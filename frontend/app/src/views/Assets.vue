@@ -25,10 +25,7 @@
             <div class="text-subtitle-2">{{ $t('assets.ignore') }}</div>
           </v-col>
           <v-col>
-            <v-switch
-              :input-value="isAssetIgnored"
-              @change="toggleIgnoreAsset"
-            />
+            <v-switch :input-value="isIgnored" @change="toggleIgnoreAsset" />
           </v-col>
         </v-row>
       </v-col>
@@ -63,18 +60,12 @@ export default defineComponent({
   },
   setup(props) {
     const { identifier } = toRefs(props);
-    const { ignoredAssets, ignoreAsset, unignoreAsset } = setupIgnoredAssets();
+    const { isAssetIgnored, ignoreAsset, unignoreAsset } = setupIgnoredAssets();
 
-    const findIgnoredAssetIndex = () => {
-      return get(ignoredAssets).indexOf(get(identifier));
-    };
-
-    const isAssetIgnored = computed<boolean>(() => {
-      return findIgnoredAssetIndex() > -1;
-    });
+    const isIgnored = isAssetIgnored(get(identifier));
 
     const toggleIgnoreAsset = () => {
-      if (findIgnoredAssetIndex() > -1) {
+      if (get(isIgnored)) {
         unignoreAsset(get(identifier));
       } else {
         ignoreAsset(get(identifier));
@@ -103,7 +94,7 @@ export default defineComponent({
     });
 
     return {
-      isAssetIgnored,
+      isIgnored,
       toggleIgnoreAsset,
       premium,
       editRoute,

@@ -45,7 +45,7 @@ export const assetsApi = (): AssetsApi => {
 
 export const statisticsApi = (): StatisticsApi => {
   const store = useStore();
-  const { ignoredAssets } = setupIgnoredAssets();
+  const { isAssetIgnored } = setupIgnoredAssets();
   return {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
       return api.queryLatestAssetValueDistribution();
@@ -54,9 +54,8 @@ export const statisticsApi = (): StatisticsApi => {
       return api.queryLatestLocationValueDistribution();
     },
     async ownedAssets(): Promise<OwnedAssets> {
-      const ignored = get(ignoredAssets);
       const owned = await api.assets.queryOwnedAssets();
-      return owned.filter(asset => !ignored.includes(asset));
+      return owned.filter(asset => !get(isAssetIgnored(asset)));
     },
     async timedBalances(
       asset: string,

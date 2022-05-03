@@ -165,6 +165,11 @@ export const setupIgnoredAssets = () => {
     return state.ignoredAssets;
   });
 
+  const isAssetIgnored = (asset: string) =>
+    computed<boolean>(() => {
+      return get(ignoredAssets).includes(asset);
+    });
+
   const ignoreAsset = async (asset: string) => {
     await store.dispatch('session/ignoreAsset', asset);
   };
@@ -174,6 +179,7 @@ export const setupIgnoredAssets = () => {
   };
 
   return {
+    isAssetIgnored,
     ignoredAssets,
     ignoreAsset,
     unignoreAsset
