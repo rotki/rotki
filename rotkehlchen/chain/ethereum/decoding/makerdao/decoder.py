@@ -10,7 +10,11 @@ from rotkehlchen.accounting.structures.base import (
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
+from rotkehlchen.chain.ethereum.decoding.structures import (
+    ActionItem,
+    TxEventSettings,
+    TxMultitakeTreatment,
+)
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
@@ -645,5 +649,13 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 method='acquisition',
                 take=1,
                 multitake_treatment=None,
+            ),  # Migrate SAI to DAI
+            get_tx_event_type_identifier(HistoryEventType.MIGRATE, HistoryEventSubType.SPEND, 'makerdao migration'): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='spend',
+                take=2,
+                multitake_treatment=TxMultitakeTreatment.SWAP,
             ),
         }
