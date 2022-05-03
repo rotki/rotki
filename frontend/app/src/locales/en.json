@@ -2810,10 +2810,16 @@
           "label": "Date & time"
         },
         "event_type": {
-          "label": "Event Type"
+          "label": "Event Type",
+          "validation": {
+            "non_empty": "The event type field cannot be empty."
+          }
         },
         "event_subtype": {
-          "label": "Event Subtype"
+          "label": "Event Subtype",
+          "validation": {
+            "non_empty": "The event subtype field cannot be empty."
+          }
         },
         "fiat_value": {
           "label": "{currency} Value",
@@ -2860,6 +2866,7 @@
         "migrate": "Migrate"
       },
       "history_event_subtype": {
+        "none": "None",
         "reward": "Reward",
         "deposit_asset": "Deposit Asset",
         "remove_asset": "Remove Asset",

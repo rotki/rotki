@@ -98,6 +98,10 @@ export const historyEventTypeData: ActionDataEntry[] = [
 
 export const historyEventSubTypeData: ActionDataEntry[] = [
   {
+    identifier: HistoryEventSubType.NONE,
+    label: i18n.t('transactions.events.history_event_subtype.none').toString()
+  },
+  {
     identifier: HistoryEventSubType.REWARD,
     label: i18n.t('transactions.events.history_event_subtype.reward').toString()
   },
@@ -261,7 +265,7 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.PAYBACK_DEBT]: TransactionEventType.REPAY,
     [HistoryEventSubType.RETURN_WRAPPED]: TransactionEventType.SEND,
     [HistoryEventSubType.DONATE]: TransactionEventType.DONATE,
-    null: TransactionEventType.SEND
+    [HistoryEventSubType.NONE]: TransactionEventType.SEND
   },
   [HistoryEventType.RECEIVE]: {
     [HistoryEventSubType.GENERATE_DEBT]: TransactionEventType.BORROW,
@@ -269,7 +273,7 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.RETURN_WRAPPED]: TransactionEventType.RECEIVE,
     [HistoryEventSubType.AIRDROP]: TransactionEventType.AIRDROP,
     [HistoryEventSubType.REWARD]: TransactionEventType.RECEIVE,
-    null: TransactionEventType.RECEIVE
+    [HistoryEventSubType.NONE]: TransactionEventType.RECEIVE
   },
   [HistoryEventType.INFORMATIONAL]: {
     [HistoryEventSubType.APPROVE]: TransactionEventType.APPROVAL,
