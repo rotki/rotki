@@ -56,7 +56,8 @@ export enum TransactionEventType {
   BRIDGE = 'bridge',
   GOVERNANCE_PROPOSE = 'governance_propose',
   DONATE = 'donate',
-  NFT = 'nft'
+  RENEW = 'renew',
+  PLACE_ORDER = 'place_order'
 }
 
 export const TransactionEventTypeEnum = z.nativeEnum(TransactionEventType);
@@ -76,5 +77,8 @@ export enum TransactionEventProtocol {
   '1INCH' = '1inch',
   VOTIUM = 'votium',
   LIQUITY = 'liquity',
-  PICKLE = 'pickle finance'
+  PICKLE = 'pickle finance',
+  DXDAO = 'dxdao',
+  BADGER = 'badger',
+  ENS = 'ens'
 }

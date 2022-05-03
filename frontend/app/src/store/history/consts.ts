@@ -93,6 +93,10 @@ export const historyEventTypeData: ActionDataEntry[] = [
   {
     identifier: HistoryEventType.MIGRATE,
     label: i18n.t('transactions.events.history_event_type.migrate').toString()
+  },
+  {
+    identifier: HistoryEventType.RENEW,
+    label: i18n.t('transactions.events.history_event_type.renew').toString()
   }
 ];
 
@@ -180,6 +184,10 @@ export const historyEventSubTypeData: ActionDataEntry[] = [
   {
     identifier: HistoryEventSubType.REWARD,
     label: i18n.t('transactions.events.history_event_subtype.reward').toString()
+  },
+  {
+    identifier: HistoryEventSubType.NFT,
+    label: i18n.t('transactions.events.history_event_subtype.nft').toString()
   }
 ];
 
@@ -250,6 +258,16 @@ export const transactionEventTypeData: ActionDataEntry[] = [
     identifier: TransactionEventType.DONATE,
     label: i18n.t('transactions.events.type.donate').toString(),
     icon: 'mdi-hand-heart-outline'
+  },
+  {
+    identifier: TransactionEventType.RENEW,
+    label: i18n.t('transactions.events.type.renew').toString(),
+    icon: 'mdi-calendar-refresh'
+  },
+  {
+    identifier: TransactionEventType.PLACE_ORDER,
+    label: i18n.t('transactions.events.type.place_order').toString(),
+    icon: 'mdi-briefcase-arrow-up-down'
   }
 ];
 
@@ -275,7 +293,9 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.APPROVE]: TransactionEventType.APPROVAL,
     [HistoryEventSubType.GOVERNANCE_PROPOSE]:
       TransactionEventType.GOVERNANCE_PROPOSE,
-    [HistoryEventSubType.DEPLOY]: TransactionEventType.DEPLOY
+    [HistoryEventSubType.DEPLOY]: TransactionEventType.DEPLOY,
+    [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.WITHDRAW,
+    [HistoryEventSubType.PLACE_ORDER]: TransactionEventType.PLACE_ORDER
   },
   [HistoryEventType.TRANSFER]: {
     [HistoryEventSubType.BRIDGE]: TransactionEventType.BRIDGE
@@ -285,16 +305,21 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.RECEIVE]: TransactionEventType.RECEIVE
   },
   [HistoryEventType.WITHDRAWAL]: {
+    null: TransactionEventType.WITHDRAW,
     [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.WITHDRAW,
     [HistoryEventSubType.GENERATE_DEBT]: TransactionEventType.BORROW
   },
   [HistoryEventType.DEPOSIT]: {
+    null: TransactionEventType.DEPOSIT,
     [HistoryEventSubType.DEPOSIT_ASSET]: TransactionEventType.DEPOSIT,
     [HistoryEventSubType.BRIDGE]: TransactionEventType.DEPOSIT
   },
   [HistoryEventType.MIGRATE]: {
     [HistoryEventSubType.SPEND]: TransactionEventType.SEND,
     [HistoryEventSubType.RECEIVE]: TransactionEventType.RECEIVE
+  },
+  [HistoryEventType.RENEW]: {
+    [HistoryEventSubType.NFT]: TransactionEventType.RENEW
   }
 };
 
@@ -370,5 +395,22 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     identifier: TransactionEventProtocol.PICKLE,
     label: 'Pickle Finance',
     image: require('@/assets/images/modules/pickle.svg')
+  },
+  {
+    identifier: TransactionEventProtocol.DXDAO,
+    label: 'dxdao',
+    image: require('@/assets/images/defi/dxdao.svg'),
+    matcher: (identifier: string) =>
+      identifier.toLowerCase().startsWith('dxdao')
+  },
+  {
+    identifier: TransactionEventProtocol.BADGER,
+    label: 'badger',
+    image: require('@/assets/images/defi/badger.png')
+  },
+  {
+    identifier: TransactionEventProtocol.ENS,
+    label: 'ens',
+    image: require('@/assets/images/airdrops/ens.svg')
   }
 ];
