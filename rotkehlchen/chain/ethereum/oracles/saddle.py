@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Optional
 
 from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.constants.assets import A_ETH, A_WETH
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_ALETH, A_ETH, A_WETH
 from rotkehlchen.constants.ethereum import SADDLE_ALETH_POOL
 from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
@@ -50,9 +50,7 @@ class SaddleOracle(CurrentPriceOracleInterface):
         and then get the eth price to calculate the ALETH price
         """
         log.debug(f'Querying saddle for price of {from_asset} to {to_asset}')
-        # TODO @yabirgb: Move this asset to the assets.py file
-        aleth = EthereumToken('0x0100546F2cD4C9D97f798fFC9755E47865FF7Ee6')
-        if from_asset != aleth:
+        if from_asset != A_ALETH:
             raise PriceQueryUnsupportedAsset(
                 f'{from_asset} is not a valid asset for the Saddle oracle',
             )
