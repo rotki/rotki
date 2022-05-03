@@ -166,7 +166,7 @@ class EthereumTransactionQuerySchema(
     address = EthereumAddressField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    protocol = fields.String(load_default=None)
+    protocols = fields.List(fields.String(), load_default=None)
     asset = AssetField(load_default=None)
 
     @validates_schema
@@ -190,7 +190,9 @@ class EthereumTransactionQuerySchema(
     ) -> Dict[str, Any]:
         address = data.get('address')
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
-        protocol, asset = data['protocol'], data['asset']
+        protocols, asset = data['protocols'], data['asset']
+        if not protocols:  # If protocols == []
+            protocols = None
         filter_query = ETHTransactionsFilterQuery.make(
             order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],
@@ -198,13 +200,12 @@ class EthereumTransactionQuerySchema(
             addresses=[address] if address is not None else None,
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
-            filter_by_events=protocol or asset,
-            protocol=protocol,
+            protocols=protocols,
             asset=asset,
         )
         event_params = {
             'asset': asset,
-            'protocol': protocol,
+            'protocols': protocols,
         }
 
         return {

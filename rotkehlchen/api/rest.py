@@ -3040,7 +3040,6 @@ class RestAPI():
                 filter_query=filter_query,
                 has_premium=self.rotkehlchen.premium is not None,
             )
-            transactions = list(set(transactions))
             status_code = HTTPStatus.OK
             message = ''
         except RemoteError as e:
@@ -3065,7 +3064,7 @@ class RestAPI():
                     filter_query=HistoryEventFilterQuery.make(
                         event_identifier=entry.tx_hash.hex(),
                         asset=event_params['asset'],
-                        counterparty=event_params['protocol'],
+                        protocols=event_params['protocols'],
                     ),
                     has_premium=True,  # for this function we don't limit. We only limit txs.
                 )

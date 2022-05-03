@@ -311,8 +311,7 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
-            filter_by_events: Optional[bool] = None,  # If True, filters by events data
-            protocol: Optional[str] = None,  # Events data
+            protocols: Optional[List[str]] = None,  # Events data
             asset: Optional[Asset] = None,  # Events data
     ) -> 'ETHTransactionsFilterQuery':
         if order_by_rules is None:
@@ -698,7 +697,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             ignored_ids: Optional[List[str]] = None,
             null_columns: Optional[List[str]] = None,
             event_identifier: Optional[str] = None,
-            counterparty: Optional[str] = None,
+            protocols: Optional[List[str]] = None,
     ) -> 'HistoryEventFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True), ('sequence_index', True)]
@@ -759,9 +758,9 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             filters.append(
                 DBStringFilter(and_op=True, column='event_identifier', value=event_identifier),
             )
-        if counterparty is not None:
+        if protocols is not None:
             filters.append(
-                DBStringFilter(and_op=True, column='counterparty', value=counterparty),
+                DBProtocolsFilter(and_op=True, protocols=protocols),
             )
 
         filter_query.timestamp_filter = DBTimestampFilter(
@@ -774,3 +773,14 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters
         return filter_query
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBProtocolsFilter(DBFilter):
+    protocols: List[str]
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        questionmarks = ','.join('?' * len(self.protocols))
+        filters = [f'counterparty IN ({questionmarks})']
+        bindings = self.protocols
+        return filters, bindings
