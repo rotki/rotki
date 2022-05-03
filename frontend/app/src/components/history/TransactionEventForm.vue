@@ -96,11 +96,13 @@
         <v-autocomplete
           v-model="eventType"
           outlined
+          required
           :label="$t('transactions.events.form.event_type.label')"
           :items="historyEventTypeData"
           item-value="identifier"
           item-text="label"
           data-cy="eventType"
+          :rules="eventTypeRules"
           :error-messages="errorMessages['eventType']"
           @focus="delete errorMessages['eventType']"
         />
@@ -109,11 +111,13 @@
         <v-autocomplete
           v-model="eventSubtype"
           outlined
+          required
           :label="$t('transactions.events.form.event_subtype.label')"
           :items="historyEventSubTypeData"
           item-value="identifier"
           item-text="label"
           data-cy="eventSubtype"
+          :rules="eventSubtypeRules"
           :error-messages="errorMessages['eventSubtype']"
           @focus="delete errorMessages['eventSubtype']"
         />
@@ -309,6 +313,22 @@ const TransactionEventForm = defineComponent({
           .toString()
     ];
 
+    const eventTypeRules = [
+      (v: string) =>
+        !!v ||
+        i18n
+          .t('transactions.events.form.event_type.validation.non_empty')
+          .toString()
+    ];
+
+    const eventSubtypeRules = [
+      (v: string) =>
+        !!v ||
+        i18n
+          .t('transactions.events.form.event_subtype.validation.non_empty')
+          .toString()
+    ];
+
     const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
     const reset = () => {
@@ -360,7 +380,7 @@ const TransactionEventForm = defineComponent({
       set(datetime, convertFromTimestamp(event.timestamp, true));
       set(location, event.location);
       set(eventType, event.eventType);
-      set(eventSubtype, event.eventSubtype);
+      set(eventSubtype, event.eventSubtype || HistoryEventSubType.NONE);
       set(asset, event.asset);
       set(amount, event.balance.amount.toString());
       set(fiatValue, convertedFiatValue);
@@ -503,6 +523,8 @@ const TransactionEventForm = defineComponent({
       amountRules,
       fiatValueRules,
       sequenceIndexRules,
+      eventTypeRules,
+      eventSubtypeRules,
       fetching,
       save,
       reset

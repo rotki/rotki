@@ -8,6 +8,8 @@ import {
 } from '@/store/history/consts';
 import { EthTransactionEventEntry } from '@/store/history/types';
 import {
+  HistoryEventSubType,
+  HistoryEventType,
   TransactionEventProtocol,
   TransactionEventType
 } from '@/types/transaction';
@@ -17,8 +19,9 @@ export const getEventType = (
 ): TransactionEventType | undefined => {
   const { eventType, eventSubtype } = event;
 
-  const subTypes = transactionEventTypeMapping[eventType || 'null'];
-  return subTypes?.[eventSubtype || 'null'] ?? undefined;
+  const subTypes =
+    transactionEventTypeMapping[eventType || HistoryEventType.NONE];
+  return subTypes?.[eventSubtype || HistoryEventSubType.NONE] ?? undefined;
 };
 
 export const getEventTypeData = (

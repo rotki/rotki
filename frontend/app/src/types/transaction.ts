@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export enum HistoryEventType {
+  NONE = 'none',
   TRADE = 'trade',
   STAKING = 'staking',
   DEPOSIT = 'deposit',
@@ -19,6 +20,7 @@ export const HistoryEventTypeEnum = z.nativeEnum(HistoryEventType);
 export type HistoryEventTypeEnum = z.infer<typeof HistoryEventTypeEnum>;
 
 export enum HistoryEventSubType {
+  NONE = 'none',
   REWARD = 'reward',
   DEPOSIT_ASSET = 'deposit asset',
   REMOVE_ASSET = 'remove asset',
