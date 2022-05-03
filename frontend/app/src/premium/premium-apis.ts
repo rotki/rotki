@@ -26,7 +26,8 @@ import {
   TimedBalances
 } from '@rotki/common/lib/statistics';
 import { computed } from '@vue/composition-api';
-import { toRefs } from '@vueuse/core';
+import { get, toRefs } from '@vueuse/core';
+import { setupIgnoredAssets } from '@/composables/session';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
@@ -44,6 +45,7 @@ export const assetsApi = (): AssetsApi => {
 
 export const statisticsApi = (): StatisticsApi => {
   const store = useStore();
+  const { ignoredAssets } = setupIgnoredAssets();
   return {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
       return api.queryLatestAssetValueDistribution();
@@ -52,7 +54,9 @@ export const statisticsApi = (): StatisticsApi => {
       return api.queryLatestLocationValueDistribution();
     },
     async ownedAssets(): Promise<OwnedAssets> {
-      return api.assets.queryOwnedAssets();
+      const ignored = get(ignoredAssets);
+      const owned = await api.assets.queryOwnedAssets();
+      return owned.filter(asset => !ignored.includes(asset));
     },
     async timedBalances(
       asset: string,
