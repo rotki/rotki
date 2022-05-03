@@ -4,6 +4,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_1INCH, A_AAVE, A_BTC, A_DOGE, A_ETH, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
+from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.types import Price
 
@@ -28,7 +29,7 @@ def test_uniswap_oracles_asset_to_asset(inquirer_defi):
         price = inquirer_defi._uniswapv2.query_current_price(A_1INCH, A_AAVE)
         assert (inch_price / aave_price).is_close(price, max_diff='0.01')
         defi_price = inquirer_defi.find_usd_price(A_AAVE, ignore_cache=True)
-        assert defi_price.is_close(aave_price, max_diff='3')
+        assert abs(defi_price - aave_price) / aave_price < FVal(0.1), f'{defi_price=} and {aave_price=} have more than 10% difference'  # noqa: E501
 
         # test with ethereum tokens but as assets instead of instance of the EthereumToken class
         a1inch = Asset(A_1INCH.identifier)
