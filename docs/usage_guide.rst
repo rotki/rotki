@@ -617,7 +617,7 @@ You can import transaction history CSV data exported from the uphold.com activit
 Loopring balances
 ===================
 
-To have your loopring balances detected you will need an API Key from loopring. To get one visit `https://loopring.io <https://loopring.io/#/trade/lite/LRC-ETH>`_ and unlock your account. In the right panel you need to click in **Export Account**
+To have your loopring balances detected you will need an API Key from loopring. To get one visit `https://loopring.io/#/layer2/security <https://loopring.io/#/layer2/security>`_ and unlock your account. In the list of options you need to click in **Export Account**
 
 .. image:: images/get_loopring_keys.png
    :alt: Get loopring keys
