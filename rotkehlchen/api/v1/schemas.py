@@ -181,6 +181,12 @@ class EthereumTransactionQuerySchema(
                 message=f'order_by_attribute for transactions can not be {value}',
                 field_name='order_by_attribute',
             )
+        protocols = data['protocols']
+        if protocols is not None and len(protocols) == 0:
+            raise ValidationError(
+                message='protocols have to be either not passed or contain at least one item',
+                field_name='protocols',
+            )
 
     @post_load
     def make_ethereum_transaction_query(  # pylint: disable=no-self-use
@@ -191,8 +197,6 @@ class EthereumTransactionQuerySchema(
         address = data.get('address')
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         protocols, asset = data['protocols'], data['asset']
-        if not protocols:  # If protocols == []
-            protocols = None
         filter_query = ETHTransactionsFilterQuery.make(
             order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],

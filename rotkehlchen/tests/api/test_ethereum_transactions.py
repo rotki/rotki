@@ -3,23 +3,14 @@ import os
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import List, Optional, Tuple
 from unittest.mock import patch
 
 import gevent
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryEventSubType,
-    HistoryEventType,
-)
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USDT
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
@@ -36,16 +27,15 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import (
+    generate_tx_entries_response,
+    make_ethereum_address,
+    make_ethereum_event,
+    make_ethereum_transaction,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import (
-    EthereumTransaction,
-    Location,
-    Timestamp,
-    TimestampMS,
-    make_evm_tx_hash,
-)
+from rotkehlchen.types import EthereumTransaction, Timestamp, make_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 EXPECTED_AFB7_TXS = [{
@@ -1069,64 +1059,6 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
     assert dbevents.get_history_events(HistoryEventFilterQuery.make(), True) == []
 
 
-def create_tx(tx_hash: bytes) -> EthereumTransaction:
-    # Helper function to reduce lines of code in tests
-    return EthereumTransaction(
-        tx_hash=make_evm_tx_hash(tx_hash),
-        timestamp=Timestamp(0),
-        block_number=0,
-        from_address=make_ethereum_address(),
-        to_address=make_ethereum_address(),
-        value=1,
-        gas=1,
-        gas_price=1,
-        gas_used=1,
-        input_data=b'',
-        nonce=0,
-    )
-
-
-def create_tx_event(
-    tx_hash: bytes,
-    index: int,
-    asset: Asset,
-    counterparty: Optional[str] = None,
-) -> HistoryBaseEntry:
-    # Helper function to reduce lines of code in tests
-    return HistoryBaseEntry(
-        event_identifier=make_evm_tx_hash(tx_hash).hex(),  # pylint: disable=no-member
-        sequence_index=index,
-        identifier=index,
-        timestamp=TimestampMS(0),
-        location=Location.KRAKEN,
-        event_type=HistoryEventType.UNKNOWN,
-        event_subtype=HistoryEventSubType.NONE,
-        asset=asset,
-        balance=Balance(amount=ONE, usd_value=ONE),
-        counterparty=counterparty,
-    )
-
-
-def generate_tx_entries_response(
-    data: List[Tuple[EthereumTransaction, List[HistoryBaseEntry]]],
-) -> List:
-    # Helper function to reduce lines of code in tests
-    result = []
-    for tx, events in data:
-        decoded_events = []
-        for event in events:
-            decoded_events.append({
-                'entry': event.serialize(),
-                'customized': False,
-            })
-        result.append({
-            'entry': tx.serialize(),
-            'decoded_events': decoded_events,
-            'ignored_in_accounting': False,
-        })
-    return result
-
-
 def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     """Tests filtering by transaction's events' properties
     Test cases:
@@ -1140,15 +1072,16 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     logging.getLogger('rotkehlchen.externalapis.etherscan').disabled = True
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
-    tx1 = create_tx(tx_hash=b'1')
-    tx2 = create_tx(tx_hash=b'2')
-    tx3 = create_tx(tx_hash=b'3')
-    event1 = create_tx_event(tx_hash=b'1', index=1, asset=A_ETH)
-    event2 = create_tx_event(tx_hash=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL')
-    event3 = create_tx_event(tx_hash=b'1', index=3, asset=A_BTC, counterparty='EXAMPLE_PROTOCOL')
-    event4 = create_tx_event(tx_hash=b'2', index=4, asset=A_BTC)
+    tx1 = make_ethereum_transaction(tx_hash=b'1')
+    tx2 = make_ethereum_transaction(tx_hash=b'2')
+    tx3 = make_ethereum_transaction(tx_hash=b'3')
+    event1 = make_ethereum_event(tx_hash=b'1', index=1, asset=A_ETH)
+    event2 = make_ethereum_event(tx_hash=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
+    event3 = make_ethereum_event(tx_hash=b'1', index=3, asset=A_BTC, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
+    event4 = make_ethereum_event(tx_hash=b'2', index=4, asset=A_BTC)
     dbethtx = DBEthTx(db)
-    dbethtx.add_ethereum_transactions([tx1, tx2, tx3], relevant_address=ethereum_accounts[0])
+    dbethtx.add_ethereum_transactions([tx1, tx2], relevant_address=ethereum_accounts[0])
+    dbethtx.add_ethereum_transactions([tx3], relevant_address=ethereum_accounts[1])
     dbevents = DBHistoryEvents(db)
     dbevents.add_history_events([event1, event2, event3, event4])
 
@@ -1158,8 +1091,35 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
             'ethereumtransactionsresource',
         ),
         json={
-            'asset': A_ETH.serialize(),
+            'asset': A_BTC.serialize(),
+            'protocols': [],
         },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='{"protocols": ["protocols have to be either not passed or contain at least one item"]}',  # noqa: E501
+    )
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+        json={
+            'asset': A_BTC.serialize(),
+            'address': ethereum_accounts[0],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    expected = generate_tx_entries_response([(tx1, [event3]), (tx2, [event4])])
+    assert result['entries'] == expected
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+        json={'asset': A_ETH.serialize()},
     )
     result = assert_proper_response_with_result(response)
     expected = generate_tx_entries_response([(tx1, [event1, event2])])
@@ -1170,25 +1130,18 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
             rotkehlchen_api_server,
             'ethereumtransactionsresource',
         ),
-        json={
-            'asset': A_BTC.serialize(),
-        },
+        json={'asset': A_BTC.serialize()},
     )
     result = assert_proper_response_with_result(response)
     expected = generate_tx_entries_response([(tx1, [event3]), (tx2, [event4])])
-    # For some reason data this data can be reversed,
-    # and we avoid failing with a help of this ugly check.
-    # Dicts are not hashable, so it's not possible to use better and simpler way
-    assert result['entries'] == expected or result['entries'] == list(reversed(expected))
+    assert result['entries'] == expected
 
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
             'ethereumtransactionsresource',
         ),
-        json={
-            'protocol': 'EXAMPLE_PROTOCOL',
-        },
+        json={'protocols': ['EXAMPLE_PROTOCOL']},
     )
     result = assert_proper_response_with_result(response)
     expected = generate_tx_entries_response([(tx1, [event2, event3])])
@@ -1201,7 +1154,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
         ),
         json={
             'asset': A_BTC.serialize(),
-            'protocol': 'EXAMPLE_PROTOCOL',
+            'protocols': ['EXAMPLE_PROTOCOL'],
         },
     )
     result = assert_proper_response_with_result(response)

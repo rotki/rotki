@@ -84,39 +84,37 @@ class DBTimestampFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBETHTransactionAddressFilter(DBFilter):
-    """Find transactions involving any of the addresses. Including in an internal.
+class DBETHTransactionJoinsFilter(DBFilter):
+    """ This join filter does 2 things:
 
-    This uses the mappings we create in the DB at transaction addition to signify
-    relevant addresses for a transaction.
+    1. If addresses is not None or empty, find transactions involving any of the addresses.
+    Including in an internal. This uses the mappings we create in the DB at transaction
+    addition to signify relevant addresses for a transaction.
+
+    2. If join_events is True, join history_events which makes it possible to apply
+    filters by history_events' properties
     """
-    addresses: List[ChecksumEthAddress]
+    addresses: Optional[List[ChecksumEthAddress]]
+    should_join_events: bool = False
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
-        questionmarks = '?' * len(self.addresses)
-        filters = [
-            f'AS A LEFT OUTER JOIN ethtx_address_mappings AS B WHERE '
-            f'A.tx_hash=b.tx_hash AND B.address IN ({",".join(questionmarks)})',
-        ]
-        bindings = self.addresses
+        query_filter, bindings = '', []
+        if self.should_join_events is True:
+            query_filter += (
+                ' INNER JOIN '
+                '(SELECT event_identifier, counterparty, asset FROM history_events) '
+                'ON hex(ethereum_transactions.tx_hash)=substr(event_identifier, 3)'
+            )
+        if self.addresses is not None:
+            questionmarks = '?' * len(self.addresses)
+            query_filter += (
+                f' INNER JOIN ethtx_address_mappings ON '
+                f'ethereum_transactions.tx_hash=ethtx_address_mappings.tx_hash AND '
+                f'ethtx_address_mappings.address IN ({",".join(questionmarks)})'
+            )
+            bindings += self.addresses
 
-        return filters, bindings
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBETHTransactionEventsJoin(DBFilter):
-    """Adds history_events to the query, so they can be used for filtering"""
-    @property
-    def addresses(self) -> Optional[List[ChecksumEthAddress]]:
-        return None  # we need it here for compatibility with DBETHTransactionAddressFilter
-
-    def prepare(self) -> Tuple[List[str], List[Any]]:
-        filters = [
-            'LEFT OUTER JOIN '
-            '(SELECT event_identifier, counterparty, asset FROM history_events) '
-            'WHERE hex(tx_hash)=substr(event_identifier, 3)',
-        ]
-        return filters, []
+        return [query_filter], bindings
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -297,7 +295,7 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         if self.join_clause is None:
             return None
 
-        ethaddress_filter = cast('DBETHTransactionAddressFilter', self.join_clause)
+        ethaddress_filter = cast('DBETHTransactionJoinsFilter', self.join_clause)
         return ethaddress_filter.addresses
 
     @classmethod
@@ -328,14 +326,18 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBETHTransactionHashFilter(and_op=False, tx_hash=tx_hash))
         else:
-            if addresses is not None:
-                filter_query.join_clause = DBETHTransactionAddressFilter(and_op=False, addresses=addresses)  # noqa: E501
-            elif filter_by_events:
-                filter_query.join_clause = DBETHTransactionEventsJoin(and_op=False)
-                if asset is not None:
-                    filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
-                if protocol is not None:
-                    filters.append(DBStringFilter(and_op=True, column='counterparty', value=protocol))  # noqa: E501
+            should_join_events = asset is not None or protocols is not None
+            if addresses is not None or should_join_events is True:
+                filter_query.join_clause = DBETHTransactionJoinsFilter(
+                    and_op=False,
+                    addresses=addresses,
+                    should_join_events=should_join_events,
+                )
+
+            if asset is not None:
+                filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
+            if protocols is not None:
+                filters.append(DBProtocolsFilter(and_op=True, protocols=protocols))
 
             filter_query.timestamp_filter = DBTimestampFilter(
                 and_op=True,
@@ -777,6 +779,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBProtocolsFilter(DBFilter):
+    """Protocols should be not empty. Otherwise, it can break the query's logic"""
     protocols: List[str]
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
