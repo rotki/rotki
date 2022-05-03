@@ -40,21 +40,34 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import Fragment from '@/components/helper/Fragment';
-import PremiumMixin from '@/mixins/premium-mixin';
+import { getPremium } from '@/composables/session';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
 
-@Component({
-  components: { Fragment }
-})
-export default class SyncButtons extends Mixins(PremiumMixin) {
-  @Prop({ required: true, type: Boolean })
-  pending!: boolean;
-  @Emit()
-  action(_action: SyncAction) {}
+export default defineComponent({
+  name: 'SyncButtons',
+  components: { Fragment },
+  props: {
+    pending: { required: true, type: Boolean }
+  },
+  emits: ['action'],
+  setup(_, { emit }) {
+    const premium = getPremium();
 
-  readonly UPLOAD = SYNC_UPLOAD;
-  readonly DOWNLOAD = SYNC_DOWNLOAD;
-}
+    const UPLOAD = SYNC_UPLOAD;
+    const DOWNLOAD = SYNC_DOWNLOAD;
+
+    const action = (_action: SyncAction) => {
+      emit('action', _action);
+    };
+
+    return {
+      premium,
+      UPLOAD,
+      DOWNLOAD,
+      action
+    };
+  }
+});
 </script>

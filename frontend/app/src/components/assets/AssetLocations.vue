@@ -20,11 +20,13 @@
         <location-display :identifier="item.location" />
       </template>
       <template #item.label="{ item }">
-        <labeled-address-display
-          v-if="item.address"
-          :account="account(item.address)"
-        />
-        <tag-display :tags="item.tags" />
+        <div class="py-4">
+          <labeled-address-display
+            v-if="item.address"
+            :account="account(item.address)"
+          />
+          <tag-display :tags="item.tags" />
+        </div>
       </template>
       <template #item.balance.amount="{ item }">
         <amount-display :value="item.balance.amount" />

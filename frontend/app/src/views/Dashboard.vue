@@ -9,7 +9,7 @@
           <summary-card
             :name="$t('dashboard.exchange_balances.title')"
             can-refresh
-            :is-loading="exchangeIsLoading"
+            :is-loading="isExchangeLoading"
             navigates-to="/accounts-balances/exchange-balances/"
             @refresh="refreshBalance($event)"
           >
@@ -46,14 +46,14 @@
         </v-col>
         <v-col cols="12" md="4" lg="4">
           <summary-card
-            :name="$t('dashboard.blockchain_balances.title')"
-            :is-loading="blockchainIsLoading"
+            :name="$tc('dashboard.blockchain_balances.title')"
+            :is-loading="isBlockchainLoading"
             can-refresh
             navigates-to="/accounts-balances/"
             @refresh="refreshBalance($event)"
           >
             <div slot="tooltip">
-              {{ $t('dashboard.blockchain_balances.tooltip') }}
+              {{ $tc('dashboard.blockchain_balances.tooltip') }}
             </div>
             <div v-if="blockchainTotals.length === 0">
               <v-card-actions class="px-4">
@@ -67,7 +67,7 @@
                   <div class="d-flex flex-column align-center">
                     <v-icon class="mb-2">mdi-plus-circle-outline</v-icon>
                     <span>
-                      {{ $t('dashboard.blockchain_balances.add') }}
+                      {{ $tc('dashboard.blockchain_balances.add') }}
                     </span>
                   </div>
                 </v-btn>
@@ -84,9 +84,9 @@
         </v-col>
         <v-col cols="12" md="4" lg="4">
           <summary-card
-            :name="$t('dashboard.manual_balances.title')"
-            :tooltip="$t('dashboard.manual_balances.card_tooltip')"
-            :is-loading="manualBalancesLoading"
+            :name="$tc('dashboard.manual_balances.title')"
+            :tooltip="$tc('dashboard.manual_balances.card_tooltip')"
+            :is-loading="isManualBalancesLoading"
             can-refresh
             navigates-to="/accounts-balances/manual-balances/"
             @refresh="fetchManualBalances"
@@ -129,17 +129,17 @@
         </v-col>
       </v-row>
       <dashboard-asset-table
-        :title="$t('dashboard.per_asset_balances.title')"
+        :title="$tc('dashboard.per_asset_balances.title')"
         table-type="ASSETS"
-        :loading="anyIsLoading"
+        :loading="isAnyLoading"
         :balances="aggregatedBalances"
       />
       <dashboard-asset-table
         v-if="liabilities.length > 0"
         class="mt-8"
         table-type="LIABILITIES"
-        :title="$t('dashboard.liabilities.title')"
-        :loading="anyIsLoading"
+        :title="$tc('dashboard.liabilities.title')"
+        :loading="isAnyLoading"
         :balances="liabilities"
       />
       <nft-balance-table data-cy="nft-balance-table" class="mt-8" />
@@ -148,12 +148,8 @@
 </template>
 
 <script lang="ts">
-import { AssetBalance } from '@rotki/common';
-import { Ref } from '@vue/composition-api';
+import { computed, defineComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { mapState } from 'pinia';
-import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
 import BlockchainBalanceCardList from '@/components/dashboard/BlockchainBalanceCardList.vue';
 import DashboardAssetTable from '@/components/dashboard/DashboardAssetTable.vue';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
@@ -162,17 +158,12 @@ import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import SummaryCard from '@/components/dashboard/SummaryCard.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import {
-  BlockchainBalancePayload,
-  BlockchainTotal,
-  ExchangeBalancePayload,
-  LocationBalance
-} from '@/store/balances/types';
+import { setupGeneralBalances, useExchanges } from '@/composables/balances';
 import { useTasks } from '@/store/tasks';
-import { ExchangeInfo } from '@/types/exchanges';
 import { TaskType } from '@/types/task-type';
 
-@Component({
+export default defineComponent({
+  name: 'Dashboard',
   components: {
     NftBalanceTable,
     PriceRefresh,
@@ -183,78 +174,67 @@ import { TaskType } from '@/types/task-type';
     ManualBalanceCardList,
     BlockchainBalanceCardList
   },
-  computed: {
-    ...mapState(useTasks, ['isTaskRunning']),
-    ...mapGetters('balances', [
-      'exchanges',
-      'manualBalanceByLocation',
-      'aggregatedBalances',
-      'liabilities',
-      'blockchainTotals',
-      'blockchainTotal'
-    ])
-  },
-  methods: {
-    ...mapActions('balances', [
-      'fetchExchangeBalances',
-      'fetchBlockchainBalances',
-      'fetchManualBalances',
-      'fetchLoopringBalances'
-    ])
-  }
-})
-export default class Dashboard extends Vue {
-  exchanges!: ExchangeInfo[];
-  isTaskRunning!: (type: TaskType) => Ref<boolean>;
-  blockchainTotals!: BlockchainTotal[];
-  aggregatedBalances!: AssetBalance[];
-  liabilities!: AssetBalance[];
-  manualBalanceByLocation!: LocationBalance[];
-  fetchBlockchainBalances!: (
-    payload: BlockchainBalancePayload
-  ) => Promise<void>;
-  fetchLoopringBalances!: (refresh: boolean) => Promise<void>;
-  fetchExchangeBalances!: (payload: ExchangeBalancePayload) => Promise<void>;
-  fetchManualBalances!: () => Promise<void>;
+  setup() {
+    const { isTaskRunning } = useTasks();
+    const {
+      blockchainTotals,
+      aggregatedBalances,
+      liabilities,
+      manualBalanceByLocation,
+      fetchBlockchainBalances,
+      fetchLoopringBalances,
+      fetchManualBalances
+    } = setupGeneralBalances();
 
-  get blockchainIsLoading(): boolean {
-    return get(this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES));
-  }
+    const { exchanges, fetchExchangeBalances } = useExchanges();
 
-  get exchangeIsLoading(): boolean {
-    return get(this.isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES));
-  }
-
-  get allBalancesIsLoading(): boolean {
-    return get(this.isTaskRunning(TaskType.QUERY_BALANCES));
-  }
-
-  get manualBalancesLoading(): boolean {
-    return get(this.isTaskRunning(TaskType.MANUAL_BALANCES));
-  }
-
-  get anyIsLoading(): boolean {
-    return (
-      this.blockchainIsLoading ||
-      this.exchangeIsLoading ||
-      this.allBalancesIsLoading
+    const isBlockchainLoading = isTaskRunning(
+      TaskType.QUERY_BLOCKCHAIN_BALANCES
     );
-  }
 
-  refreshBalance(balanceSource: string) {
-    if (balanceSource === 'blockchain') {
-      this.fetchBlockchainBalances({
-        ignoreCache: true
-      });
-      this.fetchLoopringBalances(true);
-    } else if (balanceSource === 'exchange') {
-      for (const exchange of this.exchanges) {
-        this.fetchExchangeBalances({
-          location: exchange.location,
+    const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+
+    const isAllBalancesLoading = isTaskRunning(TaskType.QUERY_BALANCES);
+
+    const isManualBalancesLoading = isTaskRunning(TaskType.MANUAL_BALANCES);
+
+    const isAnyLoading = computed<boolean>(() => {
+      return (
+        get(isBlockchainLoading) ||
+        get(isExchangeLoading) ||
+        get(isAllBalancesLoading)
+      );
+    });
+
+    const refreshBalance = (balanceSource: string) => {
+      if (balanceSource === 'blockchain') {
+        fetchBlockchainBalances({
           ignoreCache: true
         });
+        fetchLoopringBalances(true);
+      } else if (balanceSource === 'exchange') {
+        for (const exchange of get(exchanges)) {
+          fetchExchangeBalances({
+            location: exchange.location,
+            ignoreCache: true
+          });
+        }
       }
-    }
+    };
+
+    return {
+      isExchangeLoading,
+      isBlockchainLoading,
+      isManualBalancesLoading,
+      isAnyLoading,
+      exchanges,
+      blockchainTotals,
+      manualBalanceByLocation,
+      aggregatedBalances,
+      liabilities,
+      refreshBalance,
+      fetchManualBalances
+    };
   }
-}
+});
 </script>

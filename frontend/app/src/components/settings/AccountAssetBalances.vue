@@ -54,67 +54,66 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters, mapState } from 'vuex';
+import { defineComponent, PropType } from '@vue/composition-api';
+import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import Fragment from '@/components/helper/Fragment';
+import { usePrices } from '@/composables/balances';
+import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
-import {
-  AssetBalances,
-  AssetPrices,
-  ExchangeRateGetter
-} from '@/store/balances/types';
+import i18n from '@/i18n';
+import { AssetBalances } from '@/store/balances/types';
 
-@Component({
-  components: { DataTable, Fragment, AmountDisplay },
-  computed: {
-    ...mapGetters('session', ['floatingPrecision', 'currencySymbol']),
-    ...mapGetters('balances', ['exchangeRate']),
-    ...mapState('balances', ['prices'])
-  }
-})
-export default class AccountAssetBalances extends Vue {
-  readonly headers = [
-    {
-      text: this.$tc('account_asset_balance.headers.asset'),
-      class: 'text-no-wrap',
-      value: 'asset',
-      cellClass: 'asset-info'
-    },
-    {
-      text: this.$t('account_asset_balance.headers.price', {
+const headers: DataTableHeader[] = [
+  {
+    text: i18n.t('account_asset_balance.headers.asset').toString(),
+    class: 'text-no-wrap',
+    value: 'asset',
+    cellClass: 'asset-info'
+  },
+  {
+    text: i18n
+      .t('account_asset_balance.headers.price', {
         symbol: CURRENCY_USD
-      }).toString(),
-      class: 'text-no-wrap',
-      align: 'end',
-      value: 'price'
-    },
-    {
-      text: this.$tc('account_asset_balance.headers.amount'),
-      value: 'amount',
-      class: 'text-no-wrap',
-      cellClass: 'asset-divider',
-      align: 'end'
-    },
-    {
-      text: this.$tc('account_asset_balance.headers.value'),
-      value: 'usdValue',
-      align: 'end',
-      class: 'text-no-wrap'
-    }
-  ];
+      })
+      .toString(),
+    class: 'text-no-wrap',
+    align: 'end',
+    value: 'price'
+  },
+  {
+    text: i18n.t('account_asset_balance.headers.amount').toString(),
+    value: 'amount',
+    class: 'text-no-wrap',
+    cellClass: 'asset-divider',
+    align: 'end'
+  },
+  {
+    text: i18n.t('account_asset_balance.headers.value').toString(),
+    value: 'usdValue',
+    align: 'end',
+    class: 'text-no-wrap'
+  }
+];
 
-  @Prop({ required: true, type: Array })
-  assets!: AssetBalances[];
-  @Prop({ required: true, type: String })
-  title!: string;
+export default defineComponent({
+  name: 'AccountAssetBalances',
+  components: { DataTable, AmountDisplay },
+  props: {
+    assets: { required: true, type: Array as PropType<AssetBalances[]> },
+    title: { required: true, type: String }
+  },
+  setup() {
+    const { prices } = usePrices();
+    const { currencySymbol } = setupGeneralSettings();
 
-  prices!: AssetPrices;
-  currencySymbol!: string;
-  floatingPrecision!: number;
-  exchangeRate!: ExchangeRateGetter;
-}
+    return {
+      currencySymbol,
+      prices,
+      headers
+    };
+  }
+});
 </script>
 
 <style scoped lang="scss">

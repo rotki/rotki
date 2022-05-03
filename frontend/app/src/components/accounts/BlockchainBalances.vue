@@ -324,9 +324,7 @@ const BlockchainBalances = defineComponent({
     };
 
     const { isTaskRunning } = useTasks();
-    const balancesLoading = computed<boolean>(() => {
-      return get(isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES));
-    });
+    const balancesLoading = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 
     return {
       balancesLoading,

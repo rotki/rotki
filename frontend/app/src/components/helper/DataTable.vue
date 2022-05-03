@@ -43,9 +43,8 @@
 
 <script lang="ts">
 import { defineComponent, PropType, ref } from '@vue/composition-api';
-import { get } from '@vueuse/core';
+import { get, useElementBounding } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
-import { setupThemeCheck } from '@/composables/common';
 import { setupSettings } from '@/composables/settings';
 import { footerProps } from '@/config/datatable.common';
 import { ITEMS_PER_PAGE } from '@/types/frontend-settings';
@@ -62,7 +61,6 @@ export default defineComponent({
   },
   setup() {
     const { itemsPerPage, updateSetting } = setupSettings();
-    const { $vuetify } = setupThemeCheck();
 
     const table = ref<any>(null);
 
@@ -72,11 +70,13 @@ export default defineComponent({
       });
     };
 
+    const { top } = useElementBounding(table);
+
     const scrollToTop = () => {
-      const tableRef = get(table);
-      $vuetify.goTo(tableRef, {
-        container: document.querySelector('.app-main') as HTMLElement
-      });
+      const body = document.body;
+      if (get(table)) {
+        body.scrollTop = get(top) + body.scrollTop - 64;
+      }
     };
 
     return {
