@@ -2,15 +2,52 @@
 import json
 import logging
 import os
+import shutil
 import subprocess
 import time
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Optional, Any, List
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger('monitor')
 logging.basicConfig(level=logging.DEBUG)
 
 DEFAULT_LOG_LEVEL = 'critical'
+
+
+def can_delete(file: Path, cutoff: int) -> bool:
+    return int(os.stat(file).st_mtime) <= cutoff or file.name.startswith('_MEI')
+
+
+def cleanup_tmp() -> None:
+    logger.info('Preparing to cleanup tmp directory')
+    tmp_dir = Path('/tmp/').glob('*')
+    cache_cutoff = datetime.today() - timedelta(hours=6)
+    cutoff_epoch = int(cache_cutoff.strftime("%s"))
+    to_delete = filter(lambda x: can_delete(x, cutoff_epoch), tmp_dir)
+
+    deleted = 0
+    skipped = 0
+
+    for item in to_delete:
+        path = Path(item)
+        if path.is_file():
+            try:
+                path.unlink()
+                deleted += 1
+                continue
+            except PermissionError:
+                skipped += 1
+                continue
+
+        try:
+            shutil.rmtree(item)
+            deleted += 1
+        except OSError:
+            skipped += 1
+            continue
+
+    logger.info(f'Deleted {deleted} files or directories, skipped {skipped} from /tmp')
 
 
 def load_config_from_file() -> Optional[Dict[str, Any]]:
@@ -100,6 +137,8 @@ def load_config() -> List[str]:
 
     return args
 
+
+cleanup_tmp()
 
 base_args = [
     '/usr/sbin/rotki',
