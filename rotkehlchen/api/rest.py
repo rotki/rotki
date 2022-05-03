@@ -3067,6 +3067,11 @@ class RestAPI():
                     ),
                     has_premium=True,  # for this function we don't limit. We only limit txs.
                 )
+                ignored_assets = self.rotkehlchen.data.db.get_ignored_assets()
+                filtered_events = [x for x in events if x.asset not in ignored_assets]
+                if len(events) != 0 and len(filtered_events) == 0:
+                    continue  # if filtering removes all events, skip the transaction
+
                 customized_event_ids = dbevents.get_customized_event_identifiers()
                 entries_result.append({
                     'entry': entry.serialize(),
@@ -3074,7 +3079,7 @@ class RestAPI():
                         {
                             'entry': x.serialize(),
                             'customized': x.identifier in customized_event_ids,
-                        } for x in events
+                        } for x in filtered_events
                     ],
                     'ignored_in_accounting': entry.identifier in ignored_ids,
                 })
