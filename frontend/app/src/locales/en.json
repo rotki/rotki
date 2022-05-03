@@ -2863,7 +2863,8 @@
         "adjustment": "Adjustment",
         "unknown": "Unknown",
         "informational": "Informational",
-        "migrate": "Migrate"
+        "migrate": "Migrate",
+        "renew": "Renew"
       },
       "history_event_subtype": {
         "none": "None",
@@ -2881,7 +2882,8 @@
         "generate_debt": "Generate Debt",
         "payback_debt": "Payback Debt",
         "receive_wrapped": "Receive Wrapped",
-        "return_wrapped": "Return Wrapped"
+        "return_wrapped": "Return Wrapped",
+        "nft": "NFT"
       },
       "loading": "Loading events...",
       "type": {
@@ -2898,7 +2900,9 @@
         "bridge": "Bridge",
         "governance_propose": "Governance Propose",
         "donate": "Donate",
-        "unknown": "Unknown"
+        "unknown": "Unknown",
+        "renew": "Renew",
+        "place_order": "Place Order"
       },
       "view": {
         "hide": "Hide events",

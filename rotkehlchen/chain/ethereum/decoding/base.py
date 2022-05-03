@@ -89,6 +89,7 @@ class BaseDecoderTools():
             transaction: EthereumTransaction,
             set_verbs: Optional[Tuple[str, str]] = None,
             set_counterparty: Optional[str] = None,
+            set_event_subtype: Optional[HistoryEventSubType] = None,
     ) -> Optional[HistoryBaseEntry]:
         """
         Caller should know this is a transfer of either an ERC20 or an ERC721 token.
@@ -119,7 +120,7 @@ class BaseDecoderTools():
             return None
 
         event_type, location_label, counterparty, verb = direction_result
-        event_subtype = HistoryEventSubType.NONE
+        event_subtype = set_event_subtype if set_event_subtype else HistoryEventSubType.NONE
         amount_raw_or_token_id = hex_or_bytes_to_int(tx_log.data)
         if token_type == 'erc20':
             amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)

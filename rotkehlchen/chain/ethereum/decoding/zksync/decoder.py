@@ -4,6 +4,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
+    get_tx_event_type_identifier,
 )
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
@@ -66,7 +67,7 @@ class ZksyncDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 # found the deposit transfer
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.BRIDGE
-                event.counterparty = 'zksync'
+                event.counterparty = CPT_ZKSYNC
                 event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} to zksync'  # noqa: E501
                 break
 
@@ -84,4 +85,13 @@ class ZksyncDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
         """Being defined at function call time is fine since this function is called only once"""
-        return {}
+        return {
+            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.BRIDGE, CPT_ZKSYNC): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='spend',
+                take=1,
+                multitake_treatment=None,
+            ),
+        }
