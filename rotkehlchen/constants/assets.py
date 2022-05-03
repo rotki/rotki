@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# /home/yabirgb/work/rotkib/tools/scripts/generate_constant_assets.py at 30/04/2022 12:00:49.
+# /home/yabirgb/work/rotki/tools/scripts/generate_constant_assets.py at 03/05/2022 20:08:45.
 # Do not edit manually!
 
 from typing import List
@@ -2300,10 +2300,22 @@ A_FPIS = EthereumToken.initialize(
     decimals=18,
     name="Frax Price Index Share",
     symbol='FPIS',
-    started=None,
+    started=Timestamp(1648578483),
+    swapped_for=None,
+    coingecko='frax-price-index-share',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_FPIS)
+A_ALETH = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x0100546F2cD4C9D97f798fFC9755E47865FF7Ee6'),
+    decimals=18,
+    name="Alchemix ETH",
+    symbol='alETH',
+    started=Timestamp(1623421341),
     swapped_for=None,
     coingecko=None,
     cryptocompare=None,
     protocol=None,
 )
-CONSTANT_ASSETS.append(A_FPIS)
+CONSTANT_ASSETS.append(A_ALETH)
