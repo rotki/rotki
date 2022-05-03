@@ -34,7 +34,7 @@ FPIS_CONVEX_CLAIM = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\
 
 CPT_UNISWAP = 'uniswap'
 CPT_BADGER = 'badger'
-CPT_ONEINCH = 'oneinch'
+CPT_ONEINCH = '1inch'
 CPT_FRAX = 'frax'
 CPT_CONVEX = 'convex'
 

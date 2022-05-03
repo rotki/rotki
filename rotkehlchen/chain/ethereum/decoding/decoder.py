@@ -191,6 +191,22 @@ class EVMTransactionDecoder():
             take=1,
             method='acquisition',
         )
+        deposit_key = str(HistoryEventType.DEPOSIT) + '__' + str(HistoryEventSubType.NONE)
+        result[deposit_key] = TxEventSettings(
+            taxable=False,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=False,
+            take=1,
+            method='spend',
+        )
+        withdraw_key = str(HistoryEventType.WITHDRAWAL) + '__' + str(HistoryEventSubType.NONE)
+        result[withdraw_key] = TxEventSettings(
+            taxable=False,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=False,
+            take=1,
+            method='acquisition',
+        )
         return result
 
     def try_all_rules(
