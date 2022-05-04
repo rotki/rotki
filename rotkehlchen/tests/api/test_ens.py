@@ -14,7 +14,7 @@ def test_reverse_ens(rotkehlchen_api_server):
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            "reverseensresource",
+            'reverseensresource',
             ethereum_addresses=addrs_1,
         ),
     )
@@ -37,7 +37,7 @@ def test_reverse_ens(rotkehlchen_api_server):
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            "reverseensresource",
+            'reverseensresource',
             ethereum_addresses=addrs_2,
         ),
     )
@@ -60,7 +60,7 @@ def test_reverse_ens(rotkehlchen_api_server):
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            "reverseensresource",
+            'reverseensresource',
             ethereum_addresses=['0xqwerty'],
         ),
     )
@@ -71,10 +71,10 @@ def test_reverse_ens(rotkehlchen_api_server):
     requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            "reverseensresource",
+            'reverseensresource',
             ethereum_addresses=all_addrs,
             force_update=True,
         ),
     )
     timestamps_after_request = [mapping.last_update for mapping in db.get_reverse_ens(all_addrs)]
-    assert all(map(lambda t_pair: t_pair[0] < t_pair[1], zip(timestamps_before_request, timestamps_after_request)))  # noqa: E501
+    assert all(map(lambda t_pair: t_pair[0] <= t_pair[1], zip(timestamps_before_request, timestamps_after_request)))  # noqa: E501
