@@ -1041,7 +1041,7 @@ def test_timed_balances_primary_key_works(user_data_dir):
     assert 'Adding timed_balance failed' in str(exc_info.value)
 
     balances = db.query_timed_balances(asset=A_BTC)
-    assert len(balances) == 1
+    assert len(balances) == 0
 
     balances = [
         DBAssetBalance(
@@ -1063,8 +1063,9 @@ def test_timed_balances_primary_key_works(user_data_dir):
 
 
 def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
-    """Test that adding location and balance data with same timestamp does not crash.
-
+    """
+    Test that adding location and balance data with same timestamp raises an error
+    and no balance/location is added.
     Regression test for https://github.com/rotki/rotki/issues/1043
     """
     msg_aggregator = MessagesAggregator()
@@ -1091,7 +1092,7 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
     assert exc_info.errisinstance(InputError)
 
     balances = db.query_timed_balances(from_ts=0, to_ts=1590676728, asset=A_BTC)
-    assert len(balances) == 1
+    assert len(balances) == 0
 
     locations = [
         LocationData(
@@ -1110,8 +1111,7 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
     assert exc_info.errisinstance(InputError)
 
     locations = db.get_latest_location_value_distribution()
-    assert len(locations) == 1
-    assert locations[0].usd_value == '55'
+    assert len(locations) == 0
 
 
 def test_set_get_rotkehlchen_premium_credentials(data_dir, username):

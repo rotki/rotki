@@ -10,9 +10,9 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
@@ -227,6 +227,10 @@ class DBSnapshot:
         balances_snapshot_file: Path,
         location_data_snapshot_file: Path,
     ) -> Tuple[bool, str]:
+        """
+        Converts the snapshot files to list to dictionaries.
+        Performs a series of validation checks on the list before importing.
+        """
         balances_list = self._csv_to_dict(balances_snapshot_file)
         location_data_list = self._csv_to_dict(location_data_snapshot_file)
         # check if the headers match the type stored in the db
@@ -264,23 +268,26 @@ class DBSnapshot:
         balances_list: List[Dict[str, str]],
         location_data_list: List[Dict[str, str]],
     ) -> Tuple[bool, str]:
+        """Import the validated snapshot data to the database."""
         processed_balances_list = []
         processed_location_data_list = []
 
-        for entry in balances_list:
-            if entry['asset_identifier'].startswith(NFT_DIRECTIVE):
-                cursor = self.db.conn.cursor()
-                cursor.execute('INSERT OR IGNORE INTO assets(identifier) VALUES(?)', (entry['asset_identifier'],))  # noqa: 501
+        identifiers = [entry['asset_identifier'] for entry in balances_list]
+        self.db.add_asset_identifiers(identifiers)
+        try:
+            for entry in balances_list:
+                processed_balances_list.append(
+                    DBAssetBalance(
+                        category=BalanceType.deserialize(entry['category']),
+                        time=Timestamp(int(entry['timestamp'])),
+                        asset=Asset(identifier=entry['asset_identifier']),
+                        amount=entry['amount'],
+                        usd_value=str(FVal(entry['usd_value'])),
+                    ),
+                )
+        except UnknownAsset as err:
+            return False, f'snapshot contains an unknown asset ({err.asset_name}). Try adding this asset manually.'  # noqa: 501
 
-            processed_balances_list.append(
-                DBAssetBalance(
-                    category=BalanceType.deserialize(entry['category']),
-                    time=Timestamp(int(entry['timestamp'])),
-                    asset=Asset(identifier=entry['asset_identifier']),
-                    amount=entry['amount'],
-                    usd_value=str(FVal(entry['usd_value'])),
-                ),
-            )
         for entry in location_data_list:
             processed_location_data_list.append(
                 LocationData(

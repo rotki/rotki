@@ -4,6 +4,7 @@ import tempfile
 import zipfile
 from http import HTTPStatus
 from pathlib import Path
+from typing import Optional
 
 import requests
 
@@ -29,21 +30,20 @@ BALANCES_IMPORT_INVALID_HEADERS = ['timestamp', 'category', 'asset', 'amount', '
 LOCATION_DATA_IMPORT_HEADERS = ['timestamp', 'location', 'usd_value']
 LOCATION_DATA_IMPORT_INVALID_HEADERS = ['timestamp', 'location', 'value']
 
-NFT_TOKEN_ID = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_87351111192362578393917151578271555476207842532289404750603839963199017979341'  # noqa: 501
+NFT_TOKEN_ID = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_11'
 
 
 def _populate_db_with_balances(connection, ts: Timestamp):
     cursor = connection.cursor()
-    cursor.execute('INSERT OR IGNORE INTO assets(identifier) VALUES(?)', (NFT_TOKEN_ID,))
     cursor.execute(
         """
-        INSERT INTO "timed_balances" ("category", "time", "currency", "amount", "usd_value") VALUES
+        INSERT INTO timed_balances ("category", "time", "currency", "amount", "usd_value") VALUES
         (?, ?, ?, ?, ?);
-        """, ('A', ts, NFT_TOKEN_ID, '1.00', '178.44'),
+        """, ('A', ts, 'BTC', '1.00', '178.44'),
     )
     cursor.execute(
         """
-        INSERT INTO "timed_balances" ("category", "time", "currency", "amount", "usd_value") VALUES
+        INSERT INTO timed_balances ("category", "time", "currency", "amount", "usd_value") VALUES
         (?, ?, ?, ?, ?);
         """, ('A', ts, 'AVAX', '1.00', '87'),
     )
@@ -54,31 +54,45 @@ def _populate_db_with_location_data(connection, ts: Timestamp):
     cursor = connection.cursor()
     cursor.execute(
         """
-        INSERT INTO "timed_location_data" ("time", "location", "usd_value") VALUES
+        INSERT INTO timed_location_data ("time", "location", "usd_value") VALUES
         (?, ?, ?);
         """, (ts, 'A', '100.00'),
     )
     cursor.execute(
         """
-        INSERT INTO "timed_location_data" ("time", "location", "usd_value") VALUES
+        INSERT INTO timed_location_data ("time", "location", "usd_value") VALUES
         (?, ?, ?);
         """, (ts, 'B', '200.00'),
     )
     cursor.execute(
         """
-        INSERT INTO "timed_location_data" ("time", "location", "usd_value") VALUES
+        INSERT INTO timed_location_data ("time", "location", "usd_value") VALUES
         (?, ?, ?);
         """, (ts, 'H', '50.00'),
     )
     connection.commit()
 
 
-def _write_balances_csv_row(writer: 'csv.DictWriter', timestamp: Timestamp) -> None:
+def _write_balances_csv_row(
+    writer: 'csv.DictWriter',
+    timestamp: Timestamp,
+    include_unknown_asset: Optional[bool] = None,
+) -> None:
+    if include_unknown_asset:
+        writer.writerow(
+            {
+                'timestamp': timestamp,
+                'category': 'asset',
+                'asset_identifier': 'XUNKNOWNX',
+                'amount': '10.555',
+                'usd_value': '100.555',
+            },
+        )
     writer.writerow(
         {
             'timestamp': timestamp,
             'category': 'asset',
-            'asset_identifier': 'AVAX',
+            'asset_identifier': NFT_TOKEN_ID,
             'amount': '10.555',
             'usd_value': '100.555',
         },
@@ -162,6 +176,22 @@ def _create_snapshot_with_valid_data(directory: str, timestamp: Timestamp) -> No
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         _write_balances_csv_row(writer, timestamp)
+
+    path = Path(directory) / LOCATION_DATA_IMPORT_FILENAME
+    with open(path, 'w') as f:
+        fieldnames = LOCATION_DATA_IMPORT_HEADERS
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        _write_location_data_csv_row(writer, timestamp)
+
+
+def _create_snapshot_with_unknown_asset(directory: str, timestamp: Timestamp) -> None:
+    path = Path(directory) / BALANCES_FOR_IMPORT_FILENAME
+    with open(path, 'w') as f:
+        fieldnames = BALANCES_IMPORT_HEADERS
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        _write_balances_csv_row(writer, timestamp, include_unknown_asset=True)
 
     path = Path(directory) / LOCATION_DATA_IMPORT_FILENAME
     with open(path, 'w') as f:
@@ -454,6 +484,25 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     assert_error_response(
         response,
         contained_in_msg='csv file has invalid headers',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # check that importing snapshot with unknown asset_identifier fails.
+    csv_dir6 = str(tmpdir_factory.mktemp('test_csv_dir6'))
+    _create_snapshot_with_unknown_asset(csv_dir6, ts)
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dbsnapshotimportingresource',
+        ),
+        json={
+            'balances_snapshot_file': f'{csv_dir6}/{BALANCES_FOR_IMPORT_FILENAME}',
+            'location_data_snapshot_file': f'{csv_dir6}/{LOCATION_DATA_IMPORT_FILENAME}',
+        },
+    )
+    assert_error_response(
+        response,
+        contained_in_msg='snapshot contains an unknown asset',
         status_code=HTTPStatus.CONFLICT,
     )
 
