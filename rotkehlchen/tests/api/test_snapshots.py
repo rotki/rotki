@@ -29,14 +29,17 @@ BALANCES_IMPORT_INVALID_HEADERS = ['timestamp', 'category', 'asset', 'amount', '
 LOCATION_DATA_IMPORT_HEADERS = ['timestamp', 'location', 'usd_value']
 LOCATION_DATA_IMPORT_INVALID_HEADERS = ['timestamp', 'location', 'value']
 
+NFT_TOKEN_ID = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_87351111192362578393917151578271555476207842532289404750603839963199017979341'  # noqa: 501
+
 
 def _populate_db_with_balances(connection, ts: Timestamp):
     cursor = connection.cursor()
+    cursor.execute('INSERT OR IGNORE INTO assets(identifier) VALUES(?)', (NFT_TOKEN_ID,))
     cursor.execute(
         """
         INSERT INTO "timed_balances" ("category", "time", "currency", "amount", "usd_value") VALUES
         (?, ?, ?, ?, ?);
-        """, ('A', ts, 'ADA', '1.00', '178.44'),
+        """, ('A', ts, NFT_TOKEN_ID, '1.00', '178.44'),
     )
     cursor.execute(
         """
