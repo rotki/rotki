@@ -5,7 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
@@ -208,7 +208,11 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Check that assets did not get modified
-    assert set(rotki.data.db.get_ignored_assets()) == set(ignored_assets)
+    expected_tokens = set(
+        ignored_assets +
+        [EthereumToken('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC')],
+    )
+    assert set(rotki.data.db.get_ignored_assets()) == expected_tokens
 
     # Test the adding an already existing asset or removing a non-existing asset is an error
     if method == 'put':
@@ -229,4 +233,4 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         status_code=HTTPStatus.CONFLICT,
     )
     # Check that assets did not get modified
-    assert set(rotki.data.db.get_ignored_assets()) == set(ignored_assets)
+    assert set(rotki.data.db.get_ignored_assets()) == expected_tokens

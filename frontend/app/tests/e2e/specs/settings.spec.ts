@@ -132,7 +132,7 @@ describe('settings', () => {
           '1SG'
         );
       });
-      it('add another 2 ignored assets and confirm count is 3', () => {
+      it('add another 2 ignored assets and confirm count is 4', () => {
         pageAccounting.addIgnoredAsset('ZIX');
         pageAccounting.confirmInlineSuccess(
           '.accounting-settings__asset-to-ignore',
@@ -143,7 +143,7 @@ describe('settings', () => {
           '.accounting-settings__asset-to-ignore',
           '1CR'
         );
-        pageAccounting.ignoredAssetCount('3');
+        pageAccounting.ignoredAssetCount('4');
       });
       it('cannot add already ignored asset & validate UI message', () => {
         pageAccounting.addIgnoredAsset('1SG');
@@ -152,13 +152,13 @@ describe('settings', () => {
           '1SG'
         );
       });
-      it('remove an ignored asset, validate UI message, and confirm count is 2', () => {
+      it('remove an ignored asset, validate UI message, and confirm count is 3', () => {
         pageAccounting.remIgnoredAsset('1SG');
         pageAccounting.confirmInlineSuccess(
           '.accounting-settings__ignored-assets',
           '1SG'
         );
-        pageAccounting.ignoredAssetCount('2');
+        pageAccounting.ignoredAssetCount('3');
       });
     });
   });
@@ -199,7 +199,7 @@ describe('settings', () => {
         '.accounting-settings__taxfree-period',
         'false'
       );
-      pageAccounting.ignoredAssetCount('2');
+      pageAccounting.ignoredAssetCount('3');
     });
   });
 });
