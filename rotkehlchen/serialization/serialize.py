@@ -29,7 +29,7 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerPoolEventsBalance,
     BalancerPoolTokenBalance,
 )
-from rotkehlchen.chain.ethereum.modules.compound import CompoundBalance, CompoundEvent
+from rotkehlchen.chain.ethereum.modules.compound.compound import CompoundBalance, CompoundEvent
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Deposit
 from rotkehlchen.chain.ethereum.modules.liquity.trove import (
     LiquityStakeEvent,

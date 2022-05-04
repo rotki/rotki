@@ -74,7 +74,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-MODULES_PREFIX = 'rotkehlchen.chain.ethereum.decoding.'
+MODULES_PREFIX = 'rotkehlchen.chain.ethereum.modules.'
 MODULES_PREFIX_LENGTH = len(MODULES_PREFIX)
 
 
