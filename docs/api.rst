@@ -9538,6 +9538,16 @@ Dealing with ignored assets
    :statuscode 409: User is not logged in. One of the assets provided is not on the list.
    :statuscode 500: Internal rotki error
 
+.. http:post:: /api/(version)/assets/ignored/
+
+   Doing a POST on the ignored assets endpoint will update the list of ignored assets using cryptoscamdb as source.
+   
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   :resjson int result: The number of assets that were added to the ignore list.
+   :statuscode 200: Ignored assets successfully updated
+   :statuscode 500: Internal rotki error
 
 Dealing with ignored actions
 ==============================
