@@ -10,6 +10,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.asset import UnknownAsset
@@ -271,11 +272,11 @@ class DBSnapshot:
         """Import the validated snapshot data to the database."""
         processed_balances_list = []
         processed_location_data_list = []
-
-        identifiers = [entry['asset_identifier'] for entry in balances_list]
-        self.db.add_asset_identifiers(identifiers)
         try:
             for entry in balances_list:
+                if entry['asset_identifier'].startswith(NFT_DIRECTIVE):
+                    self.db.add_asset_identifiers([entry['asset_identifier']])
+
                 processed_balances_list.append(
                     DBAssetBalance(
                         category=BalanceType.deserialize(entry['category']),

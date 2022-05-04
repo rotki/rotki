@@ -1018,6 +1018,10 @@ def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):
 
 
 def test_timed_balances_primary_key_works(user_data_dir):
+    """
+    Test that adding two timed_balances with the same primary key
+    i.e (time, currency, category) fails.
+    """
     msg_aggregator = MessagesAggregator()
     db = DBHandler(user_data_dir, '123', msg_aggregator, None)
     balances = [
