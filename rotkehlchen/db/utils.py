@@ -156,7 +156,7 @@ def insert_tag_mappings(
         cursor: Cursor,
         data: Union[List['ManuallyTrackedBalance'], List[BlockchainAccountData], List['XpubData']],
         object_reference_keys: List[
-            Literal['label', 'address', 'xpub.xpub', 'derivation_path'],
+            Literal['id', 'address', 'xpub.xpub', 'derivation_path'],
         ],
 ) -> None:
     """
@@ -170,7 +170,7 @@ def insert_tag_mappings(
             for key in object_reference_keys:
                 value = rgetattr(entry, key)
                 if value is not None:
-                    reference += value
+                    reference += str(value)
             mapping_tuples.extend([(reference, tag) for tag in entry.tags])
 
     cursor.executemany(

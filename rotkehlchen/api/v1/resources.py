@@ -70,8 +70,9 @@ from rotkehlchen.api.v1.schemas import (
     IntegerIdentifierSchema,
     LedgerActionSchema,
     LedgerActionsQuerySchema,
+    ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
-    ManuallyTrackedBalancesSchema,
+    ManuallyTrackedBalancesEditSchema,
     ManualPriceDeleteSchema,
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
@@ -594,26 +595,27 @@ class BlockchainBalancesResource(BaseResource):
 class ManuallyTrackedBalancesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
-    edit_schema = ManuallyTrackedBalancesSchema()
+    put_schema = ManuallyTrackedBalancesAddSchema()
+    patch_schema = ManuallyTrackedBalancesEditSchema()
     delete_schema = ManuallyTrackedBalancesDeleteSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_manually_tracked_balances(async_query)
 
-    @use_kwargs(edit_schema, location='json')
+    @use_kwargs(put_schema, location='json')
     def put(self, async_query: bool, balances: List[ManuallyTrackedBalance]) -> Response:
         return self.rest_api.add_manually_tracked_balances(async_query=async_query, data=balances)
 
-    @use_kwargs(edit_schema, location='json')
+    @use_kwargs(patch_schema, location='json')
     def patch(self, async_query: bool, balances: List[ManuallyTrackedBalance]) -> Response:
         return self.rest_api.edit_manually_tracked_balances(async_query=async_query, data=balances)
 
     @use_kwargs(delete_schema, location='json')
-    def delete(self, async_query: bool, labels: List[str]) -> Response:
+    def delete(self, async_query: bool, ids: List[int]) -> Response:
         return self.rest_api.remove_manually_tracked_balances(
             async_query=async_query,
-            labels=labels,
+            ids=ids,
         )
 
 

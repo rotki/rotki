@@ -8963,6 +8963,7 @@ Getting manually tracked balances
       {
           "result": {
           "balances": [{
+                  "id": 1,
                   "asset": "XMR",
                   "label": "My monero wallet",
                   "amount": "50.315",
@@ -8970,12 +8971,14 @@ Getting manually tracked balances
                   "tags": ["public"],
                   "location": "blockchain"
               }, {
+                  "id": 2,
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
                   "usd_value": "9087.22",
                   "location": "blockchain"
               }, {
+                  "id": 3,
                   "asset": "ZEC",
                   "label" "My favorite wallet",
                   "amount": "76.2"
@@ -9044,6 +9047,7 @@ Adding manually tracked balances
       {
           "result": {
           "balances": [{
+                  "id": 1,
                   "asset": "XMR",
                   "label": "My monero wallet",
                   "amount": "50.315",
@@ -9051,12 +9055,14 @@ Adding manually tracked balances
                   "tags": ["public"],
                   "location": "blockchain"
               }, {
+                  "id" :2,
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
                   "usd_value": "9087.22",
                   "location": "blockchain"
               }, {
+                  "id": 3
                   "asset": "ZEC",
                   "label" "My favorite wallet",
                   "amount": "76.2"
@@ -9082,7 +9088,7 @@ Editing manually tracked balances
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PATCH on the the manual balances endpoint allows you to edit a number of manually tracked balances by label.
+   Doing a PATCH on the the manual balances endpoint allows you to edit a number of manually tracked balances by id.
 
    **Example Request**:
 
@@ -9094,12 +9100,14 @@ Editing manually tracked balances
 
       {
           "balances": [{
+                  "id": 1,
                   "asset": "XMR",
                   "label": "My monero wallet",
                   "amount": "4.5",
                   "location": "blockchain"
                   },{
-                  "asset": "ETH",
+                  "id": 3,
+                  "asset": "ETH"    ,
                   "label": "My favorite wallet",
                   "amount": "10",
                   "tags": [],
@@ -9119,6 +9127,7 @@ Editing manually tracked balances
       {
           "result": {
           "balances": [{
+                  "id" 1,
                   "asset": "XMR",
                   "label": "My monero wallet",
                   "amount": "4.5",
@@ -9126,12 +9135,14 @@ Editing manually tracked balances
                   "tags": ["public"],
                   "location": "blockchain"
               }, {
+                  "id": 2,
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
                   "usd_value": "9087.22",
                   "location": "blockchain"
               }, {
+                  "id": 3,
                   "asset": "ZEC",
                   "label" "My favorite wallet",
                   "amount": "10"
@@ -9156,8 +9167,8 @@ Deleting manually tracked balances
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a DELETE on the the manual balances endpoint with a list of labels to of manually tracked balances will remove these balances from the database for the current user.
-    If one of the given labels to remove is invalid the entire request will fail.
+   Doing a DELETE on the the manual balances endpoint with a list of ids of manually tracked balances will remove these balances from the database for the current user.
+    If one of the given ids to remove is invalid the entire request will fail.
 
 
    **Example Request**:
@@ -9168,7 +9179,7 @@ Deleting manually tracked balances
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"labels": ["My monero wallet", "My favorite wallet"]}
+      {"ids": [1, 3]}
 
    :reqjson list[string] balances: A list of labels of manually tracked balances to delete
 
@@ -9182,23 +9193,11 @@ Deleting manually tracked balances
       {
           "result": {
           "balances": [{
-                  "asset": "XMR",
-                  "label": "My monero wallet",
-                  "amount": "4.5",
-                  "usd_value": "210.548",
-                  "tags": ["public"]
-                  "location": "blockchain"
-              }, {
+                  "id": 2,
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
                   "amount": "1.425",
                   "usd_value": "9087.22",
-                  "location": "blockchain"
-              }, {
-                  "asset": "ZEC",
-                  "label" "My favorite wallet",
-                  "amount": "10"
-                  "usd_value": "1330.85"
                   "location": "blockchain"
               }]
           "message": ""

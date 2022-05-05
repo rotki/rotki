@@ -2,6 +2,7 @@ import random
 from contextlib import ExitStack
 from copy import deepcopy
 from http import HTTPStatus
+from operator import itemgetter
 from typing import Any, Dict, List
 
 import pytest
@@ -144,9 +145,15 @@ def _populate_initial_balances(api_server) -> List[Dict[str, Any]]:
         ), json={'balances': balances},
     )
     result = assert_proper_response_with_result(response)
-    assert_balances_match(expected_balances=balances, returned_balances=result['balances'])
+    expected_balances = []
+    for new_id, balance in enumerate(balances, start=1):
+        new_balance = balance.copy()
+        new_balance['id'] = new_id
+        expected_balances.append(new_balance)
+    result_balances = sorted(result['balances'], key=itemgetter('id'))
+    assert_balances_match(expected_balances=expected_balances, returned_balances=result_balances)
 
-    return balances
+    return expected_balances
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -162,7 +169,7 @@ def test_add_and_query_manually_tracked_balances(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json={'async_query': async_query},
     )
     if async_query:
@@ -179,7 +186,7 @@ def test_add_and_query_manually_tracked_balances(
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json={'async_query': async_query},
     )
     if async_query:
@@ -261,8 +268,13 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
         result = outcome['result']
     else:
         result = assert_proper_response_with_result(response)
+    expected_balances = []
+    for new_id, balance in enumerate(balances, start=1):
+        new_balance = balance.copy()
+        new_balance['id'] = new_id
+        expected_balances.append(new_balance)
     assert_balances_match(
-        expected_balances=balances,
+        expected_balances=expected_balances,
         returned_balances=result['balances'],
         expect_found_price=False,
     )
@@ -280,7 +292,7 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
     else:
         result = assert_proper_response_with_result(response)
     assert_balances_match(
-        expected_balances=balances,
+        expected_balances=expected_balances,
         returned_balances=result['balances'],
         expect_found_price=False,
     )
@@ -376,7 +388,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json={'foo': 1},
     )
     assert_error_response(
@@ -390,7 +402,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json={'balances': 'foo'},
     )
     assert_error_response(
@@ -406,7 +418,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(
@@ -422,7 +434,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(
@@ -438,7 +450,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(
@@ -454,7 +466,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(
@@ -470,7 +482,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(
@@ -486,7 +498,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(
@@ -501,7 +513,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(
@@ -517,7 +529,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(
@@ -604,7 +616,7 @@ def test_add_edit_unknown_tags(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json={'balances': balances},
     )
     msg = 'When adding manually tracked balances, unknown tags notexisting were found'
@@ -619,7 +631,7 @@ def test_add_edit_unknown_tags(rotkehlchen_api_server):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json={'balances': balances},
     )
     msg = 'When editing manually tracked balances, unknown tags notexisting were found'
@@ -636,16 +648,13 @@ def test_delete_manually_tracked_balances(rotkehlchen_api_server):
     _populate_tags(rotkehlchen_api_server)
     balances = _populate_initial_balances(rotkehlchen_api_server)
 
-    labels_to_delete = [
-        'My monero wallet',
-        'The ETH I owe to Siretfel. Must pay money or with my life',
-    ]
-    expected_balances = [b for b in balances if b['label'] not in labels_to_delete]
+    ids_to_delete = [1, 4]
+    expected_balances = [b for b in balances if b['id'] not in ids_to_delete]
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
-        ), json={'async_query': async_query, 'labels': labels_to_delete},
+            'manuallytrackedbalancesresource',
+        ), json={'async_query': async_query, 'ids': ids_to_delete},
     )
     if async_query:
         task_id = assert_ok_async_response(response)
@@ -662,7 +671,7 @@ def test_delete_manually_tracked_balances(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json={'async_query': async_query},
     )
     if async_query:
@@ -686,7 +695,7 @@ def test_delete_manually_tracked_balances_errors(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=[],
     )
     assert_error_response(
@@ -695,54 +704,90 @@ def test_delete_manually_tracked_balances_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # missing labels
+    # missing ids
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json={},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='labels": ["Missing data for required field',
+        contained_in_msg='ids": ["Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # wrong type for labels
+    # wrong type for ids
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
-        ), json={'labels': 1},
+            'manuallytrackedbalancesresource',
+        ), json={'ids': 'asdf'},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='"labels": ["Not a valid list',
+        contained_in_msg='"ids": ["Not a valid list',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # wrong type for label entries
+    # wrong type for ids entries
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
-        ), json={'labels': ['My monero wallet', 55]},
+            'manuallytrackedbalancesresource',
+        ), json={'ids': [2, 'My monero wallet']},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='"labels": {"1": ["Not a valid string."',
+        contained_in_msg='"ids": {"1": ["Not a valid integer."',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # delete non-existing label
+    # delete non-existing id
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
-        ), json={'labels': ['My monero wallet', 'nonexisting']},
+            'manuallytrackedbalancesresource',
+        ), json={'ids': [1, 23]},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Tried to remove 1 manually tracked balance labels that do not exist',
+        contained_in_msg='Tried to remove 1 manually tracked balance ids that do not exist',
         status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+def test_update_manual_balance_label(rotkehlchen_api_server):
+    _populate_tags(rotkehlchen_api_server)
+    balances = _populate_initial_balances(rotkehlchen_api_server)
+    balances.sort(key=itemgetter('id'))
+    balance_to_patch_1 = balances.pop()
+    balance_to_patch_1['label'] = 'NEW PATCHED LABEL 1'
+    balance_to_patch_2 = balances.pop()
+    balance_to_patch_2['label'] = 'NEW PATCHED LABEL 2'
+    expected_balances = balances + [balance_to_patch_2, balance_to_patch_1]
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'manuallytrackedbalancesresource',
+        ), json={
+            'balances': [balance_to_patch_1, balance_to_patch_2],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert_balances_match(
+        expected_balances=expected_balances,
+        returned_balances=result['balances'],
+    )
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'manuallytrackedbalancesresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert_balances_match(
+        expected_balances=expected_balances,
+        returned_balances=result['balances'],
     )
