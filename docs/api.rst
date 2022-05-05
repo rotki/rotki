@@ -10605,5 +10605,5 @@ Importing a database snapshot
 
    :statuscode 200: Snapshot was imported successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. Csv file has different timestamps. Csv file has invalid headers.Check error message.
+   :statuscode 409: No user is currently logged in. Csv file has different timestamps. Snapshot contains an unknown asset.Csv file has invalid headers.Check error message.
    :statuscode 500: Internal rotki error.

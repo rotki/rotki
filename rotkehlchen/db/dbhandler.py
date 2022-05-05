@@ -738,13 +738,14 @@ class DBHandler:
                     ' VALUES(?, ?, ?, ?, ?)',
                     (entry.time, entry.asset.identifier, entry.amount, entry.usd_value, entry.category.serialize_for_db()),  # noqa: E501
                 )
-                self.update_last_write()
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                self.conn.rollback()
                 raise InputError(
                     f'Adding timed_balance failed. Either asset with identifier '
                     f'{entry.asset.identifier} is not known or an entry for timestamp '
                     f'{entry.time} already exists.',
                 ) from e
+        self.update_last_write()
 
     def add_aave_events(self, address: ChecksumEthAddress, events: Sequence[AaveEvent]) -> None:
         cursor = self.conn.cursor()
@@ -1398,13 +1399,14 @@ class DBHandler:
                     ' VALUES(?, ?, ?)',
                     (entry.time, entry.location, entry.usd_value),
                 )
-                self.update_last_write()
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                self.conn.rollback()
                 raise InputError(
                     f'Tried to add a timed_location_data for '
                     f'{str(Location.deserialize_from_db(entry.location))} at'
                     f' already existing timestamp {entry.time}.',
                 ) from e
+        self.update_last_write()
 
     def add_blockchain_accounts(
             self,
