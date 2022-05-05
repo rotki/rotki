@@ -1,5 +1,5 @@
 <template>
-  <v-card class="mx-auto">
+  <v-card class="mx-auto overflow-hidden">
     <base-external-link :href="item.externalLink">
       <video
         v-if="isVideo"

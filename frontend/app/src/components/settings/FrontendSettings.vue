@@ -26,7 +26,7 @@
       </div>
       <v-switch
         v-model="enableEns"
-        class="general-settings__fields__enable_ens mb-4 mt-0"
+        class="general-settings__fields__enable_ens mb-4 mt-2"
         :label="$t('frontend_settings.label.enable_ens')"
         :success-messages="settingsMessages[ENABLE_ENS].success"
         :error-messages="settingsMessages[ENABLE_ENS].error"
@@ -52,7 +52,7 @@
 
       <v-switch
         v-model="zeroBased"
-        class="general-settings__fields__zero-base mb-4 mt-0"
+        class="general-settings__fields__zero-base mb-4 mt-2"
         :label="$t('frontend_settings.label.zero_based')"
         :hint="$t('frontend_settings.label.zero_based_hint')"
         persistent-hint
@@ -68,7 +68,7 @@
       </div>
       <v-switch
         v-model="includeNfts"
-        class="general-settings__fields__zero-base mb-4 mt-0"
+        class="general-settings__fields__zero-base mb-4 mt-2"
         :label="$t('frontend_settings.label.include_nfts')"
         :hint="$t('frontend_settings.label.include_nfts_hint')"
         persistent-hint
@@ -104,6 +104,7 @@
         <v-col class="shrink">
           <v-switch
             v-model="refreshEnabled"
+            class="mt-3"
             :label="$t('frontend_settings.label.refresh_enabled')"
             @change="onRefreshPeriodChange($event ? '30' : '-1')"
           />

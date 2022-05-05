@@ -191,7 +191,7 @@ export default defineComponent({
 
 <style module lang="scss">
 .table {
-  max-height: calc(100vh - 350px);
+  max-height: calc(100vh - 250px);
   overflow: auto;
 }
 </style>

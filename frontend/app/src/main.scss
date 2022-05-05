@@ -32,6 +32,8 @@ body {
 
 .container {
   max-width: 1500px;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 aside {
@@ -55,7 +57,7 @@ aside {
 
     &.theme {
       &--dark {
-        background: var(--v-dark-base);
+        background: #363636;
       }
     }
   }

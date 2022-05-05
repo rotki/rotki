@@ -214,10 +214,11 @@ export default defineComponent({
       return context;
     };
 
+    const { theme } = setupThemeCheck();
+
     const createDatasets = (
       canvas: CanvasRenderingContext2D
     ): ChartDataSets[] => {
-      const { theme } = setupThemeCheck();
       const color = get(theme).currentTheme['graph'] as string;
       const secondaryColor = get(theme).currentTheme['graphFade'] as string;
 
@@ -425,10 +426,12 @@ export default defineComponent({
         // @ts-ignore
         const index = axisData[0]._index;
 
-        set(selectedTimestamp, get(times)[index]);
-        set(selectedBalance, get(data)[index]);
+        if (get(times)[index] && get(data)[index]) {
+          set(selectedTimestamp, get(times)[index]);
+          set(selectedBalance, get(data)[index]);
 
-        set(showExportSnapshotDialog, true);
+          set(showExportSnapshotDialog, true);
+        }
       }
     };
 

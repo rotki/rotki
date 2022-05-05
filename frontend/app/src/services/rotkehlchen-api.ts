@@ -931,6 +931,44 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
+  async importBalancesSnapshot(
+    balancesSnapshotFile: string,
+    locationDataSnapshotFile: string
+  ): Promise<boolean> {
+    const response = await this.axios.put<ActionResult<boolean>>(
+      '/snapshot/import',
+      axiosSnakeCaseTransformer({
+        balancesSnapshotFile,
+        locationDataSnapshotFile
+      }),
+      {
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return handleResponse(response);
+  }
+
+  async uploadBalancesSnapshot(
+    balancesSnapshotFile: File,
+    locationDataSnapshotFile: File
+  ): Promise<boolean> {
+    const data = new FormData();
+    data.append('balances_snapshot_file', balancesSnapshotFile);
+    data.append('location_data_snapshot_file', locationDataSnapshotFile);
+    const response = await this.axios.post<ActionResult<boolean>>(
+      '/snapshot/import',
+      data,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+
+    return handleResponse(response);
+  }
+
   async eth2StakingDetails(): Promise<PendingTask> {
     const response = await this.axios.get<ActionResult<PendingTask>>(
       '/blockchains/ETH2/stake/details',

@@ -1,6 +1,7 @@
 import { computed } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { SupportedCurrency } from '@/data/currencies';
+import { SyncAction } from '@/services/types-api';
 import { SessionState } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
@@ -37,9 +38,14 @@ export const setupSession = () => {
   const username = computed(() => state.username);
   const privacyMode = computed(() => state.privacyMode);
   const animationsEnabled = computed(() => state.animationsEnabled);
+  const lastBalanceSave = computed(() => state.lastBalanceSave);
+  const lastDataUpload = computed(() => state.lastDataUpload);
+  const nodeConnection = computed(() => state.nodeConnection);
+
   const login = (payload: LoginCredentials): Promise<ActionStatus> => {
     return store.dispatch('session/login', payload);
   };
+
   const logout = (): Promise<void> => {
     return store.dispatch('session/logout');
   };
@@ -52,6 +58,10 @@ export const setupSession = () => {
 
   const updateSettings = (update: SettingsUpdate): Promise<void> => {
     return store.dispatch('session/updateSettings', update);
+  };
+
+  const forceSync = (action: SyncAction): Promise<void> => {
+    return store.dispatch('session/forceSync', action);
   };
 
   const changePrivacyMode = (privacyMode: number) => {
@@ -67,9 +77,13 @@ export const setupSession = () => {
     username,
     privacyMode,
     animationsEnabled,
+    lastBalanceSave,
+    lastDataUpload,
+    nodeConnection,
     createAccount,
     login,
     logout,
+    forceSync,
     updateSettings,
     changePrivacyMode,
     setAnimationsEnabled

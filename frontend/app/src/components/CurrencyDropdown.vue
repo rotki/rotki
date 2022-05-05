@@ -17,7 +17,7 @@
           {{ currency.unicodeSymbol }}
         </menu-tooltip-button>
       </template>
-      <div :style="backgroundStyle">
+      <div>
         <v-row class="ps-4 pe-4">
           <v-col>
             <v-text-field

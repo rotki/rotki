@@ -3,7 +3,7 @@
     <template #title>
       <refresh-button
         :loading="loading"
-        :tooltip="$t('kraken_staking_events.refresh_tooltip')"
+        :tooltip="$tc('kraken_staking_events.refresh_tooltip')"
         @refresh="refresh"
       />
       {{ $t('kraken_staking_events.titles') }}
@@ -30,7 +30,7 @@
           :limit="events.entriesLimit"
           :total="events.entriesTotal"
           :colspan="headers.length"
-          :label="$t('kraken_staking_events.upgrade.label')"
+          :label="$tc('kraken_staking_events.upgrade.label')"
         />
       </template>
       <template #header.usdValue>
@@ -278,7 +278,7 @@ export default defineComponent({
         fromTimestamp: fromTimestamp,
         toTimestamp: toTimestamp,
         eventSubtypes: eventSubtypes ? [eventSubtypes] : undefined,
-        asset: asset
+        asset: asset || undefined
       };
       emit('update:pagination', pagination);
     };

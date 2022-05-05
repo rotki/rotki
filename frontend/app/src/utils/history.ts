@@ -14,9 +14,10 @@ import {
   TransactionEventType
 } from '@/types/transaction';
 
-export const getEventType = (
-  event: EthTransactionEventEntry
-): TransactionEventType | undefined => {
+export const getEventType = (event: {
+  eventType?: string | null;
+  eventSubtype?: string | null;
+}): TransactionEventType | undefined => {
   const { eventType, eventSubtype } = event;
 
   const subTypes =
@@ -25,7 +26,11 @@ export const getEventType = (
 };
 
 export const getEventTypeData = (
-  event: EthTransactionEventEntry
+  event: {
+    eventType?: string | null;
+    eventSubtype?: string | null;
+  },
+  showFallbackLabel: boolean = true
 ): ActionDataEntry => {
   const type = getEventType(event);
 
@@ -35,12 +40,14 @@ export const getEventTypeData = (
     })!;
   }
 
+  const unknownLabel = i18n.t('transactions.events.type.unknown').toString();
+  const label = showFallbackLabel
+    ? event.eventSubtype || event.eventType || unknownLabel
+    : unknownLabel;
+
   return {
     identifier: '',
-    label:
-      event.eventSubtype ||
-      event.eventType ||
-      i18n.t('transactions.events.type.unknown').toString(),
+    label,
     icon: 'mdi-help',
     color: 'red'
   };
