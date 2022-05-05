@@ -10531,7 +10531,10 @@ Get ENS names
 
    Doing a POST on the ENS reverse endpoint will return the ENS names for
    the given ethereum addresses from cache if found and from blockchain otherwise.
-   If force_update is true, the entire cache will be updated
+   If ignore_cache is true, then the entire cache will be recreated
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
 
    **Example Request**:
 
@@ -10553,11 +10556,11 @@ Get ENS names
 
           {
               "ethereum_addresses": ["0x1", "0x2"],
-              "force_update": true
+              "ignore_cache": true
           }
 
    :reqjson list ethereum_addresses: A list of ethereum addresses to get names for.
-   :reqjson bool force_update: If true, the entire cache will be updated.
+   :reqjson bool ignore_cache: If true, the entire cache will be updated.
 
    **Example Response**:
 

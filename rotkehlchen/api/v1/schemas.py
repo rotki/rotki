@@ -1993,9 +1993,8 @@ class AssetsImportingFromFormSchema(Schema):
     file = FileField(allowed_extensions=['.zip', '.json'], required=True)
 
 
-class ReverseEnsSchema(Schema):
+class ReverseEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
     ethereum_addresses = fields.List(EthereumAddressField(), required=True)
-    force_update = fields.Boolean(required=False, load_default=False)
 
 
 class SnapshotImportingSchema(Schema):
