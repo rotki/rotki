@@ -22,7 +22,9 @@ class ModuleAccountantInterface(metaclass=ABCMeta):
         To have smaller objects and since few decoders use most of the given objects
         we do not save anything here at the moment, but instead let it up to the individual
         decoder to choose what to keep"""
-        self.reset()
+        # It's okay to call overriden reset here, since super class reset does not do anything.
+        # If at any point it does we have to make sure all overriden reset() call parent
+        self.reset()  # lgtm[py/missing-call-to-init]
 
     @abstractmethod
     def event_settings(self, pot: 'AccountingPot') -> Dict[str, 'TxEventSettings']:  # pylint: disable=no-self-use  # noqa: E501

@@ -6,8 +6,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.chain.ethereum.decoding.oneinch.v1.decoder import CPT_ONEINCH_V1
-from rotkehlchen.chain.ethereum.decoding.oneinch.v2.decoder import CPT_ONEINCH_V2
+from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V1, CPT_ONEINCH_V2
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
