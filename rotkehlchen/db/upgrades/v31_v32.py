@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Dict, Set
 
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 
+
 if TYPE_CHECKING:
     from sqlite3 import Cursor
 

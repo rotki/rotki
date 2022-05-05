@@ -46,6 +46,7 @@ from rotkehlchen.accounting.structures.base import (
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
@@ -4188,3 +4189,18 @@ class RestAPI():
             return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def _pull_spam_assets(self) -> Dict[str, Any]:
+        try:
+            assets_updated = update_spam_assets(self.rotkehlchen.data.db)
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        return {'result': assets_updated, 'message': '', 'status_code': HTTPStatus.OK}
+
+    def pull_spam_assets(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_pull_spam_assets',
+            )
+        response_result = self._pull_spam_assets()
+        return api_response(result=response_result, status_code=response_result['status_code'])
