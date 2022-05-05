@@ -1,14 +1,14 @@
 from contextlib import ExitStack
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_EUR
-from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -18,8 +18,19 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import Location
+
+KICK_TOKEN = EthereumToken('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC')
+
+
+def mock_cryptoscamdb_request():
+    def mock_requests_get(url, *args, **kwargs):  # pylint: disable=unused-argument
+        response = 'Error generating response'
+        return MockResponse(200, response)
+
+    return patch('requests.get', side_effect=mock_requests_get)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -77,7 +88,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
 
     # add three assets to ignored assets
-    kick_token_id = strethaddress_to_identifier('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC')
+    kick_token_id = KICK_TOKEN.identifier
     ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
     response = requests.put(
         api_url_for(
@@ -86,7 +97,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         ), json={'assets': ignored_assets},
     )
     result = assert_proper_response_with_result(response)
-    expected_ignored_assets = set(ignored_assets + [Asset(kick_token_id)])
+    expected_ignored_assets = set(ignored_assets + [KICK_TOKEN])
     assert set(result) == expected_ignored_assets
 
     # check they are there
@@ -134,6 +145,16 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
     result = assert_proper_response_with_result(response)
     assert result >= 1
     assert len(rotki.data.db.get_ignored_assets()) > len(assets_after_deletion)
+
+    # Simulate remote error from cryptoscamdb
+    with mock_cryptoscamdb_request():
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'ignoredassetsresource',
+            ),
+        )
+        assert response.status_code == HTTPStatus.BAD_GATEWAY
 
 
 @pytest.mark.parametrize('method', ['put', 'delete'])
@@ -210,7 +231,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     # Check that assets did not get modified
     expected_tokens = set(
         ignored_assets +
-        [EthereumToken('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC')],
+        [KICK_TOKEN],
     )
     assert set(rotki.data.db.get_ignored_assets()) == expected_tokens
 

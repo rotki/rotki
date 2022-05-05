@@ -4186,7 +4186,10 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _pull_spam_assets(self) -> Dict[str, Any]:
-        assets_updated = update_spam_assets(self.rotkehlchen.data.db)
+        try:
+            assets_updated = update_spam_assets(self.rotkehlchen.data.db)
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         return {'result': assets_updated, 'message': '', 'status_code': HTTPStatus.OK}
 
     def pull_spam_assets(self, async_query: bool) -> Response:

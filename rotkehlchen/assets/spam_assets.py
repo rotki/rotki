@@ -9,6 +9,7 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -46,6 +47,13 @@ KNOWN_ETH_SPAM_TOKENS = [
 
 
 def query_token_spam_list() -> Set[EthereumToken]:
+    """Generate a set of assets that can be ignored combining information of cryptoscamdb
+    and the list of spam assets KNOWN_ETH_SPAM_TOKENS. This function also makes sure to get the
+    bad assets in the list of cryptoscamdb and ensures that they exists in the globaldb before
+    trying to add them.
+    May raise:
+    - RemoteError
+    """
     try:
         response = requests.get(
             url='https://api.cryptoscamdb.org/v1/addresses',
@@ -54,14 +62,20 @@ def query_token_spam_list() -> Set[EthereumToken]:
         data = response.json()
         success, tokens_info = data['success'], data['result']
     except requests.exceptions.RequestException as e:
-        log.debug(f'Failed to retrieve information from cryptoscamdb. {str(e)}')
+        raise RemoteError(f'Failed to retrieve information from cryptoscamdb. {str(e)}') from e
     except (DeserializationError, JSONDecodeError) as e:
-        log.debug(f'Failed to deserialize data from cryptoscamdb. {str(e)}')
+        raise RemoteError(f'Failed to deserialize data from cryptoscamdb. {str(e)}') from e
     except KeyError as e:
-        log.debug(f'Response from cryptoscamdb doesn\'t contain expected key. {str(e)}')
+        raise RemoteError(
+            f'Response from cryptoscamdb doesn\'t contain expected key. {str(e)}',
+        ) from e
 
     if success is False:
-        log.error(f'Failed to retrieve cryptoscamdb information {data}')
+        log.error(f'Failed to deserialize data from cryptoscamdb. {data}')
+        raise RemoteError(
+            'Failed to deserialize data from cryptoscamdb. Check the logs '
+            'to get more information',
+        )
 
     tokens_to_ignore = set()
     for token_addr, token_data in tokens_info.items():
@@ -92,6 +106,11 @@ def query_token_spam_list() -> Set[EthereumToken]:
 
 
 def update_spam_assets(db: 'DBHandler') -> int:
+    """
+    Update the list of ignored assets using query_token_spam_list and avoiding
+    the addition of duplicates. It returns the amount of assets that were added
+    to the ignore list
+    """
     ignored_assets = {asset.identifier for asset in db.get_ignored_assets()}
     spam_tokens = query_token_spam_list()
     assets_added = 0

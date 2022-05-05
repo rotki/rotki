@@ -9548,6 +9548,7 @@ Dealing with ignored assets
    :resjson int result: The number of assets that were added to the ignore list.
    :statuscode 200: Ignored assets successfully updated
    :statuscode 500: Internal rotki error
+   :statuscode 502: Remote error downloading list of assets from cryptoscamdb
 
 Dealing with ignored actions
 ==============================
