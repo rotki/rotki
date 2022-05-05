@@ -444,13 +444,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             return None
 
         self.eth_modules[module_name] = instance
-        # also run any startup initialization actions for the module
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name=f'startup of {module_name}',
-            exception_is_error=True,
-            method=instance.on_startup,
-        )
+        if instance.on_startup is not None:  # run startup initialization actions for the module
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=f'startup of {module_name}',
+                exception_is_error=True,
+                method=instance.on_startup,
+            )
         return instance
 
     def deactivate_module(self, module_name: ModuleName) -> None:

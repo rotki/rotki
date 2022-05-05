@@ -533,9 +533,6 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         self.database.delete_uniswap_trades_data()
         self.database.delete_uniswap_events_data()
 
-    def on_startup(self) -> None:
-        pass
-
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
         pass
 

@@ -349,9 +349,6 @@ class YearnVaultsV2(EthereumModule):
             )
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        pass
-
     def on_account_addition(self, address: ChecksumEthAddress) -> None:
         pass
 

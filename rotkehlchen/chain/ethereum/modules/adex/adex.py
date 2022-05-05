@@ -952,9 +952,6 @@ class Adex(EthereumModule):
         return events
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        pass
-
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:
         """When an account is added for adex check its balances"""
         balance = self.staking_pool.call(self.ethereum, 'balanceOf', arguments=[address])

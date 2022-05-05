@@ -143,9 +143,6 @@ class PickleFinance(EthereumModule):
         return balances_per_address
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        pass
-
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
         return self.balances_in_protocol([address]).get(address, None)
 
