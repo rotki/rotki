@@ -38,8 +38,8 @@ class ModuleInactive(Exception):
     """Raises when call happens for a module that is not initialized"""
 
 
-class DecoderLoadingError(Exception):
-    """Error at loading a Decoder"""
+class ModuleLoadingError(Exception):
+    """Error at loading a specific Module's class"""
 
 
 class NotERC20Conformant(Exception):

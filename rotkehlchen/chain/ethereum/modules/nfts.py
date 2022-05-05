@@ -15,6 +15,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
@@ -43,7 +44,7 @@ class NFTResult(NamedTuple):
         }
 
 
-class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init]
+class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init]
 
     def __init__(
             self,
@@ -276,9 +277,6 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
         return True
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        pass
-
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
         pass
 

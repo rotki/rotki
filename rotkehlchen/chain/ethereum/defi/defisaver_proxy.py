@@ -130,9 +130,6 @@ class HasDSProxy(EthereumModule):
         return mapping
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        pass
-
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
         self.reset_last_query_ts()
         # Get the proxy of the account

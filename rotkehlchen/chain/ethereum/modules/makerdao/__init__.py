@@ -1,4 +1,6 @@
 __all__ = ['MakerdaoDsr', 'MakerdaoVaults']
 
-from rotkehlchen.chain.ethereum.modules.makerdao.dsr import MakerdaoDsr
-from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVaults
+from .accountant import MakerdaoAccountant  # noqa: F401
+from .decoder import MakerdaoDecoder  # noqa: F401
+from .dsr import MakerdaoDsr
+from .vaults import MakerdaoVaults

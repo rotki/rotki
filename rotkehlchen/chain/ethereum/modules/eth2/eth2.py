@@ -451,9 +451,6 @@ class Eth2(EthereumModule):
         ])
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        pass
-
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:  # pylint: disable=useless-return  # noqa: E501
         """Just query balances and add detected validators to DB. Return nothing"""
         try:

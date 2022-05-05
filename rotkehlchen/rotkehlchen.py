@@ -20,6 +20,7 @@ from rotkehlchen.balances.manual import (
     get_manually_tracked_balances,
 )
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
+from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
 from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import (
     ETHEREUM_NODES_TO_CONNECT_AT_START,
@@ -308,10 +309,14 @@ class Rotkehlchen():
             ethereum_manager=ethereum_manager,
             msg_aggregator=self.msg_aggregator,
         )
+        self.evm_accounting_aggregator = EVMAccountingAggregator(
+            ethereum_manager=ethereum_manager,
+            msg_aggregator=self.msg_aggregator,
+        )
         self.accountant = Accountant(
             db=self.data.db,
             msg_aggregator=self.msg_aggregator,
-            evm_tx_decoder=self.evm_tx_decoder,
+            evm_accounting_aggregator=self.evm_accounting_aggregator,
             premium=self.premium,
         )
         self.events_historian = EventsHistorian(

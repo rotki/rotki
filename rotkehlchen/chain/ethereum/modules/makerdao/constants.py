@@ -9,3 +9,7 @@ RAY = 10**RAY_DIGITS
 
 RAD_DIGITS = 45
 RAD = 10**RAD_DIGITS
+
+CPT_VAULT = 'makerdao vault'
+CPT_DSR = 'makerdao dsr'
+CPT_MIGRATION = 'makerdao migration'

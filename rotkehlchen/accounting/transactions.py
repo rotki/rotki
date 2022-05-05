@@ -3,13 +3,13 @@ from typing import TYPE_CHECKING, Dict, Iterator, List
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.chain.ethereum.decoding.structures import TxEventSettings, TxMultitakeTreatment
+from rotkehlchen.chain.ethereum.accounting.structures import TxEventSettings, TxMultitakeTreatment
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
-    from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+    from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -19,15 +19,16 @@ class TransactionsAccountant():
 
     def __init__(
             self,
-            evm_tx_decoder: 'EVMTransactionDecoder',
+            evm_accounting_aggregator: 'EVMAccountingAggregator',
             pot: 'AccountingPot',
     ) -> None:
-        self.evm_tx_decoder = evm_tx_decoder
+        self.evm_accounting_aggregator = evm_accounting_aggregator
         self.pot = pot
         self.tx_event_settings: Dict[str, TxEventSettings] = {}
 
     def reset(self) -> None:
-        self.tx_event_settings = self.evm_tx_decoder.get_accounting_settings(self.pot)
+        self.evm_accounting_aggregator.reset()
+        self.tx_event_settings = self.evm_accounting_aggregator.get_accounting_settings(self.pot)
 
     def process(
             self,
@@ -65,6 +66,14 @@ class TransactionsAccountant():
                 return counter
             other_events.append(next_event)
             counter += 1
+
+        # if there is any module specific accountant functionality call it
+        if event_settings.accountant_cb is not None:
+            event_settings.accountant_cb(
+                pot=self.pot,
+                event=event,
+                other_events=other_events,
+            )
 
         if event_settings.multitake_treatment == TxMultitakeTreatment.SWAP:  # noqa: E501
             return self._process_tx_swap(

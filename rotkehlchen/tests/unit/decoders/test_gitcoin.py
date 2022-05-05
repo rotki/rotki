@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.chain.ethereum.decoding.gitcoin.decoder import CPT_GITCOIN
+from rotkehlchen.chain.ethereum.modules.gitcoin.constants import CPT_GITCOIN
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal

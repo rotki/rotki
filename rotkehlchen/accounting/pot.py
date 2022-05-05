@@ -25,7 +25,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+    from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class AccountingPot(CustomizableDateMixin):
     def __init__(
             self,
             database: 'DBHandler',
-            evm_tx_decoder: 'EVMTransactionDecoder',
+            evm_accounting_aggregator: 'EVMAccountingAggregator',
             msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(database=database)
@@ -53,7 +53,7 @@ class AccountingPot(CustomizableDateMixin):
         self.pnls = PnlTotals()
         self.processed_events: List[ProcessedAccountingEvent] = []
         self.transactions = TransactionsAccountant(
-            evm_tx_decoder=evm_tx_decoder,
+            evm_accounting_aggregator=evm_accounting_aggregator,
             pot=self,
         )
         self.query_start_ts = self.query_end_ts = Timestamp(0)

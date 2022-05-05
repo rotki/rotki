@@ -1,7 +1,5 @@
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 
-CPT_GAS = 'gas'
-
 # keccak of Transfer(address,address,uint256)
 ERC20_OR_ERC721_TRANSFER = b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef'  # noqa: E501
 # keccak of approve(address,uint256)

@@ -7,6 +7,7 @@ from typing import Optional
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
+from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.config import default_data_directory
@@ -88,6 +89,17 @@ def fixture_accounting_initialize_parameters():
     return False
 
 
+@pytest.fixture(name='evm_accounting_aggregator')
+def fixture_evm_accounting_aggregator(
+        ethereum_manager,
+        function_scope_messages_aggregator,
+) -> EVMAccountingAggregator:
+    return EVMAccountingAggregator(
+        ethereum_manager=ethereum_manager,
+        msg_aggregator=function_scope_messages_aggregator,
+    )
+
+
 @pytest.fixture(name='accountant')
 def fixture_accountant(
         price_historian,  # pylint: disable=unused-argument
@@ -95,7 +107,7 @@ def fixture_accountant(
         function_scope_messages_aggregator,
         start_with_logged_in_user,
         accounting_initialize_parameters,
-        evm_transaction_decoder,
+        evm_accounting_aggregator,
         start_with_valid_premium,
         rotki_premium_credentials,
 ) -> Optional[Accountant]:
@@ -108,7 +120,7 @@ def fixture_accountant(
 
     accountant = Accountant(
         db=database,
-        evm_tx_decoder=evm_transaction_decoder,
+        evm_accounting_aggregator=evm_accounting_aggregator,
         msg_aggregator=function_scope_messages_aggregator,
         premium=premium,
     )

@@ -7,8 +7,8 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.decoding.curve.decoder import CPT_CURVE
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_LINK, A_USDT

@@ -528,9 +528,6 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         return result
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        pass
-
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
         pass
 
