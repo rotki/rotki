@@ -1,26 +1,22 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    get_tx_event_type_identifier,
 )
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
+from .constants import CPT_VOTIUM
 
 VOTIUM_CLAIM = b'Gf\x92\x1f\\Ydm"\xd7\xd2f\xa2\x91d\xc8\xe9b6\x84\xd8\xdf\xdb\xd91s\x1d\xfd\xca\x02R8'  # noqa: E501
 VOTIUM_CONTRACT = string_to_ethereum_address('0x378Ba9B73309bE80BF4C2c027aAD799766a7ED5A')
-
-CPT_VOTIUM = 'votium'
 
 
 class VotiumDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -62,16 +58,3 @@ class VotiumDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def counterparties(self) -> List[str]:
         return [CPT_VOTIUM]
-
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
-        """Being defined at function call time is fine since this function is called only once"""
-        return {
-            get_tx_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.REWARD, CPT_VOTIUM): TxEventSettings(  # noqa: E501
-                taxable=True,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='acquisition',
-                take=1,
-                multitake_treatment=None,
-            ),
-        }

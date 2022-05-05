@@ -1,14 +1,12 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
-from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    get_tx_event_type_identifier,
 )
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -16,8 +14,7 @@ from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_FPIS, A_UNI
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
+from .constants import AIRDROPS_LIST, CPT_BADGER, CPT_CONVEX, CPT_FRAX, CPT_ONEINCH, CPT_UNISWAP
 
 UNISWAP_DISTRIBUTOR = string_to_ethereum_address('0x090D4613473dEE047c3f2706764f49E0821D256e')
 UNISWAP_TOKEN_CLAIMED = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
@@ -31,12 +28,6 @@ ONEINCH_CLAIMED = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9
 FPIS = string_to_ethereum_address('0x61A1f84F12Ba9a56C22c31dDB10EC2e2CA0ceBCf')
 CONVEX = string_to_ethereum_address('0x2E088A0A19dda628B4304301d1EA70b114e4AcCd')
 FPIS_CONVEX_CLAIM = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\x8cW\xd7\r\xbc\xebNDX\xbb\xd6\x0e9\xd4'  # noqa: E501
-
-CPT_UNISWAP = 'uniswap'
-CPT_BADGER = 'badger'
-CPT_ONEINCH = '1inch'
-CPT_FRAX = 'frax'
-CPT_CONVEX = 'convex'
 
 
 class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -161,19 +152,4 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         }
 
     def counterparties(self) -> List[str]:
-        return [CPT_BADGER, CPT_UNISWAP, CPT_ONEINCH, CPT_CONVEX, CPT_FRAX]
-
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, 'TxEventSettings']:
-        """Being defined at function call time is fine since this function is called only once"""
-        airdrops_taxable = LedgerActionType.AIRDROP in pot.settings.taxable_ledger_actions
-        return {
-            get_tx_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, counterparty): TxEventSettings(  # noqa: E501
-                taxable=airdrops_taxable,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='acquisition',
-                take=1,
-                multitake_treatment=None,
-            )
-            for counterparty in self.counterparties()
-        }
+        return AIRDROPS_LIST

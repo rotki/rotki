@@ -5,10 +5,9 @@ from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    get_tx_event_type_identifier,
 )
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
@@ -16,8 +15,9 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
+from .constants import CPT_GITCOIN
+
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
@@ -30,8 +30,6 @@ log = RotkehlchenLogsAdapter(logger)
 GITCOIN_BULK_CHECKOUT = string_to_ethereum_address('0x7d655c57f71464B6f83811C55D84009Cd9f5221C')
 
 DONATION_SENT = b';\xb7B\x8b%\xf9\xbd\xad\x9b\xd2\xfa\xa4\xc6\xa7\xa9\xe5\xd5\x88&W\xe9l\x1d$\xccA\xc1\xd6\xc1\x91\n\x98'  # noqa: E501
-
-CPT_GITCOIN = 'gitcoin'
 
 
 class GitcoinDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -90,17 +88,3 @@ class GitcoinDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def counterparties(self) -> List[str]:
         return [CPT_GITCOIN]
-
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
-        """Being defined at function call time is fine since this function is called only once"""
-        return {
-            get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.DONATE, CPT_GITCOIN): TxEventSettings(  # noqa: E501
-                taxable=True,
-                # Do not count donation as expense
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=True,
-                method='spend',
-                take=1,
-                multitake_treatment=None,
-            ),
-        }

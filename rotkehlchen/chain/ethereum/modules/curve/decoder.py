@@ -4,27 +4,23 @@ from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    get_tx_event_type_identifier,
 )
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import (
-    ActionItem,
-    TxEventSettings,
-    TxMultitakeTreatment,
-)
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.defi.curve_pools import get_curve_pools
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
+from .constants import CPT_CURVE
+
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
 
-CPT_CURVE = 'curve'
+
 ADD_LIQUIDITY = b'B?d\x95\xa0\x8f\xc6RB\\\xf4\xed\r\x1f\x9e7\xe5q\xd9\xb9R\x9b\x1c\x1c#\xcc\xe7\x80\xb2\xe7\xdf\r'  # noqa: E501
 ADD_LIQUIDITY_2_ASSETS = b'&\xf5Z\x85\x08\x1d$\x97N\x85\xc6\xc0\x00E\xd0\xf0E9\x91\xe9Xs\xf5+\xff\r!\xaf@y\xa7h'  # noqa: E501
 REMOVE_LIQUIDITY = b"Z\xd0V\xf2\xe2\x8a\x8c\xec# \x15@k\x846h\xc1\xe3l\xdaY\x81'\xec;\x8cY\xb8\xc7's\xa0"  # noqa: E501
@@ -166,24 +162,3 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def counterparties(self) -> List[str]:
         return [CPT_CURVE]
-
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
-        """Being defined at function call time is fine since this function is called only once"""
-        return {
-            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_CURVE): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='spend',
-                take=2,
-                multitake_treatment=TxMultitakeTreatment.SWAP,
-            ),
-            get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, CPT_CURVE): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='spend',
-                take=2,
-                multitake_treatment=TxMultitakeTreatment.SWAP,
-            ),
-        }

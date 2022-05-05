@@ -1,18 +1,13 @@
-from typing import TYPE_CHECKING, Callable, Dict, List
+from typing import TYPE_CHECKING, Callable, List
 
 from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    get_tx_event_type_identifier,
 )
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import (
-    ActionItem,
-    TxEventSettings,
-    TxMultitakeTreatment,
-)
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.ethereum import ZERO_ADDRESS
@@ -20,13 +15,12 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import PICKLE_JAR_PROTOCOL, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
+from .constants import CPT_PICKLE
+
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
-
-CPT_PICKLE = 'pickle finance'
 
 
 class PickleDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -132,24 +126,3 @@ class PickleDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def counterparties(self) -> List[str]:
         return [CPT_PICKLE]
-
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, 'TxEventSettings']:
-        """Being defined at function call time is fine since this function is called only once"""
-        return {
-            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_PICKLE): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='spend',
-                take=2,
-                multitake_treatment=TxMultitakeTreatment.SWAP,
-            ),
-            get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, CPT_PICKLE): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='spend',
-                take=2,
-                multitake_treatment=TxMultitakeTreatment.SWAP,
-            ),
-        }

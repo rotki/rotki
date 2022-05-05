@@ -5,16 +5,11 @@ from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    get_tx_event_type_identifier,
 )
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import (
-    ActionItem,
-    TxEventSettings,
-    TxMultitakeTreatment,
-)
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
@@ -88,8 +83,9 @@ from rotkehlchen.utils.misc import (
     ts_sec_to_ms,
 )
 
+from .constants import CPT_DSR, CPT_MIGRATION, CPT_VAULT
+
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
@@ -104,10 +100,6 @@ POT_EXIT = b'\x7f\x86a\xa1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x
 NEWCDP = b"\xd6\xbe\x0b\xc1xe\x8a8/\xf4\xf9\x1c\x8ch\xb5B\xaakqh[\x8f\xe4'\x96k\x87t\\>\xa7\xa2"
 CDPMANAGER_MOVE = b'\xf9\xf3\r\xb6\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
 CDPMANAGER_FROB = b'E\xe6\xbd\xcd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
-
-CPT_VAULT = 'makerdao vault'
-CPT_DSR = 'makerdao dsr'
-CPT_MIGRATION = 'makerdao migration'
 
 
 class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-init]
@@ -597,65 +589,3 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
 
     def counterparties(self) -> List[str]:
         return [CPT_VAULT, CPT_DSR, CPT_MIGRATION]
-
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
-        """Being defined at function call time is fine since this function is called only once"""
-        # TODO: How can we count here loss from debt and gain from DSR? We need to keep state
-        return {  # vault collateral deposit
-            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_VAULT): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='spend',
-                take=1,
-                multitake_treatment=None,
-            ),  # vault collateral withdraw
-            get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_VAULT): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='acquisition',
-                take=1,
-                multitake_treatment=None,
-            ),  # payback DAI to vault
-            get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='spend',
-                take=1,
-                multitake_treatment=None,
-            ),  # generate DAI from vault
-            get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='acquisition',
-                take=1,
-                multitake_treatment=None,
-            ),  # Deposit DAI in the DSR
-            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='spend',
-                take=1,
-                multitake_treatment=None,
-            ),  # Withdraw DAI from the DSR
-            get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='acquisition',
-                take=1,
-                multitake_treatment=None,
-            ),  # Migrate SAI to DAI
-            get_tx_event_type_identifier(HistoryEventType.MIGRATE, HistoryEventSubType.SPEND, 'makerdao migration'): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='spend',
-                take=2,
-                multitake_treatment=TxMultitakeTreatment.SWAP,
-            ),
-        }

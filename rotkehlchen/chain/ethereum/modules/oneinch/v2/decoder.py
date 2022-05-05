@@ -4,14 +4,9 @@ from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    get_tx_event_type_identifier,
 )
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import (
-    ActionItem,
-    TxEventSettings,
-    TxMultitakeTreatment,
-)
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
@@ -19,15 +14,14 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
+from ..constants import CPT_ONEINCH_V2
+
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
 
 SWAPPED = b'v\xaf"J\x148e\xa5\x0bAIn\x1asb&\x98i,V\\\x12\x14\xbc\x86/\x18\xe2-\x82\x9c^'
-
-CPT_ONEINCH_V2 = '1inch-v2'
 
 
 class Oneinchv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -106,16 +100,3 @@ class Oneinchv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def counterparties(self) -> List[str]:
         return [CPT_ONEINCH_V2]
-
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, 'TxEventSettings']:
-        """Being defined at function call time is fine since this function is called only once"""
-        return {
-            get_tx_event_type_identifier(HistoryEventType.TRADE, HistoryEventSubType.SPEND, CPT_ONEINCH_V2): TxEventSettings(  # noqa: E501
-                taxable=True,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=True,
-                method='spend',
-                take=2,
-                multitake_treatment=TxMultitakeTreatment.SWAP,
-            ),
-        }

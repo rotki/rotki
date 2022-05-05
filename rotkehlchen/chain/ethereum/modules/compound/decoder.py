@@ -4,16 +4,11 @@ from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    get_tx_event_type_identifier,
 )
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import symbol_to_ethereum_token
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import (
-    ActionItem,
-    TxEventSettings,
-    TxMultitakeTreatment,
-)
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -22,8 +17,9 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
+from .constants import CPT_COMPOUND
+
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
@@ -31,8 +27,6 @@ if TYPE_CHECKING:
 
 MINT_COMPOUND_TOKEN = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n\x1co\xef&9OL\x03\x82\x1cO'  # noqa: E501
 REDEEM_COMPOUND_TOKEN = b'\xe5\xb7T\xfb\x1a\xbb\x7f\x01\xb4\x99y\x1d\x0b\x82\n\xe3\xb6\xaf4$\xac\x1cYv\x8e\xdbS\xf4\xec1\xa9)'  # noqa: E501
-
-CPT_COMPOUND = 'compound'
 
 
 class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -147,24 +141,3 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def counterparties(self) -> List[str]:
         return [CPT_COMPOUND]
-
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
-        """Being defined at function call time is fine since this function is called only once"""
-        return {
-            get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, CPT_COMPOUND): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='spend',
-                take=2,
-                multitake_treatment=TxMultitakeTreatment.SWAP,
-            ),
-            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_COMPOUND): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='spend',
-                take=2,
-                multitake_treatment=TxMultitakeTreatment.SWAP,
-            ),
-        }

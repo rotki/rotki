@@ -1,27 +1,23 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    get_tx_event_type_identifier,
 )
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import asset_raw_value
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
+from .constants import CPT_ZKSYNC
 
 DEPOSIT = b'\xb6\x86k\x02\x9f:\xa2\x9c\xd9\xe2\xbf\xf8\x15\x9a\x8c\xca\xa48\x9fz\x08|q\th\xe0\xb2\x00\xc0\xc7;\x08'  # noqa: E501
 
 ZKSYNC_BRIDGE = string_to_ethereum_address('0xaBEA9132b05A70803a4E85094fD0e1800777fBEF')
-
-CPT_ZKSYNC = 'zksync'
 
 
 class ZksyncDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -82,16 +78,3 @@ class ZksyncDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def counterparties(self) -> List[str]:
         return [CPT_ZKSYNC]
-
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
-        """Being defined at function call time is fine since this function is called only once"""
-        return {
-            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.BRIDGE, CPT_ZKSYNC): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                method='spend',
-                take=1,
-                multitake_treatment=None,
-            ),
-        }

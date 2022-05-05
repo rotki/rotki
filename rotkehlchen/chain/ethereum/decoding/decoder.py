@@ -15,8 +15,7 @@ from rotkehlchen.accounting.structures.base import (
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
+from rotkehlchen.chain.ethereum.constants import MODULES_PACKAGE, MODULES_PREFIX_LENGTH
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -27,12 +26,7 @@ from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import (
-    DecoderLoadingError,
-    InputError,
-    NotERC20Conformant,
-    RemoteError,
-)
+from rotkehlchen.errors.misc import InputError, ModuleLoadingError, NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -63,19 +57,15 @@ from .constants import (
     ONEINCH_CLAIM,
     XDAI_BRIDGE_RECEIVE,
 )
+from .structures import ActionItem
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-MODULES_PREFIX = 'rotkehlchen.chain.ethereum.modules.'
-MODULES_PREFIX_LENGTH = len(MODULES_PREFIX)
 
 
 class EVMTransactionDecoder():
@@ -126,7 +116,7 @@ class EVMTransactionDecoder():
 
                 if submodule_decoder:
                     if class_name in self.decoders:
-                        raise DecoderLoadingError(f'Decoder with name {class_name} already loaded')
+                        raise ModuleLoadingError(f'Decoder with name {class_name} already loaded')
                     self.decoders[class_name] = submodule_decoder(
                         ethereum_manager=self.ethereum_manager,
                         base_tools=self.base,
@@ -144,11 +134,10 @@ class EVMTransactionDecoder():
         return address_results, rules_results, enricher_results
 
     def initialize_all_decoders(self) -> None:
-        """Recursively check all submodules of this module to get all decoder address
-        mappings and rules
+        """Recursively check all submodules to get all decoder address mappings and rules
         """
         self.decoders: Dict[str, 'DecoderInterface'] = {}
-        address_result, rules_result, enrichers_result = self._recursively_initialize_decoders(__package__)  # noqa: E501
+        address_result, rules_result, enrichers_result = self._recursively_initialize_decoders(MODULES_PACKAGE)  # noqa: E501
         self.address_mappings = address_result
         self.event_rules.extend(rules_result)
         self.token_enricher_rules.extend(enrichers_result)
@@ -159,55 +148,6 @@ class EVMTransactionDecoder():
         for _, decoder in self.decoders.items():
             if isinstance(decoder, CustomizableDateMixin):
                 decoder.reload_settings()
-
-    def get_accounting_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:
-        """Iterate through loaded decoders and get the accounting settings for each event type"""
-        result = {}
-        for _, decoder in self.decoders.items():
-            result.update(decoder.event_settings(pot))
-
-        # Also add the default settings
-        gas_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS  # noqa: E501
-        result[gas_key] = TxEventSettings(
-            taxable=pot.settings.include_gas_costs,
-            count_entire_amount_spend=True,
-            count_cost_basis_pnl=True,
-            take=1,
-            method='spend',
-        )
-        spend_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.NONE)
-        result[spend_key] = TxEventSettings(
-            taxable=True,
-            count_entire_amount_spend=True,
-            count_cost_basis_pnl=True,
-            take=1,
-            method='spend',
-        )
-        receive_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.NONE)
-        result[receive_key] = TxEventSettings(
-            taxable=True,
-            count_entire_amount_spend=True,
-            count_cost_basis_pnl=True,
-            take=1,
-            method='acquisition',
-        )
-        deposit_key = str(HistoryEventType.DEPOSIT) + '__' + str(HistoryEventSubType.NONE)
-        result[deposit_key] = TxEventSettings(
-            taxable=False,
-            count_entire_amount_spend=False,
-            count_cost_basis_pnl=False,
-            take=1,
-            method='spend',
-        )
-        withdraw_key = str(HistoryEventType.WITHDRAWAL) + '__' + str(HistoryEventSubType.NONE)
-        result[withdraw_key] = TxEventSettings(
-            taxable=False,
-            count_entire_amount_spend=False,
-            count_cost_basis_pnl=False,
-            take=1,
-            method='acquisition',
-        )
-        return result
 
     def try_all_rules(
             self,

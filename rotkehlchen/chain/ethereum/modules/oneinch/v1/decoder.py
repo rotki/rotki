@@ -5,14 +5,9 @@ from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    get_tx_event_type_identifier,
 )
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import (
-    ActionItem,
-    TxEventSettings,
-    TxMultitakeTreatment,
-)
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
@@ -20,16 +15,15 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
+from ..constants import CPT_ONEINCH_V1
+
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
 
 HISTORY = b'\x89M\xbf\x12b\x19\x9c$\xe1u\x02\x98\xa3\x84\xc7\t\x16\x0fI\xd1cB,\xc6\xce\xe6\x94\xc77\x13\xf1\xd2'  # noqa: E501
 SWAPPED = b'\xe2\xce\xe3\xf6\x83`Y\x82\x0bg9C\x85:\xfe\xbd\x9b0&\x12]\xab\rwB\x84\xe6\xf2\x8aHU\xbe'  # noqa: E501
-
-CPT_ONEINCH_V1 = '1inch-v1'
 
 
 class Oneinchv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -158,24 +152,3 @@ class Oneinchv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def counterparties(self) -> List[str]:
         return [CPT_ONEINCH_V1]
-
-    def event_settings(self, pot: 'AccountingPot') -> Dict[str, 'TxEventSettings']:
-        """Being defined at function call time is fine since this function is called only once"""
-        return {
-            get_tx_event_type_identifier(HistoryEventType.TRADE, HistoryEventSubType.SPEND, CPT_ONEINCH_V1): TxEventSettings(  # noqa: E501
-                taxable=True,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=True,
-                method='spend',
-                take=2,
-                multitake_treatment=TxMultitakeTreatment.SWAP,
-            ),
-            get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.FEE, CPT_ONEINCH_V1): TxEventSettings(  # noqa: E501
-                taxable=True,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=True,
-                method='spend',
-                take=1,
-                multitake_treatment=None,
-            ),
-        }
