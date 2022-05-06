@@ -24,6 +24,7 @@ MIGRATION_LIST = [
     MigrationRecord(version=2, function=data_migration_2),
     MigrationRecord(version=3, function=data_migration_3),
 ]
+LAST_DATA_MIGRATION = len(MIGRATION_LIST)
 
 
 class DataMigrationManager:

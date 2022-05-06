@@ -83,6 +83,7 @@ def test_query_owned_assets(
     assert set(result) == {'ETH', 'BTC', 'EUR', A_RDN.identifier}
 
 
+@pytest.mark.parametrize('perform_migrations_at_unlock', [True])
 def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
     """Test that using the ignored assets endpoint to modify the ignored assets list works fine"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -157,6 +158,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         assert response.status_code == HTTPStatus.BAD_GATEWAY
 
 
+@pytest.mark.parametrize('perform_migrations_at_unlock', [True])
 @pytest.mark.parametrize('method', ['put', 'delete'])
 def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, method):
     """Test errors are handled properly at the ignored assets endpoint"""

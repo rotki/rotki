@@ -7,8 +7,8 @@ import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.args import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_MAX_LOG_SIZE_IN_MB
-from rotkehlchen.data_migrations.manager import DataMigrationManager
-from rotkehlchen.db.settings import LAST_DATA_MIGRATION, DBSettings
+from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION, DataMigrationManager
+from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
@@ -100,7 +100,7 @@ def fixture_cli_args(data_dir, ethrpc_endpoint):
 @pytest.fixture(name='perform_migrations_at_unlock')
 def fixture_perform_migrations_at_unlock():
     """Perform data migrations as normal during user unlock"""
-    return True
+    return False
 
 
 @pytest.fixture(name='perform_upgrades_at_unlock')
