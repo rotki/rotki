@@ -2,12 +2,14 @@ import os
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
+from typing import List, Optional
 from unittest.mock import patch
 
 import gevent
 import pytest
 import requests
 
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_DAI, A_USDT
@@ -21,6 +23,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
+    assert_proper_response,
     assert_proper_response_with_result,
     assert_simple_ok_response,
     wait_for_async_task,
@@ -29,7 +32,7 @@ from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import EthereumTransaction, Timestamp, make_evm_tx_hash
+from rotkehlchen.types import EthereumTransaction, EVMTxHash, Timestamp, make_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 EXPECTED_AFB7_TXS = [{
@@ -131,6 +134,58 @@ EXPECTED_4193_TXS = [{
     'input_data': '0x',
     'nonce': 1,
 }]
+
+
+def assert_force_redecode_txns_works(api_server: APIServer, hashes: Optional[List[EVMTxHash]]):
+    rotki = api_server.rest_api.rotkehlchen
+    get_all_txn_hashes_patch = patch.object(
+        rotki.evm_tx_decoder.dbethtx,
+        'get_all_transaction_hashes',
+        wraps=rotki.evm_tx_decoder.dbethtx.get_all_transaction_hashes,
+    )
+    original_get_all_txn_hashes = rotki.evm_tx_decoder.dbethtx.get_all_transaction_hashes
+    get_eth_txns_patch = patch.object(
+        rotki.evm_tx_decoder.dbethtx,
+        'get_ethereum_transactions',
+        wraps=rotki.evm_tx_decoder.dbethtx.get_ethereum_transactions,
+    )
+    get_or_decode_txn_events_patch = patch.object(
+        rotki.evm_tx_decoder,
+        'get_or_decode_transaction_events',
+        wraps=rotki.evm_tx_decoder.get_or_decode_transaction_events,
+    )
+    get_or_query_txn_receipt_patch = patch('rotkehlchen.chain.ethereum.transactions.EthTransactions.get_or_query_transaction_receipt')  # noqa: 501
+    with ExitStack() as stack:
+        function_call_counters = []
+        function_call_counters.append(stack.enter_context(get_all_txn_hashes_patch))
+        function_call_counters.append(stack.enter_context(get_or_decode_txn_events_patch))
+        function_call_counters.append(stack.enter_context(get_eth_txns_patch))
+        function_call_counters.append(stack.enter_context(get_or_query_txn_receipt_patch))
+
+        response = requests.post(
+            api_url_for(
+                api_server,
+                'ethereumtransactionsresource',
+            ), json={
+                'async_query': False,
+                'ignore_cache': True,
+                'tx_hashes': hashes,
+            },
+        )
+        assert_proper_response(response)
+        if hashes is None:
+            for fn in function_call_counters:
+                if fn._mock_wraps == original_get_all_txn_hashes:
+                    fn.assert_called_once()
+                else:
+                    assert fn.call_count == 14
+        else:
+            txn_hashes_len = len(hashes)
+            for fn in function_call_counters:
+                if fn._mock_wraps == original_get_all_txn_hashes:
+                    assert fn.call_count == 0
+                else:
+                    assert fn.call_count == txn_hashes_len
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[
@@ -284,28 +339,10 @@ def test_query_transactions(rotkehlchen_api_server):
         assert events[0].identifier in event_ids
 
     # Check that force re-requesting the events works
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'ethereumtransactionsresource',
-        ), json={
-            'async_query': False,
-            'ignore_cache': True,
-            'tx_hashes': hashes,
-        },
-    )
-    result = assert_proper_response_with_result(response)
-    for tx_hash_hex in hashes:
-        receipt = dbethtx.get_receipt(hexstring_to_bytes(tx_hash_hex))
-        assert isinstance(receipt, EthereumTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
-        events = dbevents.get_history_events(
-            filter_query=HistoryEventFilterQuery.make(
-                event_identifier=tx_hash_hex,
-            ),
-            has_premium=True,  # for this function we don't limit. We only limit txs.
-        )
-        assert len(events) == 1
-        assert events[0].identifier not in event_ids
+    assert_force_redecode_txns_works(rotkehlchen_api_server, hashes)
+
+    # check that passing no transaction hashes, decodes all transaction
+    assert_force_redecode_txns_works(rotkehlchen_api_server, None)
 
 
 def test_request_transaction_decoding_errors(rotkehlchen_api_server):

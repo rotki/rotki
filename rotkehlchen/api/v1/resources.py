@@ -370,7 +370,7 @@ class EthereumTransactionsResource(BaseResource):
             self,
             async_query: bool,
             ignore_cache: bool,
-            tx_hashes: List[EVMTxHash],
+            tx_hashes: Optional[List[EVMTxHash]],
     ) -> Response:
         return self.rest_api.decode_ethereum_transactions(
             async_query=async_query,

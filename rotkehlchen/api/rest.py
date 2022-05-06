@@ -3132,7 +3132,7 @@ class RestAPI():
     def _decode_ethereum_transactions(
             self,
             ignore_cache: bool,
-            tx_hashes: List[EVMTxHash],
+            tx_hashes: Optional[List[EVMTxHash]],
     ) -> Dict[str, Any]:
         try:
             self.rotkehlchen.evm_tx_decoder.decode_transaction_hashes(ignore_cache=ignore_cache, tx_hashes=tx_hashes)  # noqa: E501
@@ -3150,7 +3150,7 @@ class RestAPI():
             self,
             async_query: bool,
             ignore_cache: bool,
-            tx_hashes: List[EVMTxHash],
+            tx_hashes: Optional[List[EVMTxHash]],
     ) -> Response:
         if async_query:
             return self._query_async(

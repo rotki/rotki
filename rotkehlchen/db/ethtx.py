@@ -245,6 +245,17 @@ class DBEthTx():
 
         return hashes
 
+    def get_all_transaction_hashes(self) -> List[EVMTxHash]:
+        cursor = self.db.conn.cursor()
+        cursor_result = cursor.execute('SELECT DISTINCT tx_hash FROM ethereum_transactions')
+        hashes = []
+        for entry in cursor_result:
+            try:
+                hashes.append(deserialize_evm_tx_hash(entry[0]))
+            except DeserializationError as e:
+                log.debug(f'Got error {str(e)} while deserializing tx_hash {entry[0]} from the DB')
+        return hashes
+
     def get_transaction_hashes_not_decoded(self, limit: Optional[int]) -> List[EVMTxHash]:
         cursor = self.db.conn.cursor()
         querystr = (
