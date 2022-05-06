@@ -40,9 +40,9 @@ export interface AccountAssetBalances {
   readonly [account: string]: AssetBalances;
 }
 
-export interface EnsNames {
-  readonly [account: string]: string | null;
-}
+export const EnsNames = z.record(z.string().nullable());
+
+export type EnsNames = z.infer<typeof EnsNames>;
 
 export interface BalanceState {
   eth2Validators: Eth2Validators;

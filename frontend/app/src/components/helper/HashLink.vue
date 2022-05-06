@@ -87,7 +87,7 @@ import { setupDisplayData } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import { interop } from '@/electron-interop';
 import { truncateAddress } from '@/filters';
-import { useEnsNames } from '@/store/balances';
+import { useEnsNamesStore } from '@/store/balances';
 import { randomHex } from '@/utils/data';
 
 export default defineComponent({
@@ -116,7 +116,7 @@ export default defineComponent({
     const { explorers } = setupSettings();
     const { dark } = setupThemeCheck();
 
-    const { ensNameSelector } = useEnsNames();
+    const { ensNameSelector } = useEnsNamesStore();
 
     const ensName = computed<string | null>(() => {
       if (!get(scrambleData) || get(tx)) {

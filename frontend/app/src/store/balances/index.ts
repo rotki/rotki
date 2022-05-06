@@ -1,11 +1,16 @@
 import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { Module } from 'vuex';
+import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { BalanceState, EnsNames } from '@/store/balances/types';
+import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
 import { useStore } from '@/store/utils';
+import { TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { actions } from './actions';
 import { getters } from './getters';
@@ -14,16 +19,26 @@ import { state } from './state';
 
 const namespaced: boolean = true;
 
-export const useEnsNames = defineStore('ensNames', () => {
+export const useEnsNamesStore = defineStore('ensNames', () => {
   const store = useStore();
   const ensAddresses = ref<string[]>([]);
   const ensNames = ref<EnsNames>({});
 
-  const updateEnsAddresses = (newAddresses: string[]) => {
-    set(
-      ensAddresses,
-      [...get(ensAddresses), ...newAddresses].filter(uniqueStrings)
+  const { awaitTask } = useTasks();
+
+  const updateEnsAddresses = (newAddresses: string[]): boolean => {
+    const newEnsAddresses = [...get(ensAddresses), ...newAddresses].filter(
+      uniqueStrings
     );
+    const currentEnsAddresses = [...get(ensAddresses)];
+
+    const changed = !isEqual(newEnsAddresses, currentEnsAddresses);
+
+    if (changed) {
+      set(ensAddresses, newEnsAddresses);
+    }
+
+    return changed;
   };
 
   const updateEnsNames = (newEnsNames: EnsNames) => {
@@ -34,16 +49,36 @@ export const useEnsNames = defineStore('ensNames', () => {
     addresses: string[],
     forceUpdate: boolean = false
   ) => {
-    if (addresses.length > 0 || forceUpdate) {
-      updateEnsAddresses(addresses);
+    if (addresses.length < 1) {
+      return;
+    }
 
-      const latestEnsAddresses = get(ensAddresses);
-      if (latestEnsAddresses.length > 0) {
-        const result = await api.balances.getEnsNames(
-          forceUpdate,
+    const changed = updateEnsAddresses(addresses);
+
+    // Don't fetch if not forceUpdate, and no new ens names that need to be fetched.
+    if (!forceUpdate && !changed) {
+      return;
+    }
+
+    const latestEnsAddresses = get(ensAddresses);
+    if (latestEnsAddresses.length > 0) {
+      if (forceUpdate) {
+        const taskType = TaskType.FETCH_ENS_NAMES;
+        const { taskId } = await api.balances.getEnsNamesTask(
           latestEnsAddresses
         );
+        const { result } = await awaitTask<EnsNames, TaskMeta>(
+          taskId,
+          taskType,
+          {
+            title: i18n.t('ens_names.task.title').toString(),
+            numericKeys: []
+          }
+        );
 
+        updateEnsNames(result);
+      } else {
+        const result = await api.balances.getEnsNames(latestEnsAddresses);
         updateEnsNames(result);
       }
     }
@@ -76,5 +111,5 @@ export const balances: Module<BalanceState, RotkehlchenState> = {
 };
 
 if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useEnsNames, module.hot));
+  module.hot.accept(acceptHMRUpdate(useEnsNamesStore, module.hot));
 }
