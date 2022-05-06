@@ -56,7 +56,7 @@ import makeBlockie from 'ethereum-blockies-base64';
 import { setupThemeCheck } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
 import { truncateAddress, truncationPoints } from '@/filters';
-import { useEnsNames } from '@/store/balances';
+import { useEnsNamesStore } from '@/store/balances';
 import { randomHex } from '@/utils/data';
 
 export default defineComponent({
@@ -69,7 +69,7 @@ export default defineComponent({
     const { currentBreakpoint } = setupThemeCheck();
     const { scrambleData, shouldShowAmount } = setupDisplayData();
 
-    const { ensNameSelector } = useEnsNames();
+    const { ensNameSelector } = useEnsNamesStore();
     const ensName = computed<string | null>(() =>
       get(ensNameSelector(get(account).address))
     );

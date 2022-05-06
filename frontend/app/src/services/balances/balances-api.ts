@@ -141,16 +141,17 @@ export class BalancesApi {
       .then(handleResponse);
   }
 
-  async getEnsNames(
-    forceUpdate: boolean = false,
-    ethereumAddresses: string[]
-  ): Promise<EnsNames> {
+  async internalEnsNames<T>(
+    ethereumAddresses: string[],
+    asyncQuery: boolean = false
+  ): Promise<T> {
     return this.axios
-      .post<ActionResult<EnsNames>>(
+      .post<ActionResult<T>>(
         '/ens/reverse',
         axiosSnakeCaseTransformer({
-          forceUpdate,
-          ethereumAddresses
+          ethereumAddresses,
+          asyncQuery,
+          ignoreCache: asyncQuery
         }),
         {
           validateStatus: validWithSessionAndExternalService,
@@ -158,6 +159,16 @@ export class BalancesApi {
         }
       )
       .then(handleResponse);
+  }
+
+  async getEnsNamesTask(ethereumAddresses: string[]): Promise<PendingTask> {
+    return this.internalEnsNames<PendingTask>(ethereumAddresses, true);
+  }
+
+  async getEnsNames(ethereumAddresses: string[]): Promise<EnsNames> {
+    const response = await this.internalEnsNames<EnsNames>(ethereumAddresses);
+
+    return EnsNames.parse(response);
   }
 
   async prices(

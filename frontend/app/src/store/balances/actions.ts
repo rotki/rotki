@@ -19,7 +19,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { GeneralAccountData, XpubAccountData } from '@/services/types-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
-import { useEnsNames } from '@/store/balances/index';
+import { useEnsNamesStore } from '@/store/balances/index';
 import { BalanceMutations } from '@/store/balances/mutation-types';
 import {
   AccountAssetBalances,
@@ -388,7 +388,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         addresses.push(...Object.keys(eth2Balances));
       }
 
-      const { fetchEnsNames } = useEnsNames();
+      const { fetchEnsNames } = useEnsNamesStore();
       fetchEnsNames(addresses, forceUpdate);
     }
 
@@ -801,7 +801,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           commit('ethAccounts', accounts);
 
           const addresses = accounts.map(account => account.address);
-          const { fetchEnsNames } = useEnsNames();
+          const { fetchEnsNames } = useEnsNamesStore();
           fetchEnsNames(addresses, true);
         } else if (blockchain === Blockchain.KSM) {
           commit('ksmAccounts', accounts);

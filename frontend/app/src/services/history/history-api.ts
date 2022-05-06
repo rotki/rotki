@@ -59,12 +59,12 @@ export class HistoryApi {
 
   async internalTrades<T>(
     payload: TradeRequestPayload,
-    async: boolean
+    asyncQuery: boolean
   ): Promise<T> {
     return this.axios
       .get<ActionResult<T>>('/trades', {
         params: axiosSnakeCaseTransformer({
-          asyncQuery: async,
+          asyncQuery,
           ...payload
         }),
         validateStatus: validWithParamsSessionAndExternalService,
@@ -118,12 +118,12 @@ export class HistoryApi {
 
   async internalAssetMovements<T>(
     payload: AssetMovementRequestPayload,
-    async: boolean
+    asyncQuery: boolean
   ): Promise<T> {
     return this.axios
       .get<ActionResult<T>>('/asset_movements', {
         params: axiosSnakeCaseTransformer({
-          asyncQuery: async,
+          asyncQuery,
           ...payload
         }),
         validateStatus: validWithParamsSessionAndExternalService,
@@ -150,7 +150,7 @@ export class HistoryApi {
 
   private internalEthTransactions<T>(
     payload: TransactionRequestPayload,
-    async: boolean
+    asyncQuery: boolean
   ): Promise<T> {
     let url = `/blockchains/ETH/transactions`;
     const { address, ...data } = payload;
@@ -160,7 +160,7 @@ export class HistoryApi {
     return this.axios
       .get<ActionResult<T>>(url, {
         params: axiosSnakeCaseTransformer({
-          asyncQuery: async,
+          asyncQuery,
           ...data,
           orderByAttribute: getUpdatedKey(payload.orderByAttribute ?? '', false)
         }),
@@ -236,12 +236,12 @@ export class HistoryApi {
 
   async internalLedgerActions<T>(
     payload: LedgerActionRequestPayload,
-    async: boolean
+    asyncQuery: boolean
   ): Promise<T> {
     return this.axios
       .get<ActionResult<T>>('/ledgeractions', {
         params: axiosSnakeCaseTransformer({
-          asyncQuery: async,
+          asyncQuery,
           ...payload
         }),
         validateStatus: validWithParamsSessionAndExternalService,

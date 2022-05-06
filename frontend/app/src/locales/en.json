@@ -3696,5 +3696,10 @@
       "price": "Price:",
       "total": "Total:"
     }
+  },
+  "ens_names": {
+    "task": {
+      "title": "Querying ENS Names"
+    }
   }
 }

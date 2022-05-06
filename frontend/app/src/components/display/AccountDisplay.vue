@@ -43,7 +43,7 @@ import { get } from '@vueuse/core';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { setupDisplayData } from '@/composables/session';
 import { truncateAddress } from '@/filters';
-import { useEnsNames } from '@/store/balances';
+import { useEnsNamesStore } from '@/store/balances';
 import { randomHex } from '@/utils/data';
 
 export default defineComponent({
@@ -56,7 +56,7 @@ export default defineComponent({
     const { account } = toRefs(props);
     const { scrambleData, shouldShowAmount } = setupDisplayData();
 
-    const { ensNameSelector } = useEnsNames();
+    const { ensNameSelector } = useEnsNamesStore();
 
     const address = computed<string>(() => {
       if (!get(scrambleData)) {
