@@ -448,6 +448,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'GET',  # couldn't find any reference
     'INX',
     'JASMY',  # neither in coingecko nor cryptocompare
+    'KBH',  # K black hole but not in coingecko/cc
     'MFA',
     'FCT2',  # neither in coingecko nor cryptocompare
     'PAR',  # Couldn't find what asset is this
@@ -612,6 +613,7 @@ UNSUPPORTED_FTX_ASSETS = (
     'XRPMOON',  # no cryptocompare/coingecko data
     'KBTT',  # no cryptocompare/coingecko data
     'KSOS',  # no cryptocompare/coingecko data
+    'GALFAN',  # no cc/coingecko data
 )
 
 # https://api.kucoin.com/api/v1/currencies
@@ -711,9 +713,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'GALAX3L',  # no cryptocompare/coingecko data
     'GALAX3S',  # no cryptocompare/coingecko data
     'KDON',  # no cryptocompare/coingecko data
-    'PLY',  # no cryptocompare/coingecko data
     'ELITEHERO',  # no cryptocompare/coingecko data
-    'EPX',  # ellipsis x, no cc/coingekco data
+    'FCD',  # freshcut diamon not in cc/coingecko yet
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets

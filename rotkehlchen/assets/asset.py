@@ -361,6 +361,17 @@ WORLD_TO_KRAKEN = {
     'GST-2': 'GST',
     'GMT': 'GMT',
     'CFG': 'CFG',
+    strethaddress_to_identifier('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'): 'WETH',
+    strethaddress_to_identifier('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32'): 'LDO',
+    strethaddress_to_identifier('0x0b38210ea11411557c13457D4dA7dC6ea731B88a'): 'API3',
+    'RUNE': 'RUNE',
+    strethaddress_to_identifier('0x607F4C5BB672230e8672085532f7e901544a7375'): 'RLC',
+    strethaddress_to_identifier('0xCdF7028ceAB81fA0C6971208e83fa7872994beE5'): 'T',
+    strethaddress_to_identifier('0x32353A6C91143bfd6C7d363B546e62a9A2489A20'): 'AGLD',
+    strethaddress_to_identifier('0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85'): 'FET',
+    strethaddress_to_identifier('0x525A8F6F3Ba4752868cde25164382BfbaE3990e1'): 'NYM',
+    strethaddress_to_identifier('0x1776e1F26f98b1A5dF9cD347953a26dd3Cb46671'): 'NMR',
+    strethaddress_to_identifier('0xfA5047c9c78B8877af97BDcb85Db743fD7313d4a'): 'ROOK',
 }
 
 WORLD_TO_BINANCE = {

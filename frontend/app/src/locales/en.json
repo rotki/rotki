@@ -342,7 +342,8 @@
     "usd": "United States Dollar",
     "zar": "South African Rand",
     "inr": "Indian rupee",
-    "dkk": "Danish krone"
+    "dkk": "Danish krone",
+    "pln": "Polish zloty"
   },
   "currency_drop_down": {
     "hint": "Select as the main currency",

@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# /home/yabirgb/work/rotki/tools/scripts/generate_constant_assets.py at 03/05/2022 20:08:45.
+# /home/yabirgb/work/rotki/tools/scripts/generate_constant_assets.py at 09/05/2022 07:50:41.
 # Do not edit manually!
 
 from typing import List
@@ -2319,3 +2319,27 @@ A_ALETH = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_ALETH)
+A_STETH = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
+    decimals=18,
+    name="Liquid staked Ether 2.0",
+    symbol='stETH',
+    started=Timestamp(1608242396),
+    swapped_for=None,
+    coingecko='staked-ether',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_STETH)
+A_SAND = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x3845badAde8e6dFF049820680d1F14bD3903a5d0'),
+    decimals=18,
+    name="The Sandbox",
+    symbol='SAND',
+    started=Timestamp(1572367723),
+    swapped_for=None,
+    coingecko='the-sandbox',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_SAND)
