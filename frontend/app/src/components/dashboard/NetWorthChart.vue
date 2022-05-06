@@ -17,53 +17,16 @@
       </div>
     </div>
 
-    <v-dialog v-model="showExportSnapshotDialog" max-width="600">
-      <card>
-        <template #title>
-          {{ $t('dashboard.snapshot.export_database_snapshot') }}
-        </template>
-        <template #subtitle>
-          {{ $t('dashboard.snapshot.subtitle') }}
-        </template>
-        <div class="mb-n4">
-          <div>
-            <div>
-              {{ $t('dashboard.snapshot.time') }}
-            </div>
-            <div>
-              <date-display
-                class="font-weight-bold"
-                :timestamp="selectedTimestamp"
-              />
-            </div>
-          </div>
-          <div class="pt-2">
-            <div>
-              {{ $t('dashboard.snapshot.balance') }}
-            </div>
-            <div>
-              <amount-display
-                :value="formattedSelectedBalance"
-                :fiat-currency="currency.tickerSymbol"
-                class="font-weight-bold"
-              />
-            </div>
-          </div>
-        </div>
-        <template #buttons>
-          <v-spacer />
-          <v-btn depressed color="primary" @click="exportSnapshot">
-            {{ $t('dashboard.snapshot.download_snapshot') }}
-          </v-btn>
-        </template>
-      </card>
-    </v-dialog>
+    <export-snapshot-dialog
+      v-model="showExportSnapshotDialog"
+      :timestamp="selectedTimestamp"
+      :balance="selectedBalance"
+    />
   </div>
 </template>
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { Message } from '@rotki/common/lib/messages';
 import {
   Timeframe,
   TimeFramePeriod,
@@ -96,16 +59,12 @@ import {
   TimeUnit
 } from 'chart.js';
 import dayjs from 'dayjs';
+import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import { setupThemeCheck } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
-import { interop } from '@/electron-interop';
-import i18n from '@/i18n';
-import { api } from '@/services/rotkehlchen-api';
-import { useMainStore } from '@/store/store';
 import { assert } from '@/utils/assertions';
-import { bigNumberify, bigNumberifyFromRef } from '@/utils/bignumbers';
-import { downloadFileByUrl } from '@/utils/download';
+import { bigNumberify } from '@/utils/bignumbers';
 
 export interface ValueOverTime {
   readonly x: Date;
@@ -114,6 +73,7 @@ export interface ValueOverTime {
 
 export default defineComponent({
   name: 'NetWorthChart',
+  components: { ExportSnapshotDialog },
   props: {
     timeframe: {
       required: true,
@@ -133,14 +93,6 @@ export default defineComponent({
     const selectedTimestamp = ref<number>(0);
     const selectedBalance = ref<number>(0);
     const showExportSnapshotDialog = ref<boolean>(false);
-
-    const formattedSelectedBalance = computed<BigNumber | null>(() => {
-      if (get(selectedBalance)) {
-        return get(bigNumberifyFromRef(selectedBalance));
-      }
-
-      return null;
-    });
 
     const canvasId = 'net-worth-chart__chart';
     const chart = ref<Chart | null>(null);
@@ -435,85 +387,14 @@ export default defineComponent({
       }
     };
 
-    const downloadSnapshot = async () => {
-      const resp = await api.downloadSnapshot({
-        timestamp: get(selectedTimestamp)
-      });
-
-      const blob = new Blob([resp.data], { type: 'application/zip' });
-      const url = window.URL.createObjectURL(blob);
-
-      const date = dayjs(get(selectedTimestamp) * 1000).format(
-        'YYYYDDMMHHmmss'
-      );
-      const fileName = `${date}-snapshot.zip`;
-
-      downloadFileByUrl(url, fileName);
-
-      set(showExportSnapshotDialog, false);
-    };
-
-    const exportSnapshotCSV = async () => {
-      const { setMessage } = useMainStore();
-      let message: Message | null = null;
-
-      try {
-        if (interop.isPackaged && api.defaultBackend) {
-          const path = await interop.openDirectory(
-            i18n.t('dashboard.snapshot.select_directory').toString()
-          );
-
-          if (!path) {
-            return;
-          }
-
-          const success = await api.exportSnapshotCSV({
-            path,
-            timestamp: get(selectedTimestamp)
-          });
-
-          message = {
-            title: i18n.t('dashboard.snapshot.message.title').toString(),
-            description: success
-              ? i18n.t('dashboard.snapshot.message.success').toString()
-              : i18n.t('dashboard.snapshot.message.failure').toString(),
-            success
-          };
-
-          set(showExportSnapshotDialog, false);
-        } else {
-          await downloadSnapshot();
-        }
-      } catch (e: any) {
-        message = {
-          title: i18n.t('dashboard.snapshot.message.title').toString(),
-          description: e.message,
-          success: false
-        };
-      }
-
-      if (message) {
-        setMessage(message);
-      }
-    };
-
-    const exportSnapshot = () => {
-      if (interop.isPackaged) {
-        exportSnapshotCSV();
-      } else {
-        downloadSnapshot();
-      }
-    };
-
     return {
       dark,
       canvasId,
       canvasClicked,
       showExportSnapshotDialog,
       selectedTimestamp,
-      formattedSelectedBalance,
-      currency,
-      exportSnapshot
+      selectedBalance,
+      currency
     };
   }
 });

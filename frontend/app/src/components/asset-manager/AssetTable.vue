@@ -18,8 +18,13 @@
             clearable
             @input="onSearchTermChange($event)"
           >
-            <template v-if="!isTimeoutPending" #append>
-              <v-icon color="primary"> mdi-spin mdi-loading</v-icon>
+            <template v-if="isTimeoutPending" #append>
+              <v-progress-circular
+                indeterminate
+                color="primary"
+                width="2"
+                size="24"
+              />
             </template>
           </v-text-field>
         </v-col>

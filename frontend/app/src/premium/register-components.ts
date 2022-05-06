@@ -19,6 +19,7 @@ import {
 } from 'vuetify/lib/components';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
+import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -122,5 +123,6 @@ export function registerComponents() {
   // Version 16 - 1.23
   Vue.component('AmountInput', AmountInput);
   // Version 17 - 1.24
+  Vue.component('ExportSnapshotDialog', ExportSnapshotDialog);
   vuetifyRegister();
 }
