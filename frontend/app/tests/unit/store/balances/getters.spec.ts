@@ -1,11 +1,11 @@
 import { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
 import sortBy from 'lodash/sortBy';
+import { createPinia, setActivePinia } from 'pinia';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { BalanceType, BtcBalances } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
 import { BalanceGetters, getters } from '@/store/balances/getters';
 import { BalanceState } from '@/store/balances/types';
-import { SessionState } from '@/store/session/types';
 import store from '@/store/store';
 import { RotkehlchenState } from '@/store/types';
 import { SupportedExchange } from '@/types/exchanges';
@@ -13,6 +13,11 @@ import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { stub } from '../../../common/utils';
 
 describe('balances:getters', () => {
+  beforeEach(() => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+  });
+
   test('aggregatedBalances', () => {
     const mockGetters = {
       exchangeBalances: function (): AssetBalance[] {
@@ -95,11 +100,7 @@ describe('balances:getters', () => {
       getters.aggregatedBalances(
         state,
         stub<BalanceGetters>(mockGetters),
-        stub<RotkehlchenState>({
-          session: stub<SessionState>({
-            ignoredAssets: []
-          })
-        }),
+        stub<RotkehlchenState>(),
         stub()
       ),
       'asset'

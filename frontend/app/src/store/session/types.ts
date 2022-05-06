@@ -30,7 +30,6 @@ export interface SessionState {
   tags: Tags;
   watchers: Watcher<WatcherTypes>[];
   queriedAddresses: QueriedAddresses;
-  ignoredAssets: string[];
   lastBalanceSave: number;
   lastDataUpload: number;
   timeframe: TimeFramePeriod;

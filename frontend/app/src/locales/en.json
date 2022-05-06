@@ -2586,6 +2586,20 @@
           "message": "Failed to retrieve ignored assets: {error}"
         }
       },
+      "update_ignored_assets": {
+        "task": {
+          "title": "Querying ignored assets from CryptoScamDB"
+        },
+        "error": {
+          "title": "Querying ignored assets from CryptoScamDB",
+          "message": "Failed to retrieve ignored assets from CryptoScamDB: {error}"
+        },
+        "success": {
+          "title": "Successfully queried ignored assets from CryptoScamDB",
+          "empty_message": "No new ignored assets added.",
+          "message": "{total} ignored assets added."
+        }
+      },
       "kraken_account": {
         "error": {
           "title": "Error setting kraken account type"
@@ -3272,6 +3286,7 @@
   },
   "accounting_settings": {
     "ignored_assets": "Total number of ignored assets",
+    "fetch_from_cryptoscamdb": "Fetch ignored assets from CryptoScamDB",
     "title": "Trade Settings",
     "labels": {
       "calculate_past_cost_basis": "Calculate past cost basis when creating the report",

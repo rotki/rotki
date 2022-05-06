@@ -47,10 +47,10 @@ import { get } from '@vueuse/core';
 import { RawLocation } from 'vue-router/types/router';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
-import { getPremium, setupIgnoredAssets } from '@/composables/session';
+import { getPremium } from '@/composables/session';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 
 export default defineComponent({
   name: 'Assets',
@@ -60,7 +60,8 @@ export default defineComponent({
   },
   setup(props) {
     const { identifier } = toRefs(props);
-    const { isAssetIgnored, ignoreAsset, unignoreAsset } = setupIgnoredAssets();
+    const { isAssetIgnored, ignoreAsset, unignoreAsset } =
+      useIgnoredAssetsStore();
 
     const isIgnored = isAssetIgnored(get(identifier));
 
