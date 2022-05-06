@@ -25,7 +25,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 HISTORY_INSERT = """INSERT INTO history_events(event_identifier, sequence_index,
 timestamp, location, location_label, asset, amount, usd_value, notes,
-type, subtype, counterparty) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+type, subtype, counterparty, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
 
 
 class DBHistoryEvents():
@@ -84,7 +84,7 @@ class DBHistoryEvents():
             cursor.execute(
                 'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
                 'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
-                'type=?, subtype=?, counterparty=? WHERE identifier=?',
+                'type=?, subtype=?, counterparty=?, extra_data=? WHERE identifier=?',
                 (*event.serialize_for_db(), event.identifier),
             )
         except sqlcipher.IntegrityError:  # pylint: disable=no-member

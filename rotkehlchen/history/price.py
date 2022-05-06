@@ -193,8 +193,6 @@ class PriceHistorian():
             to_asset=to_asset,
             timestamp=timestamp,
         )
-        if from_asset.identifier == '_ceth_0x39eAE99E685906fF1C11A962a743440d0a1A6e09' and timestamp == 1609455600 and to_asset.identifier == 'CHF':  # noqa: E501
-            return Price(FVal('0.5092025315901675878772406037'))  # temporary for my script
         if from_asset == to_asset:
             return Price(FVal('1'))
 

@@ -523,6 +523,8 @@ class EVMTransactionDecoder():
                     transfer.notes = action_item.to_notes
                 if action_item.to_counterparty is not None:
                     transfer.counterparty = action_item.to_counterparty
+                if action_item.extra_data is not None:
+                    transfer.extra_data = action_item.extra_data
 
                 action_items.pop(idx)
                 break  # found an action item and acted on it

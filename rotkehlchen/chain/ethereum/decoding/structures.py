@@ -17,4 +17,4 @@ class ActionItem(NamedTuple):
     to_event_subtype: Optional[HistoryEventSubType] = None
     to_notes: Optional[str] = None
     to_counterparty: Optional[str] = None
-    extras: Optional[Dict] = None
+    extra_data: Optional[Dict] = None

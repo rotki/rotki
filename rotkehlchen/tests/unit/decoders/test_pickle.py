@@ -91,8 +91,6 @@ def test_pickle_deposit(database, ethereum_manager):
             location_label='0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',
             notes='Burned 0.00393701451 ETH in gas from 0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',  # noqa: E501
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier='0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd',
             sequence_index=260,
@@ -105,8 +103,6 @@ def test_pickle_deposit(database, ethereum_manager):
             location_label='0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',
             notes='Deposit 907.258590539447889901 LOOKS in pickle contract',
             counterparty='pickle finance',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier='0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd',
             sequence_index=262,
@@ -119,8 +115,6 @@ def test_pickle_deposit(database, ethereum_manager):
             location_label='0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',
             notes='Receive 560.885632516582380401 pLOOKS after depositing in pickle contract',
             counterparty='pickle finance',
-            identifier=None,
-            extras=None,
         )]
     assert events == expected_events
 
@@ -197,8 +191,6 @@ def test_pickle_withdraw(database, ethereum_manager):
             location_label='0xC7Dc4Cd171812a441A30472219d390f4F15f6070',
             notes='Burned 0.00393701451 ETH in gas from 0xC7Dc4Cd171812a441A30472219d390f4F15f6070',  # noqa: E501
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier='0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab',
             sequence_index=106,
@@ -211,8 +203,6 @@ def test_pickle_withdraw(database, ethereum_manager):
             location_label='0xC7Dc4Cd171812a441A30472219d390f4F15f6070',
             notes='Return 245.522202162316534411 pLOOKS to the pickle contract',
             counterparty='pickle finance',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier='0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab',
             sequence_index=107,
@@ -225,7 +215,5 @@ def test_pickle_withdraw(database, ethereum_manager):
             location_label='0xC7Dc4Cd171812a441A30472219d390f4F15f6070',
             notes='Unstake 403.097099656688209687 LOOKS from the pickle contract',
             counterparty='pickle finance',
-            identifier=None,
-            extras=None,
         )]
     assert events == expected_events

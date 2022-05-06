@@ -192,7 +192,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.counterparty = CPT_VAULT
                     event.notes = f'Deposit {amount} {vault_asset.symbol} to {vault_type} MakerDAO vault'  # noqa: E501
-                    event.extras = {'vault_type': vault_type}
+                    event.extra_data = {'vault_type': vault_type}
                     return None, None
 
         elif tx_log.topics[0] == GENERIC_EXIT:
@@ -209,7 +209,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_VAULT
                     event.notes = f'Withdraw {amount} {vault_asset.symbol} from {vault_type} MakerDAO vault'  # noqa: E501
-                    event.extras = {'vault_type': vault_type}
+                    event.extra_data = {'vault_type': vault_type}
                     return None, None
 
         return None, None
@@ -241,7 +241,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 amount=amount,
                 to_event_subtype=HistoryEventSubType.PAYBACK_DEBT,
                 to_counterparty=CPT_VAULT,
-                extras={'vault_address': join_user_address},
+                extra_data={'vault_address': join_user_address},
             )
             return None, action_item
 
@@ -435,6 +435,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             to_event_subtype=HistoryEventSubType.GENERATE_DEBT,
             to_counterparty=CPT_VAULT,
             to_notes=f'Generate {amount} DAI from MakerDAO vault {cdp_id}',
+            extra_data={'cdp_id': cdp_id},
         )
         return None, action_item
 
@@ -455,7 +456,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
 
         action_item = None
         for item in action_items:
-            if item.extras and 'vault_address' in item.extras:
+            if item.extra_data and 'vault_address' in item.extra_data:
                 action_item = item
                 break
 
@@ -463,7 +464,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             # this concerns a vault debt payback. Checking only if CDP matches since
             # the owner response is at the time of the call and may have changed
             cdp_address, _ = self._get_vault_details(cdp_id)
-            if cdp_address != action_item.extras['vault_address']:  # type: ignore
+            if cdp_address != action_item.extra_data['vault_address']:  # type: ignore
                 return None, None  # vault address does not match
 
             # now find the payback transfer and transform it
@@ -475,6 +476,9 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                         event.event_subtype = action_item.to_event_subtype
                     if action_item.to_counterparty:
                         event.counterparty = action_item.to_counterparty
+                    if action_item.extra_data:
+                        event.extra_data = action_item.extra_data
+                        event.extra_data['cdp_id'] = cdp_id
 
                     event.notes = f'Payback {event.balance.amount} DAI of debt to makerdao vault {cdp_id}'  # noqa: E501
                     break
@@ -488,8 +492,8 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                     if normalized_dink != event.balance.amount:
                         continue
 
-                    vault_type = event.extras.get('vault_type', 'unknown') if event.extras else 'unknown'  # noqa: E501
-                    event.notes = f'Deposit {event.balance.amount} {event.asset} to {vault_type} vault {cdp_id}'  # noqa: E501
+                    vault_type = event.extra_data.get('vault_type', 'unknown') if event.extra_data else 'unknown'  # noqa: E501
+                    event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} to {vault_type} vault {cdp_id}'  # noqa: E501
                     break
 
         return None, None

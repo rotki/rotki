@@ -619,6 +619,7 @@ CREATE TABLE IF NOT EXISTS history_events (
     type TEXT NOT NULL,
     subtype TEXT,
     counterparty TEXT,
+    extra_data TEXT,
     UNIQUE(event_identifier, sequence_index)
 );
 """
