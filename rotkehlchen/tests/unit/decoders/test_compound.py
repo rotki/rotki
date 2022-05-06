@@ -7,7 +7,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
-from rotkehlchen.constants.assets import A_CETH, A_ETH
+from rotkehlchen.constants.assets import A_CETH, A_COMP, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -56,7 +56,7 @@ def test_compound_ether_withdraw(database, ethereum_manager, function_scope_mess
             counterparty=CPT_COMPOUND,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
-            sequence_index=50,
+            sequence_index=2,
             timestamp=1598813490000,
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -65,6 +65,18 @@ def test_compound_ether_withdraw(database, ethereum_manager, function_scope_mess
             balance=Balance(amount=FVal('0.500003923413507454'), usd_value=ZERO),
             location_label=ADDY,
             notes='Withdraw 0.500003923413507454 ETH from compound',
+            counterparty=CPT_COMPOUND,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=49,
+            timestamp=1598813490000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_COMP,
+            balance=Balance(amount=FVal('0.000034845643426795')),
+            location_label=ADDY,
+            notes='Collect 0.000034845643426795 COMP from compound',
             counterparty=CPT_COMPOUND,
         )]
     assert events == expected_events

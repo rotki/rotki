@@ -35,4 +35,11 @@ class CompoundAccountant(ModuleAccountantInterface):
                 take=2,
                 multitake_treatment=TxMultitakeTreatment.SWAP,
             ),
+            get_tx_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.REWARD, CPT_COMPOUND): TxEventSettings(  # noqa: E501
+                taxable=True,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='acquisition',
+                take=1,
+            ),
         }
