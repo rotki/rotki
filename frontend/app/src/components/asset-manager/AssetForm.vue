@@ -357,9 +357,9 @@ export default defineComponent({
         name: newName,
         symbol: newSymbol
       } = await fetchTokenDetails(get(address));
-      set(decimals, newDecimals?.toString() ?? '');
-      set(name, newName ?? '');
-      set(symbol, newSymbol ?? '');
+      set(decimals, newDecimals?.toString() || get(decimals));
+      set(name, newName || get(name));
+      set(symbol, newSymbol || get(symbol));
       set(fetching, false);
     });
 
