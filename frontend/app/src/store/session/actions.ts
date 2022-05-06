@@ -23,7 +23,7 @@ import {
   WatcherTypes
 } from '@/services/session/types';
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { useHistory } from '@/store/history';
@@ -85,9 +85,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     };
 
     const { fetchIgnored } = useHistory();
+    const { fetchIgnoredAssets } = useIgnoredAssetsStore();
     const async = [
-      fetchIgnored,
-      dispatch('fetchIgnoredAssets'),
+      fetchIgnored(),
+      fetchIgnoredAssets(),
       dispatch('session/fetchWatchers', null, options),
       dispatch('balances/fetchManualBalances', null, options),
       dispatch('statistics/fetchNetValue', null, options),
@@ -576,46 +577,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         success: false,
         message: e.message
       };
-    }
-  },
-
-  async fetchIgnoredAssets({ commit }): Promise<void> {
-    try {
-      const ignoredAssets = await api.assets.ignoredAssets();
-      commit('ignoreAssets', ignoredAssets);
-    } catch (e: any) {
-      const title = i18n.tc('actions.session.ignored_assets.error.title');
-      const message = i18n.tc(
-        'actions.session.ignored_assets.error.message',
-        0,
-        {
-          error: e.message
-        }
-      );
-      const { notify } = useNotifications();
-      notify({
-        title,
-        message,
-        display: true
-      });
-    }
-  },
-  async ignoreAsset({ commit }, asset: string): Promise<ActionStatus> {
-    try {
-      const ignoredAssets = await api.assets.modifyAsset(true, asset);
-      commit('ignoreAssets', ignoredAssets);
-      return { success: true };
-    } catch (e: any) {
-      return { success: false, message: e.message };
-    }
-  },
-  async unignoreAsset({ commit }, asset: string): Promise<ActionStatus> {
-    try {
-      const ignoredAssets = await api.assets.modifyAsset(false, asset);
-      commit('ignoreAssets', ignoredAssets);
-      return { success: true };
-    } catch (e: any) {
-      return { success: false, message: e.message };
     }
   },
   async forceSync({ dispatch }, action: SyncAction): Promise<void> {

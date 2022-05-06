@@ -13,7 +13,7 @@ import { AssetPriceInfo } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
-import { useStore } from '@/store/utils';
+import { showMessage, useStore } from '@/store/utils';
 import {
   ApplyUpdateResult,
   AssetDBVersion,
@@ -26,8 +26,9 @@ import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 
 export const useAssets = defineStore('assets', () => {
+  const { awaitTask } = useTasks();
+
   const checkForUpdate = async (): Promise<AssetUpdateCheckResult> => {
-    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.ASSET_UPDATE;
       const { taskId } = await api.assets.checkForAssetUpdate();
@@ -66,7 +67,6 @@ export const useAssets = defineStore('assets', () => {
     resolution
   }: AssetUpdatePayload): Promise<ApplyUpdateResult> => {
     try {
-      const { awaitTask } = useTasks();
       const { taskId } = await api.assets.performUpdate(version, resolution);
       const { result } = await awaitTask<AssetUpdateResult, TaskMeta>(
         taskId,
@@ -303,7 +303,129 @@ export const useAssetInfoRetrieval = defineStore(
   }
 );
 
+export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
+  const ignoredAssets = ref<string[]>([]);
+
+  const fetchIgnoredAssets = async (): Promise<void> => {
+    try {
+      const ignored = await api.assets.ignoredAssets();
+      set(ignoredAssets, ignored);
+    } catch (e: any) {
+      const title = i18n.tc('actions.session.ignored_assets.error.title');
+      const message = i18n.tc(
+        'actions.session.ignored_assets.error.message',
+        0,
+        {
+          error: e.message
+        }
+      );
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
+    }
+  };
+
+  const ignoreAsset = async (asset: string): Promise<ActionStatus> => {
+    try {
+      const ignored = await api.assets.modifyAsset(true, asset);
+      set(ignoredAssets, ignored);
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, message: e.message };
+    }
+  };
+
+  const unignoreAsset = async (asset: string): Promise<ActionStatus> => {
+    try {
+      const ignored = await api.assets.modifyAsset(false, asset);
+      set(ignoredAssets, ignored);
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, message: e.message };
+    }
+  };
+
+  const updateIgnoredAssets = async (): Promise<void> => {
+    const { awaitTask } = useTasks();
+
+    try {
+      const taskType = TaskType.UPDATE_IGNORED_ASSETS;
+      const { taskId } = await api.assets.updateIgnoredAssets();
+      const taskMeta = {
+        title: i18n
+          .t('actions.session.update_ignored_assets.task.title')
+          .toString(),
+        numericKeys: []
+      };
+
+      const { result } = await awaitTask<number, TaskMeta>(
+        taskId,
+        taskType,
+        taskMeta
+      );
+
+      const title = i18n
+        .t('actions.session.update_ignored_assets.success.title')
+        .toString();
+      const message =
+        result > 0
+          ? i18n
+              .t('actions.session.update_ignored_assets.success.message', {
+                total: result
+              })
+              .toString()
+          : i18n
+              .t(
+                'actions.session.update_ignored_assets.success.empty_message',
+                { total: result }
+              )
+              .toString();
+
+      showMessage(message, title);
+
+      if (result) {
+        await fetchIgnoredAssets();
+      }
+    } catch (e: any) {
+      const title = i18n.tc(
+        'actions.session.update_ignored_assets.error.title'
+      );
+      const message = i18n.tc(
+        'actions.session.update_ignored_assets.error.message',
+        0,
+        {
+          error: e.message
+        }
+      );
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
+    }
+  };
+
+  const isAssetIgnored = (asset: string) =>
+    computed<boolean>(() => {
+      return get(ignoredAssets).includes(asset);
+    });
+
+  return {
+    ignoredAssets,
+    fetchIgnoredAssets,
+    ignoreAsset,
+    unignoreAsset,
+    updateIgnoredAssets,
+    isAssetIgnored
+  };
+});
+
 if (module.hot) {
   module.hot.accept(acceptHMRUpdate(useAssets, module.hot));
   module.hot.accept(acceptHMRUpdate(useAssetInfoRetrieval, module.hot));
+  module.hot.accept(acceptHMRUpdate(useIgnoredAssetsStore, module.hot));
 }

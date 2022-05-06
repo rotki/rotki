@@ -13,7 +13,7 @@ import map from 'lodash/map';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { BlockchainAssetBalances } from '@/services/balances/types';
 import { GeneralAccountData } from '@/services/types-api';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import {
   AccountAssetBalances,
   AssetBreakdown,
@@ -266,15 +266,15 @@ export const getters: Getters<
     return accounts;
   },
 
-  totals(state: BalanceState, _, { session }): AssetBalance[] {
-    const ignoredAssets = session!.ignoredAssets;
+  totals(state: BalanceState): AssetBalance[] {
+    const { isAssetIgnored } = useIgnoredAssetsStore();
     return map(state.totals, (value: Balance, asset: string) => {
       const assetBalance: AssetBalance = {
         asset,
         ...value
       };
       return assetBalance;
-    }).filter(balance => !ignoredAssets.includes(balance.asset));
+    }).filter(balance => !get(isAssetIgnored(balance.asset)));
   },
 
   exchangeRate: (state: BalanceState) => (currency: string) => {
@@ -293,14 +293,14 @@ export const getters: Getters<
   },
 
   exchangeBalances:
-    (state: BalanceState, _, { session }) =>
+    (state: BalanceState) =>
     (exchange: string): AssetBalanceWithPrice[] => {
-      const ignoredAssets = session!.ignoredAssets;
+      const { isAssetIgnored } = useIgnoredAssetsStore();
       const exchangeBalances = state.exchangeBalances[exchange];
       const noPrice = new BigNumber(-1);
       return exchangeBalances
         ? Object.keys(exchangeBalances)
-            .filter(asset => !ignoredAssets.includes(asset))
+            .filter(asset => !get(isAssetIgnored(asset)))
             .map(
               asset =>
                 ({
@@ -320,14 +320,13 @@ export const getters: Getters<
       loopringBalances,
       prices
     }: BalanceState,
-    { exchangeBalances, totals },
-    { session }
+    { exchangeBalances, totals }
   ): AssetBalanceWithPrice[] => {
-    const ignoredAssets = session!.ignoredAssets;
+    const { isAssetIgnored } = useIgnoredAssetsStore();
     const ownedAssets: { [asset: string]: AssetBalanceWithPrice } = {};
     const addToOwned = (value: AssetBalance) => {
       const asset = ownedAssets[value.asset];
-      if (ignoredAssets.includes(value.asset)) {
+      if (get(isAssetIgnored(value.asset))) {
         return;
       }
       ownedAssets[value.asset] = !asset
@@ -571,47 +570,43 @@ export const getters: Getters<
     return totals.sort((a, b) => b.usdValue.minus(a.usdValue).toNumber());
   },
 
-  accountAssets:
-    (state: BalanceState, _, { session }) =>
-    (account: string) => {
-      const ignoredAssets = session!.ignoredAssets;
-      const ethAccount = state.eth[account];
-      if (!ethAccount || isEmpty(ethAccount)) {
-        return [];
-      }
+  accountAssets: (state: BalanceState) => (account: string) => {
+    const { isAssetIgnored } = useIgnoredAssetsStore();
+    const ethAccount = state.eth[account];
+    if (!ethAccount || isEmpty(ethAccount)) {
+      return [];
+    }
 
-      return Object.entries(ethAccount.assets)
-        .filter(([asset]) => !ignoredAssets.includes(asset))
-        .map(
-          ([key, { amount, usdValue }]) =>
-            ({
-              asset: key,
-              amount: amount,
-              usdValue: usdValue
-            } as AssetBalance)
-        );
-    },
+    return Object.entries(ethAccount.assets)
+      .filter(([asset]) => !get(isAssetIgnored(asset)))
+      .map(
+        ([key, { amount, usdValue }]) =>
+          ({
+            asset: key,
+            amount: amount,
+            usdValue: usdValue
+          } as AssetBalance)
+      );
+  },
 
-  accountLiabilities:
-    (state: BalanceState, _, { session }) =>
-    (account: string) => {
-      const ignoredAssets = session!.ignoredAssets;
-      const ethAccount = state.eth[account];
-      if (!ethAccount || isEmpty(ethAccount)) {
-        return [];
-      }
+  accountLiabilities: (state: BalanceState) => (account: string) => {
+    const { isAssetIgnored } = useIgnoredAssetsStore();
+    const ethAccount = state.eth[account];
+    if (!ethAccount || isEmpty(ethAccount)) {
+      return [];
+    }
 
-      return Object.entries(ethAccount.liabilities)
-        .filter(([asset]) => !ignoredAssets.includes(asset))
-        .map(
-          ([key, { amount, usdValue }]) =>
-            ({
-              asset: key,
-              amount: amount,
-              usdValue: usdValue
-            } as AssetBalance)
-        );
-    },
+    return Object.entries(ethAccount.liabilities)
+      .filter(([asset]) => !get(isAssetIgnored(asset)))
+      .map(
+        ([key, { amount, usdValue }]) =>
+          ({
+            asset: key,
+            amount: amount,
+            usdValue: usdValue
+          } as AssetBalance)
+      );
+  },
 
   hasDetails: (state: BalanceState) => (account: string) => {
     const ethAccount = state.eth[account];
@@ -866,7 +861,7 @@ export const getters: Getters<
     }
     return balances;
   },
-  blockchainAssets: (state, { totals }, { session }) => {
+  blockchainAssets: (state, { totals }) => {
     const noPrice = new BigNumber(-1);
     const blockchainTotal = [
       ...totals.map(value => ({
@@ -874,12 +869,12 @@ export const getters: Getters<
         usdPrice: state.prices[value.asset] ?? noPrice
       }))
     ];
-    const ignoredAssets = session!.ignoredAssets;
+    const { isAssetIgnored } = useIgnoredAssetsStore();
     const loopringBalances = state.loopringBalances;
     for (const address in loopringBalances) {
       const accountBalances = loopringBalances[address];
       for (const asset in accountBalances) {
-        if (ignoredAssets.includes(asset)) {
+        if (get(isAssetIgnored(asset))) {
           continue;
         }
         const existing: Writeable<AssetBalance> | undefined =
@@ -907,15 +902,14 @@ export const getters: Getters<
         loopringBalances,
         prices
       }: BalanceState,
-      { exchangeBalances, totals },
-      { session }
+      { exchangeBalances, totals }
     ) =>
     identifier => {
-      const ignoredAssets = session!.ignoredAssets;
+      const { isAssetIgnored } = useIgnoredAssetsStore();
       const ownedAssets: { [asset: string]: AssetBalanceWithPrice } = {};
       const addToOwned = (value: AssetBalance) => {
         const asset = ownedAssets[value.asset];
-        if (ignoredAssets.includes(value.asset)) {
+        if (get(isAssetIgnored(value.asset))) {
           return;
         }
         ownedAssets[value.asset] = !asset

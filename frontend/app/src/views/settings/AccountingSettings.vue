@@ -150,6 +150,16 @@
               </v-badge>
             </v-col>
           </v-row>
+          <div class="pt-6">
+            <v-btn
+              color="primary"
+              :loading="isUpdateIgnoredAssetsLoading"
+              :disabled="isUpdateIgnoredAssetsLoading"
+              @click="updateIgnoredAssets"
+            >
+              {{ $t('accounting_settings.fetch_from_cryptoscamdb') }}
+            </v-btn>
+          </div>
         </card>
       </v-col>
     </v-row>
@@ -192,14 +202,19 @@
 </template>
 
 <script lang="ts">
+import { Ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
+import { mapState, mapActions } from 'pinia';
 import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions, mapState } from 'vuex';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import LedgerActionSettings from '@/components/settings/accounting/LedgerActionSettings.vue';
 import { settingsMessages } from '@/components/settings/utils';
 import AssetMixin from '@/mixins/asset-mixin';
 import SettingsMixin from '@/mixins/settings-mixin';
+import { useIgnoredAssetsStore } from '@/store/assets';
+import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
+import { TaskType } from '@/types/task-type';
 
 const haveCSVSummary = 'haveCSVSummary';
 const exportCSVFormulas = 'exportCSVFormulas';
@@ -233,10 +248,15 @@ type SettingsEntries = typeof SETTINGS[number];
     AssetSelect
   },
   computed: {
-    ...mapState('session', ['ignoredAssets'])
+    ...mapState(useIgnoredAssetsStore, ['ignoredAssets']),
+    ...mapState(useTasks, ['isTaskRunning'])
   },
   methods: {
-    ...mapActions('session', ['ignoreAsset', 'unignoreAsset'])
+    ...mapActions(useIgnoredAssetsStore, [
+      'ignoreAsset',
+      'unignoreAsset',
+      'updateIgnoredAssets'
+    ])
   }
 })
 export default class Accounting extends Mixins<
@@ -245,6 +265,8 @@ export default class Accounting extends Mixins<
   ignoredAssets!: string[];
   ignoreAsset!: (asset: string) => Promise<ActionStatus>;
   unignoreAsset!: (asset: string) => Promise<ActionStatus>;
+  updateIgnoredAssets!: () => Promise<ActionStatus>;
+  isTaskRunning!: (type: TaskType) => Ref<boolean>;
 
   haveCSVSummary: boolean = false;
   exportCSVFormulas: boolean = false;
@@ -288,6 +310,10 @@ export default class Accounting extends Mixins<
       this.accountingSettings.accountForAssetsMovements;
     this.calculatePastCostBasis =
       this.accountingSettings.calculatePastCostBasis;
+  }
+
+  get isUpdateIgnoredAssetsLoading(): boolean {
+    return get(this.isTaskRunning(TaskType.UPDATE_IGNORED_ASSETS));
   }
 
   onTaxFreeChange(enabled: boolean) {

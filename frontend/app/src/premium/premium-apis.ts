@@ -27,10 +27,9 @@ import {
 } from '@rotki/common/lib/statistics';
 import { computed } from '@vue/composition-api';
 import { get, toRefs } from '@vueuse/core';
-import { setupIgnoredAssets } from '@/composables/session';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswap } from '@/store/defi/uniswap';
 import { useStore } from '@/store/utils';
@@ -45,7 +44,7 @@ export const assetsApi = (): AssetsApi => {
 
 export const statisticsApi = (): StatisticsApi => {
   const store = useStore();
-  const { isAssetIgnored } = setupIgnoredAssets();
+  const { isAssetIgnored } = useIgnoredAssetsStore();
   return {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
       return api.queryLatestAssetValueDistribution();

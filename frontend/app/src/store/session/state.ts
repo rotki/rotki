@@ -25,7 +25,6 @@ export const defaultState: () => SessionState = () => ({
   tags: {},
   watchers: [],
   queriedAddresses: {},
-  ignoredAssets: [],
   lastBalanceSave: 0,
   lastDataUpload: 0,
   timeframe: TimeFramePeriod.ALL,

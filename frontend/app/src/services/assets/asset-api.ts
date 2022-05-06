@@ -152,6 +152,16 @@ export class AssetApi {
       .then(handleResponse);
   }
 
+  updateIgnoredAssets(): Promise<PendingTask> {
+    return this.axios
+      .post<ActionResult<PendingTask>>('/assets/ignored', null, {
+        params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+        validateStatus: validWithoutSessionStatus,
+        transformResponse: this.baseTransformer
+      })
+      .then(handleResponse);
+  }
+
   async allAssets(): Promise<SupportedAssets> {
     return this.axios
       .get<ActionResult<SupportedAssets>>('/assets/all', {

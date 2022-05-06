@@ -72,9 +72,6 @@ export const mutations: MutationTree<SessionState> = {
   queriedAddresses(state: SessionState, queriedAddresses: QueriedAddresses) {
     state.queriedAddresses = queriedAddresses;
   },
-  ignoreAssets(state: SessionState, ignoredAssets: string[]) {
-    state.ignoredAssets = ignoredAssets;
-  },
   updateLastBalanceSave(state: SessionState, lastBalanceSave: number) {
     state.lastBalanceSave = lastBalanceSave;
   },
