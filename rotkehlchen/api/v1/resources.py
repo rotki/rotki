@@ -2155,6 +2155,15 @@ class DBSnapshotDeletingResource(BaseResource):
 class ReverseEnsResource(BaseResource):
     reverse_ens_schema = ReverseEnsSchema
 
-    @use_kwargs(reverse_ens_schema, location='json_and_query')
-    def post(self, ethereum_addresses: List[ChecksumEthAddress], force_update: bool) -> Response:
-        return self.rest_api.get_ens_mappings(addresses=ethereum_addresses, force_update=force_update)  # noqa: E501
+    @use_kwargs(reverse_ens_schema, location='json')
+    def post(
+            self,
+            ethereum_addresses: List[ChecksumEthAddress],
+            ignore_cache: bool,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.get_ens_mappings(
+            addresses=ethereum_addresses,
+            ignore_cache=ignore_cache,
+            async_query=async_query,
+        )

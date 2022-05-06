@@ -1,7 +1,13 @@
+from http import HTTPStatus
+
 import requests
 from eth_utils import to_checksum_address
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_error_response,
+    assert_proper_response_with_result,
+)
 
 
 def test_reverse_ens(rotkehlchen_api_server):
@@ -14,12 +20,11 @@ def test_reverse_ens(rotkehlchen_api_server):
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            "reverseensresource",
-            ethereum_addresses=addrs_1,
+            'reverseensresource',
         ),
+        json={'ethereum_addresses': addrs_1},
     )
-    assert_proper_response(response)
-    result = response.json()['result']
+    result = assert_proper_response_with_result(response)
     expected_resp_1 = {
         addrs_1[0]: 'rotki.eth',
         addrs_1[1]: 'lefteris.eth',
@@ -37,13 +42,12 @@ def test_reverse_ens(rotkehlchen_api_server):
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            "reverseensresource",
-            ethereum_addresses=addrs_2,
+            'reverseensresource',
         ),
+        json={'ethereum_addresses': addrs_2},
     )
-    assert_proper_response(response)
+    result = assert_proper_response_with_result(response)
     all_addrs = list(set(addrs_1) | set(addrs_2))
-    result = response.json()['result']
     expected_resp_2 = {
         addrs_2[0]: 'rotki.eth',
         addrs_2[1]: 'abc.eth',
@@ -60,21 +64,23 @@ def test_reverse_ens(rotkehlchen_api_server):
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            "reverseensresource",
-            ethereum_addresses=['0xqwerty'],
+            'reverseensresource',
         ),
+        json={'ethereum_addresses': ['0xqwerty']},
     )
-
-    assert response.status_code == 400
+    assert_error_response(
+        response=response,
+        contained_in_msg='Given value 0xqwerty is not an ethereum address',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
     timestamps_before_request = [mapping.last_update for mapping in db.get_reverse_ens(all_addrs)]
     requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            "reverseensresource",
-            ethereum_addresses=all_addrs,
-            force_update=True,
+            'reverseensresource',
         ),
+        json={'ethereum_addresses': all_addrs, 'ignore_cache': True},
     )
     timestamps_after_request = [mapping.last_update for mapping in db.get_reverse_ens(all_addrs)]
     assert all(map(lambda t_pair: t_pair[0] < t_pair[1], zip(timestamps_before_request, timestamps_after_request)))  # noqa: E501

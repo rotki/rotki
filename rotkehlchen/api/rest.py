@@ -335,7 +335,6 @@ class RestAPI():
         gevent.wait(self.waited_greenlets)
         log.debug('Waited for greenlets. Killing all other greenlets')
         gevent.killall(self.rotkehlchen.api_task_greenlets)
-        log.debug('Greenlets killed. Killing zerorpc greenlet')
         log.debug('Shutdown completed')
         logging.shutdown()
         self.stop_event.set()
@@ -4136,15 +4135,14 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
-    def get_ens_mappings(
+    def _get_ens_mappings(
         self,
         addresses: List[ChecksumEthAddress],
-        force_update: bool,
-    ) -> Response:
+        ignore_cache: bool,
+    ) -> Dict[str, Any]:
         mappings_to_send = []
 
-        if force_update:
+        if ignore_cache:
             addresses_to_query = addresses
         else:
             addresses_to_query = []
@@ -4166,10 +4164,29 @@ class RestAPI():
         for mapping in mappings_to_send:
             wrapped_mappings[mapping.address] = mapping.name
 
-        return api_response(
-            result=_wrap_in_ok_result(wrapped_mappings),
-            status_code=HTTPStatus.OK,
+        return {'result': wrapped_mappings, 'message': '', 'status_code': HTTPStatus.OK}
+
+    @require_loggedin_user()
+    def get_ens_mappings(
+            self,
+            addresses: List[ChecksumEthAddress],
+            ignore_cache: bool,
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_ens_mappings',
+                addresses=addresses,
+                ignore_cache=ignore_cache,
+            )
+
+        response = self._get_ens_mappings(
+            addresses=addresses,
+            ignore_cache=ignore_cache,
         )
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
     def import_user_snapshot(

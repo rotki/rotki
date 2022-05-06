@@ -79,7 +79,6 @@ def fixture_cli_args(data_dir, ethrpc_endpoint):
     args = namedtuple('args', [
         'sleep_secs',
         'data_dir',
-        'zerorpc_port',
         'ethrpc_endpoint',
         'logfile',
         'logtarget',
