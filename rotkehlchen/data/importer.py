@@ -4,7 +4,7 @@ import logging
 from collections import defaultdict
 from itertools import count
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -18,7 +18,7 @@ from rotkehlchen.assets.converters import (
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_BSQ, A_BTC, A_DAI, A_SAI, A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.data.import_utils import (
+from rotkehlchen.data.binance_import_utils import (
     BinanceCsvRow,
     BinanceDepositWithdrawEntry,
     BinanceEntry,
@@ -49,14 +49,16 @@ log = RotkehlchenLogsAdapter(logger)
 SAI_TIMESTAMP = 1574035200
 
 SINGLE_BINANCE_ENTRIES = [
-    BinanceDepositWithdrawEntry,
-    BinanceStakingRewardsEntry,
-    BinancePOSEntry,
+    BinanceDepositWithdrawEntry(),
+    BinanceStakingRewardsEntry(),
+    BinancePOSEntry(),
 ]
 
 MULTIPLE_BINANCE_ENTRIES = [
-    BinanceTradeEntry,
+    BinanceTradeEntry(),
 ]
+
+BINANCE_TRADE_OPERATIONS = {'Buy', 'Sell', 'Fee'}
 
 
 def remap_header(fieldnames: List[str]) -> List[str]:
@@ -1465,6 +1467,7 @@ Activity from uphold with uphold transaction id:
         rows: List[BinanceCsvRow],
         **kwargs: Dict[str, Any],
     ) -> Tuple[int, Dict[Timestamp, List[BinanceCsvRow]]]:
+        """Groups Binance rows by timestamp and deletes unused columns"""
         multirows: Dict[Timestamp, List[BinanceCsvRow]] = defaultdict(list)
         skipped_count = 0
         formatstr = kwargs.get('timestamp_format')
@@ -1477,10 +1480,10 @@ Activity from uphold with uphold transaction id:
                 )
                 csv_row['Coin'] = asset_from_binance(csv_row['Coin'])
                 csv_row['Change'] = deserialize_asset_amount(csv_row['Change'])
-                del csv_row['UTC_Time']
-                del csv_row['User_ID']
-                del csv_row['Account']
-                del csv_row['Remark']
+                csv_row.pop('UTC_Time', None)
+                csv_row.pop('User_ID', None)
+                csv_row.pop('Account', None)
+                csv_row.pop('Remark', None)
                 multirows[timestamp].append(csv_row)
             except (DeserializationError, UnknownAsset) as e:
                 log.warning(f'Skipped binance csv row {csv_row} because of {str(e)}')
@@ -1491,27 +1494,39 @@ Activity from uphold with uphold transaction id:
 
         return skipped_count, multirows
 
-    @staticmethod
-    def _process_single_binance_sentries(
+    def _process_single_binance_entries(
+        self,
         timestamp: Timestamp,
         rows: List[BinanceCsvRow],
-    ) -> Sequence[Tuple[Type[BinanceSingleEntry], BinanceCsvRow]]:
-        processed: List[Tuple[Type[BinanceSingleEntry], BinanceCsvRow]] = []
-        for single_entry_class in SINGLE_BINANCE_ENTRIES:
-            for row in rows:
+    ) -> Tuple[Dict[BinanceSingleEntry, int], List[BinanceCsvRow]]:
+        """Processes binance entries that are represented with a single row in a csv file"""
+        processed: Dict[BinanceSingleEntry, int] = defaultdict(int)
+        ignored: List[BinanceCsvRow] = []
+        for row in rows:
+            for single_entry_class in SINGLE_BINANCE_ENTRIES:
                 if single_entry_class.is_entry(row['Operation']):
-                    single_entry_class.process_entry(timestamp=timestamp, data=row)
-                    processed.append((single_entry_class, row))
-        return processed
+                    single_entry_class.process_entry(
+                        db=self.db,
+                        db_ledger=self.db_ledger,
+                        timestamp=timestamp,
+                        data=row,
+                    )
+                    processed[single_entry_class] += 1
+                    break
+            else:
+                ignored.append(row)
+        return processed, ignored
 
-    @staticmethod
     def _process_multiple_binance_entries(
+        self,
         timestamp: Timestamp,
         rows: List[BinanceCsvRow],
-    ) -> Tuple[Optional[Type[BinanceEntry]], int]:
+    ) -> Tuple[Optional[BinanceEntry], int]:
+        """Processes binance entries that are represented with 2+ rows in a csv file"""
         for multiple_entry_class in MULTIPLE_BINANCE_ENTRIES:
             if multiple_entry_class.are_entries([row['Operation'] for row in rows]):
                 processed_count = multiple_entry_class.process_entries(
+                    db=self.db,
                     timestamp=timestamp,
                     data=rows,
                 )
@@ -1519,48 +1534,47 @@ Activity from uphold with uphold transaction id:
         return None, 0
 
     def _process_binance_rows(self, multi: Dict[Timestamp, List[BinanceCsvRow]]) -> None:
-        BinanceEntry.db = self.db
-        BinanceEntry.db_ledger = self.db_ledger
-        stats: Dict[Type[BinanceEntry], int] = defaultdict(int)
-        skipped_entries: List[Any] = []
+        stats: Dict[BinanceEntry, int] = defaultdict(int)
+        skipped_rows: List[Any] = []
         for timestamp, rows in multi.items():
-            single_processed = self._process_single_binance_sentries(
+            single_processed, rows_without_single = self._process_single_binance_entries(
                 timestamp=timestamp,
                 rows=rows,
             )
-            for entry_type, row in single_processed:
-                stats[entry_type] += 1
-                rows.remove(row)
+            for entry_type, amount in single_processed.items():
+                stats[entry_type] += amount
+
             multiple_type, multiple_count = self._process_multiple_binance_entries(
                 timestamp=timestamp,
-                rows=rows,
+                rows=rows_without_single,
             )
             if multiple_type is not None and multiple_count > 0:
                 stats[multiple_type] += multiple_count
-                rows = []
+                rows_without_multiple = []
+            else:
+                rows_without_multiple = rows_without_single
 
-            if len(rows) > 0:
-                skipped_entries.append([timestamp, rows])
+            if len(rows_without_multiple) > 0:
+                skipped_rows.append([timestamp, rows_without_multiple])
 
-        trade_operations = {'Buy', 'Sell', 'Fee'}
-        skipped_nontrade_rows = list(filter(
-            lambda x: not {el['Operation'] for el in x[1]}.issubset(trade_operations),
-            skipped_entries,
-        ))
-        skipped_trade_rows = list(filter(
-            lambda x: {el['Operation'] for el in x[1]}.issubset(trade_operations),
-            skipped_entries,
-        ))
+        skipped_nontrade_rows = []
+        skipped_trade_rows = []
+        for skipped_rows_group in skipped_rows:
+            cur_operations = {el['Operation'] for el in skipped_rows_group[1]}
+            if cur_operations.issubset(BINANCE_TRADE_OPERATIONS):
+                skipped_trade_rows.append(skipped_rows_group)
+            else:
+                skipped_nontrade_rows.append(skipped_trade_rows)
         total_found = sum(stats.values())
         skipped_count = 0
-        for _, rows in skipped_entries:
+        for _, rows in skipped_rows:
             skipped_count += len(rows)
-        log.info(f'Skipped Binance trade rows: {skipped_trade_rows}')
-        log.info(f'Skipped Binance non-trade rows {skipped_nontrade_rows}')
-        log.info(f'Total found Binance entries: {total_found}')
-        log.info(f'Total skipped Binance csv rows: {skipped_count}')
-        log.info('Binance import stats: {}'.format(
-            [{entry_class.__name__: count} for entry_class, count in stats.items()],
+        log.debug(f'Skipped Binance trade rows: {skipped_trade_rows}')
+        log.debug(f'Skipped Binance non-trade rows {skipped_nontrade_rows}')
+        log.debug(f'Total found Binance entries: {total_found}')
+        log.debug(f'Total skipped Binance csv rows: {skipped_count}')
+        log.debug('Binance import stats: {}'.format(
+            [{type(entry_class).__name__: amount} for entry_class, amount in stats.items()],
         ))
         if skipped_count > 0:
             self.db.msg_aggregator.add_warning(

@@ -413,7 +413,7 @@ def test_data_import_custom_format(rotkehlchen_api_server, file_upload):
 
 
 def test_data_import_binance_history(rotkehlchen_api_server):
-    """Test that the data import endpoint works successfully for uphold trades"""
+    """Test that the data import endpoint works successfully for binance data"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'binance_history.csv'

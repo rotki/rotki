@@ -186,7 +186,7 @@ TradeDBTuple = Tuple[
 ]
 
 
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class Trade(AccountingEventMixin):
     """Represents a Trade
 

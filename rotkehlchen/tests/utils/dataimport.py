@@ -1151,7 +1151,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             fee=None,
             fee_currency=None,
             link='',
-            notes=None,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
         Trade(
             timestamp=Timestamp(1604042198),
@@ -1164,7 +1164,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             fee=None,
             fee_currency=None,
             link='',
-            notes=None,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
         Trade(
             timestamp=Timestamp(1604067680),
@@ -1177,7 +1177,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             fee=Fee(FVal('-0.00003605')),
             fee_currency=A_ETH,
             link='',
-            notes=None,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
         Trade(
             timestamp=Timestamp(1604070545),
@@ -1190,7 +1190,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             fee=None,
             fee_currency=None,
             link='',
-            notes=None,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
         Trade(
             timestamp=Timestamp(1604437979),
@@ -1203,7 +1203,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             fee=Fee(FVal('-0.00008345')),
             fee_currency=A_ETH,
             link='',
-            notes=None,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
         Trade(
             timestamp=Timestamp(1604437979),
@@ -1216,7 +1216,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             fee=Fee(FVal('-0.00009009')),
             fee_currency=asset_from_binance('BNB'),
             link='',
-            notes=None,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
         Trade(
             timestamp=Timestamp(1605169314),
@@ -1229,20 +1229,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             fee=Fee(FVal('-0.0001057')),
             fee_currency=asset_from_binance('BNB'),
             link='',
-            notes=None,
-        ),
-        Trade(
-            timestamp=Timestamp(1605903740),
-            location=Location.BINANCE,
-            base_asset=asset_from_binance('BNB'),
-            quote_asset=Asset('SOL-2'),
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('0.000237955')),
-            rate=Price(FVal('1.643676176003315604061614975')),
-            fee=None,
-            fee_currency=None,
-            link='',
-            notes=None,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
         Trade(
             timestamp=Timestamp(1605903740),
@@ -1255,7 +1242,20 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             fee=None,
             fee_currency=None,
             link='',
-            notes=None,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+        ),
+        Trade(
+            timestamp=Timestamp(1605903740),
+            location=Location.BINANCE,
+            base_asset=asset_from_binance('BNB'),
+            quote_asset=Asset('SOL-2'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.000237955')),
+            rate=Price(FVal('1.643676176003315604061614975')),
+            fee=None,
+            fee_currency=None,
+            link='',
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
         Trade(
             timestamp=Timestamp(1605910681),
@@ -1268,7 +1268,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             fee=Fee(FVal('-1.15756')),
             fee_currency=A_USDT,
             link='',
-            notes=None,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
         Trade(
             timestamp=Timestamp(1605911401),
@@ -1281,7 +1281,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             fee=Fee(FVal('-0.882')),
             fee_currency=Asset('IOTA'),
             link='',
-            notes=None,
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
     ]
     expected_asset_movements = [
@@ -1295,7 +1295,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             amount=FVal(245.25),
             fee_asset=A_USD,
             fee=Fee(ZERO),
-            link='',
+            link='Imported from binance CSV file. Binance operation: Deposit',
         ),
         AssetMovement(
             location=Location.BINANCE,
@@ -1307,7 +1307,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             amount=FVal(0.16),
             fee_asset=A_USD,
             fee=Fee(ZERO),
-            link='',
+            link='Imported from binance CSV file. Binance operation: Withdraw',
         ),
     ]
     expected_ledger_actions = [
@@ -1321,7 +1321,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             rate=None,
             rate_asset=None,
             link=None,
-            notes='POS savings purchase',
+            notes='Imported from binance CSV file. Binance operation: POS savings purchase',
         ),
         LedgerAction(
             identifier=2,
@@ -1333,7 +1333,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             rate=None,
             rate_asset=None,
             link=None,
-            notes='ETH 2.0 Staking Rewards',
+            notes='Imported from binance CSV file. Binance operation: ETH 2.0 Staking Rewards',
         ),
         LedgerAction(
             identifier=3,
@@ -1345,7 +1345,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             rate=None,
             rate_asset=None,
             link=None,
-            notes='Launchpool Interest',
+            notes='Imported from binance CSV file. Binance operation: Launchpool Interest',
         ),
         LedgerAction(
             identifier=4,
@@ -1357,7 +1357,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             rate=None,
             rate_asset=None,
             link=None,
-            notes='POS savings redemption',
+            notes='Imported from binance CSV file. Binance operation: POS savings redemption',
         ),
         LedgerAction(
             identifier=5,
@@ -1369,7 +1369,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             rate=None,
             rate_asset=None,
             link=None,
-            notes='POS savings interest',
+            notes='Imported from binance CSV file. Binance operation: POS savings interest',
         ),
     ]
 

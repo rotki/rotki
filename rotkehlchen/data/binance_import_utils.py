@@ -1,6 +1,6 @@
+import abc
 import logging
 from collections import Counter, defaultdict
-from itertools import groupby
 from typing import Any, Dict, List, Optional
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
@@ -21,6 +21,7 @@ from rotkehlchen.types import (
     Location,
     Price,
     Timestamp,
+    TradeID,
     TradeType,
 )
 
@@ -29,17 +30,14 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class BinanceEntry:
+class BinanceEntry(metaclass=abc.ABCMeta):
     """This is a base BinanceEntry class
     All row combinations in the Binance csv have to be inherited from this base class
     """
 
-    db: DBHandler
-    db_ledger: DBLedgerActions
 
-
-class BinanceSingleEntry(BinanceEntry):
-    """Children of this class represent a single-row entries
+class BinanceSingleEntry(BinanceEntry, metaclass=abc.ABCMeta):
+    """Children of this class represent single-row entries
     It means that all required data to create an internal representation
     is contained in one csv row
 
@@ -48,36 +46,45 @@ class BinanceSingleEntry(BinanceEntry):
     """
     available_operations: List[str]
 
-    @classmethod
-    def is_entry(cls, requested_operation: str) -> bool:
+    def is_entry(self, requested_operation: str) -> bool:
         """This method checks whether row with "requested_operation" could be processed
         by a class on which this method has been called
         The default implementation can also be used in a subclass"""
-        return requested_operation in cls.available_operations
+        return requested_operation in self.available_operations
 
-    @classmethod
-    def process_entry(cls, timestamp: Timestamp, data: BinanceCsvRow) -> None:
-        """This method receives csv row and processes it into internal Rotki's representation
+    @abc.abstractmethod
+    def process_entry(
+            self,
+            db: DBHandler,
+            db_ledger: DBLedgerActions,
+            timestamp: Timestamp,
+            data: BinanceCsvRow,
+    ) -> None:
+        """This method receives a csv row and processes it into internal Rotki's representation
         Should be implemented by subclass."""
-        raise NotImplementedError('Should be implemented by subclass')
+        ...
 
 
-class BinanceMultipleEntry(BinanceEntry):
-    @classmethod
-    def are_entries(cls, requested_operations: List) -> bool:
+class BinanceMultipleEntry(BinanceEntry, metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def are_entries(self, requested_operations: List) -> bool:
         """The subclass's method checks whether requested operations can be processed
         Not implemented here because the logic can differ for each subclass"""
-        raise NotImplementedError('Should be implemented by subclass')
+        ...
 
-    @classmethod
-    def process_entries(cls, timestamp: Timestamp, data: List[BinanceCsvRow]) -> int:
+    @abc.abstractmethod
+    def process_entries(
+        self,
+        db: DBHandler,
+        timestamp: Timestamp,
+        data: List[BinanceCsvRow],
+    ) -> int:
         """Turns given csv rows into internal Rotki's representation"""
-        raise NotImplementedError('Should be implemented by subclass')
+        ...
 
 
 class BinanceTradeEntry(BinanceMultipleEntry):
-    @classmethod
-    def are_entries(cls, requested_operations: List) -> bool:
+    def are_entries(self, requested_operations: List) -> bool:
         """This class supports several formats of Trade entries from the csv.
         Supports the following combinations of "Operation" column's values:
             - Buy + Buy
@@ -106,17 +113,12 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         )
 
     @staticmethod
-    def is_fee_key(x: BinanceCsvRow) -> bool:
-        return x['Operation'] == 'Fee'
-
-    @staticmethod
-    def unique_trades_key(t_dict: Dict) -> str:
-        # Because we list and dict are unhashable, we need this function to sort and group them
-        return ';'.join(sorted([f'{x[0]}: {x[1]}' for x in t_dict.items()]))
-
-    @classmethod
-    def process_trades(cls, timestamp: Timestamp, data: List[BinanceCsvRow]) -> List[Trade]:
-        """Processes multirows data and stores it into Rotki's Trades
+    def process_trades(
+        db: DBHandler,
+        timestamp: Timestamp,
+        data: List[BinanceCsvRow],
+    ) -> List[Trade]:
+        """Processes multiple rows data and stores it into rotki's trades
         Each row has format: {'Operation': ..., 'Change': ..., 'Coin': ...}
         Change is amount, Coin is asset
         If amount is negative then this asset is sold, otherwise it's bought
@@ -126,7 +128,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         # sold value. We query usd equivalent for each amount because different Sells / Buys
         # may use different assets.
 
-        # Querying price takes a long time, so we would like to avoid it,
+        # If we query price for the first time it can take long, so we would like to avoid it,
         # and therefore we check if all Buys / Sells use the same asset.
         # If so, we can group by original amount.
 
@@ -146,7 +148,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                 break
 
         # Querying usd value if needed
-        if not same_assets:
+        if same_assets is False:
             for row in data:
                 try:
                     price = PriceHistorian.query_historical_price(
@@ -160,99 +162,107 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                     return []
                 row['usd_value'] = row['Change'] * price
 
-        # Soring by amount
-        rows_by_operation = {}
-        for is_fee, rows in groupby(sorted(data, key=cls.is_fee_key), key=cls.is_fee_key):
-            rows_by_operation[is_fee] = sorted(
-                rows, key=lambda x: x['Change'] if same_assets else x['usd_value'],
-            )
+        # Group rows depending on whether they are fee or not and then sort them by amount
+        rows_grouped_by_fee: Dict[bool, List[BinanceCsvRow]] = defaultdict(list)
+        for row in data:
+            is_fee = row['Operation'] == 'Fee'
+            rows_grouped_by_fee[is_fee].append(row)
+
+        for rows_group in rows_grouped_by_fee.values():
+            rows_group.sort(key=lambda x: x['Change'] if same_assets else x['usd_value'], reverse=True)  # noqa: E501
 
         # Grouping by combining the highest sold with the highest bought and the highest fee
         # Using fee only we were provided with fee (checking by "True in rows_by_operation")
         grouped_trade_rows = []
-        while len(rows_by_operation[False]) > 0:
-            cur_batch = [rows_by_operation[False].pop(0), rows_by_operation[False].pop(-1)]
-            if True in rows_by_operation:
-                cur_batch.append(rows_by_operation[True].pop(0))
+        while len(rows_grouped_by_fee[False]) > 0:
+            cur_batch = [rows_grouped_by_fee[False].pop(), rows_grouped_by_fee[False].pop(0)]
+            if True in rows_grouped_by_fee:
+                cur_batch.append(rows_grouped_by_fee[True].pop())
             grouped_trade_rows.append(cur_batch)
 
-        # Sometimes we can get absolutely identical trades, so we prepare data
-        # by creating dictionaries with values
-        # We don't create Trade classes there because Trade classes are immutable
-        # so working with dictionaries is nicer here
-        prepared_trade_dicts = []
+        # Creating trades structures based on grouped rows data
+        raw_trades: List[Trade] = []
         for trade_rows in grouped_trade_rows:
-            cur_data: BinanceCsvRow = defaultdict(lambda: None)
+            to_asset: Optional[Asset] = None
+            to_amount: Optional[AssetAmount] = None
+            from_asset: Optional[Asset] = None
+            from_amount: Optional[AssetAmount] = None
+            fee_asset: Optional[Asset] = None
+            fee_amount: Optional[Fee] = None
+            trade_type: Optional[TradeType] = None
+
             for row in trade_rows:
                 cur_asset = row['Coin']
                 amount = row['Change']
                 if row['Operation'] == 'Fee':
-                    cur_data['fee_asset'] = cur_asset
-                    cur_data['fee_amount'] = Fee(amount)
+                    fee_asset = cur_asset
+                    fee_amount = Fee(amount)
                 else:
-                    cur_data['trade_type'] = TradeType.SELL if row['Operation'] == 'Sell' else TradeType.BUY  # noqa:  E501
+                    trade_type = TradeType.SELL if row['Operation'] == 'Sell' else TradeType.BUY  # noqa:  E501
                     if amount < 0:
-                        cur_data['from_asset'] = cur_asset
-                        cur_data['from_amount'] = AssetAmount(-amount)
+                        from_asset = cur_asset
+                        from_amount = AssetAmount(-amount)
                     else:
-                        cur_data['to_asset'] = cur_asset
-                        cur_data['to_amount'] = amount
-            prepared_trade_dicts.append(cur_data)
+                        to_asset = cur_asset
+                        to_amount = amount
 
-        # Validating that all trades have required properties
-        # Assets are validated in the grouping method, so we don't need to do it there
-        for dict_trade in prepared_trade_dicts:
+            # Validate that we have received proper assets and amounts.
+            # There can be no fee, so we don't validate it
             if (
-                dict_trade['to_amount'] is None or dict_trade['to_amount'] == ZERO or
-                dict_trade['from_amount'] is None or dict_trade['from_amount'] == ZERO
+                to_asset is None or from_asset is None or trade_type is None or
+                to_amount is None or to_amount == ZERO or
+                from_amount is None or from_amount == ZERO
             ):
                 log.warning(
                     f'Skipped binance rows {data} because '
-                    f'trade {dict_trade} didn\'t have enough amounts data',
+                    f'it didn\'t have enough data',
                 )
-                cls.db.msg_aggregator.add_warning(
-                    'Skipped some rows because couldn\'t find amounts or it was zero',
-                )
-                return []
+                db.msg_aggregator.add_warning('Skipped some rows because couldn\'t find amounts or it was zero')  # noqa: E501
+                continue
 
-        # Grouping identical trades
-        grouped_trades_dicts = []
-        for _, grouped_trades in groupby(sorted(prepared_trade_dicts, key=cls.unique_trades_key), key=cls.unique_trades_key):  # noqa: E501
-            grouped_trades_dicts.append(list(grouped_trades))
-
-        # Combining identical trades
-        unique_trade_dicts = []
-        for trades_dict_group in grouped_trades_dicts:
-            result_trade_dict = trades_dict_group[0]
-            for trade_dict in trades_dict_group[1:]:
-                result_trade_dict['to_amount'] += trade_dict['to_amount']
-                result_trade_dict['from_amount'] += trade_dict['from_amount']
-                if result_trade_dict['fee_amount'] is not None:
-                    result_trade_dict['fee_amount'] += trade_dict['fee_amount']
-            unique_trade_dicts.append(result_trade_dict)
-
-        # Creating Trade classes.
-        trades = []
-        for trade_dict in unique_trade_dicts:
-            rate = FVal(trade_dict['to_amount']) / FVal(trade_dict['from_amount'])
-            trades.append(Trade(
+            rate = FVal(to_amount) / FVal(from_amount)
+            trade = Trade(
                 timestamp=timestamp,
                 location=Location.BINANCE,
-                base_asset=trade_dict['to_asset'],
-                quote_asset=trade_dict['from_asset'],
-                trade_type=trade_dict['trade_type'],
-                amount=trade_dict['to_amount'],
+                trade_type=trade_type,
+                base_asset=to_asset,
+                quote_asset=from_asset,
+                amount=to_amount,
                 rate=Price(rate),
-                fee=trade_dict['fee_amount'],
-                fee_currency=trade_dict['fee_asset'],
+                fee_currency=fee_asset,
+                fee=fee_amount,
                 link='',
-            ))
-        return trades
+                notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+            )
+            raw_trades.append(trade)
 
-    @classmethod
-    def process_entries(cls, timestamp: Timestamp, data: List[BinanceCsvRow]) -> int:
-        trades = cls.process_trades(timestamp=timestamp, data=data)
-        cls.db.add_trades(trades)
+        # Sometimes we can get absolutely identical trades (including timestamp) but the database
+        # allows us to add only one of them. So we combine these trades into a huge single trade
+        # First step: group trades
+        grouped_trades: Dict[TradeID, List[Trade]] = defaultdict(list)
+        for trade in raw_trades:
+            grouped_trades[trade.identifier].append(trade)
+
+        # Second step: combine them
+        unique_trades = []
+        for trades_group in grouped_trades.values():
+            result_trade = trades_group[0]
+            for trade in trades_group[1:]:
+                result_trade.amount = AssetAmount(result_trade.amount + trade.amount)  # noqa: E501
+                if result_trade.fee is not None and trade.fee is not None:
+                    result_trade.fee = Fee(result_trade.fee + trade.fee)
+            unique_trades.append(result_trade)
+
+        return unique_trades
+
+    def process_entries(
+        self,
+        db: DBHandler,
+        timestamp: Timestamp,
+        data: List[BinanceCsvRow],
+    ) -> int:
+        trades = self.process_trades(db=db, timestamp=timestamp, data=data)
+        db.add_trades(trades)
         return len(trades)
 
 
@@ -262,8 +272,13 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
 
     available_operations = ['Deposit', 'Withdraw']
 
-    @classmethod
-    def process_entry(cls, timestamp: Timestamp, data: BinanceCsvRow) -> None:
+    def process_entry(
+        self,
+        db: DBHandler,
+        db_ledger: DBLedgerActions,
+        timestamp: Timestamp,
+        data: BinanceCsvRow,
+    ) -> None:
         amount = data['Change']
         asset = data['Coin']
         category = AssetMovementCategory.DEPOSIT if data['Operation'] == 'Deposit' else AssetMovementCategory.WITHDRAWAL  # noqa: E501
@@ -280,9 +295,9 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
             amount=AssetAmount(amount),
             fee=Fee(ZERO),
             fee_asset=A_USD,
-            link='',
+            link=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
-        cls.db.add_asset_movements([asset_movement])
+        db.add_asset_movements([asset_movement])
 
 
 class BinanceStakingRewardsEntry(BinanceSingleEntry):
@@ -291,8 +306,13 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
 
     available_operations = ['ETH 2.0 Staking Rewards', 'Launchpool Interest']
 
-    @classmethod
-    def process_entry(cls, timestamp: Timestamp, data: BinanceCsvRow) -> None:
+    def process_entry(
+            self,
+            db: DBHandler,
+            db_ledger: DBLedgerActions,
+            timestamp: Timestamp,
+            data: BinanceCsvRow,
+    ) -> None:
         asset = data['Coin']
         amount = data['Change']
         ledger_action = LedgerAction(
@@ -305,9 +325,9 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
             rate=None,
             rate_asset=None,
             link=None,
-            notes=data['Operation'],
+            notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
-        cls.db_ledger.add_ledger_action(ledger_action)
+        db_ledger.add_ledger_action(ledger_action)
 
 
 class BinancePOSEntry(BinanceSingleEntry):
@@ -320,8 +340,13 @@ class BinancePOSEntry(BinanceSingleEntry):
         'POS savings redemption',
     ]
 
-    @classmethod
-    def process_entry(cls, timestamp: Timestamp, data: BinanceCsvRow) -> None:
+    def process_entry(
+            self,
+            db: DBHandler,
+            db_ledger: DBLedgerActions,
+            timestamp: Timestamp,
+            data: BinanceCsvRow,
+    ) -> None:
         asset = data['Coin']
         amount = data['Change']
         action_type = LedgerActionType.INCOME if amount > 0 else LedgerActionType.EXPENSE
@@ -336,6 +361,6 @@ class BinancePOSEntry(BinanceSingleEntry):
             rate=None,
             rate_asset=None,
             link=None,
-            notes=data['Operation'],
+            notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
-        cls.db_ledger.add_ledger_action(ledger_action)
+        db_ledger.add_ledger_action(ledger_action)
