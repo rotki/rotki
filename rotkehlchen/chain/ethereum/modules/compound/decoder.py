@@ -6,12 +6,12 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.utils import symbol_to_ethereum_token
+from rotkehlchen.assets.utils import symbol_to_asset_or_token, symbol_to_ethereum_token
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants.assets import A_COMP
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
@@ -88,8 +88,8 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         redeem_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         redeem_tokens_raw = hex_or_bytes_to_int(tx_log.data[64:96])
-        underlying_token = symbol_to_ethereum_token(compound_token.symbol[1:])
-        redeem_amount = token_normalized_value(redeem_amount_raw, underlying_token)
+        underlying_token = symbol_to_asset_or_token(compound_token.symbol[1:])
+        redeem_amount = asset_normalized_value(redeem_amount_raw, underlying_token)
         redeem_tokens = token_normalized_value(redeem_tokens_raw, compound_token)
         out_event = in_event = None
         for event in decoded_events:
