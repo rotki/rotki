@@ -213,6 +213,17 @@ export const transactionEventTypeData: ActionDataEntry[] = [
     color: 'green'
   },
   {
+    identifier: TransactionEventType.SWAP_OUT,
+    label: i18n.t('transactions.events.type.swap_out').toString(),
+    icon: 'mdi-arrow-u-right-bottom'
+  },
+  {
+    identifier: TransactionEventType.SWAP_IN,
+    label: i18n.t('transactions.events.type.swap_in').toString(),
+    icon: 'mdi-arrow-u-left-top',
+    color: 'green'
+  },
+  {
     identifier: TransactionEventType.APPROVAL,
     label: i18n.t('transactions.events.type.approval').toString(),
     icon: 'mdi-lock-open-outline'
@@ -305,8 +316,8 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.BRIDGE]: TransactionEventType.BRIDGE
   },
   [HistoryEventType.TRADE]: {
-    [HistoryEventSubType.SPEND]: TransactionEventType.SEND,
-    [HistoryEventSubType.RECEIVE]: TransactionEventType.RECEIVE
+    [HistoryEventSubType.SPEND]: TransactionEventType.SWAP_OUT,
+    [HistoryEventSubType.RECEIVE]: TransactionEventType.SWAP_IN
   },
   [HistoryEventType.WITHDRAWAL]: {
     [HistoryEventSubType.NONE]: TransactionEventType.WITHDRAW,

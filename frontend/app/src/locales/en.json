@@ -2907,6 +2907,8 @@
         "gas_fee": "Gas Fee",
         "send": "Send",
         "receive": "Receive",
+        "swap_out": "Swap",
+        "swap_in": "Receive",
         "approval": "Approval",
         "deposit": "Deposit",
         "withdraw": "Withdraw",

@@ -48,6 +48,8 @@ export enum TransactionEventType {
   GAS = 'gas',
   SEND = 'send',
   RECEIVE = 'receive',
+  SWAP_OUT = 'swap_out',
+  SWAP_IN = 'swap_in',
   APPROVAL = 'approval',
   DEPOSIT = 'deposit',
   WITHDRAW = 'withdraw',
