@@ -657,7 +657,6 @@ class EthereumManager():
         for reversed_addr, params, resolver_output in zip(reversed_addresses, resolver_params, resolvers_output):  # noqa: E501
             decoded_resolver = _decode_ens_contract(params=params, result_encoded=resolver_output)
             if is_none_or_zero_address(decoded_resolver):
-                log.error(f'Got zero resolver address for address {reversed_addr}')
                 human_names[reversed_addr] = None
                 continue
             try:
