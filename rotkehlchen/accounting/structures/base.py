@@ -1,5 +1,5 @@
-
-
+import json
+import logging
 from dataclasses import dataclass
 from enum import auto
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
@@ -8,6 +8,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventMixin, Accounting
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
@@ -17,6 +18,10 @@ from .balance import Balance
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
+
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class ActionType(DBEnumMixIn):
@@ -91,6 +96,7 @@ HISTORY_EVENT_DB_TUPLE_READ = Tuple[
     str,            # type
     str,            # subtype
     Optional[str],  # counterparty
+    Optional[str],  # extra_data
 ]
 
 HISTORY_EVENT_DB_TUPLE_WRITE = Tuple[
@@ -106,6 +112,7 @@ HISTORY_EVENT_DB_TUPLE_WRITE = Tuple[
     str,            # type
     str,            # subtype
     Optional[str],  # counterparty
+    Optional[str],  # extra_data
 ]
 
 
@@ -139,8 +146,9 @@ class HistoryBaseEntry(AccountingEventMixin):
     # For a protocol interaction it's the protocol.
     counterparty: Optional[str] = None
     identifier: Optional[int] = None
-    # this is not serialized -- contains data used only during processing
-    extras: Optional[Dict] = None
+    # contains event specific extra data. Optional, only for events that need to keep
+    # extra information such as the CDP ID of a makerdao vault etc.
+    extra_data: Optional[Dict[str, Any]] = None
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
         return (
@@ -156,6 +164,7 @@ class HistoryBaseEntry(AccountingEventMixin):
             self.event_type.serialize(),
             self.event_subtype.serialize(),
             self.counterparty,
+            json.dumps(self.extra_data) if self.extra_data else None,
         )
 
     @classmethod
@@ -164,6 +173,16 @@ class HistoryBaseEntry(AccountingEventMixin):
         - DeserializationError
         - UnknownAsset
         """
+        extra_data = None
+        if entry[13] is not None:
+            try:
+                extra_data = json.loads(entry[13])
+            except json.JSONDecodeError as e:
+                log.debug(
+                    f'Failed to read extra_data when reading HistoryBaseEntry entry '
+                    f'{entry} from the DB due to {str(e)}. Setting it to null',
+                )
+
         try:
             return HistoryBaseEntry(
                 identifier=entry[0],
@@ -183,6 +202,7 @@ class HistoryBaseEntry(AccountingEventMixin):
                 event_type=HistoryEventType.deserialize(entry[10]),
                 event_subtype=HistoryEventSubType.deserialize(entry[11]),
                 counterparty=entry[12],
+                extra_data=extra_data,
             )
         except ValueError as e:
             raise DeserializationError(

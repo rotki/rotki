@@ -10,12 +10,7 @@ from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import A_COMP, A_ETH
-from rotkehlchen.constants.ethereum import (
-    CTOKEN_ABI,
-    ERC20TOKEN_ABI,
-    ETH_SPECIAL_ADDRESS,
-    EthereumConstants,
-)
+from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
@@ -29,6 +24,8 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import hexstr_to_int, ts_now
 
+from .constants import COMP_DEPLOYED_BLOCK, COMPTROLLER_PROXY
+
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -38,8 +35,6 @@ BLOCKS_PER_DAY = 4 * 60 * 24
 DAYS_PER_YEAR = 365
 ETH_MANTISSA = 10**18
 
-COMPTROLLER_PROXY = EthereumConstants().contract('COMPTROLLER_PROXY')
-COMP_DEPLOYED_BLOCK = 9601359
 
 LEND_EVENTS_QUERY_PREFIX = """{graph_event_name}
 (where: {{blockTime_lte: $end_ts, blockTime_gte: $start_ts, {addr_position}: $address}}) {{

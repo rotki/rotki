@@ -32,10 +32,9 @@ class Aavev1Accountant(ModuleAccountantInterface):
             event: HistoryBaseEntry,
             other_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
-        address = event.location_label
-        if address is None:
-            return
-        self.balances[address][event.asset] += event.balance.amount  # type: ignore
+
+        address = cast(ChecksumEthAddress, event.location_label)  # should always exist
+        self.balances[address][event.asset] += event.balance.amount
 
     def _process_withdraw(
             self,
@@ -43,14 +42,12 @@ class Aavev1Accountant(ModuleAccountantInterface):
             event: HistoryBaseEntry,
             other_events: List[HistoryBaseEntry],
     ) -> None:
-        if event.location_label is None:
-            return
-        address = cast(ChecksumEthAddress, event.location_label)
+        address = cast(ChecksumEthAddress, event.location_label)  # should always exist
         withdraw_event = other_events[0]
         self.balances[address][withdraw_event.asset] += withdraw_event.balance.amount  # noqa: E501
 
         if self.balances[address][withdraw_event.asset] < ZERO:
-            profit = abs(self.balances[address][withdraw_event.asset])
+            profit = -1 * self.balances[address][withdraw_event.asset]
             pot.add_acquisition(
                 event_type=AccountingEventType.TRANSACTION_EVENT,
                 notes=f'Gained {profit} {withdraw_event.asset} from {CPT_AAVE_V1}',

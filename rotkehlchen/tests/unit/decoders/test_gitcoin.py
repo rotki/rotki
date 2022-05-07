@@ -42,8 +42,6 @@ def test_gitcoin_old_donation(database, ethereum_manager, function_scope_message
             location_label=ADDY,
             notes=f'Burned 0.000055118 ETH in gas from {ADDY}',
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=164,
@@ -56,8 +54,6 @@ def test_gitcoin_old_donation(database, ethereum_manager, function_scope_message
             location_label=ADDY,
             notes=f'Donate 0.95 SAI from {ADDY} to gitcoin',
             counterparty=CPT_GITCOIN,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=165,
@@ -70,8 +66,6 @@ def test_gitcoin_old_donation(database, ethereum_manager, function_scope_message
             location_label=ADDY,
             notes=f'Donate 0.05 SAI from {ADDY} to gitcoin',
             counterparty=CPT_GITCOIN,
-            identifier=None,
-            extras=None,
         ),
     ]
     assert events == expected_events

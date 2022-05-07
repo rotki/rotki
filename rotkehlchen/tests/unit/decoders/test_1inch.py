@@ -44,8 +44,6 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             location_label=ADDY,
             notes=f'Burned 0.00896373909 ETH in gas from {ADDY}',
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=90,
@@ -58,8 +56,6 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             location_label=ADDY,
             notes=f'Swap 138.75 USDC in 1inch-v1 from {ADDY}',
             counterparty=CPT_ONEINCH_V1,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=91,
@@ -72,8 +68,6 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             location_label=ADDY,
             notes=f'Receive 135.959878392183347402 DAI from 1inch-v1 swap in {ADDY}',
             counterparty=CPT_ONEINCH_V1,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=102,
@@ -86,8 +80,6 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             location_label=ADDY,
             notes=f'Send 0 CHI from {ADDY} to {ZERO_ADDRESS}',
             counterparty=ZERO_ADDRESS,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=103,
@@ -100,8 +92,6 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             location_label=ADDY,
             notes=f'Approve 0 CHI of {ADDY} for spending by {chispender_addy}',
             counterparty=chispender_addy,
-            identifier=None,
-            extras=None,
         ),
     ]
     assert expected_events == events
@@ -137,8 +127,6 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
             location_label=ADDY,
             notes=f'Burned 0.002618947 ETH in gas from {ADDY}',
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=217,
@@ -151,8 +139,6 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
             location_label=ADDY,
             notes='Swap 2152.63 PAN in 1inch-v2',
             counterparty=CPT_ONEINCH_V2,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=218,
@@ -165,8 +151,6 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
             location_label=ADDY,
             notes='Receive 0.220582251767407014 ETH from 1inch-v2 swap',
             counterparty=CPT_ONEINCH_V2,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=221,
@@ -179,8 +163,6 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
             location_label=ADDY,
             notes=f'Approve 1.157920892373161954235709850E+59 PAN of {ADDY} for spending by {oneinch_v2_addy}',  # noqa: E501
             counterparty=oneinch_v2_addy,
-            identifier=None,
-            extras=None,
         ),
     ]
     assert expected_events == events

@@ -58,6 +58,7 @@ from .constants import (
     XDAI_BRIDGE_RECEIVE,
 )
 from .structures import ActionItem
+from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
@@ -523,6 +524,21 @@ class EVMTransactionDecoder():
                     transfer.notes = action_item.to_notes
                 if action_item.to_counterparty is not None:
                     transfer.counterparty = action_item.to_counterparty
+                if action_item.extra_data is not None:
+                    transfer.extra_data = action_item.extra_data
+
+                if action_item.paired_event_data is not None:
+                    # If there is a paired event to this, take care of the order
+                    out_event = transfer
+                    in_event = action_item.paired_event_data[0]
+                    if action_item.paired_event_data[1] is True:
+                        out_event = action_item.paired_event_data[0]
+                        in_event = transfer
+                    maybe_reshuffle_events(
+                        out_event=out_event,
+                        in_event=in_event,
+                        events_list=decoded_events + [transfer],
+                    )
 
                 action_items.pop(idx)
                 break  # found an action item and acted on it

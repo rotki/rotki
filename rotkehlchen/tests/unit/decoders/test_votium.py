@@ -92,8 +92,6 @@ def test_votium_claim(database, ethereum_manager):
             location_label='0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',
             notes='Burned 0.00393701451 ETH in gas from 0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',  # noqa: E501
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier='0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30',
             sequence_index=351,
@@ -106,7 +104,5 @@ def test_votium_claim(database, ethereum_manager):
             location_label='0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',
             notes='Receive 12.369108326706528256 FXS from votium bribe',
             counterparty='votium',
-            identifier=None,
-            extras=None,
         )]
     assert events == expected_events

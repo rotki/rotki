@@ -118,8 +118,6 @@ def test_curve_deposit(database, ethereum_manager):
             location_label=location_label,
             notes='Burned 0.00393701451 ETH in gas from 0x57bF3B0f29E37619623994071C9e12091919675c',  # noqa: E501
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=371,
@@ -132,8 +130,6 @@ def test_curve_deposit(database, ethereum_manager):
             location_label=location_label,
             notes='Deposit 401746.57 DAI in curve pool',
             counterparty=CPT_CURVE,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=384,
@@ -146,8 +142,6 @@ def test_curve_deposit(database, ethereum_manager):
             location_label=location_label,
             notes='Deposit 25977.37 USDT in curve pool',
             counterparty=CPT_CURVE,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=397,
@@ -160,8 +154,6 @@ def test_curve_deposit(database, ethereum_manager):
             location_label=location_label,
             notes='Receive 392698.416886553664731892 a3CRV after depositing in curve pool',
             counterparty=CPT_CURVE,
-            identifier=None,
-            extras=None,
         )]
     assert len(events) == 4
     assert events == expected_events
@@ -260,8 +252,6 @@ def test_curve_deposit_eth(database, ethereum_manager):
             location_label=location_label,
             notes='Burned 0.00393701451 ETH in gas from 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2',  # noqa: E501
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=1,
@@ -274,8 +264,6 @@ def test_curve_deposit_eth(database, ethereum_manager):
             location_label=location_label,
             notes='Deposit 0.2 ETH in curve pool',
             counterparty=CPT_CURVE,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=414,
@@ -288,8 +276,6 @@ def test_curve_deposit_eth(database, ethereum_manager):
             location_label=location_label,
             notes='Deposit 0.19993786 stETH in curve pool',
             counterparty=CPT_CURVE,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=415,
@@ -302,8 +288,6 @@ def test_curve_deposit_eth(database, ethereum_manager):
             location_label=location_label,
             notes='Approve 1.157920892373161954235709850E+59 stETH of 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2 for spending by 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
             counterparty='0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=416,
@@ -316,8 +300,6 @@ def test_curve_deposit_eth(database, ethereum_manager):
             location_label=location_label,
             notes='Receive 0.385232873991059423 steCRV after depositing in curve pool',
             counterparty=CPT_CURVE,
-            identifier=None,
-            extras=None,
         )]
     assert len(events) == 5
     assert events == expected_events
@@ -414,8 +396,6 @@ def test_curve_remove_liquidity(database, ethereum_manager):
             location_label=location_label,
             notes='Burned 0.00393701451 ETH in gas from 0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6',  # noqa: E501
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=507,
@@ -428,8 +408,6 @@ def test_curve_remove_liquidity(database, ethereum_manager):
             location_label=location_label,
             notes='Return 3108.372467134893484707 linkCRV',
             counterparty=CPT_CURVE,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=508,
@@ -442,8 +420,6 @@ def test_curve_remove_liquidity(database, ethereum_manager):
             location_label=location_label,
             notes='Remove 3120.992481448818559504 LINK from the curve pool',
             counterparty=CPT_CURVE,
-            identifier=None,
-            extras=None,
         )]
     assert expected_events == events
 
@@ -530,8 +506,6 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager):
             location_label=location_label,
             notes='Burned 0.00393701451 ETH in gas from 0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC',  # noqa: E501
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=1,
@@ -544,8 +518,6 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager):
             location_label=location_label,
             notes='Remove 1.02930131799766041 ETH from the curve pool',
             counterparty=CPT_CURVE,
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=193,
@@ -558,7 +530,5 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager):
             location_label=location_label,
             notes='Return 0.991695529556581896 steCRV',
             counterparty=CPT_CURVE,
-            identifier=None,
-            extras=None,
         )]
     assert expected_events == events

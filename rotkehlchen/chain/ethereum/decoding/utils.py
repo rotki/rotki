@@ -34,11 +34,16 @@ def maybe_reshuffle_events(
     if events_list is not None:
         events_num = len(events_list)
         for idx, event in enumerate(events_list):
-            if event == out_event and idx + 1 < events_num and events_list[idx + 1] != in_event:  # noqa: E501
-                if events_list[idx + 1].sequence_index != event.sequence_index + 1:
-                    in_event.sequence_index = event.sequence_index + 1  # if next index free,use it
+            if event == out_event:
+                next_idx = idx + 1
+                if next_idx >= events_num:  # if no more events, then use push in event after out
+                    in_event.sequence_index = event.sequence_index + 1
                     break
+                if events_list[next_idx] != in_event and events_list[next_idx].sequence_index != event.sequence_index + 1:  # noqa: E501
+                    # else if we have more events and next sequence index is free
+                    in_event.sequence_index = event.sequence_index + 1
+                    break  # use it for the in event
 
                 # otherwise swap index of next event with the in event
-                _swap_event_indices(events_list[idx + 1], in_event)
+                _swap_event_indices(events_list[next_idx], in_event)
                 break

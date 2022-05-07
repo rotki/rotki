@@ -90,8 +90,6 @@ def test_1inch_claim(database, ethereum_manager):
             location_label='0xc931De6d845846E332a52D045072E3feF540Bd5d',
             notes='Burned 0.00393701451 ETH in gas from 0xc931De6d845846E332a52D045072E3feF540Bd5d',  # noqa: E501
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier='0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
             sequence_index=298,
@@ -104,8 +102,6 @@ def test_1inch_claim(database, ethereum_manager):
             location_label='0xc931De6d845846E332a52D045072E3feF540Bd5d',
             notes='Claim 609.397099685988397871 1INCH from the 1INCH airdrop',
             counterparty=CPT_ONEINCH,
-            identifier=None,
-            extras=None,
         ),
     ]
     assert events == expected_events
@@ -195,8 +191,6 @@ def test_xdai_bridge(database, ethereum_manager):
             location_label='0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',
             notes='Burned 0.00393701451 ETH in gas from 0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',  # noqa: E501
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier='0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02',
             sequence_index=474,
@@ -209,8 +203,6 @@ def test_xdai_bridge(database, ethereum_manager):
             location_label='0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',
             notes='Bridge 159137.254963 USDC from XDAI',
             counterparty='XDAI',
-            identifier=None,
-            extras=None,
         ),
     ]
     assert events == expected_events
@@ -286,8 +278,6 @@ def test_gitcoin_claim(database, ethereum_manager):
             location_label='0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',
             notes='Burned 0.00393701451 ETH in gas from 0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',  # noqa: E501
             counterparty='gas',
-            identifier=None,
-            extras=None,
         ), HistoryBaseEntry(
             event_identifier='0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa',
             sequence_index=474,
@@ -300,8 +290,6 @@ def test_gitcoin_claim(database, ethereum_manager):
             location_label='0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',
             notes='Claim 271.5872 GTC from the GTC airdrop',
             counterparty='0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E',
-            identifier=None,
-            extras=None,
         ),
     ]
     assert events == expected_events

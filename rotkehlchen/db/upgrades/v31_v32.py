@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Dict, Set
 
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 
-
 if TYPE_CHECKING:
     from sqlite3 import Cursor
 
@@ -26,6 +25,7 @@ def _upgrade_history_events(cursor: 'Cursor') -> None:
         type TEXT NOT NULL,
         subtype TEXT,
         counterparty TEXT,
+        extra_data TEXT,
         UNIQUE(event_identifier, sequence_index)
     );""")
     cursor.execute("""
