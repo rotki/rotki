@@ -239,27 +239,28 @@ class EthTransactions(LockableQueryMixIn):
         - RemoteError if the transaction hash can't be found in any of the connected nodes
         """
         dbethtx = DBEthTx(self.database)
-        # If the transaction is not in the DB then query it and add it
-        result = dbethtx.get_ethereum_transactions(
-            filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
-            has_premium=True,  # we don't need any limiting here
-        )
-        if len(result) == 0:
-            transaction = self.ethereum.get_transaction_by_hash(tx_hash)
-            dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-            ranges_to_query = [(transaction.timestamp, transaction.timestamp)]
-            self._get_internal_transactions_for_ranges(address=transaction.from_address, ranges_to_query=ranges_to_query)  # noqa: E501
-            self._get_erc20_transfers_for_ranges(address=transaction.from_address, ranges_to_query=ranges_to_query)  # noqa: E501
+        with self.ethereum.receipts_query_lock:
+            # If the transaction is not in the DB then query it and add it
+            result = dbethtx.get_ethereum_transactions(
+                filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
+                has_premium=True,  # we don't need any limiting here
+            )
+            if len(result) == 0:
+                transaction = self.ethereum.get_transaction_by_hash(tx_hash)
+                dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
+                ranges_to_query = [(transaction.timestamp, transaction.timestamp)]
+                self._get_internal_transactions_for_ranges(address=transaction.from_address, ranges_to_query=ranges_to_query)  # noqa: E501
+                self._get_erc20_transfers_for_ranges(address=transaction.from_address, ranges_to_query=ranges_to_query)  # noqa: E501
 
-        tx_receipt = dbethtx.get_receipt(tx_hash)
-        if tx_receipt is not None:
-            return tx_receipt
+            tx_receipt = dbethtx.get_receipt(tx_hash)
+            if tx_receipt is not None:
+                return tx_receipt
 
-        # not in the DB, so we need to query the chain for it
-        tx_receipt_data = self.ethereum.get_transaction_receipt(tx_hash=tx_hash)
-        dbethtx.add_receipt_data(tx_receipt_data)
-        tx_receipt = dbethtx.get_receipt(tx_hash)
-        return tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there
+            # not in the DB, so we need to query the chain for it
+            tx_receipt_data = self.ethereum.get_transaction_receipt(tx_hash=tx_hash)
+            dbethtx.add_receipt_data(tx_receipt_data)
+            tx_receipt = dbethtx.get_receipt(tx_hash)
+            return tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there  # noqa: E501
 
     def get_receipts_for_transactions_missing_them(self, limit: Optional[int] = None) -> None:
         """
