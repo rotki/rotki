@@ -57,6 +57,7 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
+from rotkehlchen.chain.ethereum.decoding.constants import ETHADDRESS_TO_KNOWN_NAME
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
@@ -4161,8 +4162,16 @@ class RestAPI():
             mappings_to_send.append(new_mapping)
 
         wrapped_mappings = {}
+        # TODO: Ugly. Organize better, don't mix with ENS like this in one function
+        # Check if address has any mapping in constant names before ENS
+        for address in addresses:
+            constant_name = ETHADDRESS_TO_KNOWN_NAME.get(address)
+            if constant_name is not None:
+                wrapped_mappings[address] = constant_name
+
         for mapping in mappings_to_send:
-            wrapped_mappings[mapping.address] = mapping.name
+            if mapping.name:  # TODO: Figure out why name can be optional here @alexey?
+                wrapped_mappings[mapping.address] = mapping.name
 
         return {'result': wrapped_mappings, 'message': '', 'status_code': HTTPStatus.OK}
 

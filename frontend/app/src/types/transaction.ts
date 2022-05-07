@@ -83,5 +83,6 @@ export enum TransactionEventProtocol {
   DXDAO = 'dxdao',
   BADGER = 'badger',
   ENS = 'ens',
-  CURVE = 'curve'
+  CURVE = 'curve',
+  KRAKEN = 'kraken'
 }
