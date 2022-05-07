@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -7,7 +8,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.utils import symbol_to_asset_or_token, symbol_to_ethereum_token
+from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
@@ -19,6 +20,7 @@ from rotkehlchen.chain.ethereum.utils import (
 )
 from rotkehlchen.constants.assets import A_COMP
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
@@ -29,6 +31,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 MINT_COMPOUND_TOKEN = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n\x1co\xef&9OL\x03\x82\x1cO'  # noqa: E501
 REDEEM_COMPOUND_TOKEN = b'\xe5\xb7T\xfb\x1a\xbb\x7f\x01\xb4\x99y\x1d\x0b\x82\n\xe3\xb6\xaf4$\xac\x1cYv\x8e\xdbS\xf4\xec1\xa9)'  # noqa: E501
@@ -46,6 +50,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def _decode_mint(
             self,
+            transaction: EthereumTransaction,
             tx_log: EthereumTxReceiptLog,
             decoded_events: List[HistoryBaseEntry],
             compound_token: EthereumToken,
@@ -56,17 +61,23 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         mint_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         minted_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
-        underlying_token = symbol_to_ethereum_token(compound_token.symbol[1:])
-        mint_amount = token_normalized_value(mint_amount_raw, underlying_token)
+        underlying_asset = symbol_to_asset_or_token(compound_token.symbol[1:])
+        mint_amount = asset_normalized_value(mint_amount_raw, underlying_asset)
         minted_amount = token_normalized_value(minted_amount_raw, compound_token)
+        out_event = None
         for event in decoded_events:
             # Find the transfer event which should have come before the minting
-            if event.event_type == HistoryEventType.SPEND and event.asset == underlying_token and event.balance.amount == mint_amount:  # noqa: E501
+            if event.event_type == HistoryEventType.SPEND and event.asset == underlying_asset and event.balance.amount == mint_amount:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_COMPOUND
-                event.notes = f'Deposit {mint_amount} {underlying_token.symbol} to compound'
+                event.notes = f'Deposit {mint_amount} {underlying_asset.symbol} to compound'
+                out_event = event
                 break
+
+        if out_event is None:
+            log.debug(f'At compound mint decoding of tx {transaction.tx_hash.hex()} the out event was not found')  # noqa: E501
+            return None, None
 
         # also create an action item for the receive of the cTokens
         action_item = ActionItem(
@@ -79,6 +90,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             to_notes=f'Receive {minted_amount} {compound_token.symbol} from compound',
             to_counterparty=CPT_COMPOUND,
+            paired_event_data=(out_event, True),
         )
         return None, action_item
 
@@ -119,14 +131,15 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def decode_compound_token_movement(
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EthereumTransaction,
             decoded_events: List[HistoryBaseEntry],
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
             compound_token: EthereumToken,
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         if tx_log.topics[0] == MINT_COMPOUND_TOKEN:
-            return self._decode_mint(tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
+            log.debug(f'Hash: {transaction.tx_hash.hex()}')
+            return self._decode_mint(transaction=transaction, tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
 
         if tx_log.topics[0] == REDEEM_COMPOUND_TOKEN:
             return self._decode_redeem(tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
@@ -152,6 +165,9 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             return None, None
 
         comp_raw_amount = hex_or_bytes_to_int(tx_log.data[0:32])
+        if comp_raw_amount == 0:
+            return None, None  # do not count zero comp collection
+
         comp_amount = token_normalized_value_decimals(comp_raw_amount, token_decimals=18)
         comp_event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash.hex(),
