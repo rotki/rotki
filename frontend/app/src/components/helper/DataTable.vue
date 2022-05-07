@@ -1,6 +1,6 @@
 <template>
   <v-data-table
-    ref="table"
+    ref="tableRef"
     v-bind="$attrs"
     must-sort
     :sort-desc="sortDesc"
@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref } from '@vue/composition-api';
+import { defineComponent, PropType, ref, toRefs } from '@vue/composition-api';
 import { get, useElementBounding } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import { setupSettings } from '@/composables/settings';
@@ -57,12 +57,14 @@ export default defineComponent({
     headers: { required: true, type: Array as PropType<DataTableHeader[]> },
     expanded: { required: false, type: Array, default: () => [] },
     itemClass: { required: false, type: [String, Function], default: () => '' },
-    hideDefaultFooter: { required: false, type: Boolean, default: false }
+    hideDefaultFooter: { required: false, type: Boolean, default: false },
+    container: { required: false, type: HTMLDivElement, default: () => null }
   },
-  setup() {
+  setup(props) {
     const { itemsPerPage, updateSetting } = setupSettings();
+    const { container } = toRefs(props);
 
-    const table = ref<any>(null);
+    const tableRef = ref<any>(null);
 
     const onItemsPerPageChange = async (newValue: number) => {
       await updateSetting({
@@ -70,17 +72,24 @@ export default defineComponent({
       });
     };
 
-    const { top } = useElementBounding(table);
+    const { top } = useElementBounding(tableRef);
+    const { top: containerTop } = useElementBounding(container);
 
     const scrollToTop = () => {
-      const body = document.body;
-      if (get(table)) {
-        body.scrollTop = get(top) + body.scrollTop - 64;
-      }
+      const wrapper = get(container) ?? document.body;
+      const table = get(tableRef);
+
+      if (!table || !wrapper) return;
+
+      wrapper.scrollTop =
+        get(top) +
+        wrapper.scrollTop -
+        (get(container) ? get(containerTop) : 64) -
+        table.scrollTop;
     };
 
     return {
-      table,
+      tableRef,
       itemsPerPage,
       footerProps,
       onItemsPerPageChange,

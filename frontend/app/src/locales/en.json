@@ -2935,7 +2935,11 @@
     "loading": "Please wait while your transactions are getting loaded...",
     "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",
     "title": "Ethereum Transactions",
-    "redecode_all_events": "Redecode All Events",
+    "redecode_events": {
+      "title": "Redecode Events",
+      "this_page": "Only this page",
+      "all": "All events"
+    },
     "refresh_tooltip": "Refresh ethereum transactions",
     "headers": {
       "tx_hash": "Tx Hash",

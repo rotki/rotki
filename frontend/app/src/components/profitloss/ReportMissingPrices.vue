@@ -1,9 +1,11 @@
 <template>
   <div>
     <data-table
+      ref="tableRef"
       :class="$style.table"
       :headers="headers"
       :items="formattedItems"
+      :container="tableContainer"
     >
       <template #item="{ item }">
         <tr :key="createKey(item)">
@@ -178,12 +180,20 @@ export default defineComponent({
       await fetchHistoricalPrices();
     };
 
+    const tableRef = ref<any>(null);
+
+    const tableContainer = computed(() => {
+      return get(tableRef)?.$el;
+    });
+
     return {
       updatePrice,
       formattedItems,
       headers,
       errorMessages,
-      createKey
+      createKey,
+      tableRef,
+      tableContainer
     };
   }
 });
@@ -191,7 +201,8 @@ export default defineComponent({
 
 <style module lang="scss">
 .table {
-  max-height: calc(100vh - 250px);
+  scroll-behavior: smooth;
+  max-height: calc(100vh - 310px);
   overflow: auto;
 }
 </style>

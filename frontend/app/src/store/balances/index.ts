@@ -49,16 +49,12 @@ export const useEnsNamesStore = defineStore('ensNames', () => {
     addresses: string[],
     forceUpdate: boolean = false
   ) => {
-    if (addresses.length < 1) {
-      return;
-    }
+    if (addresses.length < 1) return;
 
     const changed = updateEnsAddresses(addresses);
 
     // Don't fetch if not forceUpdate, and no new ens names that need to be fetched.
-    if (!forceUpdate && !changed) {
-      return;
-    }
+    if (!forceUpdate && !changed) return;
 
     const latestEnsAddresses = get(ensAddresses);
     if (latestEnsAddresses.length > 0) {
