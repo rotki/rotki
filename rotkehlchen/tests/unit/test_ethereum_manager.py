@@ -2,6 +2,7 @@ import os
 
 import pytest
 
+from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.manager import (
     ETHEREUM_NODES_TO_CONNECT_AT_START,
     OPEN_NODES,
@@ -9,12 +10,7 @@ from rotkehlchen.chain.ethereum.manager import (
     NodeName,
 )
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
-from rotkehlchen.constants.ethereum import (
-    ATOKEN_ABI,
-    ERC20TOKEN_ABI,
-    YEARN_YCRV_VAULT,
-    ZERO_ADDRESS,
-)
+from rotkehlchen.constants.ethereum import ATOKEN_ABI, ERC20TOKEN_ABI, YEARN_YCRV_VAULT
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal

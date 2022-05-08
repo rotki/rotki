@@ -6,11 +6,12 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V1, CPT_ONEINCH_V2
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_CHI, A_PAN, ZERO_ADDRESS
+from rotkehlchen.tests.utils.constants import A_CHI, A_PAN
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, deserialize_evm_tx_hash
 

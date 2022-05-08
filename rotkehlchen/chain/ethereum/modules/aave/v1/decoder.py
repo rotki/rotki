@@ -5,6 +5,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
@@ -73,6 +74,10 @@ class Aavev1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Receive {amount} {atoken.symbol} from aave-v1 for {event.location_label}'  # noqa: E501
                 receive_event = event
+            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and event.counterparty == ZERO_ADDRESS and event.asset == atoken:  # noqa: E501
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_AAVE_V1
+                event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
 
         maybe_reshuffle_events(out_event=deposit_event, in_event=receive_event)
         return None, None
@@ -111,6 +116,10 @@ class Aavev1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Return {amount} {atoken.symbol} to aave-v1'
                 return_event = event
+            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and event.counterparty == ZERO_ADDRESS and event.asset == atoken:  # noqa: E501
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_AAVE_V1
+                event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
 
         maybe_reshuffle_events(out_event=return_event, in_event=receive_event)
         return None, None
