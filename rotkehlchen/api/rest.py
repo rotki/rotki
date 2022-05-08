@@ -72,6 +72,7 @@ from rotkehlchen.constants.limits import (
 from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
+from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -4141,25 +4142,30 @@ class RestAPI():
         addresses: List[ChecksumEthAddress],
         ignore_cache: bool,
     ) -> Dict[str, Any]:
-        mappings_to_send = []
+        mappings_to_send: Dict[ChecksumEthAddress, str] = {}
+        dbens = DBEns(self.rotkehlchen.data.db)
 
         if ignore_cache:
             addresses_to_query = addresses
         else:
             addresses_to_query = []
-            cached_data = self.rotkehlchen.data.db.get_reverse_ens(addresses)
+            cached_data = dbens.get_reverse_ens(addresses)
             cur_time = Timestamp(int(time.time()))
-            for mapping in cached_data:
-                if cur_time - mapping.last_update > ENS_UPDATE_INTERVAL:
-                    addresses_to_query.append(mapping.address)
-                else:
-                    mappings_to_send.append(mapping)
-            addresses_to_query += list(set(addresses) - set(map(lambda x: x.address, cached_data)))
+            for address, cached_value in cached_data.items():
+                has_name = isinstance(cached_value, EnsMapping)
+                last_update: Timestamp = cached_value.last_update if has_name else cached_value  # type: ignore  # noqa: E501
+                if cur_time - last_update > ENS_UPDATE_INTERVAL:
+                    addresses_to_query.append(address)
+                elif has_name:
+                    mappings_to_send[cached_value.address] = cached_value.name  # type: ignore
+            addresses_to_query += list(set(addresses) - set(cached_data.keys()))
+
         query_results = self.rotkehlchen.chain_manager.ethereum.ens_reverse_lookup(addresses_to_query)  # noqa: E501
-        for address, name in query_results.items():
-            new_mapping = EnsMapping(name=name, address=address)
-            self.rotkehlchen.data.db.add_ens_mapping(new_mapping)
-            mappings_to_send.append(new_mapping)
+
+        mappings_to_send = dbens.update_values(
+            ens_lookup_results=query_results,
+            mappings_to_send=mappings_to_send,
+        )
 
         wrapped_mappings = {}
         # TODO: Ugly. Organize better, don't mix with ENS like this in one function
@@ -4169,10 +4175,7 @@ class RestAPI():
             if constant_name is not None:
                 wrapped_mappings[address] = constant_name
 
-        for mapping in mappings_to_send:
-            if mapping.name:  # TODO: Figure out why name can be optional here @alexey?
-                wrapped_mappings[mapping.address] = mapping.name
-
+        wrapped_mappings |= mappings_to_send
         return {'result': wrapped_mappings, 'message': '', 'status_code': HTTPStatus.OK}
 
     @require_loggedin_user()

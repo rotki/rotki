@@ -1342,17 +1342,3 @@ def test_fresh_db_adds_version(user_data_dir):
     query = query.fetchall()
     assert len(query) != 0
     assert int(query[0][0]) == ROTKEHLCHEN_DB_VERSION
-
-
-def test_ens_mapping(user_data_dir):
-    msg_aggregator = MessagesAggregator()
-    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
-    cursor = db.conn.cursor()
-    cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x45E6CA515E840A4e9E02A3062F99216951825eB2', 'LABEL1'))  # noqa: E501
-
-    with pytest.raises(IntegrityError):
-        cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x4362BBa5a26b07db048Bc2603f843E21Ac22D75E', 'LABEL1'))  # noqa: E501
-    with pytest.raises(IntegrityError):
-        cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x45E6CA515E840A4e9E02A3062F99216951825eB2', 'LABEL1'))  # noqa: E501
-    cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x4362BBa5a26b07db048Bc2603f843E21Ac22D75E', 'LABEL2'))  # noqa: E501
-    assert all(map(lambda x: x is not None, cursor.execute('SELECT last_update FROM ens_mappings').fetchall()))  # noqa: E501

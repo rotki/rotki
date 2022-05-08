@@ -2556,14 +2556,10 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     assert len([row[2] for row in result]) == 5
     assert len({row[2] for row in result}) == 5
 
-    ens_names_test_data = (
-        '0xASDF123',
-        'TEST_ENS_NAME',
-    )
-    cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ens_names_test_data)  # noqa: E501
+    ens_names_test_data = ('0xASDF123', 'TEST_ENS_NAME', 1)
+    cursor.execute('INSERT INTO ens_mappings(address, ens_name, last_update) VALUES(?, ?, ?)', ens_names_test_data)  # noqa: E501
     data_in_db = cursor.execute('SELECT address, ens_name, last_update FROM ens_mappings').fetchone()  # noqa: E501
-    assert data_in_db[:2] == ens_names_test_data
-    assert data_in_db[2] is not None
+    assert data_in_db == ens_names_test_data
     # Check that selected binance markets settings_name changed to the updated one.
     selected_binance_markets_after = cursor.execute('SELECT * from user_credentials_mappings WHERE setting_name="binance_selected_trade_pairs"').fetchall()  # noqa: E501
     assert selected_binance_markets_after == [

@@ -633,13 +633,12 @@ class EthereumManager():
 
         return hex_or_bytes_to_str(web3.eth.getCode(account))
 
-    def ens_reverse_lookup(self, reversed_addresses: List[ChecksumEthAddress]) -> Any:
+    def ens_reverse_lookup(self, reversed_addresses: List[ChecksumEthAddress]) -> Dict[ChecksumEthAddress, Optional[str]]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses
 
         Because a multicall is used, no exceptions are raised.
         If any exceptions occur, they are logged and None is returned for that
         """
-
         human_names: Dict[ChecksumEthAddress, Optional[str]] = {}
         # Querying resolvers' addresses
         resolver_params = [
