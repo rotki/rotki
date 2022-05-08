@@ -17,7 +17,8 @@ NAUGHTY_ERC721 = (  # list of ERC721 NFT tokens, not really following the standa
 )
 
 
-# TODO: Probably this mapping needs to go somewhere else
+# TODO: Probably this mapping needs to go somewhere else as part of
+# https://github.com/rotki/rotki/issues/1420
 # Map of known addresses to some names. Names sourced by various sources
 # including but not limited to etherscan's labels
 ETHADDRESS_TO_KNOWN_NAME = {
@@ -34,4 +35,6 @@ ETHADDRESS_TO_KNOWN_NAME = {
     string_to_ethereum_address('0x89e51fA8CA5D66cd220bAed62ED01e8951aa7c40'): 'Kraken 7',
     string_to_ethereum_address('0xc6bed363b30DF7F35b601a5547fE56cd31Ec63DA'): 'Kraken 8',
     string_to_ethereum_address('0x29728D0efd284D85187362fAA2d4d76C2CfC2612'): 'Kraken 9',
+
+    string_to_ethereum_address('0x340d693ED55d7bA167D184ea76Ea2Fd092a35BDc'): 'Uphold.com',
 }

@@ -5,7 +5,6 @@ from copy import deepcopy
 from unittest.mock import patch
 
 import pytest
-from pysqlcipher3._sqlite3 import IntegrityError
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.balance import BalanceType
