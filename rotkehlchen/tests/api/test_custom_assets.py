@@ -501,6 +501,7 @@ def test_custom_asset_delete_guard(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     custom1_id = result['identifier']
     user_db.add_manually_tracked_balances([ManuallyTrackedBalance(
+        id=-1,
         asset=Asset(custom1_id),
         label='manual1',
         amount=FVal(1),
@@ -577,6 +578,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
     expected_balances = deepcopy(balances)
     expected_balances[0]['usd_value'] = str(FVal(balances[0]['amount']) * FVal('1.5'))
     expected_balances[0]['tags'] = None
+    expected_balances[0]['id'] = 1
 
     if not only_in_globaldb:
         response = requests.put(
@@ -700,6 +702,7 @@ def test_replace_asset_not_in_globaldb(rotkehlchen_api_server, globaldb):
     )
     result = assert_proper_response_with_result(response)
     assert result['balances'] == [{
+        'id': 1,
         'asset': 'ICP',
         'label': 'forgotten balance',
         'amount': '1',

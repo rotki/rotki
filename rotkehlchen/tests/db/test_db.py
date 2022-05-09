@@ -236,6 +236,7 @@ def test_export_import_db(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
     starting_balance = ManuallyTrackedBalance(
+        id=-1,
         asset=A_EUR,
         label='foo',
         amount=FVal(10),
