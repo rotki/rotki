@@ -69,7 +69,7 @@
           :edit-tooltip="$t('manual_balances_table.edit_tooltip')"
           :delete-tooltip="$t('manual_balances_table.delete_tooltip')"
           @edit-click="edit(item)"
-          @delete-click="pendingDeletion = item.label"
+          @delete-click="pendingDeletion = item.id"
         />
       </template>
       <template v-if="visibleBalances.length > 0" #body.append="{ isMobile }">
@@ -91,8 +91,8 @@
     <confirm-dialog
       v-if="pendingDeletion !== null"
       display
-      :title="$t('manual_balances_table.delete_dialog.title')"
-      :message="$t('manual_balances_table.delete_dialog.message')"
+      :title="$tc('manual_balances_table.delete_dialog.title')"
+      :message="$tc('manual_balances_table.delete_dialog.message')"
       @cancel="pendingDeletion = null"
       @confirm="deleteBalance()"
     />
@@ -188,7 +188,7 @@ const ManualBalanceTable = defineComponent({
   emits: ['refresh', 'edit'],
   setup(props, { emit }) {
     const { balances } = toRefs(props);
-    const pendingDeletion = ref<string | null>(null);
+    const pendingDeletion = ref<number | null>(null);
     const onlyTags = ref<string[]>([]);
     const refresh = () => {
       emit('refresh');
@@ -201,10 +201,10 @@ const ManualBalanceTable = defineComponent({
     const { deleteManualBalance } = setupManualBalances();
 
     const deleteBalance = async () => {
-      const label = get(pendingDeletion);
-      assert(label);
+      const id = get(pendingDeletion);
+      assert(id);
       set(pendingDeletion, null);
-      await deleteManualBalance(label);
+      await deleteManualBalance(id);
     };
 
     const visibleBalances = computed<ManualBalance[]>(() => {

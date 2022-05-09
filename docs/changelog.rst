@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2219` Users will now be able to delete snapshot.
 * :feature:`4219` Users will now be able to import snapshot manually.
 * :bug:`4261` Fixes a problem were the docker container image would increase on every restart.
 * :feature:`1219` Introduces basic global search (you can go to any page in the app, do some basic actions such as adding a new trade or a ledger action, and also see prices of owned asset).

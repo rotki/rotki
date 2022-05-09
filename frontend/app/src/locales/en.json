@@ -3515,6 +3515,16 @@
       "balance": "Balance: ",
       "export_database_snapshot": "Export database snapshot",
       "subtitle": "Click the button below to download snapshot for",
+      "delete_snapshot": "Delete snapshot",
+      "delete_dialog": {
+        "title": "Delete snapshot",
+        "message": "Are you sure you want to delete this snapshot?"
+      },
+      "delete_message": {
+        "title": "Delete snapshot",
+        "success": "Snapshot successfully deleted",
+        "failure": "Delete snapshot failed"
+      },
       "download_snapshot": "Download snapshot",
       "select_directory": "Select a directory",
       "message": {

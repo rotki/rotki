@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="net-worth-chart">
     <div class="net-worth-chart__chart">
       <canvas :id="canvasId" @click="canvasClicked" />
       <div
@@ -99,6 +99,7 @@ export default defineComponent({
     const times = ref<number[]>([]);
     const data = ref<number[]>([]);
     const filteredData = ref<ValueOverTime[]>([]);
+    const showVirtualCurrentData = ref<boolean>(true);
 
     const activeTimeframe = computed<Timeframe>(() => {
       return get(timeframes)[get(timeframe)];
@@ -142,14 +143,25 @@ export default defineComponent({
 
       // set the data
       const newData = [];
-      for (let i = 0; i < get(times).length; i++) {
-        const epoch = get(times)[i];
-        newData.push({
-          x: new Date(epoch * 1000),
-          y: get(data)[i]
-        });
+      const timesVal = get(times);
+      const dataVal = get(data);
+      let showVirtual = true;
+
+      for (let i = 0; i < timesVal.length; i++) {
+        const epoch = timesVal[i];
+        const value = dataVal[i];
+
+        if (i < timesVal.length - 1 || value > 0) {
+          newData.push({
+            x: new Date(epoch * 1000),
+            y: value
+          });
+        } else {
+          showVirtual = false;
+        }
       }
       set(filteredData, newData);
+      set(showVirtualCurrentData, showVirtual);
 
       chartVal.data.datasets![0].data = get(filteredData);
       chartVal.update();
@@ -378,7 +390,14 @@ export default defineComponent({
         // @ts-ignore
         const index = axisData[0]._index;
 
-        if (get(times)[index] && get(data)[index]) {
+        if (
+          get(times)[index] &&
+          get(data)[index] &&
+          !(
+            get(showVirtualCurrentData) &&
+            index === get(chartData).data.length - 1
+          )
+        ) {
           set(selectedTimestamp, get(times)[index]);
           set(selectedBalance, get(data)[index]);
 
@@ -418,6 +437,8 @@ export default defineComponent({
 }
 
 .net-worth-chart {
+  width: 100%;
+
   &__tooltip {
     margin-top: -10px;
   }
