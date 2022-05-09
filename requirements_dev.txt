@@ -12,5 +12,7 @@ flaky==3.7.0
 
 
 # To test google spreadsheet uploading
-google-api-python-client==2.45.0
+google-api-python-client==2.47.0
 google-auth-httplib2==0.1.0
+google-api-core==2.7.3
+google-auth==2.6.6
