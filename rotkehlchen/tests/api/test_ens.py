@@ -27,6 +27,7 @@ def _get_timestamps(db: DBEns, addresses: List[ChecksumEthAddress]):
 def test_reverse_ens(rotkehlchen_api_server):
     """Test that we can reverse resolve ENS names"""
     db = DBEns(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
+    db_conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
     addrs_1 = [
         to_checksum_address('0x9531c059098e3d194ff87febb587ab07b30b1306'),
         to_checksum_address('0x2b888954421b424c5d3d9ce9bb67c9bd47537d12'),
@@ -68,6 +69,9 @@ def test_reverse_ens(rotkehlchen_api_server):
     timestamps_after_request = _get_timestamps(db, addrs_1)
     assert timestamps_before_request == timestamps_after_request
 
+    # Going to check that after request with ignore_cache ens_mappings will be updated
+    db_changes_before = db_conn.total_changes
+
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -81,7 +85,6 @@ def test_reverse_ens(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    timestamps_before_request = _get_timestamps(db, all_addrs)
     requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -89,5 +92,6 @@ def test_reverse_ens(rotkehlchen_api_server):
         ),
         json={'ethereum_addresses': all_addrs, 'ignore_cache': True},
     )
-    timestamps_after_request = _get_timestamps(db, all_addrs)
-    assert all(map(lambda t_pair: t_pair[0] < t_pair[1], zip(timestamps_before_request, timestamps_after_request)))  # noqa: E501
+    db_changes_after = db_conn.total_changes
+    # Check that we have 5 updates because we have 5 rows in ens_mappings table
+    assert db_changes_after == 5 + db_changes_before
