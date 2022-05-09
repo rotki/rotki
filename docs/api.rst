@@ -7029,7 +7029,7 @@ Getting Liquity historical staking data
 Getting Uniswap balances
 ==============================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/uniswap/balances
+.. http:get:: /api/(version)/blockchains/ETH/modules/uniswap/v2/balances
 
    Doing a GET on the uniswap balances resource will return the balances locked in Uniswap Liquidity Pools (LPs or pools).
 
@@ -7040,7 +7040,7 @@ Getting Uniswap balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/uniswap/balances HTTP/1.1
+      GET /api/1/blockchains/ETH/modules/uniswap/v2/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7106,7 +7106,7 @@ Getting Uniswap balances
 Getting Uniswap V3 balances
 ==============================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/uniswap/balances_v3
+.. http:get:: /api/(version)/blockchains/ETH/modules/uniswap/v3/balances
 
    Doing a GET on the uniswap v3 balances resource will return the balances locked in Uniswap V3 Liquidity Pools (LPs or pools).
 
@@ -7117,7 +7117,7 @@ Getting Uniswap V3 balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/uniswap/balances_v3 HTTP/1.1
+      GET /api/1/blockchains/ETH/modules/uniswap/v3/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7162,7 +7162,7 @@ Getting Uniswap V3 balances
               ],
               "total_supply": null,
               "user_balance": {
-                "amount": "0,
+                "amount": "0",
                 "usd_value": "2672437.897529272632851697224"
               }
             }
@@ -7173,16 +7173,16 @@ Getting Uniswap V3 balances
 
    :resjson object result: A mapping between accounts and their Uniswap V3 balances (represented by a list where each item is a LP).
    :resjson string address: The LP contract address.
-   :resjson int nft_id: The LP position NFT index.
+   :resjson int nft_id: The LP position NFT ID.
    :resjson string price_range: The range of prices the LP position is valid for.
-   :resjson list[object] assets: A list with the LP underlying tokens data. Per item, when ``"asset"`` is an object, it means the token is unknown to rotki. ``"total_amount"`` is the total amount of this token the pool has. ``"total_amount"`` is only available to premium users. For free users ``null`` is returned. ``"usd_price"`` is the token USD price. ``"user_balance"`` contains the user token balance and its estimated USD value.
-   :resjson optional[string] total_supply: The total amount of liquidity tokens the LP has. Only available for premium users via the graph query. For free users ``null`` is returned.
+   :resjson list[object] assets: A list with the LP underlying tokens data. Per item, when ``"asset"`` is an object, it means the token is unknown to rotki. ``"total_amount"`` is the total amount of this token the pool has. ``"usd_price"`` is the token USD price. ``"user_balance"`` contains the user token balance and its estimated USD value.
+   :resjson string total_supply: The total amount of liquidity tokens the LP has. This is ``null`` as Uniswap V3 does not store LP as tokens.
    :resjson object user_balance: The liquidity token user balance and its USD value.
 
    :statuscode 200: Uniswap balances successfully queried.
    :statuscode 409: User is not logged in. Or Uniswap module is not activated.
    :statuscode 500: Internal rotki error.
-   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 Getting Uniswap events
 =========================

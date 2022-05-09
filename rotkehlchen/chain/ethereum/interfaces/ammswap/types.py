@@ -56,24 +56,7 @@ class LiquidityPool:
         }
 
 
-@dataclass(init=True, repr=True)
-class NFTLiquidityPool(LiquidityPool):
-    nft_id: int
-    price_range: Tuple[FVal, FVal]
-
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            'address': self.address,
-            'nft_id': self.nft_id,
-            'price_range': list(self.price_range),
-            'assets': [asset.serialize() for asset in self.assets],
-            'total_supply': self.total_supply,
-            'user_balance': self.user_balance.serialize(),
-        }
-
-
 AddressToLPBalances = Dict[ChecksumEthAddress, List[LiquidityPool]]
-AddressToV3LPBalances = Dict[ChecksumEthAddress, List[NFTLiquidityPool]]
 DDAddressToLPBalances = DefaultDict[ChecksumEthAddress, List[LiquidityPool]]
 AssetToPrice = Dict[ChecksumEthAddress, Price]
 
@@ -85,17 +68,6 @@ class ProtocolBalance(NamedTuple):
     Unknown assets are those we would have to try to query through uniswap directly
     """
     address_balances: AddressToLPBalances
-    known_assets: Set[EthereumToken]
-    unknown_assets: Set[EthereumToken]
-
-
-class V3ProtocolBalance(NamedTuple):
-    """Container structure for uniswap V3 LP balances
-
-    Known assets are all assets we have an oracle for
-    Unknown assets are those we would have to try to query through uniswap directly
-    """
-    address_balances: AddressToV3LPBalances
     known_assets: Set[EthereumToken]
     unknown_assets: Set[EthereumToken]
 

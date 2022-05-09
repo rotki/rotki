@@ -168,7 +168,6 @@ FARM_ASSET_ABI = EthereumConstants.abi('FARM_ASSET')
 UNISWAP_V2_LP_ABI = EthereumConstants.abi('UNISWAP_V2_LP')
 CURVE_POOL_ABI = EthereumConstants.abi('CURVE_POOL')
 UNISWAP_V3_POOL_ABI = EthereumConstants.abi('UNISWAP_V3_POOL')
-UNISWAP_V3_NFT_MANAGER_ABI = EthereumConstants.abi('UNISWAP_V3_NFT_MANAGER')
 YEARN_VAULT_V2_ABI = EthereumConstants.abi('YEARN_VAULT_V2')
 
 YEARN_VAULTS_PREFIX = 'yearn_vaults_events'
@@ -179,8 +178,9 @@ LIQUITY_TROVE_MANAGER = EthereumConstants().contract('TROVE_MANAGER')
 PICKLE_DILL_REWARDS = EthereumConstants().contract('DILL_REWARDS')
 PICKLE_DILL = EthereumConstants().contract('DILL')
 
-UNISWAP_V3_FACTORY = EthereumConstants().contract('UNISWAP_V3_FACTORY')
 UNISWAP_V2_FACTORY = EthereumConstants().contract('UNISWAP_V2_FACTORY')
+UNISWAP_V3_FACTORY = EthereumConstants().contract('UNISWAP_V3_FACTORY')
+UNISWAP_V3_NFT_MANAGER = EthereumConstants.contract('UNISWAP_V3_NFT_POSITIONS_MANAGER')
 
 SADDLE_ALETH_POOL = EthereumConstants().contract('SADDLE_ALETH_POOL')
 
