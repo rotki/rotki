@@ -1706,8 +1706,8 @@ class DBHandler:
             query_balance_type = f'WHERE A.category="{balance_type.serialize_for_db()}"'
         query = cursor.execute(
             f'SELECT A.asset, A.label, A.amount, A.location, group_concat(B.tag_name,","), '
-            f'A.category FROM manually_tracked_balances as A '
-            f'LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.label '
+            f'A.category, A.id FROM manually_tracked_balances as A '
+            f'LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.id '
             f'{query_balance_type} GROUP BY label;',
         )
 
@@ -1717,6 +1717,7 @@ class DBHandler:
             try:
                 balance_type = BalanceType.deserialize_from_db(entry[5])
                 data.append(ManuallyTrackedBalance(
+                    id=entry[6],
                     asset=Asset(entry[0]),
                     label=entry[1],
                     amount=FVal(entry[2]),
@@ -1739,24 +1740,20 @@ class DBHandler:
         - InputError if one of the given balance entries already exist in the DB
         """
         # Insert the manually tracked balances in the DB
-        tuples = [(
-            entry.asset.identifier,
-            entry.label,
-            str(entry.amount),
-            entry.location.serialize_for_db(),
-            entry.balance_type.serialize_for_db(),
-        ) for entry in data]
         cursor = self.conn.cursor()
         try:
-            cursor.executemany(
-                'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '
-                'VALUES (?, ?, ?, ?, ?)', tuples,
-            )
+            for entry in data:
+                cursor.execute(
+                    'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '  # noqa: E501
+                    'VALUES (?, ?, ?, ?, ?)', (entry.asset.identifier, entry.label, str(entry.amount), entry.location.serialize_for_db(), entry.balance_type.serialize_for_db()),  # noqa: E501
+                )
+                entry.id = cursor.lastrowid
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
                 f'One of the manually tracked balance entries already exists in the DB. {str(e)}',
             ) from e
-        insert_tag_mappings(cursor=cursor, data=data, object_reference_keys=['label'])
+
+        insert_tag_mappings(cursor=cursor, data=data, object_reference_keys=['id'])
 
         # make sure assets are included in the global db user owned assets
         GlobalDBHandler().add_user_owned_assets([x.asset for x in data])
@@ -1779,7 +1776,7 @@ class DBHandler:
         # Delete the current tag mappings for all affected balance entries
         cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
-            'object_reference = ?;', [(x.label,) for x in data],
+            'object_reference = ?;', [(x.id,) for x in data],
         )
 
         # Update the manually tracked balance entries in the DB
@@ -1789,42 +1786,43 @@ class DBHandler:
             entry.location.serialize_for_db(),
             BalanceType.serialize_for_db(entry.balance_type),
             entry.label,
+            entry.id,
         ) for entry in data]
 
         cursor.executemany(
-            'UPDATE manually_tracked_balances SET asset=?, amount=?, location=?, category=?'
-            'WHERE label=?;', tuples,
+            'UPDATE manually_tracked_balances SET asset=?, amount=?, location=?, category=?, label=?'  # noqa: E501
+            'WHERE id=?;', tuples,
         )
         if cursor.rowcount != len(data):
             msg = 'Tried to edit manually tracked balance entry that did not exist in the DB'
             raise InputError(msg)
-        insert_tag_mappings(cursor=cursor, data=data, object_reference_keys=['label'])
+        insert_tag_mappings(cursor=cursor, data=data, object_reference_keys=['id'])
 
         self.update_last_write()
 
-    def remove_manually_tracked_balances(self, labels: List[str]) -> None:
+    def remove_manually_tracked_balances(self, ids: List[int]) -> None:
         """
-        Removes manually tracked balances for the given labels
+        Removes manually tracked balances for the given ids
 
         May raise:
         - InputError if any of the given manually tracked balance labels
         to delete did not exist
         """
         cursor = self.conn.cursor()
-        tuples = [(x,) for x in labels]
+        tuples = [(x,) for x in ids]
         cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
             'object_reference = ?;', tuples,
         )
         cursor.executemany(
-            'DELETE FROM manually_tracked_balances WHERE label = ?;', tuples,
+            'DELETE FROM manually_tracked_balances WHERE id = ?;', tuples,
         )
         affected_rows = cursor.rowcount
-        if affected_rows != len(labels):
+        if affected_rows != len(ids):
             self.conn.rollback()
             raise InputError(
-                f'Tried to remove {len(labels) - affected_rows} '
-                f'manually tracked balance labels that do not exist',
+                f'Tried to remove {len(ids) - affected_rows} '
+                f'manually tracked balance ids that do not exist',
             )
 
         self.update_last_write()

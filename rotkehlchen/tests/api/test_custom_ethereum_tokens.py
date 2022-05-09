@@ -528,6 +528,7 @@ def test_custom_tokens_delete_guard(rotkehlchen_api_server):
     user_db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     token0_id = ETHEREUM_DIRECTIVE + INITIAL_TOKENS[0].ethereum_address
     user_db.add_manually_tracked_balances([ManuallyTrackedBalance(
+        id=-1,
         asset=Asset(token0_id),
         label='manual1',
         amount=FVal(1),

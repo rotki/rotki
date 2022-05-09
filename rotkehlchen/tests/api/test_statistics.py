@@ -236,6 +236,7 @@ def test_query_statistics_value_distribution(
         btc_accounts=btc_accounts,
         token_balances=token_balances,
         manually_tracked_balances=[ManuallyTrackedBalance(
+            id=-1,
             asset=A_EUR,
             label='My EUR bank',
             amount=FVal('1550'),

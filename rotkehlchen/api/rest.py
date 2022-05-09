@@ -1918,15 +1918,15 @@ class RestAPI():
     def _modify_manually_tracked_balances(  # pylint: disable=unused-argument, no-self-use
             self,
             function: Callable[['DBHandler', List[ManuallyTrackedBalance]], None],
-            data_or_labels: List[ManuallyTrackedBalance],
+            data_or_ids: List[ManuallyTrackedBalance],
     ) -> Dict[str, Any]:
         ...
 
     @overload
     def _modify_manually_tracked_balances(  # pylint: disable=unused-argument, no-self-use
             self,
-            function: Callable[['DBHandler', List[str]], None],
-            data_or_labels: List[str],
+            function: Callable[['DBHandler', List[int]], None],
+            data_or_ids: List[int],
     ) -> Dict[str, Any]:
         ...
 
@@ -1934,12 +1934,12 @@ class RestAPI():
             self,
             function: Union[
                 Callable[['DBHandler', List[ManuallyTrackedBalance]], None],
-                Callable[['DBHandler', List[str]], None],
+                Callable[['DBHandler', List[int]], None],
             ],
-            data_or_labels: Union[List[ManuallyTrackedBalance], List[str]],
+            data_or_ids: Union[List[ManuallyTrackedBalance], List[int]],
     ) -> Dict[str, Any]:
         try:
-            function(self.rotkehlchen.data.db, data_or_labels)  # type: ignore
+            function(self.rotkehlchen.data.db, data_or_ids)  # type: ignore
         except InputError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_REQUEST)
         except TagConstraintError as e:
@@ -1960,17 +1960,17 @@ class RestAPI():
             async_query: bool,
             function: Union[
                 Callable[['DBHandler', List[ManuallyTrackedBalance]], None],
-                Callable[['DBHandler', List[str]], None],
+                Callable[['DBHandler', List[int]], None],
             ],
-            data_or_labels: Union[List[ManuallyTrackedBalance], List[str]],
+            data_or_ids: Union[List[ManuallyTrackedBalance], List[int]],
     ) -> Response:
         if async_query:
             return self._query_async(
                 command='_modify_manually_tracked_balances',
                 function=function,
-                data_or_labels=data_or_labels,
+                data_or_ids=data_or_ids,
             )
-        result = self._modify_manually_tracked_balances(function, data_or_labels)  # type: ignore
+        result = self._modify_manually_tracked_balances(function, data_or_ids)  # type: ignore
         status_code = _get_status_code_from_async_response(result)
         return api_response(result, status_code=status_code)
 
@@ -1983,7 +1983,7 @@ class RestAPI():
         return self._manually_tracked_balances_api_query(
             async_query=async_query,
             function=add_manually_tracked_balances,
-            data_or_labels=data,
+            data_or_ids=data,
         )
 
     @require_loggedin_user()
@@ -1995,19 +1995,19 @@ class RestAPI():
         return self._manually_tracked_balances_api_query(
             async_query=async_query,
             function=edit_manually_tracked_balances,
-            data_or_labels=data,
+            data_or_ids=data,
         )
 
     @require_loggedin_user()
     def remove_manually_tracked_balances(
             self,
             async_query: bool,
-            labels: List[str],
+            ids: List[int],
     ) -> Response:
         return self._manually_tracked_balances_api_query(
             async_query=async_query,
             function=remove_manually_tracked_balances,
-            data_or_labels=labels,
+            data_or_ids=ids,
         )
 
     @require_loggedin_user()

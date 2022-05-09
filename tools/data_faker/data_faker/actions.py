@@ -54,6 +54,7 @@ class ActionWriter():
         for asset, value in self.funds.items():
             if asset.is_fiat():
                 self.rotki.data.db.add_manually_tracked_balances([ManuallyTrackedBalance(
+                    id=-1,
                     asset=asset,
                     label=f'{asset.identifier} balance',
                     amount=value,
@@ -80,6 +81,7 @@ class ActionWriter():
                     )
                 if asset.is_fiat():
                     self.rotki.data.db.add_manually_tracked_balances([ManuallyTrackedBalance(
+                        id=-1,
                         asset=asset,
                         label=f'{asset.identifier} balance {timestamp}',
                         amount=value,

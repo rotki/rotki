@@ -2490,6 +2490,12 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         ('binanceus', 'S', 'PAIRS', 'abc'),
     ]
 
+    tag_mappings_before = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings').fetchall()  # noqa: E501
+    assert tag_mappings_before == [
+        ('LABEL1', 'TAG1'),
+        ('LABEL2', 'TAG2'),
+    ]
+
     db_v31.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2524,12 +2530,12 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         'manually_tracked_balances;',
     ).fetchall()
 
-    manual_balance_right = [
+    manual_balance_expected = [
         ('1CR', 'LABEL1', '34.5', 'A', 'B'),
         ('2GIVE', 'LABEL2', '0.3', 'B', 'B'),
         ('1CR', 'LABEL3', '3', 'A', 'A'),
     ]
-    assert manual_balance_right == manual_balance_before == manual_balance_after
+    assert manual_balance_expected == manual_balance_before == manual_balance_after
 
     manual_balance_ids = cursor.execute('SELECT id FROM manually_tracked_balances;').fetchall()
 
@@ -2565,6 +2571,11 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     assert selected_binance_markets_after == [
         ('binance', 'E', 'binance_selected_trade_pairs', 'pro'),
         ('binanceus', 'S', 'binance_selected_trade_pairs', 'abc'),
+    ]
+    tag_mappings_after = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings').fetchall()  # noqa: E501
+    assert tag_mappings_after == [
+        ('1', 'TAG1'),
+        ('2', 'TAG2'),
     ]
 
 

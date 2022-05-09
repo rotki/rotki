@@ -577,7 +577,7 @@ class StringIdentifierSchema(Schema):
     identifier = fields.String(required=True)
 
 
-class ManuallyTrackedBalanceSchema(Schema):
+class ManuallyTrackedBalanceAddSchema(Schema):
     asset = AssetField(required=True)
     label = fields.String(required=True)
     amount = PositiveAmountField(required=True)
@@ -591,15 +591,32 @@ class ManuallyTrackedBalanceSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> ManuallyTrackedBalance:
+        data['id'] = -1  # can be any value because id will be set automatically
         return ManuallyTrackedBalance(**data)
 
 
-class ManuallyTrackedBalancesSchema(AsyncQueryArgumentSchema):
-    balances = fields.List(fields.Nested(ManuallyTrackedBalanceSchema), required=True)
+class ManuallyTrackedBalanceEditSchema(ManuallyTrackedBalanceAddSchema):
+    id = fields.Integer(required=True)
+
+    @post_load
+    def make_manually_tracked_balances(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> ManuallyTrackedBalance:
+        return ManuallyTrackedBalance(**data)
+
+
+class ManuallyTrackedBalancesAddSchema(AsyncQueryArgumentSchema):
+    balances = fields.List(fields.Nested(ManuallyTrackedBalanceAddSchema), required=True)
+
+
+class ManuallyTrackedBalancesEditSchema(AsyncQueryArgumentSchema):
+    balances = fields.List(fields.Nested(ManuallyTrackedBalanceEditSchema), required=True)
 
 
 class ManuallyTrackedBalancesDeleteSchema(AsyncQueryArgumentSchema):
-    labels = fields.List(fields.String(required=True), required=True)
+    ids = fields.List(fields.Integer(required=True), required=True)
 
 
 class TradePatchSchema(TradeSchema):

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
@@ -12,7 +13,9 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-class ManuallyTrackedBalance(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class ManuallyTrackedBalance:
+    id: int
     asset: Asset
     label: str
     amount: FVal
@@ -22,6 +25,7 @@ class ManuallyTrackedBalance(NamedTuple):
 
 
 class ManuallyTrackedBalanceWithValue(NamedTuple):
+    id: int
     asset: Asset
     label: str
     value: Balance
@@ -55,6 +59,7 @@ def get_manually_tracked_balances(
 
         value = Balance(amount=entry.amount, usd_value=price * entry.amount)
         balances_with_value.append(ManuallyTrackedBalanceWithValue(
+            id=entry.id,
             asset=entry.asset,
             label=entry.label,
             value=value,
@@ -104,14 +109,14 @@ def edit_manually_tracked_balances(db: 'DBHandler', data: List[ManuallyTrackedBa
     db.edit_manually_tracked_balances(data)
 
 
-def remove_manually_tracked_balances(db: 'DBHandler', labels: List[str]) -> None:
+def remove_manually_tracked_balances(db: 'DBHandler', ids: List[int]) -> None:
     """Edits manually tracked balances
 
     May raise:
     - InputError if the given list is empty or if
-    any of the labels to remove do not exist in the DB.
+    any of the ids to remove do not exist in the DB.
     """
-    db.remove_manually_tracked_balances(labels)
+    db.remove_manually_tracked_balances(ids)
 
 
 def account_for_manually_tracked_asset_balances(
