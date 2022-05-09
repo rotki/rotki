@@ -27,6 +27,7 @@ flask-restful==0.3.9
 flask==2.1.2
 marshmallow==3.15.0
 webargs==8.1.0
+werkzeug==2.1.2
 
 #constraints
 setuptools==49.6.0  # constraint required by pyinstaller==4.8
