@@ -6,12 +6,14 @@ import requests
 from eth_utils import to_checksum_address
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.assets.utils import get_or_create_ethereum_token
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import SPAM_PROTOCOL
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -22,35 +24,42 @@ if TYPE_CHECKING:
 
 KNOWN_ETH_SPAM_TOKENS = [
     # khex.net and said to be spam by etherscan
-    strethaddress_to_identifier('0x4AF9ab04615cB91e2EE8cbEDb43fb52eD205041B'),
+    string_to_ethereum_address('0x4AF9ab04615cB91e2EE8cbEDb43fb52eD205041B'),
     # erc token, seems to be a spam token
-    strethaddress_to_identifier('0x78d9A9355a7823887868492c47368956ea473618'),
+    string_to_ethereum_address('0x78d9A9355a7823887868492c47368956ea473618'),
     # yLiquidate (YQI) seems to be a scam
-    strethaddress_to_identifier('0x3d3d5cCE38afb7a379B2C3175Ee56e2dC72CD7C8'),
+    string_to_ethereum_address('0x3d3d5cCE38afb7a379B2C3175Ee56e2dC72CD7C8'),
     # Old kick token
-    strethaddress_to_identifier('0xC12D1c73eE7DC3615BA4e37E4ABFdbDDFA38907E'),
+    string_to_ethereum_address('0xC12D1c73eE7DC3615BA4e37E4ABFdbDDFA38907E'),
     # kick token
-    strethaddress_to_identifier('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC'),
+    string_to_ethereum_address('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC'),
     # Fake gear token
-    strethaddress_to_identifier('0x6D38b496dCc9664C6908D8Afba6ff926887Fc359'),
+    string_to_ethereum_address('0x6D38b496dCc9664C6908D8Afba6ff926887Fc359'),
     # EthTrader Contribution (CONTRIB) few txs and all failed
-    strethaddress_to_identifier('0xbe1fffB262a2C3e65c5eb90f93caf4eDC7d28c8d'),
+    string_to_ethereum_address('0xbe1fffB262a2C3e65c5eb90f93caf4eDC7d28c8d'),
     # a68.net pishing/hack
-    strethaddress_to_identifier('0x1412ECa9dc7daEf60451e3155bB8Dbf9DA349933'),
+    string_to_ethereum_address('0x1412ECa9dc7daEf60451e3155bB8Dbf9DA349933'),
     # akswap.io
-    strethaddress_to_identifier('0x82dfDB2ec1aa6003Ed4aCBa663403D7c2127Ff67'),
+    string_to_ethereum_address('0x82dfDB2ec1aa6003Ed4aCBa663403D7c2127Ff67'),
     # up1 pishing token
-    strethaddress_to_identifier('0xF9d25EB4C75ed744596392cf89074aFaA43614a8'),
+    string_to_ethereum_address('0xF9d25EB4C75ed744596392cf89074aFaA43614a8'),
     # deapy.org scam token
-    strethaddress_to_identifier('0x01454cdC3FAb2a026CC7d1CB2aEa9B909D5bA0EE'),
+    string_to_ethereum_address('0x01454cdC3FAb2a026CC7d1CB2aEa9B909D5bA0EE'),
 ]
 
 
-def query_token_spam_list() -> Set[EthereumToken]:
+def query_token_spam_list(db: 'DBHandler') -> Set[EthereumToken]:
     """Generate a set of assets that can be ignored combining information of cryptoscamdb
     and the list of spam assets KNOWN_ETH_SPAM_TOKENS. This function also makes sure to get the
     bad assets in the list of cryptoscamdb and ensures that they exists in the globaldb before
     trying to add them.
+
+    TODO
+    This function tries to add as assets to the globaldb the tokens listed in
+    KNOWN_ETH_SPAM_TOKENS and not the ones coming from cryptoscamdb. The reason is that until the
+    v2 of the API the response contains both spam addresses and tokens and there is no way to know
+    if the address is for a contract or not. Checking if the address is a contract takes to much
+    time. When V2 gets released this can be fixed.
     May raise:
     - RemoteError
     """
@@ -94,10 +103,15 @@ def query_token_spam_list() -> Set[EthereumToken]:
             tokens_to_ignore.add(token)
 
     # Try to add custom list
-    for token_identifier in KNOWN_ETH_SPAM_TOKENS:
+    for token_address in KNOWN_ETH_SPAM_TOKENS:
         try:
-            own_token = EthereumToken.from_identifier(token_identifier)
-        except UnknownAsset:
+            own_token = get_or_create_ethereum_token(
+                userdb=db,
+                ethereum_address=token_address,
+                protocol=SPAM_PROTOCOL,
+            )
+        except (RemoteError, NotERC20Conformant) as e:
+            log.debug(f'Skipping {checksumed_address} due to {str(e)}')
             continue
         if own_token is not None:
             tokens_to_ignore.add(own_token)
@@ -112,7 +126,7 @@ def update_spam_assets(db: 'DBHandler') -> int:
     to the ignore list
     """
     ignored_assets = {asset.identifier for asset in db.get_ignored_assets()}
-    spam_tokens = query_token_spam_list()
+    spam_tokens = query_token_spam_list(db)
     assets_added = 0
     for token in spam_tokens:
         if token.identifier in ignored_assets:

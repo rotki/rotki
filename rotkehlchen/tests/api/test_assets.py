@@ -99,11 +99,11 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         ), json={'assets': ignored_assets},
     )
     result = assert_proper_response_with_result(response)
-    expected_ignored_assets = set(ignored_assets + [KICK_TOKEN])
-    assert set(result) == expected_ignored_assets
+    expected_ignored_assets = set(ignored_assets + [KICK_TOKEN.identifier])
+    assert expected_ignored_assets <= set(result)
 
     # check they are there
-    assert set(rotki.data.db.get_ignored_assets()) == expected_ignored_assets
+    assert set(rotki.data.db.get_ignored_assets()) >= expected_ignored_assets
     # Query for ignored assets and check that the response returns them
     response = requests.get(
         api_url_for(
@@ -112,21 +112,21 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert set(result) == expected_ignored_assets
+    assert expected_ignored_assets <= set(result)
 
-    # remove two assets from ignored assets
+    # remove thre assets from ignored assets
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             'ignoredassetsresource',
         ), json={'assets': [A_GNO.identifier, 'XMR', kick_token_id]},
     )
-    assets_after_deletion = [A_RDN.identifier]
+    assets_after_deletion = {A_RDN.identifier}
     result = assert_proper_response_with_result(response)
-    assert result == assets_after_deletion
+    assert assets_after_deletion <= set(result)
 
     # check that the changes are reflected
-    assert rotki.data.db.get_ignored_assets() == assets_after_deletion
+    assert set(rotki.data.db.get_ignored_assets()) >= assets_after_deletion
     # Query for ignored assets and check that the response returns them
     response = requests.get(
         api_url_for(
@@ -135,7 +135,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == assets_after_deletion
+    assert assets_after_deletion <= set(result)
 
     # Fetch remote assets to be ignored
     response = requests.post(

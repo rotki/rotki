@@ -17,6 +17,6 @@ def data_migration_3(rotki: 'Rotkehlchen') -> None:
     Update the list of ignored assets with tokens from cryptoscamdb
     """
     try:
-        update_spam_assets(rotki.data.db)
+        update_spam_assets(db=rotki.data.db)
     except RemoteError as e:
         log.error(f'Failed to update the list of ignored assets during db migration. {str(e)}')
