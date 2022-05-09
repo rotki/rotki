@@ -5,6 +5,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import (
     A_ALINK_V1,
@@ -48,7 +49,6 @@ from rotkehlchen.constants.ethereum import (
     YEARN_WETH_VAULT,
     YEARN_YCRV_VAULT,
     YEARN_YFI_VAULT,
-    ZERO_ADDRESS,
 )
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.errors.asset import UnknownAsset

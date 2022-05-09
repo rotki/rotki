@@ -19,6 +19,7 @@ from rotkehlchen.types import EthereumTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 from .constants import NAUGHTY_ERC721
+from .utils import address_is_exchange
 
 
 class BaseDecoderTools():
@@ -59,10 +60,15 @@ class BaseDecoderTools():
             set_verbs: Optional[Tuple[str, str]] = None,
             set_counterparty: Optional[str] = None,
     ) -> Optional[Tuple[HistoryEventType, str, str, str]]:
+        """Depending on addresses, if they are tracked by the user or not, if they
+        are an exchange address etc. determine the type of event to classify the transfer as"""
         tracked_from = from_address in self.tracked_accounts.eth
         tracked_to = to_address in self.tracked_accounts.eth
         if not tracked_from and not tracked_to:
             return None
+
+        from_exchange = address_is_exchange(from_address)
+        to_exchange = address_is_exchange(to_address) if to_address else None
 
         if tracked_from and tracked_to:
             event_type = HistoryEventType.TRANSFER
@@ -70,15 +76,25 @@ class BaseDecoderTools():
             counterparty = to_address if not set_counterparty else set_counterparty
             verb = 'Send' if not set_verbs else set_verbs[0]
         elif tracked_from:
-            event_type = HistoryEventType.SPEND
+            if to_exchange is not None:
+                event_type = HistoryEventType.DEPOSIT
+                verb = 'Deposit'
+                counterparty = to_exchange
+            else:
+                event_type = HistoryEventType.SPEND
+                verb = 'Send' if not set_verbs else set_verbs[0]
+                counterparty = to_address if not set_counterparty else set_counterparty
             location_label = from_address
-            counterparty = to_address if not set_counterparty else set_counterparty
-            verb = 'Send' if not set_verbs else set_verbs[0]
         else:  # can only be tracked_to
-            event_type = HistoryEventType.RECEIVE
+            if from_exchange:
+                event_type = HistoryEventType.WITHDRAWAL
+                verb = 'Withdraw'
+                counterparty = from_exchange
+            else:
+                event_type = HistoryEventType.RECEIVE
+                verb = 'Receive' if not set_verbs else set_verbs[1]
+                counterparty = from_address if not set_counterparty else set_counterparty
             location_label = to_address  # type: ignore  # to_address can't be None here
-            counterparty = from_address if not set_counterparty else set_counterparty
-            verb = 'Receive' if not set_verbs else set_verbs[1]
 
         return event_type, location_label, counterparty, verb  # type: ignore
 

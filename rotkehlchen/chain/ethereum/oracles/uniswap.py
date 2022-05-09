@@ -8,6 +8,7 @@ from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.utils import multicall, multicall_specific
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USD, A_USDC, A_USDT, A_WETH
@@ -16,7 +17,6 @@ from rotkehlchen.constants.ethereum import (
     UNISWAP_V2_LP_ABI,
     UNISWAP_V3_FACTORY,
     UNISWAP_V3_POOL_ABI,
-    ZERO_ADDRESS,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.defi import DefiPoolError

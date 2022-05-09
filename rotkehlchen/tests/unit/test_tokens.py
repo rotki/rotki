@@ -3,12 +3,13 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import A_BAT, A_MKR
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import mock_etherscan_query
-from rotkehlchen.tests.utils.constants import A_GNO, ZERO_ADDRESS
+from rotkehlchen.tests.utils.constants import A_GNO
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 
 

@@ -213,6 +213,17 @@ export const transactionEventTypeData: ActionDataEntry[] = [
     color: 'green'
   },
   {
+    identifier: TransactionEventType.SWAP_OUT,
+    label: i18n.t('transactions.events.type.swap_out').toString(),
+    icon: 'mdi-arrow-u-right-bottom'
+  },
+  {
+    identifier: TransactionEventType.SWAP_IN,
+    label: i18n.t('transactions.events.type.swap_in').toString(),
+    icon: 'mdi-arrow-u-left-top',
+    color: 'green'
+  },
+  {
     identifier: TransactionEventType.APPROVAL,
     label: i18n.t('transactions.events.type.approval').toString(),
     icon: 'mdi-lock-open-outline'
@@ -305,16 +316,16 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.BRIDGE]: TransactionEventType.BRIDGE
   },
   [HistoryEventType.TRADE]: {
-    [HistoryEventSubType.SPEND]: TransactionEventType.SEND,
-    [HistoryEventSubType.RECEIVE]: TransactionEventType.RECEIVE
+    [HistoryEventSubType.SPEND]: TransactionEventType.SWAP_OUT,
+    [HistoryEventSubType.RECEIVE]: TransactionEventType.SWAP_IN
   },
   [HistoryEventType.WITHDRAWAL]: {
-    null: TransactionEventType.WITHDRAW,
+    [HistoryEventSubType.NONE]: TransactionEventType.WITHDRAW,
     [HistoryEventSubType.REMOVE_ASSET]: TransactionEventType.WITHDRAW,
     [HistoryEventSubType.GENERATE_DEBT]: TransactionEventType.BORROW
   },
   [HistoryEventType.DEPOSIT]: {
-    null: TransactionEventType.DEPOSIT,
+    [HistoryEventSubType.NONE]: TransactionEventType.DEPOSIT,
     [HistoryEventSubType.DEPOSIT_ASSET]: TransactionEventType.DEPOSIT,
     [HistoryEventSubType.BRIDGE]: TransactionEventType.DEPOSIT
   },
@@ -421,5 +432,10 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     identifier: TransactionEventProtocol.ENS,
     label: 'ens',
     image: require('@/assets/images/airdrops/ens.svg')
+  },
+  {
+    identifier: TransactionEventProtocol.KRAKEN,
+    label: 'kraken',
+    image: require('@/assets/images/exchanges/kraken.svg')
   }
 ];

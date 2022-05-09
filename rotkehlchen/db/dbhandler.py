@@ -102,7 +102,6 @@ from rotkehlchen.types import (
     BlockchainAccountData,
     BTCAddress,
     ChecksumEthAddress,
-    EnsMapping,
     ExchangeApiCredentials,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -116,7 +115,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
-from rotkehlchen.utils.misc import create_timestamp, ts_now
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 logger = logging.getLogger(__name__)
@@ -3494,33 +3493,6 @@ class DBHandler:
         if cursor.fetchone()[0] >= 1:
             locations.add(Location.BALANCER)
         return locations
-
-    def add_ens_mapping(self, mapping: EnsMapping) -> None:
-        cursor = self.conn.cursor()
-        if mapping.address is not None:
-            cursor.execute('DELETE FROM ens_mappings WHERE ens_name = ?', (mapping.name,))
-            cursor.execute('DELETE FROM ens_mappings WHERE address = ?', (mapping.address,))
-        cursor.execute(
-            'INSERT OR IGNORE INTO ens_mappings (ens_name, address) VALUES (?, ?)',
-            (mapping.name, mapping.address),
-        )
-
-    def get_reverse_ens(
-        self,
-        addresses: List[ChecksumEthAddress],
-    ) -> List[EnsMapping]:
-        cursor = self.conn.cursor()
-        data = cursor.execute(
-            f'SELECT ens_name, address, last_update FROM ens_mappings WHERE address IN (? {", ?"*(len(addresses)-1)})',  # noqa: E501
-            addresses,
-        )
-        return [
-            EnsMapping(
-                address=ChecksumEthAddress(address),
-                name=ens_name,
-                last_update=create_timestamp(last_update),
-            ) for ens_name, address, last_update in data
-        ]
 
     def should_save_balances(self) -> bool:
         """

@@ -6,11 +6,11 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.constants.ethereum import ZERO_ADDRESS
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import PICKLE_JAR_PROTOCOL, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
