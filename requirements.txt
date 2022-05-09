@@ -2,7 +2,7 @@ gevent==21.12.0
 greenlet==1.1.2
 gevent-websocket==0.10.1
 wsaccel==0.6.3  # recommended for acceleration of gevent-websocket. But abandoned.
-web3==5.28.0
+web3==5.29.0
 pysqlcipher3==1.0.4
 requests==2.27.1
 urllib3==1.26.9
@@ -10,23 +10,24 @@ coincurve==17.0.0
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0
-scalecodec==1.0.34
+scalecodec==1.0.35
 py-sr25519-bindings==0.1.4
 py-ed25519-bindings==1.0.1
-py-bip39-bindings==0.1.8
-substrate-interface==1.2.2
+py-bip39-bindings==0.1.9
+substrate-interface==1.2.4
 beautifulsoup4==4.11.1
 maxminddb==2.2.0
 miniupnpc==2.0.2; sys_platform != 'win32'
 miniupnpc==2.2.3; sys_platform == 'win32'
-cryptography==36.0.1
+cryptography==37.0.2
 
 # For the rest api
 flask-cors==3.0.10
 flask-restful==0.3.9
-flask==2.1.1
+flask==2.1.2
 marshmallow==3.15.0
 webargs==8.1.0
+werkzeug==2.1.2
 
 #constraints
 setuptools==49.6.0  # constraint required by pyinstaller==4.8

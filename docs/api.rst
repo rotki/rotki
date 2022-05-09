@@ -155,7 +155,7 @@ Handling user creation, sign-in, log-out and querying
                   "historical_price_oracles": ["cryptocompare", "coingecko"],
                   "taxable_ledger_actions": ["income", "airdrop"],
                   "ssf_0graph_multiplier": 2,
-                  "non_sync_exchanges: [{"location": "binance", "name": "binance1"}]
+                  "non_sync_exchanges": [{"location": "binance", "name": "binance1"}]
               }
           },
           "message": ""
@@ -225,7 +225,7 @@ Handling user creation, sign-in, log-out and querying
                   "historical_price_oracles": ["cryptocompare", "coingecko"],
                   "taxable_ledger_actions": ["income", "airdrop"],
                   "ssf_0graph_multiplier": 2,
-                  "non_sync_exchanges: [{"location": "binance", "name": "binance1"}]
+                  "non_sync_exchanges": [{"location": "binance", "name": "binance1"}]
               }
           },
           "message": ""
@@ -597,7 +597,7 @@ Getting or modifying settings
               "historical_price_oracles": ["cryptocompare", "coingecko"],
               "taxable_ledger_actions": ["income", "airdrop"],
               "ssf_0graph_multiplier": 2,
-              "non_sync_exchanges: [{"location": "binance", "name": "binance1"}]
+              "non_sync_exchanges": [{"location": "binance", "name": "binance1"}]
           },
           "message": ""
       }
@@ -697,7 +697,7 @@ Getting or modifying settings
               "historical_price_oracles": ["coingecko", "cryptocompare"],
               "taxable_ledger_actions": ["income", "airdrop"],
               "ssf_0graph_multiplier": 2,
-              "non_sync_exchanges: [{"location": "binance", "name": "binance1"}]
+              "non_sync_exchanges": [{"location": "binance", "name": "binance1"}]
           },
           "message": ""
       }
@@ -4536,7 +4536,6 @@ Query saved PnL Reports
               "end_ts":1637928988,
               "first_processed_timestamp":null,
               "last_processed_timestamp": 1602042717,
-              "last_processed_timestamp": 1602042717,
               "size_on_disk":14793,
               "settings": {
                   "profit_currency": "USD",
@@ -4548,7 +4547,7 @@ Query saved PnL Reports
               },
               "overview": {
                   "trade": {"free": "0", "taxable": "60.1"},
-		  "transaction event": {"free": "0", "taxable": "40.442"}.
+                  "transaction event": {"free": "0", "taxable": "40.442"},
                   "fee": {"free": "10", "taxable": "55.5"}
               }
             },
@@ -4558,7 +4557,6 @@ Query saved PnL Reports
               "start_ts":0,
               "end_ts":1637928988,
               "first_processed_timestamp":null,
-              "last_processed_timestamp": 1602042717,
               "last_processed_timestamp": 1602042717,
               "size_on_disk":6793,
               "settings": {
@@ -4580,7 +4578,6 @@ Query saved PnL Reports
               "start_ts":0,
               "end_ts":1637928988,
               "first_processed_timestamp":null,
-              "last_processed_timestamp": 1602042717,
               "last_processed_timestamp": 1602042717,
               "size_on_disk":23493,
               "settings": {
@@ -4616,6 +4613,7 @@ Query saved PnL Reports
    :resjson int total_actions: The total number of actions to be processed  by the PnL report. This is not the same as the events shown within the report as some of them they may be before or after the time period of the report.
    :resjson int entries_found: The number of reports found if called without a specific report id.
    :resjson int entries_limit: -1 if there is no limit (premium). Otherwise the limit of saved reports to inspect is 20.
+
    **Settings**
    This object contains an entry per PnL report setting.
    :resjson str profit_currency: The identifier of the asset used as profit currency in the PnL report.
