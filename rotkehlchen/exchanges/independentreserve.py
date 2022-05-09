@@ -30,11 +30,13 @@ from rotkehlchen.constants.assets import (
     A_GRT,
     A_LINK,
     A_LTC,
+    A_MANA,
     A_MATIC,
     A_MKR,
     A_NZD,
     A_OMG,
     A_PMGT,
+    A_SAND,
     A_SGD,
     A_SNX,
     A_UNI,
@@ -118,6 +120,8 @@ IR_TO_WORLD = {
     'Sgd': A_SGD,
     'Doge': A_DOGE,
     'Matic': A_MATIC,
+    'Mana': A_MANA,
+    'Sand': A_SAND,
 }
 
 

@@ -185,6 +185,10 @@ def test_cryptocompare_asset_support(cryptocompare):
         'MINE',  # spacemine but cc has instamine
         'SIN',  # sincity but cc has sinnoverse
         'GST-2',  # green satoshi coin but cc has gstcoin
+        ethaddress_to_identifier('0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),  # noqa: E501 # gearbox but cc has metagear
+        ethaddress_to_identifier('0xA68Dd8cB83097765263AdAD881Af6eeD479c4a33'),  # noqa: E501 # fees.wtf but cc has WTF token
+        'AUSD',  # alpaca usd but cc has appeal dollar
+        'PLY',  # Aurigami but cc has playcoin
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -435,6 +439,12 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x6949Bb624E8e8A90F87cD2058139fcd77D2F3F87'),
         # sinovate but we have sincity
         'SIN',
+        # Hedge protocol but we have Hede crypto coin (book)
+        ethaddress_to_identifier('0xfFe8196bc259E8dEDc544d935786Aa4709eC3E64'),
+        # realchain but coingecko has reactor
+        ethaddress_to_identifier('0x13f25cd52b21650caa8225C9942337d914C9B030'),
+        # we have plutusdefi (usde) but coingecko has energi dollar
+        'USDE',
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
