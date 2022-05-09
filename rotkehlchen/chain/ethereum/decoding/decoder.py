@@ -241,7 +241,7 @@ class EVMTransactionDecoder():
             hashes = self.dbethtx.get_transaction_hashes_not_decoded(limit=limit)
             self.decode_transaction_hashes(ignore_cache=False, tx_hashes=hashes)
 
-    def decode_transaction_hashes(self, ignore_cache: bool, tx_hashes: List[EVMTxHash]) -> List[HistoryBaseEntry]:  # noqa: E501
+    def decode_transaction_hashes(self, ignore_cache: bool, tx_hashes: Optional[List[EVMTxHash]]) -> List[HistoryBaseEntry]:  # noqa: E501
         """Make sure that receipts are pulled + events decoded for the given transaction hashes.
 
         The transaction hashes must exist in the DB at the time of the call
@@ -254,6 +254,13 @@ class EVMTransactionDecoder():
         events = []
         self.reload_from_db()
         tx_module = EthTransactions(ethereum=self.ethereum_manager, database=self.database)
+
+        # If no transaction hashes are passed, decode all transactions.
+        if tx_hashes is None:
+            tx_hashes = []
+            cursor = self.database.conn.cursor()
+            for entry in cursor.execute('SELECT tx_hash FROM ethereum_transactions'):
+                tx_hashes.append(EVMTxHash(entry[0]))
 
         for tx_hash in tx_hashes:
             try:
