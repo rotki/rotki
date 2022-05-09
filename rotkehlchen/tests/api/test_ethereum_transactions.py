@@ -138,12 +138,6 @@ EXPECTED_4193_TXS = [{
 
 def assert_force_redecode_txns_works(api_server: APIServer, hashes: Optional[List[EVMTxHash]]):
     rotki = api_server.rest_api.rotkehlchen
-    get_all_txn_hashes_patch = patch.object(
-        rotki.evm_tx_decoder.dbethtx,
-        'get_all_transaction_hashes',
-        wraps=rotki.evm_tx_decoder.dbethtx.get_all_transaction_hashes,
-    )
-    original_get_all_txn_hashes = rotki.evm_tx_decoder.dbethtx.get_all_transaction_hashes
     get_eth_txns_patch = patch.object(
         rotki.evm_tx_decoder.dbethtx,
         'get_ethereum_transactions',
@@ -157,7 +151,6 @@ def assert_force_redecode_txns_works(api_server: APIServer, hashes: Optional[Lis
     get_or_query_txn_receipt_patch = patch('rotkehlchen.chain.ethereum.transactions.EthTransactions.get_or_query_transaction_receipt')  # noqa: 501
     with ExitStack() as stack:
         function_call_counters = []
-        function_call_counters.append(stack.enter_context(get_all_txn_hashes_patch))
         function_call_counters.append(stack.enter_context(get_or_decode_txn_events_patch))
         function_call_counters.append(stack.enter_context(get_eth_txns_patch))
         function_call_counters.append(stack.enter_context(get_or_query_txn_receipt_patch))
@@ -175,17 +168,11 @@ def assert_force_redecode_txns_works(api_server: APIServer, hashes: Optional[Lis
         assert_proper_response(response)
         if hashes is None:
             for fn in function_call_counters:
-                if fn._mock_wraps == original_get_all_txn_hashes:
-                    fn.assert_called_once()
-                else:
-                    assert fn.call_count == 14
+                assert fn.call_count == 14
         else:
             txn_hashes_len = len(hashes)
             for fn in function_call_counters:
-                if fn._mock_wraps == original_get_all_txn_hashes:
-                    assert fn.call_count == 0
-                else:
-                    assert fn.call_count == txn_hashes_len
+                assert fn.call_count == txn_hashes_len
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[

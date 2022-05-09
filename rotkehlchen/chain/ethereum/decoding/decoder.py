@@ -257,7 +257,10 @@ class EVMTransactionDecoder():
 
         # If no transaction hashes are passed, decode all transactions.
         if tx_hashes is None:
-            tx_hashes = self.dbethtx.get_all_transaction_hashes()
+            tx_hashes = []
+            cursor = self.database.conn.cursor()
+            for entry in cursor.execute('SELECT tx_hash FROM ethereum_transactions'):
+                tx_hashes.append(EVMTxHash(entry[0]))
 
         for tx_hash in tx_hashes:
             try:
