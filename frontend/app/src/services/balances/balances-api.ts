@@ -111,10 +111,10 @@ export class BalancesApi {
       .then(handleResponse);
   }
 
-  async deleteManualBalances(labels: string[]): Promise<ManualBalances> {
+  async deleteManualBalances(ids: number[]): Promise<ManualBalances> {
     return this.axios
       .delete<ActionResult<ManualBalances>>('balances/manual', {
-        data: { labels },
+        data: { ids },
         transformResponse: balanceAxiosTransformer,
         validateStatus: validWithParamsSessionAndExternalService
       })

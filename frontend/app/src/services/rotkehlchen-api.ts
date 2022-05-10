@@ -1242,6 +1242,16 @@ export class RotkehlchenApi {
       }
     );
   }
+
+  async deleteSnapshot(payload: { timestamp: number }): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>('/snapshot/delete', {
+        data: axiosSnakeCaseTransformer(payload),
+        validateStatus: validWithoutSessionStatus,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
 }
 
 export const api = new RotkehlchenApi();

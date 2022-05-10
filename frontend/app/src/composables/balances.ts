@@ -208,8 +208,8 @@ export const setupManualBalances = () => {
     await store.dispatch('balances/fetchManualBalances');
   };
 
-  const deleteManualBalance = async (label: string) => {
-    await store.dispatch('balances/deleteManualBalance', label);
+  const deleteManualBalance = async (id: number) => {
+    await store.dispatch('balances/deleteManualBalance', id);
   };
 
   const manualBalances = computed(() => store.state.balances!.manualBalances);
@@ -224,7 +224,7 @@ export const setupManualBalances = () => {
   };
 
   const addBalance: (
-    balance: ManualBalance
+    balance: Omit<ManualBalance, 'id'>
   ) => Promise<ActionStatus> = async balance => {
     return await store.dispatch('balances/addManualBalance', balance);
   };

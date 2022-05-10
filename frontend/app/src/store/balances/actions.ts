@@ -988,9 +988,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async deleteManualBalance({ commit }, label: string) {
+  async deleteManualBalance({ commit }, id: number) {
     try {
-      const { balances } = await api.balances.deleteManualBalances([label]);
+      const { balances } = await api.balances.deleteManualBalances([id]);
       commit('manualBalances', balances);
     } catch (e: any) {
       showError(

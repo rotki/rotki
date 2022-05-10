@@ -31,24 +31,38 @@
       </div>
       <template #buttons>
         <v-spacer />
+        <v-btn color="error" @click="deleteSnapshotConfirmationDialog = true">
+          <v-icon class="mr-2">mdi-delete-outline</v-icon>
+          {{ $t('dashboard.snapshot.delete_snapshot') }}
+        </v-btn>
         <v-btn depressed color="primary" @click="exportSnapshot">
+          <v-icon class="mr-2">mdi-download</v-icon>
           {{ $t('dashboard.snapshot.download_snapshot') }}
         </v-btn>
       </template>
     </card>
+    <confirm-dialog
+      v-if="deleteSnapshotConfirmationDialog"
+      display
+      :title="$tc('dashboard.snapshot.delete_dialog.title')"
+      :message="$tc('dashboard.snapshot.delete_dialog.message')"
+      @cancel="deleteSnapshotConfirmationDialog = false"
+      @confirm="deleteSnapshot"
+    />
   </v-dialog>
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { Message } from '@rotki/common/lib/messages';
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
-import { get } from '@vueuse/core';
+import { computed, defineComponent, ref, toRefs } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { setupGeneralSettings } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/store';
+import { useStore } from '@/store/utils';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { downloadFileByUrl } from '@/utils/download';
 
@@ -63,6 +77,8 @@ export default defineComponent({
   setup(props, { emit }) {
     const { timestamp, balance } = toRefs(props);
     const { currency } = setupGeneralSettings();
+
+    const deleteSnapshotConfirmationDialog = ref<boolean>(false);
 
     const updateVisibility = (visible: boolean) => {
       emit('input', visible);
@@ -92,8 +108,9 @@ export default defineComponent({
       updateVisibility(false);
     };
 
+    const { setMessage } = useMainStore();
+
     const exportSnapshotCSV = async () => {
-      const { setMessage } = useMainStore();
       let message: Message | null = null;
 
       try {
@@ -144,11 +161,46 @@ export default defineComponent({
       }
     };
 
+    const deleteSnapshot = async () => {
+      let message: Message | null;
+
+      try {
+        const success = await api.deleteSnapshot({
+          timestamp: get(timestamp)
+        });
+
+        message = {
+          title: i18n.t('dashboard.snapshot.delete_message.title').toString(),
+          description: success
+            ? i18n.t('dashboard.snapshot.delete_message.success').toString()
+            : i18n.t('dashboard.snapshot.delete_message.failure').toString(),
+          success
+        };
+
+        updateVisibility(false);
+
+        const store = useStore();
+        store.dispatch('statistics/fetchNetValue');
+      } catch (e: any) {
+        message = {
+          title: i18n.t('dashboard.snapshot.message.title').toString(),
+          description: e.message,
+          success: false
+        };
+      }
+
+      set(deleteSnapshotConfirmationDialog, false);
+
+      setMessage(message);
+    };
+
     return {
       currency,
       formattedSelectedBalance,
       updateVisibility,
-      exportSnapshot
+      exportSnapshot,
+      deleteSnapshotConfirmationDialog,
+      deleteSnapshot
     };
   }
 });

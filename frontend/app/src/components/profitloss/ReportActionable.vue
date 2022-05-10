@@ -2,7 +2,7 @@
   <div v-if="actionableItemsLength.total">
     <v-dialog v-model="mainDialogOpen" max-width="1000">
       <template #activator="{ on }">
-        <v-btn color="error" v-on="on" @click="step = 1">
+        <v-btn color="error" depressed v-on="on" @click="step = 1">
           <span class="px-2">
             {{ $tc('profit_loss_report.actionable.show_issues') }}
           </span>

@@ -25,6 +25,8 @@
       <v-btn
         color="primary"
         depressed
+        target="_blank"
+        :href="$interop.isPackaged ? undefined : $interop.premiumURL"
         class="premium-reminder__buttons__confirm"
         @click="upgrade"
       >

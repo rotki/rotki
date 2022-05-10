@@ -71,6 +71,7 @@ describe('balances:getters', () => {
     const state: BalanceState = stub<BalanceState>({
       manualBalances: [
         {
+          id: 1,
           usdValue: bigNumberify(50),
           amount: bigNumberify(50),
           asset: 'DAI',

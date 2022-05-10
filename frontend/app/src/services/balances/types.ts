@@ -12,6 +12,7 @@ export enum BalanceType {
 }
 
 export interface ManualBalance {
+  readonly id: number;
   readonly asset: string;
   readonly label: string;
   readonly amount: BigNumber;

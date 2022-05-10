@@ -4,6 +4,7 @@
       <v-btn
         text
         icon
+        target="_blank"
         v-bind="$attrs"
         :href="$interop.isPackaged ? undefined : $interop.premiumURL"
         v-on="on"

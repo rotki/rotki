@@ -13,7 +13,7 @@
       :label="$t('manual_balances_form.fields.label')"
       :error-messages="errors['label']"
       :rules="labelRules"
-      :disabled="pending || !!edit"
+      :disabled="pending"
       @focus="delete errors['label']"
     />
 
@@ -125,9 +125,10 @@ const ManualBalancesForm = defineComponent({
 
     const errors: Ref<{ [key: string]: string[] }> = ref({});
 
-    const asset = ref('');
-    const label = ref('');
-    const amount = ref('');
+    const id = ref<number | null>(null);
+    const asset = ref<string>('');
+    const label = ref<string>('');
+    const amount = ref<string>('');
     const tags: Ref<string[]> = ref([]);
     const location: Ref<TradeLocation> = ref(TRADE_LOCATION_EXTERNAL);
     const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
@@ -149,6 +150,7 @@ const ManualBalancesForm = defineComponent({
     };
 
     const setBalance = (balance: ManualBalance) => {
+      set(id, balance.id);
       set(asset, balance.asset);
       set(label, balance.label);
       set(amount, balance.amount.toString());
@@ -173,7 +175,7 @@ const ManualBalancesForm = defineComponent({
 
     const save = async () => {
       set(pending, true);
-      const balance: ManualBalance = {
+      const balance: Omit<ManualBalance, 'id'> = {
         asset: get(asset),
         amount: bigNumberify(get(amount)),
         label: get(label),
@@ -181,8 +183,11 @@ const ManualBalancesForm = defineComponent({
         location: get(location),
         balanceType: get(balanceType)
       };
-      const status = await (get(edit)
-        ? editBalance(balance)
+
+      const idVal = get(id);
+
+      const status = await (get(edit) && idVal
+        ? editBalance({ ...balance, id: idVal })
         : addBalance(balance));
 
       set(pending, false);

@@ -12,7 +12,7 @@ import '../../i18n';
 Vue.use(Vuetify);
 
 describe('AccountBalances.vue', () => {
-  let wrapper: Wrapper<AccountBalances>;
+  let wrapper: Wrapper<any>;
 
   beforeEach(() => {
     const vuetify = new Vuetify();
