@@ -9,11 +9,12 @@ from rotkehlchen.accounting.structures.base import (
 from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.aave import A_ADAI_V1
+from rotkehlchen.tests.utils.aave import A_ADAI_V1, A_AETH_V1
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, deserialize_evm_tx_hash
 
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
+ADDY2 = '0x5727c0481b90a129554395937612d8b9301D6c7b'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])  # noqa: E501
@@ -147,6 +148,75 @@ def test_aave_withdraw_v1(database, ethereum_manager, function_scope_messages_ag
             balance=Balance(amount=FVal(amount)),
             location_label=ADDY,
             notes=f'Withdraw {amount} DAI from aave-v1',
+            counterparty=CPT_AAVE_V1,
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])  # noqa: E501
+def test_aave_eth_withdraw_v1(database, ethereum_manager, function_scope_messages_aggregator):
+    """Data taken from
+    https://etherscan.io/tx/0xbd333bdd5784c10630aac5683e63f703e660a78d06f95b2ff2a8788a8dade787
+    """
+    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
+    tx_hash = deserialize_evm_tx_hash('0xbd333bdd5784c10630aac5683e63f703e660a78d06f95b2ff2a8788a8dade787')  # noqa: E501
+    events = get_decoded_events_of_transaction(
+        ethereum_manager=ethereum_manager,
+        database=database,
+        msg_aggregator=function_scope_messages_aggregator,
+        tx_hash=tx_hash,
+    )
+    amount = '1.000240847792940067'
+    interest = '0.000240847792940067'
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=0,
+            timestamp=1605789951000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.021740928')),
+            location_label=ADDY2,
+            notes=f'Burned 0.021740928 ETH in gas from {ADDY2}',
+            counterparty='gas',
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=1,
+            timestamp=1605789951000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_AETH_V1,
+            balance=Balance(amount=FVal(amount)),
+            location_label=ADDY2,
+            notes=f'Return {amount} aETH to aave-v1',
+            counterparty=CPT_AAVE_V1,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=2,
+            timestamp=1605789951000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(amount)),
+            location_label=ADDY2,
+            notes=f'Withdraw {amount} ETH from aave-v1',
+            counterparty=CPT_AAVE_V1,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=135,
+            timestamp=1605789951000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_AETH_V1,
+            balance=Balance(amount=FVal(interest)),
+            location_label=ADDY2,
+            notes=f'Gain {interest} aETH from aave-v1 as interest',
             counterparty=CPT_AAVE_V1,
         ),
     ]

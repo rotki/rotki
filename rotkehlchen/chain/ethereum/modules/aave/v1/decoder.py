@@ -121,7 +121,7 @@ class Aavev1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
 
-        maybe_reshuffle_events(out_event=return_event, in_event=receive_event)
+        maybe_reshuffle_events(out_event=return_event, in_event=receive_event, events_list=decoded_events)  # noqa: E501
         return None, None
 
     # -- DecoderInterface methods
