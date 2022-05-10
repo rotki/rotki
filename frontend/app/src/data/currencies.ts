@@ -74,7 +74,7 @@ export const currencies: Currency[] = [
   new Currency(i18n.t('currencies.nok').toString(), CURRENCY_NOK, 'kr'),
   new Currency(i18n.t('currencies.inr').toString(), CURRENCY_INR, '₹'),
   new Currency(i18n.t('currencies.dkk').toString(), CURRENCY_DKK, 'kr'),
-  new Currency(i18n.t('currencies.pln').toString(), CURRENCY_DKK, 'zł'),
+  new Currency(i18n.t('currencies.pln').toString(), CURRENCY_PLN, 'zł'),
   new Currency('Bitcoin', CURRENCY_BTC, '₿'),
   new Currency('Ether', CURRENCY_ETH, 'Ξ')
 ];
