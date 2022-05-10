@@ -660,7 +660,23 @@ class DBHandler:
         cursor.execute(
             'SELECT value FROM multisettings WHERE name="ignored_asset";',
         )
-        return [Asset(q[0]) for q in cursor]
+        assets = []
+        for asset_setting in cursor:
+            try:
+                asset = Asset(asset_setting[0])
+            except UnknownAsset:
+                msg = (
+                    f'Found unknown asset {asset_setting[0]} in the list of ignored '
+                    f'assets. Removing it.'
+                )
+                cursor.execute(
+                    'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
+                    (asset_setting[0],),
+                )
+                self.msg_aggregator.add_warning(msg)
+                continue
+            assets.append(asset)
+        return assets
 
     def add_to_ignored_action_ids(self, action_type: ActionType, identifiers: List[str]) -> None:
         """Adds a list of identifiers to be ignored for a given action type

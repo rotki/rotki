@@ -303,7 +303,7 @@ def test_writing_fetching_data(data_dir, username):
     result, _ = data.add_ignored_assets([A_DOGE])
     assert result
     result, _ = data.add_ignored_assets([A_DOGE])
-    assert not result
+    assert result is None
 
     ignored_assets = data.db.get_ignored_assets()
     assert all(isinstance(asset, Asset) for asset in ignored_assets)
@@ -311,7 +311,7 @@ def test_writing_fetching_data(data_dir, username):
     # Test removing asset that is not in the list
     result, msg = data.remove_ignored_assets([A_RDN])
     assert 'not in ignored assets' in msg
-    assert not result
+    assert result is None
     result, _ = data.remove_ignored_assets([A_DOGE])
     assert result
     assert data.db.get_ignored_assets() == [A_DAO]
