@@ -314,4 +314,5 @@ class DBSnapshot:
         if cursor.rowcount == 0:
             self.db.conn.rollback()
             return False, 'No snapshot found for the specified timestamp'
+        self.db.update_last_write()
         return True, ''
