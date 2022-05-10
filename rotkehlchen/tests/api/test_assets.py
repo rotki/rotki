@@ -114,7 +114,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
     result = assert_proper_response_with_result(response)
     assert expected_ignored_assets <= set(result)
 
-    # remove thre assets from ignored assets
+    # remove 3 assets from ignored assets
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
@@ -236,7 +236,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         ignored_assets +
         [KICK_TOKEN],
     )
-    assert set(rotki.data.db.get_ignored_assets()) == expected_tokens
+    assert set(rotki.data.db.get_ignored_assets()) >= expected_tokens
 
     # Test the adding an already existing asset or removing a non-existing asset is an error
     if method == 'put':
@@ -257,4 +257,4 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         status_code=HTTPStatus.CONFLICT,
     )
     # Check that assets did not get modified
-    assert set(rotki.data.db.get_ignored_assets()) == expected_tokens
+    assert set(rotki.data.db.get_ignored_assets()) >= expected_tokens

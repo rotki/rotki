@@ -58,7 +58,7 @@ def query_token_spam_list(db: 'DBHandler') -> Set[EthereumToken]:
     This function tries to add as assets to the globaldb the tokens listed in
     KNOWN_ETH_SPAM_TOKENS and not the ones coming from cryptoscamdb. The reason is that until the
     v2 of the API the response contains both spam addresses and tokens and there is no way to know
-    if the address is for a contract or not. Checking if the address is a contract takes to much
+    if the address is for a contract or not. Checking if the address is a contract takes too much
     time. When V2 gets released this can be fixed.
     May raise:
     - RemoteError
@@ -109,6 +109,7 @@ def query_token_spam_list(db: 'DBHandler') -> Set[EthereumToken]:
                 userdb=db,
                 ethereum_address=token_address,
                 protocol=SPAM_PROTOCOL,
+                form_with_incomplete_data=True,
             )
         except (RemoteError, NotERC20Conformant) as e:
             log.debug(f'Skipping {checksumed_address} due to {str(e)}')
