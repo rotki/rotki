@@ -38,7 +38,6 @@
                 class="transparent"
                 hide-default-footer
                 hide-default-header
-                item-key="identifier"
               >
                 <template #item.type="{ item }">
                   <transaction-event-type :event="item" />

@@ -385,10 +385,7 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
               .toString();
 
       showMessage(message, title);
-
-      if (result) {
-        await fetchIgnoredAssets();
-      }
+      await fetchIgnoredAssets();
     } catch (e: any) {
       const title = i18n.tc(
         'actions.session.update_ignored_assets.error.title'

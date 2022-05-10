@@ -572,6 +572,8 @@ export const useTransactions = defineStore('history/transactions', () => {
     Collection<EthTransactionEntry>
   >;
 
+  const fetchedTxHashesEvents = ref<{ [txHash: string]: boolean } | null>({});
+
   const transactionsPayload = ref<Partial<TransactionRequestPayload>>(
     defaultHistoricPayloadState('timestamp')
   );
@@ -756,17 +758,49 @@ export const useTransactions = defineStore('history/transactions', () => {
     return { success, message };
   };
 
+  const checkFetchedTxHashesEvents = (txHashes: string[] | null): string[] => {
+    const fetched = get(fetchedTxHashesEvents);
+    if (fetched === null) return [];
+    if (txHashes === null) {
+      set(fetchedTxHashesEvents, null);
+      return [];
+    }
+
+    const txHashesToFetch = txHashes.filter((txHash: string) => {
+      return !fetched[txHash];
+    });
+
+    if (txHashesToFetch.length > 0) {
+      const txHashesToFetchObj: { [txHash: string]: boolean } = {};
+      txHashesToFetch.forEach((txHash: string) => {
+        txHashesToFetchObj[txHash] = true;
+      });
+
+      set(fetchedTxHashesEvents, {
+        ...fetched,
+        ...txHashesToFetchObj
+      });
+    }
+
+    return txHashesToFetch;
+  };
+
   const fetchTransactionEvents = async (
-    txHashes: string[],
+    txHashes: string[] | null,
     ignoreCache: boolean = false
   ) => {
-    if (txHashes.length === 0) return;
+    const isFetchAll = txHashes === null;
+
+    const checked = checkFetchedTxHashesEvents(txHashes);
+    const txHashesToFetch = ignoreCache ? txHashes || [] : checked;
+
+    if (!isFetchAll && txHashesToFetch.length === 0) return;
 
     const { awaitTask } = useTasks();
 
     const taskType = TaskType.TX_EVENTS;
     const { taskId } = await api.history.fetchEthTransactionEvents({
-      txHashes,
+      txHashes: txHashesToFetch,
       ignoreCache
     });
     const taskMeta = {
@@ -781,6 +815,18 @@ export const useTransactions = defineStore('history/transactions', () => {
 
     if (result) {
       await fetchTransactions();
+    }
+
+    const fetched = get(fetchedTxHashesEvents);
+    if (fetched) {
+      txHashesToFetch.forEach((txHash: string) => {
+        delete fetched[txHash];
+      });
+      set(fetchedTxHashesEvents, fetched);
+    }
+
+    if (isFetchAll) {
+      set(fetchedTxHashesEvents, {});
     }
   };
 

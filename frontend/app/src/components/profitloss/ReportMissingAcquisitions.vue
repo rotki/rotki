@@ -1,12 +1,14 @@
 <template>
   <div>
     <data-table
+      ref="tableRef"
       :class="$style.table"
       :headers="headers"
       :items="groupedMissingAcquisitions"
       item-key="asset"
       single-expand
       :expanded.sync="expanded"
+      :container="tableContainer"
     >
       <template #item.asset="{ item }">
         <asset-details :asset="item.asset" />
@@ -32,7 +34,11 @@
       </template>
       <template #expanded-item="{ item }">
         <table-expand-container visible :colspan="headers.length">
-          <data-table :headers="childHeaders" :items="item.acquisitions">
+          <data-table
+            :headers="childHeaders"
+            :items="item.acquisitions"
+            :container="tableContainer"
+          >
             <template #item.time="{ item: childItem }">
               <date-display :timestamp="childItem.time" />
             </template>
@@ -172,11 +178,19 @@ export default defineComponent({
 
     const expanded = ref<MappedGroupedItems[]>([]);
 
+    const tableRef = ref<any>(null);
+
+    const tableContainer = computed(() => {
+      return get(tableRef)?.$el;
+    });
+
     return {
       headers,
       childHeaders,
       expanded,
-      groupedMissingAcquisitions
+      groupedMissingAcquisitions,
+      tableRef,
+      tableContainer
     };
   }
 });
@@ -184,7 +198,8 @@ export default defineComponent({
 
 <style module lang="scss">
 .table {
-  max-height: calc(100vh - 250px);
+  scroll-behavior: smooth;
+  max-height: calc(100vh - 310px);
   overflow: auto;
 }
 </style>

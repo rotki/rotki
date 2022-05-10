@@ -11,11 +11,27 @@
       </template>
       <template #actions>
         <v-row justify="end">
-          <v-col v-if="isDevelopment" cols="12" md="6">
+          <v-col cols="12" md="6">
             <div>
-              <v-btn color="primary" @click="redecodeAllEvents">
-                {{ $t('transactions.redecode_all_events') }}
-              </v-btn>
+              <v-menu offset-y>
+                <template #activator="{ on }">
+                  <v-btn color="primary" v-on="on">
+                    {{ $t('transactions.redecode_events.title') }}
+                  </v-btn>
+                </template>
+                <v-list>
+                  <v-list-item link @click="redecodeEvents()">
+                    <v-list-item-title>
+                      {{ $t('transactions.redecode_events.this_page') }}
+                    </v-list-item-title>
+                  </v-list-item>
+                  <v-list-item link @click="redecodeEvents(true)">
+                    <v-list-item-title>
+                      {{ $t('transactions.redecode_events.all') }}
+                    </v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
             </div>
           </v-col>
           <v-col cols="12" md="6">
@@ -38,13 +54,12 @@
         :expanded="data"
         :headers="tableHeaders"
         :items="data"
-        :loading="loading"
+        :loading="loading || eventTaskLoading"
         :options="options"
         :server-items-length="itemLength"
         :single-select="false"
         :mobile-breakpoint="0"
         :item-class="item => (item.ignoredInAccounting ? 'darken-row' : '')"
-        item-key="txHash"
         :class="$style.table"
         @update:options="updatePaginationHandler($event)"
       >
@@ -122,10 +137,8 @@
                 </v-list-item>
                 <v-list-item link @click="toggleIgnore(item)">
                   <v-list-item-icon class="mr-4">
-                    <v-icon v-if="item.ignoredInAccounting">
-                      mdi-eye-off
-                    </v-icon>
-                    <v-icon v-else> mdi-eye </v-icon>
+                    <v-icon v-if="item.ignoredInAccounting"> mdi-eye </v-icon>
+                    <v-icon v-else> mdi-eye-off </v-icon>
                   </v-list-item-icon>
                   <v-list-item-content>
                     {{
@@ -164,7 +177,7 @@
             :limit="limit"
             :total="total"
             :colspan="headers.length"
-            :label="$t('transactions.label')"
+            :label="$tc('transactions.label')"
           />
         </template>
       </data-table>
@@ -172,7 +185,7 @@
     <big-dialog
       :display="openDialog"
       :title="dialogTitle"
-      :primary-action="$t('transactions.events.dialog.save')"
+      :primary-action="$tc('transactions.events.dialog.save')"
       :action-disabled="!valid"
       :loading="loading"
       @confirm="confirmSave()"
@@ -276,8 +289,6 @@ const tableHeaders: DataTableHeader[] = [
   }
 ];
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-
 export default defineComponent({
   name: 'TransactionContent',
   components: {
@@ -325,11 +336,9 @@ export default defineComponent({
       );
     };
 
-    const redecodeAllEvents = async () => {
-      await fetchTransactionEvents(
-        get(data).map(item => item.txHash),
-        true
-      );
+    const redecodeEvents = async (all: boolean = false) => {
+      const txHashes = all ? null : get(data).map(item => item.txHash);
+      await fetchTransactionEvents(txHashes, true);
     };
 
     const forceRedecodeEvents = async (transaction: EthTransactionEntry) => {
@@ -529,7 +538,6 @@ export default defineComponent({
     const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
 
     return {
-      isDevelopment,
       account,
       tableHeaders,
       data,
@@ -563,7 +571,7 @@ export default defineComponent({
       updatePaginationHandler,
       toggleIgnore,
       forceRedecodeEvents,
-      redecodeAllEvents
+      redecodeEvents
     };
   }
 });
