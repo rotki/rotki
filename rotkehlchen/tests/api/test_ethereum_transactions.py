@@ -327,9 +327,21 @@ def test_query_transactions(rotkehlchen_api_server):
 
     # Check that force re-requesting the events works
     assert_force_redecode_txns_works(rotkehlchen_api_server, hashes)
-
     # check that passing no transaction hashes, decodes all transaction
     assert_force_redecode_txns_works(rotkehlchen_api_server, None)
+
+    # see that empty list of hashes to decode is an error
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ), json={'async_query': False, 'tx_hashes': []},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Empty list of hashes is a noop. Did you mean to omit the list?',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
 
 def test_request_transaction_decoding_errors(rotkehlchen_api_server):

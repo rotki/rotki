@@ -792,9 +792,9 @@ export const useTransactions = defineStore('history/transactions', () => {
     const isFetchAll = txHashes === null;
 
     const checked = checkFetchedTxHashesEvents(txHashes);
-    const txHashesToFetch = ignoreCache ? txHashes || [] : checked;
+    const txHashesToFetch = ignoreCache ? txHashes || null : checked;
 
-    if (!isFetchAll && txHashesToFetch.length === 0) return;
+    if (!isFetchAll && txHashesToFetch && txHashesToFetch.length === 0) return;
 
     const { awaitTask } = useTasks();
 
