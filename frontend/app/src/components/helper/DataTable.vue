@@ -85,7 +85,7 @@ export default defineComponent({
         get(top) +
         wrapper.scrollTop -
         (get(container) ? get(containerTop) : 64) -
-        table.scrollTop;
+        table.$el.scrollTop;
     };
 
     return {

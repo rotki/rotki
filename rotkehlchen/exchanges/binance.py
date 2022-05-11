@@ -1272,7 +1272,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             log.debug(f'{self.name} fiat withdraw history result', results_num=len(fiat_withdraws))
         else:
-            fiat_deposits = fiat_withdraws = []
+            fiat_deposits, fiat_withdraws = [], []
 
         movements = []
         for raw_movement in deposits + withdraws:

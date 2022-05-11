@@ -207,6 +207,16 @@ class EthereumTransactionQuerySchema(
 class EthereumTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     tx_hashes = fields.List(EVMTransactionHashField(), load_default=None)
 
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        tx_hashes = data.get('tx_hashes')
+        if tx_hashes is not None and len(tx_hashes) == 0:
+            raise ValidationError('Empty list of hashes is a noop. Did you mean to omit the list?')
+
 
 class TradesQuerySchema(
         AsyncQueryArgumentSchema,

@@ -792,9 +792,9 @@ export const useTransactions = defineStore('history/transactions', () => {
     const isFetchAll = txHashes === null;
 
     const checked = checkFetchedTxHashesEvents(txHashes);
-    const txHashesToFetch = ignoreCache ? txHashes || [] : checked;
+    const txHashesToFetch = ignoreCache ? txHashes || null : checked;
 
-    if (!isFetchAll && txHashesToFetch.length === 0) return;
+    if (!isFetchAll && txHashesToFetch && txHashesToFetch.length === 0) return;
 
     const { awaitTask } = useTasks();
 
@@ -811,22 +811,20 @@ export const useTransactions = defineStore('history/transactions', () => {
       numericKeys: []
     };
 
-    const { result } = await awaitTask(taskId, taskType, taskMeta);
+    const { result } = await awaitTask(taskId, taskType, taskMeta, true);
 
     if (result) {
       await fetchTransactions();
     }
 
     const fetched = get(fetchedTxHashesEvents);
-    if (fetched) {
+    if (isFetchAll) {
+      set(fetchedTxHashesEvents, {});
+    } else if (fetched && txHashesToFetch) {
       txHashesToFetch.forEach((txHash: string) => {
         delete fetched[txHash];
       });
       set(fetchedTxHashesEvents, fetched);
-    }
-
-    if (isFetchAll) {
-      set(fetchedTxHashesEvents, {});
     }
   };
 

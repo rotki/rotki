@@ -2048,7 +2048,7 @@ Request transactions event decoding
 
       {"async_query": true, "tx_hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"], "ignore_cache": false}
 
-   :reqjson list tx_hashes: The list of transaction hashes to request decoding for. If no transaction hashes are passed, it implies all transactions.
+   :reqjson list tx_hashes[optional]: The list of transaction hashes to request decoding for. If the list of transaction hashes is not passed then all transactions are decoded. Passing an empty list is not allowed.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not. This is always false by default. If true is given then the decoded events will be deleted and requeried.
 

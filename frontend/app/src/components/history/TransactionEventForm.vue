@@ -271,8 +271,8 @@ const TransactionEventForm = defineComponent({
     const sequenceIndex = ref<string>('');
     const datetime = ref<string>('');
     const location = ref<string>('');
-    const eventType = ref<string | null>();
-    const eventSubtype = ref<string | null>();
+    const eventType = ref<string>('');
+    const eventSubtype = ref<string>('');
     const transactionEventType = ref<string | null>();
     const asset = ref<string>('');
     const amount = ref<string>('');
@@ -354,8 +354,8 @@ const TransactionEventForm = defineComponent({
         )
       );
       set(location, '');
-      set(eventType, null);
-      set(eventSubtype, null);
+      set(eventType, '');
+      set(eventSubtype, '');
       set(asset, '');
       set(amount, '0');
       set(fiatValue, '0');
