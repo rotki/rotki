@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
@@ -13,16 +12,12 @@ from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.utils import (
-    asset_normalized_value,
-    token_normalized_value,
-    token_normalized_value_decimals,
-)
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants.assets import A_COMP
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
+from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import COMPTROLLER_PROXY, CPT_COMPOUND
 
@@ -149,7 +144,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def decode_comp_claim(
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EthereumTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
@@ -168,21 +163,17 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         if comp_raw_amount == 0:
             return None, None  # do not count zero comp collection
 
-        comp_amount = token_normalized_value_decimals(comp_raw_amount, token_decimals=18)
-        comp_event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash.hex(),
-            sequence_index=self.base.get_sequence_index(tx_log),
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.BLOCKCHAIN,
-            location_label=supplier_address,
-            asset=A_COMP,
-            balance=Balance(amount=comp_amount),
-            notes=f'Collect {comp_amount} COMP from compound',  # noqa: E501
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.REWARD,
-            counterparty=CPT_COMPOUND,
-        )
-        return comp_event, None
+        # A DistributedSupplierComp event can happen without a transfer. Just accrues
+        # comp in the Comptroller until enough for a transfer is there. We should only
+        # count a payout if the transfer occurs
+        for event in decoded_events:
+            if event.event_type == HistoryEventType.RECEIVE and event.location_label == supplier_address and event.asset == A_COMP and event.counterparty == COMPTROLLER_PROXY.address:  # noqa: E501
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_COMPOUND
+                event.notes = f'Collect {event.balance.amount} COMP from compound'
+                break
+
+        return None, None
 
     # -- DecoderInterface methods
 
