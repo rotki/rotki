@@ -128,7 +128,7 @@ def test_curve_deposit(database, ethereum_manager):
             asset=A_DAI,
             balance=Balance(amount=FVal('401746.57'), usd_value=ZERO),
             location_label=location_label,
-            notes='Deposit 401746.57 DAI in curve pool',
+            notes='Deposit 401746.57 DAI in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
@@ -140,7 +140,7 @@ def test_curve_deposit(database, ethereum_manager):
             asset=A_USDT,
             balance=Balance(amount=FVal('25977.37'), usd_value=ZERO),
             location_label=location_label,
-            notes='Deposit 25977.37 USDT in curve pool',
+            notes='Deposit 25977.37 USDT in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
@@ -152,7 +152,7 @@ def test_curve_deposit(database, ethereum_manager):
             asset=EthereumToken('0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900'),
             balance=Balance(amount=FVal('392698.416886553664731892'), usd_value=ZERO),
             location_label=location_label,
-            notes='Receive 392698.416886553664731892 a3CRV after depositing in curve pool',
+            notes='Receive 392698.416886553664731892 a3CRV after depositing in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',  # noqa: E501
             counterparty=CPT_CURVE,
         )]
     assert len(events) == 4
@@ -274,7 +274,7 @@ def test_curve_deposit_eth(database, ethereum_manager):
             asset=EthereumToken('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
             balance=Balance(amount=FVal('0.19993786'), usd_value=ZERO),
             location_label=location_label,
-            notes='Deposit 0.19993786 stETH in curve pool',
+            notes='Deposit 0.19993786 stETH in curve pool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
@@ -298,7 +298,7 @@ def test_curve_deposit_eth(database, ethereum_manager):
             asset=EthereumToken('0x06325440D014e39736583c165C2963BA99fAf14E'),
             balance=Balance(amount=FVal('0.385232873991059423'), usd_value=ZERO),
             location_label=location_label,
-            notes='Receive 0.385232873991059423 steCRV after depositing in curve pool',
+            notes='Receive 0.385232873991059423 steCRV after depositing in curve pool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
             counterparty=CPT_CURVE,
         )]
     assert len(events) == 5
@@ -418,7 +418,7 @@ def test_curve_remove_liquidity(database, ethereum_manager):
             asset=A_LINK,
             balance=Balance(amount=FVal('3120.992481448818559504'), usd_value=ZERO),
             location_label=location_label,
-            notes='Remove 3120.992481448818559504 LINK from the curve pool',
+            notes='Remove 3120.992481448818559504 LINK from the curve pool 0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0',  # noqa: E501
             counterparty=CPT_CURVE,
         )]
     assert expected_events == events
@@ -689,7 +689,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager):
             asset=A_USDC,
             balance=Balance(amount=FVal('665.267705'), usd_value=ZERO),
             location_label=location_label,
-            notes='Remove 665.267705 USDC from the curve pool',
+            notes='Receive 665.267705 USDC from the curve pool 0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3',  # noqa: E501
             counterparty=CPT_CURVE,
         )]
     assert expected_events == events
