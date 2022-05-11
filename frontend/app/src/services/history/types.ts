@@ -183,7 +183,7 @@ export type TransactionRequestPayload = {
 } & HistoryRequestPayload;
 
 export type TransactionEventRequestPayload = {
-  readonly txHashes?: string[];
+  readonly txHashes?: string[] | null;
   readonly ignoreCache: boolean;
 };
 
