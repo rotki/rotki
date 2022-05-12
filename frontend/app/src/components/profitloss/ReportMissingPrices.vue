@@ -138,7 +138,7 @@ export default defineComponent({
         return {
           ...item,
           saved: !!savedHistoricalPrice?.price,
-          price: savedHistoricalPrice?.price?.toString() ?? ''
+          price: savedHistoricalPrice?.price?.toFixed() ?? ''
         };
       });
     });

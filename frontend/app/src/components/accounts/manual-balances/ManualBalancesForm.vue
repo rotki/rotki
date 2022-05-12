@@ -153,7 +153,7 @@ const ManualBalancesForm = defineComponent({
       set(id, balance.id);
       set(asset, balance.asset);
       set(label, balance.label);
-      set(amount, balance.amount.toString());
+      set(amount, balance.amount.toFixed());
       set(tags, balance.tags ?? []);
       set(location, balance.location);
       set(balanceType, balance.balanceType);
