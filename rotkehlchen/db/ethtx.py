@@ -156,10 +156,10 @@ class DBEthTx():
         cursor = self.db.conn.cursor()
         query, bindings = filter_.prepare()
         if has_premium:
-            query = 'SELECT * FROM ethereum_transactions ' + query
+            query = 'SELECT DISTINCT ethereum_transactions.tx_hash, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM ethereum_transactions ' + query  # noqa: E501
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT * from ethereum_transactions ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            query = 'SELECT DISTINCT ethereum_transactions.tx_hash, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM (SELECT * from ethereum_transactions ORDER BY timestamp DESC LIMIT ?) ethereum_transactions ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_ETH_TX_LIMIT] + bindings)
 
         ethereum_transactions = []

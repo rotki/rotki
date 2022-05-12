@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 from contextlib import ExitStack
@@ -12,7 +13,7 @@ import requests
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.constants.assets import A_DAI, A_USDT
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USDT
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -29,7 +30,12 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.factories import (
+    generate_tx_entries_response,
+    make_ethereum_address,
+    make_ethereum_event,
+    make_ethereum_transaction,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import EthereumTransaction, EVMTxHash, Timestamp, make_evm_tx_hash
@@ -1087,3 +1093,106 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
     ):
         assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == 0
     assert dbevents.get_history_events(HistoryEventFilterQuery.make(), True) == []
+
+
+def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
+    """Tests filtering by transaction's events' properties
+    Test cases:
+        - Filtering by asset
+        - Filtering by protocol (counterparty)
+        - Filtering by both asset and a protocol
+        - Transaction has multiple related events
+        - Transaction has no related events
+        - Multiple transactions are queried
+    """
+    logging.getLogger('rotkehlchen.externalapis.etherscan').disabled = True
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    tx1 = make_ethereum_transaction(tx_hash=b'1')
+    tx2 = make_ethereum_transaction(tx_hash=b'2')
+    tx3 = make_ethereum_transaction(tx_hash=b'3')
+    event1 = make_ethereum_event(tx_hash=b'1', index=1, asset=A_ETH)
+    event2 = make_ethereum_event(tx_hash=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
+    event3 = make_ethereum_event(tx_hash=b'1', index=3, asset=A_BTC, counterparty='EXAMPLE_PROTOCOL')  # noqa: E501
+    event4 = make_ethereum_event(tx_hash=b'2', index=4, asset=A_BTC)
+    dbethtx = DBEthTx(db)
+    dbethtx.add_ethereum_transactions([tx1, tx2], relevant_address=ethereum_accounts[0])
+    dbethtx.add_ethereum_transactions([tx3], relevant_address=ethereum_accounts[1])
+    dbevents = DBHistoryEvents(db)
+    dbevents.add_history_events([event1, event2, event3, event4])
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+        json={
+            'asset': A_BTC.serialize(),
+            'protocols': [],
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='{"protocols": ["protocols have to be either not passed or contain at least one item"]}',  # noqa: E501
+    )
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+        json={
+            'asset': A_BTC.serialize(),
+            'address': ethereum_accounts[0],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    expected = generate_tx_entries_response([(tx1, [event3]), (tx2, [event4])])
+    assert result['entries'] == expected
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+        json={'asset': A_ETH.serialize()},
+    )
+    result = assert_proper_response_with_result(response)
+    expected = generate_tx_entries_response([(tx1, [event1, event2])])
+    assert result['entries'] == expected
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+        json={'asset': A_BTC.serialize()},
+    )
+    result = assert_proper_response_with_result(response)
+    expected = generate_tx_entries_response([(tx1, [event3]), (tx2, [event4])])
+    assert result['entries'] == expected
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+        json={'protocols': ['EXAMPLE_PROTOCOL']},
+    )
+    result = assert_proper_response_with_result(response)
+    expected = generate_tx_entries_response([(tx1, [event2, event3])])
+    assert result['entries'] == expected
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+        json={
+            'asset': A_BTC.serialize(),
+            'protocols': ['EXAMPLE_PROTOCOL'],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    expected = generate_tx_entries_response([(tx1, [event3])])
+    assert result['entries'] == expected

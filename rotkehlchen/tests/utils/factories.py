@@ -1,13 +1,31 @@
 import base64
 import random
 import string
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from eth_utils.address import to_checksum_address
 
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import (
+    HistoryBaseEntry,
+    HistoryEventSubType,
+    HistoryEventType,
+)
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.constants import ONE
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ApiKey, ApiSecret, ChecksumEthAddress, Timestamp
+from rotkehlchen.types import (
+    ApiKey,
+    ApiSecret,
+    ChecksumEthAddress,
+    EthereumTransaction,
+    Location,
+    Timestamp,
+    TimestampMS,
+    make_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import ts_now
 
 DEFAULT_START_TS = Timestamp(1451606400)
@@ -50,6 +68,65 @@ def make_api_secret() -> ApiSecret:
 
 def make_ethereum_address() -> ChecksumEthAddress:
     return to_checksum_address('0x' + make_random_bytes(20).hex())
+
+
+def make_ethereum_transaction(tx_hash: Optional[bytes]) -> EthereumTransaction:
+    if tx_hash is None:
+        tx_hash = make_random_bytes(42)
+    return EthereumTransaction(
+        tx_hash=make_evm_tx_hash(tx_hash),
+        timestamp=Timestamp(0),
+        block_number=0,
+        from_address=make_ethereum_address(),
+        to_address=make_ethereum_address(),
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=0,
+    )
+
+
+def make_ethereum_event(
+    index: int,
+    tx_hash: Optional[bytes] = None,
+    asset: Asset = A_USD,
+    counterparty: Optional[str] = None,
+) -> HistoryBaseEntry:
+    if tx_hash is None:
+        tx_hash = make_random_bytes(42)
+    return HistoryBaseEntry(
+        event_identifier=make_evm_tx_hash(tx_hash).hex(),  # pylint: disable=no-member
+        sequence_index=index,
+        identifier=index,
+        timestamp=TimestampMS(0),
+        location=Location.KRAKEN,
+        event_type=HistoryEventType.UNKNOWN,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=asset,
+        balance=Balance(amount=ONE, usd_value=ONE),
+        counterparty=counterparty,
+    )
+
+
+def generate_tx_entries_response(
+    data: List[Tuple[EthereumTransaction, List[HistoryBaseEntry]]],
+) -> List:
+    result = []
+    for tx, events in data:
+        decoded_events = []
+        for event in events:
+            decoded_events.append({
+                'entry': event.serialize(),
+                'customized': False,
+            })
+        result.append({
+            'entry': tx.serialize(),
+            'decoded_events': decoded_events,
+            'ignored_in_accounting': False,
+        })
+    return result
 
 
 UNIT_BTC_ADDRESS1 = '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2'

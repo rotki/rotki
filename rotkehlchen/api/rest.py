@@ -135,7 +135,6 @@ from rotkehlchen.types import (
     ChecksumEthAddress,
     EnsMapping,
     Eth2PubKey,
-    EthereumTransaction,
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -3031,12 +3030,12 @@ class RestAPI():
             self,
             only_cache: bool,
             filter_query: ETHTransactionsFilterQuery,
+            event_params: Dict[str, Any],
     ) -> Dict[str, Any]:
         tx_module = EthTransactions(
             ethereum=self.rotkehlchen.chain_manager.ethereum,
             database=self.rotkehlchen.data.db,
         )
-        transactions: Optional[List[EthereumTransaction]]
         try:
             transactions, total_filter_count = tx_module.query(
                 only_cache=only_cache,
@@ -3066,6 +3065,8 @@ class RestAPI():
                 events = dbevents.get_history_events(
                     filter_query=HistoryEventFilterQuery.make(
                         event_identifier=entry.tx_hash.hex(),
+                        asset=event_params['asset'],
+                        protocols=event_params['protocols'],
                     ),
                     has_premium=True,  # for this function we don't limit. We only limit txs.
                 )
@@ -3106,17 +3107,20 @@ class RestAPI():
             async_query: bool,
             only_cache: bool,
             filter_query: ETHTransactionsFilterQuery,
+            event_params: Dict[str, Any],
     ) -> Response:
         if async_query:
             return self._query_async(
                 command='_get_ethereum_transactions',
                 only_cache=only_cache,
                 filter_query=filter_query,
+                event_params=event_params,
             )
 
         response = self._get_ethereum_transactions(
             only_cache=only_cache,
             filter_query=filter_query,
+            event_params=event_params,
         )
         result = response['result']
         msg = response['message']

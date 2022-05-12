@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.db.filtering import (
-    DBETHTransactionAddressFilter,
+    DBETHTransactionJoinsFilter,
     DBFilterOrder,
     DBFilterPagination,
     DBFilterQuery,
@@ -23,7 +23,7 @@ def test_ethereum_transaction_filter():
         to_ts=Timestamp(999),
     )
     query, bindings = filter_query.prepare()
-    assert query == 'AS A LEFT OUTER JOIN ethtx_address_mappings AS B WHERE A.tx_hash=b.tx_hash AND B.address IN (?) AND ((timestamp >= ? AND timestamp <= ?)) ORDER BY timestamp ASC LIMIT 10 OFFSET 10'  # noqa: E501
+    assert query == ' INNER JOIN ethtx_address_mappings ON ethereum_transactions.tx_hash=ethtx_address_mappings.tx_hash AND ethtx_address_mappings.address IN (?) AND ((timestamp >= ? AND timestamp <= ?)) ORDER BY timestamp ASC LIMIT 10 OFFSET 10'  # noqa: E501
     assert bindings == [
         addresses[0],
         filter_query.from_ts,
@@ -42,7 +42,7 @@ def test_filter_arguments(and_op, order_by, pagination):
     """This one is just like the ethereum transactions filter test, but also using
     it as a testbed to test combinations of arguments"""
     addresses = [make_ethereum_address(), make_ethereum_address()]
-    address_filter = DBETHTransactionAddressFilter(and_op=False, addresses=addresses)
+    address_filter = DBETHTransactionJoinsFilter(and_op=False, addresses=addresses)
     time_filter = DBTimestampFilter(and_op=True, from_ts=Timestamp(1), to_ts=Timestamp(999))
     location_filter = DBLocationFilter(and_op=True, location=Location.KRAKEN)
     order_by_obj = DBFilterOrder(rules=[('timestamp', True)]) if order_by else None
@@ -57,9 +57,9 @@ def test_filter_arguments(and_op, order_by, pagination):
     query, bindings = filter_query.prepare()
 
     if and_op:
-        expected_query = 'AS A LEFT OUTER JOIN ethtx_address_mappings AS B WHERE A.tx_hash=b.tx_hash AND B.address IN (?,?) AND ((timestamp >= ? AND timestamp <= ?) AND (location=?))'  # noqa: E501
+        expected_query = ' INNER JOIN ethtx_address_mappings ON ethereum_transactions.tx_hash=ethtx_address_mappings.tx_hash AND ethtx_address_mappings.address IN (?,?) AND ((timestamp >= ? AND timestamp <= ?) AND (location=?))'  # noqa: E501
     else:
-        expected_query = 'AS A LEFT OUTER JOIN ethtx_address_mappings AS B WHERE A.tx_hash=b.tx_hash AND B.address IN (?,?) AND ((timestamp >= ? AND timestamp <= ?) OR (location=?))'  # noqa: E501
+        expected_query = ' INNER JOIN ethtx_address_mappings ON ethereum_transactions.tx_hash=ethtx_address_mappings.tx_hash AND ethtx_address_mappings.address IN (?,?) AND ((timestamp >= ? AND timestamp <= ?) OR (location=?))'  # noqa: E501
 
     if order_by:
         expected_query += ' ORDER BY timestamp ASC'
