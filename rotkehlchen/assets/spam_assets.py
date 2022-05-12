@@ -110,6 +110,8 @@ def query_token_spam_list(db: 'DBHandler') -> Set[EthereumToken]:
                 ethereum_address=token_address,
                 protocol=SPAM_PROTOCOL,
                 form_with_incomplete_data=True,
+                decimals=18,
+                name='Autodetected spam token',
             )
         except (RemoteError, NotERC20Conformant) as e:
             log.debug(f'Skipping {checksumed_address} due to {str(e)}')
