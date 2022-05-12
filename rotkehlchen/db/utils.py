@@ -188,6 +188,8 @@ def is_valid_db_blockchain_account(
     """Validates a blockchain address already stored in DB."""
     if blockchain == SupportedBlockchain.BITCOIN.value:
         return True
+    if blockchain == SupportedBlockchain.BITCOIN_CASH.value:
+        return True
     if blockchain in (SupportedBlockchain.ETHEREUM.value, SupportedBlockchain.AVALANCHE.value):
         return is_checksum_address(account)
     if blockchain == SupportedBlockchain.KUSAMA.value:

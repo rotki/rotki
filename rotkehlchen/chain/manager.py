@@ -1225,7 +1225,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                         already_queried_balance=a_balance,
                     )
 
-        if blockchain == SupportedBlockchain.BITCOIN_CASH:
+        elif blockchain == SupportedBlockchain.BITCOIN_CASH:
             with self.bch_lock:
                 if append_or_remove == 'append':
                     self.check_accounts_exist(blockchain, accounts)

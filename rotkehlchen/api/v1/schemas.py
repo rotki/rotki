@@ -20,7 +20,11 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
-from rotkehlchen.chain.bitcoin_cash.utils import is_valid_bitcoin_cash_address
+from rotkehlchen.chain.bitcoin_cash.utils import (
+    force_address_to_legacy_address,
+    force_addresses_to_legacy_addresses,
+    is_valid_bitcoin_cash_address,
+)
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.substrate.types import (
     KusamaAddress,
@@ -1195,7 +1199,8 @@ def _validate_blockchain_account_schemas(
                     'ENS address is not supported for BCH',
                     field_name='address',
                 )
-            if address in given_addresses:
+            # Check if they're no duplicates of same address but in different formats
+            if force_address_to_legacy_address(address) in force_addresses_to_legacy_addresses(given_addresses):  # noqa: 501
                 raise ValidationError(
                     f'Address {address} appears multiple times in the request data',
                     field_name='address',

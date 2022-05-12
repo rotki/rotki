@@ -1,7 +1,8 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Set, Tuple
 
 import bech32
 from base58 import b58decode_check, b58encode_check
+from eth_typing import ChecksumAddress
 
 from rotkehlchen.types import BTCAddress
 
@@ -141,3 +142,26 @@ def cash_to_legacy_address(address: str) -> Optional[BTCAddress]:
     version_int = _address_type('cash', converted_bits[0])[1]
     payload = converted_bits[1:-6]
     return BTCAddress(b58encode_check(_code_list_to_string([version_int] + payload)).decode())
+
+
+def force_address_to_legacy_address(address: str) -> BTCAddress:
+    """
+    Changes the format of a BCH address to Legacy.
+    If address already in legacy format, return as is.
+
+    This assumes that the address being passed is valid.
+    """
+    if ':' in address:
+        addr = cash_to_legacy_address(address)
+        if addr is not None:
+            return addr
+    return BTCAddress(address)
+
+
+def force_addresses_to_legacy_addresses(data: Set[ChecksumAddress]) -> Set[BTCAddress]:
+    """Changes the format of a list of addresses to Legacy."""
+    return_data = set()
+    for entry in data:
+        return_data.add(force_address_to_legacy_address(entry))
+
+    return return_data
