@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_LINK, A_USDT
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_LINK, A_USDC, A_USDT
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
@@ -128,7 +128,7 @@ def test_curve_deposit(database, ethereum_manager):
             asset=A_DAI,
             balance=Balance(amount=FVal('401746.57'), usd_value=ZERO),
             location_label=location_label,
-            notes='Deposit 401746.57 DAI in curve pool',
+            notes='Deposit 401746.57 DAI in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
@@ -140,7 +140,7 @@ def test_curve_deposit(database, ethereum_manager):
             asset=A_USDT,
             balance=Balance(amount=FVal('25977.37'), usd_value=ZERO),
             location_label=location_label,
-            notes='Deposit 25977.37 USDT in curve pool',
+            notes='Deposit 25977.37 USDT in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
@@ -152,7 +152,7 @@ def test_curve_deposit(database, ethereum_manager):
             asset=EthereumToken('0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900'),
             balance=Balance(amount=FVal('392698.416886553664731892'), usd_value=ZERO),
             location_label=location_label,
-            notes='Receive 392698.416886553664731892 a3CRV after depositing in curve pool',
+            notes='Receive 392698.416886553664731892 a3CRV after depositing in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',  # noqa: E501
             counterparty=CPT_CURVE,
         )]
     assert len(events) == 4
@@ -274,7 +274,7 @@ def test_curve_deposit_eth(database, ethereum_manager):
             asset=EthereumToken('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
             balance=Balance(amount=FVal('0.19993786'), usd_value=ZERO),
             location_label=location_label,
-            notes='Deposit 0.19993786 stETH in curve pool',
+            notes='Deposit 0.19993786 stETH in curve pool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
@@ -298,7 +298,7 @@ def test_curve_deposit_eth(database, ethereum_manager):
             asset=EthereumToken('0x06325440D014e39736583c165C2963BA99fAf14E'),
             balance=Balance(amount=FVal('0.385232873991059423'), usd_value=ZERO),
             location_label=location_label,
-            notes='Receive 0.385232873991059423 steCRV after depositing in curve pool',
+            notes='Receive 0.385232873991059423 steCRV after depositing in curve pool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
             counterparty=CPT_CURVE,
         )]
     assert len(events) == 5
@@ -418,7 +418,7 @@ def test_curve_remove_liquidity(database, ethereum_manager):
             asset=A_LINK,
             balance=Balance(amount=FVal('3120.992481448818559504'), usd_value=ZERO),
             location_label=location_label,
-            notes='Remove 3120.992481448818559504 LINK from the curve pool',
+            notes='Remove 3120.992481448818559504 LINK from the curve pool 0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0',  # noqa: E501
             counterparty=CPT_CURVE,
         )]
     assert expected_events == events
@@ -529,6 +529,167 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager):
             balance=Balance(amount=FVal('0.991695529556581896'), usd_value=ZERO),
             location_label=location_label,
             notes='Return 0.991695529556581896 steCRV',
+            counterparty=CPT_CURVE,
+        )]
+    assert expected_events == events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x2fac74A3a04B031F240923621a578724C40678af']])  # noqa: E501
+def test_curve_remove_imbalanced(database, ethereum_manager):
+    """Data for deposit taken from
+    https://etherscan.io/tx/0xd8832abcf4773abe24d8cda5581fb53bfb3850c535c1956d1d120a72a4ebcbd8
+    This tests uses the steth pool to verify that withdrawals are correctly decoded when an
+    internal transaction is made for eth transfers
+    """
+    msg_aggregator = MessagesAggregator()
+    tx_hex = '0xd8832abcf4773abe24d8cda5581fb53bfb3850c535c1956d1d120a72a4ebcbd8'
+    location_label = '0x2fac74A3a04B031F240923621a578724C40678af'
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    transaction = EthereumTransaction(
+        tx_hash=evmhash,
+        timestamp=1650276061,
+        block_number=14647221,
+        from_address=location_label,
+        to_address='0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3',
+        value=0,
+        gas=171249,
+        gas_price=22990000000,
+        gas_used=171249,
+        input_data=hexstring_to_bytes('0x517a55a300000000000000000000000000000000000000000000001fa9ee7266a543831f00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000003f487c50000000000000000000000000000000000000000000000000000000000000001'),  # noqa: E501
+        nonce=5,
+    )
+    receipt = EthereumTxReceipt(
+        tx_hash=evmhash,
+        contract_address=None,
+        status=True,
+        type=0,
+        logs=[
+            EthereumTxReceiptLog(
+                log_index=2183,
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000001fa9ee7266a543831f'),  # noqa: E501
+                address=string_to_ethereum_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000002fac74a3a04b031f240923621a578724c40678af'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=2184,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                address=string_to_ethereum_address('0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x00000000000000000000000045f783cce6b7ff23b2ab2d70e416cdb7d6055f51'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=2185,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000001fdb750a'),  # noqa: E501
+                address=string_to_ethereum_address('0xd6aD7a6750A7593E092a9B218d66C0A814a3436e'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x00000000000000000000000045f783cce6b7ff23b2ab2d70e416cdb7d6055f51'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=2186,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                address=string_to_ethereum_address('0x83f798e925BcD4017Eb265844FDDAbb448f1707D'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x00000000000000000000000045f783cce6b7ff23b2ab2d70e416cdb7d6055f51'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=2187,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                address=string_to_ethereum_address('0x73a052500105205d34Daf004eAb301916DA8190f'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x00000000000000000000000045f783cce6b7ff23b2ab2d70e416cdb7d6055f51'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=2188,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                address=string_to_ethereum_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=2189,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001fdb750a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000045cf4bec2e53f0000000000000000000000000000000000000000000000000000000000000e07e000000000000000000000000000000000000000000000000000000000000570d0000000000000000000000000000000000000000000000000051077d9dc293100000000000000000000000000000000000000000000c740195f187122987a9ef0000000000000000000000000000000000000000000aeddccb3976328f7d90bd'),  # noqa: E501
+                address=string_to_ethereum_address('0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xb964b72f73f5ef5bf0fdc559b2fab9a7b12a39e47817a547f1f0aee47febd602'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
+                ],
+            ), EthereumTxReceiptLog(
+                log_index=2189,
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000027a72df9'),  # noqa: E501
+                address=string_to_ethereum_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000bbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'),  # noqa: E501
+                    hexstring_to_bytes('0x0000000000000000000000002fac74a3a04b031f240923621a578724c40678af'),  # noqa: E501
+                ],
+            ),
+        ],
+    )
+    dbethtx = DBEthTx(database)
+    dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
+    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=tx_hex,
+            sequence_index=0,
+            timestamp=1650276061000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(
+                amount=FVal(0.00393701451),
+                usd_value=ZERO,
+            ),
+            location_label=location_label,
+            notes='Burned 0.00393701451 ETH in gas from 0x2fac74A3a04B031F240923621a578724C40678af',  # noqa: E501
+            counterparty='gas',
+        ), HistoryBaseEntry(
+            event_identifier=tx_hex,
+            sequence_index=2184,
+            timestamp=1650276061000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=EthereumToken('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
+            balance=Balance(amount=FVal('584.093916507047953183'), usd_value=ZERO),
+            location_label=location_label,
+            notes='Return 584.093916507047953183 yDAI+yUSDC+yUSDT+yTUSD',
+            counterparty=CPT_CURVE,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hex,
+            sequence_index=2190,
+            timestamp=1650276061000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_USDC,
+            balance=Balance(amount=FVal('665.267705'), usd_value=ZERO),
+            location_label=location_label,
+            notes='Receive 665.267705 USDC from the curve pool 0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3',  # noqa: E501
             counterparty=CPT_CURVE,
         )]
     assert expected_events == events
