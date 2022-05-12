@@ -44,6 +44,11 @@ def fixture_btc_accounts() -> List[BTCAddress]:
     return []
 
 
+@pytest.fixture(name='bch_accounts')
+def fixture_bch_accounts() -> List[BTCAddress]:
+    return []
+
+
 @pytest.fixture(name='ksm_accounts')
 def fixture_ksm_accounts() -> List[KusamaAddress]:
     """As per feature requirements, instantiating SubstrateManager won't trigger
@@ -73,6 +78,7 @@ def fixture_avax_accounts() -> List[ChecksumEthAddress]:
 def fixture_blockchain_accounts(
         ethereum_accounts: List[ChecksumEthAddress],
         btc_accounts: List[BTCAddress],
+        bch_accounts: List[BTCAddress],
         ksm_accounts: List[KusamaAddress],
         dot_accounts: List[PolkadotAddress],
         avax_accounts: List[ChecksumEthAddress],
@@ -80,6 +86,7 @@ def fixture_blockchain_accounts(
     return BlockchainAccounts(
         eth=ethereum_accounts,
         btc=btc_accounts.copy(),
+        bch=bch_accounts.copy(),
         ksm=ksm_accounts.copy(),
         dot=dot_accounts.copy(),
         avax=avax_accounts.copy(),

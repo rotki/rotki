@@ -8498,7 +8498,7 @@ Adding blockchain accounts
 .. http:put:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX", "BCH"``
 
       Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 
@@ -8892,7 +8892,7 @@ Editing blockchain account data
 .. http:patch:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX", "BCH"``
 
       Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 
@@ -8963,7 +8963,7 @@ Removing blockchain accounts
 .. http:delete:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX", "BCH"``
 
       Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 

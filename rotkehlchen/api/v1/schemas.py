@@ -20,6 +20,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
+from rotkehlchen.chain.bitcoin_cash.utils import is_valid_bitcoin_cash_address
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.substrate.types import (
     KusamaAddress,
@@ -1174,6 +1175,33 @@ def _validate_blockchain_account_schemas(
                 )
             given_addresses.add(address)
 
+    # Make sure bitcoin cash addresses are valid
+    elif data['blockchain'] == SupportedBlockchain.BITCOIN_CASH:
+        for account_data in data['accounts']:
+            address = address_getter(account_data)
+            if address.startswith('bitcoincash:') and not is_valid_bitcoin_cash_address(address):
+                raise ValidationError(
+                    f'Given value {address} is not a valid bitcoin cash address',
+                    field_name='address',
+                )
+            # check if the addresses starts with prefixes of BCH legacy addresses
+            if address.startswith(('1', '3')) and not is_valid_btc_address(address):
+                raise ValidationError(
+                    f'Given value {address} is not a valid bitcoin cash address',
+                    field_name='address',
+                )
+            if address.endswith('.eth'):
+                raise ValidationError(
+                    'ENS address is not supported for BCH',
+                    field_name='address',
+                )
+            if address in given_addresses:
+                raise ValidationError(
+                    f'Address {address} appears multiple times in the request data',
+                    field_name='address',
+                )
+            given_addresses.add(address)
+
     # Make sure kusama addresses are valid (either ss58 format or ENS domain)
     elif data['blockchain'] == SupportedBlockchain.KUSAMA:
         for account_data in data['accounts']:
@@ -1209,9 +1237,10 @@ def _validate_blockchain_account_schemas(
             given_addresses.add(address)
 
 
-def _transform_btc_address(
+def _transform_btc_or_bch_address(
         ethereum: EthereumManager,
         given_address: str,
+        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
 ) -> BTCAddress:
     """Returns a SegWit/P2PKH/P2SH address (if existing) given an ENS domain.
 
@@ -1223,7 +1252,7 @@ def _transform_btc_address(
     try:
         resolved_address = ethereum.ens_lookup(
             given_address,
-            blockchain=SupportedBlockchain.BITCOIN,
+            blockchain=blockchain,
         )
     except (RemoteError, InputError) as e:
         raise ValidationError(
@@ -1389,11 +1418,12 @@ class BlockchainAccountsPatchSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
-        if data['blockchain'] == SupportedBlockchain.BITCOIN:
+        if data['blockchain'] in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             for idx, account in enumerate(data['accounts']):
-                data['accounts'][idx]['address'] = _transform_btc_address(
+                data['accounts'][idx]['address'] = _transform_btc_or_bch_address(
                     ethereum=self.ethereum_manager,
                     given_address=account['address'],
+                    blockchain=data['blockchain'],
                 )
         if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
             for idx, account in enumerate(data['accounts']):
@@ -1446,9 +1476,10 @@ class BlockchainAccountsDeleteSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
-        if data['blockchain'] == SupportedBlockchain.BITCOIN:
+        if data['blockchain'] in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             data['accounts'] = [
-                _transform_btc_address(self.ethereum_manager, x) for x in data['accounts']
+                _transform_btc_or_bch_address(self.ethereum_manager, x, data['blockchain'])
+                for x in data['accounts']
             ]
         if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
             data['accounts'] = [
