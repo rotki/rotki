@@ -112,8 +112,11 @@ class EVMTransactionDecoder():
 
             if is_pkg:
                 submodule = importlib.import_module(full_name)
+                # take module name, transform it and find decoder if exists
                 class_name = full_name[MODULES_PREFIX_LENGTH:].translate({ord('.'): None})
-                submodule_decoder = getattr(submodule, f'{class_name.capitalize()}Decoder', None)
+                parts = class_name.split('_')
+                class_name = ''.join([x.capitalize() for x in parts])
+                submodule_decoder = getattr(submodule, f'{class_name}Decoder', None)
 
                 if submodule_decoder:
                     if class_name in self.decoders:

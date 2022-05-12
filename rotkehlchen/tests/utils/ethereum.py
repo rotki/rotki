@@ -34,6 +34,7 @@ log = RotkehlchenLogsAdapter(logger)
 # TODO: improve this. Switch between them and find one that has requests.
 # Also use Alchemy too
 INFURA_TEST = random.choice([
+    'https://mainnet.infura.io/v3/a6b269b6e5ad44ed943e9fff244dfe25',
     'https://mainnet.infura.io/v3/b921613a39d14c2386aca87c6c5054a6',
     'https://mainnet.infura.io/v3/edeb337c7f41425e933ec619f3c5b940',
     'https://mainnet.infura.io/v3/66302b8fb9874614905a3cbe903a0dbb',

@@ -1,3 +1,4 @@
+import os
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
@@ -65,7 +66,7 @@ def test_query_yearn_vault_balances(rotkehlchen_api_server, ethereum_accounts):
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "yearnvaultsbalancesresource",
+            'yearnvaultsbalancesresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -464,6 +465,10 @@ def check_vault_history(name, expected_history, result_history):
 
 # Try with 2 addresses to make sure that if an address does not have yearn vault history
 # nothing breaks
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='This test contributes in rate limiting of infura apis',
+)
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1, make_ethereum_address()]])
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
@@ -478,7 +483,11 @@ def check_vault_history(name, expected_history, result_history):
     )],
 )
 def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
-    """Check querying the yearn vaults history endpoint works. Uses real data."""
+    """Check querying the yearn vaults history endpoint works. Uses real data.
+
+    This really hurts the infura data usage since it queries way too many logs.
+    So we don't always run it in the CI.
+    """
     async_query = random.choice([True, False])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
