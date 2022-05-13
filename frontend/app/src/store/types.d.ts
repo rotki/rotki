@@ -42,3 +42,12 @@ export interface RotkehlchenState {
   defi?: DefiState;
   statistics?: StatisticsState;
 }
+
+export type ActionDataEntry = {
+  readonly identifier: string;
+  readonly label: string;
+  readonly icon?: string | undefined;
+  readonly image?: string | undefined;
+  readonly color?: string | undefined;
+  readonly matcher?: (identifier: string) => boolean | undefined;
+};

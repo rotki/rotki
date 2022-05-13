@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export type DebugSettings = { vuex: boolean };
+export type DebugSettings = { persistStore: boolean };
 
 export interface Themes {
   readonly light: ThemeColors;

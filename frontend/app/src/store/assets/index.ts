@@ -285,6 +285,7 @@ export const useAssetInfoRetrieval = defineStore(
 
     return {
       supportedAssets,
+      supportedAssetsMap,
       fetchSupportedAssets,
       assetInfo,
       assetSymbol,

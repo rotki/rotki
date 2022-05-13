@@ -8,7 +8,7 @@ const isMac = process.platform === 'darwin';
 export type MenuActions = { displayTray: (display: boolean) => void };
 
 export const debugSettings = {
-  vuex: false
+  persistStore: false
 };
 
 let actions: MenuActions = { displayTray: () => {} };
@@ -17,11 +17,11 @@ const debugMenu = {
   label: '&Debug',
   submenu: [
     {
-      label: 'Persist vuex state',
+      label: 'Persist store',
       type: 'checkbox',
-      checked: debugSettings.vuex,
+      checked: debugSettings.persistStore,
       click: async (item: MenuItem, browserWindow: BrowserWindow) => {
-        debugSettings.vuex = item.checked;
+        debugSettings.persistStore = item.checked;
         browserWindow.webContents.send(IPC_DEBUG_SETTINGS, debugSettings);
         browserWindow.reload();
       }
