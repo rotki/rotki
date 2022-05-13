@@ -47,7 +47,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     VaultEventType,
 )
 from rotkehlchen.chain.ethereum.modules.nfts import NFTResult
-from rotkehlchen.chain.ethereum.modules.pickle.pickle import DillBalance
+from rotkehlchen.chain.ethereum.modules.pickle_finance.main import DillBalance
 from rotkehlchen.chain.ethereum.modules.uniswap import (
     UniswapPool,
     UniswapPoolAsset,

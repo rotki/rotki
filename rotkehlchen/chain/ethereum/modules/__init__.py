@@ -26,7 +26,7 @@ from .liquity.trove import Liquity
 from .makerdao.dsr import MakerdaoDsr
 from .makerdao.vaults import MakerdaoVaults
 from .nfts import Nfts
-from .pickle import PickleFinance
+from .pickle_finance import PickleFinance
 from .sushiswap.sushiswap import Sushiswap
 from .uniswap.uniswap import Uniswap
 from .yearn.vaults import YearnVaults

@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class PickleDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,

@@ -7,13 +7,14 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
-from rotkehlchen.constants.assets import A_CETH, A_COMP, A_ETH
+from rotkehlchen.constants.assets import A_CDAI, A_CETH, A_COMP, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, deserialize_evm_tx_hash
 
 ADDY = '0x5727c0481b90a129554395937612d8b9301D6c7b'
+ADDY2 = '0x87Dd56068Af560B0D8472C4EF41CB902FCbF5ebE'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])  # noqa: E501
@@ -120,17 +121,78 @@ def test_compound_ether_withdraw(database, ethereum_manager, function_scope_mess
             location_label=ADDY,
             notes='Withdraw 0.500003923413507454 ETH from compound',
             counterparty=CPT_COMPOUND,
+        )]
+    assert events == expected_events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])  # noqa: E501
+def test_compound_deposit_with_comp_claim(
+        database,
+        ethereum_manager,
+        function_scope_messages_aggregator,
+):
+    """Data taken from:
+    https://etherscan.io/tx/0xfdbfe6e9ce822bd988054945c86f2dff1fac6a12b4acb0b68c8805b5aa3b30ba
+    """
+    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
+    tx_hash = deserialize_evm_tx_hash('0xfdbfe6e9ce822bd988054945c86f2dff1fac6a12b4acb0b68c8805b5aa3b30ba')  # noqa: E501
+    events = get_decoded_events_of_transaction(
+        ethereum_manager=ethereum_manager,
+        database=database,
+        msg_aggregator=function_scope_messages_aggregator,
+        tx_hash=tx_hash,
+    )
+    amount = FVal('14309.930911242041089052')
+    wrapped_amount = FVal('687371.5068874')
+    interest = FVal('0.076123031460129653')
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=0,
+            timestamp=1607572696000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.00945248'), usd_value=ZERO),
+            location_label=ADDY2,
+            notes=f'Burned 0.00945248 ETH in gas from {ADDY2}',
+            counterparty='gas',
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
-            sequence_index=49,
-            timestamp=1598813490000,
+            sequence_index=241,
+            timestamp=1607572696000,
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_COMP,
-            balance=Balance(amount=FVal('0.000034845643426795')),
-            location_label=ADDY,
-            notes='Collect 0.000034845643426795 COMP from compound',
+            balance=Balance(amount=interest),
+            location_label=ADDY2,
+            notes=f'Collect {interest} COMP from compound',
+            counterparty=CPT_COMPOUND,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=243,
+            timestamp=1607572696000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_DAI,
+            balance=Balance(amount=amount),
+            location_label=ADDY2,
+            notes=f'Deposit {amount} DAI to compound',
+            counterparty=CPT_COMPOUND,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=250,
+            timestamp=1607572696000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=A_CDAI,
+            balance=Balance(amount=wrapped_amount),
+            location_label=ADDY2,
+            notes=f'Receive {wrapped_amount} cDAI from compound',
             counterparty=CPT_COMPOUND,
         )]
     assert events == expected_events
