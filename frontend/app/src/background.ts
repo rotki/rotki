@@ -1,6 +1,6 @@
 import path from 'path';
 import { app, BrowserWindow, Menu, MenuItem, protocol } from 'electron';
-import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer';
+import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import windowStateKeeper from 'electron-window-state';
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { ipcSetup } from '@/electron-main/ipc-setup';
@@ -32,7 +32,7 @@ const onReady = async () => {
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
-      await installExtension(VUEJS3_DEVTOOLS);
+      await installExtension(VUEJS_DEVTOOLS);
     } catch (e: any) {
       console.error('Vue Devtools failed to install:', e.toString());
     }
