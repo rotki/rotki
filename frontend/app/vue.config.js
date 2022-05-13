@@ -18,7 +18,9 @@ module.exports = {
   chainWebpack: config => {
     config.plugin('fork-ts-checker').tap(args => {
       const systemMemory = Math.floor(totalmem() / 1024 / 1024);
-      args[0].memoryLimit = systemMemory < 4 * 1024 ? systemMemory * 0.5 : 2048;
+      args[0].memoryLimit = Math.round(
+        systemMemory < 4 * 1024 ? systemMemory * 0.5 : 2048
+      );
       return args;
     });
   },
