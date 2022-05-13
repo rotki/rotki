@@ -13,6 +13,7 @@ import './register-sw';
 import { Interop } from '@/plugins/interop';
 import vuetify from '@/plugins/vuetify';
 import { setupPremium, usePremiumApi } from '@/premium/setup-interface';
+import { storePiniaPlugins } from '@/store/debug';
 import { setupDayjs } from '@/utils/date';
 import { setupFormatter } from '@/utils/setup-formatter';
 import i18n from './i18n';
@@ -41,6 +42,7 @@ Vue.directive('blur', {
 });
 
 const pinia = createPinia();
+pinia.use(storePiniaPlugins);
 
 new Vue({
   setup() {

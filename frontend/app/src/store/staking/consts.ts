@@ -1,5 +1,5 @@
 import i18n from '@/i18n';
-import { ActionDataEntry } from '@/store/const';
+import { ActionDataEntry } from '@/store/types';
 import { KrakenStakingEventType } from '@/types/staking';
 
 export const ADEX_HISTORY = 'adexHistory' as const;
