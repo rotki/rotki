@@ -178,7 +178,7 @@ def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
     common_items = unsupported_assets.intersection(set(WORLD_TO_BINANCE.values()))
     assert not common_items, f'Binance assets {common_items} should not be unsupported'
 
-    exchange_data = requests.get('https://binance.com/api/v3/exchangeInfo').json()
+    exchange_data = requests.get('https://api3.binance.com/api/v3/exchangeInfo').json()
     binance_assets = set()
     for pair_symbol in exchange_data['symbols']:
         binance_assets.add(pair_symbol['baseAsset'])
