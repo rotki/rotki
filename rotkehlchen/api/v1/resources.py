@@ -3,7 +3,7 @@ from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
 
 from flask import Blueprint, Request, Response, request as flask_request
-from flask_restful import Resource
+from flask.views import MethodView
 from marshmallow import Schema
 from marshmallow.utils import missing
 from webargs.flaskparser import parser, use_kwargs
@@ -232,13 +232,13 @@ def create_blueprint() -> Blueprint:
     return Blueprint("v1_resources", __name__)
 
 
-class BaseResource(Resource):
+class BaseMethodView(MethodView):
     def __init__(self, rest_api_object: RestAPI, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.rest_api = rest_api_object
 
 
-class SettingsResource(BaseResource):
+class SettingsResource(BaseMethodView):
 
     put_schema = EditSettingsSchema()
 
@@ -253,7 +253,7 @@ class SettingsResource(BaseResource):
         return self.rest_api.get_settings()
 
 
-class AsyncTasksResource(BaseResource):
+class AsyncTasksResource(BaseMethodView):
 
     get_schema = AsyncTasksQuerySchema()
 
@@ -262,7 +262,7 @@ class AsyncTasksResource(BaseResource):
         return self.rest_api.query_tasks_outcome(task_id=task_id)
 
 
-class ExchangeRatesResource(BaseResource):
+class ExchangeRatesResource(BaseMethodView):
 
     get_schema = ExchangeRatesSchema()
 
@@ -272,7 +272,7 @@ class ExchangeRatesResource(BaseResource):
         return self.rest_api.get_exchange_rates(given_currencies=valid_currencies, async_query=async_query)  # noqa: E501
 
 
-class ExchangesResource(BaseResource):
+class ExchangesResource(BaseMethodView):
 
     put_schema = ExchangesResourceAddSchema()
     patch_schema = ExchangesResourceEditSchema()
@@ -334,7 +334,7 @@ class ExchangesResource(BaseResource):
         return self.rest_api.remove_exchange(name=name, location=location)
 
 
-class ExchangesDataResource(BaseResource):
+class ExchangesDataResource(BaseMethodView):
 
     delete_schema = ExchangesDataResourceSchema()
 
@@ -343,12 +343,12 @@ class ExchangesDataResource(BaseResource):
         return self.rest_api.purge_exchange_data(location=location)
 
 
-class AssociatedLocations(BaseResource):
+class AssociatedLocations(BaseMethodView):
     def get(self) -> Response:
         return self.rest_api.get_associated_locations()
 
 
-class EthereumTransactionsResource(BaseResource):
+class EthereumTransactionsResource(BaseMethodView):
     get_schema = EthereumTransactionQuerySchema()
     post_schema = EthereumTransactionDecodingSchema()
 
@@ -384,7 +384,7 @@ class EthereumTransactionsResource(BaseResource):
         return self.rest_api.purge_ethereum_transaction_data()
 
 
-class EthereumAirdropsResource(BaseResource):
+class EthereumAirdropsResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -393,7 +393,7 @@ class EthereumAirdropsResource(BaseResource):
         return self.rest_api.get_ethereum_airdrops(async_query)
 
 
-class ExternalServicesResource(BaseResource):
+class ExternalServicesResource(BaseMethodView):
 
     put_schema = ExternalServicesResourceAddSchema()
     delete_schema = ExternalServicesResourceDeleteSchema()
@@ -413,7 +413,7 @@ class ExternalServicesResource(BaseResource):
         return self.rest_api.delete_external_services(services=services)
 
 
-class AllBalancesResource(BaseResource):
+class AllBalancesResource(BaseMethodView):
 
     get_schema = AllBalancesQuerySchema()
 
@@ -433,7 +433,7 @@ class AllBalancesResource(BaseResource):
         )
 
 
-class ExchangeBalancesResource(BaseResource):
+class ExchangeBalancesResource(BaseMethodView):
 
     get_schema = ExchangeBalanceQuerySchema()
 
@@ -446,19 +446,19 @@ class ExchangeBalancesResource(BaseResource):
         )
 
 
-class OwnedAssetsResource(BaseResource):
+class OwnedAssetsResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.query_owned_assets()
 
 
-class DatabaseInfoResource(BaseResource):
+class DatabaseInfoResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_database_info()
 
 
-class DatabaseBackupsResource(BaseResource):
+class DatabaseBackupsResource(BaseMethodView):
 
     delete_schema = FileListSchema()
     get_schema = SingleFileSchema()
@@ -475,7 +475,7 @@ class DatabaseBackupsResource(BaseResource):
         return self.rest_api.delete_database_backups(files=files)
 
 
-class AllAssetsResource(BaseResource):
+class AllAssetsResource(BaseMethodView):
 
     delete_schema = StringIdentifierSchema()
 
@@ -509,13 +509,13 @@ class AllAssetsResource(BaseResource):
         return self.rest_api.delete_custom_asset(identifier)
 
 
-class AssetsTypesResource(BaseResource):
+class AssetsTypesResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_asset_types()
 
 
-class AssetsReplaceResource(BaseResource):
+class AssetsReplaceResource(BaseMethodView):
 
     put_schema = AssetsReplaceSchema()
 
@@ -524,7 +524,7 @@ class AssetsReplaceResource(BaseResource):
         return self.rest_api.replace_asset(source_identifier, target_asset)
 
 
-class EthereumAssetsResource(BaseResource):
+class EthereumAssetsResource(BaseMethodView):
 
     get_schema = OptionalEthereumAddressSchema()
     delete_schema = RequiredEthereumAddressSchema()
@@ -552,7 +552,7 @@ class EthereumAssetsResource(BaseResource):
         return self.rest_api.delete_custom_ethereum_token(address)
 
 
-class AssetUpdatesResource(BaseResource):
+class AssetUpdatesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
     post_schema = AssetUpdatesRequestSchema()
@@ -576,7 +576,7 @@ class AssetUpdatesResource(BaseResource):
         return self.rest_api.rebuild_assets_information(reset, ignore_warnings)
 
 
-class BlockchainBalancesResource(BaseResource):
+class BlockchainBalancesResource(BaseMethodView):
 
     get_schema = BlockchainBalanceQuerySchema()
 
@@ -594,7 +594,7 @@ class BlockchainBalancesResource(BaseResource):
         )
 
 
-class ManuallyTrackedBalancesResource(BaseResource):
+class ManuallyTrackedBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
     put_schema = ManuallyTrackedBalancesAddSchema()
@@ -621,7 +621,7 @@ class ManuallyTrackedBalancesResource(BaseResource):
         )
 
 
-class TradesResource(BaseResource):
+class TradesResource(BaseMethodView):
 
     get_schema = TradesQuerySchema()
     put_schema = TradeSchema()
@@ -706,7 +706,7 @@ class TradesResource(BaseResource):
         return self.rest_api.delete_trade(trade_id=trade_id)
 
 
-class AssetMovementsResource(BaseResource):
+class AssetMovementsResource(BaseMethodView):
 
     get_schema = AssetMovementsQuerySchema()
 
@@ -724,7 +724,7 @@ class AssetMovementsResource(BaseResource):
         )
 
 
-class TagsResource(BaseResource):
+class TagsResource(BaseMethodView):
 
     put_schema = TagSchema(color_required=True)
     patch_schema = TagSchema(color_required=False)
@@ -768,7 +768,7 @@ class TagsResource(BaseResource):
         return self.rest_api.delete_tag(name=name)
 
 
-class LedgerActionsResource(BaseResource):
+class LedgerActionsResource(BaseMethodView):
 
     get_schema = LedgerActionsQuerySchema()
     put_schema = LedgerActionSchema(identifier_required=False)
@@ -804,7 +804,7 @@ class LedgerActionsResource(BaseResource):
         return self.rest_api.delete_ledger_action(identifier=identifier)
 
 
-class HistoryBaseEntryResource(BaseResource):
+class HistoryBaseEntryResource(BaseMethodView):
 
     put_schema = HistoryBaseEntrySchema(identifier_required=False)
     patch_schema = HistoryBaseEntrySchema(identifier_required=True)
@@ -823,7 +823,7 @@ class HistoryBaseEntryResource(BaseResource):
         return self.rest_api.delete_history_events(identifiers=identifiers)
 
 
-class UsersResource(BaseResource):
+class UsersResource(BaseMethodView):
 
     put_schema = NewUserSchema()
 
@@ -850,7 +850,7 @@ class UsersResource(BaseResource):
         )
 
 
-class UsersByNameResource(BaseResource):
+class UsersByNameResource(BaseMethodView):
     patch_schema = UserActionSchema()
 
     @use_kwargs(patch_schema, location='json_and_view_args')
@@ -882,7 +882,7 @@ class UsersByNameResource(BaseResource):
         return self.rest_api.user_logout(name=name)
 
 
-class UserPasswordChangeResource(BaseResource):
+class UserPasswordChangeResource(BaseMethodView):
     patch_schema = UserPasswordChangeSchema
 
     @use_kwargs(patch_schema, location='json')
@@ -899,13 +899,13 @@ class UserPasswordChangeResource(BaseResource):
         )
 
 
-class UserPremiumKeyResource(BaseResource):
+class UserPremiumKeyResource(BaseMethodView):
 
     def delete(self) -> Response:
         return self.rest_api.user_premium_key_remove()
 
 
-class UserPremiumSyncResource(BaseResource):
+class UserPremiumSyncResource(BaseMethodView):
     put_schema = UserPremiumSyncSchema()
 
     @use_kwargs(put_schema, location='json_and_view_args')
@@ -913,7 +913,7 @@ class UserPremiumSyncResource(BaseResource):
         return self.rest_api.sync_data(async_query, action)
 
 
-class StatisticsNetvalueResource(BaseResource):
+class StatisticsNetvalueResource(BaseMethodView):
 
     get_schema = StatisticsNetValueSchema()
 
@@ -922,7 +922,7 @@ class StatisticsNetvalueResource(BaseResource):
         return self.rest_api.query_netvalue_data(include_nfts)
 
 
-class StatisticsAssetBalanceResource(BaseResource):
+class StatisticsAssetBalanceResource(BaseMethodView):
 
     get_schema = StatisticsAssetBalanceSchema()
 
@@ -940,7 +940,7 @@ class StatisticsAssetBalanceResource(BaseResource):
         )
 
 
-class StatisticsValueDistributionResource(BaseResource):
+class StatisticsValueDistributionResource(BaseMethodView):
 
     get_schema = StatisticsValueDistributionSchema()
 
@@ -951,25 +951,25 @@ class StatisticsValueDistributionResource(BaseResource):
         )
 
 
-class StatisticsRendererResource(BaseResource):
+class StatisticsRendererResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.query_premium_components()
 
 
-class MessagesResource(BaseResource):
+class MessagesResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_messages()
 
 
-class HistoryStatusResource(BaseResource):
+class HistoryStatusResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_history_status()
 
 
-class HistoryProcessingResource(BaseResource):
+class HistoryProcessingResource(BaseMethodView):
 
     get_schema = HistoryProcessingSchema()
 
@@ -987,12 +987,12 @@ class HistoryProcessingResource(BaseResource):
         )
 
 
-class HistoryActionableItemsResource(BaseResource):
+class HistoryActionableItemsResource(BaseMethodView):
     def get(self) -> Response:
         return self.rest_api.get_history_actionable_items()
 
 
-class AccountingReportsResource(BaseResource):
+class AccountingReportsResource(BaseMethodView):
 
     get_schema = AccountingReportsSchema(required_report_id=False)
     delete_schema = AccountingReportsSchema(required_report_id=True)
@@ -1006,7 +1006,7 @@ class AccountingReportsResource(BaseResource):
         return self.rest_api.purge_pnl_report_data(report_id=report_id)
 
 
-class AccountingReportDataResource(BaseResource):
+class AccountingReportDataResource(BaseMethodView):
 
     post_schema = AccountingReportDataSchema()
 
@@ -1015,7 +1015,7 @@ class AccountingReportDataResource(BaseResource):
         return self.rest_api.get_report_data(filter_query=filter_query)
 
 
-class HistoryExportingResource(BaseResource):
+class HistoryExportingResource(BaseMethodView):
 
     get_schema = HistoryExportingSchema()
 
@@ -1024,19 +1024,19 @@ class HistoryExportingResource(BaseResource):
         return self.rest_api.export_processed_history_csv(directory_path=directory_path)
 
 
-class HistoryDownloadingResource(BaseResource):
+class HistoryDownloadingResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.download_processed_history_csv()
 
 
-class PeriodicDataResource(BaseResource):
+class PeriodicDataResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.query_periodic_data()
 
 
-class BlockchainsAccountsResource(BaseResource):
+class BlockchainsAccountsResource(BaseMethodView):
 
     get_schema = BlockchainAccountsGetSchema()
 
@@ -1111,7 +1111,7 @@ class BlockchainsAccountsResource(BaseResource):
         )
 
 
-class BTCXpubResource(BaseResource):
+class BTCXpubResource(BaseMethodView):
 
     put_schema = XpubAddSchema()
     delete_schema = BaseXpubSchema()
@@ -1171,7 +1171,7 @@ class BTCXpubResource(BaseResource):
         )
 
 
-class IgnoredAssetsResource(BaseResource):
+class IgnoredAssetsResource(BaseMethodView):
 
     modify_schema = IgnoredAssetsSchema()
     post_schema = AsyncQueryArgumentSchema()
@@ -1192,7 +1192,7 @@ class IgnoredAssetsResource(BaseResource):
         return self.rest_api.pull_spam_assets(async_query)
 
 
-class IgnoredActionsResource(BaseResource):
+class IgnoredActionsResource(BaseMethodView):
 
     get_schema = IgnoredActionsGetSchema()
     modify_schema = IgnoredActionsModifySchema()
@@ -1213,7 +1213,7 @@ class IgnoredActionsResource(BaseResource):
         )
 
 
-class QueriedAddressesResource(BaseResource):
+class QueriedAddressesResource(BaseMethodView):
 
     modify_schema = QueriedAddressesSchema()
 
@@ -1229,7 +1229,7 @@ class QueriedAddressesResource(BaseResource):
         return self.rest_api.remove_queried_address_per_module(module=module, address=address)
 
 
-class InfoResource(BaseResource):
+class InfoResource(BaseMethodView):
 
     get_schema = AppInfoSchema()
 
@@ -1238,13 +1238,13 @@ class InfoResource(BaseResource):
         return self.rest_api.get_info(check_for_updates)
 
 
-class PingResource(BaseResource):
+class PingResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.ping()
 
 
-class DataImportResource(BaseResource):
+class DataImportResource(BaseMethodView):
 
     upload_schema = DataImportSchema()
 
@@ -1281,7 +1281,7 @@ class DataImportResource(BaseResource):
         return response
 
 
-class Eth2DailyStatsResource(BaseResource):
+class Eth2DailyStatsResource(BaseMethodView):
     post_schema = Eth2DailyStatsSchema()
 
     @use_kwargs(post_schema, location='json_and_query')
@@ -1298,7 +1298,7 @@ class Eth2DailyStatsResource(BaseResource):
         )
 
 
-class Eth2ValidatorsResource(BaseResource):
+class Eth2ValidatorsResource(BaseMethodView):
 
     patch_schema = Eth2ValidatorPatchSchema()
     put_schema = Eth2ValidatorPutSchema()
@@ -1334,7 +1334,7 @@ class Eth2ValidatorsResource(BaseResource):
         )
 
 
-class Eth2StakeDepositsResource(BaseResource):
+class Eth2StakeDepositsResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1343,7 +1343,7 @@ class Eth2StakeDepositsResource(BaseResource):
         return self.rest_api.get_eth2_stake_deposits(async_query)
 
 
-class Eth2StakeDetailsResource(BaseResource):
+class Eth2StakeDetailsResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1352,7 +1352,7 @@ class Eth2StakeDetailsResource(BaseResource):
         return self.rest_api.get_eth2_stake_details(async_query)
 
 
-class DefiBalancesResource(BaseResource):
+class DefiBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1361,7 +1361,7 @@ class DefiBalancesResource(BaseResource):
         return self.rest_api.get_defi_balances(async_query)
 
 
-class NamedEthereumModuleDataResource(BaseResource):
+class NamedEthereumModuleDataResource(BaseMethodView):
     delete_schema = NamedEthereumModuleDataSchema()
 
     @use_kwargs(delete_schema, location='view_args')
@@ -1369,19 +1369,19 @@ class NamedEthereumModuleDataResource(BaseResource):
         return self.rest_api.purge_module_data(module_name)
 
 
-class EthereumModuleDataResource(BaseResource):
+class EthereumModuleDataResource(BaseMethodView):
 
     def delete(self) -> Response:
         return self.rest_api.purge_module_data(module_name=None)
 
 
-class EthereumModuleResource(BaseResource):
+class EthereumModuleResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.supported_modules()
 
 
-class MakerdaoDSRBalanceResource(BaseResource):
+class MakerdaoDSRBalanceResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1390,7 +1390,7 @@ class MakerdaoDSRBalanceResource(BaseResource):
         return self.rest_api.get_makerdao_dsr_balance(async_query)
 
 
-class MakerdaoDSRHistoryResource(BaseResource):
+class MakerdaoDSRHistoryResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1399,7 +1399,7 @@ class MakerdaoDSRHistoryResource(BaseResource):
         return self.rest_api.get_makerdao_dsr_history(async_query)
 
 
-class MakerdaoVaultsResource(BaseResource):
+class MakerdaoVaultsResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1408,7 +1408,7 @@ class MakerdaoVaultsResource(BaseResource):
         return self.rest_api.get_makerdao_vaults(async_query)
 
 
-class MakerdaoVaultDetailsResource(BaseResource):
+class MakerdaoVaultDetailsResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1417,7 +1417,7 @@ class MakerdaoVaultDetailsResource(BaseResource):
         return self.rest_api.get_makerdao_vault_details(async_query)
 
 
-class AaveBalancesResource(BaseResource):
+class AaveBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1426,7 +1426,7 @@ class AaveBalancesResource(BaseResource):
         return self.rest_api.get_aave_balances(async_query)
 
 
-class AaveHistoryResource(BaseResource):
+class AaveHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1446,7 +1446,7 @@ class AaveHistoryResource(BaseResource):
         )
 
 
-class AdexBalancesResource(BaseResource):
+class AdexBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1455,7 +1455,7 @@ class AdexBalancesResource(BaseResource):
         return self.rest_api.get_adex_balances(async_query=async_query)
 
 
-class AdexHistoryResource(BaseResource):
+class AdexHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1475,7 +1475,7 @@ class AdexHistoryResource(BaseResource):
         )
 
 
-class CompoundBalancesResource(BaseResource):
+class CompoundBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1484,7 +1484,7 @@ class CompoundBalancesResource(BaseResource):
         return self.rest_api.get_compound_balances(async_query)
 
 
-class CompoundHistoryResource(BaseResource):
+class CompoundHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1504,7 +1504,7 @@ class CompoundHistoryResource(BaseResource):
         )
 
 
-class YearnVaultsBalancesResource(BaseResource):
+class YearnVaultsBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1513,7 +1513,7 @@ class YearnVaultsBalancesResource(BaseResource):
         return self.rest_api.get_yearn_vaults_balances(async_query)
 
 
-class YearnVaultsV2BalancesResource(BaseResource):
+class YearnVaultsV2BalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1522,7 +1522,7 @@ class YearnVaultsV2BalancesResource(BaseResource):
         return self.rest_api.get_yearn_vaults_v2_balances(async_query)
 
 
-class YearnVaultsHistoryResource(BaseResource):
+class YearnVaultsHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1542,7 +1542,7 @@ class YearnVaultsHistoryResource(BaseResource):
         )
 
 
-class YearnVaultsV2HistoryResource(BaseResource):
+class YearnVaultsV2HistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1562,7 +1562,7 @@ class YearnVaultsV2HistoryResource(BaseResource):
         )
 
 
-class UniswapBalancesResource(BaseResource):
+class UniswapBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1571,7 +1571,7 @@ class UniswapBalancesResource(BaseResource):
         return self.rest_api.get_uniswap_balances(async_query=async_query)
 
 
-class UniswapEventsHistoryResource(BaseResource):
+class UniswapEventsHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1591,7 +1591,7 @@ class UniswapEventsHistoryResource(BaseResource):
         )
 
 
-class UniswapTradesHistoryResource(BaseResource):
+class UniswapTradesHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1611,7 +1611,7 @@ class UniswapTradesHistoryResource(BaseResource):
         )
 
 
-class SushiswapBalancesResource(BaseResource):
+class SushiswapBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1620,7 +1620,7 @@ class SushiswapBalancesResource(BaseResource):
         return self.rest_api.get_sushiswap_balances(async_query=async_query)
 
 
-class SushiswapEventsHistoryResource(BaseResource):
+class SushiswapEventsHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1640,7 +1640,7 @@ class SushiswapEventsHistoryResource(BaseResource):
         )
 
 
-class SushiswapTradesHistoryResource(BaseResource):
+class SushiswapTradesHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1660,7 +1660,7 @@ class SushiswapTradesHistoryResource(BaseResource):
         )
 
 
-class LoopringBalancesResource(BaseResource):
+class LoopringBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1669,7 +1669,7 @@ class LoopringBalancesResource(BaseResource):
         return self.rest_api.get_loopring_balances(async_query=async_query)
 
 
-class LiquityTrovesResource(BaseResource):
+class LiquityTrovesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1678,7 +1678,7 @@ class LiquityTrovesResource(BaseResource):
         return self.rest_api.get_liquity_troves(async_query=async_query)
 
 
-class LiquityTrovesHistoryResource(BaseResource):
+class LiquityTrovesHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1698,7 +1698,7 @@ class LiquityTrovesHistoryResource(BaseResource):
         )
 
 
-class LiquityStakingHistoryResource(BaseResource):
+class LiquityStakingHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1718,7 +1718,7 @@ class LiquityStakingHistoryResource(BaseResource):
         )
 
 
-class LiquityStakingResource(BaseResource):
+class LiquityStakingResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1727,7 +1727,7 @@ class LiquityStakingResource(BaseResource):
         return self.rest_api.get_liquity_staked(async_query=async_query)
 
 
-class PickleDillResource(BaseResource):
+class PickleDillResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1736,7 +1736,7 @@ class PickleDillResource(BaseResource):
         return self.rest_api.get_dill_balance(async_query=async_query)
 
 
-class BalancerBalancesResource(BaseResource):
+class BalancerBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1745,7 +1745,7 @@ class BalancerBalancesResource(BaseResource):
         return self.rest_api.get_balancer_balances(async_query=async_query)
 
 
-class BalancerEventsHistoryResource(BaseResource):
+class BalancerEventsHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1765,7 +1765,7 @@ class BalancerEventsHistoryResource(BaseResource):
         )
 
 
-class BalancerTradesHistoryResource(BaseResource):
+class BalancerTradesHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1785,7 +1785,7 @@ class BalancerTradesHistoryResource(BaseResource):
         )
 
 
-class WatchersResource(BaseResource):
+class WatchersResource(BaseMethodView):
 
     put_schema = WatchersAddSchema
     patch_schema = WatchersEditSchema
@@ -1807,7 +1807,7 @@ class WatchersResource(BaseResource):
         return self.rest_api.delete_watchers(watchers)
 
 
-class AssetIconsResource(BaseResource):
+class AssetIconsResource(BaseMethodView):
 
     get_schema = SingleAssetIdentifierSchema()
     upload_schema = AssetIconUploadSchema()
@@ -1838,7 +1838,7 @@ class AssetIconsResource(BaseResource):
         return response
 
 
-class CurrentAssetsPriceResource(BaseResource):
+class CurrentAssetsPriceResource(BaseMethodView):
 
     put_schema = ManualPriceSchema
     post_schema = CurrentAssetsPriceSchema()
@@ -1880,7 +1880,7 @@ class CurrentAssetsPriceResource(BaseResource):
         return self.rest_api.delete_manual_current_price(asset)
 
 
-class HistoricalAssetsPriceResource(BaseResource):
+class HistoricalAssetsPriceResource(BaseMethodView):
 
     post_schema = HistoricalAssetsPriceSchema()
     put_schema = TimedManualPriceSchema()
@@ -1945,7 +1945,7 @@ class HistoricalAssetsPriceResource(BaseResource):
         return self.rest_api.delete_manual_price(from_asset, to_asset, timestamp)
 
 
-class NamedOracleCacheResource(BaseResource):
+class NamedOracleCacheResource(BaseMethodView):
 
     post_schema = NamedOracleCacheCreateSchema()
     delete_schema = NamedOracleCacheSchema()
@@ -1986,13 +1986,13 @@ class NamedOracleCacheResource(BaseResource):
         )
 
 
-class OraclesResource(BaseResource):
+class OraclesResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_supported_oracles()
 
 
-class ERC20TokenInfo(BaseResource):
+class ERC20TokenInfo(BaseMethodView):
 
     get_schema = ERC20InfoSchema()
 
@@ -2001,7 +2001,7 @@ class ERC20TokenInfo(BaseResource):
         return self.rest_api.get_token_information(address, async_query)
 
 
-class BinanceAvailableMarkets(BaseResource):
+class BinanceAvailableMarkets(BaseMethodView):
 
     get_schema = BinanceMarketsSchema()
 
@@ -2010,7 +2010,7 @@ class BinanceAvailableMarkets(BaseResource):
         return self.rest_api.get_all_binance_pairs(location)
 
 
-class BinanceUserMarkets(BaseResource):
+class BinanceUserMarkets(BaseMethodView):
 
     get_schema = BinanceMarketsUserSchema()
 
@@ -2019,7 +2019,7 @@ class BinanceUserMarkets(BaseResource):
         return self.rest_api.get_user_binance_pairs(name, location)
 
 
-class AvalancheTransactionsResource(BaseResource):
+class AvalancheTransactionsResource(BaseMethodView):
     get_schema = AvalancheTransactionQuerySchema()
 
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
@@ -2038,7 +2038,7 @@ class AvalancheTransactionsResource(BaseResource):
         )
 
 
-class ERC20TokenInfoAVAX(BaseResource):
+class ERC20TokenInfoAVAX(BaseMethodView):
     get_schema = ERC20InfoSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
@@ -2046,7 +2046,7 @@ class ERC20TokenInfoAVAX(BaseResource):
         return self.rest_api.get_avax_token_information(address, async_query)
 
 
-class NFTSResource(BaseResource):
+class NFTSResource(BaseMethodView):
     get_schema = AsyncIgnoreCacheQueryArgumentSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
@@ -2054,7 +2054,7 @@ class NFTSResource(BaseResource):
         return self.rest_api.get_nfts(async_query=async_query, ignore_cache=ignore_cache)
 
 
-class NFTSBalanceResource(BaseResource):
+class NFTSBalanceResource(BaseMethodView):
     get_schema = AsyncIgnoreCacheQueryArgumentSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
@@ -2062,7 +2062,7 @@ class NFTSBalanceResource(BaseResource):
         return self.rest_api.get_nfts_balances(async_query=async_query, ignore_cache=ignore_cache)
 
 
-class StakingResource(BaseResource):
+class StakingResource(BaseMethodView):
     get_schema = StakingQuerySchema
 
     @use_kwargs(get_schema, location='json_and_query')
@@ -2081,7 +2081,7 @@ class StakingResource(BaseResource):
         )
 
 
-class UserAssetsResource(BaseResource):
+class UserAssetsResource(BaseMethodView):
     importing_schema = AssetsImportingSchema
     import_from_form = AssetsImportingFromFormSchema
 
@@ -2101,7 +2101,7 @@ class UserAssetsResource(BaseResource):
         return response
 
 
-class DBSnapshotExportingResource(BaseResource):
+class DBSnapshotExportingResource(BaseMethodView):
     post_schema = SnapshotExportingSchema()
 
     @use_kwargs(post_schema, location='json')
@@ -2109,7 +2109,7 @@ class DBSnapshotExportingResource(BaseResource):
         return self.rest_api.export_user_db_snapshot(timestamp=timestamp, path=path)
 
 
-class DBSnapshotDownloadingResource(BaseResource):
+class DBSnapshotDownloadingResource(BaseMethodView):
     post_schema = SnapshotTimestampQuerySchema()
 
     @use_kwargs(post_schema, location='json')
@@ -2117,7 +2117,7 @@ class DBSnapshotDownloadingResource(BaseResource):
         return self.rest_api.download_user_db_snapshot(timestamp=timestamp)
 
 
-class DBSnapshotImportingResource(BaseResource):
+class DBSnapshotImportingResource(BaseMethodView):
     upload_schema = SnapshotImportingSchema()
 
     @use_kwargs(upload_schema, location='json')
@@ -2148,7 +2148,7 @@ class DBSnapshotImportingResource(BaseResource):
         return response
 
 
-class DBSnapshotDeletingResource(BaseResource):
+class DBSnapshotDeletingResource(BaseMethodView):
     delete_schema = SnapshotTimestampQuerySchema()
 
     @use_kwargs(delete_schema, location='json')
@@ -2156,7 +2156,7 @@ class DBSnapshotDeletingResource(BaseResource):
         return self.rest_api.delete_user_db_snapshot(timestamp=timestamp)
 
 
-class ReverseEnsResource(BaseResource):
+class ReverseEnsResource(BaseMethodView):
     reverse_ens_schema = ReverseEnsSchema
 
     @use_kwargs(reverse_ens_schema, location='json')

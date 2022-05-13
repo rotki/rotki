@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from flask_restful import Resource
+from flask.views import MethodView
 from webargs.flaskparser import use_kwargs
 
 from .encoding import BinanceMyTradesSchema
@@ -12,33 +12,33 @@ def create_blueprint() -> Blueprint:
     return Blueprint('v1_resources', __name__)
 
 
-class BaseResource(Resource):
+class BaseMethodView(MethodView):
     def __init__(self, rest_api_object, **kwargs):
         super().__init__(**kwargs)
         self.rest_api = rest_api_object
 
 
-class KrakenTickerResource(BaseResource):
+class KrakenTickerResource(BaseMethodView):
     def post(self):
         return self.rest_api.kraken_ticker()
 
 
-class KrakenAssetPairsResource(BaseResource):
+class KrakenAssetPairsResource(BaseMethodView):
     def post(self):
         return self.rest_api.kraken_asset_pairs()
 
 
-class KrakenBalanceResource(BaseResource):
+class KrakenBalanceResource(BaseMethodView):
     def post(self):
         return self.rest_api.kraken_balances()
 
 
-class KrakenTradesHistoryResource(BaseResource):
+class KrakenTradesHistoryResource(BaseMethodView):
     def post(self):
         return self.rest_api.kraken_trade_history()
 
 
-class KrakenLedgersResource(BaseResource):
+class KrakenLedgersResource(BaseMethodView):
 
     def post(
             self,
@@ -58,17 +58,17 @@ class KrakenLedgersResource(BaseResource):
         return self.rest_api.kraken_ledgers(ledger_type=ledger_type)
 
 
-class BinanceAccountResource(BaseResource):
+class BinanceAccountResource(BaseMethodView):
     def get(self):
         return self.rest_api.binance_account()
 
 
-class BinanceExchangeInfoResource(BaseResource):
+class BinanceExchangeInfoResource(BaseMethodView):
     def get(self):
         return self.rest_api.binance_exchange_info()
 
 
-class BinanceMyTradesResource(BaseResource):
+class BinanceMyTradesResource(BaseMethodView):
 
     @use_kwargs(BinanceMyTradesSchema)
     def get(self, **kwargs):
