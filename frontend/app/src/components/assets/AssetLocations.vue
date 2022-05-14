@@ -23,7 +23,7 @@
         <div class="py-4">
           <labeled-address-display
             v-if="item.address"
-            :account="account(item.address)"
+            :account="account(item.address).value"
           />
           <tag-display :tags="item.tags" />
         </div>
