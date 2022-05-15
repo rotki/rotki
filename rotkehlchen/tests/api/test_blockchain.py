@@ -508,34 +508,34 @@ def test_add_blockchain_accounts(
         )
 
     # Add a BCH account
-    with ExitStack() as stack:
-        setup.enter_blockchain_patches(stack)
-        response = requests.put(api_url_for(
-            rotkehlchen_api_server,
-            "blockchainsaccountsresource",
-            blockchain='BCH',
-        ), json={'accounts': [{'address': '12tkqA9xSoowkzoERHMWNKsTey55YEBqkv'}]})
-        result = assert_proper_response_with_result(response)
-        assert result['per_account']['BCH'] is not None
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='BCH',
+    ), json={'accounts': [
+        {'address': 'prettyirrelevant.eth'},
+        {'address': '12tkqA9xSoowkzoERHMWNKsTey55YEBqkv'},
+    ]})
+
+    result = assert_proper_response_with_result(response)
+    assert result['per_account']['BCH'] is not None
 
     # Check that the BCH balance is present in DB
     accounts = rotki.data.db.get_blockchain_accounts()
-    assert len(accounts.bch) == 1
+    assert len(accounts.bch) == 2
 
     # Try adding same BCH address but in different formats
-    with ExitStack() as stack:
-        setup.enter_blockchain_patches(stack)
-        response = requests.put(api_url_for(
-            rotkehlchen_api_server,
-            "blockchainsaccountsresource",
-            blockchain='BCH',
-        ), json={
-            'accounts': [
-                {'address': '1Mnwij9Zkk6HtmdNzyEUFgp6ojoLaZekP8'},
-                {'address': 'bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa'},
-            ],
-        })
-        assert_error_response(response, 'appears multiple times in the request data')
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='BCH',
+    ), json={
+        'accounts': [
+            {'address': '1Mnwij9Zkk6HtmdNzyEUFgp6ojoLaZekP8'},
+            {'address': 'bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa'},
+        ],
+    })
+    assert_error_response(response, 'appears multiple times in the request data')
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

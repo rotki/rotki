@@ -27,7 +27,7 @@ from web3.exceptions import BadFunctionCallOutput
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
-from rotkehlchen.chain.bitcoin_cash import get_bitcoin_cash_addresses_balances
+from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.modules import (
@@ -659,7 +659,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         self.balances.bch = {}
         bch_usd_price = Inquirer().find_usd_price(A_BCH)
-        total = FVal(0)
+        total = ZERO
         balances = get_bitcoin_cash_addresses_balances(self.accounts.bch)
         for account, balance in balances.items():
             total += balance

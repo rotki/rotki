@@ -4903,7 +4903,7 @@ Getting blockchain account data
 .. http:get:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
+      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
 
    Doing a GET on the blokchcains endpoint with a specific blockchain queries account data information for that blockchain.
 
@@ -8498,9 +8498,9 @@ Adding blockchain accounts
 .. http:put:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX", "BCH"``
+      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
+      Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
@@ -8892,9 +8892,9 @@ Editing blockchain account data
 .. http:patch:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX", "BCH"``
+      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
+      Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 
    Doing a PATCH on the the blockchains endpoint with a specific blockchain URL and a list of accounts to edit will edit the label and tags for those accounts.
 
@@ -8963,9 +8963,9 @@ Removing blockchain accounts
 .. http:delete:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX", "BCH"``
+      Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
+      Supported blockchains with ENS domains: ``"BTC", "BCH", "ETH", "KSM", "DOT"``
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 

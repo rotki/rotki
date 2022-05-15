@@ -3,7 +3,9 @@ from typing import List, Optional, Set, Tuple
 import bech32
 from base58 import b58decode_check, b58encode_check
 from eth_typing import ChecksumAddress
+from marshmallow import ValidationError
 
+from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address
 from rotkehlchen.types import BTCAddress
 
 _CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
@@ -71,7 +73,7 @@ def _b32decode(inputs: str) -> list:
     return out
 
 
-def b32encode(inputs: list) -> str:
+def _b32encode(inputs: list) -> str:
     out = ''
     for char_code in inputs:
         out += _CHARSET[char_code]
@@ -100,7 +102,7 @@ def _code_list_to_string(code_list: List[int]) -> bytes:
     return output
 
 
-def legacy_to_cash_address(address: str) -> Optional[str]:
+def legacy_to_cash_address(address: str) -> Optional[BTCAddress]:
     """
     Converts a legacy BCH address to CashAddr format.
     Code is taken from:
@@ -108,18 +110,21 @@ def legacy_to_cash_address(address: str) -> Optional[str]:
 
     Returns None if an error occured during conversion.
     """
-    decoded = bytearray(b58decode_check(address))
-    version = _address_type('legacy', decoded[0])
-    payload = []
-    for letter in decoded[1:]:
-        payload.append(letter)
-    version_int = _address_type('cash', version[1])[1]
-    payload = [version_int] + payload
-    converted_bits = bech32.convertbits(payload, 8, 5)
-    if converted_bits is None:
+    try:
+        decoded = bytearray(b58decode_check(address))
+        version = _address_type('legacy', decoded[0])
+        payload = []
+        for letter in decoded[1:]:
+            payload.append(letter)
+        version_int = _address_type('cash', version[1])[1]
+        payload = [version_int] + payload
+        converted_bits = bech32.convertbits(payload, 8, 5)
+        if converted_bits is None:
+            return None
+        checksum = _calculate_checksum(_PREFIX, converted_bits)
+        return BTCAddress(_PREFIX + ':' + _b32encode(converted_bits + checksum))
+    except ValueError:
         return None
-    checksum = _calculate_checksum(_PREFIX, converted_bits)
-    return _PREFIX + ':' + b32encode(converted_bits + checksum)
 
 
 def cash_to_legacy_address(address: str) -> Optional[BTCAddress]:
@@ -165,3 +170,24 @@ def force_addresses_to_legacy_addresses(data: Set[ChecksumAddress]) -> Set[BTCAd
         return_data.add(force_address_to_legacy_address(entry))
 
     return return_data
+
+
+def validate_bch_address_input(address: str, given_addresses: Set[ChecksumAddress]) -> None:
+    """Validates the address provided is valid for Bitcoin Cash.
+    May raise ValidationError if all checks are not passed.
+    """
+    not_valid_address = (
+        (address.startswith('bitcoincash:') and not is_valid_bitcoin_cash_address(address)) or
+        (not (address.startswith('bitcoincash:') or address.endswith('.eth')) and not is_valid_btc_address(address))  # noqa: 501
+    )
+    if not_valid_address:
+        raise ValidationError(
+            f'Given value {address} is not a valid bitcoin cash address',
+            field_name='address',
+        )
+    # Check if they're not duplicates of same address but in different formats
+    if force_address_to_legacy_address(address) in force_addresses_to_legacy_addresses(given_addresses):  # noqa: 501
+        raise ValidationError(
+            f'Address {address} appears multiple times in the request data',
+            field_name='address',
+        )
