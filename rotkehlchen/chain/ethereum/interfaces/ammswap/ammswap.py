@@ -41,6 +41,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
+from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -667,6 +668,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         if only_cache:
             return self._fetch_trades_from_db(addresses, from_timestamp, to_timestamp)
 
+        dbranges = DBQueryRanges(self.database)
         # Get addresses' last used query range for this AMM's trades
         for address in addresses:
             entry_name = f'{self.trades_prefix}_{address}'
@@ -691,10 +693,9 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             # Insert last used query range for new addresses
             for address in new_addresses:
                 entry_name = f'{self.trades_prefix}_{address}'
-                self.database.update_used_query_range(
-                    name=entry_name,
-                    start_ts=start_ts,
-                    end_ts=to_timestamp,
+                dbranges.update_used_query_range(
+                    location_string=entry_name,
+                    queried_ranges=[(start_ts, to_timestamp)],
                 )
 
         # Request existing DB addresses' trades
@@ -709,10 +710,9 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             # Update last used query range for existing addresses
             for address in existing_addresses:
                 entry_name = f'{self.trades_prefix}_{address}'
-                self.database.update_used_query_range(
-                    name=entry_name,
-                    start_ts=min_end_ts,
-                    end_ts=to_timestamp,
+                dbranges.update_used_query_range(
+                    location_string=entry_name,
+                    queried_ranges=[(min_end_ts, to_timestamp)],
                 )
 
         # Insert all unique swaps to the DB

@@ -1,6 +1,11 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from rotkehlchen.chain.ethereum.constants import (
+    RANGE_PREFIX_ETHINTERNALTX,
+    RANGE_PREFIX_ETHTOKENTX,
+    RANGE_PREFIX_ETHTX,
+)
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
@@ -16,6 +21,7 @@ from rotkehlchen.types import (
     EthereumInternalTransaction,
     EthereumTransaction,
     EVMTxHash,
+    Timestamp,
     deserialize_evm_tx_hash,
     make_evm_tx_hash,
 )
@@ -208,9 +214,13 @@ class DBEthTx():
     def purge_ethereum_transaction_data(self) -> None:
         """Deletes all ethereum transaction related data from the DB"""
         cursor = self.db.conn.cursor()
-        cursor.execute(
+        cursor.executemany(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            ('ethtxs\\_%', '\\'),
+            [
+                (f'{RANGE_PREFIX_ETHTX}\\_%', '\\'),
+                (f'{RANGE_PREFIX_ETHINTERNALTX}\\_%', '\\'),
+                (f'{RANGE_PREFIX_ETHTOKENTX}\\_%', '\\'),
+            ],
         )
         cursor.execute('DELETE FROM ethereum_transactions;')
         self.db.conn.commit()
@@ -364,7 +374,14 @@ class DBEthTx():
         """
         cursor = self.db.conn.cursor()
         dbevents = DBHistoryEvents(self.db)
-        cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'ethtxs_{address}',))
+        cursor.executemany(
+            'DELETE FROM used_query_ranges WHERE name=?;',
+            [
+                (f'{RANGE_PREFIX_ETHTX}_{address}',),
+                (f'{RANGE_PREFIX_ETHINTERNALTX}_{address}',),
+                (f'{RANGE_PREFIX_ETHTOKENTX}_{address}',),
+            ],
+        )
         # Get all tx_hashes that are touched by this address and no other address
         result = cursor.execute(
             'SELECT tx_hash from ethtx_address_mappings WHERE address=? AND tx_hash NOT IN ( '
@@ -385,3 +402,21 @@ class DBEthTx():
             'DELETE FROM evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
             [(x, 'ETH', HISTORY_MAPPING_DECODED) for x in tx_hashes],
         )
+
+    def get_queried_range(self, address: ChecksumEthAddress) -> Tuple[Timestamp, Timestamp]:
+        """Gets the most conservative range that was queried for the ethereum
+        transactions of an address.
+
+        That means the least common denominator of normal, internal and token transactions
+        """
+        starts = []
+        ends = []
+        for prefix in (RANGE_PREFIX_ETHTX, RANGE_PREFIX_ETHTOKENTX, RANGE_PREFIX_ETHINTERNALTX):
+            tx_range = self.db.get_used_query_range(f'{prefix}_{address}')
+            if tx_range is None:  # if any range is missing then we gotta requery
+                return Timestamp(0), Timestamp(0)
+
+            starts.append(tx_range[0])
+            ends.append(tx_range[1])
+
+        return max(starts), min(ends)

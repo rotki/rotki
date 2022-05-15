@@ -40,18 +40,12 @@ def test_update_used_query_range(database):
     database.update_used_query_range(location1, 15, 25)
     database.update_used_query_range(location2, 10, 125)
 
-    dbranges.update_used_query_range(location1, 0, 10, [])
-    msg = 'empty used query range should do nothing'
-    assert database.get_used_query_range(location1) == (15, 25), msg
-
     start_ts = 12
     end_ts = 90
     query_range = dbranges.get_location_query_ranges(location1, start_ts, end_ts)
     dbranges.update_used_query_range(
         location1,
-        start_ts=start_ts,
-        end_ts=end_ts,
-        ranges_to_query=query_range,
+        queried_ranges=[(start_ts, end_ts)] + query_range,
     )
     assert database.get_used_query_range(location1) == (12, 90)
 
@@ -60,8 +54,6 @@ def test_update_used_query_range(database):
     query_range = dbranges.get_location_query_ranges(location2, start_ts, end_ts)
     dbranges.update_used_query_range(
         location2,
-        start_ts=start_ts,
-        end_ts=end_ts,
-        ranges_to_query=query_range,
+        queried_ranges=[(start_ts, end_ts)] + query_range,
     )
     assert database.get_used_query_range(location2) == (10, 500)

@@ -40,20 +40,16 @@ class DBQueryRanges():
     def update_used_query_range(
             self,
             location_string: str,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            ranges_to_query: List[Tuple[Timestamp, Timestamp]],
+            queried_ranges: List[Tuple[Timestamp, Timestamp]],
     ) -> None:
-        """Depending on the ranges to query and the given start and end ts update the DB"""
-        if len(ranges_to_query) == 0:
+        """Depending on the queried ranges update the DB"""
+        if len(queried_ranges) == 0:
             return
 
-        starts = [x[0] for x in ranges_to_query]
-        starts.append(start_ts)
-        ends = [x[1] for x in ranges_to_query]
-        ends.append(end_ts)
+        starts = [x[0] for x in queried_ranges]
+        ends = [x[1] for x in queried_ranges]
         saved_range = self.db.get_used_query_range(location_string)
-        if saved_range:
+        if saved_range is not None:
             starts.append(saved_range[0])
             ends.append(saved_range[1])
 

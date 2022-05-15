@@ -220,12 +220,13 @@ class TaskManager():
             return
 
         now = ts_now()
+        dbethtx = DBEthTx(self.database)
         queriable_accounts = []
-        for x in accounts:
-            queried_range = self.database.get_used_query_range(f'ethtxs_{x}')
-            end_ts = queried_range[1] if queried_range else 0
-            if now - max(self.last_eth_tx_query_ts[x], end_ts) > ETH_TX_QUERY_FREQUENCY:
-                queriable_accounts.append(x)
+        for account in accounts:
+            _, end_ts = dbethtx.get_queried_range(account)
+            if now - max(self.last_eth_tx_query_ts[account], end_ts) > ETH_TX_QUERY_FREQUENCY:
+                queriable_accounts.append(account)
+
         if len(queriable_accounts) == 0:
             return
 
