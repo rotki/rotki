@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_1INCH, A_AAVE, A_BTC, A_DOGE, A_ETH, A_WETH
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DOGE, A_ETH, A_LINK, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -17,24 +17,24 @@ def test_uniswap_oracles_asset_to_asset(inquirer_defi):
     coingecko.
     """
     inch_price = inquirer_defi.find_usd_price(A_1INCH)
-    aave_price = inquirer_defi.find_usd_price(A_AAVE)
+    link_price = inquirer_defi.find_usd_price(A_LINK)
 
     for oracle in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3):
+        if oracle == CurrentPriceOracle.UNISWAPV2:
+            price_instance = inquirer_defi._uniswapv2
+        else:
+            price_instance = inquirer_defi._uniswapv3
         inquirer_defi.set_oracles_order(oracles=[oracle])
-        price = inquirer_defi._uniswapv2.query_current_price(A_1INCH, A_AAVE)
+        price = price_instance.query_current_price(A_1INCH, A_LINK)
         assert price != Price(ZERO)
-        assert (inch_price / aave_price).is_close(price, max_diff='0.01')
-
-        inquirer_defi.set_oracles_order(oracles=[CurrentPriceOracle.UNISWAPV3])
-        price = inquirer_defi._uniswapv2.query_current_price(A_1INCH, A_AAVE)
-        assert (inch_price / aave_price).is_close(price, max_diff='0.01')
-        defi_price = inquirer_defi.find_usd_price(A_AAVE, ignore_cache=True)
-        assert abs(defi_price - aave_price) / aave_price < FVal(0.1), f'{defi_price=} and {aave_price=} have more than 10% difference'  # noqa: E501
+        assert (inch_price / link_price).is_close(price, max_diff='0.01')
+        defi_price = inquirer_defi.find_usd_price(A_LINK, ignore_cache=True)
+        assert abs(defi_price - link_price) / link_price < FVal(0.1), f'{defi_price=} and {link_price=} have more than 10% difference'  # noqa: E501
 
         # test with ethereum tokens but as assets instead of instance of the EthereumToken class
         a1inch = Asset(A_1INCH.identifier)
-        aaave = Asset(A_AAVE.identifier)
-        price_as_assets = inquirer_defi._uniswapv2.query_current_price(a1inch, aaave)
+        alink = Asset(A_LINK.identifier)
+        price_as_assets = price_instance.query_current_price(a1inch, alink)
         assert price_as_assets.is_close(price, max_diff='0.01')
 
 
