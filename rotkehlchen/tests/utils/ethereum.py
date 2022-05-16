@@ -289,5 +289,10 @@ def get_decoded_events_of_transaction(
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash"""
     transactions = EthTransactions(ethereum=ethereum_manager, database=database)
     transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=transactions,
+        msg_aggregator=msg_aggregator,
+    )
     return decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])

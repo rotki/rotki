@@ -5,6 +5,7 @@ import pytest
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress, SubstrateChain
@@ -137,12 +138,25 @@ def fixture_ethereum_manager(
 def fixture_evm_transaction_decoder(
         database,
         ethereum_manager,
+        eth_transactions,
         function_scope_messages_aggregator,
-):  # noqa: E501
+):
     return EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
         msg_aggregator=function_scope_messages_aggregator,
+    )
+
+
+@pytest.fixture(name='eth_transactions')
+def fixture_eth_transactions(
+        database,
+        ethereum_manager,
+):  # noqa: E501
+    return EthTransactions(
+        ethereum=ethereum_manager,
+        database=database,
     )
 
 

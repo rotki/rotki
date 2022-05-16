@@ -59,7 +59,6 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.decoding.constants import ETHADDRESS_TO_KNOWN_NAME
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
@@ -3032,12 +3031,8 @@ class RestAPI():
             filter_query: ETHTransactionsFilterQuery,
             event_params: Dict[str, Any],
     ) -> Dict[str, Any]:
-        tx_module = EthTransactions(
-            ethereum=self.rotkehlchen.chain_manager.ethereum,
-            database=self.rotkehlchen.data.db,
-        )
         try:
-            transactions, total_filter_count = tx_module.query(
+            transactions, total_filter_count = self.rotkehlchen.eth_transactions.query(
                 only_cache=only_cache,
                 filter_query=filter_query,
                 has_premium=self.rotkehlchen.premium is not None,

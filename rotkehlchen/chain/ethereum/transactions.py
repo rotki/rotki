@@ -19,7 +19,6 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -31,7 +30,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EthTransactions(LockableQueryMixIn):
+class EthTransactions:
 
     def __init__(
             self,
@@ -68,7 +67,6 @@ class EthTransactions(LockableQueryMixIn):
             end_ts=end_ts,
         )
 
-    @protect_with_lock()
     def query(
             self,
             filter_query: ETHTransactionsFilterQuery,

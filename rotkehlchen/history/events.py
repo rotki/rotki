@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -28,6 +27,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.event.mixins import AccountingEventMixin
     from rotkehlchen.accounting.ledger_actions import LedgerAction
     from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+    from rotkehlchen.chain.ethereum.transactions import EthTransactions
     from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -46,7 +46,7 @@ log = RotkehlchenLogsAdapter(logger)
 NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 6 + len(EXTERNAL_LOCATION)
 
 
-class EventsHistorian():
+class EventsHistorian:
 
     def __init__(
             self,
@@ -55,6 +55,7 @@ class EventsHistorian():
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
             chain_manager: 'ChainManager',
+            eth_transactions: 'EthTransactions',
             evm_tx_decoder: 'EVMTransactionDecoder',
     ) -> None:
 
@@ -64,6 +65,7 @@ class EventsHistorian():
         self.exchange_manager = exchange_manager
         self.chain_manager = chain_manager
         self.evm_tx_decoder = evm_tx_decoder
+        self.eth_transactions = eth_transactions
         db_settings = self.db.get_settings()
         self.dateformat = db_settings.date_display_format
         self.datelocaltime = db_settings.display_date_in_localtime
@@ -348,9 +350,8 @@ class EventsHistorian():
             from_ts=Timestamp(0),
             to_ts=end_ts,
         )
-        ethtx_module = EthTransactions(ethereum=self.chain_manager.ethereum, database=self.db)
         try:
-            _, _ = ethtx_module.query(
+            _, _ = self.eth_transactions.query(
                 filter_query=tx_filter_query,
                 has_premium=True,  # ignore limits here. Limit applied at processing
                 only_cache=False,
@@ -365,7 +366,7 @@ class EventsHistorian():
         step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Querying ethereum transaction receipts'
-        ethtx_module.get_receipts_for_transactions_missing_them()
+        self.eth_transactions.get_receipts_for_transactions_missing_them()
         step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Decoding raw transactions'

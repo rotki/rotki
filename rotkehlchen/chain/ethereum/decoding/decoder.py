@@ -17,7 +17,6 @@ from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.constants import MODULES_PACKAGE, MODULES_PREFIX_LENGTH
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
@@ -63,6 +62,7 @@ from .utils import maybe_reshuffle_events
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.transactions import EthTransactions
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -75,10 +75,12 @@ class EVMTransactionDecoder():
             self,
             database: 'DBHandler',
             ethereum_manager: 'EthereumManager',
+            eth_transactions: 'EthTransactions',
             msg_aggregator: MessagesAggregator,
     ):
         self.database = database
         self.ethereum_manager = ethereum_manager
+        self.eth_transactions = eth_transactions
         self.msg_aggregator = msg_aggregator
         self.dbethtx = DBEthTx(self.database)
         self.dbevents = DBHistoryEvents(self.database)
@@ -256,7 +258,6 @@ class EVMTransactionDecoder():
         """
         events = []
         self.reload_from_db()
-        tx_module = EthTransactions(ethereum=self.ethereum_manager, database=self.database)
 
         # If no transaction hashes are passed, decode all transactions.
         if tx_hashes is None:
@@ -267,7 +268,7 @@ class EVMTransactionDecoder():
 
         for tx_hash in tx_hashes:
             try:
-                receipt = tx_module.get_or_query_transaction_receipt(tx_hash)
+                receipt = self.eth_transactions.get_or_query_transaction_receipt(tx_hash)
             except RemoteError as e:
                 raise InputError(f'Hash {tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
 

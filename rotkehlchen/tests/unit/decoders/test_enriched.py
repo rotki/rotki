@@ -21,7 +21,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xc931De6d845846E332a52D045072E3feF540Bd5d']])  # noqa: E501
-def test_1inch_claim(database, ethereum_manager):
+def test_1inch_claim(database, ethereum_manager, eth_transactions):
     """Data for claim taken from
     https://etherscan.io/tx/0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17
     """
@@ -71,7 +71,12 @@ def test_1inch_claim(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
@@ -108,7 +113,7 @@ def test_1inch_claim(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4']])  # noqa: E501
-def test_xdai_bridge(database, ethereum_manager):
+def test_xdai_bridge(database, ethereum_manager, eth_transactions):
     """Data for bridge taken from
     https://etherscan.io/tx/0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02
     """
@@ -172,7 +177,12 @@ def test_xdai_bridge(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
@@ -209,7 +219,7 @@ def test_xdai_bridge(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe']])  # noqa: E501
-def test_gitcoin_claim(database, ethereum_manager):
+def test_gitcoin_claim(database, ethereum_manager, eth_transactions):
     """Data for claim taken from
     https://etherscan.io/tx/0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa
     """
@@ -259,7 +269,12 @@ def test_gitcoin_claim(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [

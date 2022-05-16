@@ -2,14 +2,12 @@ import copy
 import logging
 import random
 from collections import defaultdict
-from typing import Callable, DefaultDict, List, NamedTuple, Set, Tuple
+from typing import TYPE_CHECKING, Callable, DefaultDict, List, NamedTuple, Set, Tuple
 
 import gevent
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
-from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
@@ -32,6 +30,10 @@ from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.types import ChecksumEthAddress, ExchangeLocationID, Location, Optional, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
+    from rotkehlchen.chain.ethereum.transactions import EthTransactions
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -73,7 +75,8 @@ class TaskManager():
             premium_sync_manager: Optional[PremiumSyncManager],
             chain_manager: ChainManager,
             exchange_manager: ExchangeManager,
-            evm_tx_decoder: EVMTransactionDecoder,
+            evm_tx_decoder: 'EVMTransactionDecoder',
+            eth_transactions: 'EthTransactions',
             deactivate_premium: Callable,
             query_balances: Callable,
     ) -> None:
@@ -84,6 +87,7 @@ class TaskManager():
         self.cryptocompare = cryptocompare
         self.exchange_manager = exchange_manager
         self.evm_tx_decoder = evm_tx_decoder
+        self.eth_transactions = eth_transactions
         self.cryptocompare_queries: Set[CCHistoQuery] = set()
         self.chain_manager = chain_manager
         self.last_xpub_derivation_ts = 0
@@ -230,10 +234,6 @@ class TaskManager():
         if len(queriable_accounts) == 0:
             return
 
-        tx_module = EthTransactions(
-            ethereum=self.chain_manager.ethereum,
-            database=self.database,
-        )
         address = random.choice(queriable_accounts)
         task_name = f'Query ethereum transactions for {address}'
         log.debug(f'Scheduling task to {task_name}')
@@ -241,7 +241,7 @@ class TaskManager():
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=tx_module.single_address_query_transactions,
+            method=self.eth_transactions.single_address_query_transactions,
             address=address,
             start_ts=0,
             end_ts=now,
@@ -260,17 +260,13 @@ class TaskManager():
         if len(hash_results) == 0:
             return
 
-        tx_module = EthTransactions(
-            ethereum=self.chain_manager.ethereum,
-            database=self.database,
-        )
         task_name = f'Query {len(hash_results)} ethereum transactions receipts'
         log.debug(f'Scheduling task to {task_name}')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=tx_module.get_receipts_for_transactions_missing_them,
+            method=self.eth_transactions.get_receipts_for_transactions_missing_them,
             limit=TX_RECEIPTS_QUERY_LIMIT,
         )
 
