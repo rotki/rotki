@@ -168,6 +168,7 @@ class EthereumTransactionQuerySchema(
     to_timestamp = TimestampField(load_default=ts_now)
     protocols = fields.List(fields.String(), load_default=None)
     asset = AssetField(load_default=None)
+    exclude_ignored_assets = fields.Boolean(load_default=True)
 
     @validates_schema
     def validate_ethtx_query_schema(  # pylint: disable=no-self-use
@@ -197,6 +198,7 @@ class EthereumTransactionQuerySchema(
         address = data.get('address')
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         protocols, asset = data['protocols'], data['asset']
+        exclude_ignored_assets = data['exclude_ignored_assets']
         filter_query = ETHTransactionsFilterQuery.make(
             order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],
@@ -206,10 +208,12 @@ class EthereumTransactionQuerySchema(
             to_ts=data['to_timestamp'],
             protocols=protocols,
             asset=asset,
+            exclude_ignored_assets=exclude_ignored_assets,
         )
         event_params = {
             'asset': asset,
             'protocols': protocols,
+            'exclude_ignored_assets': exclude_ignored_assets,
         }
 
         return {

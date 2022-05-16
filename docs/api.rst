@@ -1894,7 +1894,7 @@ Querying ethereum transactions
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a GET on the transactions endpoint for ETH will query all ethereum transactions for all the tracked user addresses. Caller can also specify an address to further filter the query as a from address. Also they can limit the queried transactions by timestamps and can filter transactions by related event's properties (asset and protocol). If the user is not premium and has more than the transaction limit then the returned transaction will be limited to that number. Any filtering will also be limited. Transactions are returned most recent first.
+   Doing a GET on the transactions endpoint for ETH will query all ethereum transactions for all the tracked user addresses. Caller can also specify an address to further filter the query as a from address. Also they can limit the queried transactions by timestamps and can filter transactions by related event's properties (asset, protocol and whether to exclude transactions with ignored assets). If the user is not premium and has more than the transaction limit then the returned transaction will be limited to that number. Any filtering will also be limited. Transactions are returned most recent first.
 
    **Example Request**:
 
@@ -1915,6 +1915,7 @@ Querying ethereum transactions
    :reqjson bool only_cache: If true then only the ethereum transactions in the DB are queried.
    :reqjson string asset: Optional. Serialized asset to filter by.
    :reqjson string protocol: Optional. Protocol (counterparty) to filter by.
+   :reqjson bool exclude_ignored_assets: Optional. Whether to exclude transactions with ignored assets. Default true.
 
 
    **Example Response**:

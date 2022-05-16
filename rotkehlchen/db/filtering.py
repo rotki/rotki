@@ -311,6 +311,7 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             tx_hash: Optional[EVMTxHash] = None,
             protocols: Optional[List[str]] = None,  # Events data
             asset: Optional[Asset] = None,  # Events data
+            exclude_ignored_assets: bool = False,  # Events data
     ) -> 'ETHTransactionsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -326,7 +327,7 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBETHTransactionHashFilter(and_op=False, tx_hash=tx_hash))
         else:
-            should_join_events = asset is not None or protocols is not None
+            should_join_events = asset is not None or protocols is not None or exclude_ignored_assets is True  # noqa: E501
             if addresses is not None or should_join_events is True:
                 filter_query.join_clause = DBETHTransactionJoinsFilter(
                     and_op=False,
@@ -338,6 +339,8 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
                 filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
             if protocols is not None:
                 filters.append(DBProtocolsFilter(and_op=True, protocols=protocols))
+            if exclude_ignored_assets is True:
+                filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
 
             filter_query.timestamp_filter = DBTimestampFilter(
                 and_op=True,
@@ -700,6 +703,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             null_columns: Optional[List[str]] = None,
             event_identifier: Optional[str] = None,
             protocols: Optional[List[str]] = None,
+            exclude_ignored_assets: bool = False,
     ) -> 'HistoryEventFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True), ('sequence_index', True)]
@@ -764,6 +768,8 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             filters.append(
                 DBProtocolsFilter(and_op=True, protocols=protocols),
             )
+        if exclude_ignored_assets is True:
+            filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -787,3 +793,13 @@ class DBProtocolsFilter(DBFilter):
         filters = [f'counterparty IN ({questionmarks})']
         bindings = self.protocols
         return filters, bindings
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBIgnoredAssetsFilter(DBFilter):
+    """Filter that removes rows with ignored assets"""
+    asset_key: str
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        filters = [f'{self.asset_key} NOT IN (SELECT value FROM multisettings WHERE name="ignored_asset")']  # noqa: E501
+        return filters, []
