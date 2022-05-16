@@ -1,5 +1,9 @@
 import logging
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from collections import defaultdict
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Tuple
+
+from gevent.lock import Semaphore
 
 from rotkehlchen.chain.ethereum.constants import (
     RANGE_PREFIX_ETHINTERNALTX,
@@ -40,6 +44,20 @@ class EthTransactions:
         super().__init__()
         self.ethereum = ethereum
         self.database = database
+        self.address_locks: Dict[ChecksumEthAddress, Semaphore] = defaultdict(Semaphore)
+
+    @contextmanager
+    def wait_until_no_query_for(self, addresses: List[ChecksumEthAddress]) -> Iterator[None]:
+        locks = []
+        for address in addresses:
+            lock = self.address_locks[address]
+            lock.acquire()
+            locks.append(lock)
+
+        yield  # yield to caller since all locks are now acquired
+
+        for lock in locks:  # clean up
+            lock.release()
 
     def single_address_query_transactions(
             self,
@@ -55,17 +73,19 @@ class EthTransactions:
 
         Trueblocks ... we need you.
         """
-        self._get_transactions_for_range(address=address, start_ts=start_ts, end_ts=end_ts)
-        self._get_internal_transactions_for_ranges(
-            address=address,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        )
-        self._get_erc20_transfers_for_ranges(
-            address=address,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        )
+        lock = self.address_locks[address]
+        with lock:
+            self._get_transactions_for_range(address=address, start_ts=start_ts, end_ts=end_ts)
+            self._get_internal_transactions_for_ranges(
+                address=address,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            )
+            self._get_erc20_transfers_for_ranges(
+                address=address,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            )
 
     def query(
             self,

@@ -6,7 +6,18 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Literal, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    DefaultDict,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 import gevent
 
@@ -68,6 +79,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
+    ChecksumEthAddress,
     ListOfBlockchainAddresses,
     Location,
     SupportedBlockchain,
@@ -568,7 +580,10 @@ class Rotkehlchen():
             blockchain=blockchain,
             accounts=accounts,
         )
-        self.data.db.remove_blockchain_accounts(blockchain, accounts)
+        eth_addresses: List[ChecksumEthAddress] = cast(List[ChecksumEthAddress], accounts) if blockchain == SupportedBlockchain.ETHEREUM else []  # noqa: E501
+        with self.eth_transactions.wait_until_no_query_for(eth_addresses):
+            self.data.db.remove_blockchain_accounts(blockchain, accounts)
+
         return balances_update
 
     def get_history_query_status(self) -> Dict[str, str]:
