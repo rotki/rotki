@@ -225,11 +225,11 @@ def load_view_args_file_data(request: Request, schema: Schema) -> MultiDictProxy
     return data
 
 
-def create_blueprint() -> Blueprint:
+def create_blueprint(url_prefix: str) -> Blueprint:
     # Take a look at this SO question on hints how to organize versioned
     # API with flask:
     # http://stackoverflow.com/questions/28795561/support-multiple-api-versions-in-flask#28797512
-    return Blueprint("v1_resources", __name__)
+    return Blueprint("v1_resources", __name__, url_prefix=url_prefix)
 
 
 class BaseMethodView(MethodView):
