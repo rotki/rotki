@@ -1,11 +1,10 @@
 # build stage
-FROM node:16-buster as frontend-build-stage
+FROM --platform=$BUILDPLATFORM node:16-buster as frontend-build-stage
 
 WORKDIR /app
 COPY frontend/ .
-RUN apt-get update && apt-get install -y build-essential python3
-RUN npm install -g npm@8
-RUN npm ci
+RUN apt-get update && apt-get install -y build-essential python3 --no-install-recommends
+RUN npm install -g npm@8 && npm ci
 RUN npm run docker:build
 
 FROM python:3.9-buster as backend-build-stage
@@ -14,7 +13,7 @@ ARG PYINSTALLER_VERSION=v4.8
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-RUN apt-get update && apt-get install -y build-essential zlib1g-dev
+RUN apt-get update && apt-get install -y build-essential zlib1g-dev --no-install-recommends
 
 RUN git clone https://github.com/sqlcipher/sqlcipher && \
     cd sqlcipher && \
@@ -60,7 +59,7 @@ ENV REVISION=$REVISION
 ENV ROTKI_VERSION=$ROTKI_VERSION
 
 RUN apt-get update && \
-    apt-get install -y procps python3 && \
+    apt-get install -y procps python3 --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -68,15 +67,15 @@ COPY --from=backend-build-stage /tmp/dist /opt/rotki
 COPY --from=frontend-build-stage /app/app/dist /opt/rotki/frontend
 
 RUN APP=$(find "/opt/rotki" -name "rotkehlchen-*-linux"  | head -n 1) && \
-    echo ${APP} && \
-    ln -s ${APP} /usr/sbin/rotki
+    echo "${APP}" && \
+    ln -s "${APP}" /usr/sbin/rotki
 
 VOLUME ["/data", "/logs", "/config"]
 
 EXPOSE 80
 
 COPY ./packaging/docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY ./packaging/docker/entrypoint.py ./opt/rotki
+COPY ./packaging/docker/entrypoint.py /opt/rotki
 CMD ["sh", "-c", "/opt/rotki/entrypoint.py"]
 
 HEALTHCHECK CMD curl --fail http://localhost/api/1/ping || exit 1
