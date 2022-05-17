@@ -168,7 +168,7 @@ class EthereumTransactionQuerySchema(
     to_timestamp = TimestampField(load_default=ts_now)
     protocols = fields.List(fields.String(), load_default=None)
     asset = AssetField(load_default=None)
-    exclude_ignored_assets = fields.Boolean(load_default=True)
+    exclude_ignored_assets = fields.Boolean(load_default=False)
 
     @validates_schema
     def validate_ethtx_query_schema(  # pylint: disable=no-self-use
