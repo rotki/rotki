@@ -98,23 +98,26 @@ class DBETHTransactionJoinsFilter(DBFilter):
     should_join_events: bool = False
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
-        query_filter, bindings = '', []
+        query_filters, bindings = [], []
         if self.should_join_events is True:
-            query_filter += (
-                ' INNER JOIN '
-                '(SELECT event_identifier, counterparty, asset FROM history_events) '
-                'ON hex(ethereum_transactions.tx_hash)=substr(event_identifier, 3)'
+            query_filters.append(
+                'LEFT JOIN (SELECT event_identifier, counterparty, asset FROM history_events) '
+                'ON hex(ethereum_transactions.tx_hash)=substr(event_identifier, 3)',
             )
         if self.addresses is not None:
             questionmarks = '?' * len(self.addresses)
-            query_filter += (
-                f' INNER JOIN ethtx_address_mappings ON '
+            query_filters.append(
+                f'INNER JOIN ethtx_address_mappings WHERE '
                 f'ethereum_transactions.tx_hash=ethtx_address_mappings.tx_hash AND '
-                f'ethtx_address_mappings.address IN ({",".join(questionmarks)})'
+                f'ethtx_address_mappings.address IN ({",".join(questionmarks)})',
             )
             bindings += self.addresses
+        else:
+            # We need this because other filters expect the join clause to end with a WHERE clause.
+            query_filters.append('WHERE 1')
 
-        return [query_filter], bindings
+        query = f' {" ".join(query_filters)} '
+        return [query], bindings
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -801,5 +804,5 @@ class DBIgnoredAssetsFilter(DBFilter):
     asset_key: str
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
-        filters = [f'{self.asset_key} NOT IN (SELECT value FROM multisettings WHERE name="ignored_asset")']  # noqa: E501
+        filters = [f'{self.asset_key} IS NULL OR {self.asset_key} NOT IN (SELECT value FROM multisettings WHERE name="ignored_asset")']  # noqa: E501
         return filters, []

@@ -202,10 +202,7 @@ def test_query_transactions(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'ethereumtransactionsresource',
-        ), json={
-            'async_query': async_query,
-            'exclude_ignored_assets': False,
-        },
+        ), json={'async_query': async_query},
     )
     if async_query:
         task_id = assert_ok_async_response(response)
@@ -263,7 +260,6 @@ def test_query_transactions(rotkehlchen_api_server):
                 'async_query': async_query,
                 'from_timestamp': 1461399856,
                 'to_timestamp': 1494458860,
-                'exclude_ignored_assets': False,
             },
         )
         if async_query:
@@ -610,7 +606,6 @@ def test_query_transactions_over_limit(
                     'from_timestamp': start_ts,
                     'to_timestamp': end_ts,
                     'address': address,
-                    'exclude_ignored_assets': False,
                 },
             )
             result = assert_proper_response_with_result(response)
@@ -696,7 +691,6 @@ def test_query_transactions_from_to_address(
                     'from_timestamp': start_ts,
                     'to_timestamp': end_ts,
                     'address': address,
-                    'exclude_ignored_assets': False,
                 },
             )
             result = assert_proper_response_with_result(response)
@@ -813,7 +807,6 @@ def test_query_transactions_removed_address(
             rotkehlchen_api_server,
             'ethereumtransactionsresource',
         ),
-        json={'exclude_ignored_assets': False},
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 3
@@ -868,7 +861,6 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
                 rotkehlchen_api_server,
                 'ethereumtransactionsresource',
             ),
-            json={'exclude_ignored_assets': False},
         )
         result = assert_proper_response_with_result(response)
         assert len(result['entries']) == 2
@@ -881,7 +873,6 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
                 'per_address_ethereum_transactions_resource',
                 address=ethereum_accounts[0],
             ),
-            json={'exclude_ignored_assets': False},
         )
         result = assert_proper_response_with_result(response)
         assert len(result['entries']) == 1
@@ -893,7 +884,6 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
                 'per_address_ethereum_transactions_resource',
                 address=ethereum_accounts[1],
             ),
-            json={'exclude_ignored_assets': False},
         )
         result = assert_proper_response_with_result(response)
         assert len(result['entries']) == 2
@@ -936,7 +926,6 @@ def test_query_transactions_check_decoded_events(
             json={
                 'from_timestamp': start_ts,
                 'to_timestamp': end_ts,
-                'exclude_ignored_assets': False,
             },
         )
         return assert_proper_response_with_result(response)
@@ -1229,10 +1218,11 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     dbethtx = DBEthTx(db)
     tx1 = make_ethereum_transaction(tx_hash=b'1')
     tx2 = make_ethereum_transaction(tx_hash=b'2')
+    tx3 = make_ethereum_transaction(tx_hash=b'3')
     event1 = make_ethereum_event(tx_hash=b'1', index=1, asset=A_ETH)
     event2 = make_ethereum_event(tx_hash=b'1', index=2, asset=A_BTC)
     event3 = make_ethereum_event(tx_hash=b'2', index=3, asset=A_DAI)
-    dbethtx.add_ethereum_transactions([tx1, tx2], relevant_address=ethereum_accounts[0])
+    dbethtx.add_ethereum_transactions([tx1, tx2, tx3], relevant_address=ethereum_accounts[0])
     dbevents = DBHistoryEvents(db)
     dbevents.add_history_events([event1, event2, event3])
 
@@ -1244,7 +1234,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
         json={'exclude_ignored_assets': False},
     )
     result = assert_proper_response_with_result(response)
-    expected = generate_tx_entries_response([(tx1, [event1, event2]), (tx2, [event3])])
+    expected = generate_tx_entries_response([(tx1, [event1, event2]), (tx2, [event3]), (tx3, [])])
     assert result['entries'] == expected
 
     response = requests.get(
@@ -1252,8 +1242,8 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
             rotkehlchen_api_server,
             'ethereumtransactionsresource',
         ),
-        json={'exclude_ignored_assets': True},
+        # Also testing here that default exclude_ignored_assets is True
     )
     result = assert_proper_response_with_result(response)
-    expected = generate_tx_entries_response([(tx1, [event1])])
+    expected = generate_tx_entries_response([(tx1, [event1]), (tx3, [])])
     assert result['entries'] == expected
