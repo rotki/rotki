@@ -110,10 +110,10 @@ class ResourceReadingParser(FlaskParser):
             )
         return data
 
-    def _get_schema(  # type: ignore
+    def _get_schema(
             self,
             argmap: ArgMap,
-            resource_object: MethodView,
+            resource_object: Request,
     ) -> Schema:
         """Override the behaviour of the standard parser.
 
