@@ -543,7 +543,8 @@ def deserialize_ethereum_transaction(
             timestamp = deserialize_timestamp(data['timeStamp'])
 
         from_address = deserialize_ethereum_address(data['from'])
-        to_address = deserialize_ethereum_address(data['to']) if data['to'] != '' else None
+        is_empty_to_address = data['to'] != '' and data['to'] is not None
+        to_address = deserialize_ethereum_address(data['to']) if is_empty_to_address else None
         value = read_integer(data, 'value', source)
 
         if internal:
