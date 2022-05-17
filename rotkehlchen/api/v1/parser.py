@@ -1,7 +1,7 @@
 import functools
 from typing import Any, Callable, Dict, Mapping, Optional, Tuple
 
-from flask_restful import Resource
+from flask.views import MethodView
 from marshmallow import Schema, exceptions as ma_exceptions
 from webargs.core import (
     _UNKNOWN_DEFAULT_PARAM,
@@ -71,7 +71,7 @@ class ResourceReadingParser(FlaskParser):
 
     def parse(  # type: ignore  # we have added the resource_object on top of parse
             self,
-            resource_object: Resource,
+            resource_object: MethodView,
             argmap: ArgMap,
             req: Optional[Request] = None,
             *,
@@ -113,7 +113,7 @@ class ResourceReadingParser(FlaskParser):
     def _get_schema(
             self,
             argmap: ArgMap,
-            resource_object: Resource,
+            resource_object: Request,
     ) -> Schema:
         """Override the behaviour of the standard parser.
 

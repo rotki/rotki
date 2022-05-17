@@ -1,12 +1,12 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import werkzeug
-from flask import Flask, Response
+from flask import Blueprint, Flask, Response, abort, jsonify
+from flask.views import MethodView
 from flask_cors import CORS
-from flask_restful import Api, Resource, abort
 from gevent.pywsgi import WSGIServer
 from geventwebsocket import Resource as WebsocketResource, WebSocketServer
 from marshmallow import Schema
@@ -133,8 +133,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 URLS = List[
     Union[
-        Tuple[str, Resource],
-        Tuple[str, Resource, str],
+        Tuple[str, Type[MethodView]],
+        Tuple[str, Type[MethodView], str],
     ]
 ]
 
@@ -287,8 +287,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def setup_urls(
-        flask_api_context: Api,
         rest_api: RestAPI,
+        blueprint: Blueprint,
         urls: URLS,
 ) -> None:
     for url_tuple in urls:
@@ -299,11 +299,9 @@ def setup_urls(
             route, resource_cls, endpoint = url_tuple  # type: ignore
         else:
             raise ValueError(f"Invalid URL format: {url_tuple!r}")
-        flask_api_context.add_resource(
-            resource_cls,
+        blueprint.add_url_rule(
             route,
-            resource_class_kwargs={"rest_api_object": rest_api},
-            endpoint=endpoint,
+            view_func=resource_cls.as_view(endpoint, rest_api_object=rest_api),
         )
 
 
@@ -336,7 +334,9 @@ def handle_request_parsing_error(
     elif isinstance(err.messages, list):
         msg = ','.join(err.messages)
 
-    abort(HTTPStatus.BAD_REQUEST, result=None, message=msg)
+    err_response = jsonify(result=None, message=msg)
+    err_response.status_code = HTTPStatus.BAD_REQUEST
+    abort(err_response)
 
 
 class APIServer():
@@ -352,10 +352,9 @@ class APIServer():
         flask_app = Flask(__name__)
         if cors_domain_list:
             CORS(flask_app, origins=cors_domain_list)
-        blueprint = create_blueprint()
-        flask_api_context = Api(blueprint, prefix=self._api_prefix)
+        blueprint = create_blueprint(self._api_prefix)
         setup_urls(
-            flask_api_context=flask_api_context,
+            blueprint=blueprint,
             rest_api=rest_api,
             urls=URLS_V1,
         )

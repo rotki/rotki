@@ -15,7 +15,6 @@ from data_faker.mock_apis.resources import (
     create_blueprint,
 )
 from flask import Flask, make_response
-from flask_restful import Api
 from gevent.pywsgi import WSGIServer
 
 logger = logging.getLogger(__name__)
@@ -55,12 +54,12 @@ def endpoint_not_found(e):  # pylint: disable=unused-argument
     return api_error('invalid endpoint', HTTPStatus.NOT_FOUND)
 
 
-def restapi_setup_urls(flask_api_context, rest_api, urls) -> None:
+def restapi_setup_urls(blueprint, rest_api, urls) -> None:
     for route, resource_cls in urls:
-        flask_api_context.add_resource(
-            resource_cls,
+        endpoint = resource_cls.__name__.lower()
+        blueprint.add_url_rule(
             route,
-            resource_class_kwargs={'rest_api_object': rest_api},
+            view_func=resource_cls.as_view(endpoint, rest_api_object=rest_api),
         )
 
 
@@ -69,10 +68,9 @@ class APIServer():
     def __init__(self, rest_api) -> None:
         flask_app = Flask(__name__)
         blueprint = create_blueprint()
-        flask_api_context = Api(blueprint)
 
         restapi_setup_urls(
-            flask_api_context,
+            blueprint,
             rest_api,
             URLS,
         )
@@ -80,7 +78,6 @@ class APIServer():
         self.rest_api = rest_api
         self.flask_app = flask_app
         self.blueprint = blueprint
-        self.flask_api_context = flask_api_context
 
         self.wsgiserver: Optional[WSGIServer] = None
         self.flask_app.register_blueprint(self.blueprint)
