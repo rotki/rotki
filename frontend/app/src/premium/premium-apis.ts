@@ -18,6 +18,7 @@ import {
   UserSettingsApi,
   UtilsApi
 } from '@rotki/common/lib/premium';
+import { Theme } from '@rotki/common/lib/settings';
 import { AdexBalances, AdexHistory } from '@rotki/common/lib/staking/adex';
 import {
   LocationData,
@@ -89,8 +90,8 @@ export const userSettings = (): UserSettingsApi => {
     scrambleData: computed<boolean>(
       () => (store.state as any).session.scrambleData
     ),
-    darkModeEnabled: computed<boolean>(() => {
-      return store.getters['settings/darkModeEnabled'];
+    selectedTheme: computed<Theme>(() => {
+      return store.getters['settings/selectedTheme'];
     }),
     dateInputFormat: computed<string>(() => {
       return store.getters['settings/dateInputFormat'];
@@ -102,7 +103,7 @@ export const userSettings = (): UserSettingsApi => {
       }
       return false;
     }),
-    privacyMode: computed<boolean>(() => store.getters['session/privacyMode'])
+    privacyMode: computed<number>(() => store.getters['session/privacyMode'])
   };
 };
 

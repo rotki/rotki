@@ -65,7 +65,7 @@ export interface Interop {
   downloadUpdate(progress: (percentage: number) => void): Promise<boolean>;
   installUpdate(): Promise<boolean | Error>;
   restartBackend(options: Partial<BackendOptions>): Promise<boolean>;
-  setDarkMode(enabled: boolean): Promise<boolean>;
+  setSelectedTheme(selectedTheme: number): Promise<boolean>;
   version(): Promise<SystemVersion>;
   onAbout(callback: () => void): void;
   config(defaults: boolean): Promise<Partial<BackendOptions>>;

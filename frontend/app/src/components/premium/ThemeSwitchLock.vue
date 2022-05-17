@@ -1,7 +1,7 @@
 <template>
-  <v-tooltip top>
+  <v-tooltip bottom>
     <template #activator="{ on }">
-      <v-badge color="transparent" offset-y="40" offset-x="35">
+      <v-badge color="transparent" offset-y="20" offset-x="20">
         <v-btn
           text
           icon
@@ -16,7 +16,7 @@
           <v-icon>mdi-white-balance-sunny</v-icon>
         </v-btn>
         <template #badge>
-          <v-icon color="primary">mdi-lock</v-icon>
+          <v-icon color="primary" small>mdi-lock</v-icon>
         </template>
       </v-badge>
     </template>

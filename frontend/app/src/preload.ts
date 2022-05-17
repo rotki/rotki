@@ -7,7 +7,7 @@ import {
   IPC_CLEAR_PASSWORD,
   IPC_CLOSE_APP,
   IPC_CONFIG,
-  IPC_DARK_MODE,
+  IPC_THEME,
   IPC_DEBUG_SETTINGS,
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
@@ -79,7 +79,7 @@ contextBridge.exposeInMainWorld('interop', {
     return ipcAction(IPC_DOWNLOAD_UPDATE);
   },
   installUpdate: () => ipcAction(IPC_INSTALL_UPDATE),
-  setDarkMode: (enabled: boolean) => ipcAction(IPC_DARK_MODE, enabled),
+  setSelectedTheme: selectedTheme => ipcAction(IPC_THEME, selectedTheme),
   version: () => ipcAction(IPC_VERSION),
   onAbout: (callback: () => void) => {
     ipcRenderer.on(IPC_ABOUT, () => {

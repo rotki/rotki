@@ -15,6 +15,14 @@ export const ThemeColors = z.object({
 
 export type ThemeColors = z.infer<typeof ThemeColors>;
 
+export enum Theme {
+  DARK = 0,
+  AUTO = 1,
+  LIGHT = 2
+}
+
+export const ThemeEnum = z.nativeEnum(Theme);
+
 export enum TimeUnit {
   YEAR = 'year',
   MONTH = 'month',
@@ -22,12 +30,12 @@ export enum TimeUnit {
   DAY = 'day'
 }
 
-export const DARK_MODE_ENABLED = 'darkModeEnabled' as const;
+export const SELECTED_THEME = 'selectedTheme' as const;
 export const LIGHT_THEME = 'lightTheme' as const;
 export const DARK_THEME = 'darkTheme' as const;
 
 type FrontendSettings = {
-  readonly [DARK_MODE_ENABLED]: boolean;
+  readonly [SELECTED_THEME]: Theme;
   readonly [LIGHT_THEME]: ThemeColors;
   readonly [DARK_THEME]: ThemeColors;
 }

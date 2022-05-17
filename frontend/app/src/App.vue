@@ -5,6 +5,7 @@
     class="app"
     :class="{ ['app--animations-disabled']: !animationsEnabled }"
   >
+    <theme-checker v-if="premium" @update:dark-mode="updateDarkMode" />
     <app-update-popup />
     <div v-if="logged" class="app__content rotki-light-grey">
       <asset-update auto />
@@ -56,12 +57,12 @@
           <back-button :can-navigate-back="canNavigateBack" />
         </div>
         <v-spacer />
-        <div class="d-flex overflow-hidden">
+        <div class="d-flex overflow-hidden fill-height align-center">
           <v-btn v-if="isDevelopment" to="/playground" icon>
             <v-icon>mdi-crane</v-icon>
           </v-btn>
           <app-update-indicator />
-          <theme-switch v-if="premium" />
+          <theme-switch v-if="premium" :dark-mode-enabled="darkModeEnabled" />
           <theme-switch-lock v-else />
           <notification-indicator
             :visible="showNotificationBar"
@@ -165,7 +166,7 @@ import { getPremium, setupSession } from '@/composables/session';
 import DevApp from '@/DevApp.vue';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
-import { ThemeSwitch } from '@/premium/premium';
+import { ThemeChecker, ThemeSwitch } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import { OverallPerformance } from '@/store/statistics/types';
 import { useMainStore } from '@/store/store';
@@ -186,6 +187,7 @@ export default defineComponent({
     BackButton,
     AppUpdatePopup,
     StartupErrorScreen,
+    ThemeChecker,
     ThemeSwitch,
     DevApp,
     NotificationPopup,
@@ -215,6 +217,12 @@ export default defineComponent({
     const isMini = ref(false);
     const startupErrorMessage = ref('');
     const isMacOsVersionUnsupported = ref(false);
+
+    const darkModeEnabled = ref(false);
+
+    const updateDarkMode = (enabled: boolean) => {
+      set(darkModeEnabled, enabled);
+    };
 
     const { navigateToRotki, onError, onAbout, updateTray } = useInterop();
     const openSite = navigateToRotki;
@@ -331,10 +339,12 @@ export default defineComponent({
       canNavigateBack,
       isDevelopment,
       isPlayground,
+      darkModeEnabled,
       dismissMessage,
       completeLogin,
       openSite,
-      toggleDrawer
+      toggleDrawer,
+      updateDarkMode
     };
   }
 });
@@ -391,6 +401,14 @@ export default defineComponent({
   }
 
   &__app-bar {
+    ::v-deep {
+      .v-toolbar {
+        &__content {
+          padding: 0 1rem;
+        }
+      }
+    }
+
     &__button {
       i {
         &:focus {

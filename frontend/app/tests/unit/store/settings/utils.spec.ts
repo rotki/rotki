@@ -1,8 +1,9 @@
 import { BigNumber } from '@rotki/common';
 import {
-  DARK_MODE_ENABLED,
+  SELECTED_THEME,
   DARK_THEME,
-  LIGHT_THEME
+  LIGHT_THEME,
+  Theme
 } from '@rotki/common/lib/settings';
 import {
   TimeFramePeriod,
@@ -65,7 +66,7 @@ describe('settings:utils', () => {
       [ITEMS_PER_PAGE]: 10,
       [AMOUNT_ROUNDING_MODE]: BigNumber.ROUND_UP,
       [VALUE_ROUNDING_MODE]: BigNumber.ROUND_DOWN,
-      [DARK_MODE_ENABLED]: false,
+      [SELECTED_THEME]: Theme.AUTO,
       [LIGHT_THEME]: LIGHT_COLORS,
       [DARK_THEME]: DARK_COLORS,
       [GRAPH_ZERO_BASED]: false,

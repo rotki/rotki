@@ -132,6 +132,10 @@ export const BalancerBalances = () => {
   return createFactory(load('BalancerBalances'));
 };
 
+export const ThemeChecker = () => {
+  return createFactory(load('ThemeChecker'));
+};
+
 export const ThemeSwitch = () => {
   return createFactory(load('ThemeSwitch'), {
     loading: ThemeSwitchLock,
