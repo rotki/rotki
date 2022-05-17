@@ -17,7 +17,6 @@ from rotkehlchen.chain.ethereum.constants import (
     RANGE_PREFIX_ETHTX,
 )
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USDT
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
@@ -889,7 +888,6 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
 def test_query_transactions_check_decoded_events(
         rotkehlchen_api_server,
         ethereum_accounts,
-        eth_transactions,
 ):
     """Test that querying for an address's transactions after the events have been
     decoded also includes said events
@@ -902,8 +900,8 @@ def test_query_transactions_check_decoded_events(
     start_ts = Timestamp(0)
     end_ts = Timestamp(1642803566)  # time of test writing
 
-    def query_transactions(rotki, tx_module: EthTransactions) -> None:
-        tx_module.single_address_query_transactions(
+    def query_transactions(rotki) -> None:
+        rotki.eth_transactions.single_address_query_transactions(
             address=ethereum_accounts[0],
             start_ts=start_ts,
             end_ts=end_ts,
@@ -921,7 +919,7 @@ def test_query_transactions_check_decoded_events(
         )
         return assert_proper_response_with_result(response)
 
-    result = query_transactions(rotki, eth_transactions)
+    result = query_transactions(rotki)
     entries = result['entries']
     assert len(entries) == 4
     tx1_events = [{'entry': {
@@ -1073,7 +1071,7 @@ def test_query_transactions_check_decoded_events(
     assert customized_events[1].serialize() == tx2_events[1]['entry']
 
     # requery all transactions and events and assert they are the same (different event id though)
-    result = query_transactions(rotki, eth_transactions)
+    result = query_transactions(rotki)
     entries = result['entries']
     assert len(entries) == 4
 

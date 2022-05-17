@@ -74,11 +74,11 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
         assert start_ts == 0
         assert end_ts >= now
 
-    tx_query_patch = patch(
-        'rotkehlchen.tasks.manager.EthTransactions.single_address_query_transactions',
+    tx_query_patch = patch.object(
+        task_manager.eth_transactions,
+        'single_address_query_transactions',
         wraps=tx_query_mock,
     )
-
     timeout = 8
     try:
         with gevent.Timeout(timeout):

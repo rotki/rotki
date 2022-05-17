@@ -12,6 +12,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import BlockchainAccounts
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.types import (
     ApiKey,
@@ -49,14 +50,21 @@ def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bo
 
 
 def add_blockchain_accounts_to_db(db: DBHandler, blockchain_accounts: BlockchainAccounts) -> None:
-    db.add_blockchain_accounts(
-        SupportedBlockchain.ETHEREUM,
-        [BlockchainAccountData(address=x) for x in blockchain_accounts.eth],
-    )
-    db.add_blockchain_accounts(
-        SupportedBlockchain.BITCOIN,
-        [BlockchainAccountData(address=x) for x in blockchain_accounts.btc],
-    )
+    try:
+        db.add_blockchain_accounts(
+            SupportedBlockchain.ETHEREUM,
+            [BlockchainAccountData(address=x) for x in blockchain_accounts.eth],
+        )
+        db.add_blockchain_accounts(
+            SupportedBlockchain.BITCOIN,
+            [BlockchainAccountData(address=x) for x in blockchain_accounts.btc],
+        )
+    except InputError as e:
+        raise AssertionError(
+            f'Got error at test setup blockchain account addition: {str(e)} '
+            f'Probably using two different databases or too many fixtures initialized. '
+            f'For example do not initialize both a rotki api server and another DB at same time',
+        ) from e
 
 
 def add_settings_to_test_db(
