@@ -6,7 +6,6 @@ import pytest
 
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.tasks.manager import TaskManager
@@ -46,6 +45,7 @@ def fixture_task_manager(
         cryptocompare,
         exchange_manager,
         evm_transaction_decoder,
+        eth_transactions,
 ) -> TaskManager:
     task_manager = TaskManager(
         max_tasks_num=max_tasks_num,
@@ -57,6 +57,7 @@ def fixture_task_manager(
         chain_manager=blockchain,
         exchange_manager=exchange_manager,
         evm_tx_decoder=evm_transaction_decoder,
+        eth_transactions=eth_transactions,
         deactivate_premium=lambda: None,
         query_balances=lambda: None,
     )
@@ -73,11 +74,11 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
         assert start_ts == 0
         assert end_ts >= now
 
-    tx_query_patch = patch(
-        'rotkehlchen.tasks.manager.EthTransactions.single_address_query_transactions',
+    tx_query_patch = patch.object(
+        task_manager.eth_transactions,
+        'single_address_query_transactions',
         wraps=tx_query_mock,
     )
-
     timeout = 8
     try:
         with gevent.Timeout(timeout):
@@ -156,7 +157,13 @@ def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex)
 
 
 @pytest.mark.parametrize('one_receipt_in_db', [True, False])
-def test_maybe_schedule_ethereum_txreceipts(task_manager, ethereum_manager, database, one_receipt_in_db):  # noqa: E501
+def test_maybe_schedule_ethereum_txreceipts(
+        task_manager,
+        ethereum_manager,
+        eth_transactions,
+        database,
+        one_receipt_in_db,
+):
     task_manager.potential_tasks = [task_manager._maybe_schedule_ethereum_txreceipts]  # pylint: disable=protected-member  # noqa: E501
     _, receipts = setup_ethereum_transactions_test(
         database=database,
@@ -191,10 +198,9 @@ def test_maybe_schedule_ethereum_txreceipts(task_manager, ethereum_manager, data
     except gevent.Timeout as e:
         raise AssertionError(f'receipts query was not completed within {timeout} seconds') from e  # noqa: E501
 
-    txmodule = EthTransactions(ethereum=ethereum_manager, database=database)
-    receipt1 = txmodule.get_or_query_transaction_receipt(tx_hash_1)
+    receipt1 = eth_transactions.get_or_query_transaction_receipt(tx_hash_1)
     assert receipt1 == receipts[0]
-    receipt2 = txmodule.get_or_query_transaction_receipt(tx_hash_2)
+    receipt2 = eth_transactions.get_or_query_transaction_receipt(tx_hash_2)
     assert receipt2 == receipts[1]
 
 

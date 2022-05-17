@@ -20,7 +20,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA']])  # noqa: E501
-def test_votium_claim(database, ethereum_manager):
+def test_votium_claim(database, ethereum_manager, eth_transactions):
     """Data for claim taken from
     https://etherscan.io/tx/0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30
     """
@@ -73,7 +73,12 @@ def test_votium_claim(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [

@@ -73,6 +73,7 @@ def events_historian(
         blockchain,
         evm_transaction_decoder,
         exchange_manager,
+        eth_transactions,
 ):
     historian = EventsHistorian(
         user_directory=data_dir,
@@ -81,5 +82,6 @@ def events_historian(
         exchange_manager=exchange_manager,
         chain_manager=blockchain,
         evm_tx_decoder=evm_transaction_decoder,
+        eth_transactions=eth_transactions,
     )
     return historian

@@ -1050,6 +1050,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         """Removes blockchain accounts and requeries all balances after the removal.
 
         The accounts are removed from the blockchain object and not from the database.
+        Database removal happens afterwards at the caller.
         Returns the new total balances, the actually removes accounts (some
         accounts may have been invalid) and also any errors that occured
         during the removal.

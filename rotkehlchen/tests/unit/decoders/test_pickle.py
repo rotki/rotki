@@ -20,7 +20,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f']])  # noqa: E501
-def test_pickle_deposit(database, ethereum_manager):
+def test_pickle_deposit(database, ethereum_manager, eth_transactions):
     """Data for deposit taken from
     https://etherscan.io/tx/0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd
     """
@@ -72,7 +72,12 @@ def test_pickle_deposit(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 3
     expected_events = [
@@ -120,7 +125,7 @@ def test_pickle_deposit(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xC7Dc4Cd171812a441A30472219d390f4F15f6070']])  # noqa: E501
-def test_pickle_withdraw(database, ethereum_manager):
+def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
     """Data for withdraw taken from
     https://etherscan.io/tx/0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab
     """
@@ -172,7 +177,12 @@ def test_pickle_withdraw(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 3
     expected_events = [

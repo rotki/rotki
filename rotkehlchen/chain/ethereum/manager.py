@@ -28,7 +28,6 @@ from web3.exceptions import (
     BlockNotFound,
     TransactionNotFound,
 )
-from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
@@ -349,7 +348,6 @@ class EthereumManager():
             )
             ens = ENS(provider)
             web3 = Web3(provider, ens=ens)
-            web3.middleware_onion.inject(http_retry_request_middleware, layer=0)
         except requests.exceptions.RequestException:
             message = f'Failed to connect to ethereum node {name} at endpoint {ethrpc_endpoint}'
             log.warning(message)

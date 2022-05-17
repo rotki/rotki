@@ -1166,9 +1166,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 ranges.update_used_query_range(
                     location_string=range_query_name,
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    ranges_to_query=[(query_start_ts, query_end_ts)],
+                    queried_ranges=[(start_ts, end_ts)] + ranges_to_query,
                 )
 
             if with_errors is True:

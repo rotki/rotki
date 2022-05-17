@@ -24,7 +24,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b']])  # noqa: E501
-def test_kyber_legacy_old_contract(database, ethereum_manager):
+def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions):
     """Data for trade taken from
     https://etherscan.io/tx/0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87
     """
@@ -84,7 +84,12 @@ def test_kyber_legacy_old_contract(database, ethereum_manager):
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
     dbethtx.add_ethereum_internal_transactions([internal_tx], relevant_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b')  # noqa: E501
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
@@ -136,7 +141,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0']])  # noqa: E501
-def test_kyber_legacy_new_contract(database, ethereum_manager):
+def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions):
     """Data for trade taken from
     https://etherscan.io/tx/0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22
     """
@@ -199,7 +204,12 @@ def test_kyber_legacy_new_contract(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3

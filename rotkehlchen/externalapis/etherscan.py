@@ -1,6 +1,18 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union, overload
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    overload,
+)
 
 import gevent
 import requests
@@ -18,6 +30,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_transaction,
     deserialize_int_from_str,
+    deserialize_timestamp,
 )
 from rotkehlchen.types import (
     ChecksumEthAddress,
@@ -32,6 +45,7 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_int
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
+TRANSACTIONS_BATCH_NUM = 5
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -221,7 +235,7 @@ class Etherscan(ExternalServiceWithApiKey):
             action: Literal['txlistinternal'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> List[EthereumInternalTransaction]:
+    ) -> Iterator[List[EthereumInternalTransaction]]:
         ...
 
     @overload
@@ -231,26 +245,16 @@ class Etherscan(ExternalServiceWithApiKey):
             action: Literal['txlist'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> List[EthereumTransaction]:
-        ...
-
-    @overload
-    def get_transactions(
-            self,
-            account: ChecksumEthAddress,
-            action: Literal['tokentx'],
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-    ) -> Set[str]:
+    ) -> Iterator[List[EthereumTransaction]]:
         ...
 
     def get_transactions(
             self,
             account: ChecksumEthAddress,
-            action: Literal['txlist', 'txlistinternal', 'tokentx'],
+            action: Literal['txlist', 'txlistinternal'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Union[List[EthereumTransaction], List[EthereumInternalTransaction], Set[str]]:
+    ) -> Union[Iterator[List[EthereumTransaction]], Iterator[List[EthereumInternalTransaction]]]:
         """Gets a list of transactions (either normal or internal) for account.
 
         May raise:
@@ -265,28 +269,26 @@ class Etherscan(ExternalServiceWithApiKey):
             to_block = self.get_blocknumber_by_time(to_ts)
             options['endBlock'] = str(to_block)
 
-        transactions: Union[List[EthereumTransaction], List[EthereumInternalTransaction], Set[str]]
-        if action == 'tokentx':
-            transactions = set()
-        else:
-            transactions = []  # type: ignore
+        transactions: Union[Sequence[EthereumTransaction], Sequence[EthereumInternalTransaction]] = []  # noqa: E501
+        is_internal = action == 'txlistinternal'
         while True:
             result = self._query(module='account', action=action, options=options)
+            last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
             for entry in result:
-                if action == 'tokentx':
-                    transactions.add(entry['hash'])  # type: ignore
-                    continue
-
                 try:
                     tx = deserialize_ethereum_transaction(  # type: ignore
                         data=entry,
-                        internal=action == 'txlistinternal',
+                        internal=is_internal,
                         ethereum=None,
                     )
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
                     continue
 
+                if tx.timestamp > last_ts and len(transactions) >= TRANSACTIONS_BATCH_NUM:
+                    yield transactions
+                    last_ts = tx.timestamp
+                    transactions = []
                 transactions.append(tx)  # type: ignore
 
             if len(result) != ETHERSCAN_TX_QUERY_LIMIT:
@@ -298,7 +300,44 @@ class Etherscan(ExternalServiceWithApiKey):
             last_block = result[-1]['blockNumber']  # pylint: disable=unsubscriptable-object
             options['startBlock'] = last_block
 
-        return transactions
+        yield transactions
+
+    def get_token_transaction_hashes(
+            self,
+            account: ChecksumEthAddress,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+    ) -> Iterator[Set[str]]:
+        options = {'address': str(account), 'sort': 'asc'}
+        if from_ts is not None:
+            from_block = self.get_blocknumber_by_time(from_ts)
+            options['startBlock'] = str(from_block)
+        if to_ts is not None:
+            to_block = self.get_blocknumber_by_time(to_ts)
+            options['endBlock'] = str(to_block)
+
+        hashes: Set[str] = set()
+        while True:
+            result = self._query(module='account', action='tokentx', options=options)
+            last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
+            for entry in result:
+                timestamp = deserialize_timestamp(entry['timeStamp'])
+                if timestamp > last_ts and len(hashes) >= TRANSACTIONS_BATCH_NUM:  # type: ignore
+                    yield hashes
+                    hashes = set()
+                    last_ts = timestamp
+                hashes.add(entry['hash'])
+
+            if len(result) != ETHERSCAN_TX_QUERY_LIMIT:
+                break
+            # else we hit the limit. Query once more with startBlock being the last
+            # block we got. There may be duplicate entries if there are more than one
+            # transactions for that last block but they should be filtered
+            # out when we input all of these in the DB
+            last_block = result[-1]['blockNumber']  # pylint: disable=unsubscriptable-object
+            options['startBlock'] = last_block
+
+        yield hashes
 
     def get_latest_block_number(self) -> int:
         """Gets the latest block number

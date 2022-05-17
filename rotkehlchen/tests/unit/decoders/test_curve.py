@@ -27,7 +27,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x57bF3B0f29E37619623994071C9e12091919675c']])  # noqa: E501
-def test_curve_deposit(database, ethereum_manager):
+def test_curve_deposit(database, ethereum_manager, eth_transactions):
     """Data for deposit taken from
     https://etherscan.io/tx/0x523b7df8e168315e97a836a3d516d639908814785d7df1ef1745de3e55501982
     tests that a deposit for the aave pool in curve works correctly
@@ -100,7 +100,12 @@ def test_curve_deposit(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
@@ -160,7 +165,7 @@ def test_curve_deposit(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2']])  # noqa: E501
-def test_curve_deposit_eth(database, ethereum_manager):
+def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
     """Data for deposit taken from
     https://etherscan.io/tx/0x51c052c8fb60f092f98ffc3cab6340c7c5348ee3b339582feba1c17cbd97ea56
     This tests uses the steth/eth pool to verify that deposits including transfer of ETH work
@@ -234,7 +239,12 @@ def test_curve_deposit_eth(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
@@ -306,7 +316,7 @@ def test_curve_deposit_eth(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6']])  # noqa: E501
-def test_curve_remove_liquidity(database, ethereum_manager):
+def test_curve_remove_liquidity(database, ethereum_manager, eth_transactions):
     """Data for deposit taken from
     https://etherscan.io/tx/0xd63dccdbebeede3a1f50b97c0a8592255203a0559880b80377daa39f915741b0
     This tests uses the link pool to verify that withdrawals are correctly decoded
@@ -378,7 +388,12 @@ def test_curve_remove_liquidity(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
@@ -425,7 +440,7 @@ def test_curve_remove_liquidity(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC']])  # noqa: E501
-def test_curve_remove_liquidity_with_internal(database, ethereum_manager):
+def test_curve_remove_liquidity_with_internal(database, ethereum_manager, eth_transactions):
     """Data for deposit taken from
     https://etherscan.io/tx/0x30bb99f3e34fb1fbcf009320af7e290caf18b04b207319e15aa8ffbf645f4ad9
     This tests uses the steth pool to verify that withdrawals are correctly decoded when an
@@ -488,7 +503,12 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager):
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
     dbethtx.add_ethereum_internal_transactions([internal_tx], relevant_address=location_label)  # noqa: E501
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
@@ -535,7 +555,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x2fac74A3a04B031F240923621a578724C40678af']])  # noqa: E501
-def test_curve_remove_imbalanced(database, ethereum_manager):
+def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
     """Data for deposit taken from
     https://etherscan.io/tx/0xd8832abcf4773abe24d8cda5581fb53bfb3850c535c1956d1d120a72a4ebcbd8
     This tests uses the steth pool to verify that withdrawals are correctly decoded when an
@@ -649,7 +669,12 @@ def test_curve_remove_imbalanced(database, ethereum_manager):
     )
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(

@@ -297,9 +297,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             # and also set the used queried timestamp range for the exchange
             ranges.update_used_query_range(
                 location_string=location_string,
-                start_ts=queried_range[0],
-                end_ts=queried_range[1],
-                ranges_to_query=[queried_range],
+                queried_ranges=[queried_range],
             )
             # finally append them to the already returned DB trades
             trades.extend(new_trades)
@@ -326,29 +324,27 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             start_ts=start_ts,
             end_ts=end_ts,
         )
-        new_positions = []
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(
                 f'Querying online margin history for {self.name} between '
                 f'{query_start_ts} and {query_end_ts}',
             )
-            new_positions.extend(self.query_online_margin_history(
+            new_positions = self.query_online_margin_history(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
-            ))
+            )
 
-        # make sure to add them to the DB
-        if new_positions != []:
-            self.db.add_margin_positions(new_positions)
-        # and also set the last queried timestamp for the exchange
-        ranges.update_used_query_range(
-            location_string=location_string,
-            start_ts=start_ts,
-            end_ts=end_ts,
-            ranges_to_query=ranges_to_query,
-        )
-        # finally append them to the already returned DB margin positions
-        margin_positions.extend(new_positions)
+            # make sure to add them to the DB
+            if len(new_positions) != 0:
+                self.db.add_margin_positions(new_positions)
+
+            # and also set the last queried timestamp for the exchange
+            ranges.update_used_query_range(
+                location_string=location_string,
+                queried_ranges=[(query_start_ts, query_end_ts)],
+            )
+            # finally append them to the already returned DB margin positions
+            margin_positions.extend(new_positions)
 
         return margin_positions
 
@@ -384,26 +380,24 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             start_ts=start_ts,
             end_ts=end_ts,
         )
-        new_movements = []
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(
                 f'Querying online deposits/withdrawals for {self.name} between '
                 f'{query_start_ts} and {query_end_ts}',
             )
-            new_movements.extend(self.query_online_deposits_withdrawals(
+            new_movements = self.query_online_deposits_withdrawals(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
-            ))
+            )
 
-        if new_movements != []:
-            self.db.add_asset_movements(new_movements)
-        ranges.update_used_query_range(
-            location_string=location_string,
-            start_ts=start_ts,
-            end_ts=end_ts,
-            ranges_to_query=ranges_to_query,
-        )
-        asset_movements.extend(new_movements)
+            if len(new_movements) != 0:
+                self.db.add_asset_movements(new_movements)
+
+            ranges.update_used_query_range(
+                location_string=location_string,
+                queried_ranges=[(query_start_ts, query_end_ts)],
+            )
+            asset_movements.extend(new_movements)
 
         return asset_movements
 
@@ -437,22 +431,19 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             start_ts=start_ts,
             end_ts=end_ts,
         )
-        new_ledger_actions = []
         for query_start_ts, query_end_ts in ranges_to_query:
-            new_ledger_actions.extend(self.query_online_income_loss_expense(
+            new_ledger_actions = self.query_online_income_loss_expense(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
-            ))
+            )
+            if len(new_ledger_actions) != 0:
+                db.add_ledger_actions(new_ledger_actions)
 
-        if new_ledger_actions != []:
-            db.add_ledger_actions(new_ledger_actions)
-        ranges.update_used_query_range(
-            location_string=location_string,
-            start_ts=start_ts,
-            end_ts=end_ts,
-            ranges_to_query=ranges_to_query,
-        )
-        ledger_actions.extend(new_ledger_actions)
+            ranges.update_used_query_range(
+                location_string=location_string,
+                queried_ranges=[(query_start_ts, query_end_ts)],
+            )
+            ledger_actions.extend(new_ledger_actions)
 
         return ledger_actions
 

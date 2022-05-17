@@ -25,7 +25,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9ba961989Dd6609Ed091f512bE947118c40F2291']])  # noqa: E501
-def test_liquity_trove_adjust(database, ethereum_manager):
+def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
     """Data for deposit taken from
     https://etherscan.io/tx/0xdb9a541a4af7d5d46d7ea5fe4a2a752dcb731d64d052f86f630e97362063602c
     Deposit 2.1 ether and borrow 4752 LUSD
@@ -96,7 +96,12 @@ def test_liquity_trove_adjust(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 3
     expected_events = [
@@ -144,7 +149,7 @@ def test_liquity_trove_adjust(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x648E180e246741363639B1496762763dd25649db']])  # noqa: E501
-def test_liquity_trove_deposit_lusd(database, ethereum_manager):
+def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions):
     """Data for deposit taken from
     https://etherscan.io/tx/0x40bb08427a3b99fb9896cf14858d82d361a6e7a8fb7dd6d2000511ac3dca5707
     Deposit 2.1 ether and borrow 4752 LUSD
@@ -205,7 +210,12 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager):
 
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
@@ -241,7 +251,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x648E180e246741363639B1496762763dd25649db']])  # noqa: E501
-def test_liquity_trove_remove_eth(database, ethereum_manager):
+def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
     """Data for deposit taken from
     https://etherscan.io/tx/0x6be5312c21855c3cc324b5b6ce9f9f65dbd488e270e84ac5e6fb96c74d83fe4e
     Deposit 2.1 ether and borrow 4752 LUSD
@@ -312,7 +322,12 @@ def test_liquity_trove_remove_eth(database, ethereum_manager):
     dbethtx = DBEthTx(database)
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
     dbethtx.add_ethereum_internal_transactions([internal_tx], relevant_address=user_address)  # noqa: E501
-    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    decoder = EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        eth_transactions=eth_transactions,
+        msg_aggregator=msg_aggregator,
+    )
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 3
     expected_events = [

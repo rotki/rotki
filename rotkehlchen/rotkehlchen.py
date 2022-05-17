@@ -6,7 +6,18 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Literal, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    DefaultDict,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 import gevent
 
@@ -29,6 +40,7 @@ from rotkehlchen.chain.ethereum.manager import (
 )
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateChain
@@ -67,6 +79,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
+    ChecksumEthAddress,
     ListOfBlockchainAddresses,
     Location,
     SupportedBlockchain,
@@ -267,6 +280,7 @@ class Rotkehlchen():
             connect_on_startup=self._connect_dot_manager_on_startup(),
             own_rpc_endpoint=settings.dot_rpc_endpoint,
         )
+        self.eth_transactions = EthTransactions(ethereum=ethereum_manager, database=self.data.db)
         self.covalent_avalanche = Covalent(
             database=self.data.db,
             msg_aggregator=self.msg_aggregator,
@@ -307,6 +321,7 @@ class Rotkehlchen():
         self.evm_tx_decoder = EVMTransactionDecoder(
             database=self.data.db,
             ethereum_manager=ethereum_manager,
+            eth_transactions=self.eth_transactions,
             msg_aggregator=self.msg_aggregator,
         )
         self.evm_accounting_aggregator = EVMAccountingAggregator(
@@ -326,6 +341,7 @@ class Rotkehlchen():
             exchange_manager=self.exchange_manager,
             chain_manager=self.chain_manager,
             evm_tx_decoder=self.evm_tx_decoder,
+            eth_transactions=self.eth_transactions,
         )
         self.task_manager = TaskManager(
             max_tasks_num=DEFAULT_MAX_TASKS_NUM,
@@ -336,6 +352,7 @@ class Rotkehlchen():
             premium_sync_manager=self.premium_sync_manager,
             chain_manager=self.chain_manager,
             exchange_manager=self.exchange_manager,
+            eth_transactions=self.eth_transactions,
             evm_tx_decoder=self.evm_tx_decoder,
             deactivate_premium=self.deactivate_premium_status,
             query_balances=self.query_balances,
@@ -563,7 +580,10 @@ class Rotkehlchen():
             blockchain=blockchain,
             accounts=accounts,
         )
-        self.data.db.remove_blockchain_accounts(blockchain, accounts)
+        eth_addresses: List[ChecksumEthAddress] = cast(List[ChecksumEthAddress], accounts) if blockchain == SupportedBlockchain.ETHEREUM else []  # noqa: E501
+        with self.eth_transactions.wait_until_no_query_for(eth_addresses):
+            self.data.db.remove_blockchain_accounts(blockchain, accounts)
+
         return balances_update
 
     def get_history_query_status(self) -> Dict[str, str]:

@@ -11,8 +11,12 @@ import pytest
 import requests
 
 from rotkehlchen.api.server import APIServer
+from rotkehlchen.chain.ethereum.constants import (
+    RANGE_PREFIX_ETHINTERNALTX,
+    RANGE_PREFIX_ETHTOKENTX,
+    RANGE_PREFIX_ETHTX,
+)
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USDT
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
@@ -585,12 +589,11 @@ def test_query_transactions_over_limit(
     dbethtx.add_ethereum_transactions(extra_transactions, relevant_address=ethereum_accounts[1])
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
-        DBQueryRanges(db).update_used_query_range(
-            location_string=f'ethtxs_{address}',
-            start_ts=start_ts,
-            end_ts=end_ts,
-            ranges_to_query=[],
-        )
+        for prefix in (RANGE_PREFIX_ETHTX, RANGE_PREFIX_ETHINTERNALTX, RANGE_PREFIX_ETHTOKENTX):
+            DBQueryRanges(db).update_used_query_range(
+                location_string=f'{prefix}_{address}',
+                queried_ranges=[(start_ts, end_ts)],
+            )
 
     free_expected_entries_total = [FREE_ETH_TX_LIMIT - 35, 35]
     free_expected_entries_found = [FREE_ETH_TX_LIMIT - 10, 60]
@@ -675,12 +678,11 @@ def test_query_transactions_from_to_address(
     dbethtx.add_ethereum_transactions([transactions[1]], relevant_address=ethereum_accounts[1])
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
-        DBQueryRanges(db).update_used_query_range(
-            location_string=f'ethtxs_{address}',
-            start_ts=start_ts,
-            end_ts=end_ts,
-            ranges_to_query=[],
-        )
+        for prefix in (RANGE_PREFIX_ETHTX, RANGE_PREFIX_ETHINTERNALTX, RANGE_PREFIX_ETHTOKENTX):
+            DBQueryRanges(db).update_used_query_range(
+                location_string=f'{prefix}_{address}',
+                queried_ranges=[(start_ts, end_ts)],
+            )
 
     expected_entries = {ethereum_accounts[0]: 3, ethereum_accounts[1]: 1}
     # Check that we get all transactions correctly even if we query two times
@@ -783,12 +785,11 @@ def test_query_transactions_removed_address(
     dbethtx.add_ethereum_transactions(transactions[2:], relevant_address=ethereum_accounts[1])  # noqa: E501
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
-        DBQueryRanges(db).update_used_query_range(
-            location_string=f'ethtxs_{address}',
-            start_ts=start_ts,
-            end_ts=end_ts,
-            ranges_to_query=[],
-        )
+        for prefix in (RANGE_PREFIX_ETHTX, RANGE_PREFIX_ETHINTERNALTX, RANGE_PREFIX_ETHTOKENTX):
+            DBQueryRanges(db).update_used_query_range(
+                location_string=f'{prefix}_{address}',
+                queried_ranges=[(start_ts, end_ts)],
+            )
 
     # Now remove the first account (do the mocking to not query etherscan for balances)
     setup = setup_balances(
@@ -902,7 +903,10 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x6e15887E2CEC81434C16D587709f64603b39b545']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereum_accounts):
+def test_query_transactions_check_decoded_events(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+):
     """Test that querying for an address's transactions after the events have been
     decoded also includes said events
 
@@ -911,15 +915,11 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
     are requeried the edited events are there.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    tx_module = EthTransactions(
-        ethereum=rotki.chain_manager.ethereum,
-        database=rotki.data.db,
-    )
     start_ts = Timestamp(0)
     end_ts = Timestamp(1642803566)  # time of test writing
 
-    def query_transactions(rotki, tx_module: EthTransactions) -> None:
-        tx_module.single_address_query_transactions(
+    def query_transactions(rotki) -> None:
+        rotki.eth_transactions.single_address_query_transactions(
             address=ethereum_accounts[0],
             start_ts=start_ts,
             end_ts=end_ts,
@@ -941,7 +941,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         )
         return assert_proper_response_with_result(response)
 
-    result = query_transactions(rotki, tx_module)
+    result = query_transactions(rotki)
     entries = result['entries']
     assert len(entries) == 4
     tx1_events = [{'entry': {
@@ -1093,7 +1093,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
     assert customized_events[1].serialize() == tx2_events[1]['entry']
 
     # requery all transactions and events and assert they are the same (different event id though)
-    result = query_transactions(rotki, tx_module)
+    result = query_transactions(rotki)
     entries = result['entries']
     assert len(entries) == 4
 
