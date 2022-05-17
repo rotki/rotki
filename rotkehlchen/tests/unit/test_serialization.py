@@ -4,9 +4,20 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance, add_manually_tracked_balances
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.utils import read_hash
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_int_from_hex_or_int
-from rotkehlchen.types import Location, TradeType
+from rotkehlchen.serialization.deserialize import (
+    deserialize_ethereum_address,
+    deserialize_ethereum_transaction,
+    deserialize_int_from_hex_or_int,
+)
+from rotkehlchen.types import (
+    EthereumTransaction,
+    Location,
+    Timestamp,
+    TradeType,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.serialization import pretty_json_dumps, rlk_jsondumps
 
 TEST_DATA = {
@@ -97,3 +108,38 @@ def test_deserialize_int_from_hex_or_int():
     assert deserialize_int_from_hex_or_int('0x1', 'whatever') == 1
     assert deserialize_int_from_hex_or_int('0x33', 'whatever') == 51
     assert deserialize_int_from_hex_or_int(66, 'whatever') == 66
+
+
+def test_deserialize_deployment_ethereum_transaction():
+    data = {
+        'timeStamp': 0,
+        'blockNumber': 1,
+        'hash': '0xc5be14f87be25174846ed53ed239517e4c45c1fe024b184559c17d4f1fefa736',
+        'from': '0x568Ab4b8834646f97827bB966b13d60246157B8E',
+        'to': None,
+        'value': 0,
+        'gas': 1,
+        'gasPrice': 1,
+        'gasUsed': 1,
+        'input': '',
+        'nonce': 1,
+    }
+    tx = deserialize_ethereum_transaction(
+        data=data,
+        internal=False,
+        ethereum=None,
+    )
+    expected = EthereumTransaction(
+        timestamp=Timestamp(0),
+        block_number=1,
+        tx_hash=deserialize_evm_tx_hash(data['hash']),
+        from_address=deserialize_ethereum_address(data['from']),
+        to_address=None,
+        value=data['value'],
+        gas=data['gas'],
+        gas_price=data['gasPrice'],
+        gas_used=data['gasUsed'],
+        input_data=read_hash(data, 'input'),
+        nonce=data['nonce'],
+    )
+    assert tx == expected
