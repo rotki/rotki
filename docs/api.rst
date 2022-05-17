@@ -3170,6 +3170,47 @@ Performing an asset update
    :statuscode 500: Internal rotki error
    :statuscode 502: Error while trying to reach the remote for asset updates.
 
+Reset state of assets
+=====================
+
+.. http:delete:: /api/(version)/assets/updates
+
+   Doing a DELETE on this endpoint will attempt to reset the state of the assets in the globaldb. Can be called in two modes, ``soft`` where the API will try to reset the state of packaged assets without modifying assets added by the user and ``hard`` mode where the assets added by the user will be deleted and the database will get the information from the packaged globaldb.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/assets/updates HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "ignore_warnings": true,
+          "reset": "hard"
+      }
+
+   :reqjson bool ignore_warnings: Optional. Defaults to ``false``. If set to true the database will be reset even if there are events that depend on assets that will be deleted.
+   :reqjson str reset: The mode selected to perform the reset. Can be either ``soft`` or ``hard``.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson object result: ``true`` if the reset was completed successfully
+   :statuscode 200: Reset of the globaldb performed.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Conflicts were found during the reset.
+
+
 Replacing an asset
 ========================
 
