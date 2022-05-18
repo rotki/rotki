@@ -288,6 +288,11 @@ export const transactionEventTypeData: ActionDataEntry[] = [
     identifier: TransactionEventType.PLACE_ORDER,
     label: i18n.t('transactions.events.type.place_order').toString(),
     icon: 'mdi-briefcase-arrow-up-down'
+  },
+  {
+    identifier: TransactionEventType.TRANSFER,
+    label: i18n.t('transactions.events.type.transfer').toString(),
+    icon: 'mdi-swap-horizontal'
   }
 ];
 
@@ -319,7 +324,8 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.PLACE_ORDER]: TransactionEventType.PLACE_ORDER
   },
   [HistoryEventType.TRANSFER]: {
-    [HistoryEventSubType.BRIDGE]: TransactionEventType.BRIDGE
+    [HistoryEventSubType.BRIDGE]: TransactionEventType.BRIDGE,
+    [HistoryEventSubType.NONE]: TransactionEventType.TRANSFER
   },
   [HistoryEventType.TRADE]: {
     [HistoryEventSubType.SPEND]: TransactionEventType.SWAP_OUT,
