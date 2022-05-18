@@ -32,7 +32,7 @@ setup(
     python_requires='>=3.9',
     install_requires=requirements,
     use_scm_version={
-        'fallback_version': environ.get('PACKAGE_FALLBACK_VERSION'),
+        'fallback_version': environ.get('PACKAGE_FALLBACK_VERSION') or version,
     },
     setup_requires=['setuptools_scm'],
     long_description=directory.joinpath('README.md').read_text(),
