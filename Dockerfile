@@ -11,6 +11,8 @@ RUN npm run docker:build
 FROM python:3.9-buster as backend-build-stage
 
 ARG TARGETARCH
+ARG ROTKI_VERSION
+ENV PACKAGE_FALLBACK_VERSION=$ROTKI_VERSION
 ARG PYINSTALLER_VERSION=v4.8
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"

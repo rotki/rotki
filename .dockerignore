@@ -1,4 +1,5 @@
 .eggs
+.git
 .github/actions/job-checker/node_modules
 .idea
 .mypy_cache
