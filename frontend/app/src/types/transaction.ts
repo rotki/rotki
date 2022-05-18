@@ -87,5 +87,6 @@ export enum TransactionEventProtocol {
   BADGER = 'badger',
   ENS = 'ens',
   CURVE = 'curve',
-  KRAKEN = 'kraken'
+  KRAKEN = 'kraken',
+  SHAPESHIFT = 'shapeshift'
 }

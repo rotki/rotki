@@ -418,6 +418,11 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     image: require('@/assets/images/defi/curve.svg')
   },
   {
+    identifier: TransactionEventProtocol.SHAPESHIFT,
+    label: 'Shapeshift',
+    image: require('@/assets/images/shapeshift.svg')
+  },
+  {
     identifier: TransactionEventProtocol.PICKLE,
     label: 'Pickle Finance',
     image: require('@/assets/images/modules/pickle.svg')

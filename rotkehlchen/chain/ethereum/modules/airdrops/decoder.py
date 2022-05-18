@@ -10,11 +10,19 @@ from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_FPIS, A_UNI
+from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_FOX, A_FPIS, A_UNI
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import AIRDROPS_LIST, CPT_BADGER, CPT_CONVEX, CPT_FRAX, CPT_ONEINCH, CPT_UNISWAP
+from .constants import (
+    AIRDROPS_LIST,
+    CPT_BADGER,
+    CPT_CONVEX,
+    CPT_FRAX,
+    CPT_ONEINCH,
+    CPT_SHAPESHIFT,
+    CPT_UNISWAP,
+)
 
 UNISWAP_DISTRIBUTOR = string_to_ethereum_address('0x090D4613473dEE047c3f2706764f49E0821D256e')
 UNISWAP_TOKEN_CLAIMED = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
@@ -28,6 +36,9 @@ ONEINCH_CLAIMED = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9
 FPIS = string_to_ethereum_address('0x61A1f84F12Ba9a56C22c31dDB10EC2e2CA0ceBCf')
 CONVEX = string_to_ethereum_address('0x2E088A0A19dda628B4304301d1EA70b114e4AcCd')
 FPIS_CONVEX_CLAIM = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\x8cW\xd7\r\xbc\xebNDX\xbb\xd6\x0e9\xd4'  # noqa: E501
+
+FOX_DISTRIBUTOR = string_to_ethereum_address('0xe099e688D12DBc19ab46D128d1Db297575474a0d')
+FOX_CLAIMED = b"R\x897\xb30\x08-\x89*\x98\xd4\xe4(\xab-\xcc\xa7\x84KQ\xd2'\xa1\xc0\xaeg\xf0\xb5&\x1a\xcb\xd9"  # noqa: E501
 
 
 class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -53,6 +64,31 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = CPT_UNISWAP
                 event.notes = f'Claim {amount} UNI from uniswap airdrop'  # noqa: E501
+                break
+
+        return None, None
+
+    def _decode_fox_claim(  # pylint: disable=no-self-use
+            self,
+            tx_log: EthereumTxReceiptLog,
+            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: List[ActionItem],  # pylint: disable=unused-argument
+    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+        if tx_log.topics[0] != FOX_CLAIMED:
+            return None, None
+
+        user_address = hex_or_bytes_to_address(tx_log.topics[1])
+        raw_amount = hex_or_bytes_to_int(tx_log.data[64:96])
+        amount = asset_normalized_value(amount=raw_amount, asset=A_FOX)
+
+        for event in decoded_events:
+            if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and A_FOX == event.asset:  # noqa: E501
+                event.event_type = HistoryEventType.RECEIVE
+                event.event_subtype = HistoryEventSubType.AIRDROP
+                event.counterparty = CPT_SHAPESHIFT
+                event.notes = f'Claim {amount} FOX from shapeshift airdrop'  # noqa: E501
                 break
 
         return None, None
@@ -149,6 +185,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             ONEINCH: (self._decode_oneinch_claim,),
             FPIS: (self._decode_fpis_claim, 'fpis'),
             CONVEX: (self._decode_fpis_claim, 'convex'),
+            FOX_DISTRIBUTOR: (self._decode_fox_claim,),
         }
 
     def counterparties(self) -> List[str]:
