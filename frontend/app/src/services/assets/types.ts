@@ -3,17 +3,21 @@ import { BaseAsset, SupportedAsset } from '@rotki/common/lib/data';
 import { z } from 'zod';
 import { CONFLICT_RESOLUTION } from '@/services/assets/consts';
 
-export interface UnderlyingToken {
-  readonly address: string;
-  readonly weight: string;
-}
+export const UnderlyingToken = z.object({
+  address: z.string(),
+  weight: z.string()
+});
 
-export interface EthereumToken extends BaseAsset {
-  readonly address: string;
-  readonly decimals: number;
-  readonly underlyingTokens?: UnderlyingToken[];
-  readonly protocol?: string;
-}
+export type UnderlyingToken = z.infer<typeof UnderlyingToken>;
+
+export const EthereumToken = BaseAsset.extend({
+  address: z.string(),
+  decimals: z.number(),
+  underlyingTokens: z.array(UnderlyingToken).optional(),
+  protocol: z.string().optional()
+});
+
+export type EthereumToken = z.infer<typeof EthereumToken>;
 
 export interface AssetIdResponse {
   readonly identifier: string;

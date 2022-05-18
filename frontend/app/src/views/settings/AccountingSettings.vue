@@ -87,10 +87,10 @@
               <asset-select
                 v-model="assetToIgnore"
                 outlined
-                :label="$t('account_settings.asset_settings.labels.ignore')"
+                :label="$tc('account_settings.asset_settings.labels.ignore')"
                 :success-messages="settingsMessages['addIgnoreAsset'].success"
                 :error-messages="settingsMessages['addIgnoreAsset'].error"
-                :hint="$t('account_settings.asset_settings.ignore_tags_hint')"
+                :hint="$tc('account_settings.asset_settings.ignore_tags_hint')"
                 class="accounting-settings__asset-to-ignore"
               />
             </v-col>
@@ -112,13 +112,13 @@
               <asset-select
                 v-model="assetToRemove"
                 outlined
-                :label="$t('account_settings.asset_settings.labels.unignore')"
-                value="test"
+                show-ignored
+                :label="$tc('account_settings.asset_settings.labels.unignore')"
                 :items="ignoredAssets"
                 :success-messages="settingsMessages['remIgnoreAsset'].success"
                 :error-messages="settingsMessages['remIgnoreAsset'].error"
                 :hint="
-                  $t('account_settings.asset_settings.labels.unignore_hint')
+                  $tc('account_settings.asset_settings.labels.unignore_hint')
                 "
                 class="accounting-settings__ignored-assets"
               />

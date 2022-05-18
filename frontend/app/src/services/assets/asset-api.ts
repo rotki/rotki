@@ -163,12 +163,15 @@ export class AssetApi {
   }
 
   async allAssets(): Promise<SupportedAssets> {
-    return this.axios
-      .get<ActionResult<SupportedAssets>>('/assets/all', {
+    const assets = await this.axios.get<ActionResult<SupportedAssets>>(
+      '/assets/all',
+      {
         validateStatus: validWithSessionAndExternalService,
         transformResponse: setupTransformer([], true)
-      })
-      .then(handleResponse);
+      }
+    );
+
+    return SupportedAssets.parse(handleResponse(assets));
   }
 
   async queryOwnedAssets(): Promise<string[]> {

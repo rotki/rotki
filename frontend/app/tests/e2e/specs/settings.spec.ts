@@ -145,13 +145,6 @@ describe('settings', () => {
         );
         pageAccounting.ignoredAssetCount('4');
       });
-      it('cannot add already ignored asset & validate UI message', () => {
-        pageAccounting.addIgnoredAsset('1SG');
-        pageAccounting.confirmInlineFailure(
-          '.accounting-settings__asset-to-ignore',
-          '1SG'
-        );
-      });
       it('remove an ignored asset, validate UI message, and confirm count is 3', () => {
         pageAccounting.remIgnoredAsset('1SG');
         pageAccounting.confirmInlineSuccess(
