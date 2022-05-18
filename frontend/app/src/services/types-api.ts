@@ -10,9 +10,11 @@ const SYNC_ACTIONS = [SYNC_DOWNLOAD, SYNC_UPLOAD] as const;
 
 export type SyncAction = typeof SYNC_ACTIONS[number];
 
-export interface SupportedAssets {
-  readonly [key: string]: Omit<SupportedAsset, 'identifier'>;
-}
+export const SupportedAssets = z.record(
+  SupportedAsset.omit({ identifier: true })
+);
+
+export type SupportedAssets = z.infer<typeof SupportedAssets>;
 
 export class TaskNotFoundError extends Error {}
 

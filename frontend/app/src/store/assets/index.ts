@@ -242,7 +242,17 @@ export const useAssetInfoRetrieval = defineStore(
     const assetSymbol = (identifier: string) => {
       return computed<string>(() => {
         if (!identifier) return '';
-        return get(assetInfo(identifier))?.symbol ?? identifier;
+
+        const symbol = get(assetInfo(identifier))?.symbol;
+
+        if (symbol) return symbol;
+
+        if (identifier.startsWith('_ceth_')) {
+          const address = identifier.slice(6);
+          return `Ethereum Token: ${address}`;
+        }
+
+        return '';
       });
     };
 
@@ -259,7 +269,16 @@ export const useAssetInfoRetrieval = defineStore(
     const assetName = (identifier: string) => {
       return computed<string>(() => {
         if (!identifier) return '';
-        return get(assetInfo(identifier))?.name ?? '';
+
+        const name = get(assetInfo(identifier))?.name;
+        if (name) return name;
+
+        if (identifier.startsWith('_ceth_')) {
+          const address = identifier.slice(5);
+          return `Ethereum Token: ${address}`;
+        }
+
+        return '';
       });
     };
 
@@ -306,6 +325,8 @@ export const useAssetInfoRetrieval = defineStore(
 
 export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
   const ignoredAssets = ref<string[]>([]);
+
+  const { fetchSupportedAssets } = useAssetInfoRetrieval();
 
   const fetchIgnoredAssets = async (): Promise<void> => {
     try {
@@ -387,6 +408,7 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
 
       showMessage(message, title);
       await fetchIgnoredAssets();
+      await fetchSupportedAssets();
     } catch (e: any) {
       const title = i18n.tc(
         'actions.session.update_ignored_assets.error.title'

@@ -42,7 +42,9 @@ function levenshtein(a: string, b: string) {
 }
 
 function score(keyword: string, { name, symbol }: ManagedAsset): number {
-  const symbolScore = levenshtein(keyword, symbol.toLocaleLowerCase());
+  const symbolScore = symbol
+    ? levenshtein(keyword, symbol.toLocaleLowerCase())
+    : 0;
   const nameScore = name ? levenshtein(keyword, name.toLocaleLowerCase()) : 0;
   return Math.min(symbolScore, nameScore);
 }
@@ -94,8 +96,8 @@ export const getSortItems = (getInfo: AssetInfoGetter) => {
         const aAsset = getInfo(a.asset);
         const bAsset = getInfo(b.asset);
         assert(aAsset && bAsset);
-        const bSymbol = bAsset.symbol;
-        const aSymbol = aAsset.symbol;
+        const bSymbol = bAsset.symbol || '';
+        const aSymbol = aAsset.symbol || '';
         return sortByDesc
           ? bSymbol.toLowerCase().localeCompare(aSymbol)
           : aSymbol.toLowerCase().localeCompare(bSymbol);

@@ -31,6 +31,7 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import ListItem from '@/components/helper/ListItem.vue';
 import { useRouter } from '@/composables/common';
 import { Routes } from '@/router/routes';
+import { useAssetInfoRetrieval } from '@/store/assets';
 
 const AssetDetailsBase = defineComponent({
   name: 'AssetDetailsBase',
@@ -47,6 +48,8 @@ const AssetDetailsBase = defineComponent({
   },
   setup(props) {
     const { asset, opensDetails } = toRefs(props);
+    const { assetSymbol, assetName } = useAssetInfoRetrieval();
+
     const identifier = computed(() => {
       const supportedAsset = get(asset);
       if ('ethereumAddress' in supportedAsset) {
@@ -54,8 +57,8 @@ const AssetDetailsBase = defineComponent({
       }
       return supportedAsset.identifier;
     });
-    const symbol = computed(() => get(asset).symbol);
-    const name = computed(() => get(asset).name);
+    const symbol = computed(() => get(assetSymbol(get(identifier))));
+    const name = computed(() => get(assetName(get(identifier))));
     const router = useRouter();
     const navigate = () => {
       if (!get(opensDetails)) {

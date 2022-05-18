@@ -63,7 +63,7 @@ import {
 import { get, set, useTimeoutFn } from '@vueuse/core';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { compareAssets } from '@/utils/assets';
 
 export default defineComponent({
@@ -89,12 +89,14 @@ export default defineComponent({
     outlined: { required: false, type: Boolean, default: false },
     clearable: { required: false, type: Boolean, default: false },
     persistentHint: { required: false, type: Boolean, default: false },
-    required: { required: false, type: Boolean, default: false }
+    required: { required: false, type: Boolean, default: false },
+    showIgnored: { required: false, type: Boolean, default: false }
   },
   emits: ['input'],
   setup(props, { emit }) {
-    const { items } = toRefs(props);
+    const { items, showIgnored } = toRefs(props);
     const assetInfoRetrievalStore = useAssetInfoRetrieval();
+    const { isAssetIgnored } = useIgnoredAssetsStore();
     const { supportedAssets } = toRefs(assetInfoRetrievalStore);
 
     const input = (_value: string) => emit('input', _value);
@@ -113,12 +115,17 @@ export default defineComponent({
     });
 
     const getAvailableAssets = () => {
-      if (get(items) && get(items).length > 0) {
-        return get(supportedAssets).filter(asset =>
-          get(items)!.includes(asset.identifier)
+      const unIgnoredAssets = get(supportedAssets).filter(
+        asset => get(showIgnored) || !get(isAssetIgnored(asset.identifier))
+      );
+
+      const itemsVal = get(items);
+      if (itemsVal && itemsVal.length > 0) {
+        return unIgnoredAssets.filter(asset =>
+          itemsVal!.includes(asset.identifier)
         );
       }
-      return get(supportedAssets);
+      return unIgnoredAssets;
     };
 
     const setDefaultVisibleAssets = () => {

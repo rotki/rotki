@@ -1,25 +1,29 @@
-import { Nullable } from "../index";
+import { z } from 'zod';
 
 export interface ActionResult<T> {
   readonly result: T;
   readonly message: string;
 }
 
-export interface BaseAsset {
-  readonly identifier: string;
-  readonly coingecko?: Nullable<string>;
-  readonly cryptocompare?: string;
-  readonly started?: Nullable<number>;
-  readonly name: Nullable<string>;
-  readonly symbol: string;
-  readonly swappedFor?: Nullable<string>;
-}
+export const BaseAsset = z.object({
+  identifier: z.string(),
+  coingecko: z.string().nullish(),
+  cryptocompare: z.string().nullish(),
+  started: z.number().nullish(),
+  name: z.string().nullish(),
+  symbol: z.string().nullish(),
+  swappedFor: z.string().nullish(),
+});
 
-export interface SupportedAsset extends BaseAsset {
-  readonly active?: boolean;
-  readonly ended?: number | null;
-  readonly decimals?: number | null;
-  readonly assetType: string;
-  readonly forked?: string | null;
-  readonly ethereumAddress?: string | null;
-}
+export type BaseAsset = z.infer<typeof BaseAsset>;
+
+export const SupportedAsset = BaseAsset.extend({
+  active: z.boolean().optional(),
+  ended: z.number().nullish(),
+  decimals: z.number().nullish(),
+  assetType: z.string(),
+  forked: z.string().nullish(),
+  ethereumAddress: z.string().nullish(),
+})
+
+export type SupportedAsset = z.infer<typeof SupportedAsset>;
