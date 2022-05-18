@@ -143,7 +143,7 @@ describe('settings', () => {
           '.accounting-settings__asset-to-ignore',
           '1CR'
         );
-        pageAccounting.ignoredAssetCount('4');
+        pageAccounting.ignoredAssetCount('19');
       });
       it('remove an ignored asset, validate UI message, and confirm count is 3', () => {
         pageAccounting.remIgnoredAsset('1SG');
@@ -151,7 +151,7 @@ describe('settings', () => {
           '.accounting-settings__ignored-assets',
           '1SG'
         );
-        pageAccounting.ignoredAssetCount('3');
+        pageAccounting.ignoredAssetCount('18');
       });
     });
   });
@@ -192,7 +192,7 @@ describe('settings', () => {
         '.accounting-settings__taxfree-period',
         'false'
       );
-      pageAccounting.ignoredAssetCount('3');
+      pageAccounting.ignoredAssetCount('18');
     });
   });
 });
