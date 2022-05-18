@@ -46,7 +46,7 @@ export class ElectronInterop {
   }
 
   openUrl(url: string) {
-    window.interop?.openUrl(url);
+    this.isPackaged ? window.interop?.openUrl(url) : window.open(url, '_blank');
   }
 
   openPath(path: string) {

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import pathlib
+from os import environ
 
 from pkg_resources import parse_requirements
 from setuptools import find_packages, setup
@@ -30,7 +31,9 @@ setup(
     },
     python_requires='>=3.9',
     install_requires=requirements,
-    use_scm_version=True,
+    use_scm_version={
+        'fallback_version': environ.get('PACKAGE_FALLBACK_VERSION') or version,
+    },
     setup_requires=['setuptools_scm'],
     long_description=directory.joinpath('README.md').read_text(),
     long_description_content_type='text/markdown',
