@@ -52,7 +52,7 @@ def test_gitcoin_old_donation(database, ethereum_manager, function_scope_message
             asset=A_SAI,
             balance=Balance(amount=FVal('0.95'), usd_value=ZERO),
             location_label=ADDY,
-            notes=f'Donate 0.95 SAI from {ADDY} to gitcoin',
+            notes='Donate 0.95 SAI to 0xEbDb626C95a25f4e304336b1adcAd0521a1Bdca1 via gitcoin',  # noqa: E501
             counterparty=CPT_GITCOIN,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
@@ -64,7 +64,7 @@ def test_gitcoin_old_donation(database, ethereum_manager, function_scope_message
             asset=A_SAI,
             balance=Balance(amount=FVal('0.05'), usd_value=ZERO),
             location_label=ADDY,
-            notes=f'Donate 0.05 SAI from {ADDY} to gitcoin',
+            notes='Donate 0.05 SAI to 0x00De4B13153673BCAE2616b67bf822500d325Fc3 via gitcoin',  # noqa: E501
             counterparty=CPT_GITCOIN,
         ),
     ]

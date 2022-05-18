@@ -57,9 +57,7 @@ class BaseDecoderTools():
             self,
             from_address: ChecksumEthAddress,
             to_address: Optional[ChecksumEthAddress],
-            set_verbs: Optional[Tuple[str, str]] = None,
-            set_counterparty: Optional[str] = None,
-    ) -> Optional[Tuple[HistoryEventType, str, str, str]]:
+    ) -> Optional[Tuple[HistoryEventType, Optional[str], str, str]]:
         """Depending on addresses, if they are tracked by the user or not, if they
         are an exchange address etc. determine the type of event to classify the transfer as"""
         tracked_from = from_address in self.tracked_accounts.eth
@@ -70,11 +68,12 @@ class BaseDecoderTools():
         from_exchange = address_is_exchange(from_address)
         to_exchange = address_is_exchange(to_address) if to_address else None
 
+        counterparty: Optional[str]
         if tracked_from and tracked_to:
             event_type = HistoryEventType.TRANSFER
             location_label = from_address
-            counterparty = to_address if not set_counterparty else set_counterparty
-            verb = 'Send' if not set_verbs else set_verbs[0]
+            counterparty = to_address
+            verb = 'Send'
         elif tracked_from:
             if to_exchange is not None:
                 event_type = HistoryEventType.DEPOSIT
@@ -82,8 +81,9 @@ class BaseDecoderTools():
                 counterparty = to_exchange
             else:
                 event_type = HistoryEventType.SPEND
-                verb = 'Send' if not set_verbs else set_verbs[0]
-                counterparty = to_address if not set_counterparty else set_counterparty
+                verb = 'Send'
+                counterparty = to_address
+
             location_label = from_address
         else:  # can only be tracked_to
             if from_exchange:
@@ -92,8 +92,9 @@ class BaseDecoderTools():
                 counterparty = from_exchange
             else:
                 event_type = HistoryEventType.RECEIVE
-                verb = 'Receive' if not set_verbs else set_verbs[1]
-                counterparty = from_address if not set_counterparty else set_counterparty
+                verb = 'Receive'
+                counterparty = from_address
+
             location_label = to_address  # type: ignore  # to_address can't be None here
 
         return event_type, location_label, counterparty, verb  # type: ignore
@@ -103,9 +104,6 @@ class BaseDecoderTools():
             token: EthereumToken,
             tx_log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,
-            set_verbs: Optional[Tuple[str, str]] = None,
-            set_counterparty: Optional[str] = None,
-            set_event_subtype: Optional[HistoryEventSubType] = None,
     ) -> Optional[HistoryBaseEntry]:
         """
         Caller should know this is a transfer of either an ERC20 or an ERC721 token.
@@ -129,14 +127,11 @@ class BaseDecoderTools():
         direction_result = self.decode_direction(
             from_address=from_address,
             to_address=to_address,
-            set_verbs=set_verbs,
-            set_counterparty=set_counterparty,
         )
         if direction_result is None:
             return None
 
         event_type, location_label, counterparty, verb = direction_result
-        event_subtype = set_event_subtype if set_event_subtype else HistoryEventSubType.NONE
         amount_raw_or_token_id = hex_or_bytes_to_int(tx_log.data)
         if token_type == 'erc20':
             amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)
@@ -162,6 +157,6 @@ class BaseDecoderTools():
             balance=Balance(amount=amount),
             notes=notes,
             event_type=event_type,
-            event_subtype=event_subtype,
+            event_subtype=HistoryEventSubType.NONE,
             counterparty=counterparty,
         )
