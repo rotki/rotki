@@ -110,7 +110,7 @@ export default defineComponent({
           words[index + 1] === asset;
 
         if (isAmount) {
-          formats.push({ type: NoteType.AMOUNT, amount, asset });
+          formats.push({ type: NoteType.AMOUNT, amount, asset: assetId });
           skip = true;
           return;
         }
