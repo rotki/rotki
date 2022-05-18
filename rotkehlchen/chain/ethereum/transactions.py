@@ -147,6 +147,7 @@ class EthTransactions:
         )
         dbethtx = DBEthTx(self.database)
         for query_start_ts, query_end_ts in ranges_to_query:
+            log.debug(f'Querying Transactions -> {query_start_ts} - {query_end_ts}')
             try:
                 for new_transactions in self.ethereum.etherscan.get_transactions(
                     account=address,
@@ -160,7 +161,10 @@ class EthTransactions:
                             ethereum_transactions=new_transactions,
                             relevant_address=address,
                         )
-
+                        log.debug(
+                            f'Transactions update range {query_start_ts} - '
+                            f'{new_transactions[-1].timestamp}',
+                        )
                         ranges.update_used_query_range(  # update last queried time for the address
                             location_string=location_string,
                             queried_ranges=[(query_start_ts, new_transactions[-1].timestamp)],
@@ -176,6 +180,7 @@ class EthTransactions:
                 )
                 return
 
+        log.debug(f'Transactions done. Update range {start_ts} - {end_ts}')
         ranges.update_used_query_range(  # entire range is now considered queried
             location_string=location_string,
             queried_ranges=[(start_ts, end_ts)],
@@ -201,6 +206,7 @@ class EthTransactions:
         dbethtx = DBEthTx(self.database)
         new_internal_txs = []
         for query_start_ts, query_end_ts in ranges_to_query:
+            log.debug(f'Querying Internal Transactions -> {query_start_ts} - {query_end_ts}')
             try:
                 for new_internal_txs in self.ethereum.etherscan.get_transactions(
                     account=address,
@@ -229,6 +235,7 @@ class EthTransactions:
                                 transactions=[internal_tx],
                                 relevant_address=address,
                             )
+                            log.debug(f'Internal Transactions -> update range {query_start_ts} - {timestamp}')  # noqa: E501
                             ranges.update_used_query_range(  # update last queried time for address
                                 location_string=location_string,
                                 queried_ranges=[(query_start_ts, timestamp)],
@@ -244,6 +251,7 @@ class EthTransactions:
                 )
                 return
 
+        log.debug(f'Internal Transactions done. Update range {start_ts} - {end_ts}')
         ranges.update_used_query_range(  # entire range is now considered queried
             location_string=location_string,
             queried_ranges=[(start_ts, end_ts)],
@@ -268,6 +276,7 @@ class EthTransactions:
             end_ts=end_ts,
         )
         for query_start_ts, query_end_ts in ranges_to_query:
+            log.debug(f'Querying ERC20 Transfers -> {query_start_ts} - {query_end_ts}')
             try:
                 for erc20_tx_hashes in self.ethereum.etherscan.get_token_transaction_hashes(
                     account=address,
@@ -290,6 +299,7 @@ class EthTransactions:
                         else:
                             timestamp = result[0].timestamp
 
+                        log.debug(f'ERC20 Transfers -> update range {query_start_ts} - {timestamp}')  # noqa: E501
                         ranges.update_used_query_range(  # update last queried time for the address
                             location_string=location_string,
                             queried_ranges=[(query_start_ts, timestamp)],
@@ -303,6 +313,7 @@ class EthTransactions:
                     f'to_ts: {query_end_ts} ',
                 )
 
+        log.debug(f'ERC20 Transfers done. Update range {start_ts} - {end_ts}')
         ranges.update_used_query_range(  # entire range is now considered queried
             location_string=location_string,
             queried_ranges=[(start_ts, end_ts)],

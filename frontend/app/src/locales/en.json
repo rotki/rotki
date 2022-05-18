@@ -2920,6 +2920,7 @@
         "bridge": "Bridge",
         "governance_propose": "Governance Propose",
         "donate": "Donate",
+        "receive_donation": "Receive Donation",
         "unknown": "Unknown",
         "renew": "Renew",
         "place_order": "Place Order"

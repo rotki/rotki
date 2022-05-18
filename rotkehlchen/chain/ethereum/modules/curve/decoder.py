@@ -214,6 +214,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             event.notes = f'Receive {event.balance.amount} {event.asset.symbol} from the curve pool {CURVE_Y_DEPOSIT}'  # noqa: E501
             return True
         return False
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:

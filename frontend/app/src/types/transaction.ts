@@ -60,6 +60,7 @@ export enum TransactionEventType {
   BRIDGE = 'bridge',
   GOVERNANCE_PROPOSE = 'governance_propose',
   DONATE = 'donate',
+  RECEIVE_DONATION = 'receive_donation',
   RENEW = 'renew',
   PLACE_ORDER = 'place_order'
 }
@@ -86,5 +87,6 @@ export enum TransactionEventProtocol {
   BADGER = 'badger',
   ENS = 'ens',
   CURVE = 'curve',
-  KRAKEN = 'kraken'
+  KRAKEN = 'kraken',
+  SHAPESHIFT = 'shapeshift'
 }

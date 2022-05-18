@@ -275,6 +275,11 @@ export const transactionEventTypeData: ActionDataEntry[] = [
     icon: 'mdi-hand-heart-outline'
   },
   {
+    identifier: TransactionEventType.RECEIVE_DONATION,
+    label: i18n.t('transactions.events.type.receive_donation').toString(),
+    icon: 'mdi-hand-heart-outline'
+  },
+  {
     identifier: TransactionEventType.RENEW,
     label: i18n.t('transactions.events.type.renew').toString(),
     icon: 'mdi-calendar-refresh'
@@ -302,7 +307,8 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.RETURN_WRAPPED]: TransactionEventType.RECEIVE,
     [HistoryEventSubType.AIRDROP]: TransactionEventType.AIRDROP,
     [HistoryEventSubType.REWARD]: TransactionEventType.RECEIVE,
-    [HistoryEventSubType.NONE]: TransactionEventType.RECEIVE
+    [HistoryEventSubType.NONE]: TransactionEventType.RECEIVE,
+    [HistoryEventSubType.DONATE]: TransactionEventType.RECEIVE_DONATION
   },
   [HistoryEventType.INFORMATIONAL]: {
     [HistoryEventSubType.APPROVE]: TransactionEventType.APPROVAL,
@@ -410,6 +416,11 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     identifier: TransactionEventProtocol.CURVE,
     label: 'Curve.fi',
     image: require('@/assets/images/defi/curve.svg')
+  },
+  {
+    identifier: TransactionEventProtocol.SHAPESHIFT,
+    label: 'Shapeshift',
+    image: require('@/assets/images/shapeshift.svg')
   },
   {
     identifier: TransactionEventProtocol.PICKLE,
