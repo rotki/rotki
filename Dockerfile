@@ -1,14 +1,16 @@
 # build stage
 FROM --platform=$BUILDPLATFORM node:16-buster as frontend-build-stage
 
+ARG BUILDARCH
 WORKDIR /app
 COPY frontend/ .
-RUN apt-get update && apt-get install -y build-essential python3 --no-install-recommends
+RUN if [ "$BUILDARCH" != "amd64" ]; then apt-get update && apt-get install -y build-essential python3 --no-install-recommends; fi
 RUN npm install -g npm@8 && npm ci
 RUN npm run docker:build
 
 FROM python:3.9-buster as backend-build-stage
 
+ARG TARGETARCH
 ARG PYINSTALLER_VERSION=v4.8
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -26,9 +28,9 @@ RUN git clone https://github.com/sqlcipher/sqlcipher && \
     make install && \
     ldconfig
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN if [ "$TARGETARCH" != "amd64" ]; then curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; fi
 ENV PATH="/root/.cargo/bin:${PATH}"
-RUN rustup default nightly-2021-03-24
+RUN if [ "$TARGETARCH" != "amd64" ]; then rustup default nightly-2021-03-24; fi
 
 RUN python3 -m pip install --upgrade pip setuptools wheel
 COPY ./requirements.txt /app/requirements.txt
@@ -38,12 +40,14 @@ RUN pip install -r requirements.txt
 
 COPY . /app
 
-RUN git clone https://github.com/pyinstaller/pyinstaller.git && cd pyinstaller && \
-    git checkout ${PYINSTALLER_VERSION} && \
-    cd bootloader && \
-    ./waf all && \
-    cd .. && \
-    python setup.py install
+RUN if [ "$TARGETARCH" != "amd64" ]; then \
+      git clone https://github.com/pyinstaller/pyinstaller.git && \
+      cd pyinstaller && git checkout ${PYINSTALLER_VERSION} && \
+      cd bootloader && ./waf all && cd .. && \
+      python setup.py install; \
+    else \
+      pip install pyinstaller==${PYINSTALLER_VERSION}; \
+    fi
 
 RUN pip install -e . && \
     python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
