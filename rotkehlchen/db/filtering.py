@@ -102,7 +102,7 @@ class DBETHTransactionJoinsFilter(DBFilter):
         if self.should_join_events is True:
             query_filters.append(
                 'LEFT JOIN (SELECT event_identifier, counterparty, asset FROM history_events) '
-                'ON hex(ethereum_transactions.tx_hash)=substr(event_identifier, 3)',
+                'ON lower(hex(ethereum_transactions.tx_hash))=lower(substr(event_identifier, 3))',
             )
         if self.addresses is not None:
             questionmarks = '?' * len(self.addresses)
