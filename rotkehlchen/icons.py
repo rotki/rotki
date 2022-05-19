@@ -1,6 +1,7 @@
 import itertools
 import logging
 import shutil
+from http import HTTPStatus
 from pathlib import Path
 from typing import Optional, Set
 
@@ -90,9 +91,12 @@ class IconManager():
             return False
 
         try:
-            response = requests.get(data.image_url, timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = self.coingecko.session.get(data.image_url, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException:
             # Any problem getting the image skip it: https://github.com/rotki/rotki/issues/1370
+            return False
+
+        if response.status_code != HTTPStatus.OK:
             return False
 
         with open(self.iconfile_path(asset), 'wb') as f:

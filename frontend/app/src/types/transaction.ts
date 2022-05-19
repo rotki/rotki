@@ -62,7 +62,8 @@ export enum TransactionEventType {
   DONATE = 'donate',
   RECEIVE_DONATION = 'receive_donation',
   RENEW = 'renew',
-  PLACE_ORDER = 'place_order'
+  PLACE_ORDER = 'place_order',
+  TRANSFER = 'transfer'
 }
 
 export const TransactionEventTypeEnum = z.nativeEnum(TransactionEventType);
@@ -88,5 +89,6 @@ export enum TransactionEventProtocol {
   ENS = 'ens',
   CURVE = 'curve',
   KRAKEN = 'kraken',
-  SHAPESHIFT = 'shapeshift'
+  SHAPESHIFT = 'shapeshift',
+  ELEMENT_FINANCE = 'element-finance'
 }
