@@ -148,6 +148,7 @@ A_KRW = Asset('KRW')
 
 # Needed by airdrops.py
 A_CVX = EthereumToken('0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B')
+A_ELFI = EthereumToken('0x5c6D51ecBA4D8E4F20373e3ce96a62342B125D6d')
 
 # Needed by iconomi
 A_AUST = Asset('AUST')

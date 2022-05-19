@@ -1,28 +1,36 @@
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_FOX, A_FPIS, A_UNI
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
+from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 from .constants import (
     AIRDROPS_LIST,
     CPT_BADGER,
     CPT_CONVEX,
+    CPT_ELEMENT_FINANCE,
     CPT_FRAX,
     CPT_ONEINCH,
     CPT_SHAPESHIFT,
     CPT_UNISWAP,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.user_messages import MessagesAggregator
 
 UNISWAP_DISTRIBUTOR = string_to_ethereum_address('0x090D4613473dEE047c3f2706764f49E0821D256e')
 UNISWAP_TOKEN_CLAIMED = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
@@ -41,13 +49,30 @@ FOX_DISTRIBUTOR = string_to_ethereum_address('0xe099e688D12DBc19ab46D128d1Db2975
 FOX_CLAIMED = b"R\x897\xb30\x08-\x89*\x98\xd4\xe4(\xab-\xcc\xa7\x84KQ\xd2'\xa1\xc0\xaeg\xf0\xb5&\x1a\xcb\xd9"  # noqa: E501
 
 
+ELFI_LOCKING = string_to_ethereum_address('0x02Bd4A3b1b95b01F2Aa61655415A5d3EAAcaafdD')
+ELFI_VOTE_CHANGE = b'3\x16\x1c\xf2\xda(\xd7G\xbe\x9d\xf16\xb6\xf3r\x93\x90)\x84\x94\x94rht1\x93\xc5=s\xd3\xc2\xe0'  # noqa: E501
+
+
 class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+
+    def __init__(
+            self,
+            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+    ) -> None:
+        super().__init__(
+            ethereum_manager=ethereum_manager,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        self.base = base_tools
 
     def _decode_uniswap_claim(  # pylint: disable=no-self-use
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
+            transaction: EthereumTransaction,  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
@@ -176,6 +201,54 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
         return None, None
 
+    def _decode_elfi_claim(  # pylint: disable=no-self-use
+            self,
+            tx_log: EthereumTxReceiptLog,
+            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: List[ActionItem],  # pylint: disable=unused-argument
+    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+        """Example:
+        https://etherscan.io/tx/0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b
+        """
+        if tx_log.topics[0] != ELFI_VOTE_CHANGE:
+            return None, None
+
+        user_address = hex_or_bytes_to_address(tx_log.topics[1])
+        delegate_address = hex_or_bytes_to_address(tx_log.topics[2])
+        raw_amount = hex_or_bytes_to_int(tx_log.data[0:32])
+        amount = asset_normalized_value(amount=raw_amount, asset=A_ELFI)
+
+        # now we need to find the transfer, but can't use decoded events
+        # since the transfer is from one of at least 2 airdrop contracts to
+        # vote/locking contract. Since neither the from, nor the to is a
+        # tracked address there won't be a decoded transfer. So we search for
+        # the raw log
+        for other_log in all_logs:
+            if other_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
+                continue
+
+            transfer_raw = hex_or_bytes_to_int(other_log.data[0:32])
+            if other_log.address == A_ELFI.ethereum_address and transfer_raw == raw_amount:
+                delegate_str = 'self-delegate' if user_address == delegate_address else f'delegate it to {delegate_address}'  # noqa: E501
+                event = HistoryBaseEntry(
+                    event_identifier=transaction.tx_hash.hex(),
+                    sequence_index=self.base.get_sequence_index(tx_log),
+                    timestamp=ts_sec_to_ms(transaction.timestamp),
+                    location=Location.BLOCKCHAIN,
+                    location_label=user_address,
+                    asset=A_ELFI,
+                    balance=Balance(amount=amount),
+                    notes=f'Claim {amount} ELFI from element-finance airdrop and {delegate_str}',
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.AIRDROP,
+                    counterparty=CPT_ELEMENT_FINANCE,
+                )
+                return event, None
+
+        return None, None
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
@@ -186,6 +259,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             FPIS: (self._decode_fpis_claim, 'fpis'),
             CONVEX: (self._decode_fpis_claim, 'convex'),
             FOX_DISTRIBUTOR: (self._decode_fox_claim,),
+            ELFI_LOCKING: (self._decode_elfi_claim,),
         }
 
     def counterparties(self) -> List[str]:

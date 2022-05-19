@@ -454,5 +454,10 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     identifier: TransactionEventProtocol.KRAKEN,
     label: 'kraken',
     image: require('@/assets/images/exchanges/kraken.svg')
+  },
+  {
+    identifier: TransactionEventProtocol.ELEMENT_FINANCE,
+    label: 'Element Finance',
+    image: require('@/assets/images/defi/element_finance.png')
   }
 ];

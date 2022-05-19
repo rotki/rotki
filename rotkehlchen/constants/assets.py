@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# /home/yabirgb/work/rotki/tools/scripts/generate_constant_assets.py at 09/05/2022 07:50:41.
+# /home/lefteris/w/rotkehlchen/tools/scripts/generate_constant_assets.py at 19/05/2022 11:32:50.
 # Do not edit manually!
 
 from typing import List
@@ -1439,6 +1439,18 @@ A_CVX = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_CVX)
+A_ELFI = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x5c6D51ecBA4D8E4F20373e3ce96a62342B125D6d'),
+    decimals=18,
+    name="Element Finance",
+    symbol='ELFI',
+    started=Timestamp(1642012745),
+    swapped_for=None,
+    coingecko='element-finance',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_ELFI)
 
 # Needed by iconomi
 A_AUST = Asset.initialize(
