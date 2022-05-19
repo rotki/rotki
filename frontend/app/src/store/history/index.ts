@@ -839,7 +839,7 @@ export const useTransactions = defineStore('history/transactions', () => {
       })
       .flat()
       .join(' ')
-      .split(' ');
+      .split(/\s|\\n/);
   };
 
   const getNotesAddresses = (transactions: EthTransactionEntry[]): string[] =>
