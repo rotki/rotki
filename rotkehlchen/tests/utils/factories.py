@@ -70,7 +70,7 @@ def make_ethereum_address() -> ChecksumEthAddress:
     return to_checksum_address('0x' + make_random_bytes(20).hex())
 
 
-def make_ethereum_transaction(tx_hash: Optional[bytes]) -> EthereumTransaction:
+def make_ethereum_transaction(tx_hash: Optional[bytes] = None) -> EthereumTransaction:
     if tx_hash is None:
         tx_hash = make_random_bytes(42)
     return EthereumTransaction(

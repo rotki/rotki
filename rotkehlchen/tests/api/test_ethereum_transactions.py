@@ -17,7 +17,7 @@ from rotkehlchen.chain.ethereum.constants import (
     RANGE_PREFIX_ETHTX,
 )
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USDT
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -1216,26 +1216,37 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     db.add_to_ignored_assets(A_BTC)
     db.add_to_ignored_assets(A_DAI)
     dbethtx = DBEthTx(db)
-    tx1 = make_ethereum_transaction(tx_hash=bytes.fromhex('a1'))
-    tx2 = make_ethereum_transaction(tx_hash=bytes.fromhex('b2c3'))
-    tx3 = make_ethereum_transaction(tx_hash=bytes.fromhex('d4e5f6'))
-    event1 = make_ethereum_event(tx_hash=bytes.fromhex('a1'), index=1, asset=A_ETH)
-    event2 = make_ethereum_event(tx_hash=bytes.fromhex('a1'), index=2, asset=A_BTC)
-    event3 = make_ethereum_event(tx_hash=bytes.fromhex('b2c3'), index=3, asset=A_DAI)
+    tx1 = make_ethereum_transaction()
+    tx2 = make_ethereum_transaction()
+    tx3 = make_ethereum_transaction()
+    event1 = make_ethereum_event(tx_hash=tx1.tx_hash, index=1, asset=A_ETH)
+    event2 = make_ethereum_event(tx_hash=tx1.tx_hash, index=2, asset=A_BTC)
+    event3 = make_ethereum_event(tx_hash=tx1.tx_hash, index=3, asset=A_MKR)
+    event4 = make_ethereum_event(tx_hash=tx2.tx_hash, index=4, asset=A_DAI)
     dbethtx.add_ethereum_transactions([tx1, tx2, tx3], relevant_address=ethereum_accounts[0])
     dbevents = DBHistoryEvents(db)
-    dbevents.add_history_events([event1, event2, event3])
+    dbevents.add_history_events([event1, event2, event3, event4])
 
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
             'ethereumtransactionsresource',
         ),
-        json={'exclude_ignored_assets': False},
+        json={
+            'only_cache': True,  # only deal with the DB
+            'exclude_ignored_assets': False,
+        },
     )
     result = assert_proper_response_with_result(response)
-    expected = generate_tx_entries_response([(tx1, [event1, event2]), (tx2, [event3]), (tx3, [])])
+    expected = generate_tx_entries_response(data=[
+        (tx1, [event1, event2, event3]),
+        (tx2, [event4]),
+        (tx3, []),
+    ])
     assert result['entries'] == expected
+    assert result['entries_found'] == 3
+    assert result['entries_total'] == 3
+    assert result['entries_limit'] == FREE_ETH_TX_LIMIT
 
     response = requests.get(
         api_url_for(
@@ -1243,7 +1254,11 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
             'ethereumtransactionsresource',
         ),
         # Also testing here that default exclude_ignored_assets is True
+        json={'only_cache': True},
     )
     result = assert_proper_response_with_result(response)
-    expected = generate_tx_entries_response([(tx1, [event1]), (tx3, [])])
+    expected = generate_tx_entries_response([(tx1, [event1, event3]), (tx3, [])])
     assert result['entries'] == expected
+    assert result['entries_found'] == 2
+    assert result['entries_total'] == 3
+    assert result['entries_limit'] == FREE_ETH_TX_LIMIT
