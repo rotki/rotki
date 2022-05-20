@@ -19,9 +19,10 @@ def _validate_asset_icons(icon_manager: 'IconManager') -> None:
     """
     icons_directory = icon_manager.icons_dir
     for icon_entry in icons_directory.iterdir():
-        icon_file_type = imghdr.what(icon_entry)
-        if icon_file_type is None:
-            icon_entry.unlink()
+        if icon_entry.is_file():
+            icon_file_type = imghdr.what(icon_entry)
+            if icon_file_type is None:
+                icon_entry.unlink()
 
 
 def data_migration_3(rotki: 'Rotkehlchen') -> None:

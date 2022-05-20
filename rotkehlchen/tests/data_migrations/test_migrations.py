@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -12,6 +13,14 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+
+
+def _create_invalid_icon(icon_identifier: str, icons_dir: Path) -> Path:
+    icon_filepath = icons_dir / f'{icon_identifier}_small.png'
+    with open(icon_filepath, 'wb') as f:
+        f.write(b'abcd')
+
+    return icon_filepath
 
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
@@ -119,3 +128,29 @@ def test_failed_migration(rotkehlchen_api_server):
     assert len(warnings) == 0
     assert len(errors) == 1
     assert errors[0] == 'Failed to run soft data migration to version 1 due to ngmi'
+
+
+@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_migration_3(rotkehlchen_api_server):
+    """
+    Test that the third data migration for rotki works. This migration removes icons of assets
+    that are not valid images and update the list of ignored assets using cryptoscamdb.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    icon_manager = rotki.icon_manager
+
+    btc_iconpath = _create_invalid_icon(A_BTC.identifier, icon_manager.icons_dir)
+    eth_iconpath = _create_invalid_icon(A_ETH.identifier, icon_manager.icons_dir)
+
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=MIGRATION_LIST[2:],
+    )
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    assert not btc_iconpath.is_file()
+    assert not eth_iconpath.is_file()

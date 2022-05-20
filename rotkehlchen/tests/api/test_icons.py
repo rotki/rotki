@@ -95,6 +95,7 @@ def test_upload_custom_icon_errors(rotkehlchen_api_server, file_upload):
     )
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_refresh_icon(rotkehlchen_api_server):
     """Test that checks refreshing the icon of an asset works."""
     # add icon for an asset
