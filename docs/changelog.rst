@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`718` Users can now ignore an exchange from the PnL report using the same option as the one for exchange syncing.
 * :feature:`2219` Users will now be able to delete snapshot.
 * :feature:`4219` Users will now be able to import snapshot manually.
 * :bug:`4261` Fixes a problem were the docker container image would increase on every restart.
