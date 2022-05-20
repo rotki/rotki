@@ -13,8 +13,10 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.constants import A_GNO
+from rotkehlchen.tests.utils.constants import A_DOGE, A_GNO
+from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
@@ -91,3 +93,24 @@ def test_upload_custom_icon_errors(rotkehlchen_api_server, file_upload):
         contained_in_msg=f'does not end in any of {",".join(ALLOWED_ICON_EXTENSIONS)}',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+def test_refresh_icon(rotkehlchen_api_server):
+    """Test that checks refreshing the icon of an asset works."""
+    # add icon for an asset
+    icon_manager = rotkehlchen_api_server.rest_api.rotkehlchen.icon_manager
+    root_path = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))))  # noqa: E501
+    sample_filepath = root_path / 'frontend' / 'app' / 'src' / 'assets' / 'images' / 'exchanges' / 'kraken.svg'  # noqa: E501
+    icon_filepath = icon_manager.icons_dir / 'DOGE_small.png'
+    shutil.copyfile(sample_filepath, icon_filepath)
+
+    now = ts_now()
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'asseticonsresource',
+            asset=A_DOGE.identifier,
+        ),
+    )
+    assert_simple_ok_response(response)
+    assert os.path.getctime(icon_filepath) > now

@@ -3207,6 +3207,20 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
+    def refresh_asset_icon(self, asset: Asset) -> Response:
+        """Deletes an asset's icon from the cache and requeries it."""
+        is_deleted, message = self.rotkehlchen.icon_manager.delete_icon(asset)
+        if not is_deleted:
+            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.NOT_FOUND)
+
+        is_success = self.rotkehlchen.icon_manager.query_coingecko_for_icon(asset)
+        if is_success is False:
+            return api_response(
+                wrap_in_fail_result('Unable to refresh icon at the moment.'),
+                status_code=HTTPStatus.NOT_FOUND,
+            )
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
     @staticmethod
     def _get_current_assets_price(
             assets: List[Asset],
