@@ -2,6 +2,8 @@ import { Severity } from '@rotki/common/lib/messages';
 import i18n from '@/i18n';
 import {
   BalanceSnapshotError,
+  EthereumTransactionQueryData,
+  EthereumTransactionsQueryStatus,
   SocketMessageType,
   WebsocketMessage
 } from '@/services/websocket/messages';
@@ -19,6 +21,30 @@ export async function handleSnapshotError(
       .toString(),
     display: true
   });
+}
+
+export async function handleEthereumTransactionStatus(
+  message: WebsocketMessage<SocketMessageType>
+) {
+  const data = EthereumTransactionQueryData.parse(message.data);
+  const { notify } = useNotifications();
+  if (data.status === EthereumTransactionsQueryStatus.ACCOUNT_CHANGE) {
+    const messageData = {
+      address: data.address,
+      address_index: data.period[0],
+      total_addresses: data.period[1]
+    };
+    notify({
+      title: i18n
+        .t('notification_messages.ethereum_transactions.title')
+        .toString(),
+      message: i18n
+        .t('notification_messages.ethereum_transactions.message', messageData)
+        .toString(),
+      display: true,
+      severity: Severity.INFO
+    });
+  }
 }
 
 export async function handleLegacyMessage(message: string, isWarning: boolean) {

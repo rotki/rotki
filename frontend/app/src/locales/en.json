@@ -744,6 +744,10 @@
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
+    },
+    "ethereum_transactions": {
+      "title": "Transactions query update",
+      "message": "Querying information for {address}, {address_index} of {total_addresses}"
     }
   },
   "pagination": {
