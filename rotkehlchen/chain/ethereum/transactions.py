@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Tuple
 
 from gevent.lock import Semaphore
 
+from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.chain.ethereum.constants import (
     RANGE_PREFIX_ETHINTERNALTX,
     RANGE_PREFIX_ETHTOKENTX,
@@ -46,6 +47,7 @@ class EthTransactions:
         self.database = database
         self.address_tx_locks: Dict[ChecksumEthAddress, Semaphore] = defaultdict(Semaphore)
         self.missing_receipts_lock = Semaphore()
+        self.msg_aggregator = database.msg_aggregator
 
     @contextmanager
     def wait_until_no_query_for(self, addresses: List[ChecksumEthAddress]) -> Iterator[None]:
@@ -117,7 +119,15 @@ class EthTransactions:
             f_to_ts = filter_query.to_ts
             from_ts = Timestamp(0) if f_from_ts is None else f_from_ts
             to_ts = ts_now() if f_to_ts is None else f_to_ts
-            for address in accounts:
+            for i, address in enumerate(accounts):
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                    data={
+                        'address': address,
+                        'period': [i + 1, len(accounts)],
+                        'status': str(TransactionStatusStep.ACCOUNT_CHANGE),
+                    },
+                )
                 self.single_address_query_transactions(
                     address=address,
                     start_ts=from_ts,
@@ -150,6 +160,14 @@ class EthTransactions:
         dbethtx = DBEthTx(self.database)
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying Transactions for {address} -> {query_start_ts} - {query_end_ts}')
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                data={
+                    'address': address,
+                    'period': [query_start_ts, query_end_ts],
+                    'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS),
+                },
+            )
             try:
                 for new_transactions in self.ethereum.etherscan.get_transactions(
                     account=address,
@@ -209,6 +227,14 @@ class EthTransactions:
         new_internal_txs = []
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying Internal Transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                data={
+                    'address': address,
+                    'period': [query_start_ts, query_end_ts],
+                    'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),
+                },
+            )
             try:
                 for new_internal_txs in self.ethereum.etherscan.get_transactions(
                     account=address,
@@ -279,6 +305,14 @@ class EthTransactions:
         )
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying ERC20 Transfers for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                data={
+                    'address': address,
+                    'period': [query_start_ts, query_end_ts],
+                    'status': str(TransactionStatusStep.QUERYING_ETHEREUM_TOKENS_TRANSACTIONS),
+                },
+            )
             try:
                 for erc20_tx_hashes in self.ethereum.etherscan.get_token_transaction_hashes(
                     account=address,
