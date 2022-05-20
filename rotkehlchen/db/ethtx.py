@@ -207,7 +207,7 @@ class DBEthTx():
         txs = self.get_ethereum_transactions(filter_=filter_, has_premium=has_premium)
         cursor = self.db.conn.cursor()
         query, bindings = filter_.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from ethereum_transactions ' + query
+        query = 'SELECT COUNT(DISTINCT ethereum_transactions.tx_hash) FROM ethereum_transactions ' + query  # noqa: E501
         total_found_result = cursor.execute(query, bindings)
         return txs, total_found_result.fetchone()[0]
 

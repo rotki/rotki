@@ -206,7 +206,7 @@ def update_spam_assets(db: 'DBHandler') -> int:
     spam_tokens = query_token_spam_list(db)
     # order maters here. Make sure ignored_assets are queried after spam tokens creation
     # since it's possible for a token to exist in ignored assets but not global DB.
-    # and in that case query_token_spam_list add it to the global D
+    # and in that case query_token_spam_list add it to the global DB
     ignored_assets = {asset.identifier for asset in db.get_ignored_assets()}
     assets_added = 0
     for token in spam_tokens:
