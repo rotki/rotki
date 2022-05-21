@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2890` Transactions in the PnL report are now clickable and have a link to the chosen blockchain explorer via the transaction hash.
 * :feature:`1680` Users will now be able to see their 1inch v1 and v2 trades
 * :feature:`718` Users can now ignore an exchange from the PnL report using the same option as the one for exchange syncing.
 * :feature:`2219` Users will now be able to delete snapshot.
