@@ -11,6 +11,7 @@ from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.transactions import TransactionsAccountant
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_KFEE
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
@@ -223,6 +224,10 @@ class AccountingPot(CustomizableDateMixin):
                 asset=asset,
                 timestamp=timestamp,
             )
+
+        if asset == A_KFEE:
+            count_cost_basis_pnl = False
+            taxable = False
 
         spend_cost = None
         if count_cost_basis_pnl:
