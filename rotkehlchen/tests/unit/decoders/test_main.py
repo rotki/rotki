@@ -17,4 +17,5 @@ def test_decoders_initialization(evm_transaction_decoder):
         'Uniswapv1',
         'Votium',
         'Zksync',
+        'Hop',
     }
