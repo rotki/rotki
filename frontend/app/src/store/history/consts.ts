@@ -459,5 +459,10 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     identifier: TransactionEventProtocol.ELEMENT_FINANCE,
     label: 'Element Finance',
     image: require('@/assets/images/defi/element_finance.png')
+  },
+  {
+    identifier: TransactionEventProtocol.HOP_PROTOCOL,
+    label: 'Hop Protocol',
+    image: require('@/assets/images/hop_protocol.png')
   }
 ];

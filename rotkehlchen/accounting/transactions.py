@@ -118,6 +118,7 @@ class TransactionsAccountant():
             log.debug(f'Skipping {self} at accounting for a swap due to inability to find a price')
             return 2
 
+        group_id = out_event.event_identifier + str(out_event.sequence_index) + str(in_event.sequence_index)  # noqa: E501
         self.pot.add_spend(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=out_event.notes if out_event.notes else '',
@@ -128,7 +129,10 @@ class TransactionsAccountant():
             taxable=event_settings.taxable,
             given_price=prices[0],
             count_entire_amount_spend=False,
-            extra_data={'tx_hash': out_event.event_identifier},
+            extra_data={
+                'tx_hash': out_event.event_identifier,
+                'group_id': group_id,
+            },
         )
         self.pot.add_acquisition(
             event_type=AccountingEventType.TRANSACTION_EVENT,
@@ -139,6 +143,9 @@ class TransactionsAccountant():
             amount=in_event.balance.amount,
             taxable=event_settings.taxable,
             given_price=prices[1],
-            extra_data={'tx_hash': in_event.event_identifier},
+            extra_data={
+                'tx_hash': in_event.event_identifier,
+                'group_id': group_id,
+            },
         )
         return 2
