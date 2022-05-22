@@ -338,10 +338,11 @@ class Trade(AccountingEventMixin):
             log.debug(f'Skipping {self} at accounting due to inability to find a price')
             return 1
 
+        group_id = self.identifier
         taxable = accounting.settings.include_crypto2crypto or asset_in.is_fiat()
         _, trade_taxable_amount = accounting.add_spend(
             event_type=AccountingEventType.TRADE,
-            notes=notes + 'Amount out',
+            notes=notes + ' Amount out',
             location=self.location,
             timestamp=self.timestamp,
             asset=asset_out,
@@ -349,16 +350,18 @@ class Trade(AccountingEventMixin):
             taxable=taxable,
             given_price=prices[0],
             count_entire_amount_spend=False,
+            extra_data={'group_id': group_id},
         )
         accounting.add_acquisition(
             event_type=AccountingEventType.TRADE,
-            notes=notes + 'Amount in',
+            notes=notes + ' Amount in',
             location=self.location,
             timestamp=self.timestamp,
             asset=asset_in,
             amount=amount_in,
             taxable=False,  # For a trade the outgoing part (sell) determined profit
             given_price=prices[1],
+            extra_data={'group_id': group_id},
         )
 
         if self.fee is not None and self.fee_currency is not None and self.fee != ZERO:
@@ -376,6 +379,7 @@ class Trade(AccountingEventMixin):
                 taxable_amount_ratio=trade_taxable_amount / amount_out,
                 count_cost_basis_pnl=accounting.settings.include_crypto2crypto,
                 count_entire_amount_spend=True,
+                extra_data={'group_id': group_id},
             )
 
         return 1

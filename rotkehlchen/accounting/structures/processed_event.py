@@ -91,8 +91,13 @@ class ProcessedAccountingEvent:
                 cost_basis = self.cost_basis.serialize()
             exported_dict['cost_basis'] = cost_basis
 
-        if for_api is True and tx_hash is not None:
-            exported_dict['notes'] = f'transaction {tx_hash} {self.notes}'
+        if for_api is True:
+            if tx_hash is not None:
+                exported_dict['notes'] = f'transaction {tx_hash} {self.notes}'
+
+            group_id = self.extra_data.get('group_id', None)
+            if group_id is not None:
+                exported_dict['group_id'] = group_id
 
         return exported_dict
 

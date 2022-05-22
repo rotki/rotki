@@ -4758,6 +4758,7 @@ Get saved events of a PnL Report
    :resjson str taxable_amount: The amount of the event that counts as taxable.
    :resjson int timestamp: The timestamp this event took place in.
    :resjson str type: The type of event. Can be any of the possible accounting event types.
+   :resjson str group_id: Optional. Can be missing. An id signifying events that should be grouped together in the frontend. If missing no grouping needs to happen.
 
    :statuscode 200: Report event data was successfully queried.
    :statuscode 400: Report id does not exist.
