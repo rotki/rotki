@@ -1,19 +1,30 @@
 <template>
-  <div class="net-worth-chart">
-    <div class="net-worth-chart__chart">
+  <div :class="$style.wrapper">
+    <div :class="$style.canvas">
       <canvas :id="canvasId" @click="canvasClicked" />
       <div
-        id="net-worth-chart__tooltip"
+        v-if="tooltipOption"
+        :id="tooltipOption.id"
         :class="{
-          'theme--dark': dark
+          [$style.tooltip]: true,
+          [$style['tooltip-dark']]: dark,
+          [$style['tooltip-show']]: tooltipOption.visible
+        }"
+        :data-align-x="tooltipOption.xAlign"
+        :data-align-y="tooltipOption.yAlign"
+        :style="{
+          left: `${tooltipOption.left}px`,
+          top: `${tooltipOption.top}px`
         }"
       >
-        <div
-          class="net-worth-chart__tooltip__value font-weight-bold text-center"
-        />
-        <div
-          class="net-worth-chart__tooltip__time rotki-grey--text text-center"
-        />
+        <div>
+          <div class="font-weight-bold text-center">
+            {{ tooltip.value }}
+          </div>
+          <div class="rotki-grey--text text-center">
+            {{ tooltip.time }}
+          </div>
+        </div>
       </div>
     </div>
 
@@ -36,6 +47,7 @@ import { NetValue } from '@rotki/common/lib/statistics';
 import {
   computed,
   defineComponent,
+  nextTick,
   onMounted,
   PropType,
   ref,
@@ -71,6 +83,78 @@ export interface ValueOverTime {
   readonly y: number;
 }
 
+const useTooltip = (id: string) => {
+  type TooltipOption = {
+    visible: boolean;
+    id: string;
+    left: number;
+    top: number;
+    xAlign: string;
+    yAlign: string;
+  };
+
+  const getDefaultTooltipOption = (id: string): TooltipOption => {
+    return {
+      visible: false,
+      left: 0,
+      top: 0,
+      xAlign: 'left',
+      yAlign: 'center',
+      id
+    };
+  };
+
+  type ChartTooltip = {
+    readonly time: string;
+    readonly value: string;
+  };
+
+  const defaultTooltip = (): ChartTooltip => ({
+    time: '',
+    value: ''
+  });
+
+  const tooltipOption = ref(getDefaultTooltipOption(id));
+  const tooltip = ref(defaultTooltip());
+
+  const calculateTooltipPosition = (
+    element: HTMLElement,
+    tooltipModel: Chart.ChartTooltipModel
+  ): Partial<TooltipOption> => {
+    let { x, y } = tooltipModel;
+    const { xAlign, yAlign } = tooltipModel;
+
+    const elemWidth = element.clientWidth;
+    const elemHeight = element.clientHeight;
+
+    if (tooltipModel.xAlign === 'center') {
+      x += (tooltipModel.width - elemWidth) / 2;
+    } else if (tooltipModel.xAlign === 'right') {
+      x += tooltipModel.width - elemWidth;
+    }
+
+    if (tooltipModel.yAlign === 'center') {
+      y += (tooltipModel.height - elemHeight) / 2;
+    } else if (tooltipModel.yAlign === 'bottom') {
+      y += tooltipModel.height - elemHeight;
+    }
+
+    return {
+      xAlign,
+      yAlign,
+      left: x,
+      top: y,
+      visible: true
+    };
+  };
+
+  return {
+    tooltipOption,
+    tooltip,
+    calculateTooltipPosition
+  };
+};
+
 export default defineComponent({
   name: 'NetWorthChart',
   components: { ExportSnapshotDialog },
@@ -95,6 +179,10 @@ export default defineComponent({
     const showExportSnapshotDialog = ref<boolean>(false);
 
     const canvasId = 'net-worth-chart__chart';
+    const tooltipId = 'net-worth-chart__tooltip';
+
+    const { tooltip, tooltipOption, calculateTooltipPosition } =
+      useTooltip(tooltipId);
     const chart = ref<Chart | null>(null);
     const times = ref<number[]>([]);
     const data = ref<number[]>([]);
@@ -243,64 +331,19 @@ export default defineComponent({
     };
 
     const tooltipOptions = (): ChartTooltipOptions => {
-      const symbol = () => get(currency).unicodeSymbol;
-
-      const setCaretPosition = (
-        classList: DOMTokenList,
-        tooltipModel: Chart.ChartTooltipModel
-      ) => {
-        classList.remove('above', 'below', 'no-transform');
-        if (tooltipModel.yAlign) {
-          classList.add(tooltipModel.yAlign);
-        } else {
-          classList.add('no-transform');
-        }
-      };
-
-      function updateTooltip(
-        element: HTMLElement,
-        netWorth: string,
-        time: string
-      ) {
-        const tooltipValue = element.querySelector(
-          '.net-worth-chart__tooltip__value'
-        );
-        const tooltipTime = element.querySelector(
-          '.net-worth-chart__tooltip__time'
-        );
-
-        assert(tooltipValue, 'tooltip value element was not found');
-        assert(tooltipTime, 'tooltip time element was not found');
-
-        tooltipValue!.innerHTML = `${netWorth} ${symbol()}`;
-        tooltipTime!.innerHTML = `${time}`;
-      }
-
-      function displayTooltip(
-        style: CSSStyleDeclaration,
-        tooltipModel: Chart.ChartTooltipModel
-      ) {
-        const tooltipXOffset = -130;
-        const tooltipYOffset = -20;
-
-        style.opacity = '0.9';
-        style.position = 'absolute';
-        style.left = `${tooltipModel.caretX + tooltipXOffset}px`;
-        style.top = `${tooltipModel.caretY + tooltipYOffset}px`;
-      }
-
       const custom: (
         tooltipModel: ChartTooltipModel
       ) => void = tooltipModel => {
-        const element = document.getElementById('net-worth-chart__tooltip');
+        const element = document.getElementById(tooltipId);
         assert(element, 'No tooltip element found');
 
         if (tooltipModel.opacity === 0) {
-          element.style.opacity = '0';
+          tooltipOption.value = {
+            ...tooltipOption.value,
+            visible: false
+          };
           return;
         }
-
-        setCaretPosition(element.classList, tooltipModel);
 
         const item = tooltipModel.dataPoints[0];
         const netWorth = bigNumberify(item.value!).toFormat(
@@ -312,8 +355,17 @@ export default defineComponent({
           get(activeTimeframe).tooltipTimeFormat
         );
 
-        updateTooltip(element, netWorth, time);
-        displayTooltip(element.style, tooltipModel);
+        tooltip.value = {
+          value: `${netWorth} ${get(currency).unicodeSymbol}`,
+          time: `${time}`
+        };
+
+        nextTick(() => {
+          tooltipOption.value = {
+            ...tooltipOption.value,
+            ...calculateTooltipPosition(element, tooltipModel)
+          };
+        });
       };
 
       return {
@@ -413,40 +465,128 @@ export default defineComponent({
       showExportSnapshotDialog,
       selectedTimestamp,
       selectedBalance,
-      currency
+      tooltip,
+      tooltipOption
     };
   }
 });
 </script>
-<style scoped lang="scss">
-.theme {
-  &--dark {
+<style module lang="scss">
+.tooltip {
+  position: absolute;
+  opacity: 0;
+  visibility: hidden;
+  background-color: white;
+  padding: 8px 12px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  border-radius: 6px;
+  filter: drop-shadow(0 0 8px var(--v-rotki-grey-base));
+  pointer-events: none;
+  transition: 0.3s all;
+  white-space: nowrap;
+  line-height: 1.2rem;
+
+  &::before {
+    content: '';
+    width: 0;
+    height: 0;
+    position: absolute;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent;
+  }
+
+  &[data-align-x='left'],
+  &[data-align-x='right'] {
+    &::before {
+      border-top-color: transparent;
+      border-bottom-color: transparent;
+    }
+  }
+
+  &[data-align-x='left'] {
+    &::before {
+      border-right-color: white;
+      right: 100%;
+    }
+
+    &:not([data-align-y='center']) {
+      &::before {
+        border-right-color: transparent;
+        right: calc(100% - 16px);
+      }
+    }
+  }
+
+  &[data-align-x='right'] {
+    &::before {
+      border-left-color: white;
+      left: 100%;
+    }
+
+    &:not([data-align-y='center']) {
+      &::before {
+        border-left-color: transparent;
+        left: calc(100% - 16px);
+      }
+    }
+  }
+
+  &[data-align-y='top'],
+  &[data-align-y='bottom'] {
+    &::before {
+      border-left-color: transparent;
+      border-right-color: transparent;
+    }
+  }
+
+  &[data-align-y='top'] {
+    &::before {
+      border-bottom-color: white;
+      bottom: 100%;
+    }
+  }
+
+  &[data-align-y='bottom'] {
+    &::before {
+      border-top-color: white;
+      top: 100%;
+    }
+  }
+
+  &[data-align-x='center'] {
+    &::before {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+  }
+
+  &[data-align-y='center'] {
+    &::before {
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  }
+
+  &-show {
+    opacity: 0.9;
+    visibility: visible;
+  }
+
+  &-dark {
     color: black;
   }
 }
 
-#net-worth-chart__tooltip {
-  opacity: 0;
-  background-color: white;
-  padding: 8px 15px;
-  font-family: 'Roboto', sans-serif;
-  font-size: 14px;
-  border-radius: 15px;
-  box-shadow: 0 0 8px var(--v-rotki-grey-base);
-  pointer-events: none;
+.wrapper {
+  width: 100%;
+  position: relative;
 }
 
-.net-worth-chart {
+.canvas {
+  position: relative;
+  height: 200px;
   width: 100%;
-
-  &__tooltip {
-    margin-top: -10px;
-  }
-
-  &__chart {
-    position: relative;
-    height: 200px;
-    width: 100%;
-  }
 }
 </style>
