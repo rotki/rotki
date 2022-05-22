@@ -1828,7 +1828,7 @@ class ManualPriceDeleteSchema(Schema):
 
 
 class AvalancheTransactionQuerySchema(AsyncQueryArgumentSchema):
-    address = EthereumAddressField(load_default=None)
+    address = EthereumAddressField(required=True)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
 

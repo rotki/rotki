@@ -6,7 +6,6 @@ import tempfile
 import time
 import traceback
 from collections import defaultdict
-from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from typing import (
@@ -204,57 +203,6 @@ def api_response(
     return response
 
 
-def require_loggedin_user() -> Callable:
-    """ This is a decorator for the RestAPI class's methods requiring a logged in user.
-    """
-    def _require_loggedin_user(f: Callable) -> Callable:
-        @wraps(f)
-        def wrapper(wrappingobj: 'RestAPI', *args: Any, **kwargs: Any) -> Any:
-            if not wrappingobj.rotkehlchen.user_is_logged_in:
-                result_dict = wrap_in_fail_result('No user is currently logged in')
-                return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
-            return f(wrappingobj, *args, **kwargs)
-
-        return wrapper
-    return _require_loggedin_user
-
-
-def require_premium_user(active_check: bool) -> Callable:
-    """
-    Decorator only for premium
-
-    This is a decorator for the RestAPI class's methods requiring a logged in
-    user to have premium subscription.
-
-    If active_check is false there is also an API call to the rotkehlchen server
-    to check that the saved key is also valid.
-    """
-    def _require_premium_user(f: Callable) -> Callable:
-        @wraps(f)
-        def wrapper(wrappingobj: 'RestAPI', *args: Any, **kwargs: Any) -> Any:
-            if not wrappingobj.rotkehlchen.user_is_logged_in:
-                result_dict = wrap_in_fail_result('No user is currently logged in')
-                return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
-
-            msg = (
-                f'Currently logged in user {wrappingobj.rotkehlchen.data.username} '
-                f'does not have a premium subscription'
-            )
-            if not wrappingobj.rotkehlchen.premium:
-                result_dict = wrap_in_fail_result(msg)
-                return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
-
-            if active_check:
-                if not wrappingobj.rotkehlchen.premium.is_active():
-                    result_dict = wrap_in_fail_result(msg)
-                    return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
-
-            return f(wrappingobj, *args, **kwargs)
-
-        return wrapper
-    return _require_premium_user
-
-
 class RestAPI():
     """ The Object holding the logic that runs inside all the API calls"""
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
@@ -341,8 +289,6 @@ class RestAPI():
         self.stop_event.set()
 
     # - Public functions exposed via the rest api
-
-    @require_loggedin_user()
     def set_settings(self, settings: ModifiableDBSettings) -> Response:
         success, message = self.rotkehlchen.set_settings(settings)
         if not success:
@@ -352,12 +298,10 @@ class RestAPI():
         result_dict = {'result': new_settings, 'message': ''}
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def get_settings(self) -> Response:
         result_dict = _wrap_in_ok_result(process_result(self.rotkehlchen.get_settings()))
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def query_tasks_outcome(self, task_id: Optional[int]) -> Response:
         if task_id is None:
             # If no task id is given return list of all pending and completed tasks
@@ -471,7 +415,6 @@ class RestAPI():
         )
         return {'result': result, 'message': ''}
 
-    @require_loggedin_user()
     def query_all_balances(
             self,
             save_data: bool,
@@ -506,28 +449,23 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(response_dict), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def get_external_services(self) -> Response:
         return self._return_external_services_response()
 
-    @require_loggedin_user()
     def add_external_services(self, services: List[ExternalServiceApiCredentials]) -> Response:
         self.rotkehlchen.data.db.add_external_service_credentials(services)
         return self._return_external_services_response()
 
-    @require_loggedin_user()
     def delete_external_services(self, services: List[ExternalService]) -> Response:
         self.rotkehlchen.data.db.delete_external_service_credentials(services)
         return self._return_external_services_response()
 
-    @require_loggedin_user()
     def get_exchanges(self) -> Response:
         return api_response(
             _wrap_in_ok_result(self.rotkehlchen.exchange_manager.get_connected_exchanges_info()),
             status_code=HTTPStatus.OK,
         )
 
-    @require_loggedin_user()
     def setup_exchange(
             self,
             name: str,
@@ -558,7 +496,6 @@ class RestAPI():
 
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    @require_loggedin_user()
     def edit_exchange(
             self,
             name: str,
@@ -596,7 +533,6 @@ class RestAPI():
 
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
-    @require_loggedin_user()
     def remove_exchange(self, name: str, location: Location) -> Response:
         result: Optional[bool]
         result, message = self.rotkehlchen.remove_exchange(name=name, location=location)
@@ -663,7 +599,6 @@ class RestAPI():
             'status_code': HTTPStatus.OK,
         }
 
-    @require_loggedin_user()
     def query_exchange_balances(
             self,
             location: Optional[Location],
@@ -732,7 +667,6 @@ class RestAPI():
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
-    @require_loggedin_user()
     def query_blockchain_balances(
             self,
             blockchain: Optional[SupportedBlockchain],
@@ -791,7 +725,6 @@ class RestAPI():
 
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
-    @require_loggedin_user()
     def get_trades(
             self,
             async_query: bool,
@@ -813,7 +746,6 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=status_code)
 
-    @require_loggedin_user()
     def add_trade(
             self,
             timestamp: Timestamp,
@@ -848,7 +780,6 @@ class RestAPI():
         result_dict = _wrap_in_ok_result(result_dict)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def edit_trade(
             self,
             trade_id: str,
@@ -887,7 +818,6 @@ class RestAPI():
         result_dict = _wrap_in_ok_result(result_dict)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def delete_trade(self, trade_id: str) -> Response:
         result, msg = self.rotkehlchen.data.db.delete_trade(trade_id)
         if not result:
@@ -932,7 +862,6 @@ class RestAPI():
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
-    @require_loggedin_user()
     def get_asset_movements(
             self,
             filter_query: AssetMovementsFilterQuery,
@@ -982,7 +911,6 @@ class RestAPI():
 
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
-    @require_loggedin_user()
     def get_ledger_actions(
             self,
             filter_query: LedgerActionsFilterQuery,
@@ -1004,7 +932,6 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=status_code)
 
-    @require_loggedin_user()
     def add_ledger_action(self, action: LedgerAction) -> Response:
         db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
         try:
@@ -1017,7 +944,6 @@ class RestAPI():
         result_dict = _wrap_in_ok_result({'identifier': identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def edit_ledger_action(self, action: LedgerAction) -> Response:
         db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
         error_msg = db.edit_ledger_action(action)
@@ -1032,7 +958,6 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def delete_ledger_action(self, identifier: int) -> Response:
         db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
         error_msg = db.remove_ledger_action(identifier=identifier)
@@ -1047,7 +972,6 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def add_history_event(self, event: HistoryBaseEntry) -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         try:
@@ -1061,7 +985,6 @@ class RestAPI():
         result_dict = _wrap_in_ok_result({'identifier': identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def edit_history_event(self, event: HistoryBaseEntry) -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         result, msg = db.edit_history_event(event)
@@ -1070,7 +993,6 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def delete_history_events(self, identifiers: List[int]) -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         error_msg = db.delete_history_events_by_identifier(identifiers=identifiers)
@@ -1080,13 +1002,11 @@ class RestAPI():
         # Success
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def get_tags(self) -> Response:
         result = self.rotkehlchen.data.db.get_tags()
         response = {name: data.serialize() for name, data in result.items()}
         return api_response(_wrap_in_ok_result(response), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def add_tag(
             self,
             name: str,
@@ -1107,7 +1027,6 @@ class RestAPI():
 
         return self.get_tags()
 
-    @require_loggedin_user()
     def edit_tag(
             self,
             name: str,
@@ -1130,7 +1049,6 @@ class RestAPI():
 
         return self.get_tags()
 
-    @require_loggedin_user()
     def delete_tag(self, name: str) -> Response:
 
         try:
@@ -1253,7 +1171,6 @@ class RestAPI():
         }
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def user_logout(self, name: str) -> Response:
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
 
@@ -1274,7 +1191,6 @@ class RestAPI():
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def user_set_premium_credentials(
             self,
             name: str,
@@ -1305,7 +1221,6 @@ class RestAPI():
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def user_change_password(
         self,
         name: str,
@@ -1335,7 +1250,6 @@ class RestAPI():
         # else
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_premium_user(active_check=False)
     def user_premium_key_remove(self) -> Response:
         """Returns successful result if API keys are successfully removed"""
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
@@ -1370,7 +1284,6 @@ class RestAPI():
             log_result=False,
         )
 
-    @require_loggedin_user()
     def query_owned_assets(self) -> Response:
         result = process_result_list(self.rotkehlchen.data.db.query_owned_assets())
         return api_response(
@@ -1383,7 +1296,6 @@ class RestAPI():
         types = [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
         return api_response(_wrap_in_ok_result(types), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def add_custom_asset(self, asset_type: AssetType, **kwargs: Any) -> Response:
         globaldb = GlobalDBHandler()
         # There is no good way to figure out if an asset already exists in the DB
@@ -1430,7 +1342,6 @@ class RestAPI():
         AssetResolver().assets_cache.pop(data['identifier'], None)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def delete_custom_asset(self, identifier: str) -> Response:
         # Before deleting, also make sure we have up to date global DB owned data
         self.rotkehlchen.data.db.update_owned_assets_in_globaldb()
@@ -1444,7 +1355,6 @@ class RestAPI():
         AssetResolver().assets_cache.pop(identifier, None)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def replace_asset(self, source_identifier: str, target_asset: Asset) -> Response:
         try:
             self.rotkehlchen.data.db.replace_asset_identifier(source_identifier, target_asset)
@@ -1476,7 +1386,6 @@ class RestAPI():
             log_result=False,
         )
 
-    @require_loggedin_user()
     def add_custom_ethereum_token(self, token: EthereumToken) -> Response:
         identifier = ethaddress_to_identifier(token.ethereum_address)
         try:
@@ -1512,7 +1421,6 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    @require_loggedin_user()
     def delete_custom_ethereum_token(self, address: ChecksumEthAddress) -> Response:
         # Before deleting, also make sure we have up to date global DB owned data
         self.rotkehlchen.data.db.update_owned_assets_in_globaldb()
@@ -1531,7 +1439,6 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    @require_loggedin_user()
     def rebuild_assets_information(
         self,
         reset: Literal['soft', 'hard'],
@@ -1563,7 +1470,6 @@ class RestAPI():
         result = process_result({'times': data[0], 'data': data[1]})
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @require_premium_user(active_check=False)
     def query_timed_balances_data(
             self,
             asset: Asset,
@@ -1581,7 +1487,6 @@ class RestAPI():
         result = process_result_list(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @require_premium_user(active_check=False)
     def query_value_distribution_data(self, distribution_by: str) -> Response:
         data: Union[List[DBAssetBalance], List[LocationData]]
         if distribution_by == 'location':
@@ -1593,7 +1498,6 @@ class RestAPI():
         result = process_result_list(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @require_premium_user(active_check=True)
     def query_premium_components(self) -> Response:
         result_dict = {'result': None, 'message': ''}
         try:
@@ -1628,7 +1532,6 @@ class RestAPI():
         )
         return {'result': report_id, 'message': error_or_empty}
 
-    @require_loggedin_user()
     def process_history(
             self,
             from_timestamp: Timestamp,
@@ -1652,7 +1555,6 @@ class RestAPI():
         result_dict = _wrap_in_result(result=result, message=msg)
         return api_response(result_dict, status_code=status_code)
 
-    @require_loggedin_user()
     def get_history_actionable_items(self) -> Response:
         missing_acquisitions = self.rotkehlchen.accountant.pots[0].cost_basis.missing_acquisitions
         missing_prices = self.rotkehlchen.accountant.pots[0].cost_basis.missing_prices
@@ -1667,7 +1569,6 @@ class RestAPI():
         )
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def export_processed_history_csv(self, directory_path: Path) -> Response:
         success, msg = self.rotkehlchen.accountant.export(directory_path)
         if success is False:
@@ -1675,7 +1576,6 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def download_processed_history_csv(self) -> Response:
         success, zipfile = self.rotkehlchen.accountant.export(directory_path=None)
         if success is False:
@@ -1694,12 +1594,10 @@ class RestAPI():
                 status_code=HTTPStatus.NOT_FOUND,
             )
 
-    @require_loggedin_user()
     def get_history_status(self) -> Response:
         result = self.rotkehlchen.get_history_query_status()
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def query_periodic_data(self) -> Response:
         data = self.rotkehlchen.query_periodic_data()
         result = process_result(data)
@@ -1720,7 +1618,6 @@ class RestAPI():
         # success
         return {'result': result.serialize(), 'message': ''}
 
-    @require_loggedin_user()
     def add_xpub(self, xpub_data: 'XpubData', async_query: bool) -> Response:
         if async_query is True:
             return self._query_async(command=self._add_xpub, xpub_data=xpub_data)
@@ -1748,7 +1645,6 @@ class RestAPI():
         # success
         return {'result': result.serialize(), 'message': ''}
 
-    @require_loggedin_user()
     def delete_xpub(self, xpub_data: 'XpubData', async_query: bool) -> Response:
         if async_query is True:
             return self._query_async(command=self._delete_xpub, xpub_data=xpub_data)
@@ -1765,7 +1661,6 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
-    @require_loggedin_user()
     def edit_xpub(self, xpub_data: 'XpubData') -> Response:
         try:
             XpubManager(self.rotkehlchen.chain_manager).edit_bitcoin_xpub(
@@ -1777,7 +1672,6 @@ class RestAPI():
         data = self.rotkehlchen.get_blockchain_account_data(SupportedBlockchain.BITCOIN)
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:
         data = self.rotkehlchen.get_blockchain_account_data(blockchain)
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
@@ -1808,7 +1702,6 @@ class RestAPI():
         # success
         return {'result': result.serialize(), 'message': ''}
 
-    @require_loggedin_user()
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
@@ -1834,7 +1727,6 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
-    @require_loggedin_user()
     def edit_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
@@ -1877,7 +1769,6 @@ class RestAPI():
 
         return {'result': result.serialize(), 'message': ''}
 
-    @require_loggedin_user()
     def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
@@ -1946,7 +1837,6 @@ class RestAPI():
 
         return self._get_manually_tracked_balances()
 
-    @require_loggedin_user()
     def get_manually_tracked_balances(self, async_query: bool) -> Response:
         if async_query is True:
             return self._query_async(command=self._get_manually_tracked_balances)
@@ -1973,7 +1863,6 @@ class RestAPI():
         status_code = _get_status_code_from_async_response(result)
         return api_response(result, status_code=status_code)
 
-    @require_loggedin_user()
     def add_manually_tracked_balances(
             self,
             async_query: bool,
@@ -1985,7 +1874,6 @@ class RestAPI():
             data_or_ids=data,
         )
 
-    @require_loggedin_user()
     def edit_manually_tracked_balances(
             self,
             async_query: bool,
@@ -1997,7 +1885,6 @@ class RestAPI():
             data_or_ids=data,
         )
 
-    @require_loggedin_user()
     def remove_manually_tracked_balances(
             self,
             async_query: bool,
@@ -2009,12 +1896,10 @@ class RestAPI():
             data_or_ids=ids,
         )
 
-    @require_loggedin_user()
     def get_ignored_assets(self) -> Response:
         result = [asset.identifier for asset in self.rotkehlchen.data.db.get_ignored_assets()]
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def add_ignored_assets(self, assets: List[Asset]) -> Response:
         result, msg = self.rotkehlchen.data.add_ignored_assets(assets=assets)
         if result is None:
@@ -2022,7 +1907,6 @@ class RestAPI():
         result_dict = _wrap_in_result(process_result_list(result), msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def remove_ignored_assets(self, assets: List[Asset]) -> Response:
         result, msg = self.rotkehlchen.data.remove_ignored_assets(assets=assets)
         if result is None:
@@ -2030,13 +1914,11 @@ class RestAPI():
         result_dict = _wrap_in_result(process_result_list(result), msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def get_ignored_action_ids(self, action_type: Optional[ActionType]) -> Response:
         mapping = self.rotkehlchen.data.db.get_ignored_action_ids(action_type)
         result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def add_ignored_action_ids(self, action_type: ActionType, action_ids: List[str]) -> Response:
         try:
             self.rotkehlchen.data.db.add_to_ignored_action_ids(
@@ -2052,7 +1934,6 @@ class RestAPI():
         result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def remove_ignored_action_ids(
             self,
             action_type: ActionType,
@@ -2071,12 +1952,10 @@ class RestAPI():
         result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def get_queried_addresses_per_module(self) -> Response:
         result = QueriedAddresses(self.rotkehlchen.data.db).get_queried_addresses_per_module()
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def add_queried_address_per_module(
             self,
             module: ModuleName,
@@ -2089,7 +1968,6 @@ class RestAPI():
 
         return self.get_queried_addresses_per_module()
 
-    @require_loggedin_user()
     def remove_queried_address_per_module(
             self,
             module: ModuleName,
@@ -2199,7 +2077,6 @@ class RestAPI():
 
         return OK_RESULT
 
-    @require_loggedin_user()
     def import_data(
             self,
             source: IMPORTABLE_LOCATIONS,
@@ -2235,7 +2112,6 @@ class RestAPI():
 
         return {'result': process_result_list([x.serialize() for x in result]), 'message': ''}
 
-    @require_premium_user(active_check=False)
     def get_eth2_stake_deposits(self, async_query: bool) -> Response:
         if async_query is True:
             return self._query_async(command=self._get_eth2_stake_deposits)
@@ -2265,7 +2141,6 @@ class RestAPI():
             'message': '',
         }
 
-    @require_premium_user(active_check=False)
     def get_eth2_stake_details(self, async_query: bool) -> Response:
         if async_query is True:
             return self._query_async(command=self._get_eth2_stake_details)
@@ -2305,7 +2180,6 @@ class RestAPI():
         }
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
-    @require_premium_user(active_check=False)
     def get_eth2_daily_stats(
             self,
             filter_query: Eth2DailyStatsFilterQuery,
@@ -2330,7 +2204,6 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
-    @require_loggedin_user()
     def get_eth2_validators(self) -> Response:
         try:
             validators = self.rotkehlchen.chain_manager.get_eth2_validators()
@@ -2374,7 +2247,6 @@ class RestAPI():
 
         return {'result': True, 'message': ''}
 
-    @require_loggedin_user()
     def add_eth2_validator(
             self,
             validator_index: Optional[int],
@@ -2402,7 +2274,6 @@ class RestAPI():
             return api_response(wrap_in_fail_result(msg), status_code=status_code)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def edit_eth2_validator(self, validator_index: int, ownership_proportion: FVal) -> Response:
         try:
             self.rotkehlchen.chain_manager.edit_eth2_validator(
@@ -2413,7 +2284,6 @@ class RestAPI():
         except (InputError, ModuleInactive) as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-    @require_loggedin_user()
     def delete_eth2_validator(
             self,
             validators: List[Dict],
@@ -2449,7 +2319,6 @@ class RestAPI():
 
         return {'result': process_result(balances), 'message': ''}
 
-    @require_loggedin_user()
     def get_defi_balances(self, async_query: bool) -> Response:
         if async_query is True:
             return self._query_async(command=self._get_defi_balances)
@@ -2478,7 +2347,6 @@ class RestAPI():
 
         return _wrap_in_ok_result(process_result(data))
 
-    @require_loggedin_user()
     def get_ethereum_airdrops(self, async_query: bool) -> Response:
         if async_query is True:
             return self._query_async(command=self._get_ethereum_airdrops)
@@ -2494,7 +2362,6 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
-    @require_loggedin_user()
     def purge_module_data(self, module_name: Optional[ModuleName]) -> Response:
         self.rotkehlchen.data.db.purge_module_data(module_name)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
@@ -2572,7 +2439,6 @@ class RestAPI():
         status_code = _get_status_code_from_async_response(response)
         return api_response(process_result(result_dict), status_code=status_code)
 
-    @require_loggedin_user()
     def get_makerdao_dsr_balance(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -2581,7 +2447,6 @@ class RestAPI():
             query_specific_balances_before=None,
         )
 
-    @require_premium_user(active_check=False)
     def get_makerdao_dsr_history(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -2590,7 +2455,6 @@ class RestAPI():
             query_specific_balances_before=None,
         )
 
-    @require_loggedin_user()
     def get_makerdao_vaults(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -2599,7 +2463,6 @@ class RestAPI():
             query_specific_balances_before=None,
         )
 
-    @require_premium_user(active_check=False)
     def get_makerdao_vault_details(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -2608,7 +2471,6 @@ class RestAPI():
             query_specific_balances_before=None,
         )
 
-    @require_loggedin_user()
     def get_aave_balances(self, async_query: bool) -> Response:
         # Once that has ran we can be sure that defi_balances mapping is populated
         return self._api_query_for_eth_module(
@@ -2623,7 +2485,6 @@ class RestAPI():
             given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
         )
 
-    @require_premium_user(active_check=False)
     def get_aave_history(
             self,
             async_query: bool,
@@ -2647,7 +2508,6 @@ class RestAPI():
             given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
         )
 
-    @require_loggedin_user()
     def get_compound_balances(self, async_query: bool) -> Response:
         # Once that has ran we can be sure that defi_balances mapping is populated
         return self._api_query_for_eth_module(
@@ -2662,7 +2522,6 @@ class RestAPI():
             given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
         )
 
-    @require_premium_user(active_check=False)
     def get_compound_history(
             self,
             async_query: bool,
@@ -2686,7 +2545,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    @require_loggedin_user()
     def get_yearn_vaults_balances(self, async_query: bool) -> Response:
         # Once that has ran we can be sure that defi_balances mapping is populated
         return self._api_query_for_eth_module(
@@ -2701,7 +2559,6 @@ class RestAPI():
             given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
         )
 
-    @require_loggedin_user()
     def get_yearn_vaults_v2_balances(self, async_query: bool) -> Response:
         # Once that has ran we can be sure that defi_balances mapping is populated
         return self._api_query_for_eth_module(
@@ -2716,7 +2573,6 @@ class RestAPI():
             given_eth_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
         )
 
-    @require_premium_user(active_check=False)
     def get_yearn_vaults_history(
             self,
             async_query: bool,
@@ -2740,7 +2596,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    @require_premium_user(active_check=False)
     def get_yearn_vaults_v2_history(
             self,
             async_query: bool,
@@ -2765,7 +2620,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    @require_loggedin_user()
     def get_uniswap_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -2775,7 +2629,6 @@ class RestAPI():
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
         )
 
-    @require_premium_user(active_check=False)
     def get_uniswap_events_history(
             self,
             async_query: bool,
@@ -2794,7 +2647,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    @require_premium_user(active_check=False)
     def get_uniswap_trades_history(
             self,
             async_query: bool,
@@ -2813,7 +2665,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    @require_premium_user(active_check=False)
     def get_sushiswap_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -2823,7 +2674,6 @@ class RestAPI():
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('sushiswap'),
         )
 
-    @require_premium_user(active_check=False)
     def get_sushiswap_events_history(
             self,
             async_query: bool,
@@ -2842,7 +2692,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    @require_premium_user(active_check=False)
     def get_sushiswap_trades_history(
             self,
             async_query: bool,
@@ -2861,7 +2710,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    @require_loggedin_user()
     def get_adex_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -2871,7 +2719,6 @@ class RestAPI():
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('adex'),
         )
 
-    @require_premium_user(active_check=False)
     def get_adex_history(
             self,
             async_query: bool,
@@ -2890,7 +2737,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    @require_loggedin_user()
     def get_loopring_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -2900,7 +2746,6 @@ class RestAPI():
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('loopring'),
         )
 
-    @require_premium_user(active_check=False)
     def get_balancer_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -2910,7 +2755,6 @@ class RestAPI():
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('balancer'),
         )
 
-    @require_premium_user(active_check=False)
     def get_balancer_events_history(
             self,
             async_query: bool,
@@ -2929,7 +2773,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    @require_premium_user(active_check=False)
     def get_balancer_trades_history(
             self,
             async_query: bool,
@@ -2967,7 +2810,6 @@ class RestAPI():
             addresses_list=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
         )
 
-    @require_premium_user(active_check=False)
     def get_liquity_staked(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -2977,7 +2819,6 @@ class RestAPI():
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
         )
 
-    @require_premium_user(active_check=False)
     def get_liquity_trove_events(
         self,
         async_query: bool,
@@ -2995,7 +2836,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    @require_premium_user(active_check=False)
     def get_liquity_stake_events(
         self,
         async_query: bool,
@@ -3031,23 +2871,18 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(result_json), status_code=HTTPStatus.OK)
 
-    @require_premium_user(active_check=False)
     def get_watchers(self) -> Response:
         return self._watcher_query(method='GET', data=None)
 
-    @require_premium_user(active_check=False)
     def add_watchers(self, watchers: List[Dict[str, Any]]) -> Response:
         return self._watcher_query(method='PUT', data={'watchers': watchers})
 
-    @require_premium_user(active_check=False)
     def edit_watchers(self, watchers: List[Dict[str, Any]]) -> Response:
         return self._watcher_query(method='PATCH', data={'watchers': watchers})
 
-    @require_premium_user(active_check=False)
     def delete_watchers(self, watchers: List[str]) -> Response:
         return self._watcher_query(method='DELETE', data={'watchers': watchers})
 
-    @require_loggedin_user()
     def purge_exchange_data(self, location: Optional[Location]) -> Response:
         if location:
             self.rotkehlchen.data.db.purge_exchange_data(location)
@@ -3057,7 +2892,6 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def purge_ethereum_transaction_data(self) -> Response:
         DBEthTx(self.rotkehlchen.data.db).purge_ethereum_transaction_data()
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
@@ -3130,7 +2964,6 @@ class RestAPI():
 
         return {'result': result, 'message': message, 'status_code': status_code}
 
-    @require_loggedin_user()
     def get_ethereum_transactions(
             self,
             async_query: bool,
@@ -3178,7 +3011,6 @@ class RestAPI():
             message = f'Failed to request ethereum transaction decoding due to {str(e)}'
         return {'result': None, 'message': message, 'status_code': status_code}
 
-    @require_loggedin_user()
     def decode_ethereum_transactions(
             self,
             async_query: bool,
@@ -3284,7 +3116,6 @@ class RestAPI():
         }
         return _wrap_in_ok_result(process_result(result))
 
-    @require_loggedin_user()
     def get_current_assets_price(
             self,
             assets: List[Asset],
@@ -3344,7 +3175,6 @@ class RestAPI():
         }
         return _wrap_in_ok_result(process_result(result))
 
-    @require_loggedin_user()
     def get_historical_assets_price(
             self,
             assets_timestamp: List[Tuple[Asset, Timestamp]],
@@ -3409,7 +3239,6 @@ class RestAPI():
 
         return _wrap_in_ok_result(True)
 
-    @require_loggedin_user()
     def create_oracle_cache(
             self,
             oracle: HistoricalPriceOracle,
@@ -3463,7 +3292,6 @@ class RestAPI():
         result['status_code'] = HTTPStatus.OK
         return result
 
-    @require_loggedin_user()
     def get_oracle_cache(self, oracle: HistoricalPriceOracle, async_query: bool) -> Response:
         if async_query is True:
             return self._query_async(command=self._get_oracle_cache, oracle=oracle)
@@ -3497,7 +3325,6 @@ class RestAPI():
             )
         return _wrap_in_ok_result(info)
 
-    @require_loggedin_user()
     def get_token_information(
         self,
         token_address: ChecksumEthAddress,
@@ -3560,7 +3387,6 @@ class RestAPI():
             'status_code': HTTPStatus.CONFLICT,
         }
 
-    @require_loggedin_user()
     def perform_assets_updates(
             self,
             async_query: bool,
@@ -3706,7 +3532,6 @@ class RestAPI():
         msg = ''
         return {'result': result, 'message': msg, 'status_code': HTTPStatus.OK}
 
-    @require_loggedin_user()
     def get_avalanche_transactions(
         self,
         async_query: bool,
@@ -3753,7 +3578,6 @@ class RestAPI():
             )
         return _wrap_in_ok_result(info)
 
-    @require_loggedin_user()
     def get_avax_token_information(
         self,
         token_address: ChecksumEthAddress,
@@ -3775,7 +3599,6 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
-    @require_loggedin_user()
     def get_nfts(self, async_query: bool, ignore_cache: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -3786,7 +3609,6 @@ class RestAPI():
             ignore_cache=ignore_cache,
         )
 
-    @require_loggedin_user()
     def get_nfts_balances(self, async_query: bool, ignore_cache: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -3798,7 +3620,6 @@ class RestAPI():
             ignore_cache=ignore_cache,
         )
 
-    @require_loggedin_user()
     def get_nfts_with_price(self) -> Response:
         return self._api_query_for_eth_module(
             async_query=False,
@@ -3807,7 +3628,6 @@ class RestAPI():
             query_specific_balances_before=None,
         )
 
-    @require_loggedin_user()
     def add_manual_current_price(
             self,
             from_asset: Asset,
@@ -3824,7 +3644,6 @@ class RestAPI():
             price=price,
         )
 
-    @require_loggedin_user()
     def delete_manual_current_price(self, asset: Asset) -> Response:
         return self._api_query_for_eth_module(
             async_query=False,
@@ -3853,7 +3672,6 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(result_dict), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def create_database_backup(self) -> Response:
         try:
             db_backup_path = self.rotkehlchen.data.db.create_db_backup()
@@ -3863,7 +3681,6 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(str(db_backup_path)), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def download_database_backup(self, filepath: Path) -> Response:
         if filepath.parent != self.rotkehlchen.data.db.user_data_dir:
             error_msg = f'DB backup file {filepath} is not in the user directory'
@@ -3876,7 +3693,6 @@ class RestAPI():
             download_name=filepath.name,
         )
 
-    @require_loggedin_user()
     def delete_database_backups(self, files: List[Path]) -> Response:
         for filepath in files:
             if filepath.parent != self.rotkehlchen.data.db.user_data_dir:
@@ -3889,7 +3705,6 @@ class RestAPI():
             filepath.unlink()  # should not raise file not found as marshmallow should check
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def purge_pnl_report_data(self, report_id: int) -> Response:
         dbreports = DBAccountingReports(self.rotkehlchen.data.db)
         try:
@@ -3899,7 +3714,6 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def get_pnl_reports(
             self,
             report_id: Optional[int],
@@ -3924,7 +3738,6 @@ class RestAPI():
         })
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def get_report_data(self, filter_query: ReportDataFilterQuery) -> Response:
         with_limit = False
         entries_limit = -1
@@ -3952,7 +3765,6 @@ class RestAPI():
         result_dict = _wrap_in_result(result, '')
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def get_associated_locations(self) -> Response:
         locations = self.rotkehlchen.data.db.get_associated_locations()
         return api_response(
@@ -4042,7 +3854,6 @@ class RestAPI():
         }
         return {'result': result, 'message': message, 'status_code': HTTPStatus.OK}
 
-    @require_loggedin_user()
     def query_kraken_staking_events(
             self,
             query_filter: HistoryEventFilterQuery,
@@ -4067,7 +3878,6 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=status_code)
 
-    @require_loggedin_user()
     def get_user_added_assets(self, path: Optional[Path]) -> Response:
         """
         Creates a zip file with the list of assets added by the user. If path is not None the zip
@@ -4098,7 +3908,6 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    @require_loggedin_user()
     def import_user_assets(self, path: Path) -> Response:
         try:
             if path.suffix == '.json':
@@ -4134,7 +3943,6 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def export_user_db_snapshot(self, timestamp: Timestamp, path: Path) -> Response:
         dbsnapshot = DBSnapshot(
             db_handler=self.rotkehlchen.data.db,
@@ -4146,7 +3954,6 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
     def download_user_db_snapshot(self, timestamp: Timestamp) -> Response:
         dbsnapshot = DBSnapshot(
             db_handler=self.rotkehlchen.data.db,
@@ -4169,7 +3976,6 @@ class RestAPI():
                 status_code=HTTPStatus.NOT_FOUND,
             )
 
-    @require_loggedin_user()
     def delete_user_db_snapshot(self, timestamp: Timestamp) -> Response:
         dbsnapshot = DBSnapshot(
             db_handler=self.rotkehlchen.data.db,
@@ -4222,7 +4028,6 @@ class RestAPI():
         wrapped_mappings |= mappings_to_send
         return {'result': wrapped_mappings, 'message': '', 'status_code': HTTPStatus.OK}
 
-    @require_loggedin_user()
     def get_ens_mappings(
             self,
             addresses: List[ChecksumEthAddress],
@@ -4244,7 +4049,6 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=status_code)
 
-    @require_loggedin_user()
     def import_user_snapshot(
         self,
         balances_snapshot_file: Path,
