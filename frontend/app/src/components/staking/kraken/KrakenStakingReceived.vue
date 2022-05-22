@@ -25,6 +25,7 @@
         <v-col cols="auto" :class="$style.amount">
           <value-accuracy-hint v-if="!current" />
           <balance-display
+            no-icon
             :asset="item.asset"
             :value="getBalance(item)"
             :price-loading="pricesAreLoading && current"

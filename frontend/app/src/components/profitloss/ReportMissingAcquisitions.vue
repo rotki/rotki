@@ -43,20 +43,10 @@
               <date-display :timestamp="childItem.time" />
             </template>
             <template #item.foundAmount="{ item: childItem }">
-              <amount-display
-                pnl
-                force-currency
-                :value="childItem.foundAmount"
-                :fiat-currency="report.settings.profitCurrency"
-              />
+              <amount-display pnl :value="childItem.foundAmount" />
             </template>
             <template #item.missingAmount="{ item: childItem }">
-              <amount-display
-                pnl
-                force-currency
-                :value="childItem.missingAmount"
-                :fiat-currency="report.settings.profitCurrency"
-              />
+              <amount-display pnl :value="childItem.missingAmount" />
             </template>
           </data-table>
         </table-expand-container>
