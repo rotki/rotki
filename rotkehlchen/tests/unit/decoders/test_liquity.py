@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
@@ -119,7 +120,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
             ),
             location_label=user_address,
             notes=f'Burned 0.00393701451 ETH in gas from {user_address}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=1,
@@ -233,7 +234,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
             ),
             location_label=user_address,
             notes=f'Burned 0.00393701451 ETH in gas from {user_address}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=208,
@@ -345,7 +346,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
             ),
             location_label=user_address,
             notes=f'Burned 0.00393701451 ETH in gas from {user_address}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=1,

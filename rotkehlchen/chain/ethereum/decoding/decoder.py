@@ -48,15 +48,15 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .base import BaseDecoderTools
 from .constants import (
+    CPT_GAS,
+    CPT_GNOSIS_CHAIN,
     ERC20_APPROVE,
     ERC20_OR_ERC721_TRANSFER,
-    GAS_COUNTERPARTY,
+    GNOSIS_CHAIN_BRIDGE_RECEIVE,
     GOVERNORALPHA_PROPOSE,
     GOVERNORALPHA_PROPOSE_ABI,
     GTC_CLAIM,
     ONEINCH_CLAIM,
-    XDAI_BRIDGE_RECEIVE,
-    XDAI_COUNTERPARTY,
 )
 from .structures import ActionItem
 from .utils import maybe_reshuffle_events
@@ -152,7 +152,7 @@ class EVMTransactionDecoder():
         self.event_rules.extend(rules_result)
         self.token_enricher_rules.extend(enrichers_result)
         # update with counterparties not in any module
-        self.all_counterparties.update([GAS_COUNTERPARTY, XDAI_COUNTERPARTY])
+        self.all_counterparties.update([CPT_GAS, CPT_GNOSIS_CHAIN])
 
     def reload_from_db(self) -> None:
         """Reload all related settings from DB so that decoding happens with latest"""
@@ -394,7 +394,7 @@ class EVMTransactionDecoder():
                     notes=f'Burned {eth_burned_as_gas} ETH in gas from {location_label}',
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
-                    counterparty=GAS_COUNTERPARTY,
+                    counterparty=CPT_GAS,
                 ))
 
         # Decode internal transactions after gas so gas is always 0 indexed
@@ -581,15 +581,15 @@ class EVMTransactionDecoder():
                     event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'  # noqa: E501
             return None
 
-        if tx_log.topics[0] == XDAI_BRIDGE_RECEIVE and tx_log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501
+        if tx_log.topics[0] == GNOSIS_CHAIN_BRIDGE_RECEIVE and tx_log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501
             for event in decoded_events:
                 if event.event_type == HistoryEventType.RECEIVE:
-                    # user bridged from xdai
+                    # user bridged from gnosis chain
                     event.event_type = HistoryEventType.TRANSFER
                     event.event_subtype = HistoryEventSubType.BRIDGE
-                    event.counterparty = 'XDAI'
+                    event.counterparty = CPT_GNOSIS_CHAIN
                     event.notes = (
-                        f'Bridge {event.balance.amount} {event.asset.symbol} from XDAI'
+                        f'Bridge {event.balance.amount} {event.asset.symbol} from gnosis chain'
                     )
 
         return None

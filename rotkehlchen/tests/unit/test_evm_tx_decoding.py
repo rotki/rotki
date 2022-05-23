@@ -8,6 +8,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
@@ -57,7 +58,7 @@ def test_tx_decode(evm_transaction_decoder, database):
                     notes=f'Burned 0.000030921 ETH in gas from {addr1}',
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
-                    counterparty='gas',
+                    counterparty=CPT_GAS,
                 ))
                 assert_events_equal(events[1], HistoryBaseEntry(
                     # The no-member is due to https://github.com/PyCQA/pylint/issues/3162

@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.constants import (
     RANGE_PREFIX_ETHTOKENTX,
     RANGE_PREFIX_ETHTX,
 )
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
@@ -937,7 +938,7 @@ def test_query_transactions_check_decoded_events(
         'identifier': 4,
         'asset': 'ETH',
         'balance': {'amount': '0.00863351371344', 'usd_value': '0'},
-        'counterparty': 'gas',
+        'counterparty': CPT_GAS,
         'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
         'event_subtype': 'fee',
         'event_type': 'spend',
@@ -965,7 +966,7 @@ def test_query_transactions_check_decoded_events(
         'identifier': 1,
         'asset': 'ETH',
         'balance': {'amount': '0.017690836625228792', 'usd_value': '0'},
-        'counterparty': 'gas',
+        'counterparty': CPT_GAS,
         'event_identifier': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
         'event_subtype': 'fee',
         'event_type': 'spend',

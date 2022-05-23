@@ -43,6 +43,7 @@ from rotkehlchen.api.v1.resources import (
     BTCXpubResource,
     CompoundBalancesResource,
     CompoundHistoryResource,
+    CounterpartiesResource,
     CurrentAssetsPriceResource,
     DatabaseBackupsResource,
     DatabaseInfoResource,
@@ -99,7 +100,6 @@ from rotkehlchen.api.v1.resources import (
     PeriodicDataResource,
     PickleDillResource,
     PingResource,
-    ProtocolsResource,
     QueriedAddressesResource,
     ReverseEnsResource,
     SettingsResource,
@@ -217,6 +217,7 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/erc20details/', ERC20TokenInfo),
     ('/blockchains/ETH/modules/<string:module_name>/data', NamedEthereumModuleDataResource),
     ('/blockchains/ETH/modules/data', EthereumModuleDataResource),
+    ('/blockchains/ETH/modules/data/counterparties', CounterpartiesResource),
     ('/blockchains/ETH/modules/', EthereumModuleResource),
     ('/blockchains/ETH/modules/makerdao/dsrbalance', MakerdaoDSRBalanceResource),
     ('/blockchains/ETH/modules/makerdao/dsrhistory', MakerdaoDSRHistoryResource),
@@ -281,7 +282,6 @@ URLS_V1: URLS = [
     ('/snapshot/import', DBSnapshotImportingResource),
     ('/snapshot/delete', DBSnapshotDeletingResource),
     ('/ens/reverse', ReverseEnsResource),
-    ('/protocols', ProtocolsResource),
 ]
 
 logger = logging.getLogger(__name__)

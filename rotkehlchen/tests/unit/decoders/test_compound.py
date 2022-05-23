@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.constants.assets import A_CDAI, A_CETH, A_COMP, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -42,7 +43,7 @@ def test_compound_ether_deposit(database, ethereum_manager, function_scope_messa
             balance=Balance(amount=FVal('0.014122318'), usd_value=ZERO),
             location_label=ADDY,
             notes=f'Burned 0.014122318 ETH in gas from {ADDY}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=1,
@@ -96,7 +97,7 @@ def test_compound_ether_withdraw(database, ethereum_manager, function_scope_mess
             balance=Balance(amount=FVal('0.02858544'), usd_value=ZERO),
             location_label=ADDY,
             notes=f'Burned 0.02858544 ETH in gas from {ADDY}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=1,
@@ -157,7 +158,7 @@ def test_compound_deposit_with_comp_claim(
             balance=Balance(amount=FVal('0.00945248'), usd_value=ZERO),
             location_label=ADDY2,
             notes=f'Burned 0.00945248 ETH in gas from {ADDY2}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=241,

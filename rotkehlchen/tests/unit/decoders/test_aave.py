@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.fval import FVal
@@ -43,7 +44,7 @@ def test_aave_deposit_v1(database, ethereum_manager, function_scope_messages_agg
             balance=Balance(amount=FVal('0.00825148723006')),
             location_label=ADDY,
             notes=f'Burned 0.00825148723006 ETH in gas from {ADDY}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=93,
@@ -112,7 +113,7 @@ def test_aave_withdraw_v1(database, ethereum_manager, function_scope_messages_ag
             balance=Balance(amount=FVal('0.028562839354')),
             location_label=ADDY,
             notes=f'Burned 0.028562839354 ETH in gas from {ADDY}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=98,
@@ -181,7 +182,7 @@ def test_aave_eth_withdraw_v1(database, ethereum_manager, function_scope_message
             balance=Balance(amount=FVal('0.021740928')),
             location_label=ADDY2,
             notes=f'Burned 0.021740928 ETH in gas from {ADDY2}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=1,
