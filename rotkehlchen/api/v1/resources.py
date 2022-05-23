@@ -1810,6 +1810,7 @@ class WatchersResource(BaseMethodView):
 class AssetIconsResource(BaseMethodView):
 
     get_schema = SingleAssetIdentifierSchema()
+    patch_schema = SingleAssetIdentifierSchema()
     upload_schema = AssetIconUploadSchema()
 
     @use_kwargs(get_schema, location='view_args')
@@ -1836,6 +1837,10 @@ class AssetIconsResource(BaseMethodView):
             response = self.rest_api.upload_asset_icon(asset=asset, filepath=filepath)
 
         return response
+
+    @use_kwargs(patch_schema, location='view_args')
+    def patch(self, asset: Asset) -> Response:
+        return self.rest_api.refresh_asset_icon(asset)
 
 
 class CurrentAssetsPriceResource(BaseMethodView):

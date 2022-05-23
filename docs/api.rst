@@ -3315,6 +3315,37 @@ Uploading custom asset icons
    :statuscode 500: Internal rotki error
 
 
+Refreshing asset icons
+===============================
+
+.. http:patch:: /api/(version)/assets/(identifier)/icon
+
+   Doing a PATCH on the asset icon endpoint will refresh the icon of the given asset.
+   First, the cache of the icon of the given asset is deleted and then requeried from CoinGecko and saved to the filesystem.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/assets/_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e/icon HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {"result": true, "message": ""}
+
+   :statuscode 200: Icon successfully deleted and requeried.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 404: Unable to refresh icon at the moment.
+   :statuscode 500: Internal rotki error
+
+
 Statistics for netvalue over time
 ====================================
 
