@@ -99,6 +99,7 @@ from rotkehlchen.api.v1.resources import (
     PeriodicDataResource,
     PickleDillResource,
     PingResource,
+    ProtocolsResource,
     QueriedAddressesResource,
     ReverseEnsResource,
     SettingsResource,
@@ -280,6 +281,7 @@ URLS_V1: URLS = [
     ('/snapshot/import', DBSnapshotImportingResource),
     ('/snapshot/delete', DBSnapshotDeletingResource),
     ('/ens/reverse', ReverseEnsResource),
+    ('/protocols', ProtocolsResource),
 ]
 
 logger = logging.getLogger(__name__)

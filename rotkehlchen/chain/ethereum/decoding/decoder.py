@@ -50,11 +50,13 @@ from .base import BaseDecoderTools
 from .constants import (
     ERC20_APPROVE,
     ERC20_OR_ERC721_TRANSFER,
+    GAS_COUNTERPARTY,
     GOVERNORALPHA_PROPOSE,
     GOVERNORALPHA_PROPOSE_ABI,
     GTC_CLAIM,
     ONEINCH_CLAIM,
     XDAI_BRIDGE_RECEIVE,
+    XDAI_COUNTERPARTY,
 )
 from .structures import ActionItem
 from .utils import maybe_reshuffle_events
@@ -150,7 +152,7 @@ class EVMTransactionDecoder():
         self.event_rules.extend(rules_result)
         self.token_enricher_rules.extend(enrichers_result)
         # update with counterparties not in any module
-        self.all_counterparties.update(['gas', 'XDAI'])
+        self.all_counterparties.update([GAS_COUNTERPARTY, XDAI_COUNTERPARTY])
 
     def reload_from_db(self) -> None:
         """Reload all related settings from DB so that decoding happens with latest"""
@@ -392,7 +394,7 @@ class EVMTransactionDecoder():
                     notes=f'Burned {eth_burned_as_gas} ETH in gas from {location_label}',
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
-                    counterparty='gas',
+                    counterparty=GAS_COUNTERPARTY,
                 ))
 
         # Decode internal transactions after gas so gas is always 0 indexed
