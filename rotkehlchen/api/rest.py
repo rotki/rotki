@@ -311,12 +311,12 @@ class RestAPI():
             }
             self._write_task_result(task_id, result)
 
-    def _do_query_async(self, command: str, task_id: int, **kwargs: Any) -> None:
+    def _do_query_async(self, command: Callable, task_id: int, **kwargs: Any) -> None:
         log.debug(f'Async task with task id {task_id} started')
-        result = getattr(self, command)(**kwargs)
+        result = command(**kwargs)
         self._write_task_result(task_id, result)
 
-    def _query_async(self, command: str, **kwargs: Any) -> Response:
+    def _query_async(self, command: Callable, **kwargs: Any) -> Response:
         task_id = self._new_task_id()
         greenlet = gevent.spawn(
             self._do_query_async,
@@ -449,9 +449,9 @@ class RestAPI():
                 status_code=HTTPStatus.BAD_REQUEST,
             )
 
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_get_exchange_rates',
+                command=self._get_exchange_rates,
                 given_currencies=given_currencies,
             )
 
@@ -479,9 +479,9 @@ class RestAPI():
             async_query: bool,
             ignore_cache: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_query_all_balances',
+                command=self._query_all_balances,
                 save_data=save_data,
                 ignore_errors=ignore_errors,
                 ignore_cache=ignore_cache,
@@ -670,9 +670,9 @@ class RestAPI():
             async_query: bool,
             ignore_cache: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_query_exchange_balances',
+                command=self._query_exchange_balances,
                 location=location,
                 ignore_cache=ignore_cache,
             )
@@ -739,9 +739,9 @@ class RestAPI():
             async_query: bool,
             ignore_cache: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_query_blockchain_balances',
+                command=self._query_blockchain_balances,
                 blockchain=blockchain,
                 ignore_cache=ignore_cache,
             )
@@ -798,9 +798,9 @@ class RestAPI():
             only_cache: bool,
             filter_query: TradesFilterQuery,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_get_trades',
+                command=self._get_trades,
                 only_cache=only_cache,
                 filter_query=filter_query,
             )
@@ -939,9 +939,9 @@ class RestAPI():
             async_query: bool,
             only_cache: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_get_asset_movements',
+                command=self._get_asset_movements,
                 filter_query=filter_query,
                 only_cache=only_cache,
             )
@@ -989,9 +989,9 @@ class RestAPI():
             async_query: bool,
             only_cache: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_get_ledger_actions',
+                command=self._get_ledger_actions,
                 filter_query=filter_query,
                 only_cache=only_cache,
             )
@@ -1635,9 +1635,9 @@ class RestAPI():
             to_timestamp: Timestamp,
             async_query: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_process_history',
+                command=self._process_history,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
             )
@@ -1722,8 +1722,8 @@ class RestAPI():
 
     @require_loggedin_user()
     def add_xpub(self, xpub_data: 'XpubData', async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_add_xpub', xpub_data=xpub_data)
+        if async_query is True:
+            return self._query_async(command=self._add_xpub, xpub_data=xpub_data)
 
         response = self._add_xpub(xpub_data=xpub_data)
         result = response['result']
@@ -1750,8 +1750,8 @@ class RestAPI():
 
     @require_loggedin_user()
     def delete_xpub(self, xpub_data: 'XpubData', async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_delete_xpub', xpub_data=xpub_data)
+        if async_query is True:
+            return self._query_async(command=self._delete_xpub, xpub_data=xpub_data)
 
         response = self._delete_xpub(xpub_data=xpub_data)
         result = response['result']
@@ -1815,9 +1815,9 @@ class RestAPI():
             account_data: List[BlockchainAccountData],
             async_query: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_add_blockchain_accounts',
+                command=self._add_blockchain_accounts,
                 blockchain=blockchain,
                 account_data=account_data,
             )
@@ -1884,9 +1884,9 @@ class RestAPI():
             accounts: ListOfBlockchainAddresses,
             async_query: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_remove_blockchain_accounts',
+                command=self._remove_blockchain_accounts,
                 blockchain=blockchain,
                 accounts=accounts,
             )
@@ -1948,8 +1948,8 @@ class RestAPI():
 
     @require_loggedin_user()
     def get_manually_tracked_balances(self, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_manually_tracked_balances')
+        if async_query is True:
+            return self._query_async(command=self._get_manually_tracked_balances)
 
         result = self._get_manually_tracked_balances()
         return api_response(result, status_code=HTTPStatus.OK)
@@ -1963,9 +1963,9 @@ class RestAPI():
             ],
             data_or_ids: Union[List[ManuallyTrackedBalance], List[int]],
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_modify_manually_tracked_balances',
+                command=self._modify_manually_tracked_balances,
                 function=function,
                 data_or_ids=data_or_ids,
             )
@@ -2212,9 +2212,9 @@ class RestAPI():
             filepath.save(tmpfilepath)
             self.import_tmp_files[filepath] = Path(tmpfilepath)
 
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_import_data',
+                command=self._import_data,
                 source=source,
                 filepath=filepath,
                 timestamp_format=timestamp_format,
@@ -2237,8 +2237,8 @@ class RestAPI():
 
     @require_premium_user(active_check=False)
     def get_eth2_stake_deposits(self, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_eth2_stake_deposits')
+        if async_query is True:
+            return self._query_async(command=self._get_eth2_stake_deposits)
 
         response = self._get_eth2_stake_deposits()
         result = response['result']
@@ -2267,8 +2267,8 @@ class RestAPI():
 
     @require_premium_user(active_check=False)
     def get_eth2_stake_details(self, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_eth2_stake_details')
+        if async_query is True:
+            return self._query_async(command=self._get_eth2_stake_details)
 
         response = self._get_eth2_stake_details()
         result = response['result']
@@ -2312,9 +2312,9 @@ class RestAPI():
             async_query: bool,
             only_cache: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_get_eth2_daily_stats',
+                command=self._get_eth2_daily_stats,
                 filter_query=filter_query,
                 only_cache=only_cache,
             )
@@ -2382,9 +2382,9 @@ class RestAPI():
             ownership_proportion: FVal,
             async_query: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_add_eth2_validator',
+                command=self._add_eth2_validator,
                 validator_index=validator_index,
                 public_key=public_key,
                 ownership_proportion=ownership_proportion,
@@ -2451,8 +2451,8 @@ class RestAPI():
 
     @require_loggedin_user()
     def get_defi_balances(self, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_defi_balances')
+        if async_query is True:
+            return self._query_async(command=self._get_defi_balances)
 
         response = self._get_defi_balances()
         result = response['result']
@@ -2480,8 +2480,8 @@ class RestAPI():
 
     @require_loggedin_user()
     def get_ethereum_airdrops(self, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_ethereum_airdrops')
+        if async_query is True:
+            return self._query_async(command=self._get_ethereum_airdrops)
 
         response = self._get_ethereum_airdrops()
         result = response['result']
@@ -2553,9 +2553,9 @@ class RestAPI():
             query_specific_balances_before: Optional[List[str]],
             **kwargs: Any,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_eth_module_query',
+                command=self._eth_module_query,
                 module_name=module_name,
                 method=method,
                 query_specific_balances_before=query_specific_balances_before,
@@ -3138,9 +3138,9 @@ class RestAPI():
             filter_query: ETHTransactionsFilterQuery,
             event_params: Dict[str, Any],
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_get_ethereum_transactions',
+                command=self._get_ethereum_transactions,
                 only_cache=only_cache,
                 filter_query=filter_query,
                 event_params=event_params,
@@ -3185,9 +3185,9 @@ class RestAPI():
             ignore_cache: bool,
             tx_hashes: Optional[List[EVMTxHash]],
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_decode_ethereum_transactions',
+                command=self._decode_ethereum_transactions,
                 ignore_cache=ignore_cache,
                 tx_hashes=tx_hashes,
             )
@@ -3292,9 +3292,9 @@ class RestAPI():
             ignore_cache: bool,
             async_query: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_get_current_assets_price',
+                command=self._get_current_assets_price,
                 assets=assets,
                 target_asset=target_asset,
                 ignore_cache=ignore_cache,
@@ -3351,9 +3351,9 @@ class RestAPI():
             target_asset: Asset,
             async_query: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_get_historical_assets_price',
+                command=self._get_historical_assets_price,
                 assets_timestamp=assets_timestamp,
                 target_asset=target_asset,
             )
@@ -3383,9 +3383,9 @@ class RestAPI():
             async_query: bool,
             action: Literal['upload', 'download'],
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_sync_data',
+                command=self._sync_data,
                 action=action,
             )
 
@@ -3418,9 +3418,9 @@ class RestAPI():
             purge_old: bool,
             async_query: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_create_oracle_cache',
+                command=self._create_oracle_cache,
                 oracle=oracle,
                 from_asset=from_asset,
                 to_asset=to_asset,
@@ -3465,8 +3465,8 @@ class RestAPI():
 
     @require_loggedin_user()
     def get_oracle_cache(self, oracle: HistoricalPriceOracle, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_oracle_cache', oracle=oracle)
+        if async_query is True:
+            return self._query_async(command=self._get_oracle_cache, oracle=oracle)
 
         response = self._get_oracle_cache(oracle=oracle)
         result = response['result']
@@ -3504,8 +3504,8 @@ class RestAPI():
         async_query: bool,
     ) -> Response:
 
-        if async_query:
-            return self._query_async(command='_get_token_info', address=token_address)
+        if async_query is True:
+            return self._query_async(command=self._get_token_info, address=token_address)
 
         response = self._get_token_info(token_address)
 
@@ -3528,8 +3528,8 @@ class RestAPI():
         return _wrap_in_ok_result({'local': local, 'remote': remote, 'new_changes': new_changes})
 
     def get_assets_updates(self, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_assets_updates')
+        if async_query is True:
+            return self._query_async(command=self._get_assets_updates)
 
         response = self._get_assets_updates()
         return api_response(
@@ -3567,9 +3567,9 @@ class RestAPI():
             up_to_version: Optional[int],
             conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_perform_assets_updates',
+                command=self._perform_assets_updates,
                 up_to_version=up_to_version,
                 conflicts=conflicts,
             )
@@ -3714,9 +3714,9 @@ class RestAPI():
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_get_avalanche_transactions',
+                command=self._get_avalanche_transactions,
                 address=address,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
@@ -3760,8 +3760,8 @@ class RestAPI():
         async_query: bool,
     ) -> Response:
 
-        if async_query:
-            return self._query_async(command='_get_avax_token_info', address=token_address)
+        if async_query is True:
+            return self._query_async(command=self._get_avax_token_info, address=token_address)
 
         response = self._get_avax_token_info(token_address)
 
@@ -4050,9 +4050,9 @@ class RestAPI():
             only_cache: bool,
             async_query: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_query_kraken_staking_events',
+                command=self._query_kraken_staking_events,
                 only_cache=only_cache,
                 query_filter=query_filter,
                 value_filter=value_filter,
@@ -4229,9 +4229,9 @@ class RestAPI():
             ignore_cache: bool,
             async_query: bool,
     ) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_get_ens_mappings',
+                command=self._get_ens_mappings,
                 addresses=addresses,
                 ignore_cache=ignore_cache,
             )
@@ -4271,9 +4271,9 @@ class RestAPI():
         return {'result': assets_updated, 'message': '', 'status_code': HTTPStatus.OK}
 
     def pull_spam_assets(self, async_query: bool) -> Response:
-        if async_query:
+        if async_query is True:
             return self._query_async(
-                command='_pull_spam_assets',
+                command=self._pull_spam_assets,
             )
         response_result = self._pull_spam_assets()
         return api_response(result=response_result, status_code=response_result['status_code'])
