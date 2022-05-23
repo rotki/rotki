@@ -2,7 +2,7 @@ import importlib
 import logging
 import pkgutil
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from gevent.lock import Semaphore
 
@@ -79,6 +79,7 @@ class EVMTransactionDecoder():
             msg_aggregator: MessagesAggregator,
     ):
         self.database = database
+        self.all_counterparties: Set[str] = set()
         self.ethereum_manager = ethereum_manager
         self.eth_transactions = eth_transactions
         self.msg_aggregator = msg_aggregator
@@ -131,6 +132,7 @@ class EVMTransactionDecoder():
                     address_results.update(self.decoders[class_name].addresses_to_decoders())
                     rules_results.extend(self.decoders[class_name].decoding_rules())
                     enricher_results.extend(self.decoders[class_name].enricher_rules())
+                    self.all_counterparties.update(self.decoders[class_name].counterparties())
 
                 recursive_addrs, recursive_rules, recurisve_enricher_results = self._recursively_initialize_decoders(full_name)  # noqa: E501
                 address_results.update(recursive_addrs)
@@ -147,6 +149,8 @@ class EVMTransactionDecoder():
         self.address_mappings = address_result
         self.event_rules.extend(rules_result)
         self.token_enricher_rules.extend(enrichers_result)
+        # update with counterparties not in any module
+        self.all_counterparties.update(['gas', 'XDAI'])
 
     def reload_from_db(self) -> None:
         """Reload all related settings from DB so that decoding happens with latest"""
