@@ -177,9 +177,11 @@ export const EthTransactionCollectionResponse = getCollectionResponseType(
 );
 
 export type TransactionRequestPayload = {
-  readonly fromTimestamp?: number;
-  readonly toTimestamp?: number;
+  readonly fromTimestamp?: string | number;
+  readonly toTimestamp?: string | number;
   readonly address?: string;
+  readonly asset?: string;
+  readonly protocols?: string | string[];
 } & HistoryRequestPayload;
 
 export type TransactionEventRequestPayload = {

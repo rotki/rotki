@@ -40,6 +40,7 @@ import {
 } from '@/services/types-api';
 import {
   handleResponse,
+  paramsSerializer,
   validAccountOperationStatus,
   validAuthorizedStatus,
   validStatus,
@@ -487,8 +488,9 @@ export class RotkehlchenApi {
       .get<ActionResult<PendingTask>>('/exchange_rates', {
         params: {
           async_query: true,
-          currencies: currencies.join(',')
+          currencies
         },
+        paramsSerializer,
         validateStatus: validWithoutSessionStatus,
         transformResponse: basicAxiosTransformer
       })

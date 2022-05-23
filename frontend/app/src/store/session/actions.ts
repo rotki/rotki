@@ -26,7 +26,7 @@ import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
-import { useHistory } from '@/store/history';
+import { useHistory, useTransactions } from '@/store/history';
 import { useNotifications } from '@/store/notifications';
 import { useReports } from '@/store/reports';
 import {
@@ -131,6 +131,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('login', { username, newAccount });
       const { fetchSupportedAssets } = useAssetInfoRetrieval();
       fetchSupportedAssets();
+      const { fetchCounterparties } = useTransactions();
+      fetchCounterparties();
 
       if (!newAccount || sync) {
         await dispatch('refreshData', exchanges);

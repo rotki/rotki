@@ -119,7 +119,8 @@ export default defineComponent({
       }: {
         matchers: SearchMatcher<any>[];
         used: string[];
-      }) => matchers.filter(({ key }) => !used.includes(key))
+      }) =>
+        matchers.filter(({ key, multiple }) => !used.includes(key) || multiple)
     );
 
     const suggest = computed<string[]>(

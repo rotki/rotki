@@ -49,12 +49,48 @@ function score(keyword: string, { name, symbol }: ManagedAsset): number {
   return Math.min(symbolScore, nameScore);
 }
 
+/**
+ *
+ * @param {string} a - First string to compare
+ * @param {string} b - Second string to compare
+ * @param {string} keyword
+ *
+ * @return {number} - Rank comparison between string a to keyword and string b to keyword.
+ *
+ * @description
+ * This method use levenshtein to compare the string, but with little modifications.
+ * This method will prioritize this thing (in order) other than the value from levenshtein:
+ * 1. It will prioritize string that match from beginning (i.e. for keyword `hop`, it prioritizes string `hop-portocol` higher than string `hoo`)
+ * 2. It will prioritize string that contain the keyword (i.e. for keyword `urv`, it prioritizes string `curvy`, higher than string `urw`)
+ */
 export function compareSymbols(a: string, b: string, keyword: string) {
   const search = keyword.toLocaleLowerCase().trim();
-  return (
-    levenshtein(search, a.toLocaleLowerCase()) -
-    levenshtein(search, b.toLocaleLowerCase())
-  );
+  const keywordA = a.toLocaleLowerCase().trim();
+  const keywordB = b.toLocaleLowerCase().trim();
+
+  let rankA = levenshtein(search, keywordA);
+  let rankB = levenshtein(search, keywordB);
+
+  const keywordAHaystackIndex = keywordA.indexOf(search);
+  const keywordANeedleIndex = search.indexOf(keywordA);
+  const keywordBHaystackIndex = keywordB.indexOf(search);
+  const keywordBNeedleIndex = search.indexOf(keywordB);
+
+  const length = search.length;
+
+  if (keywordAHaystackIndex === 0 || keywordANeedleIndex === 0) {
+    rankA -= length + 1;
+  } else if (keywordAHaystackIndex > 0 || keywordANeedleIndex > 0) {
+    rankA -= length;
+  }
+
+  if (keywordBHaystackIndex === 0 || keywordBNeedleIndex === 0) {
+    rankB -= length + 1;
+  } else if (keywordBHaystackIndex > 0 || keywordBNeedleIndex > 0) {
+    rankB -= length;
+  }
+
+  return rankA - rankB;
 }
 
 export function compareAssets(

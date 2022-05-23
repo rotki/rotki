@@ -370,6 +370,7 @@ export const useTrades = defineStore('history/trades', () => {
 
   const reset = () => {
     set(trades, defaultHistoricState<TradeEntry>());
+    set(tradesPayload, defaultHistoricPayloadState());
   };
 
   return {
@@ -555,6 +556,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
 
   const reset = () => {
     set(assetMovements, defaultHistoricState<AssetMovementEntry>());
+    set(assetMovementsPayload, defaultHistoricPayloadState());
   };
 
   return {
@@ -577,6 +579,8 @@ export const useTransactions = defineStore('history/transactions', () => {
   const transactionsPayload = ref<Partial<TransactionRequestPayload>>(
     defaultHistoricPayloadState('timestamp')
   );
+
+  const counterparties = ref<string[]>([]);
 
   const fetchTransactions = async (refresh: boolean = false) => {
     const ethAddresses = computed<string[]>(() => {
@@ -847,17 +851,28 @@ export const useTransactions = defineStore('history/transactions', () => {
 
   const reset = () => {
     set(transactions, defaultHistoricState<EthTransactionEntry>());
+    set(fetchedTxHashesEvents, {});
+    set(transactionsPayload, defaultHistoricPayloadState('timestamp'));
+    set(counterparties, []);
+  };
+
+  const fetchCounterparties = async () => {
+    const result = await api.history.fetchAvailableCounterparties();
+
+    set(counterparties, result);
   };
 
   return {
     transactions,
     transactionsPayload,
+    counterparties,
     updateTransactionsPayload,
     fetchTransactions,
     fetchTransactionEvents,
     addTransactionEvent,
     editTransactionEvent,
     deleteTransactionEvent,
+    fetchCounterparties,
     reset
   };
 });
@@ -1057,6 +1072,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
 
   const reset = () => {
     set(ledgerActions, defaultHistoricState<LedgerActionEntry>());
+    set(ledgerActionsPayload, defaultHistoricPayloadState());
   };
 
   return {

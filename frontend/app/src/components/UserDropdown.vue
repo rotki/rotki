@@ -54,8 +54,8 @@
     </v-menu>
     <confirm-dialog
       :display="confirmLogout"
-      :title="$t('user_dropdown.confirmation.title')"
-      :message="$t('user_dropdown.confirmation.message')"
+      :title="$tc('user_dropdown.confirmation.title')"
+      :message="$tc('user_dropdown.confirmation.message')"
       @confirm="logoutHandler()"
       @cancel="confirmLogout = false"
     />
