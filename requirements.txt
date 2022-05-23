@@ -28,5 +28,8 @@ marshmallow==3.15.0
 webargs==8.1.0
 werkzeug==2.1.2
 
+# for icon validation
+filetype==1.0.13
+
 #constraints
 setuptools==49.6.0  # constraint required by pyinstaller==4.8

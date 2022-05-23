@@ -1,5 +1,4 @@
 import filecmp
-import os
 import shutil
 from http import HTTPStatus
 from pathlib import Path
@@ -25,7 +24,7 @@ from rotkehlchen.utils.misc import ts_now
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
     """Test that uploading custom icon works"""
-    root_path = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))))  # noqa: E501
+    root_path = Path(__file__).resolve().parent.parent.parent.parent
     filepath = root_path / 'frontend' / 'app' / 'src' / 'assets' / 'images' / 'exchanges' / 'kraken.svg'  # noqa: E501
 
     if file_upload:
@@ -61,7 +60,7 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upload_custom_icon_errors(rotkehlchen_api_server, file_upload):
     """Test that common error handling for uploading custom icons"""
-    root_path = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))))  # noqa: E501
+    root_path = Path(__file__).resolve().parent.parent.parent.parent
     filepath = root_path / 'frontend' / 'app' / 'src' / 'assets' / 'images' / 'exchanges' / 'kraken.svg'  # noqa: E501
 
     # Let's also try to upload a file without the csv prefix
@@ -100,7 +99,7 @@ def test_refresh_icon(rotkehlchen_api_server):
     """Test that checks refreshing the icon of an asset works."""
     # add icon for an asset
     icon_manager = rotkehlchen_api_server.rest_api.rotkehlchen.icon_manager
-    root_path = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))))  # noqa: E501
+    root_path = Path(__file__).resolve().parent.parent.parent.parent
     sample_filepath = root_path / 'frontend' / 'app' / 'src' / 'assets' / 'images' / 'exchanges' / 'kraken.svg'  # noqa: E501
     icon_filepath = icon_manager.icons_dir / 'DOGE_small.png'
     shutil.copyfile(sample_filepath, icon_filepath)
@@ -114,4 +113,4 @@ def test_refresh_icon(rotkehlchen_api_server):
         ),
     )
     assert_simple_ok_response(response)
-    assert os.path.getctime(icon_filepath) > now
+    assert icon_filepath.stat().st_ctime > now

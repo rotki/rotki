@@ -3342,7 +3342,7 @@ Refreshing asset icons
 
    :statuscode 200: Icon successfully deleted and requeried.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 404: We have no cache of icon for that asset. Unable to refresh icon at the moment.
+   :statuscode 404: Unable to refresh icon at the moment.
    :statuscode 500: Internal rotki error
 
 

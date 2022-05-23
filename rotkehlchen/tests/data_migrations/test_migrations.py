@@ -152,5 +152,5 @@ def test_migration_3(rotkehlchen_api_server):
     with migration_patch:
         DataMigrationManager(rotki).maybe_migrate_data()
 
-    assert not btc_iconpath.is_file()
-    assert not eth_iconpath.is_file()
+    assert btc_iconpath.is_file() is False
+    assert eth_iconpath.is_file() is False

@@ -3,7 +3,7 @@ import logging
 import shutil
 from http import HTTPStatus
 from pathlib import Path
-from typing import Optional, Set, Tuple
+from typing import Optional, Set
 
 import gevent
 import requests
@@ -204,17 +204,15 @@ class IconManager():
             self.custom_icons_dir / f'{asset.identifier}{icon_path.suffix}',
         )
 
-    def delete_icon(self, asset: Asset) -> Tuple[bool, str]:
-        """Deletes an icon from the filesystem cache."""
-        # First delete the custom icon if it exists
+    def delete_icon(self, asset: Asset) -> None:
+        """
+        Tries to find and delete the cache of an icon in both the custom icons
+        and default icons directory.
+        """
         icon_path = self.custom_iconfile_path(asset)
         if icon_path is not None:
             icon_path.unlink()
 
-        # Then check the icons directory
         icon_path = self.iconfile_path(asset)
         if icon_path.is_file():
             icon_path.unlink()
-            return True, ''
-
-        return False, 'Unable to find icon in cache.'

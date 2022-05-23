@@ -1,9 +1,11 @@
-import imghdr
 import logging
 from typing import TYPE_CHECKING
 
+import filetype
+
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -20,8 +22,10 @@ def _validate_asset_icons(icon_manager: 'IconManager') -> None:
     icons_directory = icon_manager.icons_dir
     for icon_entry in icons_directory.iterdir():
         if icon_entry.is_file():
-            icon_file_type = imghdr.what(icon_entry)
+            icon_file_type = filetype.guess(icon_entry)
             if icon_file_type is None:
+                icon_entry.unlink()
+            elif icon_file_type.extension not in ALLOWED_ICON_EXTENSIONS:
                 icon_entry.unlink()
 
 
