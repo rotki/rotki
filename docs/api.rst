@@ -167,25 +167,23 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 409: User already exists. Another user is already logged in. Given Premium API credentials are invalid. Permission error while trying to access the directory where rotki saves data.
    :statuscode 500: Internal rotki error
 
-.. http:patch:: /api/(version)/users/(username)
+.. http:post:: /api/(version)/users/(username)
 
-   By doing a ``PATCH`` at this endpoint with action ``'login'`` you can login to the user with ``username``.
+   By doing a ``POST`` at this endpoint, you can login to the user with ``username``.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      PATCH /api/1/users/john HTTP/1.1
+      POST /api/1/users/john HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
       {
-          "action": "login",
           "password": "supersecurepassword",
           "sync_approval": "unknown"
       }
 
-   :reqjson string action: The action to perform. Can only be one of ``"login"`` or ``"logout"`` and for the login case has to be ``"login"``
    :reqjson string password: The password that unlocks the account
    :reqjson bool sync_approval: A string denoting if the user approved an initial syncing of data from premium. Valid values are ``"unknown"``, ``"yes"`` and ``"no"``. Should always be ``"unknown"`` at first and only if the user approves should a login with approval as ``"yes`` be sent. If he does not approve a login with approval as ``"no"`` should be sent. If there is the possibility of data sync from the premium server and this is ``"unknown"`` the login will fail with an appropriate error asking the consumer of the api to set it to ``"yes"`` or ``"no"``.
 
@@ -255,7 +253,7 @@ Handling user creation, sign-in, log-out and querying
           "action": "logout"
       }
 
-   :reqjson string action: The action to perform. Can only be one of ``"login"`` or ``"logout"`` and for the logout case has to be ``"logout"``
+   :reqjson string action: The action to perform. Can only be ``"logout"``.
 
    **Example Response**:
 

@@ -105,6 +105,7 @@ from rotkehlchen.api.v1.schemas import (
     TradePatchSchema,
     TradeSchema,
     TradesQuerySchema,
+    UserActionLoginSchema,
     UserActionSchema,
     UserPasswordChangeSchema,
     UserPremiumSyncSchema,
@@ -237,7 +238,7 @@ def require_loggedin_user() -> Callable:
             # grab the `rest_api` attribute from the view class.
             view_class = args[0]
             rest_api = view_class.rest_api
-            if not rest_api.rotkehlchen.user_is_logged_in:
+            if rest_api.rotkehlchen.user_is_logged_in is False:
                 result_dict = wrap_in_fail_result('No user is currently logged in')
                 return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
             return f(*args, **kwargs)
@@ -262,7 +263,7 @@ def require_premium_user(active_check: bool) -> Callable:
             # grab the `rest_api` attribute from the view class.
             view_class = args[0]
             rest_api = view_class.rest_api
-            if not rest_api.rotkehlchen.user_is_logged_in:
+            if rest_api.rotkehlchen.user_is_logged_in is False:
                 result_dict = wrap_in_fail_result('No user is currently logged in')
                 return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
@@ -270,12 +271,12 @@ def require_premium_user(active_check: bool) -> Callable:
                 f'Currently logged in user {rest_api.rotkehlchen.data.username} '
                 f'does not have a premium subscription'
             )
-            if not rest_api.rotkehlchen.premium:
+            if rest_api.rotkehlchen.premium is None:
                 result_dict = wrap_in_fail_result(msg)
                 return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
             if active_check:
-                if not rest_api.rotkehlchen.premium.is_active():
+                if rest_api.rotkehlchen.premium.is_active() is False:
                     result_dict = wrap_in_fail_result(msg)
                     return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
@@ -962,35 +963,38 @@ class UsersResource(BaseMethodView):
 
 class UsersByNameResource(BaseMethodView):
     patch_schema = UserActionSchema()
+    post_schema = UserActionLoginSchema()
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json_and_view_args')
     def patch(
             self,
-            action: Optional[str],
             name: str,
-            password: Optional[str],
-            sync_approval: Literal['yes', 'no', 'unknown'],
+            action: Optional[str],
             premium_api_key: str,
             premium_api_secret: str,
     ) -> Response:
-        if action is None:
-            return self.rest_api.user_set_premium_credentials(
-                name=name,
-                api_key=premium_api_key,
-                api_secret=premium_api_secret,
-            )
+        if action == 'logout':
+            return self.rest_api.user_logout(name=name)
 
-        if action == 'login':
-            assert password is not None, 'Marshmallow validation should not let password=None here'
-            return self.rest_api.user_login(
-                name=name,
-                password=password,
-                sync_approval=sync_approval,
-            )
+        return self.rest_api.user_set_premium_credentials(
+            name=name,
+            api_key=premium_api_key,
+            api_secret=premium_api_secret,
+        )
 
-        # else can only be logout -- checked by marshmallow
-        return self.rest_api.user_logout(name=name)
+    @use_kwargs(post_schema, location='json_and_view_args')
+    def post(
+            self,
+            name: str,
+            password: str,
+            sync_approval: Literal['yes', 'no', 'unknown'],
+    ) -> Response:
+        return self.rest_api.user_login(
+            name=name,
+            password=password,
+            sync_approval=sync_approval,
+        )
 
 
 class UserPasswordChangeResource(BaseMethodView):
@@ -1494,6 +1498,7 @@ class Eth2StakeDetailsResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
+    @require_premium_user(active_check=False)
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_eth2_stake_details(async_query)
@@ -2293,11 +2298,6 @@ class UserAssetsResource(BaseMethodView):
                     status_code=HTTPStatus.BAD_REQUEST,
                 ))
             return self.rest_api.import_user_assets(path=file)
-        if destination is None:
-            return api_response(wrap_in_fail_result(
-                message='destination is required for download action.',
-                status_code=HTTPStatus.BAD_REQUEST,
-            ))
         return self.rest_api.get_user_added_assets(path=destination)
 
     @require_loggedin_user()

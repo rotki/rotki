@@ -860,14 +860,8 @@ class BaseUserSchema(Schema):
 
 class UserActionSchema(Schema):
     name = fields.String(required=True)
-    # All the fields below are not needed for logout/modification so are not required=True
-    password = fields.String(load_default=None)
-    sync_approval = fields.String(
-        load_default='unknown',
-        validate=webargs.validate.OneOf(choices=('unknown', 'yes', 'no')),
-    )
     action = fields.String(
-        validate=webargs.validate.OneOf(choices=('login', 'logout')),
+        validate=webargs.validate.Equal('logout'),
         load_default=None,
     )
     premium_api_key = fields.String(load_default='')
@@ -879,14 +873,20 @@ class UserActionSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if data['action'] == 'login':
-            if data['password'] is None:
-                raise ValidationError('Missing password field for login')
-        elif data['action'] is None:
+        if data['action'] is None:
             if data['premium_api_key'] == '' or data['premium_api_secret'] == '':
                 raise ValidationError(
                     'Without an action premium api key and secret must be provided',
                 )
+
+
+class UserActionLoginSchema(Schema):
+    name = fields.String(required=True)
+    password = fields.String(required=True)
+    sync_approval = fields.String(
+        load_default='unknown',
+        validate=webargs.validate.OneOf(choices=('unknown', 'yes', 'no')),
+    )
 
 
 class UserPasswordChangeSchema(Schema):
