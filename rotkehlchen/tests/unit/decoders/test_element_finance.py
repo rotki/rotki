@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_ELEMENT_FINANCE
 from rotkehlchen.constants.assets import A_ELFI, A_ETH
 from rotkehlchen.fval import FVal
@@ -40,7 +41,7 @@ def test_claim_aidrop(database, ethereum_manager, function_scope_messages_aggreg
             balance=Balance(amount=FVal('0.0061843862')),
             location_label=ADDY,
             notes=f'Burned 0.0061843862 ETH in gas from {ADDY}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=549,

@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.hop.constants import CPT_HOP
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
@@ -40,7 +41,7 @@ def test_hop_l2_deposit(database, ethereum_manager, function_scope_messages_aggr
             balance=Balance(amount=FVal('0.001964214783875487')),
             location_label=ADDY,
             notes=f'Burned 0.001964214783875487 ETH in gas from {ADDY}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=1,

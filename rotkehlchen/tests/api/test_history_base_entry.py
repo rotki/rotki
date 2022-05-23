@@ -10,7 +10,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.chain.ethereum.decoding.constants import GAS_COUNTERPARTY
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDT
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -68,7 +68,7 @@ def _add_entries(server) -> List[HistoryBaseEntry]:
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         notes='Burned 0.0001 ETH in gas from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # noqa: E501
         event_subtype=HistoryEventSubType.FEE,
-        counterparty=GAS_COUNTERPARTY,
+        counterparty=CPT_GAS,
     ), HistoryBaseEntry(
         event_identifier='0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc',
         sequence_index=3,

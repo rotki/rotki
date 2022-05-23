@@ -2178,6 +2178,6 @@ class ReverseEnsResource(BaseMethodView):
         )
 
 
-class ProtocolsResource(BaseMethodView):
+class CounterpartiesResource(BaseMethodView):
     def get(self) -> Response:
-        return self.rest_api.get_all_protocols()
+        return self.rest_api.get_all_counterparties()

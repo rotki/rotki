@@ -9,6 +9,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -119,7 +120,7 @@ def test_include_gas_costs(accountant, google_service):
             notes=f'Burned 0.000030921 ETH in gas from {addr1}',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            counterparty='gas',
+            counterparty=CPT_GAS,
         )]
     accounting_history_process(accountant, start_ts=1436979735, end_ts=1619693374, history_list=history)  # noqa: E501
     no_message_errors(accountant.msg_aggregator)
@@ -165,7 +166,7 @@ def test_ignored_transactions(accountant, google_service):
             notes=f'Burned 0.000030921 ETH in gas from {addr1}',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             identifier='uniqueid2',    # should normally be given by DB at write time
             event_identifier=ignored_tx_hash,
@@ -178,7 +179,7 @@ def test_ignored_transactions(accountant, google_service):
             notes=f'Burned 0.000040921 ETH in gas from {addr1}',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            counterparty='gas',
+            counterparty=CPT_GAS,
         )]
     _, events = accounting_history_process(accountant, start_ts=1436979735, end_ts=1619693374, history_list=history)  # noqa: E501
     assert len(events) == 3

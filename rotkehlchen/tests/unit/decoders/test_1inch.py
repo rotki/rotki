@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V1, CPT_ONEINCH_V2
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
 from rotkehlchen.fval import FVal
@@ -43,7 +44,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             balance=Balance(amount=FVal('0.00896373909')),
             location_label=ADDY,
             notes=f'Burned 0.00896373909 ETH in gas from {ADDY}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=90,
@@ -126,7 +127,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
             balance=Balance(amount=FVal('0.002618947')),
             location_label=ADDY,
             notes=f'Burned 0.002618947 ETH in gas from {ADDY}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=217,

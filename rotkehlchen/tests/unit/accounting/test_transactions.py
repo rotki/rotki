@@ -11,6 +11,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
@@ -85,7 +86,7 @@ def test_gas_fees_after_year(accountant, google_service):
             notes='Burned 0.01 ETH in gas',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
-            counterparty='gas',
+            counterparty=CPT_GAS,
         )]
     accounting_history_process(
         accountant,

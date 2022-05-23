@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import CPT_GITCOIN
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.constants.misc import ZERO
@@ -41,7 +42,7 @@ def test_gitcoin_old_donation(database, ethereum_manager, function_scope_message
             balance=Balance(amount=FVal('0.000055118'), usd_value=ZERO),
             location_label=ADDY,
             notes=f'Burned 0.000055118 ETH in gas from {ADDY}',
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hash.hex(),  # pylint: disable=no-member
             sequence_index=164,

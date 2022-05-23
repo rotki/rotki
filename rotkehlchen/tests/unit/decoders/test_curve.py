@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
@@ -122,7 +123,7 @@ def test_curve_deposit(database, ethereum_manager, eth_transactions):
             ),
             location_label=location_label,
             notes='Burned 0.00393701451 ETH in gas from 0x57bF3B0f29E37619623994071C9e12091919675c',  # noqa: E501
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=371,
@@ -261,7 +262,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             ),
             location_label=location_label,
             notes='Burned 0.00393701451 ETH in gas from 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2',  # noqa: E501
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=1,
@@ -410,7 +411,7 @@ def test_curve_remove_liquidity(database, ethereum_manager, eth_transactions):
             ),
             location_label=location_label,
             notes='Burned 0.00393701451 ETH in gas from 0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6',  # noqa: E501
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=507,
@@ -525,7 +526,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager, eth_tr
             ),
             location_label=location_label,
             notes='Burned 0.00393701451 ETH in gas from 0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC',  # noqa: E501
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=1,
@@ -691,7 +692,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             ),
             location_label=location_label,
             notes='Burned 0.00393701451 ETH in gas from 0x2fac74A3a04B031F240923621a578724C40678af',  # noqa: E501
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier=tx_hex,
             sequence_index=2184,

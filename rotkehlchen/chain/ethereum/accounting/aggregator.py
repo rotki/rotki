@@ -5,7 +5,8 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Dict, Union
 
 from rotkehlchen.accounting.structures.base import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.constants import CPT_GAS, MODULES_PACKAGE, MODULES_PREFIX_LENGTH
+from rotkehlchen.chain.ethereum.constants import MODULES_PACKAGE, MODULES_PREFIX_LENGTH
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.errors.misc import ModuleLoadingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator

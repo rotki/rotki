@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS, CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_ONEINCH
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
@@ -94,7 +95,7 @@ def test_1inch_claim(database, ethereum_manager, eth_transactions):
             ),
             location_label='0xc931De6d845846E332a52D045072E3feF540Bd5d',
             notes='Burned 0.00393701451 ETH in gas from 0xc931De6d845846E332a52D045072E3feF540Bd5d',  # noqa: E501
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier='0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
             sequence_index=298,
@@ -113,7 +114,7 @@ def test_1inch_claim(database, ethereum_manager, eth_transactions):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4']])  # noqa: E501
-def test_xdai_bridge(database, ethereum_manager, eth_transactions):
+def test_gnosis_chain_bridge(database, ethereum_manager, eth_transactions):
     """Data for bridge taken from
     https://etherscan.io/tx/0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02
     """
@@ -200,7 +201,7 @@ def test_xdai_bridge(database, ethereum_manager, eth_transactions):
             ),
             location_label='0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',
             notes='Burned 0.00393701451 ETH in gas from 0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',  # noqa: E501
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier='0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02',
             sequence_index=474,
@@ -211,8 +212,8 @@ def test_xdai_bridge(database, ethereum_manager, eth_transactions):
             asset=EthereumToken('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             balance=Balance(amount=FVal('159137.254963'), usd_value=ZERO),
             location_label='0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',
-            notes='Bridge 159137.254963 USDC from XDAI',
-            counterparty='XDAI',
+            notes='Bridge 159137.254963 USDC from gnosis chain',
+            counterparty=CPT_GNOSIS_CHAIN,
         ),
     ]
     assert events == expected_events
@@ -292,7 +293,7 @@ def test_gitcoin_claim(database, ethereum_manager, eth_transactions):
             ),
             location_label='0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',
             notes='Burned 0.00393701451 ETH in gas from 0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',  # noqa: E501
-            counterparty='gas',
+            counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             event_identifier='0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa',
             sequence_index=474,

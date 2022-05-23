@@ -4241,7 +4241,7 @@ class RestAPI():
         response_result = self._pull_spam_assets()
         return api_response(result=response_result, status_code=response_result['status_code'])
 
-    def get_all_protocols(self) -> Response:
+    def get_all_counterparties(self) -> Response:
         return api_response(
             result={
                 # Converting to list since set is not json serializable
