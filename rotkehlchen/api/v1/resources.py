@@ -2162,9 +2162,9 @@ class DBSnapshotDeletingResource(BaseMethodView):
 
 
 class ReverseEnsResource(BaseMethodView):
-    reverse_ens_schema = ReverseEnsSchema
+    post_schema = ReverseEnsSchema
 
-    @use_kwargs(reverse_ens_schema, location='json')
+    @use_kwargs(post_schema, location='json')
     def post(
             self,
             ethereum_addresses: List[ChecksumEthAddress],
@@ -2176,3 +2176,8 @@ class ReverseEnsResource(BaseMethodView):
             ignore_cache=ignore_cache,
             async_query=async_query,
         )
+
+
+class ProtocolsResource(BaseMethodView):
+    def get(self) -> Response:
+        return self.rest_api.get_all_protocols()

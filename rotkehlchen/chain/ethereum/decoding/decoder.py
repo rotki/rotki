@@ -2,7 +2,7 @@ import importlib
 import logging
 import pkgutil
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from gevent.lock import Semaphore
 
@@ -50,11 +50,13 @@ from .base import BaseDecoderTools
 from .constants import (
     ERC20_APPROVE,
     ERC20_OR_ERC721_TRANSFER,
+    GAS_COUNTERPARTY,
     GOVERNORALPHA_PROPOSE,
     GOVERNORALPHA_PROPOSE_ABI,
     GTC_CLAIM,
     ONEINCH_CLAIM,
     XDAI_BRIDGE_RECEIVE,
+    XDAI_COUNTERPARTY,
 )
 from .structures import ActionItem
 from .utils import maybe_reshuffle_events
@@ -79,6 +81,7 @@ class EVMTransactionDecoder():
             msg_aggregator: MessagesAggregator,
     ):
         self.database = database
+        self.all_counterparties: Set[str] = set()
         self.ethereum_manager = ethereum_manager
         self.eth_transactions = eth_transactions
         self.msg_aggregator = msg_aggregator
@@ -131,6 +134,7 @@ class EVMTransactionDecoder():
                     address_results.update(self.decoders[class_name].addresses_to_decoders())
                     rules_results.extend(self.decoders[class_name].decoding_rules())
                     enricher_results.extend(self.decoders[class_name].enricher_rules())
+                    self.all_counterparties.update(self.decoders[class_name].counterparties())
 
                 recursive_addrs, recursive_rules, recurisve_enricher_results = self._recursively_initialize_decoders(full_name)  # noqa: E501
                 address_results.update(recursive_addrs)
@@ -147,6 +151,8 @@ class EVMTransactionDecoder():
         self.address_mappings = address_result
         self.event_rules.extend(rules_result)
         self.token_enricher_rules.extend(enrichers_result)
+        # update with counterparties not in any module
+        self.all_counterparties.update([GAS_COUNTERPARTY, XDAI_COUNTERPARTY])
 
     def reload_from_db(self) -> None:
         """Reload all related settings from DB so that decoding happens with latest"""
@@ -388,7 +394,7 @@ class EVMTransactionDecoder():
                     notes=f'Burned {eth_burned_as_gas} ETH in gas from {location_label}',
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
-                    counterparty='gas',
+                    counterparty=GAS_COUNTERPARTY,
                 ))
 
         # Decode internal transactions after gas so gas is always 0 indexed

@@ -38,3 +38,6 @@ ETHADDRESS_TO_KNOWN_NAME = {
 
     string_to_ethereum_address('0x340d693ED55d7bA167D184ea76Ea2Fd092a35BDc'): 'Uphold.com',
 }
+
+GAS_COUNTERPARTY = 'gas'
+XDAI_COUNTERPARTY = 'gnosis-chain'
