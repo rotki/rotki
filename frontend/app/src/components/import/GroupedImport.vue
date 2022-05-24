@@ -49,6 +49,7 @@ import CryptoComImport from '@/components/import/CryptoComImport.vue';
 import NexoImport from '@/components/import/NexoImport.vue';
 import ShapeshiftImport from '@/components/import/ShapeshiftImport.vue';
 import UpholdImport from '@/components/import/UpholdImport.vue';
+import BinanceImport from '@/components/import/BinanceImport.vue'
 import i18n from '@/i18n';
 
 const sources = [
@@ -93,6 +94,12 @@ const sources = [
     name: i18n.t('import_data.bisq.name'),
     logo: require('@/assets/images/bisq.svg'),
     form: 'bisq-import'
+  },
+  {
+    identifier: 'binance',
+    name: i18n.t('import_data.binance.name'),
+    logo: require('@/assets/images/exchanges/binance.svg'),
+    form: 'binance-import'
   }
 ];
 
@@ -106,7 +113,8 @@ export default defineComponent({
     BlockFiImport,
     CryptoComImport,
     CointrackingImport,
-    BisqImport
+    BisqImport,
+    BinanceImport,
   },
   setup() {
     const selectedSource = ref<string>('');

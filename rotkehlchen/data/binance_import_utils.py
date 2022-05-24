@@ -11,7 +11,6 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -220,7 +219,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                 db.msg_aggregator.add_warning('Skipped some rows because couldn\'t find amounts or it was zero')  # noqa: E501
                 continue
 
-            rate = FVal(to_amount) / FVal(from_amount)
+            rate = to_amount / from_amount
             trade = Trade(
                 timestamp=timestamp,
                 location=Location.BINANCE,
