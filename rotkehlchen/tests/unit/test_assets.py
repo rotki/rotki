@@ -5,6 +5,7 @@ from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.spam_assets import KNOWN_ETH_SPAM_TOKENS
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import get_or_create_ethereum_token, symbol_to_ethereum_token
 from rotkehlchen.constants.assets import A_DAI, A_USDT
@@ -539,3 +540,12 @@ def test_get_or_create_ethereum_token(globaldb, database):
         ethereum_address='0xdAC17F958D2ee523a2206206994597C13D831ec7',
     )
     assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2
+
+
+def test_spam_assets_are_valid():
+    """Test that the information for our own list of spam assets is correct"""
+    for address, info in KNOWN_ETH_SPAM_TOKENS.items():
+        assert is_checksum_address(address)
+        assert 'name' in info
+        assert 'symbol' in info
+        assert 'decimals' in info

@@ -71,8 +71,8 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def _decode_uniswap_claim(  # pylint: disable=no-self-use
             self,
             tx_log: EthereumTxReceiptLog,
-            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
