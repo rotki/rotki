@@ -10,7 +10,26 @@
       :server-items-length="itemLength"
       :options.sync="options"
       sort-by="time"
+      :mobile-breakpoint="0"
     >
+      <template #item.group="{ item }">
+        <v-tooltip v-if="item.groupId" right>
+          <template #activator="{ on, attrs }">
+            <div v-bind="attrs" :class="$style['group']" v-on="on">
+              <div
+                v-if="item.groupLine.top"
+                :class="`${$style['group__line']} ${$style['group__line-top']}`"
+              />
+              <div :class="$style['group__dot']" />
+              <div
+                v-if="item.groupLine.bottom"
+                :class="`${$style['group__line']} ${$style['group__line-bottom']}`"
+              />
+            </div>
+          </template>
+          <span>{{ $tc('profit_loss_events.same_action') }}</span>
+        </v-tooltip>
+      </template>
       <template #item.type="{ item }">
         <profit-loss-event-type :type="item.type" />
       </template>
@@ -93,6 +112,7 @@
       <template #expanded-item="{ headers, item }">
         <cost-basis-table
           v-if="item.costBasis"
+          :show-group-line="item.groupLine.bottom"
           :currency="report.settings.profitCurrency"
           :colspan="headers.length"
           :cost-basis="item.costBasis"
@@ -124,11 +144,19 @@ import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import {
   ProfitLossEvent,
+  ProfitLossEvents,
   ProfitLossEventTypeEnum,
   SelectedReport
 } from '@/types/reports';
 
 const tableHeaders: DataTableHeader[] = [
+  {
+    text: '',
+    value: 'group',
+    sortable: false,
+    class: 'px-0',
+    cellClass: 'px-0'
+  },
   {
     text: i18n.t('profit_loss_events.headers.type').toString(),
     align: 'center',
@@ -225,9 +253,14 @@ export default defineComponent({
     const { report } = toRefs(props);
 
     const items = computed(() => {
-      return report.value.entries.map((value, index) => ({
+      const entries = report.value.entries.map((value, index) => ({
         ...value,
         id: index
+      }));
+
+      return entries.map((entry, index) => ({
+        ...entry,
+        groupLine: checkGroupLine(entries, index)
       }));
     });
 
@@ -268,14 +301,66 @@ export default defineComponent({
 
     watch(options, updatePagination);
 
+    const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
+      const current = entries[index];
+      const prev = index - 1 >= 0 ? entries[index - 1] : null;
+      const next = index + 1 < entries.length ? entries[index + 1] : null;
+
+      return {
+        top: !!(current?.groupId && prev && current?.groupId === prev?.groupId),
+        bottom: !!(
+          current?.groupId &&
+          next &&
+          current?.groupId === next?.groupId
+        )
+      };
+    };
+
     return {
       items,
       itemLength,
       options,
       showUpgradeMessage,
       isTransactionEvent,
-      tableHeaders
+      tableHeaders,
+      checkGroupLine
     };
   }
 });
 </script>
+<style module lang="scss">
+.group {
+  height: 100%;
+  position: relative;
+  width: 10px;
+  margin-left: 1.5rem;
+
+  &__dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 10px;
+    background: var(--v-primary-base);
+  }
+
+  &__line {
+    position: absolute;
+    height: 50%;
+    left: 50%;
+    width: 0;
+    transform: translateX(-50%);
+    border-left: 2px dashed var(--v-primary-base);
+
+    &-top {
+      top: 0;
+    }
+
+    &-bottom {
+      bottom: 0;
+    }
+  }
+}
+</style>

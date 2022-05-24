@@ -1,5 +1,16 @@
 <template>
-  <table-expand-container visible :colspan="colspan" :padded="false">
+  <table-expand-container
+    visible
+    :colspan="colspan"
+    :padded="false"
+    :offset="1"
+    :offset-class-name="$style.offset"
+  >
+    <template #offset>
+      <div v-if="showGroupLine" :class="$style.group">
+        <div :class="$style['group__line']" />
+      </div>
+    </template>
     <template #append>
       <v-expansion-panels
         v-model="panel"
@@ -133,7 +144,8 @@ export default defineComponent({
   props: {
     costBasis: { required: true, type: Object as PropType<CostBasis> },
     colspan: { required: true, type: Number },
-    currency: { required: false, type: String, default: CURRENCY_USD }
+    currency: { required: false, type: String, default: CURRENCY_USD },
+    showGroupLine: { required: false, type: Boolean, default: false }
   },
   setup() {
     const { currencySymbol } = setupGeneralSettings();
@@ -184,6 +196,26 @@ export default defineComponent({
         }
       }
     }
+  }
+}
+
+.offset {
+  padding: 0 !important;
+}
+
+.group {
+  height: 100%;
+  position: relative;
+  width: 10px;
+  margin-left: 1.5rem;
+
+  &__line {
+    position: absolute;
+    height: 100%;
+    left: 50%;
+    width: 0;
+    transform: translateX(-50%);
+    border-left: 2px dashed var(--v-primary-base);
   }
 }
 </style>
