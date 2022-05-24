@@ -242,7 +242,6 @@ class DataImporter():
             'crypto_purchase',
             'crypto_exchange',
             'card_cashback_reverted',
-            'reimbursement',
             'viban_purchase',
             'crypto_viban_exchange',
             'recurring_buy_order',
@@ -339,7 +338,7 @@ class DataImporter():
             'referral_gift',
             'referral_bonus',
             'crypto_earn_interest_paid',
-
+            'reimbursement',
         ):
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
