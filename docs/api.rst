@@ -9858,6 +9858,9 @@ Data imports
 
    Doing a PUT on the data import endpoint will facilitate importing data from external sources. The arguments are the source of data import and the filepath to the data for importing.
 
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
 
    **Example Request**:
 

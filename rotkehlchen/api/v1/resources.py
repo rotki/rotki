@@ -1250,20 +1250,23 @@ class DataImportResource(BaseMethodView):
 
     @use_kwargs(upload_schema, location='json')
     def put(
-        self,
-        source: IMPORTABLE_LOCATIONS,
-        file: Path,
-        timestamp_format: Optional[str],
+            self,
+            async_query: bool,
+            source: IMPORTABLE_LOCATIONS,
+            file: Path,
+            timestamp_format: Optional[str],
     ) -> Response:
         return self.rest_api.import_data(
             source=source,
             filepath=file,
             timestamp_format=timestamp_format,
+            async_query=async_query,
         )
 
     @use_kwargs(upload_schema, location='form_and_file')
     def post(
             self,
+            async_query: bool,
             source: IMPORTABLE_LOCATIONS,
             file: FileStorage,
             timestamp_format: Optional[str],
@@ -1276,6 +1279,7 @@ class DataImportResource(BaseMethodView):
                 source=source,
                 filepath=filepath,
                 timestamp_format=timestamp_format,
+                async_query=async_query,
             )
 
         return response
