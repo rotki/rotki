@@ -86,7 +86,7 @@ KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEthAddress, Dict[str, Any]] = {
         'symbol': 'deApy.org',
         'decimals': 18,
     },
-    string_to_ethereum_address('0x73885eb0da4ba8b061acf1bfc5ea7073b07ccea2'): {
+    string_to_ethereum_address('0x73885eb0dA4ba8B061acF1bfC5eA7073B07ccEA2'): {
         'name': 'Adidas fake token',
         'symbol': MISSING_SYMBOL_SPAM_TOKEN,
         'decimals': 18,
