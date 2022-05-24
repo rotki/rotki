@@ -45,6 +45,20 @@ export function mapCollectionResponse<T>(
   };
 }
 
+export function paramsSerializer(params: { [key: string]: any }): string {
+  const list = [];
+  for (const [key, value] of Object.entries(params)) {
+    if (value === null || value === undefined) continue;
+
+    if (Array.isArray(value)) {
+      list.push(`${key}=${value.join(',')}`);
+    } else {
+      list.push(`${key}=${value}`);
+    }
+  }
+  return list.join('&');
+}
+
 /**
  * Returns true if the provided status code is contained in the array of valid
  * status codes.

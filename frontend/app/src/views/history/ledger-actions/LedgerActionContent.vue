@@ -534,7 +534,7 @@ export default defineComponent({
       }
 
       const payload: Partial<LedgerActionRequestPayload> = {
-        ...get(filters),
+        ...(get(filters) as Partial<LedgerActionRequestPayload>),
         ...paginationOptions
       };
 

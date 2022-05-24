@@ -275,10 +275,10 @@ export default defineComponent({
         orderByAttribute: sortBy[0],
         limit: itemsPerPage,
         offset: (page - 1) * itemsPerPage,
-        fromTimestamp: fromTimestamp,
-        toTimestamp: toTimestamp,
-        eventSubtypes: eventSubtypes ? [eventSubtypes] : undefined,
-        asset: asset || undefined
+        fromTimestamp: fromTimestamp as string,
+        toTimestamp: toTimestamp as string,
+        eventSubtypes: eventSubtypes ? [eventSubtypes as string] : undefined,
+        asset: (asset as string) || undefined
       };
       emit('update:pagination', pagination);
     };

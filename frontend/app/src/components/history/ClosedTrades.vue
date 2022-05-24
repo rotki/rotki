@@ -600,7 +600,7 @@ export default defineComponent({
       }
 
       const payload: Partial<TradeRequestPayload> = {
-        ...get(filters),
+        ...(get(filters) as Partial<TradeRequestPayload>),
         ...paginationOptions
       };
 

@@ -30,6 +30,7 @@ import {
 import { PendingTask } from '@/services/types-api';
 import {
   handleResponse,
+  paramsSerializer,
   validStatus,
   validWithParamsSessionAndExternalService,
   validWithSessionStatus
@@ -164,6 +165,7 @@ export class HistoryApi {
           ...data,
           orderByAttribute: getUpdatedKey(payload.orderByAttribute ?? '', false)
         }),
+        paramsSerializer,
         validateStatus: validWithParamsSessionAndExternalService,
         transformResponse: basicAxiosTransformer
       })
@@ -323,5 +325,17 @@ export class HistoryApi {
       })
       .then(handleResponse)
       .then(result => IgnoredActions.parse(result));
+  }
+
+  fetchAvailableCounterparties(): Promise<string[]> {
+    return this.axios
+      .get<ActionResult<string[]>>(
+        '/blockchains/ETH/modules/data/counterparties',
+        {
+          validateStatus: validStatus,
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
   }
 }

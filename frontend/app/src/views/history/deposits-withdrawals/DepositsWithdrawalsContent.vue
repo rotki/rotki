@@ -403,7 +403,7 @@ export default defineComponent({
       }
 
       const payload: Partial<AssetMovementRequestPayload> = {
-        ...get(filters),
+        ...(get(filters) as Partial<AssetMovementRequestPayload>),
         ...paginationOptions
       };
 

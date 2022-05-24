@@ -2932,7 +2932,12 @@
       }
     },
     "filter": {
-      "label": "Filter by account"
+      "account": "Filter by account",
+      "asset": "filter by the asset of the events",
+      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
+      "end_date": "filter by the end date of the transaction period",
+      "protocol": "filter by the protocol / counterparty of the events",
+      "start_date": "filter by the start date of the transaction period"
     },
     "loading": "Please wait while your transactions are getting loaded...",
     "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",

@@ -86,6 +86,7 @@ export default defineComponent({
       const key = validKeys.find(value => value.startsWith(searchKey[0]));
       return matcherForKey(key) ?? null;
     });
+
     const usedKeys = computed(() =>
       get(selection).map(entry => splitSearch(entry)[0])
     );
@@ -115,23 +116,33 @@ export default defineComponent({
         if (matcher.validate(keyword)) {
           validPairs.push(entry);
           const valueKey = (matcher.keyValue ?? matcher.key) as string;
-          matched[valueKey] = matcher.transformer?.(keyword) ?? keyword;
+          const transformedKeyword = matcher.transformer?.(keyword) ?? keyword;
+
+          if (matcher.multiple) {
+            if (!matched[valueKey]) {
+              matched[valueKey] = [];
+            }
+            (matched[valueKey] as string[]).push(transformedKeyword);
+          } else {
+            matched[valueKey] = transformedKeyword;
+          }
         }
       }
 
       set(selection, validPairs);
-
       emit('update:matches', matched);
     }
 
     const applyFilter = (filter: string) => {
       const newSelection = [...get(selection)];
-      const splitFilter = splitSearch(filter);
+      const [key] = splitSearch(filter);
       const index = newSelection.findIndex(
-        value => splitSearch(value)[0] === splitFilter[0]
+        value => splitSearch(value)[0] === key
       );
+      const matcher = matcherForKey(key);
+      assert(matcher);
 
-      if (index >= 0) {
+      if (index >= 0 && !matcher.multiple) {
         newSelection[index] = filter;
       } else {
         newSelection.push(filter);
