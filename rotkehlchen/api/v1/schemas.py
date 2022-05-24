@@ -67,7 +67,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
-
 from .fields import (
     AmountField,
     ApiKeyField,
@@ -166,7 +165,7 @@ class EthereumTransactionQuerySchema(
     address = EthereumAddressField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    protocols = fields.List(fields.String(), load_default=None)
+    protocols = DelimitedOrNormalList(fields.String(), load_default=None)
     asset = AssetField(load_default=None)
     exclude_ignored_assets = fields.Boolean(load_default=True)
 
