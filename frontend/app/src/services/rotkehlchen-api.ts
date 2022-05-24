@@ -560,24 +560,26 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  importDataFrom(
+  async importDataFrom(
     source: string,
     file: string,
     timestampFormat: string | null
-  ): Promise<boolean> {
-    return this.axios
-      .put<ActionResult<boolean>>(
-        '/import',
-        axiosSnakeCaseTransformer({
-          source,
-          file,
-          timestampFormat
-        }),
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
+  ): Promise<PendingTask> {
+    const response = await this.axios.put<ActionResult<PendingTask>>(
+      '/import',
+      axiosSnakeCaseTransformer({
+        source,
+        file,
+        timestampFormat,
+        asyncQuery: true
+      }),
+      {
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    return handleResponse(response);
   }
 
   removeBlockchainAccount(
@@ -1087,15 +1089,20 @@ export class RotkehlchenApi {
     return KrakenStakingEvents.parse(data);
   }
 
-  importFile(data: FormData) {
-    return this.axios
-      .post<ActionResult<boolean>>('/import', data, {
+  async importFile(data: FormData): Promise<PendingTask> {
+    const response = await this.axios.post<ActionResult<PendingTask>>(
+      '/import',
+      data,
+      {
         validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer,
         headers: {
           'Content-Type': 'multipart/form-data'
         }
-      })
-      .then(handleResponse);
+      }
+    );
+
+    return handleResponse(response);
   }
 
   queryBinanceMarkets(location: string): Promise<string[]> {

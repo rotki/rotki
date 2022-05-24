@@ -20,6 +20,16 @@
           <span class="error--text mt-2">{{ error }}</span>
         </div>
         <div
+          v-else-if="loading"
+          class="d-flex flex-column align-center justify-center py-2"
+        >
+          <v-progress-circular indeterminate color="primary" />
+
+          <div class="pt-4">
+            {{ $t('file_upload.loading') }}
+          </div>
+        </div>
+        <div
           v-else-if="!uploaded"
           class="d-flex flex-column align-center justify-center"
         >
@@ -119,6 +129,7 @@ export default defineComponent({
         return SOURCES.includes(value);
       }
     },
+    loading: { required: false, type: Boolean, default: false },
     fileFilter: { required: false, type: String, default: '.csv' },
     uploaded: { required: false, type: Boolean, default: false },
     errorMessage: { required: false, type: String, default: '' }
