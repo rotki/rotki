@@ -197,18 +197,6 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         link='',
         notes=get_cryptocom_note('MCO/CRO Overall Swap'),
     ), Trade(
-        timestamp=Timestamp(1599934176),
-        location=Location.CRYPTOCOM,
-        base_asset=A_CRO,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('138.256')),
-        rate=Price(FVal('0.1429232727693553986807082514')),
-        fee=Fee(ZERO),
-        fee_currency=A_USD,
-        link='',
-        notes=get_cryptocom_note('Card Rebate: Deliveries'),
-    ), Trade(
         timestamp=Timestamp(1606833565),
         location=Location.CRYPTOCOM,
         base_asset=A_CRO,
@@ -244,18 +232,6 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee_currency=A_USD,
         link='',
         notes=get_cryptocom_note('Convert Dust'),
-    ), Trade(
-        timestamp=Timestamp(1614989135),
-        location=Location.CRYPTOCOM,
-        base_asset=A_CRO,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('7.76792828')),
-        rate=Price(FVal('0.1287344532485822590524741560')),
-        fee=Fee(ZERO),
-        fee_currency=A_USD,
-        link='',
-        notes=get_cryptocom_note('Card Rebate: Netflix'),
     ), Trade(
         timestamp=Timestamp(1620192867),
         location=Location.CRYPTOCOM,
@@ -309,7 +285,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
     assert expected_movements == asset_movements
 
     expected_ledger_actions = [LedgerAction(
-        identifier=4,
+        identifier=5,
         timestamp=Timestamp(1596014223),
         action_type=LedgerActionType.INCOME,
         location=Location.CRYPTOCOM,
@@ -320,7 +296,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         link=None,
         notes=get_cryptocom_note('Sign-up Bonus Unlocked'),
     ), LedgerAction(
-        identifier=3,
+        identifier=4,
         timestamp=Timestamp(1596429934),
         action_type=LedgerActionType.INCOME,
         location=Location.CRYPTOCOM,
@@ -330,6 +306,17 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         rate_asset=None,
         link=None,
         notes=get_cryptocom_note('Crypto Earn'),
+    ), LedgerAction(
+        identifier=3,
+        timestamp=Timestamp(1599934176),
+        action_type=LedgerActionType.INCOME,
+        location=Location.CRYPTOCOM,
+        amount=AssetAmount(FVal('138.256')),
+        asset=A_CRO,
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes=get_cryptocom_note('Card Rebate: Deliveries'),
     ), LedgerAction(
         identifier=2,
         timestamp=Timestamp(1602515376),
@@ -353,7 +340,18 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         link=None,
         notes=get_cryptocom_note('Referral Bonus Reward'),
     ), LedgerAction(
-        identifier=11,
+        identifier=13,
+        timestamp=Timestamp(1614989135),
+        action_type=LedgerActionType.INCOME,
+        location=Location.CRYPTOCOM,
+        amount=AssetAmount(FVal('7.76792828')),
+        asset=A_CRO,
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes=get_cryptocom_note('Card Rebate: Netflix'),
+    ), LedgerAction(
+        identifier=12,
         timestamp=Timestamp(1615097829),
         action_type=LedgerActionType.EXPENSE,
         location=Location.CRYPTOCOM,
@@ -364,7 +362,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         link=None,
         notes=get_cryptocom_note('Card Rebate Reversal: Netflix'),
     ), LedgerAction(
-        identifier=9,
+        identifier=10,
         timestamp=Timestamp(1616237351),
         action_type=LedgerActionType.INCOME,
         location=Location.CRYPTOCOM,
@@ -375,7 +373,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         link=None,
         notes=get_cryptocom_note('Pay Rewards'),
     ), LedgerAction(
-        identifier=10,
+        identifier=11,
         timestamp=Timestamp(1616237351),
         action_type=LedgerActionType.EXPENSE,
         location=Location.CRYPTOCOM,
@@ -386,7 +384,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         link=None,
         notes=get_cryptocom_note('To +49XXXXXXXXXX'),
     ), LedgerAction(
-        identifier=8,
+        identifier=9,
         timestamp=Timestamp(1616266740),
         action_type=LedgerActionType.INCOME,
         location=Location.CRYPTOCOM,
@@ -397,7 +395,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         link=None,
         notes=get_cryptocom_note('From +49XXXXXXXXXX'),
     ), LedgerAction(
-        identifier=7,
+        identifier=8,
         timestamp=Timestamp(1616669547),
         action_type=LedgerActionType.EXPENSE,
         location=Location.CRYPTOCOM,
@@ -408,7 +406,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         link=None,
         notes=get_cryptocom_note('Merchant XXX'),
     ), LedgerAction(
-        identifier=6,
+        identifier=7,
         timestamp=Timestamp(1616669548),
         action_type=LedgerActionType.INCOME,
         location=Location.CRYPTOCOM,
@@ -419,7 +417,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         link=None,
         notes=get_cryptocom_note('Pay Rewards'),
     ), LedgerAction(
-        identifier=5,
+        identifier=6,
         timestamp=Timestamp(1616670041),
         action_type=LedgerActionType.INCOME,
         location=Location.CRYPTOCOM,
