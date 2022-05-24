@@ -9858,6 +9858,9 @@ Data imports
 
    Doing a PUT on the data import endpoint will facilitate importing data from external sources. The arguments are the source of data import and the filepath to the data for importing.
 
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
 
    **Example Request**:
 
@@ -9869,7 +9872,7 @@ Data imports
 
       {"source": "cointracking.info", "filepath": "/path/to/data/file", "timestamp_format": "%d/%m/%Y %H:%M:%S"}
 
-   :reqjson str source: The source of the data to import. Valid values are ``"cointracking.info"``, ``"cryptocom"``, ``"blockfi-transactions"``, ``"blockfi-trades"``, ``"nexo"``,  ``"shapeshift-trades"``, ``"uphold"``.
+   :reqjson str source: The source of the data to import. Valid values are ``"cointracking.info"``, ``"cryptocom"``, ``"blockfi-transactions"``, ``"blockfi-trades"``, ``"nexo"``,  ``"shapeshift-trades"``, ``"uphold"``, ``"binance"``.
    :reqjson str filepath: The filepath to the data for importing
    :reqjson str timestamp_format: Optional. Custom format to use for dates in the CSV file. Should follow rules at `Datetime docs <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__.
 

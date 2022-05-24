@@ -2114,79 +2114,86 @@ class RestAPI():
     def ping() -> Response:
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
+    def _import_data(
+            self,
+            source: IMPORTABLE_LOCATIONS,
+            filepath: Path,
+            timestamp_format: Optional[str],
+    ) -> Dict[str, Any]:
+        if source == 'cointracking.info':
+            success, msg = self.rotkehlchen.data_importer.import_cointracking_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+        elif source == 'cryptocom':
+            success, msg = self.rotkehlchen.data_importer.import_cryptocom_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+        elif source == 'blockfi-transactions':
+            success, msg = self.rotkehlchen.data_importer.import_blockfi_transactions_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+        elif source == 'blockfi-trades':
+            success, msg = self.rotkehlchen.data_importer.import_blockfi_trades_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+        elif source == 'nexo':
+            success, msg = self.rotkehlchen.data_importer.import_nexo_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+        elif source == 'shapeshift-trades':
+            success, msg = self.rotkehlchen.data_importer.import_shapeshift_trades_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+        elif source == 'uphold':
+            success, msg = self.rotkehlchen.data_importer.import_uphold_transactions_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+        elif source == 'bisq':
+            success, msg = self.rotkehlchen.data_importer.import_bisq_trades_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+        elif source == 'binance':
+            success, msg = self.rotkehlchen.data_importer.import_binance_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+
+        if success is False:
+            return wrap_in_fail_result(
+                message=f'Invalid CSV format, missing required field: {msg}',
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
+
+        return OK_RESULT
+
     @require_loggedin_user()
     def import_data(
             self,
             source: IMPORTABLE_LOCATIONS,
             filepath: Path,
             timestamp_format: Optional[str],
+            async_query: bool,
     ) -> Response:
-        if source == 'cointracking.info':
-            success, msg = self.rotkehlchen.data_importer.import_cointracking_csv(
+        if async_query:
+            return self._query_async(
+                command='_import_data',
+                source=source,
                 filepath=filepath,
                 timestamp_format=timestamp_format,
             )
-            if not success:
-                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
-                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-        elif source == 'cryptocom':
-            success, msg = self.rotkehlchen.data_importer.import_cryptocom_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-            if not success:
-                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
-                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-        elif source == 'blockfi-transactions':
-            success, msg = self.rotkehlchen.data_importer.import_blockfi_transactions_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-            if not success:
-                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
-                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-        elif source == 'blockfi-trades':
-            success, msg = self.rotkehlchen.data_importer.import_blockfi_trades_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-            if not success:
-                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
-                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-        elif source == 'nexo':
-            success, msg = self.rotkehlchen.data_importer.import_nexo_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-            if not success:
-                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
-                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-        elif source == 'shapeshift-trades':
-            success, msg = self.rotkehlchen.data_importer.import_shapeshift_trades_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-            if not success:
-                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
-                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-        elif source == 'uphold':
-            success, msg = self.rotkehlchen.data_importer.import_uphold_transactions_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-            if not success:
-                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
-                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-        elif source == 'bisq':
-            success, msg = self.rotkehlchen.data_importer.import_bisq_trades_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-            if not success:
-                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
-                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
 
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        response = self._import_data(source=source, filepath=filepath, timestamp_format=timestamp_format)  # noqa: E501
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(result_dict, status_code=status_code)
 
     def _get_eth2_stake_deposits(self) -> Dict[str, Any]:
         try:

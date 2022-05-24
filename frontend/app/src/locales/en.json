@@ -3489,6 +3489,14 @@
       "note": "Important notes for importing data from {0}'s CSV exports.",
       "source_name": "Bisq"
     },
+    "binance": {
+      "import": "Import {0} from binance",
+      "name": "Binance",
+      "line_one": "Imports: Deposits, Withdrawals, Trades, ETH 2.0 Staking, Small assets exchange BNB, ETH 2.0 Staking Rewards, Launchpool Interest, POS savings interest, POS savings purchase, POS savings redemption.",
+      "line_two": "Because of binance's csv format there is a chance that not all data will be imported. If this will happen, you will get warning.",
+      "note": "Important notes for importing data from {0}'s CSV exports.",
+      "source_name": "Binance"
+    },
     "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
     "select_source": {
       "title": "Select source"

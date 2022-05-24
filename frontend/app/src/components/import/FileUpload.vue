@@ -105,7 +105,8 @@ const SOURCES = [
   'blockfi-trades',
   'shapeshift-trades',
   'uphold',
-  'bisq'
+  'bisq',
+  'binance'
 ] as const;
 
 export default defineComponent({

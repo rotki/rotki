@@ -1671,7 +1671,7 @@ class QueriedAddressesSchema(Schema):
     address = EthereumAddressField(required=True)
 
 
-class DataImportSchema(Schema):
+class DataImportSchema(AsyncQueryArgumentSchema):
     source = fields.String(
         required=True,
         validate=webargs.validate.OneOf(
@@ -1684,6 +1684,7 @@ class DataImportSchema(Schema):
                 'shapeshift-trades',
                 'uphold',
                 'bisq',
+                'binance',
             ),
         ),
     )

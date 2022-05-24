@@ -1,7 +1,7 @@
 =========
 Changelog
 =========
-
+* :feature:`4154` Binance data (trades, deposits, staking, etc.) can now be imported via csv file.
 * :feature:`2890` Transactions in the PnL report are now clickable and have a link to the chosen blockchain explorer via the transaction hash.
 * :feature:`1680` Users will now be able to see their 1inch v1 and v2 trades
 * :feature:`718` Users can now ignore an exchange from the PnL report using the same option as the one for exchange syncing.
@@ -16,7 +16,7 @@ Changelog
 * :bug:`4172` Disallow addition and editing of external trade that could result in invalid trade fees.
 * :feature:`3370` Manual balance labels are now editable even after their creation
 * :feature:`4125` Introduces auto login mechanism for electron app.
-* :feature:`1477` Adds classification for ETH transactions and their events.
+* :feature:`1447` Adds classification for ETH transactions and their events.
 * :bug:`4078` Adjust scrollbar color in dark mode for better visibility.
 * :feature:`4071` Add option to reduce the animations effect.
 * :feature:`3669` Users can export and import their custom assets.

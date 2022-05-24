@@ -74,6 +74,7 @@ IMPORTABLE_LOCATIONS = Literal[
     'shapeshift-trades',
     'uphold',
     'bisq',
+    'binance',
 ]
 
 UNISWAP_PROTOCOL = 'UNI-V2'
