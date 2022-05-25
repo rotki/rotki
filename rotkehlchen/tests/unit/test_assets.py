@@ -190,6 +190,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0xA68Dd8cB83097765263AdAD881Af6eeD479c4a33'),  # noqa: E501 # fees.wtf but cc has WTF token
         'AUSD',  # alpaca usd but cc has appeal dollar
         'PLY',  # Aurigami but cc has playcoin
+        'MLS',  # Pikaster but cc has crop
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (

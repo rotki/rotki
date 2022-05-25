@@ -350,6 +350,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'XFLR',  # neither in coingecko nor cryptocompare (is an iou for FLR - SPARK)
     'SUNX',  # neither in coingecko nor cryptocompare
     'SQUID',  # neither in coingecko nor cryptocompare
+    'XCNOLD',  # No info in the exchange about this asset
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -715,6 +716,11 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'KDON',  # no cryptocompare/coingecko data
     'ELITEHERO',  # no cryptocompare/coingecko data
     'FCD',  # freshcut diamon not in cc/coingecko yet
+    'XRACER',  # no cryptocompare/coingecko data
+    'APE3L',  # no cryptocompare/coingecko data
+    'APE3S',  # no cryptocompare/coingecko data
+    'GMT3L',  # no cryptocompare/coingecko data
+    'GMT3S',  # no cryptocompare/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
