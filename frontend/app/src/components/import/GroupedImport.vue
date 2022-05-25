@@ -42,6 +42,7 @@
 import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import BinanceImport from '@/components/import/BinanceImport.vue';
 import BisqImport from '@/components/import/Bisq.vue';
 import BlockFiImport from '@/components/import/BlockFiImport.vue';
 import CointrackingImport from '@/components/import/CointrackingImport.vue';
@@ -49,7 +50,6 @@ import CryptoComImport from '@/components/import/CryptoComImport.vue';
 import NexoImport from '@/components/import/NexoImport.vue';
 import ShapeshiftImport from '@/components/import/ShapeshiftImport.vue';
 import UpholdImport from '@/components/import/UpholdImport.vue';
-import BinanceImport from '@/components/import/BinanceImport.vue'
 import i18n from '@/i18n';
 
 const sources = [
@@ -114,7 +114,7 @@ export default defineComponent({
     CryptoComImport,
     CointrackingImport,
     BisqImport,
-    BinanceImport,
+    BinanceImport
   },
   setup() {
     const selectedSource = ref<string>('');

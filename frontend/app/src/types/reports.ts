@@ -57,7 +57,8 @@ export const ProfitLossEvent = z.object({
   price: NumericString,
   taxableAmount: NumericString,
   timestamp: z.number(),
-  type: z.string()
+  type: z.string(),
+  groupId: z.string().nullish()
 });
 
 export type ProfitLossEvent = z.infer<typeof ProfitLossEvent>;

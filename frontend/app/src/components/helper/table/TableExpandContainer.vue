@@ -1,6 +1,8 @@
 <template>
   <fragment>
-    <td v-if="offset > 0" :colspan="offset" />
+    <td v-if="offset > 0" :colspan="offset" :class="offsetClassName">
+      <slot name="offset" />
+    </td>
     <td v-if="visible" class="table-expand-container" :colspan="colspan">
       <div class="py-4">
         <div v-if="$scopedSlots.title" class="text-h6 mb-4">
@@ -33,7 +35,8 @@ export default defineComponent({
     visible: { required: true, type: Boolean },
     colspan: { required: true, type: Number },
     padded: { required: false, type: Boolean, default: true },
-    offset: { required: false, type: Number, default: 0 }
+    offset: { required: false, type: Number, default: 0 },
+    offsetClassName: { required: false, type: String, default: '' }
   }
 });
 </script>
