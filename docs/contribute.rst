@@ -311,6 +311,38 @@ To review your changes you can compile the documentation using the command
 
 inside the docs folder.
 
+Guide Screenshots
+------------------
+
+When updating the user guide documentation you might need to update the application screenshots.
+
+.. image:: images/contrib_screen.png
+   :alt: Capturing screenshots
+   :align: center
+
+In order to be consistent, you can use the chrome developer tools in the electron application to
+capture the screenshots.
+
+First you have to toggle the device toolbar (1).
+
+If this is the first time you are taking a screenshot, click on the **Dimensions** dropdown menu and
+select edit (2).
+
+.. image:: images/contrib_dimens.png
+   :alt: Adding a custom screen resolution
+   :align: center
+
+There you will be given the option to **Add custom device**. Use the following settings:
+
+- **Resolution**: 1280x894
+- **DPR**: 1.3
+
+In the user agent make sure that **Desktop** is selected. Then proceed to save the entry.
+
+After making sure that this entry is selected, you can press the overflow menu (3) and select the
+**Capture Screenshot** entry to capture a new screenshot.
+
+
 Code profiling
 *********************
 
