@@ -6,6 +6,7 @@
       </div>
       <v-form ref="form" v-model="valid">
         <file-upload
+          :loading="loading"
           :uploaded="uploaded"
           :source="source"
           :error-message="errorMessage"
@@ -79,7 +80,10 @@ import { displayDateFormatter } from '@/data/date_formatter';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useTasks } from '@/store/tasks';
 import { DateFormat } from '@/types/date-format';
+import { TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
 
 export default defineComponent({
@@ -126,15 +130,37 @@ export default defineComponent({
       return displayDateFormatter.format(now, get(dateInputFormat)!);
     });
 
+    const taskType = TaskType.IMPORT_CSV;
+    const { awaitTask, isTaskRunning } = useTasks();
+
+    const loading = isTaskRunning(taskType);
+
     const uploadPackaged = async (file: string) => {
       try {
-        await api.importDataFrom(
+        const { taskId } = await api.importDataFrom(
           get(source),
           file,
           get(dateInputFormat) || null
         );
-        set(uploaded, true);
+
+        set(loading, true);
+        const { result } = await awaitTask<boolean, TaskMeta>(
+          taskId,
+          taskType,
+          {
+            title: i18n
+              .t('file_upload.task.title', { source: get(source) })
+              .toString(),
+            numericKeys: []
+          }
+        );
+
+        if (result) {
+          set(uploaded, true);
+          set(loading, false);
+        }
       } catch (e: any) {
+        set(loading, false);
         set(errorMessage, e.message);
       }
     };
@@ -147,13 +173,30 @@ export default defineComponent({
           const formData = new FormData();
           formData.append('source', get(source));
           formData.append('file', get(file)!);
+          formData.append('async_query', 'true');
           if (get(dateInputFormat)) {
             formData.append('timestamp_format', get(dateInputFormat)!);
           }
           try {
-            await api.importFile(formData);
-            set(uploaded, true);
+            const { taskId } = await api.importFile(formData);
+            set(loading, true);
+            const { result } = await awaitTask<boolean, TaskMeta>(
+              taskId,
+              taskType,
+              {
+                title: i18n
+                  .t('file_upload.task.title', { source: get(source) })
+                  .toString(),
+                numericKeys: []
+              }
+            );
+
+            if (result) {
+              set(uploaded, true);
+              set(loading, false);
+            }
           } catch (e: any) {
+            set(loading, false);
             set(errorMessage, e.message);
           }
         }
@@ -173,6 +216,7 @@ export default defineComponent({
       valid,
       errorMessage,
       formatHelp,
+      loading,
       uploaded,
       dateInputFormat,
       dateFormatRules,

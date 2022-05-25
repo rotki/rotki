@@ -1122,6 +1122,7 @@
     "import_complete": "Import was completed successfully.",
     "select_file": "Select file",
     "change_file": "Change file",
+    "loading": "Loading",
     "many_files_selected": "One one file must be selected",
     "only_files": "Only {fileFilter} files are allowed",
     "import": "Import",
@@ -1129,6 +1130,9 @@
       "placeholder": "Input custom date format",
       "hint": "Use this if date format in your file is: {format}",
       "switch_label": "Use custom date format to parsing your file"
+    },
+    "task": {
+      "title": "Importing csv for source: {source}"
     }
   },
   "generate": {
