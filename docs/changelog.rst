@@ -1,20 +1,25 @@
 =========
 Changelog
 =========
+
+* :feature:`2221` All missing yearn v1 vaults should now have their balances detected and their historical accounting taken into account.
+* :feature:`1797` All missing acquisitions and missing prices found during a PnL period are now gathered and shown to the user as actionable items at the end of the report generation.
 * :feature:`4154` Binance data (trades, deposits, staking, etc.) can now be imported via csv file.
+* :feature:`1115` Apply ENS reverse resolution to all Ethereum addresses shown in the frontend and if any have an ENS name associated with them, display that instead of raw address.
 * :feature:`2890` Transactions in the PnL report are now clickable and have a link to the chosen blockchain explorer via the transaction hash.
-* :feature:`1680` Users will now be able to see their 1inch v1 and v2 trades
+* :feature:`1680` Users will now be able to see their 1inch v1 and v2 trades.
 * :feature:`718` Users can now ignore an exchange from the PnL report using the same option as the one for exchange syncing.
-* :feature:`2219` Users will now be able to delete snapshot.
-* :feature:`4219` Users will now be able to import snapshot manually.
-* :bug:`4261` Fixes a problem were the docker container image would increase on every restart.
+* :feature:`2219` Users will now be able to delete balance snapshots.
+* :feature:`4219` Users will now be able to import a balance snapshot manually.
+* :bug:`4261` Fixes a problem were the docker container image size would increase on every restart.
 * :feature:`1219` Introduces basic global search (you can go to any page in the app, do some basic actions such as adding a new trade or a ledger action, and also see prices of owned asset).
-* :feature:`4249` Allow users to ignore asset from the asset overview page
+* :feature:`4249` Allow users to ignore asset from the asset overview page.
 * :feature:`1106` Balance snapshots will now be created automatically without the need to restart the application or force a save.
 * :feature:`2853` Add option to disable sync for connected exchanges.
-* :feature:`3894` Users will now be able to download snapshot of database by clicking a point at dashboard graph.
+* :feature:`3894` Users will now be able to download a balance snapshot by clicking a point at dashboard graph.
 * :bug:`4172` Disallow addition and editing of external trade that could result in invalid trade fees.
-* :feature:`3370` Manual balance labels are now editable even after their creation
+* :bug:`4060` Treat reimbursement as a ledger action for crypto.com imports.
+* :feature:`3370` Manual balance labels are now editable even after their creation.
 * :feature:`4125` Introduces auto login mechanism for electron app.
 * :feature:`1447` Adds classification for ETH transactions and their events.
 * :bug:`4078` Adjust scrollbar color in dark mode for better visibility.
