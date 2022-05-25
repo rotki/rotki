@@ -39,6 +39,7 @@ from rotkehlchen.constants.assets import (
     A_SAND,
     A_SGD,
     A_SNX,
+    A_SOL,
     A_UNI,
     A_USD,
     A_USDC,
@@ -122,6 +123,7 @@ IR_TO_WORLD = {
     'Matic': A_MATIC,
     'Mana': A_MANA,
     'Sand': A_SAND,
+    'Sol': A_SOL,
 }
 
 

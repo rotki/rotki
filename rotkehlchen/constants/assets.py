@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# /home/lefteris/w/rotkehlchen/tools/scripts/generate_constant_assets.py at 19/05/2022 11:32:50.
+# /home/yabirgb/work/rotki/tools/scripts/generate_constant_assets.py at 25/05/2022 14:24:57.
 # Do not edit manually!
 
 from typing import List
@@ -167,6 +167,18 @@ A_KFEE = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_KFEE)
+A_SOL = Asset.initialize(
+    identifier='SOL-2',
+    asset_type=AssetType.OWN_CHAIN,
+    name="Solana",
+    symbol='SOL',
+    started=Timestamp(1586494758),
+    forked=None,
+    swapped_for=None,
+    coingecko='solana',
+    cryptocompare='SOL',
+)
+CONSTANT_ASSETS.append(A_SOL)
 
 
 A_BAL = EthereumToken.initialize(
@@ -1167,6 +1179,441 @@ A_YV1_GUSD = EthereumToken.initialize(
     protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_GUSD)
+A_PSLP = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x5Eff6d166D66BacBC1BF52E2C54dD391AE6b1f48'),
+    decimals=18,
+    name="pickling SushiSwap LP Token",
+    symbol='pSLP',
+    started=Timestamp(1612639016),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='pickle_jar',
+)
+CONSTANT_ASSETS.append(A_PSLP)
+CRV_CDAI_CUSDC = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x845838DF265Dcd2c412A1Dc9e959c7d08537f8a2'),
+    decimals=18,
+    name="Curve.fi cDAI/cUSDC",
+    symbol='cDAI+cUSDC',
+    started=Timestamp(1582652731),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_CDAI_CUSDC)
+CRV_MUSD = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x1AEf73d49Dedc4b1778d0706583995958Dc862e6'),
+    decimals=18,
+    name="Curve.fi MUSD/3Crv",
+    symbol='musd3CRV',
+    started=Timestamp(1602118991),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_MUSD)
+CRV_EURS = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x194eBd173F6cDacE046C53eACcE9B953F28411d1'),
+    decimals=18,
+    name="Curve.fi EURS/sEUR",
+    symbol='eursCRV',
+    started=Timestamp(1608157510),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_EURS)
+A_MUSD = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
+    decimals=18,
+    name="mStable USD",
+    symbol='mUSD',
+    started=Timestamp(1590585470),
+    swapped_for=None,
+    coingecko='musd',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_MUSD)
+CRV_USDN = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x4f3E8F405CF5aFC05D68142F3783bDfE13811522'),
+    decimals=18,
+    name="Curve.fi USDN/3Crv",
+    symbol='usdn3CRV',
+    started=Timestamp(1602099637),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_USDN)
+CRV_UST = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x94e131324b6054c0D789b190b2dAC504e4361b53'),
+    decimals=18,
+    name="Curve.fi UST/3Crv",
+    symbol='ust3CRV',
+    started=Timestamp(1608153341),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_UST)
+CRV_BBTC_SBTC = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x410e3E86ef427e30B9235497143881f717d93c2A'),
+    decimals=18,
+    name="Curve.fi bBTC/sbtcCRV",
+    symbol='bBTC/sbtcCRV',
+    started=Timestamp(1608000599),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_BBTC_SBTC)
+CRV_TBTC_SBTC = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x64eda51d3Ad40D56b9dFc5554E06F94e1Dd786Fd'),
+    decimals=18,
+    name="Curve.fi tBTC/sbtcCrv",
+    symbol='tbtc/sbtcCrv',
+    started=Timestamp(1603235147),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_TBTC_SBTC)
+CRV_OBTC_SBTC = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x2fE94ea3d5d4a175184081439753DE15AeF9d614'),
+    decimals=18,
+    name="Curve.fi oBTC/sbtcCRV",
+    symbol='oBTC/sbtcCRV',
+    started=Timestamp(1608056620),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_OBTC_SBTC)
+CRV_HBTC = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xb19059ebb43466C323583928285a49f558E572Fd'),
+    decimals=18,
+    name="Curve.fi hBTC/wBTC",
+    symbol='hCRV',
+    started=Timestamp(1598394687),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_HBTC)
+CRV_HUSD = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858'),
+    decimals=18,
+    name="Curve.fi HUSD/3Crv",
+    symbol='husd3CRV',
+    started=Timestamp(1602093636),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_HUSD)
+CRV_DUSD = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x3a664Ab939FD8482048609f652f9a0B0677337B9'),
+    decimals=18,
+    name="Curve.fi DUSD/3Crv",
+    symbol='dusd3CRV',
+    started=Timestamp(1604447498),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_DUSD)
+CRV_AETH = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xaA17A236F2bAdc98DDc0Cf999AbB47D47Fc0A6Cf'),
+    decimals=18,
+    name="Curve.fi ETH/aETH",
+    symbol='ankrCRV',
+    started=Timestamp(1612233081),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_AETH)
+CRV_ADAI_ASUSD = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x02d341CcB60fAaf662bC0554d13778015d1b285C'),
+    decimals=18,
+    name="Curve.fi aDAI/aSUSD",
+    symbol='saCRV',
+    started=Timestamp(1612211177),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_ADAI_ASUSD)
+CRV_USDP = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x7Eb40E450b9655f4B3cC4259BCC731c63ff55ae6'),
+    decimals=18,
+    name="Curve.fi USDP/3Crv",
+    symbol='usdp3CRV',
+    started=Timestamp(1614197821),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='curve_pool',
+)
+CONSTANT_ASSETS.append(CRV_USDP)
+
+A_YV1_CDAI_CUSD = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x629c759D1E83eFbF63d84eb3868B564d9521C129'),
+    decimals=18,
+    name="yearn Curve.fi cDAI/cUSDC",
+    symbol='yvcDAI+cUSDC',
+    started=Timestamp(1604758201),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_CDAI_CUSD)
+A_YV1_MSUD_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x0FCDAeDFb8A7DfDa2e9838564c5A1665d856AFDF'),
+    decimals=18,
+    name="yearn Curve.fi MUSD/3Crv",
+    symbol='yvmusd3CRV',
+    started=Timestamp(1607160847),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_MSUD_CRV)
+A_YV1_GUSD_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xcC7E70A958917cCe67B4B87a8C30E6297451aE98'),
+    decimals=18,
+    name="yearn Curve.fi GUSD/3Crv",
+    symbol='yvgusd3CRV',
+    started=Timestamp(1607237689),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_GUSD_CRV)
+A_YV1_EURS_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x98B058b2CBacF5E99bC7012DF757ea7CFEbd35BC'),
+    decimals=18,
+    name="yearn Curve.fi EURS/sEUR",
+    symbol='yveursCRV',
+    started=Timestamp(1610435041),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_EURS_CRV)
+A_YV1_MUSD_VAULT = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xE0db48B4F71752C4bEf16De1DBD042B82976b8C7'),
+    decimals=18,
+    name="yearn mStable USD",
+    symbol='yvmUSD',
+    started=Timestamp(1609441345),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_MUSD_VAULT)
+A_YV1_RENBT_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
+    decimals=18,
+    name="yearn Curve.fi renBTC/wBTC",
+    symbol='yvcrvRenWBTC',
+    started=Timestamp(1611583752),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_RENBT_CRV)
+A_YV1_USDN_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xFe39Ce91437C76178665D64d7a2694B0f6f17fE3'),
+    decimals=18,
+    name="yearn Curve.fi USDN/3Crv",
+    symbol='yvusdn3CRV',
+    started=Timestamp(1611451016),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_USDN_CRV)
+A_YV1_UST_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xF6C9E9AF314982A4b38366f4AbfAa00595C5A6fC'),
+    decimals=18,
+    name="yearn Curve.fi UST/3Crv",
+    symbol='yvust3CRV',
+    started=Timestamp(1611444747),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_UST_CRV)
+A_YV1_BBTC_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xA8B1Cb4ed612ee179BDeA16CCa6Ba596321AE52D'),
+    decimals=18,
+    name="yearn Curve.fi bBTC/sbtcCRV",
+    symbol='yvbBTC/sbtcCRV',
+    started=Timestamp(1611443166),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_BBTC_CRV)
+A_YV1_TBTC_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x07FB4756f67bD46B748b16119E802F1f880fb2CC'),
+    decimals=18,
+    name="yearn Curve.fi tBTC/sbtcCrv",
+    symbol='yvtbtc/sbtcCrv',
+    started=Timestamp(1611641883),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_TBTC_CRV)
+A_YV1_OBTC_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x7F83935EcFe4729c4Ea592Ab2bC1A32588409797'),
+    decimals=18,
+    name="yearn Curve.fi oBTC/sbtcCRV",
+    symbol='yvoBTC/sbtcCRV',
+    started=Timestamp(1611698586),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_OBTC_CRV)
+A_YV1_HBTC_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x46AFc2dfBd1ea0c0760CAD8262A5838e803A37e5'),
+    decimals=18,
+    name="yearn Curve.fi hBTC/wBTC",
+    symbol='yvhCRV',
+    started=Timestamp(1611973890),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_HBTC_CRV)
+A_YV1_SUSD_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x5533ed0a3b83F70c3c4a1f69Ef5546D3D4713E44'),
+    decimals=18,
+    name="yearn Curve.fi DAI/USDC/USDT/sUSD",
+    symbol='yvcrvPlain3andSUSD',
+    started=Timestamp(1611704712),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_SUSD_CRV)
+A_YV1_HUSD_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x39546945695DCb1c037C836925B355262f551f55'),
+    decimals=18,
+    name="yearn Curve.fi HUSD/3Crv",
+    symbol='yvhusd3CRV',
+    started=Timestamp(1611973890),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_HUSD_CRV)
+A_YV1_DUSD_3CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x8e6741b456a074F0Bc45B8b82A755d4aF7E965dF'),
+    decimals=18,
+    name="yearn Curve.fi DUSD/3Crv",
+    symbol='yvdusd3CRV',
+    started=Timestamp(1611973890),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_DUSD_3CRV)
+A_YV1_A3CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x03403154afc09Ce8e44C3B185C82C6aD5f86b9ab'),
+    decimals=18,
+    name="yearn Curve.fi aDAI/aUSDC/aUSDT",
+    symbol='yva3CRV',
+    started=Timestamp(1612192629),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_A3CRV)
+A_YV1_ETH_ANKER = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xE625F5923303f1CE7A43ACFEFd11fd12f30DbcA4'),
+    decimals=18,
+    name="yearn Curve.fi ETH/aETH",
+    symbol='yvankrCRV',
+    started=Timestamp(1613091218),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_ETH_ANKER)
+A_YV1_ASUSD_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xBacB69571323575C6a5A3b4F9EEde1DC7D31FBc1'),
+    decimals=18,
+    name="yearn Curve.fi aDAI/aSUSD",
+    symbol='yvsaCRV',
+    started=Timestamp(1613888556),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_ASUSD_CRV)
+A_YV1_USDP_CRV = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x1B5eb1173D2Bf770e50F10410C9a96F7a8eB6e75'),
+    decimals=18,
+    name="yearn Curve.fi USDP/3Crv",
+    symbol='yvusdp3CRV',
+    started=Timestamp(1614835272),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_USDP_CRV)
+A_YV1_PSLP = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xbD17B1ce622d73bD438b9E658acA5996dc394b0d'),
+    decimals=18,
+    name="yearn pSLP",
+    symbol='yvpSLP',
+    started=Timestamp(1599694464),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol='yearn-v1',
+)
+CONSTANT_ASSETS.append(A_YV1_PSLP)
+
+
 A_FARM_USDC = EthereumToken.initialize(
     address=string_to_ethereum_address('0xf0358e8c3CD5Fa238a29301d0bEa3D63A17bEdBE'),
     decimals=6,
@@ -1847,7 +2294,7 @@ A_HBTC = EthereumToken.initialize(
     started=Timestamp(1575863326),
     swapped_for=None,
     coingecko='huobi-btc',
-    cryptocompare=None,
+    cryptocompare='HBTC',
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_HBTC)
