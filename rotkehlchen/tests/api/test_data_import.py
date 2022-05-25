@@ -428,3 +428,24 @@ def test_data_import_binance_history(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert result is True
     assert_binance_import_results(rotki)
+
+
+def test_docker_async_import(rotkehlchen_api_server):
+    """Test that docker async csv import using POST on /import is initialized properly
+        The test doesn't wait for import completion, it only tests successful import initialization
+    """
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'binance_history.csv'
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), data={
+            'async_query': True,
+            'source': 'binance',
+        }, files={
+            'file': open(filepath, 'rb'),
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == {'task_id': 0}

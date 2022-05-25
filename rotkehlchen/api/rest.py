@@ -32,6 +32,7 @@ from gevent.lock import Semaphore
 from marshmallow.exceptions import ValidationError
 from pysqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
+from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.ledger_actions import LedgerAction
@@ -2114,12 +2115,13 @@ class RestAPI():
     def ping() -> Response:
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
-    def _import_data(
-            self,
-            source: IMPORTABLE_LOCATIONS,
-            filepath: Path,
-            timestamp_format: Optional[str],
-    ) -> Dict[str, Any]:
+    def _do_import_data(
+        self,
+        source: str,
+        filepath: Path,
+        timestamp_format: Optional[str],
+    ) -> Tuple[bool, str]:
+        success, msg = False, ''
         if source == 'cointracking.info':
             success, msg = self.rotkehlchen.data_importer.import_cointracking_csv(
                 filepath=filepath,
@@ -2165,6 +2167,30 @@ class RestAPI():
                 filepath=filepath,
                 timestamp_format=timestamp_format,
             )
+        return success, msg
+
+    def _import_data(
+            self,
+            source: IMPORTABLE_LOCATIONS,
+            filepath: Union[FileStorage, Path],
+            timestamp_format: Optional[str],
+    ) -> Dict[str, Any]:
+        if isinstance(filepath, Path):
+            success, msg = self._do_import_data(
+                source=source,
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+        else:
+            with tempfile.TemporaryDirectory() as temp_directory:
+                filename = filepath.filename if filepath.filename else f'{source}.csv'
+                saved_filepath = Path(temp_directory) / filename
+                filepath.save(str(saved_filepath))
+                success, msg = self._do_import_data(
+                    source=source,
+                    filepath=saved_filepath,
+                    timestamp_format=timestamp_format,
+                )
 
         if success is False:
             return wrap_in_fail_result(
@@ -2178,7 +2204,7 @@ class RestAPI():
     def import_data(
             self,
             source: IMPORTABLE_LOCATIONS,
-            filepath: Path,
+            filepath: Union[FileStorage, Path],
             timestamp_format: Optional[str],
             async_query: bool,
     ) -> Response:
