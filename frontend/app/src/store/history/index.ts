@@ -598,7 +598,7 @@ export const useTransactions = defineStore('history/transactions', () => {
       parameters?: Partial<TransactionRequestPayload>
     ) => {
       const defaults: TradeRequestPayload = {
-        limit: 1,
+        limit: 0,
         offset: 0,
         ascending: false,
         orderByAttribute: 'timestamp',
@@ -678,7 +678,9 @@ export const useTransactions = defineStore('history/transactions', () => {
         setStatus(Status.REFRESHING);
         const { notify } = useNotifications();
         const refreshAddressTxs = get(ethAddresses).map((address: string) =>
-          fetchTransactionsHandler(false).catch(error => {
+          fetchTransactionsHandler(false, {
+            address
+          }).catch(error => {
             notify({
               title: i18n.t('actions.transactions.error.title').toString(),
               message: i18n
