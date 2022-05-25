@@ -1271,18 +1271,12 @@ class DataImportResource(BaseMethodView):
             file: FileStorage,
             timestamp_format: Optional[str],
     ) -> Response:
-        with TemporaryDirectory() as temp_directory:
-            filename = file.filename if file.filename else f'{source}.csv'
-            filepath = Path(temp_directory) / filename
-            file.save(str(filepath))
-            response = self.rest_api.import_data(
-                source=source,
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-                async_query=async_query,
-            )
-
-        return response
+        return self.rest_api.import_data(
+            source=source,
+            filepath=file,
+            timestamp_format=timestamp_format,
+            async_query=async_query,
+        )
 
 
 class Eth2DailyStatsResource(BaseMethodView):
