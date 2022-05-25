@@ -747,7 +747,7 @@
     },
     "ethereum_transactions": {
       "title": "Transactions query update",
-      "message": "Querying information for {address}, {address_index} of {total_addresses}"
+      "message": "Querying ethereum transactions information for {address} between {start} and {end}"
     }
   },
   "pagination": {

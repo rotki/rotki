@@ -31,8 +31,8 @@ export async function handleEthereumTransactionStatus(
   if (data.status === EthereumTransactionsQueryStatus.ACCOUNT_CHANGE) {
     const messageData = {
       address: data.address,
-      address_index: data.period[0],
-      total_addresses: data.period[1]
+      start: data.period[0],
+      end: data.period[1]
     };
     notify({
       title: i18n

@@ -119,12 +119,12 @@ class EthTransactions:
             f_to_ts = filter_query.to_ts
             from_ts = Timestamp(0) if f_from_ts is None else f_from_ts
             to_ts = ts_now() if f_to_ts is None else f_to_ts
-            for i, address in enumerate(accounts):
+            for address in accounts:
                 self.msg_aggregator.add_message(
                     message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
                     data={
                         'address': address,
-                        'period': [i + 1, len(accounts)],
+                        'period': [from_ts, to_ts],
                         'status': str(TransactionStatusStep.ACCOUNT_CHANGE),
                     },
                 )
@@ -180,10 +180,6 @@ class EthTransactions:
                         dbethtx.add_ethereum_transactions(
                             ethereum_transactions=new_transactions,
                             relevant_address=address,
-                        )
-                        log.debug(
-                            f'Transactions update range {query_start_ts} - '
-                            f'{new_transactions[-1].timestamp}',
                         )
                         ranges.update_used_query_range(  # update last queried time for the address
                             location_string=location_string,
