@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 SAI_TIMESTAMP = 1574035200
-ROWS_PER_YIELD = 500
+ROWS_PER_CONTEXT_SWITCH = 500
 
 SINGLE_BINANCE_ENTRIES = [
     BinanceDepositWithdrawEntry(),
@@ -215,7 +215,7 @@ class DataImporter():
             data = csv.reader(csvfile, delimiter=',', quotechar='"')
             header = remap_header(next(data))
             for idx, row in enumerate(data):
-                if idx % ROWS_PER_YIELD == 0:
+                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
                     gevent.sleep(0.1)
                 try:
                     self._consume_cointracking_entry(dict(zip(header, row)), **kwargs)
@@ -575,7 +575,7 @@ class DataImporter():
                 investments_withdrawals[asset].append(row)
 
         for idx, timestamp in enumerate(multiple_rows):
-            if idx % ROWS_PER_YIELD == 0:
+            if idx % ROWS_PER_CONTEXT_SWITCH == 0:
                 gevent.sleep(0.1)
             # When we convert multiple assets dust to CRO
             # in one time, it will create multiple debited rows with
@@ -650,7 +650,7 @@ class DataImporter():
         # Compute investments profit
         if len(investments_withdrawals) != 0:
             for idx, asset in enumerate(investments_withdrawals):
-                if idx % ROWS_PER_YIELD == 0:
+                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
                     gevent.sleep(0.1)
                 asset_object = asset_from_cryptocom(asset)
                 if asset not in investments_deposits:
@@ -756,7 +756,7 @@ class DataImporter():
                 # continue, since they already are in DB
 
             for idx, row in enumerate(data):
-                if idx % ROWS_PER_YIELD == 0:
+                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
                     gevent.sleep(0.1)
                 try:
                     self._consume_cryptocom_entry(row, **kwargs)
@@ -884,7 +884,7 @@ class DataImporter():
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
             for idx, row in enumerate(data):
-                if idx % ROWS_PER_YIELD == 0:
+                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
                     gevent.sleep(0.1)
                 try:
                     self._consume_blockfi_entry(row, **kwargs)
@@ -960,7 +960,7 @@ class DataImporter():
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
             for idx, row in enumerate(data):
-                if idx % ROWS_PER_YIELD == 0:
+                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
                     gevent.sleep(0.1)
                 try:
                     self._consume_blockfi_trade(row, **kwargs)
@@ -1097,7 +1097,7 @@ class DataImporter():
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
             for idx, row in enumerate(data):
-                if idx % ROWS_PER_YIELD == 0:
+                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
                     gevent.sleep(0.1)
                 try:
                     self._consume_nexo(row, **kwargs)
@@ -1195,7 +1195,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
             for idx, row in enumerate(data):
-                if idx % ROWS_PER_YIELD == 0:
+                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
                     gevent.sleep(0.1)
                 try:
                     self._consume_shapeshift_trade(row, **kwargs)
@@ -1367,7 +1367,7 @@ Activity from uphold with uphold transaction id:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
             for idx, row in enumerate(data):
-                if idx % ROWS_PER_YIELD == 0:
+                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
                     gevent.sleep(0.1)
                 try:
                     self._consume_uphold_transaction(row, **kwargs)
@@ -1463,7 +1463,7 @@ Activity from uphold with uphold transaction id:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
             for idx, row in enumerate(data):
-                if idx % ROWS_PER_YIELD == 0:
+                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
                     gevent.sleep(0.1)
                 try:
                     self._consume_bisq_trade(row, **kwargs)
@@ -1558,7 +1558,7 @@ Activity from uphold with uphold transaction id:
         stats: Dict[BinanceEntry, int] = defaultdict(int)
         skipped_rows: List[Any] = []
         for idx, (timestamp, rows) in enumerate(multi.items()):
-            if idx % ROWS_PER_YIELD == 0:
+            if idx % ROWS_PER_CONTEXT_SWITCH == 0:
                 gevent.sleep(0.1)
             single_processed, rows_without_single = self._process_single_binance_entries(
                 timestamp=timestamp,

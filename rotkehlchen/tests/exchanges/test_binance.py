@@ -213,9 +213,8 @@ def test_binance_query_balances_include_features(function_scope_binance):
     assert balances[A_WBTC].amount == FVal('2.1')
 
     warnings = binance.msg_aggregator.consume_warnings()
-    assert len(warnings) == 2
+    assert len(warnings) == 1
     assert 'unknown binance asset IDONTEXIST' in warnings[0]
-    assert 'unsupported binance asset ETF' in warnings[1]
 
 
 TIMESTAMPS_RE = re.compile(r'.*&startTime\=(.*?)&endTime\=(.*?)&')

@@ -2594,10 +2594,10 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     # Check that staking events have been updated
     cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype="staking remove asset" AND type="unstaking"')  # noqa: E501
     assert cursor.fetchone() == (0,)
-    cursor.execute('SELECT COUNT(*), timestamp FROM history_events WHERE subtype="staking receive asset" AND type="unstaking"')  # noqa: E501
-    assert cursor.fetchone() == (0, None)
-    cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype="remove asset" AND type="staking"')  # noqa: E501
-    assert cursor.fetchone() == (1,)
+    cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype="staking receive asset" AND type="unstaking"')  # noqa: E501
+    assert cursor.fetchone() == (0,)
+    cursor.execute('SELECT COUNT(*), timestamp FROM history_events WHERE subtype="remove asset" AND type="staking"')  # noqa: E501
+    assert cursor.fetchone() == (1, expected_timestamp // 10)
     cursor.execute('SELECT COUNT(*), timestamp FROM history_events WHERE subtype="remove asset" AND type="staking"')  # noqa: E501
     assert cursor.fetchone() == (1, expected_timestamp // 10)
 
