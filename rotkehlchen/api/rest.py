@@ -267,8 +267,8 @@ class RestAPI():
         self.task_lock = Semaphore()
         self.task_id = 0
         self.task_results: Dict[int, Any] = {}
-
         self.trade_schema = TradeSchema()
+        self.import_tmp_files: DefaultDict[FileStorage, Path] = defaultdict()
 
     # - Private functions not exposed to the API
     def _new_task_id(self) -> int:
@@ -2182,15 +2182,14 @@ class RestAPI():
                 timestamp_format=timestamp_format,
             )
         else:
-            with tempfile.TemporaryDirectory() as temp_directory:
-                filename = filepath.filename if filepath.filename else f'{source}.csv'
-                saved_filepath = Path(temp_directory) / filename
-                filepath.save(str(saved_filepath))
-                success, msg = self._do_import_data(
-                    source=source,
-                    filepath=saved_filepath,
-                    timestamp_format=timestamp_format,
-                )
+            tmpfilepath = self.import_tmp_files[filepath]
+            success, msg = self._do_import_data(
+                source=source,
+                filepath=tmpfilepath,
+                timestamp_format=timestamp_format,
+            )
+            tmpfilepath.unlink(missing_ok=True)
+            del self.import_tmp_files[filepath]
 
         if success is False:
             return wrap_in_fail_result(
@@ -2208,6 +2207,11 @@ class RestAPI():
             timestamp_format: Optional[str],
             async_query: bool,
     ) -> Response:
+        if not isinstance(filepath, Path):
+            _, tmpfilepath = tempfile.mkstemp()
+            filepath.save(tmpfilepath)
+            self.import_tmp_files[filepath] = Path(tmpfilepath)
+
         if async_query:
             return self._query_async(
                 command='_import_data',

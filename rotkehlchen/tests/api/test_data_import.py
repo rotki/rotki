@@ -11,6 +11,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response_with_result,
+    wait_for_async_task,
 )
 from rotkehlchen.tests.utils.dataimport import (
     assert_binance_import_results,
@@ -448,4 +449,5 @@ def test_docker_async_import(rotkehlchen_api_server):
         },
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'task_id': 0}
+    outcome = wait_for_async_task(rotkehlchen_api_server, result['task_id'])
+    assert outcome['message'] == ''
