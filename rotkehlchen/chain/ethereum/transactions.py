@@ -90,6 +90,14 @@ class EthTransactions:
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+            data={
+                'address': address,
+                'period': [start_ts, end_ts],
+                'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
+            },
+        )
 
     def query(
             self,
@@ -120,14 +128,6 @@ class EthTransactions:
             from_ts = Timestamp(0) if f_from_ts is None else f_from_ts
             to_ts = ts_now() if f_to_ts is None else f_to_ts
             for address in accounts:
-                self.msg_aggregator.add_message(
-                    message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
-                    data={
-                        'address': address,
-                        'period': [from_ts, to_ts],
-                        'status': str(TransactionStatusStep.ACCOUNT_CHANGE),
-                    },
-                )
                 self.single_address_query_transactions(
                     address=address,
                     start_ts=from_ts,

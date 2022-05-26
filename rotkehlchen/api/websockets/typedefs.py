@@ -22,6 +22,7 @@ class TransactionStatusStep(Enum):
     QUERYING_TRANSACTIONS = auto()
     QUERYING_INTERNAL_TRANSACTIONS = auto()
     QUERYING_ETHEREUM_TOKENS_TRANSACTIONS = auto()
+    QUERYING_TRANSACTIONS_FINISHED = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member
