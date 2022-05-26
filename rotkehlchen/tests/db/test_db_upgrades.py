@@ -2428,12 +2428,18 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     cursor = db_v31.conn.cursor()
     result = cursor.execute('SELECT rowid from history_events')
     old_ids = {row[0] for row in result}
-    assert len(old_ids) == 13
+    assert len(old_ids) == 15
     cursor.execute(
         'SELECT subtype from history_events',
     )
     subtypes = [row[0] for row in cursor]
-    assert set(subtypes) == {'staking deposit asset', 'staking receive asset', None, 'fee'}
+    assert set(subtypes) == {
+        'staking deposit asset',
+        'staking receive asset',
+        None,
+        'fee',
+        'staking remove asset',
+    }
     # check used query ranges
     result = cursor.execute('SELECT * from used_query_ranges').fetchall()
     assert result == [
@@ -2496,6 +2502,13 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         ('LABEL2', 'TAG2'),
     ]
 
+    # Check that we have old staking events
+    expected_timestamp = 16099501664486
+    cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype="staking remove asset" AND type="unstaking"')  # noqa: E501
+    assert cursor.fetchone() == (1,)
+    cursor.execute('SELECT COUNT(*), timestamp FROM history_events WHERE subtype="staking receive asset" AND type="unstaking"')  # noqa: E501
+    assert cursor.fetchone() == (1, expected_timestamp)
+
     db_v31.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2506,9 +2519,9 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     cursor = db.conn.cursor()
     cursor.execute('SELECT subtype FROM history_events')
     subtypes = {row[0] for row in cursor}
-    assert subtypes == {'staking deposit asset', 'staking receive asset', 'reward', 'fee', None}
+    assert subtypes == {'deposit asset', 'receive wrapped', 'reward', 'fee', None, 'remove asset'}
     result = cursor.execute('SELECT identifier FROM history_events ORDER BY identifier')
-    assert [x[0] for x in result] == list(range(1, 14)), 'identifier column should be added'
+    assert [x[0] for x in result] == list(range(1, 16)), 'identifier column should be added'
     # check used query range got delete and rest are intact
     result = cursor.execute('SELECT * from used_query_ranges').fetchall()
     assert result == [
@@ -2577,6 +2590,16 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         ('1', 'TAG1'),
         ('2', 'TAG2'),
     ]
+
+    # Check that staking events have been updated
+    cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype="staking remove asset" AND type="unstaking"')  # noqa: E501
+    assert cursor.fetchone() == (0,)
+    cursor.execute('SELECT COUNT(*), timestamp FROM history_events WHERE subtype="staking receive asset" AND type="unstaking"')  # noqa: E501
+    assert cursor.fetchone() == (0, None)
+    cursor.execute('SELECT COUNT(*) FROM history_events WHERE subtype="remove asset" AND type="staking"')  # noqa: E501
+    assert cursor.fetchone() == (1,)
+    cursor.execute('SELECT COUNT(*), timestamp FROM history_events WHERE subtype="remove asset" AND type="staking"')  # noqa: E501
+    assert cursor.fetchone() == (1, expected_timestamp // 10)
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
