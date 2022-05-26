@@ -32,7 +32,6 @@ from gevent.lock import Semaphore
 from marshmallow.exceptions import ValidationError
 from pysqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
-from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.ledger_actions import LedgerAction
@@ -2172,26 +2171,14 @@ class RestAPI():
     def _import_data(
             self,
             source: IMPORTABLE_LOCATIONS,
-            filepath: Union[FileStorage, Path],
+            filepath: Path,
             timestamp_format: Optional[str],
     ) -> Dict[str, Any]:
-        if isinstance(filepath, Path):
-            success, msg = self._do_import_data(
-                source=source,
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-        else:
-            with tempfile.TemporaryDirectory() as temp_directory:
-                filename = filepath.filename if filepath.filename else f'{source}.csv'
-                saved_filepath = Path(temp_directory) / filename
-                filepath.save(str(saved_filepath))
-                success, msg = self._do_import_data(
-                    source=source,
-                    filepath=saved_filepath,
-                    timestamp_format=timestamp_format,
-                )
-
+        success, msg = self._do_import_data(
+            source=source,
+            filepath=filepath,
+            timestamp_format=timestamp_format,
+        )
         if success is False:
             return wrap_in_fail_result(
                 message=f'Invalid CSV format, missing required field: {msg}',
@@ -2204,7 +2191,7 @@ class RestAPI():
     def import_data(
             self,
             source: IMPORTABLE_LOCATIONS,
-            filepath: Union[FileStorage, Path],
+            filepath: Path,
             timestamp_format: Optional[str],
             async_query: bool,
     ) -> Response:

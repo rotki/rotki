@@ -1,5 +1,5 @@
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, mkdtemp
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
 
 from flask import Blueprint, Request, Response, request as flask_request
@@ -1271,9 +1271,13 @@ class DataImportResource(BaseMethodView):
             file: FileStorage,
             timestamp_format: Optional[str],
     ) -> Response:
+        temp_directory = mkdtemp()
+        filename = file.filename if file.filename else f'{source}.csv'
+        saved_filepath = Path(temp_directory) / filename
+        file.save(saved_filepath)
         return self.rest_api.import_data(
             source=source,
-            filepath=file,
+            filepath=saved_filepath,
             timestamp_format=timestamp_format,
             async_query=async_query,
         )
