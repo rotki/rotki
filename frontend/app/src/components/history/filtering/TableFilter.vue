@@ -115,8 +115,8 @@ export default defineComponent({
 
         if (matcher.validate(keyword)) {
           validPairs.push(entry);
-          const valueKey = (matcher.keyValue ?? matcher.key) as string;
-          const transformedKeyword = matcher.transformer?.(keyword) ?? keyword;
+          const valueKey = (matcher.keyValue || matcher.key) as string;
+          const transformedKeyword = matcher.transformer?.(keyword) || keyword;
 
           if (matcher.multiple) {
             if (!matched[valueKey]) {
