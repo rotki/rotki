@@ -222,7 +222,7 @@ WORLD_TO_KRAKEN = {
     # REP V2
     strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REPV2',
     'DAO': 'XDAO',
-    'MLN': 'XMLN',
+    strethaddress_to_identifier('0xec67005c4E498Ec7f55E092bd1d35cbC47C91892'): 'XMLN',
     'ICN': 'XICN',
     'GNO': 'GNO',
     'BCH': 'BCH',
@@ -555,6 +555,8 @@ WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0xa0246c9032bC3A600820415aE600c6388619A14D'): 'FARM',
     'STX-2': 'STX',
     strethaddress_to_identifier('0x9E46A38F5DaaBe8683E10793b06749EEF7D733d1'): 'NCT',
+    strethaddress_to_identifier('0xec67005c4E498Ec7f55E092bd1d35cbC47C91892'): 'MLN',
+    strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
 }
 
 WORLD_TO_COINBASE = {
@@ -566,6 +568,8 @@ WORLD_TO_COINBASE = {
     strethaddress_to_identifier('0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784'): 'TRU',
     strethaddress_to_identifier('0xa0246c9032bC3A600820415aE600c6388619A14D'): 'FARM',
     'STX-2': 'STX',
+    strethaddress_to_identifier('0xec67005c4E498Ec7f55E092bd1d35cbC47C91892'): 'MLN',
+    strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
 }
 
 WORLD_TO_UPHOLD = {

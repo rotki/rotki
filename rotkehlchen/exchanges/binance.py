@@ -504,10 +504,11 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             try:
                 asset = asset_from_binance(asset_symbol)
             except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found unsupported {self.name} asset {e.asset_name}. '
-                    f'Ignoring its balance query.',
-                )
+                if e.asset_name != 'ETF':
+                    self.msg_aggregator.add_warning(
+                        f'Found unsupported {self.name} asset {e.asset_name}. '
+                        f'Ignoring its balance query.',
+                    )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
