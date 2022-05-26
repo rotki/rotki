@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import json
 import logging
+import shutil
 import tempfile
 import time
 import traceback
@@ -2174,11 +2175,15 @@ class RestAPI():
             filepath: Path,
             timestamp_format: Optional[str],
     ) -> Dict[str, Any]:
+        """Imports the data depending on the `source` and cleanup the tmp dir created."""
         success, msg = self._do_import_data(
             source=source,
             filepath=filepath,
             timestamp_format=timestamp_format,
         )
+        tmp_dir = tempfile.gettempdir()
+        if filepath.is_relative_to(tmp_dir) is True:
+            shutil.rmtree(filepath.parents)
         if success is False:
             return wrap_in_fail_result(
                 message=f'Invalid CSV format, missing required field: {msg}',
