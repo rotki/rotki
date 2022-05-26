@@ -51,6 +51,14 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def _hashes_tuple_to_list(hashes: Set[Tuple[str, Timestamp]]) -> List[str]:
+    """Turns the set of hashes/timestamp to a timestamp ascending ordered list
+
+    This function needs to exist since Set has no guranteed order of iteration.
+    """
+    return [x[0] for x in sorted(hashes, key=lambda x: x[1])]
+
+
 class Etherscan(ExternalServiceWithApiKey):
     def __init__(self, database: DBHandler, msg_aggregator: MessagesAggregator) -> None:
         super().__init__(database=database, service_name=ExternalService.ETHERSCAN)
@@ -307,7 +315,7 @@ class Etherscan(ExternalServiceWithApiKey):
             account: ChecksumEthAddress,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Iterator[Set[str]]:
+    ) -> Iterator[List[str]]:
         options = {'address': str(account), 'sort': 'asc'}
         if from_ts is not None:
             from_block = self.get_blocknumber_by_time(from_ts)
@@ -316,17 +324,17 @@ class Etherscan(ExternalServiceWithApiKey):
             to_block = self.get_blocknumber_by_time(to_ts)
             options['endBlock'] = str(to_block)
 
-        hashes: Set[str] = set()
+        hashes: Set[Tuple[str, Timestamp]] = set()
         while True:
             result = self._query(module='account', action='tokentx', options=options)
             last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
             for entry in result:
                 timestamp = deserialize_timestamp(entry['timeStamp'])
                 if timestamp > last_ts and len(hashes) >= TRANSACTIONS_BATCH_NUM:  # type: ignore
-                    yield hashes
+                    yield _hashes_tuple_to_list(hashes)
                     hashes = set()
                     last_ts = timestamp
-                hashes.add(entry['hash'])
+                hashes.add((entry['hash'], timestamp))
 
             if len(result) != ETHERSCAN_TX_QUERY_LIMIT:
                 break
@@ -337,7 +345,7 @@ class Etherscan(ExternalServiceWithApiKey):
             last_block = result[-1]['blockNumber']  # pylint: disable=unsubscriptable-object
             options['startBlock'] = last_block
 
-        yield hashes
+        yield _hashes_tuple_to_list(hashes)
 
     def get_latest_block_number(self) -> int:
         """Gets the latest block number
