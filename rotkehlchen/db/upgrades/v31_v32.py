@@ -28,6 +28,12 @@ def _upgrade_history_events(cursor: 'Cursor') -> None:
         extra_data TEXT,
         UNIQUE(event_identifier, sequence_index)
     );""")
+    cursor.execute('UPDATE history_events SET timestamp = timestamp / 10;')
+    cursor.execute('UPDATE history_events SET subtype = "deposit asset" WHERE subtype = "staking deposit asset";')  # noqa: E501
+    cursor.execute('UPDATE history_events SET subtype = "receive wrapped" WHERE subtype = "staking receive asset";')  # noqa: E501
+    cursor.execute('UPDATE history_events SET subtype = "remove asset", type = "staking" WHERE subtype = "staking remove asset" AND type = "unstaking";')  # noqa: E501
+    cursor.execute('UPDATE history_events SET subtype = "return wrapped", type = "staking" WHERE subtype = "staking receive asset" AND type = "unstaking";')  # noqa: E501
+    cursor.execute('UPDATE history_events SET type = "informational" WHERE subtype = "unknown";')
     cursor.execute("""
     INSERT INTO history_events_copy (event_identifier, sequence_index, timestamp, location,
     location_label, asset, amount, usd_value, notes, type, subtype)
