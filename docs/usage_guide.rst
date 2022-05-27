@@ -606,7 +606,7 @@ At the moment there is no compulsory API key. But if you don't use your own node
 Cointracking.info
 ====================
 
-You can also import data from `cointracking.info <https://cointracking.info/>`_ into rotki by clicking on "Import Data" on the left sidebard and then following the instructions.
+You can also import data from `cointracking.info <https://cointracking.info/>`_ into rotki by clicking on "Import Data" on the left sidebar and then following the instructions.
 
 rotki can import any trade CSV data exported from cointracking.info. But in general it's not recommended to utilize cointracking as their exported data are missing a lot of information.
 
@@ -614,10 +614,19 @@ rotki can import any trade CSV data exported from cointracking.info. But in gene
    :alt: Importing data from cointracking.info
    :align: center
 
+Binance.com
+=============
+
+You can import data from `binance.com <https://binance.com/>`_ into rotki by clicking on "Import Data" on the left sidebar and then following the instructions.
+
+rotki can import a CSV data file exported from Binance. But due to Binance's csv format some data may be not importable. You will see warnings if this happens.
+
+By importing a csv file you are able to import more than with the API. Particularly: Trades, Deposits and Withdrawals, Small assets exchange BNB, ETH 2.0 Staking and ETH 2.0 Staking Rewards, Launchpool Interests, POS savings interest, POS savings purchase, POS savings redemption.
+
 ShapeShift.com
 ====================
 
-You can import trade CSV data exported from shapeshift.com.  Transactions will come from adding your Blockchain Accounts used with ShapeShift to rotki.
+You can import trade CSV data file exported from shapeshift.com.  Transactions will come from adding your Blockchain Accounts used with ShapeShift to rotki.
 
 Import data in the same section as the image above in the prior heading.  When exporting trades from ShapeShift, the selected wallet may show DEX trades in the user interface.  If it is not the Native wallet, DEX trades may not show up in the user interface, but they still export to CSV.  This importer ignores DEX trades, as they are covered by premium support for Uniswap and SushiSwap.
 
@@ -712,6 +721,15 @@ An xpub does not allow spending your coins but provides information about your w
    :alt: Add a bitcoin account using XPUB
    :align: center
 
+
+ENS names resolution
+=====================
+
+rotki automatically resolves ens name for each of your ethereum accounts. If there is a primary ens name specified for an account, this name will be shown instead of raw blockchain address across the app. You can find the blockchain address by hovering the mouse over the ens name.
+
+.. image:: images/ens_resolution.png
+   :alt: Example of resolving an ens name
+   :align: center
 
 Checking Exchange Balances
 ===========================
@@ -879,7 +897,7 @@ Adding manual trades
 
 rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
 
-On the left sidebar click on History and then the Trade button from the dropdown menu. This will take you to the Trades page. Clicking on the ``+`` symbol will open a menu like the following.
+On the left sidebar click on History and then the Trades button from the dropdown menu. This will take you to the Trades page. Clicking on the ``+`` button will open a menu like the following.
 
 .. image:: images/external_trade.png
    :alt: Add an external trade
@@ -899,6 +917,7 @@ Adding ledger actions
 =====================
 
 With ledger actions you can add events that represent incomes, losses, expenses, etc. On the left sidebar click on History and then the Ledger Actions button from the dropdown menu.
+To add a ledger action click on the ``+`` button.
 You can provide a location, for example an exchange, a bank, a blockchain or others. For the action type you can select from:
 
 * Income
@@ -945,7 +964,7 @@ When selecting a filter, by clicking or typing the filter you will get some sugg
 
 .. note::
 
-    At the moment it is not possible to navigate select the available filters using the keyboard arrows or tab.
+    At the moment it is not possible to select the available filters using the keyboard arrows or tab.
     This is a feature that will become available in the future.
 
 When a suggestion appears you can navigate to the next available suggestion using the tab button or you can also change
@@ -960,7 +979,7 @@ After adding your filters you can press enter to close the menu.
 Filtering deposits & withdrawals
 ================================
 
-You can filter your deposits and withdrawals int he same say you can filter your trades.
+You can filter your deposits and withdrawals in the same way you can filter your trades.
 
 .. image:: images/sc_history_deposits_filter.png
    :alt: Deposit filters
@@ -1344,15 +1363,15 @@ Timeout or price not found for timestamp
 Figure out which asset caused the price not found. Then check the historical price caches and make sure you have the historical price cache for that asset pair created. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. See :ref:`manage-historical-price-cache` on how to do it.
 
 
-Analytics
+Statistics
 **********
 
-If you have a premium subscription you can get analytics on all your assets and trades.
+If you have a premium subscription you can get statistics on all your assets and trades.
 
 .. note::
-    The starting point of the for these analytics will be when you started using the application as rotki takes balance snapshots daily. We also plan to provide analytics on data before that in a best effort basis as detailed in `this <https://github.com/rotki/rotki/issues/1379>`_ issue.
+    The starting point of these statistics will be when you started using the application as rotki takes balance snapshots daily. We also plan to provide analytics on data before that in a best effort basis as detailed in `this <https://github.com/rotki/rotki/issues/1379>`_ issue.
 
-Click on the analytics page on the left sidebar to go to your analytics page.
+Click on the statistics page on the left sidebar to go to your statistics page.
 
 Since rotki is tracking all your assets over time the first thing you can see is a value/time graph of your entire net value.
 
