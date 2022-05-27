@@ -735,14 +735,14 @@ rotki automatically resolves ens name for each of your ethereum accounts. If the
 Ethereum Transactions
 =====================
 
-rotki is capable of getting and decoding (understand what is happening) your ethereum transactions. When you visit the ``Ethereum Transactions`` section the process to obtain all the information will start. You will be able to check
-the status in a informative breakdown per address
+rotki is capable of getting and decoding (understand what is happening) your ethereum transactions. When you visit the ``Ethereum Transactions`` section the process to obtain all the information will start. You will be able to check the status in a informative breakdown per address.
 
 .. image:: images/eth_tx_query_process.png
    :alt: Ethereum transactions query status breakdown
    :align: center
 
 It is possible that you need to redecode some transactions if the set of decoding rules is modified. To redecode a transaction you have two possibilities. The first of them is to click on the three dots to display the options for an ethereum transaction and click on ``Redecode events``. This will start the process to read the transaction's events again and try to understand what happened in them.
+
 .. image:: images/redecode_events.png
    :alt: Menu to redecode events for an ethereum transaction
    :align: center
@@ -759,17 +759,15 @@ Events in a transaction might need to be edited if they were not properly decode
    :alt: Menu to edit ethereum events
    :align: center
 
-
 Here the non obvious fields are:
 
 - ``Event Type``: We have created a categorization of all the actions in a set of major event types. This field will describe the action category.
 - ``Event Subtype``: Inside an event type you can perform different actions. This subtype will let you describe exactly what is happening in the event.
-- ``Sequence Index``: Is an internal index that sets the order in which events happened in the transactions. This allows to know how events are sorted and should be taken into account. By default it corresponds to the event log index in the ethereum blockchain with a few exceptions.
+- ``Sequence Index``: Is an internal index that sets the order in which events happened in the transactions. This allows knowing how events are sorted and should be taken into account. By default it corresponds to the event log index in the ethereum blockchain with a few exceptions.
 - ``Location Label``: This is the address related to the event, for example if you are receiving one asset in a transfer or calling a contract will match with your address.
 - ``Counterparty``: This is the other part of the transaction, the address you are interacting with. Can be a protocol identifier if the transaction is decoded as part of a protocol.
 
-
-Events that have been modified will appear marked in the UI
+Events that have been modified will appear marked in the UI.
 
 .. image:: images/customized_events.png
    :alt: Customized events in the UI
@@ -938,6 +936,21 @@ You can force a snapshot taking by clicking in the floppy disk icon at the top b
    :align: center
 
 Snapshots won't be saved if there is any error querying information for external sources. If you want to force the snapshot to be saved when an external source is reporting an error you can select the option `Ignore Errors`.
+
+It is possible to remove balance snapshots from the history in case the information is not correct or needs to be modified. To do so click on a snapshot's point at the dashboard's net value graph and this will open a menu.
+
+.. image:: images/delete_snapshot_menu.png
+   :alt: Delete snapshot
+   :align: center
+
+Clicking on delete will remove the saved information for that snapshot. The same menu allows exporting the information of the balance snapshot to an external file. Four files are then generated, two meant to be used if you want to import information about snapshots later and the other 2 have the same information in a human readable format to be used in accounting. ``balances_snapshot``  contains information about the balances at the snapshot time for all the different assets rotki knew you had and ``location_data_snapshot`` has the value per location for the same assets.
+
+Finally information about snapshots can be imported back into the app using the files you exported with the suffix ``_import```. To import them use the import functionality by clicking on the save disk icon at the top bar.
+
+.. image:: images/import_snapshot.png
+   :alt: Import snapshots information
+   :align: center
+
 
 Historical events
 ************************
