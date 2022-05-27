@@ -28,6 +28,10 @@ import {
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
 import { mapCollectionResponse } from '@/services/utils';
+import {
+  EthereumTransactionQueryData,
+  EthereumTransactionsQueryStatus
+} from '@/services/websocket/messages';
 import { useEnsNamesStore } from '@/store/balances';
 import { Section, Status } from '@/store/const';
 import {
@@ -582,6 +586,37 @@ export const useTransactions = defineStore('history/transactions', () => {
 
   const counterparties = ref<string[]>([]);
 
+  const queryStatus = ref<{
+    [address: string]: EthereumTransactionQueryData;
+  }>({});
+
+  const setQueryStatus = (data: EthereumTransactionQueryData) => {
+    const status = { ...get(queryStatus) };
+    const address = data.address;
+
+    if (data.status === EthereumTransactionsQueryStatus.ACCOUNT_CHANGE) {
+      return;
+    }
+
+    if (
+      data.status ===
+      EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED
+    ) {
+      status[address] = {
+        ...data,
+        status: EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS
+      };
+    } else {
+      status[address] = data;
+    }
+
+    set(queryStatus, status);
+  };
+
+  const resetQueryStatus = () => {
+    set(queryStatus, {});
+  };
+
   const fetchTransactions = async (refresh: boolean = false) => {
     const ethAddresses = computed<string[]>(() => {
       return store.getters['balances/ethAddresses'];
@@ -856,6 +891,8 @@ export const useTransactions = defineStore('history/transactions', () => {
     set(fetchedTxHashesEvents, {});
     set(transactionsPayload, defaultHistoricPayloadState('timestamp'));
     set(counterparties, []);
+
+    resetQueryStatus();
   };
 
   const fetchCounterparties = async () => {
@@ -868,6 +905,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     transactions,
     transactionsPayload,
     counterparties,
+    queryStatus,
     updateTransactionsPayload,
     fetchTransactions,
     fetchTransactionEvents,
@@ -875,6 +913,8 @@ export const useTransactions = defineStore('history/transactions', () => {
     editTransactionEvent,
     deleteTransactionEvent,
     fetchCounterparties,
+    setQueryStatus,
+    resetQueryStatus,
     reset
   };
 });

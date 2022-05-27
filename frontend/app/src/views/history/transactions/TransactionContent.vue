@@ -184,8 +184,10 @@
             @delete:event="event => promptForDelete(item, event)"
           />
         </template>
-        <template v-if="showUpgradeRow" #body.prepend="{ headers }">
+        <template #body.prepend="{ headers }">
+          <transaction-query-status :colspan="headers.length" />
           <upgrade-row
+            v-if="showUpgradeRow"
             :limit="limit"
             :total="total"
             :colspan="headers.length"
@@ -280,6 +282,7 @@ import { Collection } from '@/types/collection';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
+import TransactionQueryStatus from '@/views/history/transactions/TransactionQueryStatus.vue';
 
 type PaginationOptions = {
   page: number;
@@ -333,6 +336,7 @@ enum TransactionFilterValueKeys {
 export default defineComponent({
   name: 'TransactionContent',
   components: {
+    TransactionQueryStatus,
     Fragment,
     TransactionEventForm,
     BigDialog,

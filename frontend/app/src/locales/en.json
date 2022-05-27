@@ -744,10 +744,6 @@
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
-    },
-    "ethereum_transactions": {
-      "title": "Transactions query update",
-      "message": "Querying ethereum transactions information for {address} between {start} and {end}"
     }
   },
   "pagination": {
@@ -2950,6 +2946,23 @@
     },
     "loading": "Please wait while your transactions are getting loaded...",
     "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",
+    "query_status": {
+      "done_date_range": "Done querying all transactions for {address} between {start} and {end}",
+      "done_end_date": "Done querying all transactions for {address} until {end}",
+      "done_group": "Done querying all transactions information for {length} address(es)",
+      "group": "Querying ethereum transactions information for {length} address(es)",
+      "date_range": "Querying {status} for {address} between {start} and {end}",
+      "end_date": "Querying {status} for {address} until {end}",
+      "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
+      "latest_period_end_date": "Latest successfully queried period is until {end}",
+      "details": "Details",
+      "title": "Ethereum Transaction Query Status",
+      "statuses": {
+        "querying_transactions": "ethereum transactions",
+        "querying_internal_transactions": "ethereum internal transactions",
+        "querying_ethereum_tokens_transactions": "ethereum tokens transactions"
+      }
+    },
     "title": "Ethereum Transactions",
     "redecode_events": {
       "title": "Redecode Events",

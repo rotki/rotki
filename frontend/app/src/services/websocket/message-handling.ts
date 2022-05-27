@@ -3,10 +3,10 @@ import i18n from '@/i18n';
 import {
   BalanceSnapshotError,
   EthereumTransactionQueryData,
-  EthereumTransactionsQueryStatus,
   SocketMessageType,
   WebsocketMessage
 } from '@/services/websocket/messages';
+import { useTransactions } from '@/store/history';
 import { useNotifications } from '@/store/notifications';
 
 export async function handleSnapshotError(
@@ -27,24 +27,8 @@ export async function handleEthereumTransactionStatus(
   message: WebsocketMessage<SocketMessageType>
 ) {
   const data = EthereumTransactionQueryData.parse(message.data);
-  const { notify } = useNotifications();
-  if (data.status === EthereumTransactionsQueryStatus.ACCOUNT_CHANGE) {
-    const messageData = {
-      address: data.address,
-      start: data.period[0],
-      end: data.period[1]
-    };
-    notify({
-      title: i18n
-        .t('notification_messages.ethereum_transactions.title')
-        .toString(),
-      message: i18n
-        .t('notification_messages.ethereum_transactions.message', messageData)
-        .toString(),
-      display: true,
-      severity: Severity.INFO
-    });
-  }
+  const { setQueryStatus } = useTransactions();
+  setQueryStatus(data);
 }
 
 export async function handleLegacyMessage(message: string, isWarning: boolean) {

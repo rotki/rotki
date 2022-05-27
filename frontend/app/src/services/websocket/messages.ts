@@ -20,8 +20,10 @@ export const BalanceSnapshotError = z.object({
 export enum EthereumTransactionsQueryStatus {
   ACCOUNT_CHANGE = 'account_change',
   QUERYING_TRANSACTIONS = 'querying_transactions',
+  QUERYING_TRANSACTIONS_STARTED = 'querying_transactions_started',
   QUERYING_INTERNAL_TRANSACTIONS = 'querying_internal_transactions',
-  QUERYING_ETHEREUM_TOKENS_TRANSACTIONS = 'querying_ethereum_tokens_transactions'
+  QUERYING_ETHEREUM_TOKENS_TRANSACTIONS = 'querying_ethereum_tokens_transactions',
+  QUERYING_TRANSACTIONS_FINISHED = 'querying_transactions_finished'
 }
 
 export const EthereumTransactionQueryData = z.object({

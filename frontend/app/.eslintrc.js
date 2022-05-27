@@ -67,7 +67,8 @@ module.exports = {
       'error',
       {
         src: './src',
-        extensions: ['.ts', '.vue']
+        extensions: ['.ts', '.vue'],
+        ignores: ['/transactions.query_status.*/']
       }
     ],
     '@intlify/vue-i18n/no-raw-text': [
