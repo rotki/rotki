@@ -60,7 +60,7 @@
             depressed
             block
             data-cy="button-import"
-            :disabled="!valid || !file"
+            :disabled="!valid || !file || loading"
             @click="uploadFile"
           >
             {{ $t('file_upload.import') }}
