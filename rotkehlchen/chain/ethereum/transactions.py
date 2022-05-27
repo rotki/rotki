@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Tuple
 
 from gevent.lock import Semaphore
 
+from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.chain.ethereum.constants import (
     RANGE_PREFIX_ETHINTERNALTX,
     RANGE_PREFIX_ETHTOKENTX,
@@ -46,6 +47,7 @@ class EthTransactions:
         self.database = database
         self.address_tx_locks: Dict[ChecksumEthAddress, Semaphore] = defaultdict(Semaphore)
         self.missing_receipts_lock = Semaphore()
+        self.msg_aggregator = database.msg_aggregator
 
     @contextmanager
     def wait_until_no_query_for(self, addresses: List[ChecksumEthAddress]) -> Iterator[None]:
@@ -77,6 +79,14 @@ class EthTransactions:
         """
         lock = self.address_tx_locks[address]
         with lock:
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                data={
+                    'address': address,
+                    'period': [start_ts, end_ts],
+                    'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
+                },
+            )
             self._get_transactions_for_range(address=address, start_ts=start_ts, end_ts=end_ts)
             self._get_internal_transactions_for_ranges(
                 address=address,
@@ -88,6 +98,14 @@ class EthTransactions:
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+            data={
+                'address': address,
+                'period': [start_ts, end_ts],
+                'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
+            },
+        )
 
     def query(
             self,
@@ -163,13 +181,17 @@ class EthTransactions:
                             ethereum_transactions=new_transactions,
                             relevant_address=address,
                         )
-                        log.debug(
-                            f'Transactions update range {query_start_ts} - '
-                            f'{new_transactions[-1].timestamp}',
-                        )
                         ranges.update_used_query_range(  # update last queried time for the address
                             location_string=location_string,
                             queried_ranges=[(query_start_ts, new_transactions[-1].timestamp)],
+                        )
+                        self.msg_aggregator.add_message(
+                            message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                            data={
+                                'address': address,
+                                'period': [query_start_ts, new_transactions[-1].timestamp],
+                                'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS),
+                            },
                         )
 
             except RemoteError as e:
@@ -242,6 +264,14 @@ class EthTransactions:
                                 location_string=location_string,
                                 queried_ranges=[(query_start_ts, timestamp)],
                             )
+                            self.msg_aggregator.add_message(
+                                message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                                data={
+                                    'address': address,
+                                    'period': [query_start_ts, timestamp],
+                                    'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),  # noqa: E501
+                                },
+                            )
 
             except RemoteError as e:
                 self.ethereum.msg_aggregator.add_error(
@@ -305,6 +335,14 @@ class EthTransactions:
                         ranges.update_used_query_range(  # update last queried time for the address
                             location_string=location_string,
                             queried_ranges=[(query_start_ts, timestamp)],
+                        )
+                        self.msg_aggregator.add_message(
+                            message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                            data={
+                                'address': address,
+                                'period': [query_start_ts, timestamp],
+                                'status': str(TransactionStatusStep.QUERYING_ETHEREUM_TOKENS_TRANSACTIONS),  # noqa: E501
+                            },
                         )
             except RemoteError as e:
                 self.ethereum.msg_aggregator.add_error(

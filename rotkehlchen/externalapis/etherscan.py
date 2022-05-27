@@ -45,7 +45,7 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_int
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
-TRANSACTIONS_BATCH_NUM = 5
+TRANSACTIONS_BATCH_NUM = 20
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

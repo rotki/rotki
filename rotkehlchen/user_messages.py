@@ -78,7 +78,9 @@ class MessagesAggregator():
                 failure_callback_args={'msg': fallback_msg},
             )
         else:
-            self.errors.appendleft(fallback_msg)
+            # ETHEREUM_TRANSACTION_STATUS are always informational messages
+            if message_type != WSMessageType.ETHEREUM_TRANSACTION_STATUS:
+                self.errors.appendleft(fallback_msg)
 
     def consume_errors(self) -> List[str]:
         result = []

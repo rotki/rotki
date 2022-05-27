@@ -143,7 +143,6 @@ export default defineComponent({
           get(dateInputFormat) || null
         );
 
-        set(loading, true);
         const { result } = await awaitTask<boolean, TaskMeta>(
           taskId,
           taskType,
@@ -157,10 +156,8 @@ export default defineComponent({
 
         if (result) {
           set(uploaded, true);
-          set(loading, false);
         }
       } catch (e: any) {
-        set(loading, false);
         set(errorMessage, e.message);
       }
     };
@@ -179,7 +176,6 @@ export default defineComponent({
           }
           try {
             const { taskId } = await api.importFile(formData);
-            set(loading, true);
             const { result } = await awaitTask<boolean, TaskMeta>(
               taskId,
               taskType,
@@ -193,10 +189,8 @@ export default defineComponent({
 
             if (result) {
               set(uploaded, true);
-              set(loading, false);
             }
           } catch (e: any) {
-            set(loading, false);
             set(errorMessage, e.message);
           }
         }

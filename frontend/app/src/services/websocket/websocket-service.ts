@@ -1,5 +1,6 @@
 import * as logger from 'loglevel';
 import {
+  handleEthereumTransactionStatus,
   handleLegacyMessage,
   handleSnapshotError
 } from '@/services/websocket/message-handling';
@@ -54,6 +55,10 @@ class WebsocketService {
             data.value,
             data.verbosity === MESSAGE_WARNING
           );
+        } else if (
+          message.type === SocketMessageType.ETHEREUM_TRANSACTION_STATUS
+        ) {
+          await handleEthereumTransactionStatus(message);
         } else {
           logger.warn(`Unsupported socket message received: ${message}`);
         }

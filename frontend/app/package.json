@@ -59,7 +59,7 @@
     "@babel/plugin-proposal-nullish-coalescing-operator": "7.16.7",
     "@babel/plugin-proposal-optional-chaining": "7.16.7",
     "@babel/preset-env": "7.16.11",
-    "@intlify/eslint-plugin-vue-i18n": "1.2.0",
+    "@intlify/eslint-plugin-vue-i18n": "2.0.0",
     "@mdi/font": "6.5.95",
     "@namics/stylelint-bem": "6.3.4",
     "@testing-library/jest-dom": "5.16.1",

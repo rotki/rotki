@@ -1,5 +1,5 @@
 <template>
-  <tr>
+  <tr class="tr">
     <td
       :colspan="$vuetify.breakpoint.xsOnly ? 2 : colspan"
       class="upgrade-row font-weight-medium"
@@ -81,6 +81,10 @@ export default defineComponent({
 </script>
 
 <style>
+.tr {
+  background: transparent !important;
+}
+
 .upgrade-row {
   height: 60px;
 }

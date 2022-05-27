@@ -164,11 +164,13 @@ const AccountForm = defineComponent({
     const errorMessages = ref(validationErrors());
     const pending = ref(false);
     const selectedModules = ref<Module[]>([]);
+    const valid = ref<boolean>(false);
 
     const setErrors = (field: keyof ValidationErrors, messages: string[]) => {
       const errors = { ...get(errorMessages) };
       errors[field].push(...messages);
       set(errorMessages, errors);
+      set(valid, false);
       input(false);
     };
 
@@ -181,6 +183,7 @@ const AccountForm = defineComponent({
       for (let i = 0; i < messages.length; i++) {
         messages.pop();
       }
+      set(valid, true);
       input(true);
     };
     watch(blockchain, () => {
@@ -287,6 +290,10 @@ const AccountForm = defineComponent({
         get(isTaskRunning(TaskType.QUERY_BALANCES)) ||
         get(isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES))
     );
+
+    watch(loading, loading => {
+      input(get(valid) && !loading);
+    });
 
     const {
       addAccount,

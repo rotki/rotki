@@ -27,6 +27,7 @@ import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { useHistory, useTransactions } from '@/store/history';
+import { useTxQueryStatus } from '@/store/history/query-status';
 import { useNotifications } from '@/store/notifications';
 import { useReports } from '@/store/reports';
 import {
@@ -294,6 +295,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('statistics/reset', payload, opts);
     commit('staking/reset', payload, opts);
     useHistory().reset();
+    useTxQueryStatus().reset();
     useNotifications().reset();
     useReports().reset();
     useTasks().reset();
