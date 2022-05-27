@@ -228,10 +228,13 @@ import {
   EthereumTransactionQueryData,
   EthereumTransactionsQueryStatus
 } from '@/services/websocket/messages';
-import { useTransactions } from '@/store/history';
+import { useTxQueryStatus } from '@/store/history/query-status';
 import { toSentenceCase } from '@/utils/text';
 
 const statusesData = {
+  [EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: {
+    index: -1
+  },
   [EthereumTransactionsQueryStatus.ACCOUNT_CHANGE]: {
     index: 0
   },
@@ -284,10 +287,10 @@ export default defineComponent({
   setup() {
     const openStatusDropdown = ref<boolean>(false);
 
-    const transactionStore = useTransactions();
-    const { queryStatus } = toRefs(transactionStore);
+    const transactionsQueryStatusStore = useTxQueryStatus();
+    const { queryStatus } = toRefs(transactionsQueryStatusStore);
 
-    const { resetQueryStatus } = transactionStore;
+    const { resetQueryStatus } = transactionsQueryStatusStore;
 
     const isQueryStatusRange = (data: EthereumTransactionQueryData) => {
       return data.period?.[0] > 0;

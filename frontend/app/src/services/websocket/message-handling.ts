@@ -6,7 +6,7 @@ import {
   SocketMessageType,
   WebsocketMessage
 } from '@/services/websocket/messages';
-import { useTransactions } from '@/store/history';
+import { useTxQueryStatus } from '@/store/history/query-status';
 import { useNotifications } from '@/store/notifications';
 
 export async function handleSnapshotError(
@@ -27,7 +27,7 @@ export async function handleEthereumTransactionStatus(
   message: WebsocketMessage<SocketMessageType>
 ) {
   const data = EthereumTransactionQueryData.parse(message.data);
-  const { setQueryStatus } = useTransactions();
+  const { setQueryStatus } = useTxQueryStatus();
   setQueryStatus(data);
 }
 

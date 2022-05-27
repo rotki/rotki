@@ -1,0 +1,58 @@
+import { ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import {
+  EthereumTransactionQueryData,
+  EthereumTransactionsQueryStatus
+} from '@/services/websocket/messages';
+
+export const useTxQueryStatus = defineStore(
+  'history/transactionsQueryStatus',
+  () => {
+    const queryStatus = ref<{
+      [address: string]: EthereumTransactionQueryData;
+    }>({});
+
+    const setQueryStatus = (data: EthereumTransactionQueryData) => {
+      const status = { ...get(queryStatus) };
+      const address = data.address;
+
+      if (data.status === EthereumTransactionsQueryStatus.ACCOUNT_CHANGE) {
+        return;
+      }
+
+      if (
+        data.status ===
+        EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED
+      ) {
+        status[address] = {
+          ...data,
+          status: EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS
+        };
+      } else {
+        status[address] = data;
+      }
+
+      set(queryStatus, status);
+    };
+
+    const resetQueryStatus = () => {
+      set(queryStatus, {});
+    };
+
+    const reset = () => {
+      resetQueryStatus();
+    };
+
+    return {
+      queryStatus,
+      setQueryStatus,
+      resetQueryStatus,
+      reset
+    };
+  }
+);
+
+if (module.hot) {
+  module.hot.accept(acceptHMRUpdate(useTxQueryStatus, module.hot));
+}
