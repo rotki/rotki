@@ -45,7 +45,7 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_int
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
-TRANSACTIONS_BATCH_NUM = 20
+TRANSACTIONS_BATCH_NUM = 10
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -283,6 +283,7 @@ class Etherscan(ExternalServiceWithApiKey):
             result = self._query(module='account', action=action, options=options)
             last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
             for entry in result:
+                gevent.sleep(0)
                 try:
                     tx = deserialize_ethereum_transaction(  # type: ignore
                         data=entry,
@@ -329,6 +330,7 @@ class Etherscan(ExternalServiceWithApiKey):
             result = self._query(module='account', action='tokentx', options=options)
             last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None  # noqa: E501 pylint: disable=unsubscriptable-object
             for entry in result:
+                gevent.sleep(0)
                 timestamp = deserialize_timestamp(entry['timeStamp'])
                 if timestamp > last_ts and len(hashes) >= TRANSACTIONS_BATCH_NUM:  # type: ignore
                     yield _hashes_tuple_to_list(hashes)

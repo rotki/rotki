@@ -3,6 +3,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Tuple
 
+import gevent
 from gevent.lock import Semaphore
 
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
@@ -241,12 +242,14 @@ class EthTransactions:
                     if len(new_internal_txs) != 0:
                         for internal_tx in new_internal_txs:
                             # make sure all internal transaction parent transactions are in the DB
+                            gevent.sleep(0)
                             result = dbethtx.get_ethereum_transactions(
                                 ETHTransactionsFilterQuery.make(tx_hash=internal_tx.parent_tx_hash),  # noqa: E501
                                 has_premium=True,  # ignore limiting here
                             )
                             if len(result) == 0:  # parent transaction is not in the DB. Get it
                                 transaction = self.ethereum.get_transaction_by_hash(internal_tx.parent_tx_hash)  # noqa: E501
+                                gevent.sleep(0)
                                 dbethtx.add_ethereum_transactions(
                                     ethereum_transactions=[transaction],
                                     relevant_address=address,
@@ -322,6 +325,7 @@ class EthTransactions:
                             has_premium=True,  # ignore limiting here
                         )
                         if len(result) == 0:  # if transaction is not there add it
+                            gevent.sleep(0)
                             transaction = self.ethereum.get_transaction_by_hash(tx_hash_bytes)
                             dbethtx.add_ethereum_transactions(
                                 [transaction],
