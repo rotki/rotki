@@ -649,14 +649,9 @@ export const useTransactions = defineStore('history/transactions', () => {
       );
 
       const parsedResult = EthTransactionCollectionResponse.parse(result);
-      const mapped = mapCollectionEntriesWithMeta<EthTransaction>(
+      return mapCollectionEntriesWithMeta<EthTransaction>(
         mapCollectionResponse(parsedResult)
       ) as Collection<EthTransactionEntry>;
-
-      const addresses = getNotesAddresses(mapped.data);
-      fetchEnsNames(addresses, true);
-
-      return mapped;
     };
 
     try {
