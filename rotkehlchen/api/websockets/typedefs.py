@@ -18,7 +18,7 @@ class WSMessageType(Enum):
 
 
 class TransactionStatusStep(Enum):
-    ACCOUNT_CHANGE = auto()
+    QUERYING_TRANSACTIONS_STARTED = auto()
     QUERYING_TRANSACTIONS = auto()
     QUERYING_INTERNAL_TRANSACTIONS = auto()
     QUERYING_ETHEREUM_TOKENS_TRANSACTIONS = auto()

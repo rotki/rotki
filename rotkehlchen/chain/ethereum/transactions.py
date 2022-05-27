@@ -79,6 +79,14 @@ class EthTransactions:
         """
         lock = self.address_tx_locks[address]
         with lock:
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                data={
+                    'address': address,
+                    'period': [start_ts, end_ts],
+                    'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
+                },
+            )
             self._get_transactions_for_range(address=address, start_ts=start_ts, end_ts=end_ts)
             self._get_internal_transactions_for_ranges(
                 address=address,
