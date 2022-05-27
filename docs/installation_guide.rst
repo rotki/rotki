@@ -472,7 +472,7 @@ then do::
     Make sure that pysqlcipher3 is properly installed. If ``$ pip3 freeze | grep pysqlcipher3`` returns nothing for you then it was not installed. Try to manually install only that dependency with the verbose option to see where it fails. ``$ pip3 install pysqlcipher3 -v``. If it fails at the stage of finding the library for ``-lsqlcipher`` or ``sqlcipher/sqlite3.h file not found`` then ``brew install sqlciper`` did not place the installed lib directory to the ``LIBRARY_PATH`` and you will have to do it manually.
     For example, if ``sqlcipher`` was installed using Homebrew, the library path resembles this ``/opt/homebrew/Cellar/sqlcipher/<version>/lib`` on Mac ARM based chips and ``/usr/local/Cellar/sqlcipher/<version>/lib`` on Mac Intel based chips by default.
     Afterwards, install ``pysqlcipher3`` using the command below:
-    ``$ LIBRARY_PATH=/opt/homebrew/Cellar/sqlcipher/4.5.1/lib pip3 install pysqlcipher3``.
+    ``$ LIBRARY_PATH=/opt/homebrew/Cellar/sqlcipher/4.5.1/lib C_INCLUDE_PATH=/opt/homebrew/Cellar/sqlcipher/4.5.1/include pip3 install pysqlcipher3``.
     Assuming ``version`` = 4.5.1.
 
 Since the electron application is located in a different directory you also need to do::
