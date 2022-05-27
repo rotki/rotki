@@ -11,7 +11,7 @@
       <v-col cols="12" md="6">
         <price-oracle-selection
           :value="currentOracles"
-          :all-items="availableOracles"
+          :all-items="availableCurrentOracles"
           :status="currentError"
           @input="onCurrentChange($event)"
         >
@@ -24,7 +24,7 @@
       <v-col cols="12" md="6">
         <price-oracle-selection
           :value="historicOracles"
-          :all-items="availableOracles"
+          :all-items="availableHistoricOracles"
           :status="historicError"
           @input="onHistoricChange($event)"
         >
@@ -54,7 +54,14 @@ import { PriceOracle } from '@/types/user';
   components: { PriceOracleSelection, SettingCategory }
 })
 export default class PriceOracleSettings extends Mixins(SettingsMixin) {
-  readonly availableOracles: string[] = ['cryptocompare', 'coingecko'];
+  private readonly baseAvailableOracles = ['cryptocompare', 'coingecko'];
+  readonly availableCurrentOracles: string[] = [
+    ...this.baseAvailableOracles,
+    'uniswapv2',
+    'uniswapv3',
+    'saddle'
+  ];
+  readonly availableHistoricOracles = [...this.baseAvailableOracles, 'manual'];
 
   currentOracles: string[] = [];
   historicOracles: string[] = [];
