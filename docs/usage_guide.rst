@@ -731,6 +731,58 @@ rotki automatically resolves ens name for each of your ethereum accounts. If the
    :alt: Example of resolving an ens name
    :align: center
 
+
+Ethereum Transactions
+=====================
+
+rotki is capable of getting and decoding (understand what is happening) your ethereum transactions. When you visit the ``Ethereum Transactions`` section the process to obtain all the information will start. You will be able to check
+the status in a informative breakdown per address
+
+.. image:: images/eth_tx_query_process.png
+   :alt: Ethereum transactions query status breakdown
+   :align: center
+
+It is possible that you need to redecode some transactions if the set of decoding rules is modified. To redecode a transaction you have two possibilities. The first of them is to click on the three dots to display the options for an ethereum transaction and click on ``Redecode events``. This will start the process to read the transaction's events again and try to understand what happened in them.
+.. image:: images/redecode_events.png
+   :alt: Menu to redecode events for an ethereum transaction
+   :align: center
+
+The second option is to redecode all the transactions in one page or all the transactions that have been queried. To do so you need to click on ``REDECODE EVENTS`` at the top of the page. This will allow to select between ``Only this page`` and ``All events``.
+
+.. image:: images/redecode_all_events.png
+   :alt: Menu to redecode all events in one page
+   :align: center
+
+Events in a transaction might need to be edited if they were not properly decoded or if they have a special meaning to you (like OTC trades, transfers between accounts...). To edit one event click on the pencil icon and a menu will appear.
+
+.. image:: images/edit_eth_event.png
+   :alt: Menu to edit ethereum events
+   :align: center
+
+
+Here the non obvious fields are:
+
+- ``Event Type``: We have created a categorization of all the actions in a set of major event types. This field will describe the action category.
+- ``Event Subtype``: Inside an event type you can perform different actions. This subtype will let you describe exactly what is happening in the event.
+- ``Sequence Index``: Is an internal index that sets the order in which events happened in the transactions. This allows to know how events are sorted and should be taken into account. By default it corresponds to the event log index in the ethereum blockchain with a few exceptions.
+- ``Location Label``: This is the address related to the event, for example if you are receiving one asset in a transfer or calling a contract will match with your address.
+- ``Counterparty``: This is the other part of the transaction, the address you are interacting with. Can be a protocol identifier if the transaction is decoded as part of a protocol.
+
+
+Events that have been modified will appear marked in the UI
+
+.. image:: images/customized_events.png
+   :alt: Customized events in the UI
+   :align: center
+
+
+Ethereum transactions can be filtered by account and by:
+
+- Time range
+- Asset involved in the transaction
+- Protocol that interacted in the transaction
+
+
 Checking Exchange Balances
 ===========================
 
