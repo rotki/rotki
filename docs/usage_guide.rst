@@ -223,12 +223,20 @@ Price Oracle settings
 
 Here you can customize the precedence of querying that price oracles will have. That means which price source to check first, which second and so on and so forth both for current but also for historical prices.
 
+DeFi oracles like Uniswap V2 and Uniswap V3 use only on chain information to get current prices, this means that it is a bit slower to query information from them but you depend only on the ethereum chain to query the prices.
+Also prices for some assets may differ from Coingecko or CryptoCompare depending on the conditions of the pools at the moment of making the query.
+
 Frontend only settings
 -----------------------
 
 .. image:: images/sc_frontendonly_settings1.png
    :alt: Customizing the app's frontend only settings
    :align: center
+
+Animations effect
+^^^^^^^^^^^^^^^^^
+
+It is possible to reduce the animation effect in differents part of the app to improve the performance in case where this is needed. This will affect the quality of the animations but the user will get a better usage of the resources.
 
 Data scrambling
 ^^^^^^^^^^^^^^^
@@ -330,11 +338,15 @@ Asset settings
 Ignored assets
 ^^^^^^^^^^^^^^^
 
-Specify which assets you own and would like to completely ignore from all calculations and balance queries. Any actions that involve these assets are ignored. You can also ignore asset by clicking asset icons anywhere on the app, that will redirect you to this overview asset page. In this page, you can ignore or un-ignore selected asset.
+Specify which assets you own and would like to completely ignore from all calculations and balance queries. Any actions that involve these assets are ignored.
+We have introduced a mechanism to populate the ignore list with assets labeled as spam/scam by us. This list can be re-queried at any time by the user by clicking on ``Sync the list of ignored assets``.
+
+You can also ignore asset by clicking asset icons anywhere on the app, that will redirect you to this overview asset page. In this page, you can ignore or un-ignore selected asset.
 
 .. image:: images/asset_overview.png
    :alt: Asset overview page
    :align: center
+
 
 .. _ledger_action_settings:
 
