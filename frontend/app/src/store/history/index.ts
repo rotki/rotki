@@ -1069,7 +1069,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
 
   const reset = () => {
     set(ledgerActions, defaultHistoricState<LedgerActionEntry>());
-    set(ledgerActionsPayload, defaultHistoricPayloadState());
+    set(ledgerActionsPayload, defaultHistoricPayloadState('timestamp'));
   };
 
   return {
