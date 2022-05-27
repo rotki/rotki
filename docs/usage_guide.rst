@@ -38,7 +38,7 @@ You have to provide a username and a password:
   - **Username**: it is just an identifier for your database; a local user.
   - **Password**: :red:`Do not forget this password`. It is used to encrypt all your local files.
 
-For a completely new account it is suggested to add your premium API key and secret using :ref:`set-up-rotki-premium`
+For a completely new account, premium API key and secret can be added either using the prompt provided or using :ref:`set-up-rotki-premium`
 after logging in with the new account.
 
 .. image:: images/rotki_create_account.png
@@ -70,7 +70,7 @@ If you already have an account just write the name and the password at the sign 
 Set up rotki Premium
 ======================
 
-If you decide to purchase `rotki Premium <https://rotki.com/products/>`_ at a later time, you can set it up via API Keys -> rotki Premium.
+If you decide to purchase `rotki Premium <https://rotki.com/products/>`_ at a later time, you can set it up via :menuselection:`API Keys --> rotki Premium`.
 
 .. image:: images/rotki_premium_set.png
    :alt: Set up rotki premium API key/secret pair in an existing account
@@ -99,7 +99,7 @@ Bear in mind that in case of using multiple accounts/devices with the data sync 
    :alt: Replace local database with remote backup
    :align: center
 
-You can manually move the global DB that contains the assets from one system to the other too. Find the :ref:`rotki_data_directory` in the source system. Assuming it's linux it will be ``~/.local/share/rotki/data``. The global db is then ``~/.local/share/rotki/data/global_data/global.db``. Manually move it to the equivalent location in the new system.
+You can manually move the global DB that contains the assets from one system to the other too. Find the :ref:`rotki_data_directory` in the source system. Assuming it's linux it will be :file:`~/.local/share/rotki/data`. The global db is then :file:`~/.local/share/rotki/data/global_data/global.db`. Manually move it to the equivalent location in the new system.
 
 
 Customizing
@@ -1370,7 +1370,7 @@ Moreover you can see a piechart of the distribution of your netvalue across all 
 Global search
 *****************************
 
-You can use global search provided to speed up your actions by clicking icon on top bar, or using shortcut Ctrl + / (Cmd + / if you are using Mac).
+You can use global search provided to speed up your actions by clicking icon on top bar, or using shortcut :kbd:`Control-/` (:kbd:`Command-/` if you are using Mac).
 
 Some actions provided by this global search:
 - Navigate to any page in rotki
@@ -1437,7 +1437,7 @@ for Windows, MacOS and Linux at the previous link.
 Once installed you have to start the program with the sqlcipher functionality and after that you need to select the rotki database. This database can be found in the :ref:`rotki data directory<rotki_data_directory>`. Once you open it, the program will
 ask for the password of the database. The password used for the database is the same as the one you use to unlock your rotki account.
 
-Once the database is unlocked you can browse the information in the ``Browse Data`` tab or execute custom SQL commands. Please be aware that manually modifying the information of the database can lead to inconsistent state. 
+Once the database is unlocked you can browse the information in the ``Browse Data`` tab or execute custom SQL commands. Please be aware that manually modifying the information of the database can lead to inconsistent state.
 So only run commands that you have double checked with our team there. Or use it without supervision only if you really know what you are doing. And always take backups of the database before you modify it.
 
 Troubleshooting
