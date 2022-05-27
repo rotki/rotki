@@ -1047,6 +1047,11 @@ rotki allows you to track special assets like:
 1. *Uniswap/Sushiswap LP tokens*: You can track LP tokens by adding them and using `UNI-V2` as protocol. This will make the app query balances and prices. As for now historical prices are not queried so you will need to add missing prices manually.
 2. *Yearn vaults*: To add a yearn vault you need to add a new ethereum token and use `yearn_vaults_v2` as protocol. In addition you need to specify the underlying token that the vault uses with a 100% weight.
 
+Ignoring assets
+===============
+
+Clicking on an asset's name or icon from the assets list, takes you to its detail's page from which you can ignore it by pressing the ``Ignore Asset`` switch.
+
 Adding missing prices
 **********************
 
