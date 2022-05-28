@@ -30,7 +30,6 @@ from rotkehlchen.constants.assets import (
     A_SAI,
     A_STAKE,
     A_UNI,
-    A_USD,
     A_USDC,
     A_USDT,
     A_WBTC,
@@ -164,16 +163,6 @@ CRYPTOCOMPARE_HOURQUERYLIMIT = 2000
 class HistoHourAssetData(NamedTuple):
     timestamp: Timestamp
     usd_price: Price
-
-
-# Safest starting timestamp for requesting an asset price via histohour avoiding
-# 0 price. Be aware `usd_price` is from the 'close' price in USD.
-CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES: Dict[Asset, HistoHourAssetData] = {
-    A_COMP: HistoHourAssetData(
-        timestamp=Timestamp(1592629200),
-        usd_price=Price(FVal('239.13')),
-    ),
-}
 
 
 def _multiply_str_nums(a: str, b: str) -> str:
@@ -748,42 +737,6 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
         GlobalDBHandler().add_historical_prices(prices)
         self.last_histohour_query_ts = ts_now()  # also save when last query finished
 
-    @staticmethod
-    def _check_and_get_special_histohour_price(
-            from_asset: Asset,
-            to_asset: Asset,
-            timestamp: Timestamp,
-    ) -> Price:
-        """For the given timestamp, check whether the from..to asset price
-        (or viceversa) is a special histohour API case. If so, return the price
-        based on the assets pair, otherwise return zero.
-
-        NB: special histohour API cases are the ones where this Cryptocompare
-        API returns zero prices per hour.
-        """
-        price = Price(ZERO)
-        if (
-            from_asset in CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES and to_asset == A_USD or
-            from_asset == A_USD and to_asset in CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES
-        ):
-            asset_data = (
-                CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES[from_asset]
-                if to_asset == A_USD
-                else CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES[to_asset]
-            )
-            if timestamp <= asset_data.timestamp:
-                price = (
-                    asset_data.usd_price
-                    if to_asset == A_USD
-                    else Price(FVal('1') / asset_data.usd_price)
-                )
-                log.warning(
-                    f'Query price of: {from_asset.identifier} in {to_asset.identifier} '
-                    f'at timestamp {timestamp} may return zero price. '
-                    f'Setting price to {price}, from timestamp {asset_data.timestamp}.',
-                )
-        return price
-
     def query_historical_price(
             self,
             from_asset: Asset,
@@ -806,20 +759,6 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
         - RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
         """
-        # TODO: Figure out a better way to log and return. Only thing I can imagine
-        # is nested ifs (ugly af) or a different function (meh + performance).
-
-        # NB: check if the from..to asset price (or viceversa) is a special
-        # histohour API case.
-        price = self._check_and_get_special_histohour_price(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            timestamp=timestamp,
-        )
-        if price != Price(ZERO):
-            log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price)  # noqa: E501
-            return price
-
         # check DB cache
         price_cache_entry = GlobalDBHandler().get_historical_price(
             from_asset=from_asset,
@@ -829,7 +768,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
             source=HistoricalPriceOracle.CRYPTOCOMPARE,
         )
         if price_cache_entry and price_cache_entry.price != Price(ZERO):
-            log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price)  # noqa: E501
+            log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price_cache_entry.price)  # noqa: E501
             return price_cache_entry.price
 
         # else

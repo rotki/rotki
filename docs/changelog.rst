@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` COMP price before 20/06/2020 will not be hardcoded to $239.13 if queried via cryptocompare.
 * :bug:`4381` Fixes a problem at the DB upgrade between v1.23.4 and 1.24.0 which affected a subset of some kraken users.
 
 * :release:`1.24.0 <2022-05-27>`
