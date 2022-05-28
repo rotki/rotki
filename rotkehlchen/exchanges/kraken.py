@@ -543,7 +543,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             hashlib.sha512,
         )
         self.session.headers.update({
-            'API-Sign': base64.b64encode(signature.digest()),  # type: ignore
+            'API-Sign': base64.b64encode(signature.digest()),
         })
         try:
             response = self.session.post(

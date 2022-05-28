@@ -216,7 +216,7 @@ class Premium():
             compression=compression_type,
         )
         self.session.headers.update({
-            'API-SIGN': base64.b64encode(signature.digest()),  # type: ignore
+            'API-SIGN': base64.b64encode(signature.digest()),
         })
 
         try:
@@ -242,7 +242,7 @@ class Premium():
         """
         signature, data = self.sign('get_saved_data')
         self.session.headers.update({
-            'API-SIGN': base64.b64encode(signature.digest()),  # type: ignore
+            'API-SIGN': base64.b64encode(signature.digest()),
         })
 
         try:
@@ -267,7 +267,7 @@ class Premium():
         """
         signature, data = self.sign('last_data_metadata')
         self.session.headers.update({
-            'API-SIGN': base64.b64encode(signature.digest()),  # type: ignore
+            'API-SIGN': base64.b64encode(signature.digest()),
         })
 
         try:
@@ -298,7 +298,7 @@ class Premium():
         """
         signature, data = self.sign('statistics_rendererv2', version=2)
         self.session.headers.update({
-            'API-SIGN': base64.b64encode(signature.digest()),  # type: ignore
+            'API-SIGN': base64.b64encode(signature.digest()),
         })
 
         try:
@@ -325,7 +325,7 @@ class Premium():
 
         signature, _ = self.sign('watchers', **data)
         self.session.headers.update({
-            'API-SIGN': base64.b64encode(signature.digest()),  # type: ignore
+            'API-SIGN': base64.b64encode(signature.digest()),
         })
 
         try:
