@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`4381` Fixes a problem at the DB upgrade between v1.23.4 and 1.24.0 which affected a subset of some kraken users.
+
 * :release:`1.24.0 <2022-05-27>`
 * :feature:`2221` All missing yearn v1 vaults should now have their balances detected and their historical accounting taken into account.
 * :feature:`1797` All missing acquisitions and missing prices found during a PnL period are now gathered and shown to the user as actionable items at the end of the report generation.
