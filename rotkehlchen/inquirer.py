@@ -621,7 +621,7 @@ class Inquirer():
             return None
 
         # Calculate weight of each asset as the proportion of tokens value
-        weights = map(lambda x: data[x + 1] * prices[x] / total_assets_price, range(len(tokens)))
+        weights = (data[x + 1] * prices[x] / total_assets_price for x in range(len(tokens)))
         assets_price = FVal(sum(map(operator.mul, weights, prices)))
         return (assets_price * FVal(data[0])) / (10 ** lp_token.decimals)
 
