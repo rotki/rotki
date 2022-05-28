@@ -142,22 +142,20 @@ def _update_history_entries_from_kraken(cursor: 'Cursor') -> None:
     DELETE FROM history_events where location="B" AND asset="KFEE" AND
      type="trade" AND subtype=NULL;
     """)
+
+    cursor.execute('SELECT event_identifier, sequence_index from history_events')
+    eventid_to_indices: Dict[str, Set[int]] = defaultdict(set)
+    for event_identifier, sequence_index in cursor:
+        eventid_to_indices[event_identifier].add(sequence_index)
+
     cursor.execute("""
     SELECT e.event_identifier, e.sequence_index, e.identifier from history_events e JOIN (SELECT event_identifier,
     sequence_index, COUNT(*) as cnt FROM history_events GROUP BY event_identifier, sequence_index)
     other ON e.event_identifier = other.event_identifier and e.sequence_index=other.sequence_index
     WHERE other.cnt > 1;
     """)  # noqa: E501
-
     update_tuples = []
-    eventid_to_indices: Dict[str, Set[int]] = defaultdict(set)
     for event_identifier, sequence_index, identifier in cursor:
-        last_indices = eventid_to_indices.get(event_identifier)
-        if last_indices is None:
-            # Let the first one be the same as it was in the database
-            eventid_to_indices[event_identifier].add(sequence_index)
-            continue
-
         new_index = sequence_index + 1
         while new_index in eventid_to_indices[event_identifier]:
             new_index += 1
