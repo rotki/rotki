@@ -125,10 +125,26 @@ def assert_pnl_totals_close(expected: PnlTotals, got: PnlTotals) -> None:
     # ignore prefork acquisitions for these tests
     got.pop(AccountingEventType.PREFORK_ACQUISITION)
 
-    assert len(expected) == len(got)
-    for event_type, expected_pnl in expected.items():
-        assert expected_pnl.free.is_close(got[event_type].free)
-        assert expected_pnl.taxable.is_close(got[event_type].taxable)
+    iterate_pnl = got
+    check_pnl = expected
+    if len(expected) >= len(got):
+        iterate_pnl = expected
+        check_pnl = got
+
+    reduced_length = 0
+    for event_type, iterate_pnl_val in iterate_pnl.items():
+        check_pnl_val = check_pnl.get(event_type)
+        if check_pnl_val is None:
+            if iterate_pnl_val.free == ZERO and iterate_pnl_val.taxable == ZERO:
+                reduced_length += 1
+                continue
+            # else
+            raise AssertionError(f'Expected {event_type}: {iterate_pnl_val}')
+
+        assert iterate_pnl_val.free.is_close(check_pnl_val.free)
+        assert iterate_pnl_val.taxable.is_close(check_pnl_val.taxable)
+
+    assert len(iterate_pnl) == len(check_pnl) + reduced_length
 
 
 def _check_boolean_settings(row: Dict[str, Any], accountant: 'Accountant'):
@@ -259,8 +275,7 @@ def assert_csv_export(
                 event_type = AccountingEventType.deserialize(row['type'])
                 taxable = FVal(row['pnl_taxable'])
                 free = FVal(row['pnl_free'])
-                if taxable != ZERO or free != ZERO:
-                    calculated_pnls[event_type] += PNL(taxable=taxable, free=free)
+                calculated_pnls[event_type] += PNL(taxable=taxable, free=free)
 
         assert_pnl_totals_close(expected_pnls, calculated_pnls)
 

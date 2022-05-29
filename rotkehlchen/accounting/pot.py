@@ -135,7 +135,10 @@ class AccountingPot(CustomizableDateMixin):
         if given_price is not None:
             price = given_price
         else:
-            price = self.get_rate_in_profit_currency(asset=asset, timestamp=timestamp)
+            try:
+                price = self.get_rate_in_profit_currency(asset=asset, timestamp=timestamp)
+            except (NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset, RemoteError):
+                price = Price(ZERO)
 
         prefork_events = handle_prefork_asset_acquisitions(
             cost_basis=self.cost_basis,

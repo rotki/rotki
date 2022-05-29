@@ -1,11 +1,12 @@
 import pytest
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.types import MissingPrice
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.constants.assets import A_BTC, A_COMP, A_ETH, A_EUR
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import (
@@ -268,3 +269,38 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
         to_asset=A_EUR,
         time=time,
     )
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('force_no_price_found_for', [[(A_COMP, 1446979735)]])
+def test_acquisition_price_not_found(accountant, google_service):
+    """Test that if for an acquisition the price is not found, price of
+    zero is taken and asset is not ignored and no missing acquisition is counted"""
+    history = [
+        LedgerAction(
+            identifier=1,
+            timestamp=1446979735,
+            action_type=LedgerActionType.INCOME,
+            location=Location.EXTERNAL,
+            asset=A_COMP,
+            amount=FVal(1),
+        ), Trade(
+            timestamp=1635314397,  # cryptocompare hourly COMP/EUR price: 261.39
+            location=Location.POLONIEX,
+            base_asset=A_COMP,
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal(1),
+            rate=FVal('261.39'),
+            link=None,
+        ),
+    ]
+    accounting_history_process(accountant, 1436979735, 1636314397, history)
+    no_message_errors(accountant.msg_aggregator)
+    comp_acquisitions = accountant.pots[0].cost_basis.get_events(A_COMP).used_acquisitions
+    assert len(comp_acquisitions) == 1
+    expected_pnls = PnlTotals({
+        AccountingEventType.LEDGER_ACTION: PNL(taxable=ZERO, free=ZERO),
+        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('261.39')),
+    })
+    check_pnls_and_csv(accountant, expected_pnls, google_service)

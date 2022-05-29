@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -183,9 +184,14 @@ prices = {
             1612051199: FVal(0.8241),
         },
     },
-    strethaddress_to_identifier('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'): {
+    strethaddress_to_identifier('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'): {  # RDN
         'EUR': {
             1512561942: ZERO,
+        },
+    },
+    strethaddress_to_identifier('0xc00e94Cb662C3520282E6f5717214004A7f26888'): {  # COMP
+        'EUR': {
+            1635314397: ZERO,
         },
     },
     'CHF': {
@@ -1181,6 +1187,7 @@ def maybe_mock_historical_price_queries(
         mocked_price_queries,
         default_mock_value: Optional[FVal] = None,
         dont_mock_price_for: Optional[List['Asset']] = None,
+        force_no_price_found_for: Optional[List[Tuple['Asset', Timestamp]]] = None,
 ) -> None:
     """If needed will make sure the historian's price queries are mocked"""
     if not should_mock_price_queries:
@@ -1188,6 +1195,9 @@ def maybe_mock_historical_price_queries(
 
     if dont_mock_price_for is None:
         dont_mock_price_for = []
+
+    if force_no_price_found_for is None:
+        force_no_price_found_for = []
 
     # save the original function in this variable to be used when
     # the list of assets to not mock is non empty.
@@ -1202,6 +1212,13 @@ def maybe_mock_historical_price_queries(
 
         if from_asset in dont_mock_price_for:
             return original_function(from_asset, to_asset, timestamp)
+
+        if (from_asset, timestamp) in force_no_price_found_for:
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+            )
 
         try:
             price = mocked_price_queries[from_asset.identifier][to_asset.identifier][timestamp]

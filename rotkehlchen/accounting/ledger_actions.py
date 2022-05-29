@@ -79,10 +79,10 @@ class LedgerAction(AccountingEventMixin):
     location: Location
     amount: AssetAmount
     asset: Asset
-    rate: Optional[Price]
-    rate_asset: Optional[Asset]
-    link: Optional[str]
-    notes: Optional[str]
+    rate: Optional[Price] = None
+    rate_asset: Optional[Asset] = None
+    link: Optional[str] = None
+    notes: Optional[str] = None
 
     def __hash__(self) -> int:
         return hash(str(self))
