@@ -1071,15 +1071,13 @@ def asset_from_cryptocom(cryptocom_name: str) -> Asset:
     return symbol_to_asset_or_token(symbol)
 
 
-LOCATION_TO_ASSET_MAPPING: Dict[Location, Callable] = {
+LOCATION_TO_ASSET_MAPPING: Dict[Location, Callable[[str], Asset]] = {
     Location.BINANCE: asset_from_binance,
     Location.CRYPTOCOM: asset_from_cryptocom,
     Location.BITPANDA: asset_from_bitpanda,
-    Location.COINBASE: asset_from_coinbase,
     Location.COINBASEPRO: asset_from_coinbasepro,
     Location.KRAKEN: asset_from_kraken,
     Location.BITSTAMP: asset_from_bitstamp,
-    Location.BITFINEX: asset_from_bitfinex,
     Location.FTX: asset_from_ftx,
     Location.BITSTAMP: asset_from_bitstamp,
     Location.GEMINI: asset_from_gemini,
