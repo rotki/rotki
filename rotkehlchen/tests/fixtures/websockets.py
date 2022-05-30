@@ -47,9 +47,9 @@ class WebsocketReader():
 @pytest.fixture(name='websocket_connection')
 def fixture_websocket_connection_reader(
         rotkehlchen_api_server,  # pylint: disable=unused-argument
-        websockets_api_port,
+        rest_api_port,
 ) -> Generator[WebsocketReader, None, None]:
-    ws = create_connection(f'ws://127.0.0.1:{websockets_api_port}')
+    ws = create_connection(f'ws://127.0.0.1:{rest_api_port}/ws')
     websocket_reader = WebsocketReader(ws)
     ws.send('{}')  # whatever -- just to subscribe
     greenlet = gevent.spawn(websocket_reader.read_forever)

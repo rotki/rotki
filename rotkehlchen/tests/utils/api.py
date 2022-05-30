@@ -37,7 +37,6 @@ def _wait_for_listening_port(
 def create_api_server(
         rotki: Rotkehlchen,
         rest_port_number: int,
-        websockets_port_number: int,
 ) -> APIServer:
     api_server = APIServer(RestAPI(rotkehlchen=rotki), rotki.rotki_notifier)
 
@@ -45,14 +44,12 @@ def create_api_server(
     api_server.start(
         host='127.0.0.1',
         rest_port=rest_port_number,
-        websockets_port=websockets_port_number,
     )
 
     # Fixes flaky test, where requests are done prior to the server initializing
     # the listening socket.
     # https://github.com/raiden-network/raiden/issues/389#issuecomment-305551563
     _wait_for_listening_port(rest_port_number)
-    _wait_for_listening_port(websockets_port_number)
 
     return api_server
 
