@@ -5,7 +5,7 @@
   "author": "Rotki Solutions GmbH <info@rotki.com>",
   "scripts": {
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run --headless",
+    "cypress:run": "cypress run --headless --browser chrome",
     "serve": "node scripts/serve.js --web",
     "build": "cross-env NODE_ENV=production node scripts/build.js",
     "test:unit": "cross-env TZ=UTC vitest --dir tests/unit",
