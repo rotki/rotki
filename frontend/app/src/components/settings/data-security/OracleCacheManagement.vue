@@ -8,81 +8,69 @@
         {{ $tc('oracle_cache_management.subtitle') }}
       </v-card-subtitle>
       <v-card-text>
-        <v-row no-gutters align="center">
-          <v-col>
-            <v-autocomplete
-              v-model="selection"
-              :label="$t('oracle_cache_management.select_oracle')"
-              prepend-inner-icon="mdi-magnify"
-              outlined
-              :items="oracles"
-            >
-              <template #selection="{ item }">
-                <oracle-entry :identifier="item" />
-              </template>
-              <template #item="{ item }">
-                <oracle-entry :identifier="item" />
-              </template>
-            </v-autocomplete>
-          </v-col>
-          <v-col cols="auto" />
-        </v-row>
-        <v-row align="center">
-          <v-col>
-            <asset-select
-              v-model="fromAsset"
-              :disabled="pending"
-              outlined
-              :label="$tc('oracle_cache_management.from_asset')"
-            />
-          </v-col>
-          <v-col>
-            <asset-select
-              v-model="toAsset"
-              :disabled="pending"
-              outlined
-              :label="$tc('oracle_cache_management.to_asset')"
-            />
-          </v-col>
-          <v-col cols="auto">
-            <v-tooltip open-delay="400" top>
-              <template #activator="{ on, attrs }">
-                <div class="pb-7">
-                  <v-btn
-                    v-bind="attrs"
-                    text
-                    :loading="pending"
-                    color="primary"
-                    :disabled="!fromAsset || !toAsset || pending"
-                    v-on="on"
-                    @click="fetchPrices()"
-                  >
-                    {{ $t('oracle_cache_management.create_cache') }}
-                  </v-btn>
-                </div>
-              </template>
-              <span>{{ $t('oracle_cache_management.create_tooltip') }}</span>
-            </v-tooltip>
-          </v-col>
-        </v-row>
-        <v-divider class="mb-4" />
-        <v-row justify="end">
-          <v-col cols="auto">
-            <v-text-field
-              v-model="search"
-              outlined
-              dense
-              prepend-inner-icon="mdi-magnify"
-              :label="$tc('oracle_cache_management.filter')"
-            />
-          </v-col>
-        </v-row>
+        <v-autocomplete
+          v-model="selection"
+          :label="$t('oracle_cache_management.select_oracle')"
+          prepend-inner-icon="mdi-magnify"
+          outlined
+          :items="oracles"
+        >
+          <template #selection="{ item }">
+            <oracle-entry :identifier="item" />
+          </template>
+          <template #item="{ item }">
+            <oracle-entry :identifier="item" />
+          </template>
+        </v-autocomplete>
+        <div class="pb-8">
+          <v-row align="center">
+            <v-col>
+              <asset-select
+                v-model="fromAsset"
+                clearable
+                :disabled="pending"
+                outlined
+                :label="$tc('oracle_cache_management.from_asset')"
+              />
+            </v-col>
+            <v-col>
+              <asset-select
+                v-model="toAsset"
+                clearable
+                :disabled="pending"
+                outlined
+                :label="$tc('oracle_cache_management.to_asset')"
+              />
+            </v-col>
+            <v-col cols="auto" class="pb-10 pr-8">
+              <v-btn icon large @click="clearFilter">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </v-col>
+          </v-row>
+          <v-tooltip open-delay="400" top>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs"
+                :loading="pending"
+                large
+                color="primary"
+                :disabled="!fromAsset || !toAsset || pending"
+                v-on="on"
+                @click="fetchPrices()"
+              >
+                <v-icon class="mr-2">mdi-plus-circle</v-icon>
+                {{ $t('oracle_cache_management.create_cache') }}
+              </v-btn>
+            </template>
+            <span>{{ $t('oracle_cache_management.create_tooltip') }}</span>
+          </v-tooltip>
+        </div>
         <v-sheet outlined rounded>
           <data-table
-            :search.sync="search"
             :headers="headers"
             :loading="loading"
-            :items="cacheData"
+            :items="filteredData"
           >
             <template #item.fromAsset="{ item }">
               <asset-details opens-details :asset="item.fromAsset" />
@@ -198,14 +186,25 @@ export default defineComponent({
     const cacheData = ref<OracleCacheMeta[]>([]);
     const fromAsset = ref<string>('');
     const toAsset = ref<string>('');
-    const search = ref<string>('');
     const selection = ref<PriceOracle>('cryptocompare');
     const deleteEntry = ref<OracleCacheMeta | null>(null);
 
     const load = async () => {
       set(loading, true);
       set(cacheData, await getPriceCache('cryptocompare'));
+      set(loading, false);
     };
+
+    const filteredData = computed<OracleCacheMeta[]>(() => {
+      const from = get(fromAsset);
+      const to = get(toAsset);
+
+      return get(cacheData).filter(item => {
+        const fromAssetMatch = !from || from === item.fromAsset;
+        const toAssetMatch = !to || to === item.toAsset;
+        return fromAssetMatch && toAssetMatch;
+      });
+    });
 
     onMounted(async () => {
       await load();
@@ -269,8 +268,6 @@ export default defineComponent({
       const fromAssetVal = get(fromAsset);
       const toAssetVal = get(toAsset);
       const source = get(selection);
-      set(fromAsset, '');
-      set(toAsset, '');
 
       const status = await createOracleCache({
         purgeOld: false,
@@ -279,7 +276,7 @@ export default defineComponent({
         source
       });
 
-      if (status.message) {
+      if (!status.message) {
         await load();
       }
 
@@ -307,14 +304,19 @@ export default defineComponent({
       });
     };
 
+    const clearFilter = () => {
+      set(fromAsset, '');
+      set(toAsset, '');
+    };
+
     return {
       headers,
       selection,
       oracles,
       fromAsset,
       toAsset,
+      filteredData,
       pending,
-      search,
       loading,
       cacheData,
       confirmClear,
@@ -322,7 +324,8 @@ export default defineComponent({
       deleteToAsset,
       clearCache,
       confirmDelete,
-      fetchPrices
+      fetchPrices,
+      clearFilter
     };
   }
 });
