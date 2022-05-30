@@ -158,6 +158,9 @@ class DataImporter():
                 # Really makes no difference as this is just a gift and the amount is zero
                 quote_asset = A_USD
             base_amount_bought = deserialize_asset_amount(csv_row['Buy'])
+            if base_amount_bought == ZERO:
+                raise DeserializationError('Bought amount in trade is zero')
+
             if csv_row['Sell'] != '-':
                 quote_amount_sold = deserialize_asset_amount(csv_row['Sell'])
             else:
