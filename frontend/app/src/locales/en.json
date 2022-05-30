@@ -1326,7 +1326,6 @@
       "title": "Delete all the cached prices"
     },
     "delete_tooltip": "Delete the prices cached for this pair and the selected price oracle",
-    "filter": "Filter",
     "from_asset": "From Asset",
     "headers": {
       "from": "From Asset",

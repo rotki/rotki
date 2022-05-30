@@ -3,10 +3,10 @@
     <change-password />
     <asset-update />
     <backup-manager class="mt-8" />
-    <manage-custom-assets class="mt-8" />
-    <restore-assets-database />
     <data-management class="mt-8" />
     <oracle-cache-management class="mt-8" />
+    <manage-custom-assets class="mt-8" />
+    <restore-assets-database />
   </div>
 </template>
 

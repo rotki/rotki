@@ -12,7 +12,7 @@
           <asset-select
             v-model="filter.fromAsset"
             outlined
-            :label="$t('price_management.from_asset')"
+            :label="$tc('price_management.from_asset')"
             clearable
           />
         </v-col>
@@ -20,7 +20,7 @@
           <asset-select
             v-model="filter.toAsset"
             outlined
-            :label="$t('price_management.to_asset')"
+            :label="$tc('price_management.to_asset')"
             clearable
           />
         </v-col>
