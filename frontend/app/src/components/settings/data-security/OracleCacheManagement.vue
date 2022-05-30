@@ -138,6 +138,7 @@ import OracleEntry from '@/components/settings/OracleEntry.vue';
 import { usePrices } from '@/composables/balances';
 import i18n from '@/i18n';
 import { OracleCacheMeta } from '@/services/balances/types';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -216,12 +217,18 @@ export default defineComponent({
 
     const deleteFromAsset = computed<string>(() => {
       const deleteEntryVal = get(deleteEntry);
-      return deleteEntryVal?.fromAsset || '';
+      if (deleteEntryVal?.fromAsset) {
+        return getAssetSymbol(deleteEntryVal.fromAsset);
+      }
+      return '';
     });
 
     const deleteToAsset = computed<string>(() => {
       const deleteEntryVal = get(deleteEntry);
-      return deleteEntryVal?.toAsset || '';
+      if (deleteEntryVal?.toAsset) {
+        return getAssetSymbol(deleteEntryVal.toAsset);
+      }
+      return '';
     });
 
     const pending = isTaskRunning(TaskType.CREATE_PRICE_CACHE);
@@ -232,6 +239,7 @@ export default defineComponent({
     };
 
     const { notify } = useNotifications();
+    const { getAssetSymbol } = useAssetInfoRetrieval();
 
     const clearCache = async () => {
       const deleteEntryVal = get(deleteEntry);
@@ -249,8 +257,8 @@ export default defineComponent({
 
         const message = i18n
           .t('oracle_cache_management.clear_error', {
-            fromAsset,
-            toAsset,
+            fromAsset: getAssetSymbol(fromAsset),
+            toAsset: getAssetSymbol(toAsset),
             error: e.message
           })
           .toString();
@@ -282,13 +290,13 @@ export default defineComponent({
 
       const message = status.success
         ? i18n.t('oracle_cache_management.notification.success', {
-            fromAsset: fromAssetVal,
-            toAsset: toAssetVal,
+            fromAsset: getAssetSymbol(fromAssetVal),
+            toAsset: getAssetSymbol(toAssetVal),
             source
           })
         : i18n.t('oracle_cache_management.notification.error', {
-            fromAsset: fromAssetVal,
-            toAsset: toAssetVal,
+            fromAsset: getAssetSymbol(fromAssetVal),
+            toAsset: getAssetSymbol(toAssetVal),
             source,
             error: status.message
           });
@@ -325,7 +333,8 @@ export default defineComponent({
       clearCache,
       confirmDelete,
       fetchPrices,
-      clearFilter
+      clearFilter,
+      getAssetSymbol
     };
   }
 });

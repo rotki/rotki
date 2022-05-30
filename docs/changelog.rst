@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`4378` Ask for users permission to access keychain only when `Remember Me` option at login screen is enabled.
 * :bug:`4384` Price caches filter should now be working again.
 * :bug:`-` Acquisitions for which no price can be found will still appear and not count as missing acquisitions.
 * :bug:`-` COMP price before 20/06/2020 will not be hardcoded to $239.13 if queried via cryptocompare.
