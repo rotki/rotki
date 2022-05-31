@@ -26,6 +26,8 @@ if (!fs.existsSync(tempPath)) {
 
 const logDir = path.join(os.homedir(), 'rotki-e2e-logs');
 
+process.stdout.write(`Using ${logDir} to output backend logs\n`);
+
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
 }

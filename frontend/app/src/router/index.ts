@@ -6,8 +6,8 @@ import { Routes } from '@/router/routes';
 
 Vue.use(Router);
 
-const base = process.env.VUE_APP_PUBLIC_PATH ? window.location.pathname : '/';
-const isDocker = process.env.VUE_APP_DOCKER;
+const base = process.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
+const isDocker = process.env.VITE_DOCKER;
 
 export default new Router({
   mode: isDocker ? 'hash' : 'history',

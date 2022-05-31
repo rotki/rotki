@@ -105,7 +105,7 @@ export default class PyHandler {
   }
 
   get logDir(): string {
-    if (process.env.VUE_APP_DEV_LOGS) {
+    if (process.env.VITE_DEV_LOGS) {
       return path.join('..', 'logs');
     }
     return this.logDirectory ?? this.defaultLogDirectory;
@@ -186,7 +186,7 @@ export default class PyHandler {
     }
 
     const port = await selectPort();
-    const backendUrl = process.env.VUE_APP_BACKEND_URL;
+    const backendUrl = process.env.VITE_BACKEND_URL;
 
     assert(backendUrl);
     const regExp = /(.*):\/\/(.*):(.*)/;

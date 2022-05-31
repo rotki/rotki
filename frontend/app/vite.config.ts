@@ -8,7 +8,7 @@ import { defineConfig } from 'vite';
 import { createVuePlugin as vue } from 'vite-plugin-vue2';
 
 const PACKAGE_ROOT = __dirname;
-const envPath = process.env.VUE_APP_PUBLIC_PATH;
+const envPath = process.env.VITE_PUBLIC_PATH;
 const publicPath = envPath ? envPath : '/';
 const isDevelopment = process.env.NODE_ENV === 'development';
 

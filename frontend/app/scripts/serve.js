@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+require('dotenv').config();
 const { spawn } = require('child_process');
 const electron = require('electron');
 const { createServer, build, createLogger } = require('vite');

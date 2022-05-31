@@ -157,7 +157,7 @@ jobs:
         if: always()
         with:
           name: backend-logs-${{ runner.os }}
-          path: ~/*.log
+          path: ~/rotki-e2e-logs/*.log
       - uses: actions/upload-artifact@v2
         if: always()
         with:
