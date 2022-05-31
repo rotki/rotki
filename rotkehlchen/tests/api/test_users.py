@@ -791,7 +791,7 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     # Login first to test that schema validation works.
     data = {'password': db_password, 'sync_approval': 'unknown'}
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
     assert rotki.user_is_logged_in is True

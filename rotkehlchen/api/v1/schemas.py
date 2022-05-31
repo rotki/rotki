@@ -873,11 +873,10 @@ class UserActionSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if data['action'] is None:
-            if data['premium_api_key'] == '' or data['premium_api_secret'] == '':
-                raise ValidationError(
-                    'Without an action premium api key and secret must be provided',
-                )
+        if data['action'] is None and (data['premium_api_key'] == '' or data['premium_api_secret'] == ''):  # noqa: 501
+            raise ValidationError(
+                'Without an action premium api key and secret must be provided',
+            )
 
 
 class UserActionLoginSchema(Schema):
