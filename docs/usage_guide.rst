@@ -1332,6 +1332,12 @@ Results of the PnL report
 
 Once done you have an overview of the profit/loss for the given period, how much of that is taxable, and how much each taxable event category contributes to the total.
 
+
+.. image:: images/sc_pnl_report1.png
+   :alt: Overview of the profit/loss report
+   :align: center
+
+
 Additionally below the overview you get a table containing all of the events that were taken into account in the calculation along with how much of the ``profit_currency`` you lost or gained through that event.
 
 .. image:: images/sc_pnl_report2.png
@@ -1347,26 +1353,22 @@ Following are definitions for the all_event document's columns
 
 - ``type`` is a string describing the type of event a user engaged in, e.g. in "I buy ETH for EUR", buy is the ``type``.
 - ``location`` is a string describing the location the event occured at. For example "kraken" for kraken trades.
-- ``paid_asset`` is a string identifying the asset an event was paid in, e.g. in "I bought 1 ETH for 100 EUR", EUR is the  ``paid_asset``.
-- ``paid_in_asset`` is a number specifying the amount of ``paid_asset`` involved in an event, e.g. in "I bought 1 ETH for 100 EUR", 100 is the ``paid_in_asset``.
-- ``taxable_amount``: is a number specifying the amount of ``paid_asset`` needed to be taken into consideration for tax purposes according to the accounting settings, e.g. "I sold 1 ETH for 120 EUR", 1 ETH is the ``taxable_amount``.
-- ``received_asset`` is a string identifying the asset of an event's yield, e.g. in "I bought 1 ETH for 100 EUR", ETH is the ``received_asset``.
-- ``received_in_asset`` is a number specifying the amount of ``received_asset`` involved in an event, e.g. in "I bought 1 ETH for 100 EUR", 1 is the ``received_in_asset``.
-- ``net_profit_or_loss`` is a number specifying the amount of profit or loss an event accounts for given the selected accounting strategy. Note that its value is based on a spreadsheet formula.
+- ``asset`` is a string identifying the asset an event was paid in, e.g. in "I bought 1 ETH for 100 EUR", EUR is the  ``asset``.
+- ``free_amount``: is a number specifying the amount of ``asset`` that won't be taken into consideration for tax purposes.
+- ``taxable_amount``: is a number specifying the amount of ``asset`` needed to be taken into consideration for tax purposes according to the accounting settings, e.g. "I sold 1 ETH for 120 EUR", 1 ETH is the ``taxable_amount``.
 - ``timestamp`` is a string containing the date and time an event was executed.
 - ``price`` is ``asset`` price in ``profit_currency`` at the time the event was executed.
-- ``is_virtual`` is a boolean describing if an event is a virtually generated event. Only appears if the crypto to crypto setting is set. In many jurisdictions, crypto to crypto trades are taxable at the rate of the equivalent fiat currency. So an additional virtual buy is always generated for a crypto to crypto sell and the opposite for a crypto to crypto buy. So for example selling BSV for BTC would also make the user buy BTC with EUR as a virtual event, assuming EUR is the set profit currency.
-- ``paid_in_XXX``, where XXX is the user's customized ``profit_currency`` is a number describing the amount of ``paid_in_asset`` converted to the user`s ``profit_currency``.
-- ``taxable_received_in_XXX`` where XXX is the user's customized ``profit_currency`` is a number describing the amount of ``received_in_asset`` converted to the user's ``profit_currency``. Note that rotki additionally subtracts an exchange's trading fees from this number.
-- ``taxable_bought_cost_in_XXX`` where XXX is the user's customized ``profit_currency`` is a float simulating the total amount of ``paid_in_asset`` given the user's customized accounting strategy in the user's ``profit_currency``.
+- ``pnl_free`` is a number describing the amount of ``asset`` converted to the user's ``profit_currency`` that won't be taken into consideration for tax purposes.
+- ``pnl_taxable`` is a number describing the amount of ``asset`` converted to the user's ``profit_currency``. Note that rotki additionally subtracts an exchange's trading fees from this number.
 - ``cost_basis`` If this is a spending event, this field contains information about where the amount that is spent came from according to the user's setting. Which buys contributed to this spend. If not enough information is known then this is also stated.
+- ``notes`` Information about the event.
 
 .. note::
    To learn more about `profit_currency` or to adjust it, see the section :ref:`change_profit_currency`
 
 Results from past profit and loss reports are saved so the user can later review them without the need to run a new execution.
 
-.. image:: images/pnl_report_saved.png
+.. image:: images/sc_pnl_saved_reports.png
    :alt: Profit and loss reports from past executions
    :align: center
 
@@ -1388,16 +1390,15 @@ For all those trades you can see the cost basis when you create a profit loss re
 
 1. Either navigating to the trade in the generated table after the PnL report and pressing the arrow to show more details.
 
-.. image:: images/sc_costbasis_pnltable.png
+.. image:: images/sc_pnl_reports_costbasis.png
    :alt: Cost basis in PnL report table
    :align: center
 
 2. Export the report to CSV and import it in a spreadsheet tool. We have tested it works with google spreadsheets and libreoffice. The cost basis column contains the info you seek.
 
-.. image:: images/sc_costbasis_spreadsheet.png
+.. image:: images/sc_pnl_reports_costbasis_spreadsheet.png
    :alt: Cost basis in PnL report spreadsheet
    :align: center
-
 
 
 .. _troubleshooting-pnl-report:
@@ -1410,10 +1411,8 @@ No documented acquisition found
 
 It's possible that rotki is not able to find an acquisition event for a sale. In which case it will warn you and ask you to fix it.
 
-Example warning:
-
-.. image:: images/sc_acquisition_notfound.png
-   :alt: No documented acquisition found for asset
+.. image:: images/sc_pnl_missing_acquisitions.png
+   :alt: Missing acquisitions found for asset
    :align: center
 
 This can happen for many reasons. The asset may have been acquired in a non-supported exchange/protocol, some event not detected etc.
@@ -1425,7 +1424,11 @@ The way to fix it is to add either a :ref:`manual trade<adding-manual-trade>` or
 Timeout or price not found for timestamp
 -------------------------------------------------
 
-Figure out which asset caused the price not found. Then check the historical price caches and make sure you have the historical price cache for that asset pair created. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. See :ref:`manage-historical-price-cache` on how to do it.
+.. image:: images/sc_pnl_missing_prices.png
+   :alt: Missing prices asset
+   :align: center
+
+It's possible that rotki is not able to find the price of assets. You have to input the price manually, otherwise the event will be skipped from pnl reports. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. You can add the prices on the spot, or open :ref:`manage-historical-price-cache`.
 
 
 Statistics

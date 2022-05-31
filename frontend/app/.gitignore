@@ -33,3 +33,4 @@ tests/e2e/screenshots
 
 rotki_config.json
 package-lock.json
+components.d.ts
