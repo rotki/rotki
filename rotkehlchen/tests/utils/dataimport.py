@@ -619,6 +619,28 @@ def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
         fee_asset=A_USD,
         fee=Fee(ZERO),
         link='',
+    ), AssetMovement(
+        location=Location.BLOCKFI,
+        category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
+        timestamp=Timestamp(1611734258),
+        asset=A_USDC,
+        amount=AssetAmount(FVal('3597.48627700')),
+        fee_asset=A_USD,
+        fee=Fee(ZERO),
+        link='',
+    ), AssetMovement(
+        location=Location.BLOCKFI,
+        category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
+        timestamp=Timestamp(1611820658),
+        asset=A_BTC,
+        amount=AssetAmount(FVal('2.11415058')),
+        fee_asset=A_USD,
+        fee=Fee(ZERO),
+        link='',
     )]
     assert expected_movements == asset_movements
 
