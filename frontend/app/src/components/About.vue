@@ -11,7 +11,7 @@
         class="mt-4 mb-2"
         contain
         max-width="72px"
-        :src="require('@/assets/images/rotkehlchen_no_text.png')"
+        src="/assets/images/rotkehlchen_no_text.png"
       />
       <div class="d-flex flex-row align-center about__version mt-4">
         <div class="font-weight-bold">{{ version.version }}</div>

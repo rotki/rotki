@@ -20,7 +20,7 @@
         <v-img
           contain
           max-width="24px"
-          :src="require(`@/assets/images/metamask-fox.svg`)"
+          :src="`/assets/images/metamask-fox.svg`"
         />
         <span class="hidden-sm-and-down ml-1">
           {{ $t('input_mode_select.metamask_import.label') }}

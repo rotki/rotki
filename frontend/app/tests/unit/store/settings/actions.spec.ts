@@ -40,11 +40,11 @@ import {
   VISIBLE_TIMEFRAMES
 } from '@/types/frontend-settings';
 
-jest.mock('@/services/rotkehlchen-api');
+vi.mock('@/services/rotkehlchen-api');
 
 describe('settings:actions', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
   test('updates settings on valid payload', async () => {
     expect.assertions(1);

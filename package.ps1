@@ -321,15 +321,17 @@ if ($Env:CI) {
     echo "::endgroup::"
 }
 
+$ELECTRON_BUILD_PATH="electron-build"
+
 cd app
-$BINARY_NAME = @(Get-ChildItem -Path $PWD\dist -Filter *.exe -Recurse -File -Name)[0]
+$BINARY_NAME = @(Get-ChildItem -Path "$PWD\$ELECTRON_BUILD_PATH" -Filter *.exe -Recurse -File -Name)[0]
 
 if (-not ($BINARY_NAME)) {
     echo "The app binary was not found"
     exit 1
 }
 
-cd dist
+cd $ELECTRON_BUILD_PATH
 $CHECKSUM_NAME = "$BINARY_NAME.sha512"
 $APP_BINARY = "$PWD\$BINARY_NAME"
 $APP_CHECKSUM = "$PWD\$CHECKSUM_NAME"

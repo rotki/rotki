@@ -1,4 +1,4 @@
-jest.mock('@/i18n');
+vi.mock('@/i18n');
 
 import Vue from 'vue';
 

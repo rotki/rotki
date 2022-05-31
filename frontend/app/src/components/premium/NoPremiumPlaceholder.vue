@@ -8,7 +8,7 @@
               <v-img
                 contain
                 :class="$style.image"
-                :src="require('@/assets/images/rotkehlchen_no_text.png')"
+                src="/assets/images/rotkehlchen_no_text.png"
               />
             </div>
           </v-col>

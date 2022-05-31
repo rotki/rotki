@@ -104,11 +104,11 @@ export default defineComponent({
     AmountCurrency
   },
   props: {
-    value: { required: true, type: Object as PropType<BigNumber> },
+    value: { required: true, type: BigNumber },
     loading: { required: false, type: Boolean, default: false },
     amount: {
       required: false,
-      type: Object as PropType<BigNumber>,
+      type: BigNumber,
       default: null
     },
     fiatCurrency: { required: false, type: String, default: null },

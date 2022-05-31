@@ -26,7 +26,7 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useAssetInfoRetrieval } from '@/store/assets';
@@ -39,7 +39,7 @@ export default defineComponent({
     notes: { required: false, type: String, default: '' },
     amount: {
       required: false,
-      type: Object as PropType<BigNumber>,
+      type: BigNumber,
       default: null
     },
     asset: { required: false, type: String, default: '' }

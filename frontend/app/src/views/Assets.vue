@@ -44,7 +44,7 @@
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { RawLocation } from 'vue-router/types/router';
+import { RawLocation } from 'vue-router';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
 import { getPremium } from '@/composables/session';

@@ -6,7 +6,7 @@
       position="left"
       width="26px"
       max-height="24px"
-      :src="require(`@/assets/images/defi/${getIcon(item)}.svg`)"
+      :src="`/assets/images/defi/${getIcon(item)}.svg`"
     />
     <span class="ml-2">{{ identifier }}</span>
   </div>

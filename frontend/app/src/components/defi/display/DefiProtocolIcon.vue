@@ -15,7 +15,7 @@
             'mr-2': mode !== 'icon',
             [$style.icon]: true
           }"
-          :src="require(`@/assets/images/defi/${icon}.svg`)"
+          :src="`/assets/images/defi/${icon}.svg`"
           v-on="on"
         />
         <span

@@ -6,6 +6,7 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import store from '@/store/store';
+import '../../i18n';
 
 Vue.use(Vuetify);
 

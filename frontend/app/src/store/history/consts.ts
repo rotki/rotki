@@ -354,115 +354,115 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
   {
     identifier: TransactionEventProtocol.COMPOUND,
     label: 'Compound',
-    image: require('@/assets/images/defi/compound.svg')
+    image: '/assets/images/defi/compound.svg'
   },
   {
     identifier: TransactionEventProtocol.GITCOIN,
     label: 'Gitcoin',
-    image: require('@/assets/images/gitcoin.svg')
+    image: '/assets/images/gitcoin.svg'
   },
   {
     identifier: TransactionEventProtocol.XDAI,
     label: 'Aave',
-    image: require('@/assets/images/defi/xdai.png')
+    image: '/assets/images/defi/xdai.png'
   },
   {
     identifier: TransactionEventProtocol.MAKERDAO,
     label: 'Makerdao',
-    image: require('@/assets/images/defi/makerdao.svg'),
+    image: '/assets/images/defi/makerdao.svg',
     matcher: (identifier: string) =>
       identifier.toLowerCase().startsWith('makerdao')
   },
   {
     identifier: TransactionEventProtocol.UNISWAP,
     label: 'Uniswap',
-    image: require('@/assets/images/defi/uniswap.svg'),
+    image: '/assets/images/defi/uniswap.svg',
     matcher: (identifier: string) =>
       identifier.toLowerCase().startsWith('uniswap')
   },
   {
     identifier: TransactionEventProtocol.AAVE,
     label: 'Aave',
-    image: require('@/assets/images/defi/aave.svg'),
+    image: '/assets/images/defi/aave.svg',
     matcher: (identifier: string) => identifier.toLowerCase().startsWith('aave')
   },
   {
     identifier: TransactionEventProtocol.FRAX,
     label: 'FRAX',
-    image: require('@/assets/images/defi/frax.png')
+    image: '/assets/images/defi/frax.png'
   },
   {
     identifier: TransactionEventProtocol.CONVEX,
     label: 'Convex',
-    image: require('@/assets/images/defi/convex.jpeg')
+    image: '/images/defi/convex.jpeg'
   },
   {
     identifier: TransactionEventProtocol['1INCH'],
     label: '1inch',
-    image: require('@/assets/images/defi/1inch.svg'),
+    image: '/assets/images/defi/1inch.svg',
     matcher: (identifier: string) =>
       identifier.toLowerCase().startsWith('1inch')
   },
   {
     identifier: TransactionEventProtocol.ZKSYNC,
     label: 'zkSync',
-    image: require('@/assets/images/zksync.jpg')
+    image: '/assets/images/zksync.jpg'
   },
   {
     identifier: TransactionEventProtocol.VOTIUM,
     label: 'Votium',
-    image: require('@/assets/images/defi/votium.png')
+    image: '/assets/images/defi/votium.png'
   },
   {
     identifier: TransactionEventProtocol.LIQUITY,
     label: 'Liquity',
-    image: require('@/assets/images/defi/liquity.svg')
+    image: '/assets/images/defi/liquity.svg'
   },
   {
     identifier: TransactionEventProtocol.CURVE,
     label: 'Curve.fi',
-    image: require('@/assets/images/defi/curve.svg')
+    image: '/assets/images/defi/curve.svg'
   },
   {
     identifier: TransactionEventProtocol.SHAPESHIFT,
     label: 'Shapeshift',
-    image: require('@/assets/images/shapeshift.svg')
+    image: '/assets/images/shapeshift.svg'
   },
   {
     identifier: TransactionEventProtocol.PICKLE,
     label: 'Pickle Finance',
-    image: require('@/assets/images/modules/pickle.svg')
+    image: '/assets/images/modules/pickle.svg'
   },
   {
     identifier: TransactionEventProtocol.DXDAO,
     label: 'dxdao',
-    image: require('@/assets/images/defi/dxdao.svg'),
+    image: '/assets/images/defi/dxdao.svg',
     matcher: (identifier: string) =>
       identifier.toLowerCase().startsWith('dxdao')
   },
   {
     identifier: TransactionEventProtocol.BADGER,
     label: 'badger',
-    image: require('@/assets/images/defi/badger.png')
+    image: '/assets/images/defi/badger.png'
   },
   {
     identifier: TransactionEventProtocol.ENS,
     label: 'ens',
-    image: require('@/assets/images/airdrops/ens.svg')
+    image: '/assets/images/airdrops/ens.svg'
   },
   {
     identifier: TransactionEventProtocol.KRAKEN,
     label: 'kraken',
-    image: require('@/assets/images/exchanges/kraken.svg')
+    image: '/assets/images/exchanges/kraken.svg'
   },
   {
     identifier: TransactionEventProtocol.ELEMENT_FINANCE,
     label: 'Element Finance',
-    image: require('@/assets/images/defi/element_finance.png')
+    image: '/assets/images/defi/element_finance.png'
   },
   {
     identifier: TransactionEventProtocol.HOP_PROTOCOL,
     label: 'Hop Protocol',
-    image: require('@/assets/images/hop_protocol.png')
+    image: '/assets/images/hop_protocol.png'
   }
 ];

@@ -6,7 +6,7 @@
           <v-img
             contain
             :max-width="$vuetify.breakpoint.mobile ? '100px' : '200px'"
-            :src="require('@/assets/images/rotkehlchen_no_text.png')"
+            src="/assets/images/rotkehlchen_no_text.png"
           />
         </slot>
       </v-col>

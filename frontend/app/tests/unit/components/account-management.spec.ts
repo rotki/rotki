@@ -3,6 +3,7 @@ import flushPromises from 'flush-promises/index';
 import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
+import { VDialog } from 'vuetify/lib/components';
 import AccountManagement from '@/components/AccountManagement.vue';
 import { interop, useInterop } from '@/electron-interop';
 import { Api } from '@/plugins/api';
@@ -10,12 +11,17 @@ import { Interop } from '@/plugins/interop';
 import store, { useMainStore } from '@/store/store';
 import '../i18n';
 
-jest.mock('@/electron-interop');
-jest.mock('@/services/rotkehlchen-api');
+vi.mock('@/electron-interop');
+vi.mock('@/services/rotkehlchen-api');
 
 Vue.use(Vuetify);
 Vue.use(Api);
 Vue.use(Interop);
+
+// This is workaround used because stubs is somehow not working,
+// Eager prop will render the <slot /> immediately
+// @ts-ignore
+VDialog.options.props.eager.default = true;
 
 describe('AccountManagement.vue', () => {
   let wrapper: Wrapper<any>;
@@ -26,8 +32,8 @@ describe('AccountManagement.vue', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
 
-    (useInterop as jest.Mock).mockImplementation(() => interop);
-    interop.premiumUserLoggedIn = jest.fn();
+    (useInterop as any).mockImplementation(() => interop);
+    interop.premiumUserLoggedIn = vi.fn();
 
     useMainStore().setConnected(true);
 
@@ -38,14 +44,6 @@ describe('AccountManagement.vue', () => {
         'vuex-store': store
       },
       vuetify,
-      stubs: {
-        VDialog: {
-          template: '<span v-if="value"><slot></slot></span>',
-          props: {
-            value: { type: Boolean }
-          }
-        }
-      },
       propsData: {
         logged: true
       }
@@ -58,7 +56,7 @@ describe('AccountManagement.vue', () => {
 
   describe('existing account', () => {
     test('non premium users should see the premium dialog', async () => {
-      store.dispatch = jest.fn().mockResolvedValue({ success: true });
+      store.dispatch = vi.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
       await wrapper.vm.userLogin({ username: '1234', password: '1234' });
@@ -78,7 +76,7 @@ describe('AccountManagement.vue', () => {
 
     test('premium users should not see the premium dialog', async () => {
       store.commit('session/premium', true);
-      store.dispatch = jest.fn().mockResolvedValue({ success: true });
+      store.dispatch = vi.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
       await wrapper.vm.userLogin({ username: '1234', password: '1234' });
@@ -95,7 +93,7 @@ describe('AccountManagement.vue', () => {
 
   describe('new account', () => {
     test('non premium users should only see menu', async () => {
-      store.dispatch = jest.fn().mockResolvedValue({ success: true });
+      store.dispatch = vi.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
       await wrapper.vm.createNewAccount({ username: '1234', password: '1234' });
@@ -109,7 +107,7 @@ describe('AccountManagement.vue', () => {
 
     test('premium users should not see the premium menu entry', async () => {
       expect.assertions(4);
-      store.dispatch = jest.fn().mockResolvedValue({ success: true });
+      store.dispatch = vi.fn().mockResolvedValue({ success: true });
 
       store.commit('session/premium', true);
       // @ts-ignore

@@ -240,8 +240,7 @@ export default defineComponent({
       return get(balances).map(balance => {
         return {
           ...balance,
-          imageUrl:
-            balance.imageUrl || require('@/assets/images/placeholder.svg'),
+          imageUrl: balance.imageUrl || '/assets/images/placeholder.svg',
           isVideo: isVideo(balance.imageUrl)
         };
       });

@@ -16,7 +16,7 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent } from '@vue/composition-api';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Zero } from '@/utils/bignumbers';
 
@@ -29,7 +29,7 @@ export default defineComponent({
     title: { required: true, type: String },
     value: {
       required: false,
-      type: Object as PropType<BigNumber>,
+      type: BigNumber,
       default: () => Zero
     },
     fiat: { required: false, type: Boolean }

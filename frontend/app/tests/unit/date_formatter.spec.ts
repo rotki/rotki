@@ -1,7 +1,5 @@
 import { DateFormatter } from '@/data/date_formatter';
 
-jest.setTimeout(50000);
-
 describe('DateFormatter', function () {
   const converter = new DateFormatter();
   let date: Date;
@@ -12,7 +10,6 @@ describe('DateFormatter', function () {
   }
 
   beforeEach(function () {
-    process.env.TZ = 'UTC';
     originalOffset = Date.prototype.getTimezoneOffset;
     overrideTimezoneOffset(0);
     date = new Date(Date.parse('03 Feb 2019 13:09:09 UTC'));

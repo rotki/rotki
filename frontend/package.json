@@ -27,17 +27,14 @@
     "dev": "node start-dev.js",
     "dev:web": "node start-dev.js --web"
   },
-  "overrides": {
-    "vue-cli-plugin-electron-builder": {
-      "electron-builder": "23.0.3"
-    }
-  },
   "devDependencies": {
-    "electron-builder": "23.0.3",
-    "vue-cli-plugin-electron-builder": "2.1.1",
-    "@typescript-eslint/eslint-plugin": "5.10.1",
-    "@typescript-eslint/parser": "5.10.1",
+    "@typescript-eslint/eslint-plugin": "5.18.0",
+    "@typescript-eslint/parser": "5.18.0",
     "dotenv": "14.3.0",
+    "eslint-config-prettier": "8.3.0",
+    "eslint-import-resolver-alias": "1.1.2",
+    "eslint-plugin-import": "2.26.0",
+    "jsdom": "19.0.0",
     "rimraf": "3.0.2",
     "semver": "7.3.5"
   }

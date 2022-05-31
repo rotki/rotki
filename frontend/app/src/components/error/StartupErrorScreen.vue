@@ -48,8 +48,6 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
 .startup-error-screen {
   background-color: white;
 }

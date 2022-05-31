@@ -231,6 +231,6 @@ export const useUniswap = defineStore('defi/uniswap', () => {
   };
 });
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useUniswap, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useUniswap, import.meta.hot));
 }

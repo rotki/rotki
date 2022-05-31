@@ -28,7 +28,7 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent } from '@vue/composition-api';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { setupGeneralSettings } from '@/composables/session';
 import { toSentenceCase } from '@/utils/text';
@@ -43,7 +43,7 @@ export default defineComponent({
     },
     amount: {
       required: true,
-      type: Object as PropType<BigNumber>
+      type: BigNumber
     }
   },
   setup() {

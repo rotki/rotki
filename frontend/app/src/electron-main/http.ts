@@ -20,10 +20,10 @@ const STATUS_NOT_FOUND = 404;
 const STATUS_CONTENT_LENGTH_REQUIRED = 411;
 
 const FILE_WHITELIST = [
-  'img/alert.svg',
-  'img/done.svg',
-  'img/mm-logo.svg',
-  'img/rotki.svg',
+  'metamask/img/alert.svg',
+  'metamask/img/done.svg',
+  'metamask/img/mm-logo.svg',
+  'metamask/img/rotki.svg',
   'apple-touch-icon.png'
 ];
 
@@ -155,7 +155,7 @@ function handleRequests(
   if (url === '/') {
     okResponse(
       res,
-      fs.readFileSync(path.join(basePath, 'import.html')),
+      fs.readFileSync(path.join(basePath, 'metamask/import.html')),
       headersHtml
     );
   } else if (url === '/import' && req.method === 'POST') {

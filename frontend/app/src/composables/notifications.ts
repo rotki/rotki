@@ -23,6 +23,6 @@ export const setupNotifications = () => {
   };
 };
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useNotifications, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useNotifications, import.meta.hot));
 }

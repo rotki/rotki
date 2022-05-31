@@ -7,14 +7,12 @@ import {
 import store, { useMainStore } from '@/store/store';
 import { Module } from '@/types/modules';
 
-jest.mock('@/services/rotkehlchen-api');
+vi.mock('@/services/rotkehlchen-api');
 
 describe('session:actions', () => {
   beforeEach(() => {
     const pinia = createPinia();
     setActivePinia(pinia);
-
-    (api.session as any) = jest.mock('@/services/session/session-api');
     store.dispatch('session/logout');
   });
 
@@ -23,7 +21,7 @@ describe('session:actions', () => {
     const response: QueriedAddresses = {
       makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5']
     };
-    api.session.queriedAddresses = jest.fn().mockResolvedValue(response);
+    api.session.queriedAddresses = vi.fn().mockResolvedValue(response);
     await store.dispatch('session/fetchQueriedAddresses');
     expect(api.session.queriedAddresses).toHaveBeenCalledTimes(1);
     expect(store.state.session!.queriedAddresses).toMatchObject(response);
@@ -31,7 +29,7 @@ describe('session:actions', () => {
 
   test('fetchQueriedAddresses fails', async () => {
     expect.assertions(3);
-    api.session.queriedAddresses = jest
+    api.session.queriedAddresses = vi
       .fn()
       .mockRejectedValue(new Error('failed'));
     await store.dispatch('session/fetchQueriedAddresses');
@@ -49,7 +47,7 @@ describe('session:actions', () => {
     const response: QueriedAddresses = {
       makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5']
     };
-    api.session.addQueriedAddress = jest.fn().mockResolvedValue(response);
+    api.session.addQueriedAddress = vi.fn().mockResolvedValue(response);
     await store.dispatch('session/addQueriedAddress', payload);
     expect(api.session.addQueriedAddress).toHaveBeenCalledWith(payload);
     expect(store.state.session!.queriedAddresses).toMatchObject(response);
@@ -62,7 +60,7 @@ describe('session:actions', () => {
       address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
     };
 
-    api.session.addQueriedAddress = jest
+    api.session.addQueriedAddress = vi
       .fn()
       .mockRejectedValue(new Error('failed'));
     await store.dispatch('session/addQueriedAddress', payload);
@@ -82,7 +80,7 @@ describe('session:actions', () => {
       address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
     };
 
-    api.session.deleteQueriedAddress = jest.fn().mockResolvedValue({});
+    api.session.deleteQueriedAddress = vi.fn().mockResolvedValue({});
     await store.dispatch('session/deleteQueriedAddress', payload);
     expect(api.session.deleteQueriedAddress).toHaveBeenCalledWith(payload);
     expect(store.state.session!.queriedAddresses).toMatchObject({});
@@ -99,7 +97,7 @@ describe('session:actions', () => {
       address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
     };
 
-    api.session.deleteQueriedAddress = jest
+    api.session.deleteQueriedAddress = vi
       .fn()
       .mockRejectedValue(new Error('failed'));
     await store.dispatch('session/deleteQueriedAddress', payload);

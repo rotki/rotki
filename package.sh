@@ -211,7 +211,7 @@ function generate_checksum() {
     eval "$3='$(pwd)/$checksum_file'"
 }
 
-cd frontend/app/dist || exit 1
+cd frontend/app/electron-build || exit 1
 
 if [[ "$PLATFORM" == "linux" ]]; then
   GENERATED_APPIMAGE=$(find "$(pwd)" -name "rotki-linux*.AppImage"  | head -n 1)

@@ -56,49 +56,49 @@ const sources = [
   {
     identifier: 'cointracking.info',
     name: i18n.t('import_data.cointracking.name').toString(),
-    logo: require('@/assets/images/cointracking.svg'),
+    logo: '/assets/images/cointracking.svg',
     form: 'cointracking-import'
   },
   {
     identifier: 'cryptocom',
     name: i18n.t('import_data.cryptocom.name').toString(),
-    logo: require('@/assets/images/crypto_com.svg'),
+    logo: '/assets/images/crypto_com.svg',
     form: 'crypto-com-import'
   },
   {
     identifier: 'blockfi',
     name: i18n.t('import_data.blockfi.name').toString(),
-    logo: require('@/assets/images/blockfi.svg'),
+    logo: '/assets/images/blockfi.svg',
     form: 'block-fi-import'
   },
   {
     identifier: 'nexo',
     name: i18n.t('import_data.nexo.name').toString(),
-    logo: require('@/assets/images/nexo.svg'),
+    logo: '/assets/images/nexo.svg',
     form: 'nexo-import'
   },
   {
     identifier: 'shapeshift-trades',
     name: i18n.t('import_data.shapeshift.name').toString(),
-    logo: require('@/assets/images/shapeshift.svg'),
+    logo: '/assets/images/shapeshift.svg',
     form: 'shapeshift-import'
   },
   {
     identifier: 'uphold',
     name: i18n.t('import_data.uphold.name').toString(),
-    logo: require('@/assets/images/uphold.svg'),
+    logo: '/assets/images/uphold.svg',
     form: 'uphold-import'
   },
   {
     identifier: 'bisq',
     name: i18n.t('import_data.bisq.name'),
-    logo: require('@/assets/images/bisq.svg'),
+    logo: '/assets/images/bisq.svg',
     form: 'bisq-import'
   },
   {
     identifier: 'binance',
     name: i18n.t('import_data.binance.name'),
-    logo: require('@/assets/images/exchanges/binance.svg'),
+    logo: '/assets/images/exchanges/binance.svg',
     form: 'binance-import'
   }
 ];

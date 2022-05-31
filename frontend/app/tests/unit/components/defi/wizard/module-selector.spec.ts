@@ -9,7 +9,7 @@ import { Module } from '@/types/modules';
 import { GeneralSettings } from '@/types/user';
 import '../../../i18n';
 
-jest.mock('@/services/rotkehlchen-api');
+vi.mock('@/services/rotkehlchen-api');
 
 Vue.use(Vuetify);
 
@@ -45,7 +45,7 @@ describe('ModuleSelector.vue', () => {
 
   test('removes active modules on click', async () => {
     expect.assertions(2);
-    api.setSettings = jest.fn().mockResolvedValue({ active_modules: [] });
+    api.setSettings = vi.fn().mockResolvedValue({ active_modules: [] });
     wrapper.find('#defi-module-aave').find('button').trigger('click');
     await wrapper.vm.$nextTick();
     expect(wrapper.find('#defi-module-aave').exists()).toBe(false);

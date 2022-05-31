@@ -37,7 +37,7 @@ export default defineComponent({
   height: 48px;
   width: 48px;
   border-radius: 50%;
-  background: url(~@/assets/images/defi/balancer.svg) no-repeat 8px 32px;
+  background: url(/assets/images/defi/balancer.svg) no-repeat 8px 32px;
   background-size: 12px 12px;
 
   > * {

@@ -130,7 +130,7 @@ export default defineComponent({
       if (!protocol.icon) {
         return '';
       }
-      return require(`@/assets/images/defi/${protocol.icon}`);
+      return `/assets/images/defi/${protocol.icon}`;
     });
 
     const assets = computed(() => {
