@@ -42,7 +42,7 @@ export default defineComponent({
     const { fetchTrades } = useTrades();
 
     const preview = computed<boolean>(() => {
-      return !!process.env.VUE_APP_TRADES_PREVIEW;
+      return !!process.env.VITE_TRADES_PREVIEW;
     });
 
     const openTrades: TradeEntry[] = [];

@@ -322,7 +322,7 @@ export default defineComponent({
       accountCreationError,
       errors,
       syncConflict,
-      isTest: !!process.env.VUE_APP_TEST,
+      isTest: !!process.env.VITE_TEST,
       isPackaged: computed(() => interop.isPackaged),
       backendChanged,
       dismissPremiumModal,
