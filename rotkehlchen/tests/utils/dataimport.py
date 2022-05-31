@@ -56,7 +56,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
-    assert len(warnings) == 3
+    assert len(warnings) == 4
 
     expected_trades = [Trade(
         timestamp=Timestamp(1566687719),

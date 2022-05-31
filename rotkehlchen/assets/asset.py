@@ -425,6 +425,7 @@ WORLD_TO_BINANCE = {
     strethaddress_to_identifier('0xba5BDe662c17e2aDFF1075610382B9B691296350'): 'RARE',
     strethaddress_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF'): 'IMX',
     strethaddress_to_identifier('0x27702a26126e0B3702af63Ee09aC4d1A084EF628'): 'ALEPH',
+    strethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7'): 'USDT',
 }
 
 WORLD_TO_BITFINEX = {

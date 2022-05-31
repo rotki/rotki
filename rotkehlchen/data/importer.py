@@ -11,6 +11,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.converters import (
+    LOCATION_TO_ASSET_MAPPING,
     asset_from_binance,
     asset_from_cryptocom,
     asset_from_nexo,
@@ -138,6 +139,7 @@ class DataImporter():
             location='cointracking.info',
         )
         location = exchange_row_to_location(csv_row['Exchange'])
+        asset_resolver = LOCATION_TO_ASSET_MAPPING.get(location, symbol_to_asset_or_token)
         notes = csv_row['Comment']
         if location == Location.EXTERNAL:
             notes += f'. Data from -{csv_row["Exchange"]}- not known by rotki.'
@@ -146,11 +148,11 @@ class DataImporter():
         fee_currency = A_USD  # whatever (used only if there is no fee)
         if csv_row['Fee'] != '':
             fee = deserialize_fee(csv_row['Fee'])
-            fee_currency = asset_from_cryptocom(csv_row['Cur.Fee'])
+            fee_currency = asset_resolver(csv_row['Cur.Fee'])
 
         if row_type in ('Gift/Tip', 'Trade', 'Income'):
-            base_asset = asset_from_cryptocom(csv_row['Cur.Buy'])
-            quote_asset = None if csv_row['Cur.Sell'] == '' else asset_from_cryptocom(csv_row['Cur.Sell'])  # noqa: E501
+            base_asset = asset_resolver(csv_row['Cur.Buy'])
+            quote_asset = None if csv_row['Cur.Sell'] == '' else asset_resolver(csv_row['Cur.Sell'])  # noqa: E501
             if quote_asset is None and row_type not in ('Gift/Tip', 'Income'):
                 raise DeserializationError('Got a trade entry with an empty quote asset')
 
@@ -158,6 +160,9 @@ class DataImporter():
                 # Really makes no difference as this is just a gift and the amount is zero
                 quote_asset = A_USD
             base_amount_bought = deserialize_asset_amount(csv_row['Buy'])
+            if base_amount_bought == ZERO:
+                raise DeserializationError('Bought amount in trade is zero')
+
             if csv_row['Sell'] != '-':
                 quote_amount_sold = deserialize_asset_amount(csv_row['Sell'])
             else:
@@ -182,10 +187,10 @@ class DataImporter():
             category = deserialize_asset_movement_category(row_type.lower())
             if category == AssetMovementCategory.DEPOSIT:
                 amount = deserialize_asset_amount(csv_row['Buy'])
-                asset = asset_from_cryptocom(csv_row['Cur.Buy'])
+                asset = asset_resolver(csv_row['Cur.Buy'])
             else:
                 amount = deserialize_asset_amount_force_positive(csv_row['Sell'])
-                asset = asset_from_cryptocom(csv_row['Cur.Sell'])
+                asset = asset_resolver(csv_row['Cur.Sell'])
 
             asset_movement = AssetMovement(
                 location=location,

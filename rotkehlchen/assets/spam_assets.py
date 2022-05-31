@@ -119,6 +119,12 @@ KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEthAddress, Dict[str, Any]] = {
         'symbol': 'Audi',
         'decimals': 18,
     },
+    # LunaV2.io (Luna Token)
+    string_to_ethereum_address('0xAF0b2fBeDd5d1Fda457580FB3DAbAD1F5C8bBC36'): {
+        'name': 'LunaV2.io',
+        'symbol': 'Luna Token',
+        'decimals': 18,
+    },
 }
 
 

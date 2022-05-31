@@ -6,6 +6,7 @@ Changelog
 * :bug:`4384` Price caches filter should now be working again.
 * :bug:`-` Acquisitions for which no price can be found will still appear and not count as missing acquisitions.
 * :bug:`-` COMP price before 20/06/2020 will not be hardcoded to $239.13 if queried via cryptocompare.
+* :bug:`-` Prevent error while importing CSVs from cointracking when one trade row had a 0 amount bought.
 * :bug:`4381` Fixes a problem at the DB upgrade between v1.23.4 and 1.24.0 which affected a subset of some kraken users.
 
 * :release:`1.24.0 <2022-05-27>`
