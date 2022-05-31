@@ -1,7 +1,7 @@
 =========
 Changelog
 =========
-
+* :bug:`4386` Blockfi import for transactions now supports 'Crypto Transfer'
 * :bug:`4378` Ask for users permission to access keychain only when `Remember Me` option at login screen is enabled.
 * :bug:`4384` Price caches filter should now be working again.
 * :bug:`-` Acquisitions for which no price can be found will still appear and not count as missing acquisitions.

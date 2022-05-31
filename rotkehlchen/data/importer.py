@@ -871,6 +871,24 @@ class DataImporter():
                 notes=f'{entry_type} from BlockFi',
             )
             self.db_ledger.add_ledger_action(action)
+        elif entry_type == 'Crypto Transfer':
+            category = (
+                AssetMovementCategory.WITHDRAWAL if FVal(csv_row['Amount']) < ZERO
+                else AssetMovementCategory.DEPOSIT
+            )
+            asset_movement = AssetMovement(
+                location=Location.BLOCKFI,
+                category=category,
+                address=None,
+                transaction_id=None,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee=fee,
+                fee_asset=fee_asset,
+                link='',
+            )
+            self.db.add_asset_movements([asset_movement])
         elif entry_type == 'Trade':
             pass
         else:
