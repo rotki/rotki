@@ -3,9 +3,7 @@ import { selectAsset } from '../../support/utils';
 
 export class TradeHistoryPage {
   visit() {
-    cy.get('.history__trades').scrollIntoView().should('be.visible').click({
-      force: true
-    });
+    cy.get('.history__trades').scrollIntoView().should('be.visible').click();
   }
 
   fetchTrades() {
@@ -26,23 +24,23 @@ export class TradeHistoryPage {
   addTrade(trade: ExternalTrade) {
     cy.get('.closed-trades__add-trade').click();
     cy.get('[data-cy=trade-form]').should('be.visible');
-    cy.get('[data-cy=date]')
-      .type(`{selectall}{backspace}${trade.time}`)
-      .click({ force: true }); // Click is needed to hide the popup
+    cy.get('[data-cy=date]').type(`{selectall}{backspace}${trade.time}`);
+    // clicking outside to a fully visible element to close the datepicker
+    cy.get('[data-cy=bottom-dialog]').find('.card-title').click();
 
-    selectAsset('[data-cy=base-asset]', trade.base, trade.base_id);
-    selectAsset('[data-cy=quote-asset]', trade.quote, trade.quote_id);
-    cy.get('[data-cy=type] input').check(trade.trade_type, {
-      force: true
-    });
     cy.intercept({
       method: 'GET',
       url: '/api/1/tasks/*'
     }).as('priceTask');
+
+    selectAsset('[data-cy=base-asset]', trade.base, trade.base_id);
+    selectAsset('[data-cy=quote-asset]', trade.quote, trade.quote_id);
+    cy.get(`[data-cy=type] input[value=${trade.trade_type}]`)
+      .parentsUntil('.v-radio')
+      .first()
+      .click();
     cy.get('[data-cy=amount]').type(trade.amount);
-    cy.wait('@priceTask', { timeout: 30000 })
-      .its('response.statusCode')
-      .should('equal', 200);
+    cy.wait('@priceTask').its('response.statusCode').should('equal', 200);
     cy.get('[data-cy=rate]')
       .parent()
       .parent()
@@ -106,7 +104,7 @@ export class TradeHistoryPage {
     cy.get('.closed-trades tbody > tr')
       .eq(position)
       .find('[data-cy=row-edit]')
-      .click({ force: true });
+      .click();
 
     cy.get('[data-cy=trade-form]').should('be.visible');
     cy.get('[data-cy=amount]').clear();

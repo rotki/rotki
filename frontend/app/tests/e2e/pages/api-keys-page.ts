@@ -1,7 +1,7 @@
 export class ApiKeysPage {
   visit() {
     cy.get('.v-app-bar__nav-icon').click();
-    cy.get('.navigation__settings__api-keys').click({ force: true });
+    cy.get('.navigation__settings__api-keys').click();
   }
 
   addExchange(
@@ -10,9 +10,7 @@ export class ApiKeysPage {
     exchange: string,
     name: string
   ) {
-    cy.get('.tab-navigation__tabs .settings__api-keys__exchanges').click({
-      force: true
-    });
+    cy.get('.tab-navigation__tabs .settings__api-keys__exchanges').click();
     cy.get('[data-cy="exchanges"]').find('[data-cy="add-exchange"]').click();
     cy.get('[data-cy="exchange-keys"]').as('keys');
     cy.get('[data-cy="bottom-dialog"]', { timeout: 45000 }).should(

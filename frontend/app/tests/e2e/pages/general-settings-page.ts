@@ -4,7 +4,7 @@ export class GeneralSettingsPage {
     cy.get('[data-cy=user-dropdown]').should('be.visible');
     cy.get('.user-dropdown__settings').click();
     cy.get('[data-cy=user-dropdown]').should('not.be.visible');
-    cy.get('a.settings__general').click({ force: true });
+    cy.get('a.settings__general').click();
   }
 
   setFloatingPrecision(value: string) {

@@ -17,9 +17,7 @@ export class ManualBalancesPage extends AccountBalancesPage {
     cy.get('.accounts-balances__manual-balances')
       .scrollIntoView()
       .should('be.visible')
-      .click({
-        force: true
-      });
+      .click();
   }
 
   addBalance(balance: FixtureManualBalance) {

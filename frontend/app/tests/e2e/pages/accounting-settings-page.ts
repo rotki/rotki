@@ -3,7 +3,7 @@ export class AccountingSettingsPage {
     cy.get('.user-dropdown').click();
     cy.get('[data-cy=user-dropdown]').should('be.visible');
     cy.get('.user-dropdown__settings').click();
-    cy.get('a.settings__accounting').click({ force: true });
+    cy.get('a.settings__accounting').click();
     cy.get('[data-cy=user-dropdown]').should('not.be.visible');
   }
 
@@ -55,11 +55,20 @@ export class AccountingSettingsPage {
     cy.get('.accounting-settings__buttons__remove').click();
   }
 
-  ignoredAssetCount(number: string) {
+  ignoredAssetCount(number: number) {
     cy.get('.accounting-settings__ignored-assets__badge').should(
       'include.text',
-      number
+      number.toString()
     );
+  }
+
+  ignoredAssets() {
+    return cy
+      .get('.accounting-settings__ignored-assets__badge')
+      .invoke('text')
+      .then(text => {
+        cy.wrap(text);
+      });
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
