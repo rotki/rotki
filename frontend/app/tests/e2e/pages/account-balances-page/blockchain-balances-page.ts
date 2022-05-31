@@ -15,9 +15,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     cy.get('.accounts-balances__blockchain-balances')
       .scrollIntoView()
       .should('be.visible')
-      .click({
-        force: true
-      });
+      .click();
   }
 
   isGroupped(balance: FixtureBlockchainBalance) {
@@ -137,9 +135,9 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
 
     this.confirmDelete();
 
-    cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"]`).should(
-      'not.be.exist'
-    );
+    cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"]`, {
+      timeout: 120000
+    }).should('not.be.exist');
   }
 
   confirmDelete() {

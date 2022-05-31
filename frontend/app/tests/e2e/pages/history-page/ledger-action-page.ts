@@ -6,9 +6,7 @@ export class LedgerActionPage {
     cy.get('.history__ledger-actions')
       .scrollIntoView()
       .should('be.visible')
-      .click({
-        force: true
-      });
+      .click();
   }
 
   fetchLedgerActions() {
@@ -30,9 +28,13 @@ export class LedgerActionPage {
     cy.get('.ledger-actions__add').click();
     cy.get('[data-cy=ledger-action-form]').should('be.visible');
     selectLocation('[data-cy=location]', ledgerAction.location);
-    cy.get('[data-cy=datetime]')
-      .type(`{selectall}{backspace}${ledgerAction.datetime}`)
-      .click({ force: true }); // Click is needed to hide the popup
+    cy.get('[data-cy=datetime]').type(
+      `{selectall}{backspace}${ledgerAction.datetime}`
+    );
+
+    // clicking outside to a fully visible element to close the datepicker
+    cy.get('[data-cy=bottom-dialog]').find('.card-title').click();
+
     selectAsset('[data-cy=asset]', ledgerAction.asset, ledgerAction.asset_id);
     cy.get('[data-cy=amount]').type(ledgerAction.amount);
     cy.get('[data-cy=action-type]').parent().click();
@@ -91,7 +93,7 @@ export class LedgerActionPage {
     cy.get('.ledger_actions tbody > tr')
       .eq(position)
       .find('[data-cy=row-edit]')
-      .click({ force: true });
+      .click();
 
     cy.get('[data-cy=ledger-action-form]').should('be.visible');
     cy.get('[data-cy=amount]').clear();
