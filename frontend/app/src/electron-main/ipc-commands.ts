@@ -10,7 +10,6 @@ export const IPC_OPEN_PATH = 'OPEN_PATH' as const;
 export const IPC_CONFIG = 'CONFIG' as const;
 export const IPC_METAMASK_IMPORT = 'METAMASK_IMPORT' as const;
 export const IPC_SERVER_URL = 'SERVER_URL' as const;
-export const IPC_WEBSOCKET_URL = 'WEBSOCKET_URL' as const;
 export const IPC_GET_DEBUG = 'GET_DEBUG' as const;
 export const IPC_OPEN_URL = 'OPEN_URL' as const;
 export const IPC_OPEN_DIRECTORY = 'OPEN_DIRECTORY' as const;

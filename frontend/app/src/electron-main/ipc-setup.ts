@@ -4,8 +4,8 @@ import {
   ipcMain,
   Menu,
   nativeTheme,
-  shell,
-  safeStorage
+  safeStorage,
+  shell
 } from 'electron';
 import { ProgressInfo } from 'electron-builder';
 import Store from 'electron-store';
@@ -15,10 +15,10 @@ import { startHttp, stopHttp } from '@/electron-main/http';
 import { BackendOptions, SystemVersion, TrayUpdate } from '@/electron-main/ipc';
 import {
   IPC_CHECK_FOR_UPDATES,
+  IPC_CLEAR_PASSWORD,
   IPC_CLOSE_APP,
   IPC_CONFIG,
   IPC_DARK_MODE,
-  IPC_CLEAR_PASSWORD,
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_GET_DEBUG,
@@ -34,8 +34,7 @@ import {
   IPC_SERVER_URL,
   IPC_STORE_PASSWORD,
   IPC_TRAY_UPDATE,
-  IPC_VERSION,
-  IPC_WEBSOCKET_URL
+  IPC_VERSION
 } from '@/electron-main/ipc-commands';
 import { debugSettings, getUserMenu, MenuActions } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
@@ -197,10 +196,6 @@ export function ipcSetup(
 
   ipcMain.on(IPC_SERVER_URL, event => {
     event.returnValue = pyHandler.serverUrl;
-  });
-
-  ipcMain.on(IPC_WEBSOCKET_URL, event => {
-    event.returnValue = pyHandler.websocketUrl;
   });
 
   ipcMain.on(IPC_PREMIUM_LOGIN, (event, args) => {

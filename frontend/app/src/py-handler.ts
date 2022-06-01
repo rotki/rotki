@@ -81,7 +81,6 @@ export default class PyHandler {
     app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
     this.defaultLogDirectory = app.getPath('logs');
     this._serverUrl = '';
-    this._websocketUrl = '';
     this.logToFile('\nStarting rotki\n');
   }
 
@@ -96,12 +95,6 @@ export default class PyHandler {
 
   get serverUrl(): string {
     return this._serverUrl;
-  }
-
-  private _websocketUrl: string;
-
-  get websocketUrl(): string {
-    return this._websocketUrl;
   }
 
   get logDir(): string {
@@ -205,14 +198,12 @@ export default class PyHandler {
     }
 
     this._port = port;
-    this._websocketPort = await selectPort(port + 1);
-    this._websocketUrl = `${host}:${this._websocketPort}`;
     const args: string[] = getBackendArguments(options);
 
     if (this.guessPackaged()) {
-      this.startProcessPackaged(port, this._websocketPort, args, window);
+      this.startProcessPackaged(port, args, window);
     } else {
-      this.startProcess(port, this._websocketPort, args);
+      this.startProcess(port, args);
     }
 
     const childProcess = this.childProcess;
@@ -332,14 +323,12 @@ export default class PyHandler {
     }, 2000);
   }
 
-  private startProcess(port: number, websocketPort: number, args: string[]) {
+  private startProcess(port: number, args: string[]) {
     const defaultArgs: string[] = [
       '-m',
       'rotkehlchen',
       '--rest-api-port',
-      port.toString(),
-      '--websockets-api-port',
-      websocketPort.toString()
+      port.toString()
     ];
 
     if (this._corsURL) {
@@ -373,9 +362,8 @@ export default class PyHandler {
 
   private startProcessPackaged(
     port: number,
-    websocketPort: number,
     args: string[],
-    window: BrowserWindow
+    window: Electron.CrossProcessExports.BrowserWindow
   ) {
     const distDir = PyHandler.packagedBackendPath();
     const files = fs.readdirSync(distDir);
@@ -408,12 +396,7 @@ export default class PyHandler {
       args.push('--api-cors', this._corsURL);
     }
     args.push('--logfile', this.backendLogFile);
-    args = [
-      '--rest-api-port',
-      port.toString(),
-      '--websockets-api-port',
-      websocketPort.toString()
-    ].concat(args);
+    args = ['--rest-api-port', port.toString()].concat(args);
     this.logToFile(
       `Starting packaged python subprocess: ${executable} ${args.join(' ')}`
     );

@@ -1,4 +1,5 @@
 import * as logger from 'loglevel';
+import { api } from '@/services/rotkehlchen-api';
 import {
   handleEthereumTransactionStatus,
   handleLegacyMessage,
@@ -28,18 +29,18 @@ class WebsocketService {
 
   connect(): Promise<boolean> {
     return new Promise<boolean>(resolve => {
-      let websocketUrl = window.interop?.websocketUrl() ?? null;
-      const protocol = location.protocol.startsWith('https') ? 'wss' : 'ws';
-      if (!websocketUrl) {
-        const websocketPort = process.env.VITE_WEBSOCKET_PORT;
-        const host = window.location.host;
-        if (websocketPort) {
-          websocketUrl = `${host.split(':')[0]}:${websocketPort}`;
-        } else {
-          websocketUrl = `${host}${this.pathname}/ws/`;
-        }
+      const serverUrl = api.serverUrl;
+      let protocol = 'ws';
+      const location = window.location;
+      if (
+        serverUrl?.startsWith('https') ||
+        location.protocol.startsWith('https')
+      ) {
+        protocol = 'wss';
       }
-      const url = `${protocol}://${websocketUrl}`;
+      const baseUrl = serverUrl ? serverUrl.split('://')[1] : location.host;
+
+      const url = `${protocol}://${baseUrl}/ws/`;
       logger.debug(`preparing to connect to ${url}`);
       this._connection = new WebSocket(url);
       this._connection.onmessage = async event => {
