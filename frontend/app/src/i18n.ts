@@ -21,8 +21,9 @@ function loadLocaleMessages(): LocaleMessages {
 }
 
 export default new VueI18n({
-  locale: process.env.VITE_I18N_LOCALE || 'en',
-  fallbackLocale: process.env.VITE_I18N_FALLBACK_LOCALE || 'en',
+  locale: (import.meta.env.VITE_I18N_LOCALE as string | undefined) || 'en',
+  fallbackLocale:
+    (import.meta.env.VITE_I18N_FALLBACK_LOCALE as string | undefined) || 'en',
   messages: loadLocaleMessages(),
   silentTranslationWarn: process.env.ROTKEHLCHEN_ENVIRONMENT === 'test'
 });

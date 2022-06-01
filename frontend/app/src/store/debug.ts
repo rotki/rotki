@@ -54,7 +54,7 @@ const setState = (key: string, state: any) => {
 export const storeVuexPlugins = () => {
   const debugSettings = window.interop?.debugSettings?.();
   const persistStore =
-    debugSettings?.persistStore || process.env.VITE_PERSIST_STORE;
+    debugSettings?.persistStore || import.meta.env.VITE_PERSIST_STORE;
 
   if (!persistStore) {
     storage.removeItem('vuex');
@@ -72,7 +72,7 @@ export const storeVuexPlugins = () => {
 export const storePiniaPlugins = (context: PiniaPluginContext) => {
   const debugSettings = window.interop?.debugSettings?.();
   const persistStore =
-    debugSettings?.persistStore || process.env.VITE_PERSIST_STORE;
+    debugSettings?.persistStore || import.meta.env.VITE_PERSIST_STORE;
 
   const { store } = context;
   const storeId = store.$id;

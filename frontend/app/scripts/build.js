@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const { ArgumentParser } = require('argparse');
 const { build } = require('vite');
-require('dotenv').config();
 
 const { sharedConfig } = require('./setup');
 const OUTPUT_DIR = 'dist';
+
+const parser = new ArgumentParser({
+  description: 'Rotki frontend build'
+});
+parser.add_argument('--mode', { help: 'mode docker', default: 'production' });
+const { mode } = parser.parse_args();
 
 /**
  * @param {{name: string; configFile: string }} param0
@@ -13,6 +19,7 @@ const OUTPUT_DIR = 'dist';
 const getBuilder = ({ name, configFile }) => {
   return build({
     ...sharedConfig,
+    mode,
     configFile,
     plugins: [{ name }]
   });
@@ -44,8 +51,12 @@ const setupRendererBuilder = () => {
     if (fs.existsSync(OUTPUT_DIR)) {
       fs.rmSync(OUTPUT_DIR, { recursive: true });
     }
-    await setupPreloadBuilder();
-    await setupMainBuilder();
+
+    if (mode !== 'docker') {
+      await setupPreloadBuilder();
+      await setupMainBuilder();
+    }
+
     const watcher = await setupRendererBuilder();
     watcher.on('event', event => {
       if (event.code === 'END') {

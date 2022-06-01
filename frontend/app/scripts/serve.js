@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 
-require('dotenv').config();
 const { spawn } = require('child_process');
+const { ArgumentParser } = require('argparse');
 const electron = require('electron');
 const { createServer, build, createLogger } = require('vite');
-const scriptArgs = process.argv;
-const noElectron = scriptArgs.indexOf('--web') >= 0;
 const { LOG_LEVEL, sharedConfig } = require('./setup');
+
+const parser = new ArgumentParser({
+  description: 'Rotki frontend build'
+});
+parser.add_argument('--web', { action: 'store_true' });
+parser.add_argument('--remote-debugging-port', { type: 'int' });
+parser.add_argument('--mode', { help: 'mode docker', default: 'development' });
+let args = parser.parse_args();
+const { web, remote_debugging_port, mode } = args;
 
 /** Messages on stderr that match any of the contained patterns will be stripped from output */
 const stderrFilterPatterns = [
@@ -22,6 +29,7 @@ const stderrFilterPatterns = [
 const getWatcher = ({ name, configFile, writeBundle }) => {
   return build({
     ...sharedConfig,
+    mode,
     configFile,
     plugins: [{ name, writeBundle }]
   });
@@ -56,7 +64,12 @@ const setupMainPackageWatcher = ({ config: { server } }) => {
         spawnProcess = null;
       }
 
-      spawnProcess = spawn(String(electron), ['.']);
+      let args = ['.'];
+      if (remote_debugging_port) {
+        args.push(`--remote-debugging-port=${remote_debugging_port}`);
+      }
+
+      spawnProcess = spawn(String(electron), args);
 
       spawnProcess.stdout.on(
         'data',
@@ -96,13 +109,14 @@ const setupPreloadPackageWatcher = ({ ws }) =>
   try {
     const viteDevServer = await createServer({
       ...sharedConfig,
+      mode,
       configFile: 'vite.config.ts'
     });
 
     await viteDevServer.listen();
     viteDevServer.printUrls();
 
-    if (!noElectron) {
+    if (!web) {
       await setupPreloadPackageWatcher(viteDevServer);
       await setupMainPackageWatcher(viteDevServer);
     }

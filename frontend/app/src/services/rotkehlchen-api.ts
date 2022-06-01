@@ -102,11 +102,11 @@ export class RotkehlchenApi {
   private readonly pathname: string;
 
   get defaultServerUrl(): string {
-    if (process.env.VITE_BACKEND_URL) {
-      return process.env.VITE_BACKEND_URL;
+    if (import.meta.env.VITE_BACKEND_URL) {
+      return import.meta.env.VITE_BACKEND_URL as string;
     }
 
-    if (process.env.VITE_PUBLIC_PATH) {
+    if (import.meta.env.VITE_PUBLIC_PATH) {
       const pathname = this.pathname;
       return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
     }

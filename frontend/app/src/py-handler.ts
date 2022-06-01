@@ -98,7 +98,7 @@ export default class PyHandler {
   }
 
   get logDir(): string {
-    if (process.env.VITE_DEV_LOGS) {
+    if (import.meta.env.VITE_DEV_LOGS) {
       return path.join('..', 'logs');
     }
     return this.logDirectory ?? this.defaultLogDirectory;
@@ -179,7 +179,7 @@ export default class PyHandler {
     }
 
     const port = await selectPort();
-    const backendUrl = process.env.VITE_BACKEND_URL;
+    const backendUrl = import.meta.env.VITE_BACKEND_URL as string | undefined;
 
     assert(backendUrl);
     const regExp = /(.*):\/\/(.*):(.*)/;
