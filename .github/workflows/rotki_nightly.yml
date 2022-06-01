@@ -106,6 +106,7 @@ jobs:
           path: |
             ~/.npm
             ~/.cache/Cypress
+            ./frontend/app/components.d.ts
           key: ${{ runner.os }}-node-${{ hashFiles('**/requirements.txt') }}
       - name: Store frontend cache
         uses: actions/cache@v2

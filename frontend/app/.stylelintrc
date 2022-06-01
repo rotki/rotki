@@ -5,6 +5,7 @@
     "stylelint-order"
   ],
   "extends": "stylelint-config-recommended-scss",
+  "customSyntax": "postcss-html",
   "rules": {
     "no-empty-source": null,
     "selector-pseudo-element-no-unknown": [

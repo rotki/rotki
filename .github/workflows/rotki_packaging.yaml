@@ -116,6 +116,7 @@ jobs:
           path: |
             ~/.npm
             ~/cache/Cypress
+            ./frontend/app/components.d.ts
           key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
       - name: Setup SQLCipher
         run: |
@@ -207,6 +208,7 @@ jobs:
           path: |
             ~/.npm
             ~/Library/Caches/Cypress
+            ./frontend/app/components.d.ts
           key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
       - name: Setup SQLCipher
         run: |
@@ -308,6 +310,7 @@ jobs:
           path: | 
             ${{ steps.npm-cache.outputs.dir }}
             ~\AppData\Local\Cypress
+            .\frontend\app\components.d.ts
           key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
             ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}

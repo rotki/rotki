@@ -121,15 +121,19 @@ export default class PyHandler {
   }
 
   logToFile(msg: string | Error) {
-    if (!msg) {
-      return;
+    try {
+      if (!msg) {
+        return;
+      }
+      const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
+      console.log(message);
+      if (!fs.existsSync(this.logDir)) {
+        fs.mkdirSync(this.logDir);
+      }
+      fs.appendFileSync(this.electronLogFile, `${message}\n`);
+    } catch (e) {
+      console.error(e);
     }
-    const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
-    console.log(message);
-    if (!fs.existsSync(this.logDir)) {
-      fs.mkdirSync(this.logDir);
-    }
-    fs.appendFileSync(this.electronLogFile, `${message}\n`);
   }
 
   setCorsURL(url: string) {
@@ -211,14 +215,14 @@ export default class PyHandler {
       return;
     }
     if (childProcess.stdout) {
-      streamToString(childProcess.stdout).then(value =>
-        this.logBackendOutput(value)
-      );
+      streamToString(childProcess.stdout)
+        .then(value => this.logBackendOutput(value))
+        .catch(reason => console.log(reason));
     }
     if (childProcess.stderr) {
-      streamToString(childProcess.stderr).then(value =>
-        this.logBackendOutput(value)
-      );
+      streamToString(childProcess.stderr)
+        .then(value => this.logBackendOutput(value))
+        .catch(reason => console.log(reason));
     }
 
     const handler = this;

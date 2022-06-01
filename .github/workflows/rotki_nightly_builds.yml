@@ -42,6 +42,7 @@ jobs:
           path: |
             ~/.npm
             ~/cache/Cypress
+            ./frontend/app/components.d.ts
           key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
       - name: Setup SQLCipher
         run: |
@@ -183,6 +184,7 @@ jobs:
           path: |
             ${{ steps.npm-cache.outputs.dir }}
             ~\AppData\Local\Cypress
+            .\frontend\app\components.d.ts
           key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
       - name: Persist Build Dependencies
         uses: actions/cache@v2

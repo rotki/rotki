@@ -61,6 +61,7 @@ jobs:
           path: |
             ~/.npm
             ~/.cache/Cypress
+            ./frontend/app/components.d.ts
           key: ${{ runner.os }}-node--ci-${{ hashFiles('**/app/package-lock.json') }}
       - name: Install dependencies
         working-directory: ./frontend
@@ -215,6 +216,7 @@ jobs:
           path: |
             ~/.npm
             ~/.cache/Cypress
+            ./frontend/app/components.d.ts
           key: ${{ runner.os }}-node--e2e-${{ hashFiles('**/app/package-lock.json') }}
       - name: Store frontend cache
         uses: actions/cache@v2
