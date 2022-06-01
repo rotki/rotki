@@ -814,7 +814,8 @@ class DataImporter():
             return
 
         asset = symbol_to_asset_or_token(csv_row['Cryptocurrency'])
-        amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
+        raw_amount = deserialize_asset_amount(csv_row['Amount'])
+        abs_amount = AssetAmount(abs(raw_amount))
         entry_type = csv_row['Transaction Type']
         # BlockFI doesn't provide information about fees
         fee = Fee(ZERO)
@@ -828,7 +829,7 @@ class DataImporter():
                 transaction_id=None,
                 timestamp=timestamp,
                 asset=asset,
-                amount=amount,
+                amount=abs_amount,
                 fee=fee,
                 fee_asset=fee_asset,
                 link='',
@@ -842,7 +843,7 @@ class DataImporter():
                 transaction_id=None,
                 timestamp=timestamp,
                 asset=asset,
-                amount=amount,
+                amount=abs_amount,
                 fee=fee,
                 fee_asset=fee_asset,
                 link='',
@@ -854,7 +855,7 @@ class DataImporter():
                 timestamp=timestamp,
                 action_type=LedgerActionType.EXPENSE,
                 location=Location.BLOCKFI,
-                amount=amount,
+                amount=abs_amount,
                 asset=asset,
                 rate=None,
                 rate_asset=None,
@@ -868,7 +869,7 @@ class DataImporter():
                 timestamp=timestamp,
                 action_type=LedgerActionType.INCOME,
                 location=Location.BLOCKFI,
-                amount=amount,
+                amount=abs_amount,
                 asset=asset,
                 rate=None,
                 rate_asset=None,
@@ -878,7 +879,7 @@ class DataImporter():
             self.db_ledger.add_ledger_action(action)
         elif entry_type == 'Crypto Transfer':
             category = (
-                AssetMovementCategory.WITHDRAWAL if FVal(csv_row['Amount']) < ZERO
+                AssetMovementCategory.WITHDRAWAL if raw_amount < ZERO
                 else AssetMovementCategory.DEPOSIT
             )
             asset_movement = AssetMovement(
@@ -888,7 +889,7 @@ class DataImporter():
                 transaction_id=None,
                 timestamp=timestamp,
                 asset=asset,
-                amount=amount,
+                amount=abs_amount,
                 fee=fee,
                 fee_asset=fee_asset,
                 link='',
