@@ -12,7 +12,7 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Get Release Version
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Generate changelog
@@ -94,24 +94,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: create_draft
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: '3.9'
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: '16.x'
       - name: pip cache persistence
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
       - name: npm cache persistence
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.npm
@@ -188,22 +188,22 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: create_draft
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up python
         run: packaging/setup-osx.sh
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: '16.x'
       - name: pip cache persistence
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/Library/Caches/pip
           key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
       - name: npm cache persistence
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.npm
@@ -282,19 +282,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: create_draft
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: '3.9'
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: '16.x'
       - name: pip cache persistence
-        uses: actions/cache@v2    
+        uses: actions/cache@v3
         with:
           path: ~\AppData\Local\pip\Cache
           key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
@@ -305,7 +305,7 @@ jobs:
         run: |
           echo "::set-output name=dir::$(npm config get cache)"
       - name: npm cache persistence
-        uses: actions/cache@v2    
+        uses: actions/cache@v3
         with:
           path: | 
             ${{ steps.npm-cache.outputs.dir }}
@@ -315,7 +315,7 @@ jobs:
           restore-keys: |
             ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
       - name: Persist Build Dependencies
-        uses: actions/cache@v2        
+        uses: actions/cache@v3
         with:
           path: | 
             ~\${{ env.BUILD_DEPENDENCIES }}\
@@ -362,7 +362,7 @@ jobs:
     environment: docker
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx

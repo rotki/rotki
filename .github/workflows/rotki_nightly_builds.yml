@@ -20,24 +20,24 @@ jobs:
         node-version: [ 16.x ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: '3.9'
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: '16.x'
       - name: pip cache persistence
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
       - name: npm cache persistence
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.npm
@@ -57,7 +57,7 @@ jobs:
           pip3 install --upgrade pip
           ./package.sh
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: nightly-linux
           path: |
@@ -86,22 +86,22 @@ jobs:
         node-version: [ 16.x ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up python
         run: packaging/setup-osx.sh
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: '16.x'
       - name: pip cache persistence
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/Library/Caches/pip
           key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
       - name: npm cache persistence
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.npm
@@ -128,7 +128,7 @@ jobs:
           APPLEID: ${{ secrets.APPLEID }}
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: nightly-osx
           path: |
@@ -158,19 +158,19 @@ jobs:
         node-version: [ 16.x ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: '3.9'
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: '16.x'
       - name: pip cache persistence
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~\AppData\Local\pip\Cache
           key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
@@ -179,7 +179,7 @@ jobs:
         run: |
           echo "::set-output name=dir::$(npm config get cache)"
       - name: npm cache persistence
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ${{ steps.npm-cache.outputs.dir }}
@@ -187,7 +187,7 @@ jobs:
             .\frontend\app\components.d.ts
           key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
       - name: Persist Build Dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~\${{ env.BUILD_DEPENDENCIES }}\
@@ -201,7 +201,7 @@ jobs:
           .\package.ps1
         shell: powershell
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: nightly-windows
           path: |
@@ -221,7 +221,7 @@ jobs:
     environment: docker
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up QEMU

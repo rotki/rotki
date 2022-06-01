@@ -23,7 +23,7 @@ jobs:
       frontend_tasks: ${{ steps.checker.outputs.frontend_tasks }}
       documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: ./.github/actions/job-checker
         id: checker
         with:
@@ -48,28 +48,27 @@ jobs:
         node-version: [16.x]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 2
       - name: Setup
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: '16.x'
       - name: Store npm cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.npm
             ~/.cache/Cypress
             ./frontend/app/components.d.ts
           key: ${{ runner.os }}-node--ci-${{ hashFiles('**/app/package-lock.json') }}
+      - name: Update npm
+        working-directory: ./frontend
+        run: npm install -g npm@8.10
       - name: Install dependencies
         working-directory: ./frontend
-        run: |
-          npm install -g npm@8
-          if ! npm ci --exit-code; then
-            npm ci
-          fi
+        run: npm ci
       - name: Build
         working-directory: ./frontend
         run: npm run build
@@ -95,9 +94,9 @@ jobs:
         python-version: [3.9]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: '3.9'
       - name: Install dependencies
@@ -117,9 +116,9 @@ jobs:
         python-version: [3.9]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: '3.9'
       - name: Install dependencies
@@ -142,7 +141,7 @@ jobs:
         python-version: [3.9]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 2
       - name: Setup SQLCipher
@@ -152,16 +151,16 @@ jobs:
           ./install_deps.sh
           sudo ldconfig
       - name: Set up python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: '3.9'
       - name: Store python cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
       - name: Store test dir
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-testdir-${{ hashFiles('**/requirements.txt') }}
@@ -192,26 +191,26 @@ jobs:
         node-version: [16.x]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 2
       - name: Set up python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v3
         with:
           python-version: '3.9'
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: '16.x'
       - name: Store python cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cache/pip
             ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-pip-e2e-${{ hashFiles('**/requirements.txt') }}
       - name: Store npm cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.npm
@@ -219,7 +218,7 @@ jobs:
             ./frontend/app/components.d.ts
           key: ${{ runner.os }}-node--e2e-${{ hashFiles('**/app/package-lock.json') }}
       - name: Store frontend cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/rotki-e2e/price_history
@@ -241,10 +240,8 @@ jobs:
       - name: Restore dependencies
         working-directory: ./frontend
         run: |
-          npm install -g npm@8
-          if ! npm ci --exit-code; then
-            npm ci
-          fi
+          npm install -g npm@8        
+          npm ci
           npm run build -w @rotki/common
       - name: Run integration tests
         uses: cypress-io/github-action@v2
@@ -257,18 +254,18 @@ jobs:
       - name: Upload coverage
         working-directory: ./frontend/app
         run: cd ../.. && ./.github/.codecov -F frontend_integration
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: screenshots-${{ runner.os }}
           path: ./frontend/app/tests/e2e/screenshots
       - name: Upload backend logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: backend-logs-${{ runner.os }}
           path: ~/rotki-e2e-logs/*.log
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: videos-${{ runner.os }}
