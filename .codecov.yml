@@ -16,8 +16,8 @@ flags:
   frontend_unit:
     carryforward: true
     paths:
-      - frontend/app
+      - frontend/app/tests/unit
   frontend_integration:
     carryforward: true
     paths:
-      - frontend/app
+      - frontend/app/tests/e2e
