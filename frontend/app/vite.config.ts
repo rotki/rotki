@@ -5,6 +5,8 @@ import { VuetifyResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
 import ScriptSetup from 'unplugin-vue2-script-setup/vite';
 import { defineConfig } from 'vite';
+// @ts-ignore
+import istanbul from 'vite-plugin-istanbul';
 import { createVuePlugin as vue } from 'vite-plugin-vue2';
 
 const PACKAGE_ROOT = __dirname;
@@ -29,6 +31,12 @@ export default defineConfig({
     environment: 'jsdom',
     deps: {
       inline: ['vuetify']
+    },
+    coverage: {
+      reportsDirectory: 'tests/unit/coverage',
+      reporter: ['json'],
+      include: 'src/*',
+      exclude: ['node_modules', 'tests/', '**/*.d.ts']
     }
   },
   base: publicPath,
@@ -42,6 +50,11 @@ export default defineConfig({
       dts: true,
       include: [/\.vue$/, /\.vue\?vue/],
       resolvers: [VuetifyResolver()]
+    }),
+    istanbul({
+      include: 'src/*',
+      exclude: ['node_modules', 'tests/', '**/*.d.ts'],
+      extension: ['.ts', '.vue']
     })
   ],
   server: {
