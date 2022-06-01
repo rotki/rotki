@@ -111,8 +111,7 @@ class AsyncQueryArgumentSchema(Schema):
     async_query = fields.Boolean(load_default=False)
 
 
-class AsyncIgnoreCacheQueryArgumentSchema(Schema):
-    async_query = fields.Boolean(load_default=False)
+class AsyncIgnoreCacheQueryArgumentSchema(AsyncQueryArgumentSchema):
     ignore_cache = fields.Boolean(load_default=False)
 
 
@@ -520,12 +519,6 @@ class LedgerActionsQuerySchema(
         }
 
 
-class TimerangeQuerySchema(Schema):
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
-    async_query = fields.Boolean(load_default=False)
-
-
 class TradeSchema(Schema):
     timestamp = TimestampUntilNowField(required=True)
     location = LocationField(required=True)
@@ -916,8 +909,7 @@ class NewUserSchema(BaseUserSchema):
     initial_settings = fields.Nested(ModifiableSettingsSchema, load_default=None)
 
 
-class AllBalancesQuerySchema(Schema):
-    async_query = fields.Boolean(load_default=False)
+class AllBalancesQuerySchema(AsyncQueryArgumentSchema):
     save_data = fields.Boolean(load_default=False)
     ignore_errors = fields.Boolean(load_default=False)
     ignore_cache = fields.Boolean(load_default=False)
@@ -977,15 +969,13 @@ class ExchangesResourceRemoveSchema(Schema):
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
 
 
-class ExchangeBalanceQuerySchema(Schema):
+class ExchangeBalanceQuerySchema(AsyncQueryArgumentSchema):
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, load_default=None)
-    async_query = fields.Boolean(load_default=False)
     ignore_cache = fields.Boolean(load_default=False)
 
 
-class BlockchainBalanceQuerySchema(Schema):
+class BlockchainBalanceQuerySchema(AsyncQueryArgumentSchema):
     blockchain = BlockchainField(load_default=None)
-    async_query = fields.Boolean(load_default=False)
     ignore_cache = fields.Boolean(load_default=False)
 
 
@@ -1002,10 +992,9 @@ class StatisticsValueDistributionSchema(Schema):
     )
 
 
-class HistoryProcessingSchema(Schema):
+class HistoryProcessingSchema(AsyncQueryArgumentSchema):
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    async_query = fields.Boolean(load_default=False)
 
 
 class AccountingReportsSchema(Schema):
@@ -1077,16 +1066,14 @@ class BlockchainAccountDataSchema(Schema):
     tags = fields.List(fields.String(), load_default=None)
 
 
-class BaseXpubSchema(Schema):
+class BaseXpubSchema(AsyncQueryArgumentSchema):
     xpub = XpubField(required=True)
     derivation_path = DerivationPathField(load_default=None)
-    async_query = fields.Boolean(load_default=False)
 
 
-class XpubAddSchema(Schema):
+class XpubAddSchema(AsyncQueryArgumentSchema):
     xpub = fields.String(required=True)
     derivation_path = DerivationPathField(load_default=None)
-    async_query = fields.Boolean(load_default=False)
     label = fields.String(load_default=None)
     xpub_type = fields.String(
         required=False,
@@ -1419,14 +1406,13 @@ class BlockchainAccountsPatchSchema(Schema):
         return data
 
 
-class BlockchainAccountsPutSchema(BlockchainAccountsPatchSchema):
-    async_query = fields.Boolean(load_default=False)
+class BlockchainAccountsPutSchema(AsyncQueryArgumentSchema, BlockchainAccountsPatchSchema):
+    ...
 
 
-class BlockchainAccountsDeleteSchema(Schema):
+class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     accounts = fields.List(fields.String(), required=True)
-    async_query = fields.Boolean(load_default=False)
 
     def __init__(self, ethereum_manager: EthereumManager):
         super().__init__()
@@ -1628,7 +1614,7 @@ class EthereumTokenSchema(Schema):
 
 
 class ModifyEthereumTokenSchema(Schema):
-    token = fields.Nested('EthereumTokenSchema', required=True)
+    token = fields.Nested(EthereumTokenSchema, required=True)
 
     def __init__(
             self,
@@ -1697,8 +1683,7 @@ class AssetIconUploadSchema(Schema):
     file = FileField(required=True, allowed_extensions=ALLOWED_ICON_EXTENSIONS)
 
 
-class ExchangeRatesSchema(Schema):
-    async_query = fields.Boolean(load_default=False)
+class ExchangeRatesSchema(AsyncQueryArgumentSchema):
     currencies = DelimitedOrNormalList(MaybeAssetField(), required=True)
 
 
@@ -1745,7 +1730,7 @@ class SingleAssetIdentifierSchema(Schema):
     asset = AssetField(required=True, form_with_incomplete_data=True)
 
 
-class CurrentAssetsPriceSchema(Schema):
+class CurrentAssetsPriceSchema(AsyncQueryArgumentSchema):
     assets = DelimitedOrNormalList(
         AssetField(required=True),
         required=True,
@@ -1753,10 +1738,9 @@ class CurrentAssetsPriceSchema(Schema):
     )
     target_asset = AssetField(required=True)
     ignore_cache = fields.Boolean(load_default=False)
-    async_query = fields.Boolean(load_default=False)
 
 
-class HistoricalAssetsPriceSchema(Schema):
+class HistoricalAssetsPriceSchema(AsyncQueryArgumentSchema):
     assets_timestamp = fields.List(
         fields.Tuple(  # type: ignore # Tuple is not annotated
             (AssetField(required=True), TimestampField(required=True)),
@@ -1766,11 +1750,9 @@ class HistoricalAssetsPriceSchema(Schema):
         validate=webargs.validate.Length(min=1),
     )
     target_asset = AssetField(required=True)
-    async_query = fields.Boolean(load_default=False)
 
 
-class AssetUpdatesRequestSchema(Schema):
-    async_query = fields.Boolean(load_default=False)
+class AssetUpdatesRequestSchema(AsyncQueryArgumentSchema):
     up_to_version = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
@@ -1799,18 +1781,16 @@ class NamedOracleCacheSchema(Schema):
     to_asset = AssetField(required=True)
 
 
-class NamedOracleCacheCreateSchema(NamedOracleCacheSchema):
+class NamedOracleCacheCreateSchema(AsyncQueryArgumentSchema, NamedOracleCacheSchema):
     purge_old = fields.Boolean(load_default=False)
-    async_query = fields.Boolean(load_default=False)
 
 
 class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
     oracle = HistoricalPriceOracleField(required=True)
 
 
-class ERC20InfoSchema(Schema):
+class ERC20InfoSchema(AsyncQueryArgumentSchema):
     address = EthereumAddressField(required=True)
-    async_query = fields.Boolean(load_default=False)
 
 
 class BinanceMarketsUserSchema(Schema):
@@ -1847,8 +1827,7 @@ class ManualPriceDeleteSchema(Schema):
     timestamp = TimestampField(required=True)
 
 
-class AvalancheTransactionQuerySchema(Schema):
-    async_query = fields.Boolean(load_default=False)
+class AvalancheTransactionQuerySchema(AsyncQueryArgumentSchema):
     address = EthereumAddressField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
@@ -1913,8 +1892,8 @@ class Eth2ValidatorSchema(Schema):
         return data
 
 
-class Eth2ValidatorPutSchema(Eth2ValidatorSchema):
-    async_query = fields.Boolean(load_default=False)
+class Eth2ValidatorPutSchema(AsyncQueryArgumentSchema, Eth2ValidatorSchema):
+    ...
 
 
 class Eth2ValidatorDeleteSchema(Schema):
