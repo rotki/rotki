@@ -8,7 +8,8 @@ from flask import Blueprint, Flask, Response, abort, jsonify
 from flask.views import MethodView
 from flask_cors import CORS
 from gevent.pywsgi import WSGIServer
-from geventwebsocket import Resource as WebsocketResource, WebSocketServer
+from geventwebsocket import Resource as WebsocketResource
+from geventwebsocket.handler import WebSocketHandler
 from marshmallow import Schema
 from marshmallow.exceptions import ValidationError
 from webargs.flaskparser import parser
@@ -368,7 +369,6 @@ class APIServer():
 
         self.wsgiserver: Optional[WSGIServer] = None
         self.flask_app.register_blueprint(self.blueprint)
-        self.ws_server: Optional[WebSocketServer] = None
 
         self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
         self.flask_app.register_error_handler(Exception, self.unhandled_exception)
@@ -391,40 +391,29 @@ class APIServer():
             self,
             host: str = '127.0.0.1',
             rest_port: int = 5042,
-            websockets_port: int = 5043,
     ) -> None:
         """This is used to start the API server in production"""
         wsgi_logger = logging.getLogger(__name__ + '.pywsgi')
         self.wsgiserver = WSGIServer(
             listener=(host, rest_port),
-            application=self.flask_app,
+            application=WebsocketResource([
+                ('^/ws', RotkiWSApp),
+                ('^/', self.flask_app),
+            ]),
             log=wsgi_logger,
+            handler_class=WebSocketHandler,
+            environ={'rotki_notifier': self.rotki_notifier},
             error_log=wsgi_logger,
         )
         msg = f'rotki REST API server is running at: {host}:{rest_port}'
         print(msg)
         log.info(msg)
         self.wsgiserver.start()
-        self.ws_server = WebSocketServer(
-            listener=(host, websockets_port),
-            application=WebsocketResource([
-                ('^/', RotkiWSApp),
-            ]),
-            debug=False,
-            environ={'rotki_notifier': self.rotki_notifier},
-        )
-        msg = f'rotki Websockets API server is running at: {host}:{websockets_port}'
-        print(msg)
-        log.info(msg)
-        self.ws_server.start()
 
     def stop(self, timeout: int = 5) -> None:
         """Stops the API server. If handlers are running after timeout they are killed"""
         if self.wsgiserver is not None:
             self.wsgiserver.stop(timeout)
-            self.wsgiserver = None
-        if self.ws_server is not None:
-            self.ws_server.stop(timeout)
             self.wsgiserver = None
 
         self.rest_api.stop()

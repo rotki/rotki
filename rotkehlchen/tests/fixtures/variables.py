@@ -29,12 +29,6 @@ def rest_api_port(port_generator):
 
 
 @pytest.fixture
-def websockets_api_port(port_generator):
-    port = next(port_generator)
-    return port
-
-
-@pytest.fixture
 def added_exchanges() -> Sequence[Location]:
     """A fixture determining which exchanges to add to a test rotkehlchen api server"""
     return (

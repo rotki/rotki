@@ -56,6 +56,5 @@ class RotkehlchenServer():
         self.api_server.start(
             host=self.args.api_host,
             rest_port=self.args.rest_api_port,
-            websockets_port=self.args.websockets_api_port,
         )
         self.stop_event.wait()
