@@ -11,10 +11,11 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import WORLD_TO_KUCOIN
 from rotkehlchen.assets.converters import UNSUPPORTED_KUCOIN_ASSETS, asset_from_kucoin
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USDT
+from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
-from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
+from rotkehlchen.exchanges.kucoin import KUCOIN_LAUNCH_TS, Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -763,3 +764,24 @@ def test_query_asset_movements_sandbox(
         )
 
     assert asset_movements == expected_asset_movements
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+def test_query_old_trades_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unused-argument
+    """Test that the endpoint for old trades returns valid results from the api
+    in very old timestamps
+    """
+    trades, _ = sandbox_kuckoin.query_online_trade_history(
+        start_ts=Timestamp(KUCOIN_LAUNCH_TS),
+        end_ts=Timestamp(KUCOIN_LAUNCH_TS + WEEK_IN_SECONDS * 4),
+    )
+    msg_aggregator = sandbox_kuckoin.msg_aggregator
+    assert len(msg_aggregator.consume_errors()) == 0
+    assert len(msg_aggregator.consume_warnings()) == 0
+    assert trades == []
+
+    last_trades, _ = sandbox_kuckoin.query_online_trade_history(
+        start_ts=Timestamp(1651425348),
+        end_ts=Timestamp(1654110961),
+    )
+    assert len(last_trades) == 24

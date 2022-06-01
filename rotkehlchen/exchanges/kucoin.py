@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import logging
 from collections import defaultdict
-from enum import Enum
+from enum import Enum, auto
 from functools import partial
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -76,6 +76,7 @@ API_KEY_ERROR_CODE_ACTION = {
     400004: 'Invalid API passphrase.',
     400005: 'Invalid API secret.',
     400007: 'Provided KuCoin API key needs to have "General" permission activated.',
+    400100: 'Invalid query time',
     411100: 'Contact KuCoin support to unfreeze your account',
 }
 API_PAGE_SIZE_LIMIT = 500
@@ -90,12 +91,12 @@ KUCOIN_LAUNCH_TS = Timestamp(1504224000)  # 01/09/2017
 
 
 class KucoinCase(Enum):
-    API_KEY = 1
-    BALANCES = 2
-    TRADES = 3
-    OLD_TRADES = 4
-    DEPOSITS = 5
-    WITHDRAWALS = 6
+    API_KEY = auto()
+    BALANCES = auto()
+    TRADES = auto()
+    OLD_TRADES = auto()
+    DEPOSITS = auto()
+    WITHDRAWALS = auto()
 
     def __str__(self) -> str:
         if self == KucoinCase.API_KEY:
@@ -116,10 +117,9 @@ class KucoinCase(Enum):
 PAGINATED_CASES = (KucoinCase.OLD_TRADES, KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS)  # noqa: E501
 
 
-def _serialize_ts(case: KucoinCase, time: int) -> int:
-    if case == KucoinCase.OLD_TRADES:
-        return time
-    return time * 1000
+def _serialize_ts(time: Timestamp) -> Timestamp:
+    """Transform time from seconds to miliseconds"""
+    return Timestamp(time * 1000)
 
 
 def _deserialize_ts(case: KucoinCase, time: int) -> Timestamp:
@@ -225,11 +225,10 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 api_path = 'api/v1/withdrawals'
         elif case == KucoinCase.OLD_TRADES:
             assert isinstance(options, dict)
-            api_path = 'api/v1/hist-orders'
+            api_path = 'api/v1/orders'
         elif case == KucoinCase.TRADES:
             assert isinstance(options, dict)
             api_path = 'api/v1/fills'
-
         else:
             raise AssertionError(f'Unexpected case: {case}')
 
@@ -355,7 +354,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             time_step = WEEK_IN_SECONDS
         elif case == KucoinCase.OLD_TRADES:
             deserialization_method = partial(self._deserialize_trade, case=case)
-            time_step = MONTH_IN_SECONDS  # does not get used anyway
+            time_step = WEEK_IN_SECONDS
         elif case in (KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
             deserialization_method = partial(
                 self._deserialize_asset_movement,
@@ -366,15 +365,15 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise AssertionError(f'Unexpected case: {case}')
 
         call_options = options.copy()
-        call_options['startAt'] = _serialize_ts(case, max(start_ts, KUCOIN_LAUNCH_TS))
+        call_options['startAt'] = _serialize_ts(max(start_ts, KUCOIN_LAUNCH_TS))
         while True:
             current_query_ts = _deserialize_ts(case, call_options['startAt'])
-            if case != KucoinCase.OLD_TRADES:
-                call_options['endAt'] = _serialize_ts(
-                    case=case,
-                    time=min(current_query_ts + time_step, end_ts),
-                )
-
+            call_options['endAt'] = _serialize_ts(
+                time=min(Timestamp(current_query_ts + time_step), end_ts),
+            )
+            logger.debug(
+                f'Querying kucoin {case} from {current_query_ts} to {call_options["endAt"]}',
+            )
             response = self._api_query(
                 case=case,
                 options=call_options,
@@ -403,6 +402,12 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except KeyError as e:
                 msg = f'Kucoin {case} JSON response is missing key: {str(e)}'
                 log.error(msg, response_dict)
+                if case == KucoinCase.OLD_TRADES and '400100' == response_dict.get('code', ''):
+                    if current_query_ts + time_step >= end_ts:
+                        break  # end of time range query and last page. We are done.
+                    # else update query ts
+                    current_query_ts += time_step  # type: ignore
+                    continue
                 raise RemoteError(msg) from e
 
             for raw_result in raw_results:
@@ -441,7 +446,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             is_last_page = total_page in (0, current_page)
             if is_last_page:
-                if case == KucoinCase.OLD_TRADES or current_query_ts + time_step >= end_ts:
+                if current_query_ts + time_step >= end_ts:
                     break  # end of time range query and last page. We are done.
                 # else update query ts
                 current_query_ts += time_step  # type: ignore
@@ -453,7 +458,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 call_options['currentPage'] = current_page + 1
             else:
                 call_options['currentPage'] = 1
-            call_options['startAt'] = _serialize_ts(case, current_query_ts)
+            call_options['startAt'] = _serialize_ts(current_query_ts)
 
         return results
 
