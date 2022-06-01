@@ -2,6 +2,7 @@
 const path = require('path');
 
 module.exports = {
+  root: true,
   env: {
     commonjs: true,
     es6: true,

@@ -34,7 +34,7 @@ let startDevProxy = false;
 const devEnvExists = fs.existsSync("app/.env.development.local");
 if (devEnvExists) {
   require("dotenv").config({ path: "app/.env.development.local" });
-  startDevProxy = !!process.env.VUE_APP_BACKEND_URL;
+  startDevProxy = !!process.env.VITE_BACKEND_URL;
 }
 
 const subprocesses = [];
