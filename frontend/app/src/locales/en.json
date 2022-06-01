@@ -1697,7 +1697,9 @@
         "url": "The entry inserted is not in a valid url format"
       }
     },
-    "remember_me": "Remember User",
+    "remember_username": "Remember Username",
+    "remember_password": "Remember Password",
+    "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
     "title": "Sign In",
     "label_username": "Username",
     "label_password": "Password",
