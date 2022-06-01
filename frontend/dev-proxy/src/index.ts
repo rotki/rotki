@@ -30,6 +30,7 @@ if (
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let mockedAsyncCalls: { [url: string]: any } = {};
 if (fs.existsSync('async-mock.json')) {
   try {
@@ -60,6 +61,7 @@ function manipulateResponse(res: Response, callback: (original: any) => any) {
       // @ts-ignore
       _write.call(res, payload);
       return true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       console.error(e);
       return false;
@@ -281,6 +283,7 @@ function mockPreflight(res: Response) {
       // @ts-ignore
       _write.call(res, chunk);
       return true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       return false;
     }

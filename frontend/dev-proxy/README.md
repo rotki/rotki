@@ -48,7 +48,7 @@ environment file. Put the file in the frontend directory of rotki. (`frontend/ap
 The file must contain the following entry:
 
 ```env
-VUE_APP_BACKEND_URL=http://localhost:4243
+VITE_BACKEND_URL=http://localhost:4243
 ```
 
 > Adjust accordingly to if you used a custom port for the proxy.
