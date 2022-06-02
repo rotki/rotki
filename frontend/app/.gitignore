@@ -27,9 +27,12 @@ yarn-error.log*
 #Electron-builder output
 /dist_electron
 coverage
+reports
 tests/e2e/videos
 tests/e2e/screenshots
+tests/**/coverage
 .nyc_output
 
 rotki_config.json
 package-lock.json
+components.d.ts
