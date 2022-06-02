@@ -1654,13 +1654,15 @@ class RestAPI():
 
     @require_loggedin_user()
     def get_history_actionable_items(self) -> Response:
-        missing_acquisitions = self.rotkehlchen.accountant.pots[0].cost_basis.missing_acquisitions
-        missing_prices = self.rotkehlchen.accountant.pots[0].cost_basis.missing_prices
+        pot = self.rotkehlchen.accountant.pots[0]
+        missing_acquisitions = pot.cost_basis.missing_acquisitions
+        missing_prices = pot.cost_basis.missing_prices
 
         processed_missing_acquisitions = [entry.serialize() for entry in missing_acquisitions]
         processed_missing_prices = [entry.serialize() for entry in missing_prices]
         result_dict = _wrap_in_ok_result(
             {
+                'report_id': pot.report_id,
                 'missing_acquisitions': processed_missing_acquisitions,
                 'missing_prices': processed_missing_prices,
             },

@@ -110,9 +110,10 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
             'historyactionableitemsresource',
         ),
     )
-    assert_proper_response_with_result(response=response, status_code=HTTPStatus.OK)
-    assert len(response.json()['result']['missing_acquisitions']) == 10
-    assert len(response.json()['result']['missing_prices']) == 0
+    result = assert_proper_response_with_result(response=response, status_code=HTTPStatus.OK)
+    assert len(result['missing_acquisitions']) == 10
+    assert len(result['missing_prices']) == 0
+    assert result['report_id'] == 1
 
 
 @pytest.mark.parametrize(
