@@ -35,16 +35,39 @@
           @keypress.enter="login()"
         />
 
-        <v-row no-gutters align="center">
+        <v-row no-gutters align="end">
           <v-col>
             <v-checkbox
-              v-model="rememberUser"
-              :disabled="customBackendDisplay"
+              v-model="rememberUsername"
+              :disabled="customBackendDisplay || rememberPassword"
               color="primary"
               hide-details
-              class="mt-0"
-              :label="$t('login.remember_me')"
+              class="mt-0 mb-2 remember"
+              :label="$t('login.remember_username')"
             />
+            <v-row no-gutters>
+              <v-col cols="auto">
+                <v-checkbox
+                  v-if="$interop.isPackaged"
+                  v-model="rememberPassword"
+                  :disabled="customBackendDisplay"
+                  color="primary"
+                  hide-details
+                  class="mt-0 pt-0 remember"
+                  :label="$t('login.remember_password')"
+                />
+              </v-col>
+              <v-col>
+                <v-tooltip right max-width="200">
+                  <template #activator="{ on }">
+                    <v-icon small v-on="on"> mdi-help-circle </v-icon>
+                  </template>
+                  <div class="remember__tooltip">
+                    {{ $t('login.remember_password_tooltip') }}
+                  </div>
+                </v-tooltip>
+              </v-col>
+            </v-row>
           </v-col>
           <v-col cols="auto">
             <v-tooltip open-delay="400" top>
@@ -65,13 +88,14 @@
         </v-row>
 
         <transition v-if="customBackendDisplay" name="bounce">
-          <div class="animate">
+          <div class="animate mt-4">
             <v-divider />
             <v-row no-gutters class="mt-4" align="center">
               <v-col>
                 <v-text-field
                   v-model="customBackendUrl"
-                  prepend-icon="mdi-server"
+                  outlined
+                  prepend-inner-icon="mdi-server"
                   :rules="customBackendRules"
                   :disabled="customBackendSaved"
                   :label="$t('login.custom_backend.label')"
@@ -80,10 +104,10 @@
                   @keypress.enter="saveCustomBackend"
                 />
               </v-col>
-              <v-col cols="auto">
+              <v-col cols="auto" class="pb-7">
                 <v-btn
                   v-if="!customBackendSaved"
-                  class="ms-2"
+                  class="ml-4"
                   icon
                   @click="saveCustomBackend()"
                 >
@@ -98,6 +122,7 @@
               <v-col>
                 <v-checkbox
                   v-model="customBackendSessionOnly"
+                  class="mt-0"
                   hide-details
                   :disabled="customBackendSaved"
                   :label="$t('login.custom_backend.session_only')"
@@ -245,7 +270,8 @@ const setupLogout = () => {
   };
 };
 
-const KEY_REMEMBER = 'rotki.remember';
+const KEY_REMEMBER_USERNAME = 'rotki.remember_username';
+const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 const KEY_USERNAME = 'rotki.username';
 
 const customBackendRules = [
@@ -292,7 +318,8 @@ export default defineComponent({
 
     const username: Ref<string> = ref('');
     const password: Ref<string> = ref('');
-    const rememberUser: Ref<boolean> = ref(false);
+    const rememberUsername: Ref<boolean> = ref(false);
+    const rememberPassword: Ref<boolean> = ref(false);
     const customBackendDisplay: Ref<boolean> = ref(false);
     const customBackendUrl: Ref<string> = ref('');
     const customBackendSessionOnly: Ref<boolean> = ref(false);
@@ -303,7 +330,8 @@ export default defineComponent({
     const usernameRef: Ref<any> = ref(null);
     const passwordRef: Ref<any> = ref(null);
 
-    const savedRemember = useLocalStorage(KEY_REMEMBER, null);
+    const savedRememberUsername = useLocalStorage(KEY_REMEMBER_USERNAME, null);
+    const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
     const savedUsername = useLocalStorage(KEY_USERNAME, '');
 
     watch(username, () => {
@@ -379,15 +407,23 @@ export default defineComponent({
       set(customBackendDisplay, false);
     };
 
+    const checkRememberUsername = () => {
+      set(
+        rememberUsername,
+        !!get(savedRememberUsername) || !!get(savedRememberPassword)
+      );
+    };
+
     const loadSettings = async () => {
-      set(rememberUser, !!get(savedRemember));
+      set(rememberPassword, !!get(savedRememberPassword));
+      checkRememberUsername();
       set(username, get(savedUsername));
       const { sessionOnly, url } = getBackendUrl();
       set(customBackendUrl, url);
       set(customBackendSessionOnly, sessionOnly);
       set(customBackendSaved, !!url);
 
-      if (interop.isPackaged && get(rememberUser) && get(username)) {
+      if (interop.isPackaged && get(rememberPassword) && get(username)) {
         const savedPassword = await interop.getPassword(get(username));
 
         if (savedPassword) {
@@ -412,21 +448,34 @@ export default defineComponent({
       updateFocus();
     });
 
-    watch(rememberUser, (remember: boolean, previous: boolean) => {
+    watch(rememberUsername, (remember: boolean, previous: boolean) => {
       if (remember === previous) {
         return;
       }
 
       if (!remember) {
-        set(savedRemember, null);
+        set(savedRememberUsername, null);
         set(savedUsername, null);
+      } else {
+        set(savedRememberUsername, 'true');
+      }
+    });
 
+    watch(rememberPassword, (remember: boolean, previous: boolean) => {
+      if (remember === previous) {
+        return;
+      }
+
+      if (!remember) {
+        set(savedRememberPassword, null);
         if (interop.isPackaged) {
           interop.clearPassword();
         }
       } else {
-        set(savedRemember, 'true');
+        set(savedRememberPassword, 'true');
       }
+
+      checkRememberUsername();
     });
 
     const login = (syncApproval: SyncApproval = 'unknown') => {
@@ -436,12 +485,12 @@ export default defineComponent({
         syncApproval
       };
       emit('login', credentials);
-      if (get(rememberUser)) {
+      if (get(rememberUsername)) {
         set(savedUsername, get(username));
+      }
 
-        if (interop.isPackaged) {
-          interop.storePassword(get(username), get(password));
-        }
+      if (get(rememberPassword) && interop.isPackaged) {
+        interop.storePassword(get(username), get(password));
       }
     };
 
@@ -452,7 +501,8 @@ export default defineComponent({
       passwordRules,
       username,
       password,
-      rememberUser,
+      rememberUsername,
+      rememberPassword,
       customBackendDisplay,
       customBackendUrl,
       customBackendSessionOnly,
@@ -497,6 +547,14 @@ export default defineComponent({
       margin-top: 5px;
       margin-bottom: 8px;
     }
+  }
+}
+
+.remember {
+  width: 190px;
+
+  &__tooltip {
+    font-size: 0.8rem;
   }
 }
 

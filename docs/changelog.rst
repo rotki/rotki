@@ -1,6 +1,8 @@
 =========
 Changelog
 =========
+
+* :feature:`4401` The options for remember username and password are now separated.
 * :bug:`4386` Blockfi import for transactions now supports 'Crypto Transfer'
 * :bug:`4378` Ask for users permission to access keychain only when `Remember Me` option at login screen is enabled.
 * :bug:`4384` Price caches filter should now be working again.
