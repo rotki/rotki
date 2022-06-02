@@ -125,6 +125,11 @@ KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEthAddress, Dict[str, Any]] = {
         'symbol': 'Luna Token',
         'decimals': 18,
     },
+    string_to_ethereum_address('0x3baB61Ad5D103Bb5b203C9092Eb3a5e11677a5D0'): {
+        'name': 'ETH2Dao.net',
+        'symbol': 'ETH2DAO.net',
+        'decimals': 18,
+    },
 }
 
 

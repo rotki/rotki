@@ -15,6 +15,7 @@ from ens.utils import (
     normal_name_to_hash,
     normalize_name,
 )
+from eth_abi.exceptions import InsufficientDataBytes
 from eth_typing import BlockNumber, HexStr
 from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
@@ -267,7 +268,15 @@ class EthereumManager():
             'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks',
         )
         # A cache for the erc20 contract info to not requery same one
-        self.contract_info_cache: Dict[ChecksumEthAddress, Dict[str, Any]] = {}
+        self.contract_info_cache: Dict[ChecksumEthAddress, Dict[str, Any]] = {
+            # hard coding contract info we know can't be queried properly
+            # https://github.com/rotki/rotki/issues/4420
+            string_to_ethereum_address('0xECF8F87f810EcF450940c9f60066b4a7a501d6A7'): {
+                'name': 'Old Wrapped Ether',
+                'symbol': 'WETH',
+                'decimals': 18,
+            },
+        }
 
     def connected_to_any_web3(self) -> bool:
         return (
@@ -1225,11 +1234,14 @@ class EthereumManager():
                 if x[0] and len(x[1]) else None
                 for (x, method_name) in zip(output, properties)
             ]
-        except OverflowError as e:
+        except (OverflowError, InsufficientDataBytes) as e:
             # This can happen when contract follows the ERC20 standard methods
-            # but name and symbol return bytes instead of string. UNIV1 LP is in this case
+            # but name and symbol return bytes instead of string. UNIV1 LP is such a case
+            # It can also happen if the method is missing and they are all hitting
+            # the fallback function. old WETH contract is such a case
             log.error(
-                f'{address} failed to decode as ERC20 token. Trying UNIV1 LP token. {str(e)}',
+                f'{address} failed to decode as ERC20 token. '
+                f'Trying with token ABI using bytes. {str(e)}',
             )
             contract = EthereumContract(address=address, abi=UNIV1_LP_ABI, deployed_block=0)
             decoded = [
