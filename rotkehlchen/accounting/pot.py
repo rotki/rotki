@@ -58,13 +58,14 @@ class AccountingPot(CustomizableDateMixin):
             pot=self,
         )
         self.query_start_ts = self.query_end_ts = Timestamp(0)
+        self.report_id: Optional[int] = None
 
     def _add_processed_event(self, event: ProcessedAccountingEvent) -> None:
         dbpnl = DBAccountingReports(self.database)
         self.processed_events.append(event)
         try:
             dbpnl.add_report_data(
-                report_id=self.report_id,
+                report_id=self.report_id,  # type: ignore # report id is initialized by now
                 time=event.timestamp,
                 ts_converter=self.timestamp_to_date,
                 event=event,

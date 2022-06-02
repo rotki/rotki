@@ -4555,7 +4555,7 @@ Get missing acquisitions and prices
       }
 
    :resjson object result: An object with missing acquisitions and prices data.
-   :resjson int report_id: The id of the PnL report for which the actionable items were generated.
+   :resjson int report_id: [Optional -- missing if no report was ran]. The id of the PnL report for which the actionable items were generated.
    :resjson list missing_prices: A list that contains entries of missing prices found during PnL reporting.
    :resjsonarr str from_asset: The asset whose price is missing.
    :resjsonarr str to_asset: The asset in which we want the price of from_asset.
