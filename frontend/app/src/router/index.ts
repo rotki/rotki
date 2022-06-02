@@ -286,6 +286,14 @@ export default new Router({
       },
       props: true
     },
+    {
+      path: Routes.STANDALONE_REPORT_ACTIONABLE.route,
+      name: 'standalone-report-actionable',
+      meta: {
+        standalone: true
+      },
+      component: () => import('../views/reports/StandaloneReportActionable.vue')
+    },
     ...(process.env.NODE_ENV === 'development'
       ? [
           {

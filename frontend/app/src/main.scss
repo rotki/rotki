@@ -60,3 +60,16 @@ aside {
     }
   }
 }
+
+@media only screen and (max-width: 959px) {
+  .v-stepper {
+    &:not(&--vertical) {
+      .v-stepper {
+        &__label {
+          display: flex !important;
+          margin-left: 0.5rem;
+        }
+      }
+    }
+  }
+}

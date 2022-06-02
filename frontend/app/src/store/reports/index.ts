@@ -124,6 +124,11 @@ export const useReports = defineStore('reports', () => {
     }
   };
 
+  const fetchActionableItems = async () => {
+    const actionable = await api.reports.fetchActionableItems();
+    set(actionableItems, actionable);
+  };
+
   const fetchReport = async (
     reportId: number,
     page?: { limit: number; offset: number }
@@ -156,10 +161,10 @@ export const useReports = defineStore('reports', () => {
         processedActions: selectedReport.processedActions
       });
 
-      if (isLatestReport(reportId)) {
-        const actionable = await api.reports.fetchActionableItems();
-        set(actionableItems, actionable);
+      if (get(isLatestReport(reportId))) {
+        await fetchActionableItems();
       }
+
       set(loaded, false);
       const words = reportEntries.entries
         .filter(event => {
@@ -295,6 +300,7 @@ export const useReports = defineStore('reports', () => {
     clearReport,
     clearError,
     isLatestReport,
+    fetchActionableItems,
     reset
   };
 });

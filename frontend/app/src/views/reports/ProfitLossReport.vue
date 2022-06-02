@@ -118,10 +118,6 @@ export default defineComponent({
         router.replace({ query: {} });
       }
 
-      if (get(route).query.openReportActionable) {
-        set(initialOpenReportActionable, true);
-        router.replace({ query: {} });
-      }
       set(loading, false);
     });
 

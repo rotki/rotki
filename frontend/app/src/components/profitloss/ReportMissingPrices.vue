@@ -2,7 +2,10 @@
   <div>
     <data-table
       ref="tableRef"
-      :class="$style.table"
+      :class="{
+        [$style.table]: true,
+        [$style.standalone]: isStandalone
+      }"
       :headers="headers"
       :items="formattedItems"
       :container="tableContainer"
@@ -56,6 +59,7 @@ import {
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
+import { useRoute } from '@/composables/common';
 import i18n from '@/i18n';
 import {
   HistoricalPrice,
@@ -186,6 +190,11 @@ export default defineComponent({
       return get(tableRef)?.$el;
     });
 
+    const route = useRoute();
+    const isStandalone = computed(() => {
+      return get(route).meta?.standalone;
+    });
+
     return {
       updatePrice,
       formattedItems,
@@ -193,7 +202,8 @@ export default defineComponent({
       errorMessages,
       createKey,
       tableRef,
-      tableContainer
+      tableContainer,
+      isStandalone
     };
   }
 });
@@ -204,5 +214,9 @@ export default defineComponent({
   scroll-behavior: smooth;
   max-height: calc(100vh - 310px);
   overflow: auto;
+}
+
+.standalone {
+  max-height: calc(100vh - 220px);
 }
 </style>

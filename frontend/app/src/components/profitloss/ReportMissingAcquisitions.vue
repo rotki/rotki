@@ -2,7 +2,10 @@
   <div>
     <data-table
       ref="tableRef"
-      :class="$style.table"
+      :class="{
+        [$style.table]: true,
+        [$style.standalone]: isStandalone
+      }"
       :headers="headers"
       :items="groupedMissingAcquisitions"
       item-key="asset"
@@ -66,8 +69,9 @@ import {
 import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import RowExpander from '@/components/helper/RowExpander.vue';
+import { useRoute } from '@/composables/common';
 import i18n from '@/i18n';
-import { MissingAcquisition, SelectedReport } from '@/types/reports';
+import { MissingAcquisition } from '@/types/reports';
 
 type GroupedItems = { [asset: string]: MissingAcquisition[] };
 type MappedGroupedItems = {
@@ -133,10 +137,6 @@ export default defineComponent({
     RowExpander
   },
   props: {
-    report: {
-      required: true,
-      type: Object as PropType<SelectedReport>
-    },
     items: { required: true, type: Array as PropType<MissingAcquisition[]> }
   },
   setup(props) {
@@ -174,13 +174,19 @@ export default defineComponent({
       return get(tableRef)?.$el;
     });
 
+    const route = useRoute();
+    const isStandalone = computed(() => {
+      return get(route).meta?.standalone;
+    });
+
     return {
       headers,
       childHeaders,
       expanded,
       groupedMissingAcquisitions,
       tableRef,
-      tableContainer
+      tableContainer,
+      isStandalone
     };
   }
 });
@@ -191,5 +197,9 @@ export default defineComponent({
   scroll-behavior: smooth;
   max-height: calc(100vh - 310px);
   overflow: auto;
+}
+
+.standalone {
+  max-height: calc(100vh - 220px);
 }
 </style>

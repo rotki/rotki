@@ -1,130 +1,133 @@
 <template>
+  <dev-app v-if="isPlayground" />
   <v-app
-    v-if="!isPlayground"
+    v-else
     id="rotki"
     class="app"
     :class="{ ['app--animations-disabled']: !animationsEnabled }"
   >
-    <app-update-popup />
-    <div v-if="logged" class="app__content rotki-light-grey">
-      <asset-update auto />
-      <notification-popup />
-      <v-navigation-drawer
-        v-if="loginComplete"
-        v-model="showDrawer"
-        width="300"
-        class="app__navigation-drawer"
-        fixed
-        :mini-variant="isMini"
-        :color="appBarColor"
-        clipped
-        app
-      >
-        <div v-if="!isMini" class="text-center app__logo" />
-        <div v-else class="app__logo-mini">
-          {{ $t('app.name') }}
-        </div>
-        <navigation-menu :is-mini="isMini" />
-        <v-spacer />
-        <div
-          v-if="!isMini"
-          class="my-2 text-center px-2 app__navigation-drawer__version"
+    <router-view v-if="isStandalone" />
+    <template v-else>
+      <app-update-popup />
+      <div v-if="logged" class="app__content rotki-light-grey">
+        <asset-update auto />
+        <notification-popup />
+        <v-navigation-drawer
+          v-if="loginComplete"
+          v-model="showDrawer"
+          width="300"
+          class="app__navigation-drawer"
+          fixed
+          :mini-variant="isMini"
+          :color="appBarColor"
+          clipped
+          app
         >
-          <span class="text-overline">
-            <v-divider class="mx-3 my-1" />
-            {{ appVersion }}
-          </span>
-        </div>
-      </v-navigation-drawer>
+          <div v-if="!isMini" class="text-center app__logo" />
+          <div v-else class="app__logo-mini">
+            {{ $t('app.name') }}
+          </div>
+          <navigation-menu :is-mini="isMini" />
+          <v-spacer />
+          <div
+            v-if="!isMini"
+            class="my-2 text-center px-2 app__navigation-drawer__version"
+          >
+            <span class="text-overline">
+              <v-divider class="mx-3 my-1" />
+              {{ appVersion }}
+            </span>
+          </div>
+        </v-navigation-drawer>
 
-      <v-app-bar
-        app
-        fixed
-        clipped-left
-        flat
-        :color="appBarColor"
-        class="app__app-bar"
-      >
-        <v-app-bar-nav-icon
-          class="secondary--text text--lighten-4"
-          @click="toggleDrawer()"
+        <v-app-bar
+          app
+          fixed
+          clipped-left
+          flat
+          :color="appBarColor"
+          class="app__app-bar"
+        >
+          <v-app-bar-nav-icon
+            class="secondary--text text--lighten-4"
+            @click="toggleDrawer()"
+          />
+          <div class="d-flex overflow-hidden">
+            <node-status-indicator v-if="!xsOnly" />
+            <balance-saved-indicator />
+            <global-search />
+            <back-button :can-navigate-back="canNavigateBack" />
+          </div>
+          <v-spacer />
+          <div class="d-flex overflow-hidden">
+            <v-btn v-if="isDevelopment" to="/playground" icon>
+              <v-icon>mdi-crane</v-icon>
+            </v-btn>
+            <app-update-indicator />
+            <theme-switch v-if="premium" />
+            <theme-switch-lock v-else />
+            <notification-indicator
+              :visible="showNotificationBar"
+              class="app__app-bar__button"
+              @click="showNotificationBar = !showNotificationBar"
+            />
+            <currency-dropdown class="app__app-bar__button" />
+            <privacy-mode-dropdown class="app__app-bar__button" />
+            <user-dropdown class="app__app-bar__button" />
+            <help-indicator
+              v-if="!xsOnly"
+              :visible="showHelpBar"
+              @visible:update="showHelpBar = $event"
+            />
+          </div>
+        </v-app-bar>
+        <notification-sidebar
+          :visible="showNotificationBar"
+          @close="showNotificationBar = false"
         />
-        <div class="d-flex overflow-hidden">
-          <node-status-indicator v-if="!xsOnly" />
-          <balance-saved-indicator />
-          <global-search />
-          <back-button :can-navigate-back="canNavigateBack" />
+        <help-sidebar
+          :visible="showHelpBar"
+          @visible:update="showHelpBar = $event"
+          @about="showAbout = true"
+        />
+        <div
+          class="app-main"
+          :class="{
+            small: showDrawer && isMini,
+            expanded: showDrawer && !isMini && !isMobile
+          }"
+        >
+          <v-main>
+            <router-view />
+          </v-main>
         </div>
-        <v-spacer />
-        <div class="d-flex overflow-hidden">
-          <v-btn v-if="isDevelopment" to="/playground" icon>
-            <v-icon>mdi-crane</v-icon>
-          </v-btn>
-          <app-update-indicator />
-          <theme-switch v-if="premium" />
-          <theme-switch-lock v-else />
-          <notification-indicator
-            :visible="showNotificationBar"
-            class="app__app-bar__button"
-            @click="showNotificationBar = !showNotificationBar"
-          />
-          <currency-dropdown class="app__app-bar__button" />
-          <privacy-mode-dropdown class="app__app-bar__button" />
-          <user-dropdown class="app__app-bar__button" />
-          <help-indicator
-            v-if="!xsOnly"
-            :visible="showHelpBar"
-            @visible:update="showHelpBar = $event"
-          />
-        </div>
-      </v-app-bar>
-      <notification-sidebar
-        :visible="showNotificationBar"
-        @close="showNotificationBar = false"
-      />
-      <help-sidebar
-        :visible="showHelpBar"
-        @visible:update="showHelpBar = $event"
-        @about="showAbout = true"
-      />
-      <div
-        class="app-main"
-        :class="{
-          small: showDrawer && isMini,
-          expanded: showDrawer && !isMini && !isMobile
-        }"
-      >
-        <v-main>
-          <router-view />
-        </v-main>
       </div>
-    </div>
-    <message-dialog
-      :title="message.title"
-      :message="message.description"
-      :success="message.success"
-      @dismiss="dismissMessage()"
-    />
-    <startup-error-screen
-      v-if="startupErrorMessage.length > 0"
-      :message="startupErrorMessage"
-      fatal
-    />
-    <mac-os-version-unsupported v-if="isMacOsVersionUnsupported" />
-    <v-fade-transition>
-      <account-management
-        v-if="startupErrorMessage.length === 0 && !loginIn"
-        :logged="logged"
-        @login-complete="completeLogin(true)"
-        @about="showAbout = true"
+      <message-dialog
+        :title="message.title"
+        :message="message.description"
+        :success="message.success"
+        @dismiss="dismissMessage()"
       />
-    </v-fade-transition>
-    <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
-      <about />
-    </v-dialog>
-    <frontend-update-notifier />
+      <startup-error-screen
+        v-if="startupErrorMessage.length > 0"
+        :message="startupErrorMessage"
+        fatal
+      />
+      <mac-os-version-unsupported v-if="isMacOsVersionUnsupported" />
+      <v-fade-transition>
+        <account-management
+          v-if="startupErrorMessage.length === 0 && !loginIn"
+          :logged="logged"
+          @login-complete="completeLogin(true)"
+          @about="showAbout = true"
+        />
+      </v-fade-transition>
+      <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
+        <about />
+      </v-dialog>
+      <frontend-update-notifier />
+    </template>
   </v-app>
-  <dev-app v-else />
 </template>
 
 <script lang="ts">
@@ -160,7 +163,7 @@ import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import AppUpdatePopup from '@/components/status/update/AppUpdatePopup.vue';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
-import { setupThemeCheck, useRoute, useRouter } from '@/composables/common';
+import { setupThemeCheck, useRoute } from '@/composables/common';
 import { getPremium, setupSession } from '@/composables/session';
 import DevApp from '@/DevApp.vue';
 import { useInterop } from '@/electron-interop';
@@ -232,7 +235,6 @@ export default defineComponent({
     const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
     const route = useRoute();
-    const router = useRouter();
 
     const canNavigateBack = computed(() => {
       const canNavigateBack = get(route).meta?.canNavigateBack ?? false;
@@ -242,6 +244,9 @@ export default defineComponent({
     const isDevelopment = process.env.NODE_ENV === 'development';
     const isPlayground = computed(() => {
       return isDevelopment && get(route).name === 'playground';
+    });
+    const isStandalone = computed(() => {
+      return get(route).meta?.standalone;
     });
 
     const appBarColor = computed(() => {
@@ -302,9 +307,9 @@ export default defineComponent({
         set(showDrawer, !get(isMobile));
       }
 
-      if (get(route).name !== 'dashboard') {
-        router.push({ name: 'dashboard' });
-      }
+      // if (get(route).name !== 'dashboard') {
+      //   router.push({ name: 'dashboard' });
+      // }
     });
 
     const premium = getPremium();
@@ -331,6 +336,7 @@ export default defineComponent({
       canNavigateBack,
       isDevelopment,
       isPlayground,
+      isStandalone,
       dismissMessage,
       completeLogin,
       openSite,

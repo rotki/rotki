@@ -1,6 +1,10 @@
 <template>
   <div v-if="actionableItemsLength.total">
-    <v-dialog v-model="mainDialogOpen" max-width="1000">
+    <v-dialog
+      v-model="mainDialogOpen"
+      max-width="1000"
+      :content-class="isStandalone ? $style.dialog : ''"
+    >
       <template #activator="{ on }">
         <v-btn color="error" depressed v-on="on" @click="step = 1">
           <span class="px-2">
@@ -13,7 +17,7 @@
       </template>
       <v-card>
         <v-toolbar dark color="primary">
-          <v-btn icon dark @click="mainDialogOpen = false">
+          <v-btn v-if="!isStandalone" icon dark @click="mainDialogOpen = false">
             <v-icon>mdi-close</v-icon>
           </v-btn>
 
@@ -24,6 +28,17 @@
               })
             }}
           </v-toolbar-title>
+
+          <v-spacer />
+
+          <v-tooltip v-if="!isStandalone" bottom>
+            <template #activator="{ on }">
+              <v-btn icon dark v-on="on" @click="openInNewWindow">
+                <v-icon>mdi-open-in-new</v-icon>
+              </v-btn>
+            </template>
+            {{ $t('profit_loss_report.actionable.show_in_new_window') }}
+          </v-tooltip>
         </v-toolbar>
         <div>
           <v-stepper v-model="step">
@@ -34,7 +49,11 @@
                   :step="index + 1"
                   :complete="step > index + 1"
                 >
-                  {{ content.title }}
+                  <span
+                    v-if="$vuetify.breakpoint.mdAndUp || step === index + 1"
+                  >
+                    {{ content.title }}
+                  </span>
                 </v-stepper-step>
                 <v-divider
                   v-if="index < stepperContents.length - 1"
@@ -93,7 +112,7 @@
                             }}
                           </v-btn>
                           <v-btn
-                            v-else
+                            v-else-if="!isStandalone"
                             class="ml-4"
                             color="primary"
                             @click="submitActionableItems(items)"
@@ -193,6 +212,7 @@
   </div>
 </template>
 <script lang="ts">
+/* eslint-disable */
 import {
   computed,
   defineComponent,
@@ -205,7 +225,7 @@ import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcqu
 import ReportMissingPrices, {
   EditableMissingPrice
 } from '@/components/profitloss/ReportMissingPrices.vue';
-import { useRouter } from '@/composables/common';
+import { useRoute, useRouter } from '@/composables/common';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
@@ -220,8 +240,9 @@ export default defineComponent({
   },
   props: {
     report: {
-      required: true,
-      type: Object as PropType<SelectedReport>
+      required: false,
+      type: Object as PropType<SelectedReport>,
+      default: () => null
     },
     initialOpen: { required: false, type: Boolean, default: false }
   },
@@ -230,9 +251,13 @@ export default defineComponent({
     const mainDialogOpen = ref<boolean>(get(initialOpen));
 
     const reportsStore = useReports();
-    const { actionableItems } = reportsStore;
+    const { actionableItems } = toRefs(reportsStore);
 
     const router = useRouter();
+
+    const isStandalone = computed(() => {
+      return get(route).meta?.standalone;
+    });
 
     const actionableItemsLength = computed(() => {
       let missingAcquisitionsLength: number = 0;
@@ -329,10 +354,18 @@ export default defineComponent({
         path: Routes.PROFIT_LOSS_REPORTS.route,
         query: {
           regenerate: 'true',
-          start: get(report).start.toString(),
-          end: get(report).end.toString()
+          start: get(report)?.start.toString(),
+          end: get(report)?.end.toString()
         }
       });
+    };
+
+    const route = useRoute();
+
+    const openInNewWindow = () => {
+      const path = Routes.STANDALONE_REPORT_ACTIONABLE.route.replace(':id', get(route).params.id);
+      console.log(get(route));
+      window.open(path, "_blank", "toolbar=no, location=no, directories=no,status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=yes, width=600, height=600");
     };
 
     return {
@@ -347,12 +380,20 @@ export default defineComponent({
       confirmationDialogOpen,
       ignoreIssues,
       regenerateReport,
-      toSentenceCase
+      toSentenceCase,
+      openInNewWindow,
+      isStandalone
     };
   }
 });
 </script>
 <style module lang="scss">
+.dialog {
+  margin: 0 !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
 .raise {
   position: relative;
   z-index: 2;

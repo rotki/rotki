@@ -218,5 +218,8 @@ export const Routes = {
   },
   LOCATIONS: {
     route: '/locations/:identifier'
+  },
+  STANDALONE_REPORT_ACTIONABLE: {
+    route: '/report/:id/actionable'
   }
 };

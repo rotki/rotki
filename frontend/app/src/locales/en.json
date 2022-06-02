@@ -3414,6 +3414,7 @@
       },
       "show_issues": "Show Issues",
       "issues_found": "{total} issues found with the generated report",
+      "show_in_new_window": "Show in new window",
       "missing_acquisitions": {
         "headers": {
           "asset": "Asset",
