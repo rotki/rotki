@@ -66,7 +66,7 @@ def fixture_kucoin_sandbox_base_uri():
 
 
 @pytest.fixture
-def sandbox_kuckoin(
+def sandbox_kucoin(
         database,
         inquirer,  # pylint: disable=unused-argument
         function_scope_messages_aggregator,

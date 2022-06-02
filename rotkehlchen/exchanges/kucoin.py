@@ -117,11 +117,6 @@ class KucoinCase(Enum):
 PAGINATED_CASES = (KucoinCase.OLD_TRADES, KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS)  # noqa: E501
 
 
-def _serialize_ts(time: Timestamp) -> Timestamp:
-    """Transform time from seconds to miliseconds"""
-    return Timestamp(time * 1000)
-
-
 def _deserialize_ts(case: KucoinCase, time: int) -> Timestamp:
     if case == KucoinCase.OLD_TRADES:
         return Timestamp(time)
@@ -365,11 +360,11 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise AssertionError(f'Unexpected case: {case}')
 
         call_options = options.copy()
-        call_options['startAt'] = _serialize_ts(max(start_ts, KUCOIN_LAUNCH_TS))
+        call_options['startAt'] = Timestamp(max(start_ts, KUCOIN_LAUNCH_TS) * 1000)
         while True:
             current_query_ts = _deserialize_ts(case, call_options['startAt'])
-            call_options['endAt'] = _serialize_ts(
-                time=min(Timestamp(current_query_ts + time_step), end_ts),
+            call_options['endAt'] = Timestamp(
+                min(Timestamp(current_query_ts + time_step), end_ts) * 1000,
             )
             logger.debug(
                 f'Querying kucoin {case} from {current_query_ts} to {call_options["endAt"]}',
@@ -458,7 +453,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 call_options['currentPage'] = current_page + 1
             else:
                 call_options['currentPage'] = 1
-            call_options['startAt'] = _serialize_ts(current_query_ts)
+            call_options['startAt'] = Timestamp(current_query_ts * 1000)
 
         return results
 
