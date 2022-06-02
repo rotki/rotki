@@ -239,7 +239,7 @@ import { SupportedAsset } from '@rotki/common/lib/data';
 import {
   computed,
   defineComponent,
-  onActivated,
+  onBeforeMount,
   onMounted,
   PropType,
   ref,
@@ -400,7 +400,7 @@ export default defineComponent({
       };
     });
 
-    onActivated(async () => {
+    onBeforeMount(async () => {
       try {
         set(types, await api.assets.assetTypes());
       } catch (e: any) {

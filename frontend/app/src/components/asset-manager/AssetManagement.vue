@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <refresh-header
-      :title="$t('asset_management.title')"
+      :title="$tc('asset_management.title')"
       :loading="loading"
       @refresh="refresh"
     />
@@ -58,9 +58,9 @@
       />
     </big-dialog>
     <confirm-dialog
-      :title="$t('asset_management.confirm_delete.title')"
+      :title="$tc('asset_management.confirm_delete.title')"
       :message="
-        $t('asset_management.confirm_delete.message', {
+        $tc('asset_management.confirm_delete.message', {
           asset: deleteAssetSymbol
         })
       "
