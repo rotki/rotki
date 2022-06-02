@@ -8,7 +8,7 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
-from rotkehlchen.tasks.manager import TaskManager
+from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tests.utils.ethereum import setup_ethereum_transactions_test
 from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET
 from rotkehlchen.types import Location
@@ -60,6 +60,7 @@ def fixture_task_manager(
         eth_transactions=eth_transactions,
         deactivate_premium=lambda: None,
         query_balances=lambda: None,
+        activate_premium=lambda _: None,
     )
     return task_manager
 
@@ -221,6 +222,10 @@ def test_check_premium_status(rotkehlchen_api_server):
     premium = Premium(premium_credentials)
     premium.status = SubscriptionStatus.ACTIVE
 
+    def mock_check_premium_status():
+        task_manager.last_premium_status_check = ts_now() - PREMIUM_STATUS_CHECK
+        task_manager._maybe_check_premium_status()
+
     with patch(
         'rotkehlchen.db.dbhandler.DBHandler.get_rotkehlchen_premium',
         MagicMock(return_value=premium_credentials),
@@ -228,14 +233,26 @@ def test_check_premium_status(rotkehlchen_api_server):
         assert premium.is_active() is True
         assert rotki.premium is not None
 
-        timeout = 5
-        try:
-            with gevent.Timeout(timeout):
-                task_manager.schedule()
-        except gevent.Timeout as e:
-            raise AssertionError(f'Premium check query was not completed within {timeout} seconds') from e  # noqa: E501
+        with patch('rotkehlchen.premium.premium.Premium.is_active', MagicMock(return_value=False)):
+            for check_trial in range(3):
+                mock_check_premium_status()
+                assert rotki.premium is not None, (
+                    'Premium object is None and should be'
+                    f'active after the {check_trial} periodic check'
+                )
 
-        assert rotki.premium is None
+            mock_check_premium_status()
+            assert rotki.premium is None, (
+                'Premium object is not None and should be'
+                'deactivated after the 4th periodic check'
+            )
+
+        with patch('rotkehlchen.premium.premium.Premium.is_active', MagicMock(return_value=True)):
+            mock_check_premium_status()
+            assert rotki.premium is not None, (
+                'Permium object is None and Periodic check'
+                'didn\'t reactivate the premium status'
+            )
 
 
 def test_update_snapshot_balances(task_manager):

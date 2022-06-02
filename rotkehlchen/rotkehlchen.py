@@ -356,6 +356,7 @@ class Rotkehlchen():
             eth_transactions=self.eth_transactions,
             evm_tx_decoder=self.evm_tx_decoder,
             deactivate_premium=self.deactivate_premium_status,
+            activate_premium=self.activate_premium_status,
             query_balances=self.query_balances,
         )
         DataMigrationManager(self).maybe_migrate_data()
@@ -434,6 +435,13 @@ class Rotkehlchen():
         self.premium_sync_manager.premium = None
         self.accountant.deactivate_premium_status()
         self.chain_manager.deactivate_premium_status()
+
+    def activate_premium_status(self, credentials: PremiumCredentials) -> None:
+        """Activate the premium in the current session"""
+        self.premium = Premium(credentials)
+        self.premium_sync_manager.premium = self.premium
+        self.accountant.activate_premium_status(self.premium)
+        self.chain_manager.activate_premium_status(self.premium)
 
     def delete_premium_credentials(self) -> Tuple[bool, str]:
         """Deletes the premium credentials for rotki"""

@@ -25,7 +25,7 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import premium_create_and_verify
+from rotkehlchen.premium.premium import PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.types import ChecksumEthAddress, ExchangeLocationID, Location, Optional, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -48,6 +48,7 @@ EXCHANGE_QUERY_FREQUENCY = 3600  # every hour
 PREMIUM_STATUS_CHECK = 3600  # every hour
 TX_RECEIPTS_QUERY_LIMIT = 500
 TX_DECODING_LIMIT = 500
+PREMIUM_CHECK_RETRY_LIMIT = 3
 
 
 def noop_exchange_success_cb(trades, margin, asset_movements, exchange_specific_data) -> None:  # type: ignore # noqa: E501
@@ -77,7 +78,8 @@ class TaskManager():
             exchange_manager: ExchangeManager,
             evm_tx_decoder: 'EVMTransactionDecoder',
             eth_transactions: 'EthTransactions',
-            deactivate_premium: Callable,
+            deactivate_premium: Callable[[], None],
+            activate_premium: Callable[[PremiumCredentials], None],
             query_balances: Callable,
     ) -> None:
         self.max_tasks_num = max_tasks_num
@@ -102,9 +104,11 @@ class TaskManager():
             method=self._prepare_cryptocompare_queries,
         )
         self.deactivate_premium = deactivate_premium
+        self.activate_premium = activate_premium
         self.query_balances = query_balances
         self.last_premium_status_check = ts_now()
         self.msg_aggregator = MessagesAggregator()
+        self.premium_check_retries = 0
 
         self.potential_tasks = [
             self._maybe_schedule_cryptocompare_query,
@@ -397,25 +401,39 @@ class TaskManager():
     def _maybe_check_premium_status(self) -> None:
         """
         Validates the premium status of the account and if the credentials are not valid
-        it deactivates the user's premium status.
+        it retries 3 times before deactivating the user's premium status. If the
+        credentials are valid and the premium status is not correct it will reactivate
+        the user's premium status.
         """
         now = ts_now()
         if now - self.last_premium_status_check < PREMIUM_STATUS_CHECK:
             return
 
         db_credentials = self.database.get_rotkehlchen_premium()
-        if db_credentials:
-            try:
-                premium_create_and_verify(db_credentials)
-            except PremiumAuthenticationError as e:
-                message = (
-                    f'Could not authenticate with the rotkehlchen server with '
-                    f'the API keys found in the Database. Error: {str(e)}. Will '
-                    f'deactivate the premium status.'
-                )
-                self.msg_aggregator.add_error(message)
-                self.deactivate_premium()
-        self.last_premium_status_check = now
+        if not db_credentials:
+            self.last_premium_status_check = now
+            return
+
+        try:
+            premium_create_and_verify(db_credentials)
+        except PremiumAuthenticationError as e:
+            if self.premium_check_retries < PREMIUM_CHECK_RETRY_LIMIT:
+                self.premium_check_retries += 1
+                self.last_premium_status_check = now
+                return
+            message = (
+                f'Could not authenticate with the rotkehlchen server with '
+                f'the API keys found in the Database. Error: {str(e)}. Will '
+                f'deactivate the premium status.'
+            )
+            self.msg_aggregator.add_error(message)
+            self.deactivate_premium()
+        else:
+            if self.premium_check_retries >= PREMIUM_CHECK_RETRY_LIMIT:
+                self.activate_premium(db_credentials)
+            self.premium_check_retries = 0
+        finally:
+            self.last_premium_status_check = now
 
     def _maybe_update_snapshot_balances(self) -> None:
         """
