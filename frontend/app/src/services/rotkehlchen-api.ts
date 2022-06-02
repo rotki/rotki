@@ -524,12 +524,11 @@ export class RotkehlchenApi {
 
   async login(credentials: LoginCredentials): Promise<UserAccount> {
     const { password, syncApproval, username } = credentials;
-    const response = await this.axios.patch<
+    const response = await this.axios.post<
       ActionResult<UserAccount | SyncConflictPayload>
     >(
       `/users/${username}`,
       axiosSnakeCaseTransformer({
-        action: 'login',
         password,
         syncApproval
       }),

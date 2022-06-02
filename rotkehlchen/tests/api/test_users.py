@@ -444,8 +444,8 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
     assert rotki.user_is_logged_in is False
 
     # And login with the new password to make sure it works
-    data = {'action': 'login', 'password': new_password, 'sync_approval': 'unknown'}
-    response = requests.patch(
+    data = {'password': new_password, 'sync_approval': 'unknown'}
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
     )
@@ -524,8 +524,8 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     assert users_data['another_user'] == 'loggedout'
 
     # Now let's try to login
-    data = {'action': 'login', "password": db_password, 'sync_approval': 'unknown'}
-    response = requests.patch(
+    data = {'password': db_password, 'sync_approval': 'unknown'}
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
@@ -552,8 +552,8 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     assert users_data['another_user'] == 'loggedout'
 
     # Now try to login with a wrong password
-    data = {'action': 'login', "password": 'wrong_password', 'sync_approval': 'unknown'}
-    response = requests.patch(
+    data = {'password': 'wrong_password', 'sync_approval': 'unknown'}
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
@@ -569,8 +569,8 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     assert users_data['another_user'] == 'loggedout'
 
     # Now let's manually add valid but not authenticable premium credentials in the DB
-    data = {'action': 'login', "password": db_password, 'sync_approval': 'unknown'}
-    response = requests.patch(
+    data = {'password': db_password, 'sync_approval': 'unknown'}
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
@@ -584,8 +584,8 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     assert_simple_ok_response(response)
     assert rotki.user_is_logged_in is False
     # And try to login while having these unauthenticable premium credentials in the DB
-    data = {'action': 'login', "password": db_password, 'sync_approval': 'unknown'}
-    response = requests.patch(
+    data = {'password': db_password, 'sync_approval': 'unknown'}
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
@@ -671,8 +671,8 @@ def test_user_login_user_dir_permission_error(rotkehlchen_api_server, data_dir):
     db_path.touch()
     os.chmod(user_dir, 0o200)
 
-    data = {'action': 'login', "password": '123', 'sync_approval': 'unknown'}
-    response = requests.patch(
+    data = {'password': '123', 'sync_approval': 'unknown'}
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
@@ -693,8 +693,8 @@ def test_user_login_db_permission_error(rotkehlchen_api_server, data_dir):
     db_path = Path(data_dir / username / 'rotkehlchen.db')
     db_path.touch()
     os.chmod(db_path, 0o200)
-    data = {'action': 'login', "password": '123', 'sync_approval': 'unknown'}
-    response = requests.patch(
+    data = {'password': '123', 'sync_approval': 'unknown'}
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
@@ -737,8 +737,8 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     """Test that user by name endpoint errors are handled (for login/logout and edit)"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Now let's try to login while the user is already logged in
-    data = {'action': 'login', 'password': db_password, 'sync_approval': 'unknown'}
-    response = requests.patch(
+    data = {'password': db_password, 'sync_approval': 'unknown'}
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
@@ -763,8 +763,8 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     assert rotki.user_is_logged_in is False
 
     # Now let's try to login with an invalid password
-    data = {'action': 'login', 'password': 'wrong-password', 'sync_approval': 'unknown'}
-    response = requests.patch(
+    data = {'password': 'wrong-password', 'sync_approval': 'unknown'}
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
@@ -776,20 +776,28 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     assert rotki.user_is_logged_in is False
 
     # Login action without a password
-    data = {'action': 'login', 'sync_approval': 'unknown'}
-    response = requests.patch(
+    data = {'sync_approval': 'unknown'}
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Missing password field for login',
+        contained_in_msg='Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     assert rotki.user_is_logged_in is False
+
+    # Login first to test that schema validation works.
+    data = {'password': db_password, 'sync_approval': 'unknown'}
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+        json=data,
+    )
+    assert rotki.user_is_logged_in is True
 
     # No action and no premium credentials
-    data = {'sync_approval': 'unknown'}
+    data = {}
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
@@ -799,10 +807,10 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
         contained_in_msg='Without an action premium api key and secret must be provided',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    assert rotki.user_is_logged_in is False
+    assert rotki.user_is_logged_in is True
 
     # No action and only premium key
-    data = {'sync_approval': 'unknown', 'premium_api_key': VALID_PREMIUM_KEY}
+    data = {'premium_api_key': VALID_PREMIUM_KEY}
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
@@ -812,10 +820,10 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
         contained_in_msg='Without an action premium api key and secret must be provided',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    assert rotki.user_is_logged_in is False
+    assert rotki.user_is_logged_in is True
 
     # No action and only premium secret
-    data = {'sync_approval': 'unknown', 'premium_api_secret': VALID_PREMIUM_SECRET}
+    data = {'premium_api_secret': VALID_PREMIUM_SECRET}
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
@@ -825,10 +833,10 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
         contained_in_msg='Without an action premium api key and secret must be provided',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    assert rotki.user_is_logged_in is False
+    assert rotki.user_is_logged_in is True
 
     # Invalid action type
-    data = {'action': 555.3, 'password': db_password, 'sync_approval': 'unknown'}
+    data = {'action': 555.3, 'premium_api_key': '123', 'premium_api_secret': '1'}
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
@@ -838,24 +846,24 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
         contained_in_msg='Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    assert rotki.user_is_logged_in is False
+    assert rotki.user_is_logged_in is True
 
     # Invalid action string
-    data = {'action': 'chopwood', 'password': db_password, 'sync_approval': 'unknown'}
+    data = {'action': 'chopwood', 'premium_api_key': '123', 'premium_api_secret': '1'}
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Must be one of: login, logout',
+        contained_in_msg='Must be equal to logout',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    assert rotki.user_is_logged_in is False
+    assert rotki.user_is_logged_in is True
 
     # Invalid password type
-    data = {'action': 'login', 'password': True, 'sync_approval': 'unknown'}
-    response = requests.patch(
+    data = {'password': True, 'sync_approval': 'unknown'}
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
@@ -864,4 +872,4 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
         contained_in_msg='Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    assert rotki.user_is_logged_in is False
+    assert rotki.user_is_logged_in is True
