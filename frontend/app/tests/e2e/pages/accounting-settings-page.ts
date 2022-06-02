@@ -55,11 +55,20 @@ export class AccountingSettingsPage {
     cy.get('.accounting-settings__buttons__remove').click();
   }
 
-  ignoredAssetCount(number: string) {
+  ignoredAssetCount(number: number) {
     cy.get('.accounting-settings__ignored-assets__badge').should(
       'include.text',
-      number
+      number.toString()
     );
+  }
+
+  ignoredAssets() {
+    return cy
+      .get('.accounting-settings__ignored-assets__badge')
+      .invoke('text')
+      .then(text => {
+        cy.wrap(text);
+      });
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {

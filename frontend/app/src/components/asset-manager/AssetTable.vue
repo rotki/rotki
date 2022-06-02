@@ -218,10 +218,18 @@ export default defineComponent({
       if (!search || !item) {
         return true;
       }
+
       const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
       const name = item.name?.toLocaleLowerCase()?.trim() ?? '';
       const symbol = item.symbol?.toLocaleLowerCase()?.trim() ?? '';
-      return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
+      const address =
+        (item as EthereumToken).address?.toLocaleLowerCase()?.trim() ?? '';
+      return (
+        symbol.indexOf(keyword) >= 0 ||
+        name.indexOf(keyword) >= 0 ||
+        address.indexOf(keyword) >= 0 ||
+        item.identifier.indexOf(keyword) >= 0
+      );
     };
 
     const sortItems = (

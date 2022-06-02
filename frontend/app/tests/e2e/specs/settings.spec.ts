@@ -125,6 +125,13 @@ describe('settings', () => {
     });
 
     describe('ignored asset settings', () => {
+      let ignoredAssets = 0;
+      before(() => {
+        pageAccounting.ignoredAssets().then(ignored => {
+          ignoredAssets = parseInt(ignored);
+        });
+      });
+
       it('add an ignored asset and validate UI message it has been added', () => {
         pageAccounting.addIgnoredAsset('1SG');
         pageAccounting.confirmInlineSuccess(
@@ -132,7 +139,7 @@ describe('settings', () => {
           '1SG'
         );
       });
-      it('add another 2 ignored assets and confirm count is 4', () => {
+      it('add another 2 ignored assets and confirm count increased by 3', () => {
         pageAccounting.addIgnoredAsset('ZIX');
         pageAccounting.confirmInlineSuccess(
           '.accounting-settings__asset-to-ignore',
@@ -143,15 +150,15 @@ describe('settings', () => {
           '.accounting-settings__asset-to-ignore',
           '1CR'
         );
-        pageAccounting.ignoredAssetCount('21');
+        pageAccounting.ignoredAssetCount(ignoredAssets + 3);
       });
-      it('remove an ignored asset, validate UI message, and confirm count is 3', () => {
+      it('remove an ignored asset, validate UI message, and confirm count decreased by one', () => {
         pageAccounting.remIgnoredAsset('1SG');
         pageAccounting.confirmInlineSuccess(
           '.accounting-settings__ignored-assets',
           '1SG'
         );
-        pageAccounting.ignoredAssetCount('20');
+        pageAccounting.ignoredAssetCount(ignoredAssets + 2);
       });
     });
   });
@@ -180,6 +187,12 @@ describe('settings', () => {
 
     it('Accounting settings', () => {
       pageAccounting.visit();
+
+      let ignoredAssets = 0;
+      pageAccounting.ignoredAssets().then(ignored => {
+        ignoredAssets = parseInt(ignored);
+      });
+
       pageAccounting.verifySwitchState(
         '.accounting-settings__crypto2crypto',
         'false'
@@ -192,7 +205,7 @@ describe('settings', () => {
         '.accounting-settings__taxfree-period',
         'false'
       );
-      pageAccounting.ignoredAssetCount('20');
+      pageAccounting.ignoredAssetCount(ignoredAssets + 2);
     });
   });
 });
