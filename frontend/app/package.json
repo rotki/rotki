@@ -94,19 +94,19 @@
     "stylelint-scss": "3.21.0",
     "ts-loader": "9.2.8",
     "typescript": "4.6.2",
-    "unplugin-vue-components": "0.17.11",
-    "unplugin-vue2-script-setup": "0.10.0",
-    "vite": "2.9.0",
-    "vite-plugin-vue2": "1.9.3",
+    "unplugin-vue-components": "0.19.6",
+    "unplugin-vue2-script-setup": "0.11.0",
+    "vite": "2.9.9",
+    "vite-plugin-vue2": "2.0.1",
     "vite-plugin-istanbul": "2.7.3",
-    "vitest": "0.9.0",
+    "vitest": "0.13.1",
     "vue-eslint-parser": "8.3.0",
     "vue-i18n-extract": "2.0.4",
     "vue-template-compiler": "2.6.14"
   },
   "optionalDependencies": {
     "@cypress/code-coverage": "3.10.0",
-    "cypress": "9.7.0",
+    "cypress": "10.0.1",
     "dmg-license": "1.0.10"
   },
   "engines": {
