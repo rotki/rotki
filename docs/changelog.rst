@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`4398` Fix asset type selection that cannot be enabled for new asset addition.
 * :feature:`4401` The options for remember username and password are now separated.
 * :bug:`4386` Blockfi import for transactions now supports 'Crypto Transfer'
 * :bug:`4378` Ask for users permission to access keychain only when `Remember Me` option at login screen is enabled.
