@@ -223,6 +223,40 @@ class DBSnapshot:
 
         return True, ''
 
+    @staticmethod
+    def validate_import_data(
+        balances_data: List[Dict[str, str]],
+        location_data: List[Dict[str, str]],
+        source: str = 'csv file',
+    ) -> Tuple[bool, str]:
+        """Validates the snapshot data about to be imported."""
+        # check if the headers match the type stored in the db
+        has_invalid_headers = (
+            tuple(balances_data[0].keys()) != ('timestamp', 'category', 'asset_identifier', 'amount', 'usd_value') or  # noqa: E501
+            tuple(location_data[0].keys()) != ('timestamp', 'location', 'usd_value')  # noqa: E501
+        )
+        if has_invalid_headers:
+            return False, f'{source} has invalid headers'
+
+        # check if all timestamps are the same.
+        balances_timestamps = [int(entry['timestamp']) for entry in balances_data]
+        location_data_timestamps = [int(entry['timestamp']) for entry in location_data]
+        has_different_timestamps = (
+            balances_timestamps.count(balances_timestamps[0]) != len(balances_timestamps) or
+            location_data_timestamps.count(location_data_timestamps[0]) != len(location_data_timestamps) or  # noqa: E501
+            balances_timestamps[0] != location_data_timestamps[0]
+        )
+        if has_different_timestamps:
+            return False, f'{source} has different timestamps'
+
+        # check if the timestamp can be converted to int
+        try:
+            _ = deserialize_timestamp(balances_data[0]['timestamp'])
+        except DeserializationError:
+            return False, f'{source} contains invalid timestamp format'
+
+        return True, ''
+
     def import_snapshot(
         self,
         balances_snapshot_file: Path,
@@ -234,30 +268,12 @@ class DBSnapshot:
         """
         balances_list = self._csv_to_dict(balances_snapshot_file)
         location_data_list = self._csv_to_dict(location_data_snapshot_file)
-        # check if the headers match the type stored in the db
-        has_invalid_headers = (
-            tuple(balances_list[0].keys()) != ('timestamp', 'category', 'asset_identifier', 'amount', 'usd_value') or  # noqa: E501
-            tuple(location_data_list[0].keys()) != ('timestamp', 'location', 'usd_value')  # noqa: E501
+        is_valid, message = self.validate_import_data(
+            balances_data=balances_list,
+            location_data=location_data_list,
         )
-        if has_invalid_headers:
-            return False, 'csv file has invalid headers'
-
-        # check if all timestamps are the same.
-        balances_timestamps = [int(entry['timestamp']) for entry in balances_list]
-        location_data_timestamps = [int(entry['timestamp']) for entry in location_data_list]
-        has_different_timestamps = (
-            balances_timestamps.count(balances_timestamps[0]) != len(balances_timestamps) or
-            location_data_timestamps.count(location_data_timestamps[0]) != len(location_data_timestamps) or  # noqa: E501
-            balances_timestamps[0] != location_data_timestamps[0]
-        )
-        if has_different_timestamps:
-            return False, 'csv file has different timestamps'
-
-        # check if the timestamp can be converted to int
-        try:
-            _ = deserialize_timestamp(balances_list[0]['timestamp'])
-        except DeserializationError:
-            return False, 'csv file contains invalid timestamp format'
+        if is_valid is False:
+            return is_valid, message
 
         return self._import_snapshot(
             balances_list=balances_list,
@@ -270,8 +286,9 @@ class DBSnapshot:
         location_data_list: List[Dict[str, str]],
     ) -> Tuple[bool, str]:
         """Import the validated snapshot data to the database."""
-        processed_balances_list = []
-        processed_location_data_list = []
+        processed_balances_list: List[DBAssetBalance] = []
+        processed_location_data_list: List[LocationData] = []
+
         try:
             for entry in balances_list:
                 if entry['asset_identifier'].startswith(NFT_DIRECTIVE):
@@ -297,12 +314,33 @@ class DBSnapshot:
                     usd_value=str(FVal(entry['usd_value'])),
                 ),
             )
+
         try:
             self.db.add_multiple_balances(processed_balances_list)
             self.db.add_multiple_location_data(processed_location_data_list)
         except InputError as err:
             return False, str(err)
         return True, ''
+
+    def update(
+        self,
+        timestamp: Timestamp,
+        balances_snapshot: List[DBAssetBalance],
+        location_data_snapshot: List[LocationData],
+    ) -> Tuple[bool, str]:
+        """Updates a snapshot of the database at a given timestamp."""
+        # delete the existing snapshot of that timestamp
+        is_success, message = self.delete(timestamp)
+        if is_success is False:
+            return is_success, message
+
+        # update the snapshot with the provided data.
+        try:
+            self.db.add_multiple_balances(balances_snapshot)
+            self.db.add_multiple_location_data(location_data_snapshot)
+        except InputError as err:
+            return False, str(err)
+        return True, 'Snapshot updated succesfully.'
 
     def delete(self, timestamp: Timestamp) -> Tuple[bool, str]:
         """Deletes a snapshot of the database at a given timestamp"""

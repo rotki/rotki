@@ -20,6 +20,8 @@ from rotkehlchen.db.snapshots import (
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_proper_response,
+    assert_proper_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.types import Location, Timestamp
@@ -321,43 +323,42 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
     _populate_db_with_location_data(conn, ts)
 
     rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
-    response = requests.post(
+    response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotexportingresource',
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            path=csv_dir,
+            action='export',
         ),
-        json={
-            'timestamp': ts,
-            'path': csv_dir,
-        },
     )
     assert_csv_export_response(response, csv_dir, main_currency=A_EUR, is_download=False)
 
     rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_ETH))  # noqa: E501
-    response = requests.post(
+    response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotexportingresource',
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            path=csv_dir2,
+            action='export',
         ),
-        json={
-            'timestamp': ts,
-            'path': csv_dir2,
-        },
     )
     assert_csv_export_response(response, csv_dir2, main_currency=A_ETH, is_download=False)
 
     rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_USD))  # noqa: E501
-    response = requests.post(
+    response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotexportingresource',
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            action='export',
         ),
-        json={
-            'timestamp': ts,
-            'path': csv_dir2,
-        },
     )
-    assert_csv_export_response(response, csv_dir2, main_currency=A_USD, is_download=False)
+    assert_error_response(
+        response,
+        contained_in_msg='A path has to be provided when action is export',
+    )
 
 
 def test_download_snapshot(rotkehlchen_api_server):
@@ -367,12 +368,13 @@ def test_download_snapshot(rotkehlchen_api_server):
     _populate_db_with_location_data(conn, ts)
 
     rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
-    response = requests.post(
+    response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotdownloadingresource',
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            action='download',
         ),
-        json={'timestamp': ts},
     )
     with tempfile.TemporaryDirectory() as tmpdirname:
         tempzipfile = Path(tmpdirname, 'temp.zip')
@@ -396,7 +398,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotimportingresource',
+            'dbsnapshotsresource',
         ),
         json={
             'balances_snapshot_file': f'{csv_dir}/{BALANCES_FOR_IMPORT_FILENAME}',
@@ -411,7 +413,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotimportingresource',
+            'dbsnapshotsresource',
         ),
         files={
             'balances_snapshot_file': open(f'{csv_dir2}/{BALANCES_FOR_IMPORT_FILENAME}'),
@@ -422,21 +424,20 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
 
     # check that importing a snapshot that is present in the db fails.
     csv_dir3 = str(tmpdir_factory.mktemp('test_csv_dir3'))
-    response = requests.post(
+    response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotexportingresource',
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            action='export',
+            path=csv_dir3,
         ),
-        json={
-            'timestamp': ts,
-            'path': csv_dir3,
-        },
     )
     assert_csv_export_response(response, csv_dir3, main_currency=A_EUR, is_download=False)
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotimportingresource',
+            'dbsnapshotsresource',
         ),
         json={
             'balances_snapshot_file': f'{csv_dir3}/{BALANCES_FOR_IMPORT_FILENAME}',
@@ -455,7 +456,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotimportingresource',
+            'dbsnapshotsresource',
         ),
         json={
             'balances_snapshot_file': f'{csv_dir4}/{BALANCES_FOR_IMPORT_FILENAME}',
@@ -474,7 +475,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotimportingresource',
+            'dbsnapshotsresource',
         ),
         json={
             'balances_snapshot_file': f'{csv_dir5}/{BALANCES_FOR_IMPORT_FILENAME}',
@@ -493,7 +494,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotimportingresource',
+            'dbsnapshotsresource',
         ),
         json={
             'balances_snapshot_file': f'{csv_dir6}/{BALANCES_FOR_IMPORT_FILENAME}',
@@ -516,7 +517,7 @@ def test_delete_snapshot(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotdeletingresource',
+            'dbsnapshotsresource',
         ),
         json={'timestamp': ts},
     )
@@ -529,7 +530,7 @@ def test_delete_snapshot(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            'dbsnapshotdeletingresource',
+            'dbsnapshotsresource',
         ),
         json={'timestamp': 1000000},
     )
@@ -538,3 +539,80 @@ def test_delete_snapshot(rotkehlchen_api_server):
         contained_in_msg='No snapshot found for the specified timestamp',
         status_code=HTTPStatus.CONFLICT,
     )
+
+
+def test_get_snapshot(rotkehlchen_api_server):
+    conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
+    ts = Timestamp(ts_now())
+    _populate_db_with_balances(conn, ts)
+    _populate_db_with_location_data(conn, ts)
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['balances_snapshot']) == 2
+    assert len(result['location_data_snapshot']) == 3
+
+    # check that requesting for a snapshot with invalid timestamp fails.
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts + 1,
+        ),
+    )
+    assert_error_response(
+        response,
+        'No snapshot data found for the given timestamp',
+        status_code=HTTPStatus.NOT_FOUND,
+    )
+
+
+def test_edit_snapshot(rotkehlchen_api_server):
+    conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
+    ts = Timestamp(ts_now())
+    _populate_db_with_balances(conn, ts)
+    _populate_db_with_location_data(conn, ts)
+
+    snapshot_payload = {
+        'balances_snapshot': [
+            {
+                'timestamp': str(ts),
+                'category': 'asset',
+                'asset_identifier': 'AVAX',
+                'amount': '1000.00',
+                'usd_value': '12929.00',
+            },
+        ],
+        'location_data_snapshot': [
+            {'timestamp': str(ts), 'location': 'external', 'usd_value': '12929.00'},
+            {'timestamp': str(ts), 'location': 'total', 'usd_value': '12929.00'},
+        ],
+    }
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+        ),
+        json=snapshot_payload,
+    )
+    assert_proper_response(response)
+
+    # compare the updated snapshot with snapshot in db
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['balances_snapshot']) == 1
+    assert len(result['location_data_snapshot']) == 2
+    assert result == snapshot_payload

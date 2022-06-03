@@ -4088,6 +4088,53 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
+    def get_user_db_snapshot(self, timestamp: Timestamp) -> Response:
+        dbsnapshot = DBSnapshot(
+            db_handler=self.rotkehlchen.data.db,
+            msg_aggregator=self.rotkehlchen.msg_aggregator,
+        )
+        balances = dbsnapshot.get_timed_balances(timestamp)
+        location_data = dbsnapshot.get_timed_location_data(timestamp)
+        if len(balances) == 0 or len(location_data) == 0:
+            return api_response(
+                wrap_in_fail_result('No snapshot data found for the given timestamp.'),
+                status_code=HTTPStatus.NOT_FOUND,
+            )
+
+        serialized_balances = [entry.serialize() for entry in balances]
+        serialized_location_data = [entry.serialize() for entry in location_data]
+        result_dict = _wrap_in_result(
+            result={
+                'balances_snapshot': serialized_balances,
+                'location_data_snapshot': serialized_location_data,
+            },
+            message='',
+        )
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def edit_user_db_snapshot(
+        self,
+        timestamp: Timestamp,
+        location_data_snapshot: List[LocationData],
+        balances_snapshot: List[DBAssetBalance],
+    ) -> Response:
+        dbsnapshot = DBSnapshot(
+            db_handler=self.rotkehlchen.data.db,
+            msg_aggregator=self.rotkehlchen.msg_aggregator,
+        )
+        is_success, message = dbsnapshot.update(
+            timestamp=timestamp,
+            balances_snapshot=balances_snapshot,
+            location_data_snapshot=location_data_snapshot,
+        )
+        if is_success is False:
+            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(
+            _wrap_in_result(result='', message=message),
+            status_code=HTTPStatus.OK,
+        )
+
     def export_user_db_snapshot(self, timestamp: Timestamp, path: Path) -> Response:
         dbsnapshot = DBSnapshot(
             db_handler=self.rotkehlchen.data.db,
