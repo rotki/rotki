@@ -1,4 +1,4 @@
-from typing import List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple, Union
 
 import bech32
 from base58 import b58decode_check, b58encode_check
@@ -80,11 +80,11 @@ def _b32encode(inputs: list) -> str:
     return out
 
 
-def _address_type(address_type: str, version: int) -> Tuple[str, int, bool]:
+def _address_type(address_type: str, version: Union[str, int]) -> Tuple[str, int, bool]:
     for mapping in _VERSION_MAP[address_type]:
         if version in (mapping[0], mapping[1]):
             return mapping
-    return _VERSION_MAP[address_type][0]
+    raise ValueError('Invalid Address')
 
 
 def _calculate_checksum(prefix: str, payload: List[int]) -> list:
@@ -112,13 +112,13 @@ def legacy_to_cash_address(address: str) -> Optional[BTCAddress]:
     """
     try:
         decoded = bytearray(b58decode_check(address))
-        version = _address_type('legacy', decoded[0])
+        version = _address_type('legacy', decoded[0])[0]
         payload = []
         for letter in decoded[1:]:
             payload.append(letter)
-        version_int = _address_type('cash', version[1])[1]
-        payload = [version_int] + payload
-        converted_bits = bech32.convertbits(payload, 8, 5)
+        version_int = _address_type('cash', version)[1]
+        new_payload = [version_int] + payload
+        converted_bits = bech32.convertbits(new_payload, 8, 5)
         if converted_bits is None:
             return None
         checksum = _calculate_checksum(_PREFIX, converted_bits)
@@ -135,18 +135,24 @@ def cash_to_legacy_address(address: str) -> Optional[BTCAddress]:
 
     Returns None if an error occured during conversion.
     """
-    is_valid = is_valid_bitcoin_cash_address(address)
-    if not is_valid:
-        return None
+    try:
+        is_valid = is_valid_bitcoin_cash_address(address)
+        if not is_valid:
+            return None
 
-    _, base32string = address.split(':')
-    decoded_string = _b32decode(base32string)
-    converted_bits = bech32.convertbits(decoded_string, 5, 8)
-    if converted_bits is None:
+        _, base32string = address.split(':')
+        decoded_string = _b32decode(base32string)
+        converted_bits = bech32.convertbits(decoded_string, 5, 8)
+        if converted_bits is None:
+            return None
+        version = _address_type('cash', converted_bits[0])[0]
+        legacy_version = _address_type('legacy', version)[1]
+        payload = converted_bits[1:-6]
+        return BTCAddress(b58encode_check(
+            _code_list_to_string([legacy_version] + payload),
+        ).decode())
+    except ValueError:
         return None
-    version_int = _address_type('cash', converted_bits[0])[1]
-    payload = converted_bits[1:-6]
-    return BTCAddress(b58encode_check(_code_list_to_string([version_int] + payload)).decode())
 
 
 def force_address_to_legacy_address(address: str) -> BTCAddress:

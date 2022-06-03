@@ -23,6 +23,7 @@ def test_legacy_to_cash_address():
     """Test that converting from Bitcoin Legacy format to CashAddr format works."""
     assert legacy_to_cash_address('38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr') == 'bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g'   # noqa: 501
     assert legacy_to_cash_address('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2') == 'bitcoincash:qpfmdqmd8usfc3m307d33590xf2udatq7gur8qmn7j'   # noqa: 501
+    assert legacy_to_cash_address('38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr') == 'bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g'  # noqa: 501
     assert legacy_to_cash_address('bc1zw508d6qejxtdg4y5r3zarvaryvg6kdaj') is None
     assert legacy_to_cash_address('bc1gmk9yu') is None
 
@@ -31,6 +32,7 @@ def test_cash_to_legacy_address():
     """Test that converting from CashAddr to Legacy format works."""
     assert cash_to_legacy_address('bitcoincash:qpfmdqmd8usfc3m307d33590xf2udatq7gur8qmn7j') == '18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2'   # noqa: 501
     assert cash_to_legacy_address('bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt') == '17CTr5NPYx7NcLp6w8mwZamfq7Xam8QrAe'   # noqa: 501
+    assert cash_to_legacy_address('bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g') == '38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr'  # noqa: 501
     assert cash_to_legacy_address('bch:419') is None
     assert cash_to_legacy_address('bitcoincash:38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr') is None
 
