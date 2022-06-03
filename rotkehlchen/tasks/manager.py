@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Callable, DefaultDict, List, NamedTuple, Set, 
 
 import gevent
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.manager import ChainManager
@@ -25,7 +26,11 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import PremiumCredentials, premium_create_and_verify
+from rotkehlchen.premium.premium import (
+    PremiumCredentials,
+    SubscriptionStatus,
+    premium_create_and_verify,
+)
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.types import ChecksumEthAddress, ExchangeLocationID, Location, Optional, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -428,9 +433,17 @@ class TaskManager():
             )
             self.msg_aggregator.add_error(message)
             self.deactivate_premium()
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
+                data={'is_premium_active': False},
+            )
         else:
             if self.premium_check_retries >= PREMIUM_CHECK_RETRY_LIMIT:
                 self.activate_premium(db_credentials)
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
+                    data={'is_premium_active': True},
+                )
             self.premium_check_retries = 0
         finally:
             self.last_premium_status_check = now
