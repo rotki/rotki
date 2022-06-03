@@ -14,27 +14,25 @@
           <v-col cols="12" md="6">
             <v-row>
               <v-col cols="auto">
-                <div class="fill-height">
-                  <v-menu offset-y>
-                    <template #activator="{ on }">
-                      <v-btn color="primary" height="100%" depressed v-on="on">
-                        {{ $t('transactions.redecode_events.title') }}
-                      </v-btn>
-                    </template>
-                    <v-list>
-                      <v-list-item link @click="redecodeEvents()">
-                        <v-list-item-title>
-                          {{ $t('transactions.redecode_events.this_page') }}
-                        </v-list-item-title>
-                      </v-list-item>
-                      <v-list-item link @click="redecodeEvents(true)">
-                        <v-list-item-title>
-                          {{ $t('transactions.redecode_events.all') }}
-                        </v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
-                </div>
+                <v-menu offset-y>
+                  <template #activator="{ on }">
+                    <v-btn color="primary" depressed v-on="on">
+                      {{ $t('transactions.redecode_events.title') }}
+                    </v-btn>
+                  </template>
+                  <v-list>
+                    <v-list-item link @click="redecodeEvents()">
+                      <v-list-item-title>
+                        {{ $t('transactions.redecode_events.this_page') }}
+                      </v-list-item-title>
+                    </v-list-item>
+                    <v-list-item link @click="redecodeEvents(true)">
+                      <v-list-item-title>
+                        {{ $t('transactions.redecode_events.all') }}
+                      </v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
               </v-col>
               <v-col>
                 <div v-if="false">
