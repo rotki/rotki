@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 
 from rotkehlchen.assets.asset import (
     WORLD_TO_BINANCE,
@@ -25,7 +25,7 @@ from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.upgrades.v7_v8 import COINBASE_DAI_UPGRADE_END_TS
 from rotkehlchen.errors.asset import UnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 UNSUPPORTED_POLONIEX_ASSETS = (
@@ -1069,3 +1069,19 @@ def asset_from_cryptocom(cryptocom_name: str) -> Asset:
 
     symbol = CRYPTOCOM_TO_WORLD.get(cryptocom_name, cryptocom_name)
     return symbol_to_asset_or_token(symbol)
+
+
+LOCATION_TO_ASSET_MAPPING: Dict[Location, Callable[[str], Asset]] = {
+    Location.BINANCE: asset_from_binance,
+    Location.CRYPTOCOM: asset_from_cryptocom,
+    Location.BITPANDA: asset_from_bitpanda,
+    Location.COINBASEPRO: asset_from_coinbasepro,
+    Location.KRAKEN: asset_from_kraken,
+    Location.BITSTAMP: asset_from_bitstamp,
+    Location.FTX: asset_from_ftx,
+    Location.BITSTAMP: asset_from_bitstamp,
+    Location.GEMINI: asset_from_gemini,
+    Location.POLONIEX: asset_from_poloniex,
+    Location.NEXO: asset_from_nexo,
+    Location.KUCOIN: asset_from_kucoin,
+}

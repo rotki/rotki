@@ -19,36 +19,34 @@
         {{ subtitle }}
       </v-card-subtitle>
       <div class="big-dialog__content">
-        <v-row align="center" class="mx-0 big-dialog__body">
-          <v-col v-if="display" cols="12">
-            <slot />
-          </v-col>
-        </v-row>
-        <v-card-actions class="px-6">
-          <v-progress-linear v-if="loading" indeterminate class="mx-4" />
-          <v-spacer />
-          <v-btn
-            color="primary"
-            depressed
-            outlined
-            text
-            class="big-dialog__buttons__cancel"
-            @click="cancel()"
-          >
-            {{ secondaryAction }}
-          </v-btn>
-          <v-btn
-            data-cy="confirm"
-            :color="themes[confirmType].color"
-            :disabled="actionDisabled"
-            depressed
-            class="big-dialog__buttons__confirm"
-            @click="confirm()"
-          >
-            {{ primaryAction }}
-          </v-btn>
-        </v-card-actions>
+        <div class="big-dialog__body">
+          <slot v-if="display" />
+        </div>
       </div>
+      <v-card-actions class="px-6">
+        <v-progress-linear v-if="loading" indeterminate class="mx-4" />
+        <v-spacer />
+        <v-btn
+          color="primary"
+          depressed
+          outlined
+          text
+          class="big-dialog__buttons__cancel"
+          @click="cancel()"
+        >
+          {{ secondaryAction }}
+        </v-btn>
+        <v-btn
+          data-cy="confirm"
+          :color="themes[confirmType].color"
+          :disabled="actionDisabled"
+          depressed
+          class="big-dialog__buttons__confirm"
+          @click="confirm()"
+        >
+          {{ primaryAction }}
+        </v-btn>
+      </v-card-actions>
     </v-card>
   </v-bottom-sheet>
 </template>
@@ -97,7 +95,7 @@ export default defineComponent({
   }
 
   &__content {
-    height: calc(100% - 85px);
+    max-height: calc(100% - 105px);
     overflow-y: scroll;
   }
 }

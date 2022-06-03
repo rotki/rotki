@@ -70,6 +70,10 @@ class PnlTotals(MutableMapping):
     def reset(self) -> None:
         self.totals = defaultdict(PNL)
 
+    def __repr__(self) -> str:
+        result = ','.join(f'{event_type}: {totals}' for event_type, totals in self.totals.items())
+        return result
+
     def __getitem__(self, key: 'AccountingEventType') -> PNL:
         return self.totals[key]
 

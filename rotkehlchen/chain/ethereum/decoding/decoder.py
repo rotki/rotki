@@ -469,7 +469,8 @@ class EVMTransactionDecoder():
 
         amount_raw = hex_or_bytes_to_int(tx_log.data)
         amount = token_normalized_value(token_amount=amount_raw, token=token)
-        notes = f'Approve {amount} {token.symbol} of {owner_address} for spending by {spender_address}'  # noqa: E501
+        prefix = f'Revoke {token.symbol} approval' if amount == ZERO else f'Approve {amount} {token.symbol}'  # noqa: E501
+        notes = f'{prefix} of {owner_address} for spending by {spender_address}'
         return HistoryBaseEntry(
             event_identifier=transaction.tx_hash.hex(),
             sequence_index=self.base.get_sequence_index(tx_log),

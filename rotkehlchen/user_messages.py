@@ -12,6 +12,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+INFORMATIONAL_MESSAGE_TYPES = {
+    WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+    WSMessageType.PREMIUM_STATUS_UPDATE,
+}
 
 
 class MessagesAggregator():
@@ -78,8 +82,8 @@ class MessagesAggregator():
                 failure_callback_args={'msg': fallback_msg},
             )
         else:
-            # ETHEREUM_TRANSACTION_STATUS are always informational messages
-            if message_type != WSMessageType.ETHEREUM_TRANSACTION_STATUS:
+            # Avoid sending as error informational messages
+            if message_type not in INFORMATIONAL_MESSAGE_TYPES:
                 self.errors.appendleft(fallback_msg)
 
     def consume_errors(self) -> List[str]:

@@ -136,7 +136,9 @@ function setupPasswordStorage() {
   const store = new Store<Record<string, string>>();
 
   const encoding = 'latin1';
-  const encryptionAvailable = safeStorage.isEncryptionAvailable();
+
+  const getEncryptionAvailability = (): boolean =>
+    safeStorage.isEncryptionAvailable();
 
   const setPassword = (key: string, password: string) => {
     const buffer = safeStorage.encryptString(password);
@@ -160,7 +162,7 @@ function setupPasswordStorage() {
     IPC_STORE_PASSWORD,
     (event, { username, password }: { username: string; password: string }) => {
       let success = false;
-      if (encryptionAvailable) {
+      if (getEncryptionAvailability()) {
         setPassword(username, password);
         success = true;
       }
@@ -170,14 +172,14 @@ function setupPasswordStorage() {
 
   ipcMain.on(IPC_GET_PASSWORD, (event, username: string) => {
     let password = '';
-    if (encryptionAvailable) {
+    if (getEncryptionAvailability()) {
       password = getPassword(username);
     }
     event.sender.send(IPC_GET_PASSWORD, password);
   });
 
   ipcMain.on(IPC_CLEAR_PASSWORD, () => {
-    if (encryptionAvailable) {
+    if (getEncryptionAvailability()) {
       clearPassword();
     }
   });

@@ -33,6 +33,11 @@ def fixture_dont_mock_price_for():
     return []
 
 
+@pytest.fixture(name='force_no_price_found_for')
+def fixture_force_no_price_found_for():
+    return []
+
+
 @pytest.fixture
 def price_historian(
         data_dir,
@@ -44,6 +49,7 @@ def price_historian(
         default_mock_price_value,
         historical_price_oracles_order,
         dont_mock_price_for,
+        force_no_price_found_for,
 ):
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
@@ -60,6 +66,7 @@ def price_historian(
         mocked_price_queries=mocked_price_queries,
         default_mock_value=default_mock_price_value,
         dont_mock_price_for=dont_mock_price_for,
+        force_no_price_found_for=force_no_price_found_for,
     )
 
     return historian

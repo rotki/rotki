@@ -12,7 +12,6 @@ describe('settings', () => {
   let pageGeneral: GeneralSettingsPage;
   let pageAccounting: AccountingSettingsPage;
   let pageUserSecurity: UserSecuritySettingsPage;
-  let ignoredAssets = 0;
 
   const settings = {
     floatingPrecision: '4',
@@ -126,6 +125,7 @@ describe('settings', () => {
     });
 
     describe('ignored asset settings', () => {
+      let ignoredAssets = 0;
       before(() => {
         pageAccounting.ignoredAssets().then(ignored => {
           ignoredAssets = parseInt(ignored);
@@ -189,6 +189,12 @@ describe('settings', () => {
 
     it('Accounting settings', () => {
       pageAccounting.visit();
+
+      let ignoredAssets = 0;
+      pageAccounting.ignoredAssets().then(ignored => {
+        ignoredAssets = parseInt(ignored);
+      });
+
       pageAccounting.verifySwitchState(
         '.accounting-settings__crypto2crypto',
         'false'

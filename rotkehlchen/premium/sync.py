@@ -2,7 +2,7 @@ import base64
 import logging
 import shutil
 from enum import Enum
-from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple
+from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
@@ -52,7 +52,7 @@ class PremiumSyncManager():
 
         try:
             metadata = self.premium.query_last_data_metadata()
-        except RemoteError as e:
+        except (RemoteError, PremiumAuthenticationError) as e:
             log.debug('can sync data from server failed', error=str(e))
             return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
@@ -94,7 +94,7 @@ class PremiumSyncManager():
 
         try:
             result = self.premium.pull_data()
-        except RemoteError as e:
+        except (RemoteError, PremiumAuthenticationError) as e:
             log.debug('sync from server -- pulling failed.', error=str(e))
             return False, f'Pulling failed: {str(e)}'
 
@@ -127,7 +127,7 @@ class PremiumSyncManager():
 
         try:
             metadata = self.premium.query_last_data_metadata()
-        except RemoteError as e:
+        except (RemoteError, PremiumAuthenticationError) as e:
             log.debug('upload to server -- fetching metadata error', error=str(e))
             return False
         b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
@@ -168,7 +168,7 @@ class PremiumSyncManager():
                 last_modify_ts=our_last_write_ts,
                 compression_type='zlib',
             )
-        except RemoteError as e:
+        except (RemoteError, PremiumAuthenticationError) as e:
             log.debug('upload to server -- upload error', error=str(e))
             return False
 
@@ -214,7 +214,7 @@ class PremiumSyncManager():
     def _abort_new_syncing_premium_user(
             self,
             username: str,
-            original_exception: PremiumAuthenticationError,
+            original_exception: Union[PremiumAuthenticationError, RemoteError],
     ) -> None:
         """At this point we are at a new user trying to create an account with
         premium API keys and we failed. But a directory was created. Remove it.
@@ -251,7 +251,7 @@ class PremiumSyncManager():
 
             try:
                 self.premium = premium_create_and_verify(given_premium_credentials)
-            except PremiumAuthenticationError as e:
+            except (PremiumAuthenticationError, RemoteError) as e:
                 self._abort_new_syncing_premium_user(username=username, original_exception=e)
 
         # else, if we got premium data in the DB initialize it and try to sync with the server
@@ -260,7 +260,7 @@ class PremiumSyncManager():
             assert not create_new, 'We should never get here for a new account'
             try:
                 self.premium = premium_create_and_verify(db_credentials)
-            except PremiumAuthenticationError as e:
+            except (PremiumAuthenticationError, RemoteError) as e:
                 message = (
                     f'Could not authenticate with the rotkehlchen server with '
                     f'the API keys found in the Database. Error: {str(e)}'

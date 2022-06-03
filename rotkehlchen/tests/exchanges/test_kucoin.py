@@ -11,10 +11,11 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import WORLD_TO_KUCOIN
 from rotkehlchen.assets.converters import UNSUPPORTED_KUCOIN_ASSETS, asset_from_kucoin
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USDT
+from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
-from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
+from rotkehlchen.exchanges.kucoin import KUCOIN_LAUNCH_TS, Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -411,8 +412,8 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin):
 
 @pytest.mark.skip('Fails with status code: 404 and text: KC-API-KEY not exists')
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_balances_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unused-argument
-    assets_balance, msg = sandbox_kuckoin.query_balances()
+def test_query_balances_sandbox(sandbox_kucoin, inquirer):  # pylint: disable=unused-argument
+    assets_balance, msg = sandbox_kucoin.query_balances()
     assert assets_balance == {
         A_BTC: Balance(
             amount=FVal('2.61018067'),
@@ -436,7 +437,7 @@ def test_query_balances_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=u
 
 @pytest.mark.skip('Fails with status code: 404 and text: KC-API-KEY not exists')
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_trades_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unused-argument
+def test_query_trades_sandbox(sandbox_kucoin, inquirer):  # pylint: disable=unused-argument
     """The sandbox account has 6 trades. Below a list of the trades and their
     timestamps in ascending mode.
     - trade 1: 1612556651 -> skipped
@@ -503,7 +504,7 @@ def test_query_trades_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unu
             notes='',
         ),
     ]
-    trades, _ = sandbox_kuckoin.query_online_trade_history(
+    trades, _ = sandbox_kucoin.query_online_trade_history(
         start_ts=Timestamp(1612556693),
         end_ts=Timestamp(1612556765),
     )
@@ -512,7 +513,7 @@ def test_query_trades_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unu
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_asset_movements_sandbox(
-        sandbox_kuckoin,
+        sandbox_kucoin,
         inquirer,  # pylint: disable=unused-argument
 ):
     """Unfortunately the sandbox environment does not support deposits and
@@ -750,16 +751,37 @@ def test_query_asset_movements_sandbox(
         new=2,
     )
     api_query_patch = patch.object(
-        target=sandbox_kuckoin,
+        target=sandbox_kucoin,
         attribute='_api_query',
         side_effect=mock_api_query_response,
     )
     with ExitStack() as stack:
         stack.enter_context(months_in_seconds_patch)
         stack.enter_context(api_query_patch)
-        asset_movements = sandbox_kuckoin.query_online_deposits_withdrawals(
+        asset_movements = sandbox_kucoin.query_online_deposits_withdrawals(
             start_ts=Timestamp(1612556651),
             end_ts=Timestamp(1612556654),
         )
 
     assert asset_movements == expected_asset_movements
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+def test_query_old_trades_sandbox(sandbox_kucoin, inquirer):  # pylint: disable=unused-argument
+    """Test that the endpoint for old trades returns valid results from the api
+    in very old timestamps
+    """
+    trades, _ = sandbox_kucoin.query_online_trade_history(
+        start_ts=Timestamp(KUCOIN_LAUNCH_TS),
+        end_ts=Timestamp(KUCOIN_LAUNCH_TS + WEEK_IN_SECONDS * 4),
+    )
+    msg_aggregator = sandbox_kucoin.msg_aggregator
+    assert len(msg_aggregator.consume_errors()) == 0
+    assert len(msg_aggregator.consume_warnings()) == 0
+    assert trades == []
+
+    last_trades, _ = sandbox_kucoin.query_online_trade_history(
+        start_ts=Timestamp(1651425348),
+        end_ts=Timestamp(1654110961),
+    )
+    assert len(last_trades) == 24

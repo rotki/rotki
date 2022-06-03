@@ -91,7 +91,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             asset=A_CHI,
             balance=Balance(),
             location_label=ADDY,
-            notes=f'Approve 0 CHI of {ADDY} for spending by {chispender_addy}',
+            notes=f'Revoke CHI approval of {ADDY} for spending by {chispender_addy}',
             counterparty=chispender_addy,
         ),
     ]

@@ -2428,7 +2428,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     cursor = db_v31.conn.cursor()
     result = cursor.execute('SELECT rowid from history_events')
     old_ids = {row[0] for row in result}
-    assert len(old_ids) == 15
+    assert len(old_ids) == 19
     cursor.execute(
         'SELECT subtype from history_events',
     )
@@ -2521,7 +2521,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     subtypes = {row[0] for row in cursor}
     assert subtypes == {'deposit asset', 'receive wrapped', 'reward', 'fee', None, 'remove asset'}
     result = cursor.execute('SELECT identifier FROM history_events ORDER BY identifier')
-    assert [x[0] for x in result] == list(range(1, 16)), 'identifier column should be added'
+    assert [x[0] for x in result] == list(range(1, 20)), 'identifier column should be added'
     # check used query range got delete and rest are intact
     result = cursor.execute('SELECT * from used_query_ranges').fetchall()
     assert result == [

@@ -2,6 +2,23 @@
 Changelog
 =========
 
+* :release:`1.24.1 <2022-06-03>`
+* :bug:`4383` Removing an address while running a PnL report should now work.
+* :bug:`4379` For many ethereum transactions the entire app should no longer hang. This is a temporary fix until a proper one is implemented. With this fix we temporarily remove the ability to filter in the ethereum transactions view.
+* :bug:`4425` Makes periodic premium checking task less strict. Also introduces automatic reactivation.
+* :bug:`4398` Fix asset type selection that cannot be enabled for new asset addition.
+* :feature:`4401` The options for remember username and password are now separated.
+* :bug:`4386` Blockfi import for transactions now supports 'Crypto Transfer'
+* :bug:`4420` Transactions with the old WETH contract and other contracts that don't have decimals, symbol and name should now be decoded properly.
+* :bug:`4378` Ask for users permission to access keychain only when `Remember Me` option at login screen is enabled.
+* :bug:`4384` Price caches filter should now be working again.
+* :bug:`-` Acquisitions for which no price can be found will still appear and not count as missing acquisitions.
+* :bug:`4122` Kucoin users should be able to retrieve information for old trades again.
+* :bug:`-` COMP price before 20/06/2020 will not be hardcoded to $239.13 if queried via cryptocompare.
+* :bug:`-` Prevent error while importing CSVs from cointracking when one trade row had a 0 amount bought.
+* :bug:`4381` Fixes a problem at the DB upgrade between v1.23.4 and 1.24.0 which affected a subset of some kraken users.
+* :bug:`4422` Account balances in blockchain accounts that contain ignored assets will now show the correct sum total net value.
+
 * :release:`1.24.0 <2022-05-27>`
 * :feature:`2221` All missing yearn v1 vaults should now have their balances detected and their historical accounting taken into account.
 * :feature:`1797` All missing acquisitions and missing prices found during a PnL period are now gathered and shown to the user as actionable items at the end of the report generation.

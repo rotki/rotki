@@ -56,7 +56,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
-    assert len(warnings) == 3
+    assert len(warnings) == 4
 
     expected_trades = [Trade(
         timestamp=Timestamp(1566687719),
@@ -616,6 +616,28 @@ def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
         timestamp=Timestamp(1605977971),
         asset=A_ETH,
         amount=AssetAmount(FVal('3')),
+        fee_asset=A_USD,
+        fee=Fee(ZERO),
+        link='',
+    ), AssetMovement(
+        location=Location.BLOCKFI,
+        category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
+        timestamp=Timestamp(1611734258),
+        asset=A_USDC,
+        amount=AssetAmount(FVal('3597.48627700')),
+        fee_asset=A_USD,
+        fee=Fee(ZERO),
+        link='',
+    ), AssetMovement(
+        location=Location.BLOCKFI,
+        category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
+        timestamp=Timestamp(1611820658),
+        asset=A_BTC,
+        amount=AssetAmount(FVal('2.11415058')),
         fee_asset=A_USD,
         fee=Fee(ZERO),
         link='',

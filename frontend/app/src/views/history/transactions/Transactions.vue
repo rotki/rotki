@@ -36,7 +36,7 @@ export default defineComponent({
     const { fetchTransactions } = useTransactions();
     const { pause, resume, isActive } = useIntervalFn(
       () => fetchTransactions(),
-      10000
+      15000
     );
 
     const { isTaskRunning } = useTasks();

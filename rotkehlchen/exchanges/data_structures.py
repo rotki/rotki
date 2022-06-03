@@ -214,14 +214,14 @@ class Trade(AccountingEventMixin):
     # sold if it's a sell. Should NOT include fees
     amount: AssetAmount
     rate: Price
-    fee: Optional[Fee]
-    fee_currency: Optional[Asset]
+    fee: Optional[Fee] = None
+    fee_currency: Optional[Asset] = None
     # For external trades this is optional and is a link to the trade in an explorer
     # For exchange trades this should be the exchange unique trade identifer
     # For trades imported from third parties we should generate a unique id for this.
     # If trades are both imported from third parties like cointracking.info and from
     # the exchanges themselves then there is no way to avoid duplicates.
-    link: Optional[str]
+    link: Optional[str] = None
     notes: Optional[str] = None
 
     @property
