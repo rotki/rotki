@@ -176,10 +176,10 @@ class Premium():
             self.query_last_data_metadata()
             self.status = SubscriptionStatus.ACTIVE
             return True
-        except RemoteError as e:
+        except RemoteError:
             self.status = SubscriptionStatus.INACTIVE
             if catch_connection_errors is False:
-                raise e
+                raise
             return False
         except PremiumAuthenticationError:
             self.status = SubscriptionStatus.INACTIVE
@@ -371,7 +371,7 @@ def premium_create_and_verify(credentials: PremiumCredentials) -> Premium:
     """
     premium = Premium(credentials)
 
-    if premium.is_active(catch_connection_errors=False):
+    if premium.is_active(catch_connection_errors=True):
         return premium
 
     raise PremiumAuthenticationError('Rotkehlchen API key was rejected by server')

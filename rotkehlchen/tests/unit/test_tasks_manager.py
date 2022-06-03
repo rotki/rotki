@@ -62,6 +62,7 @@ def fixture_task_manager(
         deactivate_premium=lambda: None,
         query_balances=lambda: None,
         activate_premium=lambda _: None,
+        rotki_notifier=None,
     )
     return task_manager
 

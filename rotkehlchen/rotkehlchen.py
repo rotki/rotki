@@ -442,9 +442,7 @@ class Rotkehlchen():
         self.chain_manager.deactivate_premium_status()
 
     def activate_premium_status(self, premium: Premium) -> None:
-        """Activate the premium in the current session if was deactivated"""
-        if self.premium is not None:
-            return
+        """Activate premium in the current session if was deactivated"""
         self.premium = premium
         self.premium_sync_manager.premium = self.premium
         self.accountant.activate_premium_status(self.premium)

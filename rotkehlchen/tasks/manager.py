@@ -83,7 +83,7 @@ class TaskManager():
             deactivate_premium: Callable[[], None],
             activate_premium: Callable[[Premium], None],
             query_balances: Callable,
-            rotki_notifier: 'RotkiNotifier' = None,
+            rotki_notifier: Optional['RotkiNotifier'],
     ) -> None:
         self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
@@ -416,7 +416,7 @@ class TaskManager():
             return
 
         db_credentials = self.database.get_rotkehlchen_premium()
-        if not db_credentials:
+        if db_credentials is None:
             self.last_premium_status_check = now
             return
 

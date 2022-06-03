@@ -82,7 +82,7 @@ class MessagesAggregator():
                 failure_callback_args={'msg': fallback_msg},
             )
         else:
-            # ETHEREUM_TRANSACTION_STATUS are always informational messages
+            # Avoid sending as error informational messages
             if message_type not in INFORMATIONAL_MESSAGE_TYPES:
                 self.errors.appendleft(fallback_msg)
 
