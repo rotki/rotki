@@ -37,7 +37,7 @@
                 </div>
               </v-col>
               <v-col>
-                <div>
+                <div v-if="false">
                   <blockchain-account-selector
                     v-model="account"
                     :chains="['ETH']"
@@ -52,7 +52,7 @@
             </v-row>
           </v-col>
           <v-col cols="12" md="6">
-            <div>
+            <div v-if="false">
               <table-filter
                 :matchers="matchers"
                 @update:matches="updateFilterHandler($event)"
