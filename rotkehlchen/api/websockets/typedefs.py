@@ -12,6 +12,7 @@ class WSMessageType(Enum):
     LEGACY = auto()
     BALANCE_SNAPSHOT_ERROR = auto()
     ETHEREUM_TRANSACTION_STATUS = auto()
+    PREMIUM_STATUS_UPDATE = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

@@ -356,8 +356,11 @@ class Rotkehlchen():
             eth_transactions=self.eth_transactions,
             evm_tx_decoder=self.evm_tx_decoder,
             deactivate_premium=self.deactivate_premium_status,
+            activate_premium=self.activate_premium_status,
             query_balances=self.query_balances,
+            rotki_notifier=self.rotki_notifier,
         )
+
         DataMigrationManager(self).maybe_migrate_data()
         self.greenlet_manager.spawn_and_track(
             after_seconds=5,
@@ -420,7 +423,10 @@ class Rotkehlchen():
         if self.premium is not None:
             self.premium.set_credentials(credentials)
         else:
-            self.premium = premium_create_and_verify(credentials)
+            try:
+                self.premium = premium_create_and_verify(credentials)
+            except RemoteError as e:
+                raise PremiumAuthenticationError(str(e)) from e
 
         self.premium_sync_manager.premium = self.premium
         self.accountant.activate_premium_status(self.premium)
@@ -434,6 +440,13 @@ class Rotkehlchen():
         self.premium_sync_manager.premium = None
         self.accountant.deactivate_premium_status()
         self.chain_manager.deactivate_premium_status()
+
+    def activate_premium_status(self, premium: Premium) -> None:
+        """Activate premium in the current session if was deactivated"""
+        self.premium = premium
+        self.premium_sync_manager.premium = self.premium
+        self.accountant.activate_premium_status(self.premium)
+        self.chain_manager.activate_premium_status(self.premium)
 
     def delete_premium_credentials(self) -> Tuple[bool, str]:
         """Deletes the premium credentials for rotki"""
