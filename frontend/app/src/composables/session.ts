@@ -95,6 +95,11 @@ export const getPremium = () => {
   return computed(() => sessionState.premium);
 };
 
+export const setPremium = (isPremium: boolean) => {
+  const store = useStore();
+  store.commit('session/premium', isPremium);
+};
+
 export const setupTags = () => {
   const store = useStore();
   const tags = computed<Tag[]>(() => {

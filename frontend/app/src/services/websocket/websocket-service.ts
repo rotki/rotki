@@ -2,11 +2,13 @@ import * as logger from 'loglevel';
 import {
   handleEthereumTransactionStatus,
   handleLegacyMessage,
+  handlePremiumStatusUpdate,
   handleSnapshotError
 } from '@/services/websocket/message-handling';
 import {
   LegacyMessageData,
   MESSAGE_WARNING,
+  PremiumStatusUpdateData,
   SocketMessageType,
   WebsocketMessage
 } from '@/services/websocket/messages';
@@ -59,6 +61,9 @@ class WebsocketService {
           message.type === SocketMessageType.ETHEREUM_TRANSACTION_STATUS
         ) {
           await handleEthereumTransactionStatus(message);
+        } else if (message.type === SocketMessageType.PREMIUM_STATUS_UPDATE) {
+          const data = PremiumStatusUpdateData.parse(message.data);
+          await handlePremiumStatusUpdate(data.is_premium_active);
         } else {
           logger.warn(`Unsupported socket message received: ${message}`);
         }

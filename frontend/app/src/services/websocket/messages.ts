@@ -37,16 +37,23 @@ export type EthereumTransactionQueryData = z.infer<
   typeof EthereumTransactionQueryData
 >;
 
+export const PremiumStatusUpdateData = z.object({
+  is_premium_active: z.boolean()
+});
+export type PremiumStatusUpdateData = z.infer<typeof PremiumStatusUpdateData>;
+
 export enum SocketMessageType {
   LEGACY = 'legacy',
   BALANCES_SNAPSHOT_ERROR = 'balance_snapshot_error',
-  ETHEREUM_TRANSACTION_STATUS = 'ethereum_transaction_status'
+  ETHEREUM_TRANSACTION_STATUS = 'ethereum_transaction_status',
+  PREMIUM_STATUS_UPDATE = 'premium_status_update'
 }
 
 type MessageData = {
   [SocketMessageType.LEGACY]: LegacyMessageData;
   [SocketMessageType.BALANCES_SNAPSHOT_ERROR]: BalanceSnapshotError;
   [SocketMessageType.ETHEREUM_TRANSACTION_STATUS]: EthereumTransactionQueryData;
+  [SocketMessageType.PREMIUM_STATUS_UPDATE]: PremiumStatusUpdateData;
 };
 
 export interface WebsocketMessage<T extends SocketMessageType> {

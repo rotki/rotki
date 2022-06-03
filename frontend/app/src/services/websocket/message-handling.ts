@@ -1,4 +1,5 @@
 import { Severity } from '@rotki/common/lib/messages';
+import { setPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import {
   BalanceSnapshotError,
@@ -39,4 +40,8 @@ export async function handleLegacyMessage(message: string, isWarning: boolean) {
     display: !isWarning,
     severity: isWarning ? Severity.WARNING : Severity.ERROR
   });
+}
+
+export async function handlePremiumStatusUpdate(active: boolean) {
+  setPremium(active);
 }
