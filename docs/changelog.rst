@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`4383` Removing an address while running a PnL report should now work.
+* :bug:`4379` For many ethereum transactions the entire app should no longer hang. This is a temporary fix until a proper one is implemented. With this fix we temporarily remove the ability to filter in the ethereum transactions view.
 * :bug:`4398` Fix asset type selection that cannot be enabled for new asset addition.
 * :feature:`4401` The options for remember username and password are now separated.
 * :bug:`4386` Blockfi import for transactions now supports 'Crypto Transfer'
