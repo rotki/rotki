@@ -58,7 +58,7 @@ def _process_dict_response(response: requests.Response) -> Dict:
     result_dict = jsonloads_dict(response.text)
 
     if response.status_code == HTTPStatus.UNAUTHORIZED:
-        raise PremiumAuthenticationError(result_dict['message'])
+        raise PremiumAuthenticationError(result_dict.get('message', 'no message given'))
 
     if 'error' in result_dict:
         raise RemoteError(result_dict['error'])
