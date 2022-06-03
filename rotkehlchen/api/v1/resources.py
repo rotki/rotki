@@ -96,8 +96,9 @@ from rotkehlchen.api.v1.schemas import (
     ReverseEnsSchema,
     SingleAssetIdentifierSchema,
     SingleFileSchema,
-    SnapshotExportingSchema,
+    SnapshotEditingSchema,
     SnapshotImportingSchema,
+    SnapshotQuerySchema,
     SnapshotTimestampQuerySchema,
     StakingQuerySchema,
     StatisticsAssetBalanceSchema,
@@ -133,6 +134,7 @@ from rotkehlchen.db.filtering import (
     TradesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.types import (
@@ -2370,26 +2372,27 @@ class UserAssetsResource(BaseMethodView):
         return response
 
 
-class DBSnapshotExportingResource(BaseMethodView):
-    post_schema = SnapshotExportingSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(post_schema, location='json')
-    def post(self, timestamp: Timestamp, path: Path) -> Response:
-        return self.rest_api.export_user_db_snapshot(timestamp=timestamp, path=path)
-
-
-class DBSnapshotDownloadingResource(BaseMethodView):
-    post_schema = SnapshotTimestampQuerySchema()
-
-    @require_loggedin_user()
-    @use_kwargs(post_schema, location='json')
-    def post(self, timestamp: Timestamp) -> Response:
-        return self.rest_api.download_user_db_snapshot(timestamp=timestamp)
-
-
-class DBSnapshotImportingResource(BaseMethodView):
+class DBSnapshotsResource(BaseMethodView):
+    get_schema = SnapshotQuerySchema()
     upload_schema = SnapshotImportingSchema()
+    patch_schema = SnapshotEditingSchema()
+    delete_schema = SnapshotTimestampQuerySchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(
+        self,
+        action: Optional[str],
+        timestamp: Timestamp,
+        path: Optional[Path],
+    ) -> Response:
+        if action == 'export':
+            if path is not None:
+                return self.rest_api.export_user_db_snapshot(timestamp=timestamp, path=path)
+        elif action == 'download':
+            return self.rest_api.download_user_db_snapshot(timestamp=timestamp)
+
+        return self.rest_api.get_user_db_snapshot(timestamp=timestamp)
 
     @require_loggedin_user()
     @use_kwargs(upload_schema, location='json')
@@ -2411,18 +2414,27 @@ class DBSnapshotImportingResource(BaseMethodView):
             location_data_snapshot_filename = location_data_snapshot_file.filename if location_data_snapshot_file.filename else 'location_data_snapshot.csv'  # noqa: 501
             balance_snapshot_filepath = Path(temp_directory) / balance_snapshot_filename
             location_data_snapshot_filepath = Path(temp_directory) / location_data_snapshot_filename  # noqa: 501
-            balances_snapshot_file.save(str(balance_snapshot_filepath))
-            location_data_snapshot_file.save(str(location_data_snapshot_filepath))
+            balances_snapshot_file.save(balance_snapshot_filepath)
+            location_data_snapshot_file.save(location_data_snapshot_filepath)
             response = self.rest_api.import_user_snapshot(
                 balances_snapshot_file=balance_snapshot_filepath,
                 location_data_snapshot_file=location_data_snapshot_filepath,
             )
-
         return response
 
-
-class DBSnapshotDeletingResource(BaseMethodView):
-    delete_schema = SnapshotTimestampQuerySchema()
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json_and_view_args')
+    def patch(
+        self,
+        timestamp: Timestamp,
+        balances_snapshot: List[DBAssetBalance],
+        location_data_snapshot: List[LocationData],
+    ) -> Response:
+        return self.rest_api.edit_user_db_snapshot(
+            timestamp=timestamp,
+            balances_snapshot=balances_snapshot,
+            location_data_snapshot=location_data_snapshot,
+        )
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')

@@ -45,6 +45,8 @@ from rotkehlchen.db.filtering import (
     TradesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.snapshots import DBSnapshot
+from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -1843,10 +1845,6 @@ class SnapshotTimestampQuerySchema(Schema):
     timestamp = TimestampField(required=True)
 
 
-class SnapshotExportingSchema(SnapshotTimestampQuerySchema):
-    path = DirectoryField(required=True)
-
-
 class ManualPriceRegisteredSchema(Schema):
     from_asset = AssetField(load_default=None)
     to_asset = AssetField(load_default=None)
@@ -2055,11 +2053,6 @@ class ReverseEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
     ethereum_addresses = fields.List(EthereumAddressField(), required=True)
 
 
-class SnapshotImportingSchema(Schema):
-    balances_snapshot_file = FileField(allowed_extensions=['.csv'], required=True)
-    location_data_snapshot_file = FileField(allowed_extensions=['.csv'], required=True)
-
-
 class BaseAddressbookSchema(Schema):
     book_type = SerializableEnumField(enum_class=AddressbookType, required=True)
 
@@ -2083,3 +2076,100 @@ class AddressbookUpdateSchema(BaseAddressbookSchema):
 
 class AllNamesSchema(Schema):
     addresses = fields.List(EthereumAddressField(required=True), required=True)
+
+
+class SnapshotImportingSchema(Schema):
+    balances_snapshot_file = FileField(allowed_extensions=['.csv'], required=True)
+    location_data_snapshot_file = FileField(allowed_extensions=['.csv'], required=True)
+
+
+class SnapshotQuerySchema(SnapshotTimestampQuerySchema):
+    action = fields.String(
+        validate=webargs.validate.OneOf(choices=('export', 'download')),
+        load_default=None,
+    )
+    path = DirectoryField(load_default=None)
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        path = data.get('path')
+        action = data.get('action')
+        if action == 'export' and path is None:
+            raise ValidationError(
+                message='A path has to be provided when action is export',
+                field_name='action',
+            )
+
+
+class BalanceSnapshotSchema(Schema):
+    timestamp = TimestampField(required=True)
+    category = SerializableEnumField(enum_class=BalanceType, required=True)
+    asset_identifier = AssetField(required=True, form_with_incomplete_data=True)
+    amount = AmountField(required=True)
+    usd_value = AmountField(required=True)
+
+    @post_load
+    def make_balance(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> DBAssetBalance:
+        return DBAssetBalance(
+            category=data['category'],
+            time=data['timestamp'],
+            asset=data['asset_identifier'],
+            amount=str(data['amount']),
+            usd_value=str(data['usd_value']),
+        )
+
+
+class LocationDataSnapshotSchema(Schema):
+    timestamp = TimestampField(required=True)
+    location = LocationField(required=True)
+    usd_value = AmountField(required=True)
+
+    @post_load
+    def make_location_data(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> LocationData:
+        return LocationData(
+            time=data['timestamp'],
+            location=data['location'].serialize_for_db(),
+            usd_value=str(data['usd_value']),
+        )
+
+
+class SnapshotEditingSchema(Schema):
+    timestamp = TimestampField(required=True)
+    balances_snapshot = fields.List(
+        fields.Nested(BalanceSnapshotSchema),
+        required=True,
+        validate=webargs.validate.Length(min=1),
+    )
+    location_data_snapshot = fields.List(
+        fields.Nested(LocationDataSnapshotSchema),
+        required=True,
+        validate=webargs.validate.Length(min=1),
+    )
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+        self,
+        data: Dict[str, Any],
+        **_kwargs: Any,
+    ) -> None:
+        if not data['timestamp'] == data['balances_snapshot'][0].time == data['location_data_snapshot'][0].time:  # noqa: 501
+            raise ValidationError("timestamp does not match")
+        is_success, message = DBSnapshot.validate_import_data(
+            balances_data=[entry.serialize() for entry in data['balances_snapshot']],
+            location_data=[entry.serialize() for entry in data['location_data_snapshot']],
+            source='json',
+        )
+        if is_success is False:
+            raise ValidationError(message)

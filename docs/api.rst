@@ -10811,28 +10811,76 @@ Import assets added by the user
    :statuscode 507: Filesystem error, probably related to size.
 
 
-Export database snapshot to CSV
+Handling snapshot manipulation
 ================================
 
-.. http:post:: /api/(version)/snapshot/export
+.. http:get:: /api/(version)/snapshots/(timestamp)
 
-   Doing a POST on the snapshot export endpoint will export the database snapshot for the specified timestamp to CSV files and save them in the given directory.
+    Doing a GET on this endpoint without any action will return the database snapshot for the specified timestamp in JSON.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/snapshot/export HTTP/1.1
+      GET /api/1/snapshots/149095883 HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
       {
-          "path": "/home/user/Documents",
-          "timestamp": 133899009
+          "result": {
+              "balances_snapshot": [
+                    {
+                        "timestamp": "149095883",
+                        "category": "asset",
+                        "asset_identifier": "AVAX",
+                        "amount": "1000.00",
+                        "usd_value": "12929.00",
+                    }
+                ],
+              "location_data_snapshot": [
+                    {
+                        "timestamp": "149095883",
+                        "location": "external",
+                        "usd_value": "12929.00"
+                    },
+                    {
+                        "timestamp": "149095883",
+                        "location": "total",
+                        "usd_value": "12929.00"
+                    }
+              ]
+        }
+          "message": ""
       }
 
-   :reqjson str path: The directory in which to write the exported CSV files.
-   :reqjson int timestamp: The epoch timestamp representing the time of the snapshot to be returned.
+   :resjson object result: A dictionary representing the snapshot at the specified timestamp.
+   :statuscode 200: Snapshot was retrieved successfully.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 404: No snapshot data found for the given timestamp.
+   :statuscode 500: Internal rotki error.
+
+
+.. http:get:: /api/(version)/snapshots/(timestamp)
+
+   Doing a GET on this endpoint with action ``'export'`` will export the database snapshot for the specified timestamp to CSV files and save them in the given directory.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/snapshots/149095883?action=export&path=/home/user/documents HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+   :reqquery str path: The directory in which to write the exported CSV files.
+   :reqquery str action: The action to be performed by the endpoint. Can be one of ``'export'``, ``'download'``.
 
    **Example Response**:
 
@@ -10848,31 +10896,24 @@ Export database snapshot to CSV
 
    :resjson bool result: Boolean denoting success or failure of the query.
    :statuscode 200: Files were exported successfully.
-   :statuscode 400: Provided JSON is in some way malformed or given path is not a directory.
+   :statuscode 400: Provided query paramenter(s) is in some way malformed or given path is not a directory.
    :statuscode 409: No user is currently logged in. No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal rotki error.
 
 
-Downloading a database snapshot
-=================================
+.. http:get:: /api/(version)/snapshots/(timestamp)
 
-.. http:post:: /api/(version)/snapshot/download
-
-   Doing a POST on the snapshot download endpoint will download database snapshot for the specified timestamp as a zip file.
+   Doing a GET on this endpoint with action ``'download'`` will download database snapshot for the specified timestamp as a zip file.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/snapshot/download HTTP/1.1
+      GET /api/1/snapshots/149095883?action=download HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {
-          "timestamp": 133899009
-      }
-
-   :reqjson int timestamp: The epoch timestamp representing the time of the snapshot to be returned.
+   :reqquery str action: The action to be performed by the endpoint. Can be one of ``'export'``, ``'download'``.
 
    **Example Response**:
 
@@ -10883,28 +10924,25 @@ Downloading a database snapshot
 
 
    :statuscode 200: Snapshot was downloaded successfully.
-   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 400: Provided query parameter(s) is in some way malformed.
    :statuscode 409: No user is currently logged in. No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal rotki error.
 
 
-Deleting a database snapshot
-=================================
+.. http:delete:: /api/(version)/snapshots
 
-.. http:delete:: /api/(version)/snapshot/delete
-
-   Doing a DELETE on the snapshot delete endpoint will delete the snapshot for the specified timestamp.
+   Doing a DELETE on this endpoint will delete the snapshot for the specified timestamp.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/snapshot/delete HTTP/1.1
+      DELETE /api/1/snapshots HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
       {
-          "timestamp": 133899009
+        "timestamp": 149095883
       }
 
    :reqjson int timestamp: The epoch timestamp representing the time of the snapshot to be deleted.
@@ -10920,6 +10958,94 @@ Deleting a database snapshot
    :statuscode 200: Snapshot was deleted successfully.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is currently logged in. No snapshot found for the specified timestamp.Check error message.
+   :statuscode 500: Internal rotki error.
+
+
+.. http:patch:: /api/(version)/snapshots/(timestamp)
+
+   Doing either a PATCH on this endpoint will update the snapshot of the specified timestamp with the provided payload.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/snapshots/ HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+        {
+            "balances_snapshot": [
+                {
+                    "timestamp": "149095883",
+                    "category": "asset",
+                    "asset_identifier": "AVAX",
+                    "amount": "1000.00",
+                    "usd_value": "12929.00"
+                }
+            ],
+            "location_data_snapshot": [
+                {
+                    "timestamp": "149095883",
+                    "location": "external",
+                    "usd_value": "12929.00"
+                },
+                {
+                    "timestamp": "149095883",
+                    "location": "total",
+                    "usd_value": "12929.00"
+                }
+            ]
+        }
+
+   :reqjson list balances_snapshot: The list of objects represent the balances of an account to be updated.
+   :reqjson list location_data_snapshot: The list of objects representing the location data to be updated.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/zip
+
+
+   :statuscode 200: Snapshot was updated successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. JSON has different timestamps. Snapshot contains an unknown asset.JSON has invalid headers.Check error message.
+   :statuscode 500: Internal rotki error.
+
+
+.. http:put:: /api/(version)/snapshots
+.. http:post:: /api/(version)/snapshots
+
+   Doing either a PUT or a POST on this import endpoint will import database snapshot from the specified paths in the request body.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/snapshots HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "balances_snapshot_file": "/path/to/balances_snapshot_import.csv",
+          "location_data_snapshot_file": "/path/to/location_data_snapshot.csv"
+      }
+
+   :reqjson str balances_snapshot_file: The path to a `balances_snapshot_import.csv` file that was previously exported for PUT. The file itself for POST.
+   :reqjson str location_data_snapshot_file: The path to a `location_data_snapshot.csv` file that was previously exported for PUT. The file itself for POST.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/zip
+
+
+   :statuscode 200: Snapshot was imported successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. Csv file has different timestamps. Snapshot contains an unknown asset.Csv file has invalid headers.Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -10981,44 +11107,6 @@ Get ENS names
    :statuscode 200: Names were returned successfully.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is currently logged in or addresses have incorrect format.
-   :statuscode 500: Internal rotki error.
-
-
-Importing a database snapshot
-=================================
-
-.. http:put:: /api/(version)/snapshot/import
-.. http:post:: /api/(version)/snapshot/import
-
-   Doing either a PUT or a POST on the snapshot import endpoint will import database snapshot from the specified paths in the request body.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      PUT /api/1/snapshot/import HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {
-          "balances_snapshot_file": "/path/to/balances_snapshot_import.csv",
-          "location_data_snapshot_file": "/path/to/location_data_snapshot.csv"
-      }
-
-   :reqjson str balances_snapshot_file: The path to a `balances_snapshot_import.csv` file that was previously exported for PUT. The file itself for POST.
-   :reqjson str location_data_snapshot_file: The path to a `location_data_snapshot.csv` file that was previously exported for PUT. The file itself for POST.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/zip
-
-
-   :statuscode 200: Snapshot was imported successfully.
-   :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. Csv file has different timestamps. Snapshot contains an unknown asset.Csv file has invalid headers.Check error message.
    :statuscode 500: Internal rotki error.
 
 
