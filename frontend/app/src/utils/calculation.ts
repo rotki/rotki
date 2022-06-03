@@ -1,8 +1,15 @@
 import { Balance, BigNumber } from '@rotki/common';
+import { get } from '@vueuse/core';
+import { useIgnoredAssetsStore } from '@/store/assets';
 import { Zero } from '@/utils/bignumbers';
 
 export function assetSum(balances: { [asset: string]: Balance }) {
-  return Object.values(balances).reduce((sum, balance) => {
+  const { isAssetIgnored } = useIgnoredAssetsStore();
+
+  return Object.entries(balances).reduce((sum, [asset, balance]) => {
+    if (get(isAssetIgnored(asset))) {
+      return sum;
+    }
     return sum.plus(balance.usdValue);
   }, Zero);
 }
