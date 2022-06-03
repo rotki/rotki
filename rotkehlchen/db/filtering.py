@@ -308,13 +308,14 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             order_by_rules: Optional[List[Tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
-            addresses: Optional[List[ChecksumEthAddress]] = None,
+            # temporary unused argument here and below. Remove warning later.
+            addresses: Optional[List[ChecksumEthAddress]] = None,  # pylint: disable=unused-argument  # noqa: E501
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
-            protocols: Optional[List[str]] = None,  # Events data
-            asset: Optional[Asset] = None,  # Events data
-            exclude_ignored_assets: bool = False,  # Events data
+            protocols: Optional[List[str]] = None,  # pylint: disable=unused-argument
+            asset: Optional[Asset] = None,  # pylint: disable=unused-argument
+            exclude_ignored_assets: bool = False,  # pylint: disable=unused-argument
     ) -> 'ETHTransactionsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -330,20 +331,21 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBETHTransactionHashFilter(and_op=False, tx_hash=tx_hash))
         else:
-            should_join_events = asset is not None or protocols is not None or exclude_ignored_assets is True  # noqa: E501
-            if addresses is not None or should_join_events is True:
-                filter_query.join_clause = DBETHTransactionJoinsFilter(
-                    and_op=False,
-                    addresses=addresses,
-                    should_join_events=should_join_events,
-                )
+            # temporary to remove filtering https://github.com/rotki/rotki/issues/4379
+            # should_join_events = asset is not None or protocols is not None or exclude_ignored_assets is True  # noqa: E501
+            # if addresses is not None or should_join_events is True:
+            #     filter_query.join_clause = DBETHTransactionJoinsFilter(
+            #         and_op=False,
+            #         addresses=addresses,
+            #         should_join_events=should_join_events,
+            #     )
 
-            if asset is not None:
-                filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
-            if protocols is not None:
-                filters.append(DBProtocolsFilter(and_op=True, protocols=protocols))
-            if exclude_ignored_assets is True:
-                filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
+            # if asset is not None:
+            #     filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
+            # if protocols is not None:
+            #     filters.append(DBProtocolsFilter(and_op=True, protocols=protocols))
+            # if exclude_ignored_assets is True:
+            #     filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
 
             filter_query.timestamp_filter = DBTimestampFilter(
                 and_op=True,
