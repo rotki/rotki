@@ -9,6 +9,7 @@
     "../common/lib/**/*"
   ],
   "include": [
+    "cypress.config.ts",
     "vite.config.main.ts",
     "vite.config.preload.ts",
     "vite.config.ts",

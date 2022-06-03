@@ -39,7 +39,7 @@ jobs:
             frontend/app
 
 
-  check-frontend:
+  lint-frontend:
     needs: ['check-changes']
     if: ${{ needs.check-changes.outputs.frontend_tasks }}
     strategy:
@@ -78,6 +78,38 @@ jobs:
       - name: Lint style
         working-directory: ./frontend/app
         run: npm run lint:style
+
+  unittest-frontend:
+    needs: [ 'check-changes' ]
+    if: ${{ needs.check-changes.outputs.frontend_tasks }}
+    strategy:
+      matrix:
+        os: [ ubuntu-18.04 ]
+        node-version: [ 16.x ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - name: Setup
+        uses: actions/setup-node@v1
+        with:
+          node-version: '16.x'
+      - name: Store npm cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/Cypress
+          key: ${{ runner.os }}-node--ci-${{ hashFiles('**/app/package-lock.json') }}
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: |
+          npm install -g npm@8
+          if ! npm ci --exit-code; then
+            npm ci
+          fi
+          npm run build -w @rotki/common
       - name: Run unit tests
         working-directory: ./frontend/app
         run: npm run test:unit
@@ -273,7 +305,7 @@ jobs:
           path: ./frontend/app/tests/e2e/videos
   done:
     if: ${{ always() }}
-    needs: [ 'check-changes', 'check-frontend', 'docs', 'lint-backend', 'test-backend', 'test-e2e' ]
+    needs: [ 'check-changes', 'lint-frontend', 'unittest-frontend', 'docs', 'lint-backend', 'test-backend', 'test-e2e' ]
     strategy:
       matrix:
         os: [ubuntu-18.04]
