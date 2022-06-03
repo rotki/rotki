@@ -421,7 +421,10 @@ class Rotkehlchen():
         if self.premium is not None:
             self.premium.set_credentials(credentials)
         else:
-            self.premium = premium_create_and_verify(credentials)
+            try:
+                self.premium = premium_create_and_verify(credentials)
+            except RemoteError as e:
+                raise PremiumAuthenticationError(str(e)) from e
 
         self.premium_sync_manager.premium = self.premium
         self.accountant.activate_premium_status(self.premium)
@@ -436,9 +439,11 @@ class Rotkehlchen():
         self.accountant.deactivate_premium_status()
         self.chain_manager.deactivate_premium_status()
 
-    def activate_premium_status(self, credentials: PremiumCredentials) -> None:
-        """Activate the premium in the current session"""
-        self.premium = Premium(credentials)
+    def activate_premium_status(self, premium: Premium) -> None:
+        """Activate the premium in the current session if was deactivated"""
+        if self.premium is not None:
+            return
+        self.premium = premium
         self.premium_sync_manager.premium = self.premium
         self.accountant.activate_premium_status(self.premium)
         self.chain_manager.activate_premium_status(self.premium)

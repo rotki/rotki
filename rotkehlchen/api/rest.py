@@ -1601,7 +1601,7 @@ class RestAPI():
             result = self.rotkehlchen.premium.query_premium_components()  # type: ignore
             result_dict['result'] = result
             status_code = HTTPStatus.OK
-        except RemoteError as e:
+        except (RemoteError, PremiumAuthenticationError) as e:
             result_dict['message'] = str(e)
             status_code = HTTPStatus.CONFLICT
 

@@ -26,11 +26,7 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import (
-    PremiumCredentials,
-    SubscriptionStatus,
-    premium_create_and_verify,
-)
+from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.types import ChecksumEthAddress, ExchangeLocationID, Location, Optional, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -84,7 +80,7 @@ class TaskManager():
             evm_tx_decoder: 'EVMTransactionDecoder',
             eth_transactions: 'EthTransactions',
             deactivate_premium: Callable[[], None],
-            activate_premium: Callable[[PremiumCredentials], None],
+            activate_premium: Callable[[Premium], None],
             query_balances: Callable,
     ) -> None:
         self.max_tasks_num = max_tasks_num
@@ -420,30 +416,29 @@ class TaskManager():
             return
 
         try:
-            premium_create_and_verify(db_credentials)
-        except PremiumAuthenticationError as e:
+            premium = premium_create_and_verify(db_credentials)
+        except RemoteError:
             if self.premium_check_retries < PREMIUM_CHECK_RETRY_LIMIT:
                 self.premium_check_retries += 1
                 self.last_premium_status_check = now
                 return
-            message = (
-                f'Could not authenticate with the rotkehlchen server with '
-                f'the API keys found in the Database. Error: {str(e)}. Will '
-                f'deactivate the premium status.'
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
+                data={'is_premium_active': False},
             )
-            self.msg_aggregator.add_error(message)
+            self.deactivate_premium()
+        except PremiumAuthenticationError:
             self.deactivate_premium()
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
                 data={'is_premium_active': False},
             )
         else:
-            if self.premium_check_retries >= PREMIUM_CHECK_RETRY_LIMIT:
-                self.activate_premium(db_credentials)
-                self.msg_aggregator.add_message(
-                    message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
-                    data={'is_premium_active': True},
-                )
+            self.activate_premium(premium)
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
+                data={'is_premium_active': True},
+            )
             self.premium_check_retries = 0
         finally:
             self.last_premium_status_check = now

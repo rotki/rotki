@@ -7,6 +7,7 @@ import pytest
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tests.utils.ethereum import setup_ethereum_transactions_test
@@ -234,6 +235,23 @@ def test_check_premium_status(rotkehlchen_api_server):
         assert rotki.premium is not None
 
         with patch('rotkehlchen.premium.premium.Premium.is_active', MagicMock(return_value=False)):
+            mock_check_premium_status()
+            assert rotki.premium is None, (
+                'Premium object is not None and should be'
+                'deactivated after invalid premium credentials'
+            )
+
+        with patch('rotkehlchen.premium.premium.Premium.is_active', MagicMock(return_value=True)):
+            mock_check_premium_status()
+            assert rotki.premium is not None, (
+                'Permium object is None and Periodic check'
+                'didn\'t reactivate the premium status'
+            )
+
+        with patch(
+            'rotkehlchen.premium.premium.Premium.is_active',
+            MagicMock(side_effect=RemoteError()),
+        ):
             for check_trial in range(3):
                 mock_check_premium_status()
                 assert rotki.premium is not None, f'Premium object is None and should be active after the {check_trial} periodic check'  # noqa: E501
