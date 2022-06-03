@@ -45,19 +45,19 @@ def mock_kucoin(
 @pytest.fixture(name='kucoin_sandbox_api_key')
 def fixture_kucoin_sandbox_api_key():
     # General permission (aka read-only)
-    return '6023e471a2644e00063aa8bb'
+    return '6296162429c69200011e6d6f'
 
 
 @pytest.fixture(name='kucoin_sandbox_api_secret')
 def fixture_kucoin_sandbox_api_secret():
     # General permission (aka read-only)
-    return b'3a817593-eceb-47f3-90d4-26de79de588a'
+    return b'59df08af-5a6e-4893-9a8c-81e0d0a5b655'
 
 
 @pytest.fixture(name='kucoin_sandbox_passphrase')
 def fixture_kucoin_sandbox_passphrase():
     # General permission (aka read-only)
-    return 'rotkidev'
+    return 'rotkiapi'
 
 
 @pytest.fixture(name='kucoin_sandbox_base_uri')
@@ -66,7 +66,7 @@ def fixture_kucoin_sandbox_base_uri():
 
 
 @pytest.fixture
-def sandbox_kuckoin(
+def sandbox_kucoin(
         database,
         inquirer,  # pylint: disable=unused-argument
         function_scope_messages_aggregator,
