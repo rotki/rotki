@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import contextlib
 import logging.config
 import os
 import time
@@ -581,7 +582,11 @@ class Rotkehlchen():
             accounts=accounts,
         )
         eth_addresses: List[ChecksumEthAddress] = cast(List[ChecksumEthAddress], accounts) if blockchain == SupportedBlockchain.ETHEREUM else []  # noqa: E501
-        with self.eth_transactions.wait_until_no_query_for(eth_addresses):
+        with contextlib.ExitStack() as stack:
+            if blockchain == SupportedBlockchain.ETHEREUM:
+                stack.enter_context(self.eth_transactions.wait_until_no_query_for(eth_addresses))
+                stack.enter_context(self.eth_transactions.missing_receipts_lock)
+                stack.enter_context(self.evm_tx_decoder.undecoded_tx_query_lock)
             self.data.db.remove_blockchain_accounts(blockchain, accounts)
 
         return balances_update
