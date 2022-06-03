@@ -358,7 +358,9 @@ class Rotkehlchen():
             deactivate_premium=self.deactivate_premium_status,
             activate_premium=self.activate_premium_status,
             query_balances=self.query_balances,
+            rotki_notifier=self.rotki_notifier,
         )
+
         DataMigrationManager(self).maybe_migrate_data()
         self.greenlet_manager.spawn_and_track(
             after_seconds=5,
