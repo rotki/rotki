@@ -12,6 +12,7 @@ describe('settings', () => {
   let pageGeneral: GeneralSettingsPage;
   let pageAccounting: AccountingSettingsPage;
   let pageUserSecurity: UserSecuritySettingsPage;
+  let ignoredAssets = 0;
 
   const settings = {
     floatingPrecision: '4',
@@ -125,7 +126,6 @@ describe('settings', () => {
     });
 
     describe('ignored asset settings', () => {
-      let ignoredAssets = 0;
       before(() => {
         pageAccounting.ignoredAssets().then(ignored => {
           ignoredAssets = parseInt(ignored);
@@ -201,7 +201,7 @@ describe('settings', () => {
         '.accounting-settings__taxfree-period',
         'false'
       );
-      pageAccounting.ignoredAssetCount('18');
+      pageAccounting.ignoredAssetCount(ignoredAssets + 2);
     });
   });
 });
