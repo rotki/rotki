@@ -92,6 +92,7 @@ a = Entrypoint(
     hookspath=['tools/pyinstaller_hooks'],
     hiddenimports=hiddenimports,
     datas=[
+        # This list should be kept in sync with setup.py (package_data)
         ('rotkehlchen/data/eth_abi.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/eth_contracts.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/all_assets.json', 'rotkehlchen/data'),

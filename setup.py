@@ -26,7 +26,9 @@ setup(
     url='https://github.com/rotki/rotki',
     packages=find_packages('.'),
     package_data={
-        # TODO: Investigate if it's needed. rotkehlchen.spec is where files seem to be copied
+        # Data files to package in the Rotki python package wheel. While
+        # pyinstaller does not use this list, changes here should be kept in
+        # sync with rotkehlchen.spec
         'rotkehlchen': [
             'data/eth_abi.json',
             'data/eth_contracts.json',
