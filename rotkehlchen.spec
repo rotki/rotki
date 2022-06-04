@@ -102,7 +102,7 @@ a = Entrypoint(
         ('rotkehlchen/data/curve_pools.json', 'rotkehlchen/data'),
         # TODO
         # We probably should have a better way to specify some data should be loaded
-        # by a module in pynistaller. Should be loaded dynamically by rotki and not
+        # by a module in pyinstaller. Should be loaded dynamically by rotki and not
         # by pyinstaller if we want it to be truly modular
         (
             'rotkehlchen/chain/ethereum/modules/dxdaomesa/data/contracts.json',
