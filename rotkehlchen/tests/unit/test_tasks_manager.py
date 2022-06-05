@@ -47,6 +47,7 @@ def fixture_task_manager(
         exchange_manager,
         evm_transaction_decoder,
         eth_transactions,
+        messages_aggregator,
 ) -> TaskManager:
     task_manager = TaskManager(
         max_tasks_num=max_tasks_num,
@@ -62,7 +63,7 @@ def fixture_task_manager(
         deactivate_premium=lambda: None,
         query_balances=lambda: None,
         activate_premium=lambda _: None,
-        rotki_notifier=None,
+        msg_aggregator=messages_aggregator,
     )
     return task_manager
 

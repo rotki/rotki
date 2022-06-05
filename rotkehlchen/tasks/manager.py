@@ -33,7 +33,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.api.websockets.notifier import RotkiNotifier
     from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
     from rotkehlchen.chain.ethereum.transactions import EthTransactions
 
@@ -83,7 +82,7 @@ class TaskManager():
             deactivate_premium: Callable[[], None],
             activate_premium: Callable[[Premium], None],
             query_balances: Callable,
-            rotki_notifier: Optional['RotkiNotifier'],
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
@@ -110,11 +109,8 @@ class TaskManager():
         self.activate_premium = activate_premium
         self.query_balances = query_balances
         self.last_premium_status_check = ts_now()
-        self.msg_aggregator = MessagesAggregator()
+        self.msg_aggregator = msg_aggregator
         self.premium_check_retries = 0
-
-        if rotki_notifier is not None:
-            self.msg_aggregator.rotki_notifier = rotki_notifier
 
         self.potential_tasks = [
             self._maybe_schedule_cryptocompare_query,
