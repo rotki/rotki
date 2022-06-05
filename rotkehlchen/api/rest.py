@@ -194,12 +194,15 @@ def api_response(
     else:
         data = json.dumps(result)
 
-    logged_response = data
-    if log_result is False:
-        logged_response = '<redacted>'
-    log.debug("Request successful", response=logged_response, status_code=status_code)
     response = make_response(
-        (data, status_code, {"mimetype": "application/json", "Content-Type": "application/json"}),
+        (
+            data,
+            status_code,
+            {
+                "mimetype": "application/json",
+                "Content-Type": "application/json",
+                "rotki-log-result": log_result,  # popped by after request callback
+            }),
     )
     return response
 

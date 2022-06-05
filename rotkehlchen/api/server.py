@@ -4,7 +4,7 @@ from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import werkzeug
-from flask import Blueprint, Flask, Response, abort, jsonify
+from flask import Blueprint, Flask, Response, abort, jsonify, request
 from flask.views import MethodView
 from flask_cors import CORS
 from gevent.pywsgi import WSGIServer
@@ -372,6 +372,8 @@ class APIServer():
 
         self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
         self.flask_app.register_error_handler(Exception, self.unhandled_exception)
+        self.flask_app.before_request(self.before_request_callback)
+        self.flask_app.after_request(self.after_request_callback)  # type: ignore
 
     @staticmethod
     def unhandled_exception(exception: Exception) -> Response:
@@ -382,6 +384,36 @@ class APIServer():
             exception=str(exception),
         )
         return api_response(wrap_in_fail_result(str(exception)), HTTPStatus.INTERNAL_SERVER_ERROR)
+
+    @staticmethod
+    def before_request_callback() -> None:
+        """Function that runs before each request"""
+        log.debug(
+            f'start rotki api {request.method} {request.path}',
+            view_args=request.view_args,
+            query_string=request.query_string,
+        )
+
+    @staticmethod
+    def after_request_callback(response: Response) -> Response:
+        """Function that runs after each completed request
+
+        Logs the response if required. This is determined by the
+        fake header rotki-log-result passed to all responses.
+        """
+        if response.headers.pop('rotki-log-result', 'True') == 'True':
+            result = response.json
+        else:
+            result = 'redacted'
+
+        log.debug(
+            f'end rotki api {request.method} {request.path}',
+            view_args=request.view_args,
+            query_string=request.query_string,
+            status_code=response.status_code,
+            result=result,
+        )
+        return response
 
     def run(self, host: str = '127.0.0.1', port: int = 5042, **kwargs: Any) -> None:
         """This is only used for the data faker and not used in production"""
@@ -398,7 +430,7 @@ class APIServer():
         self.wsgiserver = WSGIServer(
             listener=(host, rest_port),
             application=self.flask_app,
-            log=wsgi_logger,
+            log=None,
             error_log=wsgi_logger,
         )
         msg = f'rotki REST API server is running at: {host}:{rest_port}'
