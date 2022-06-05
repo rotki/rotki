@@ -360,7 +360,7 @@ class Inquirer():
                     to_asset=to_asset,
                 )
             except (DefiPoolError, PriceQueryUnsupportedAsset, RemoteError) as e:
-                log.error(
+                log.warning(
                     f'Current price oracle {oracle} failed to request {to_asset.identifier} '
                     f'price for {from_asset.identifier} due to: {str(e)}.',
                 )
