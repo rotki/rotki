@@ -104,6 +104,12 @@ export class AssetApi {
       .then(handleResponse);
   }
 
+  refreshIcon(identifier: string): Promise<boolean> {
+    return this.axios
+      .patch<ActionResult<boolean>>(`/assets/${identifier}/icon`)
+      .then(handleResponse);
+  }
+
   assetTypes(): Promise<string[]> {
     return this.axios
       .get<ActionResult<string[]>>('/assets/types', {

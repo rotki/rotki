@@ -91,12 +91,12 @@ export default defineComponent({
   height: calc(100vh - 80px);
 
   &__body {
-    padding: 0 16px;
+    padding: 0 1.5rem;
   }
 
   &__content {
-    max-height: calc(100% - 105px);
-    overflow-y: scroll;
+    max-height: calc(100% - 120px);
+    overflow-y: auto;
   }
 }
 
@@ -104,6 +104,10 @@ export default defineComponent({
   .v-card {
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
+
+    &__actions {
+      padding: 1rem 1.5rem !important;
+    }
   }
 }
 </style>

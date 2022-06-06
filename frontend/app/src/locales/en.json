@@ -934,6 +934,10 @@
       "title": "Icon upload",
       "description": "The icon upload failed: {message}"
     },
+    "fetch_latest_icon": {
+      "title": "Fetch the latest icon",
+      "description": "Failed to fetch the latest icon for {identifier}: {message}"
+    },
     "types": {
       "error": "We could not load the asset types: {message}"
     },

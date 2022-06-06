@@ -2,6 +2,8 @@
 node_modules
 /dist
 /electron-build
+/coverage
+/reports
 
 /tests/spectron/reports/
 selenium-debug.log
@@ -26,8 +28,6 @@ yarn-error.log*
 
 #Electron-builder output
 /dist_electron
-coverage
-reports
 tests/e2e/videos
 tests/e2e/screenshots
 tests/**/coverage
