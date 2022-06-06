@@ -316,6 +316,8 @@ class BlockchainField(fields.Field):
     ) -> SupportedBlockchain:
         if value in ('btc', 'BTC'):
             chain_type = SupportedBlockchain.BITCOIN
+        elif value in ('bch', 'BCH'):
+            chain_type = SupportedBlockchain.BITCOIN_CASH
         elif value in ('eth', 'ETH'):
             chain_type = SupportedBlockchain.ETHEREUM
         elif value in ('eth2', 'ETH2'):

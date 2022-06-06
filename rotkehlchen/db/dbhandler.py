@@ -1651,6 +1651,7 @@ class DBHandler:
         query = query.fetchall()
         eth_list = []
         btc_list = []
+        bch_list = []
         ksm_list = []
         dot_list = []
         avax_list = []
@@ -1672,6 +1673,8 @@ class DBHandler:
 
             if entry[0] == SupportedBlockchain.BITCOIN.value:
                 btc_list.append(entry[1])
+            elif entry[0] == SupportedBlockchain.BITCOIN_CASH.value:
+                bch_list.append(entry[1])
             elif entry[0] == SupportedBlockchain.ETHEREUM.value:
                 eth_list.append(entry[1])
             elif entry[0] == SupportedBlockchain.KUSAMA.value:
@@ -1681,7 +1684,7 @@ class DBHandler:
             elif entry[0] == SupportedBlockchain.POLKADOT.value:
                 dot_list.append(entry[1])
 
-        return BlockchainAccounts(eth=eth_list, btc=btc_list, ksm=ksm_list, dot=dot_list, avax=avax_list)  # noqa: E501
+        return BlockchainAccounts(eth=eth_list, btc=btc_list, bch=bch_list, ksm=ksm_list, dot=dot_list, avax=avax_list)  # noqa: E501
 
     def get_blockchain_account_data(
             self,

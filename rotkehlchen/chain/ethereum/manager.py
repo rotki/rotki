@@ -703,6 +703,7 @@ class EthereumManager():
             name: str,
             blockchain: Literal[
                 SupportedBlockchain.BITCOIN,
+                SupportedBlockchain.BITCOIN_CASH,
                 SupportedBlockchain.KUSAMA,
                 SupportedBlockchain.POLKADOT,
             ],

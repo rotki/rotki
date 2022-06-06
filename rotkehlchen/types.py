@@ -331,6 +331,7 @@ class SupportedBlockchain(Enum):
     ETHEREUM = 'ETH'
     ETHEREUM_BEACONCHAIN = 'ETH2'
     BITCOIN = 'BTC'
+    BITCOIN_CASH = 'BCH'
     KUSAMA = 'KSM'
     AVALANCHE = 'AVAX'
     POLKADOT = 'DOT'
@@ -340,7 +341,7 @@ class SupportedBlockchain(Enum):
             return ChecksumEthAddress
         if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
             return Eth2PubKey
-        if self == SupportedBlockchain.BITCOIN:
+        if self in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             return BTCAddress
         if self == SupportedBlockchain.KUSAMA:
             return KusamaAddress
@@ -358,6 +359,8 @@ class SupportedBlockchain(Enum):
             return 60
         if self == SupportedBlockchain.BITCOIN:
             return 0
+        if self == SupportedBlockchain.BITCOIN_CASH:
+            return 145
         if self == SupportedBlockchain.KUSAMA:
             return 434
         if self == SupportedBlockchain.POLKADOT:

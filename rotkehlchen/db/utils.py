@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 class BlockchainAccounts(NamedTuple):
     eth: List[ChecksumEthAddress]
     btc: List[BTCAddress]
+    bch: List[BTCAddress]
     ksm: List[KusamaAddress]
     dot: List[PolkadotAddress]
     avax: List[ChecksumEthAddress]
@@ -36,6 +37,8 @@ class BlockchainAccounts(NamedTuple):
     def get(self, blockchain: SupportedBlockchain) -> ListOfBlockchainAddresses:
         if blockchain == SupportedBlockchain.BITCOIN:
             return self.btc
+        if blockchain == SupportedBlockchain.BITCOIN_CASH:
+            return self.bch
         if blockchain == SupportedBlockchain.ETHEREUM:
             return self.eth
         if blockchain == SupportedBlockchain.KUSAMA:
@@ -184,6 +187,8 @@ def is_valid_db_blockchain_account(
 ) -> bool:
     """Validates a blockchain address already stored in DB."""
     if blockchain == SupportedBlockchain.BITCOIN.value:
+        return True
+    if blockchain == SupportedBlockchain.BITCOIN_CASH.value:
         return True
     if blockchain in (SupportedBlockchain.ETHEREUM.value, SupportedBlockchain.AVALANCHE.value):
         return is_checksum_address(account)
