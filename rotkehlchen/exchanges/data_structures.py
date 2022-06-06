@@ -442,6 +442,19 @@ class MarginPosition(AccountingEventMixin):
         )
         return hash_id(string)
 
+    def serialize(self) -> Dict[str, Any]:
+        """Serialize the margin position into a dict."""
+        return {
+            'location': self.location.serialize(),
+            'open_time': self.open_time,
+            'close_time': self.close_time,
+            'profit_loss': str(self.profit_loss),
+            'pl_currency': self.pl_currency.identifier,
+            'fee': str(self.fee),
+            'link': self.link,
+            'notes': self.notes,
+        }
+
     @classmethod
     def deserialize_from_db(cls, entry: MarginPositionDBTuple) -> 'MarginPosition':
         """May raise:
@@ -533,6 +546,18 @@ class Loan(AccountingEventMixin):
 
     def get_timestamp(self) -> Timestamp:
         return self.close_time
+
+    def serialize(self) -> Dict[str, Any]:
+        """Serialize the loan into a dict."""
+        return {
+            'location': self.location.serialize(),
+            'open_time': self.open_time,
+            'close_time': self.close_time,
+            'currency': self.currency.serialize(),
+            'fee': str(self.fee),
+            'earned': str(self.earned),
+            'amount_lent': str(self.amount_lent),
+        }
 
     @staticmethod
     def get_accounting_event_type() -> AccountingEventType:

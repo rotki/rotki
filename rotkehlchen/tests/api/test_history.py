@@ -12,6 +12,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
@@ -297,3 +298,17 @@ def test_query_pnl_report_events_pagination_filtering(
             assert x['timestamp'] <= events[idx + 1]['timestamp']
         else:
             assert x['timestamp'] >= events[idx + 1]['timestamp']
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_history_debug_import(rotkehlchen_api_server):
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyprocessingdebugresource',
+            async_query=False,
+        ),
+        json={'filepath': str(Path(__file__).resolve().parent.parent / 'data' / 'pnl_debug.json')},
+    )
+
+    assert_simple_ok_response(response)

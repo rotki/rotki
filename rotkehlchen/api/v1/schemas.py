@@ -1002,6 +1002,10 @@ class HistoryProcessingSchema(AsyncQueryArgumentSchema):
     to_timestamp = TimestampField(load_default=ts_now)
 
 
+class HistoryProcessingDebugImportSchema(AsyncQueryArgumentSchema):
+    filepath = FileField(required=True, allowed_extensions=['.json'])
+
+
 class AccountingReportsSchema(Schema):
     report_id = fields.Integer(load_default=None)
 

@@ -67,6 +67,7 @@ from rotkehlchen.api.v1.schemas import (
     HistoricalAssetsPriceSchema,
     HistoryBaseEntrySchema,
     HistoryExportingSchema,
+    HistoryProcessingDebugImportSchema,
     HistoryProcessingSchema,
     IdentifiersListSchema,
     IgnoredActionsGetSchema,
@@ -1111,6 +1112,41 @@ class HistoryProcessingResource(BaseMethodView):
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
             async_query=async_query,
+        )
+
+
+class HistoryProcessingDebugResource(BaseMethodView):
+    post_schema = HistoryProcessingSchema()
+    upload_schema = HistoryProcessingDebugImportSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.get_history_debug(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            async_query=async_query,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='json')
+    def put(self, async_query: bool, filepath: Path) -> Response:
+        return self.rest_api.import_history_debug(
+            async_query=async_query,
+            filepath=filepath,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='form_and_file')
+    def patch(self, async_query: bool, filepath: FileStorage) -> Response:
+        return self.rest_api.import_history_debug(
+            async_query=async_query,
+            filepath=filepath,
         )
 
 

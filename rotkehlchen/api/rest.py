@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import json
 import logging
+import sys
 import tempfile
 import time
 import traceback
@@ -34,6 +35,7 @@ from web3.exceptions import BadFunctionCallOutput
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
+from rotkehlchen.accounting.importer.json import HistoryJSONImporter
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.base import (
@@ -1556,6 +1558,107 @@ class RestAPI():
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)
         result_dict = _wrap_in_result(result=result, message=msg)
+        return api_response(result_dict, status_code=status_code)
+
+    def _get_history_debug(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Dict[str, Any]:
+        """This method creates all history events for a timestamp range.
+        It also gets the user settings & ignored action identifiers all to be exported
+        for PnL debugging.
+        """
+        error_or_empty, events = self.rotkehlchen.events_historian.get_history(
+            start_ts=from_timestamp,
+            end_ts=to_timestamp,
+            has_premium=self.rotkehlchen.premium is not None,
+        )
+        if error_or_empty != '':
+            return wrap_in_fail_result(error_or_empty, status_code=HTTPStatus.CONFLICT)
+
+        settings = self.rotkehlchen.get_settings()
+        ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(None)
+        debug_info = {
+            'events': [entry.serialize() for entry in events],
+            'settings': settings.serialize(),
+            'ignored_events_ids': {k.serialize(): v for k, v in ignored_ids.items()},
+        }
+        return _wrap_in_ok_result(debug_info)
+
+    def get_history_debug(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            async_query: bool,
+    ) -> Response:
+        if async_query is True:
+            return self._query_async(
+                command=self._get_history_debug,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        response = self._get_history_debug(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = _wrap_in_result(result=response['result'], message=response['message'])
+        return api_response(result_dict, status_code=status_code)
+
+    def _import_history_debug(self, filepath: Union[FileStorage, Path]) -> Dict[str, Any]:
+        """Imports the PnL debug data for processing and report generation"""
+        json_importer = HistoryJSONImporter(self.rotkehlchen.data.db)
+        if isinstance(filepath, Path):
+            success, data = json_importer.import_history_debug(filepath=filepath)
+        else:
+            tmpfilepath = self.import_tmp_files[filepath]
+            success, data = json_importer.import_history_debug(filepath=tmpfilepath)
+            tmpfilepath.unlink(missing_ok=True)
+            del self.import_tmp_files[filepath]
+
+        if success is False:
+            return wrap_in_fail_result(
+                message=data['msg'],
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
+        dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
+        events = dbevents.get_history_events(
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+        )
+        self.rotkehlchen.accountant.process_history(
+            start_ts=data['data']['start_ts'],
+            end_ts=data['data']['end_ts'],
+            events=list(events),
+        )
+        return OK_RESULT
+
+    def import_history_debug(
+            self,
+            async_query: bool,
+            filepath: Union[FileStorage, Path],
+    ) -> Response:
+        if getattr(sys, 'frozen', False):
+            return api_response(
+                wrap_in_fail_result('This endpoint is only available for debugging purposes'),
+                status_code=HTTPStatus.FORBIDDEN,
+            )
+        if not isinstance(filepath, Path):
+            _, tmpfilepath = tempfile.mkstemp()
+            filepath.save(tmpfilepath)
+            self.import_tmp_files[filepath] = Path(tmpfilepath)
+
+        if async_query is True:
+            return self._query_async(
+                command=self._import_history_debug,
+                filepath=filepath,
+            )
+
+        response = self._import_history_debug(filepath=filepath)
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = _wrap_in_result(response['result'], response['message'])
         return api_response(result_dict, status_code=status_code)
 
     def get_history_actionable_items(self) -> Response:
