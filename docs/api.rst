@@ -4447,6 +4447,209 @@ Querying complete action history
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.
 
+
+Export PnL report debug data
+============================
+
+.. http:post:: /api/(version)/history/debug
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a POST on the PnL report debug endpoint will trigger a query and export of the history of all actions (trades, deposits, withdrawals, loans, eth transactions) within a specific time range alongside the user settings and ignored events identifiers.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/debug HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+       {
+            "from_timestamp": 1514764800,
+            "to_timestamp": 1572080165,
+            "async_query": false
+        }
+
+   :reqjson int from_timestamp: The timestamp after which to return action history. If not given zero is considered as the start.
+   :reqjson int to_timestamp: The timestamp until which to return action history. If not given all balances until now are returned.
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :param int from_timestamp: The timestamp after which to return action history. If not given zero is considered as the start.
+   :param int to_timestamp: The timestamp until which to return action history. If not given all balances until now are returned.
+   :param bool async_query: Boolean denoting whether this is an asynchronous query or not.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+            "events": [
+                {
+                "identifier": 12,
+                "event_identifier": "0xb626d9d9e3a5b9ecbe0c2194cf96ab7561063c6d31e0e6799d56a589b8094609",
+                "sequence_index": 0,
+                "timestamp": 1651258550,
+                "location": "blockchain",
+                "asset": "ETH",
+                "balance": {
+                    "amount": "3.55448345",
+                    "usd_value": "24455.415502078435"
+                },
+                "event_type": "receive",
+                "event_subtype": null,
+                "location_label": "0x19e4057A38a730be37c4DA690b103267AAE1d75d",
+                "notes": "Receive 3.55448345 ETH 0xaBEA9132b05A70803a4E85094fD0e1800777fBEF -> 0x19e4057A38a730be37c4DA690b103267AAE1d75d",
+                "counterparty": "0xaBEA9132b05A70803a4E85094fD0e1800777fBEF"
+                },
+                {
+                "identifier": 8,
+                "event_identifier": "0xa9905f5eaa664a53e6513f7ba2147dcebc3e54d4062df9df1925116b6a220014",
+                "sequence_index": 0,
+                "timestamp": 1651259834,
+                "location": "blockchain",
+                "asset": "ETH",
+                "balance": {
+                    "amount": "0.009",
+                    "usd_value": "33.85395142596176076"
+                },
+                "event_type": "spend",
+                "event_subtype": "fee",
+                "location_label": "0x19e4057A38a730be37c4DA690b103267AAE1d75d",
+                "notes": "Burned 0.001367993179812 ETH in gas from 0x19e4057A38a730be37c4DA690b103267AAE1d75d",
+                "counterparty": "gas"
+                }
+            ],
+            "settings": {
+                "have_premium": false,
+                "version": 32,
+                "last_write_ts": 1654528773,
+                "premium_should_sync": false,
+                "include_crypto2crypto": true,
+                "last_data_upload_ts": 0,
+                "ui_floating_precision": 2,
+                "taxfree_after_period": 31536000,
+                "balance_save_frequency": 24,
+                "include_gas_costs": true,
+                "eth_rpc_endpoint": "http://localhost:8545",
+                "ksm_rpc_endpoint": "http://localhost:9933",
+                "dot_rpc_endpoint": "",
+                "main_currency": "USD",
+                "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
+                "last_balance_save": 0,
+                "submit_usage_analytics": true,
+                "active_modules": [
+                    "uniswap",
+                    "eth2",
+                    "aave",
+                    "loopring",
+                    "balancer",
+                    "yearn_vaults_v2",
+                    "makerdao_vaults",
+                    "compound",
+                    "liquity",
+                    "pickle_finance",
+                    "nfts",
+                    "sushiswap"
+                ],
+                "frontend_settings": "{\"defi_setup_done\":false,\"timeframe_setting\":\"REMEMBER\",\"visible_timeframes\":[\"All\",\"1Y\",\"3M\",\"1M\",\"2W\",\"1W\"],\"last_known_timeframe\":\"2W\",\"query_period\":5,\"profit_loss_report_period\":{\"year\":\"2022\",\"quarter\":\"ALL\"},\"thousand_separator\":\",\",\"decimal_separator\":\".\",\"currency_location\":\"after\",\"refresh_period\":-1,\"explorers\":{},\"items_per_page\":10,\"amount_rounding_mode\":0,\"value_rounding_mode\":1,\"dark_mode_enabled\":false,\"light_theme\":{\"primary\":\"#7e4a3b\",\"accent\":\"#e45325\",\"graph\":\"#96DFD2\"},\"dark_theme\":{\"primary\":\"#ff5722\",\"accent\":\"#ff8a50\",\"graph\":\"#E96930\"},\"graph_zero_based\":false,\"nfts_in_net_value\":true,\"dashboard_tables_visible_columns\":{\"ASSETS\":[\"percentage_of_total_net_value\"],\"LIABILITIES\":[\"percentage_of_total_net_value\"],\"NFT\":[\"percentage_of_total_net_value\"]},\"date_input_format\":\"%d/%m/%Y %H:%M:%S\",\"version_update_check_frequency\":24,\"enable_ens\":true}",
+                "account_for_assets_movements": true,
+                "btc_derivation_gap_limit": 20,
+                "calculate_past_cost_basis": true,
+                "display_date_in_localtime": true,
+                "current_price_oracles": [
+                    "coingecko",
+                    "cryptocompare",
+                    "uniswapv2",
+                    "uniswapv3",
+                    "saddle"
+                ],
+                "historical_price_oracles": ["manual", "cryptocompare", "coingecko"],
+                "taxable_ledger_actions": [
+                    "income",
+                    "expense",
+                    "loss",
+                    "dividends income",
+                    "donation received",
+                    "grant"
+                ],
+                "pnl_csv_with_formulas": true,
+                "pnl_csv_have_summary": false,
+                "ssf_0graph_multiplier": 0,
+                "last_data_migration": 3,
+                "non_syncing_exchanges": []
+            },
+            "ignored_events_ids": {
+                "trade": ["X124-JYI", "2325"],
+                "ethereum transaction": ["0xfoo", "0xboo"]
+            }
+            },
+          "message": ""
+      }
+
+   :resjson object result: This returns the requested Pnl debug data. ``"events"`` represent the history events created within specified timestamps. ``"settings"`` represent the user settings as at when the pnl debug was exported. ``"ignored_events_ids"`` represent action identifiers ignored by the user.
+
+   :statuscode 200: Debugging history data returned successfully
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+
+Import PnL report debug data
+============================
+
+.. http:put:: /api/(version)/history/debug
+.. http:patch:: /api/(version)/history/debug
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a PUT on the PnL report debug endpoint with a path to the debug PnL json file will import the history events, settings and ignored action identifiers.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/history/debug HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+       {
+            "file": "/home/user/Documents/pnl_debug.json",
+            "async_query": true
+        }
+
+   :reqjson str file: The path to the exported debug PnL JSON file.
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: Boolean denoting success or failure of the query.
+
+   :statuscode 200: Import of debug history data successfully
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+
 Export action history to CSV
 ================================
 

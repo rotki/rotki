@@ -122,6 +122,20 @@ class DBSettings(NamedTuple):
     non_syncing_exchanges: List[ExchangeLocationID] = []
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
 
+    def serialize(self) -> Dict[str, Any]:
+        settings_dict = self._asdict()   # pylint: disable=no-member
+        for key in settings_dict:
+            value = settings_dict.get(key)
+            if value is not None:
+                if key in JSON_KEYS:
+                    value = [x.serialize() for x in value]
+                elif key == 'cost_basis_method':
+                    value = value.serialize()  # pylint: disable=no-member
+                elif key == 'main_currency':
+                    value = value.serialize()
+            settings_dict[key] = value
+        return settings_dict
+
 
 class ModifiableDBSettings(NamedTuple):
     premium_should_sync: Optional[bool] = None
