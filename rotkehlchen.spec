@@ -92,6 +92,7 @@ a = Entrypoint(
     hookspath=['tools/pyinstaller_hooks'],
     hiddenimports=hiddenimports,
     datas=[
+        # This list should be kept in sync with setup.py (package_data)
         ('rotkehlchen/data/eth_abi.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/eth_contracts.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/all_assets.json', 'rotkehlchen/data'),
@@ -102,7 +103,7 @@ a = Entrypoint(
         ('rotkehlchen/data/curve_pools.json', 'rotkehlchen/data'),
         # TODO
         # We probably should have a better way to specify some data should be loaded
-        # by a module in pynistaller. Should be loaded dynamically by rotki and not
+        # by a module in pyinstaller. Should be loaded dynamically by rotki and not
         # by pyinstaller if we want it to be truly modular
         (
             'rotkehlchen/chain/ethereum/modules/dxdaomesa/data/contracts.json',
