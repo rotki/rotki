@@ -67,7 +67,7 @@ export default defineComponent({
     const { shouldShowPercentage, scrambleData } = setupDisplayData();
 
     const displayValue = computed<string>(() => {
-      if (get(scrambleData)) {
+      if (get(scrambleData) || !get(shouldShowPercentage)) {
         return (Math.random() * 100 + 1).toFixed(2);
       }
 
