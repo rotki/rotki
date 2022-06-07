@@ -7,7 +7,19 @@ import time
 from functools import wraps
 from operator import attrgetter
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from gevent.hub import get_hub
 # We want to look as much like the sqlite3 DBAPI module as possible.
@@ -35,51 +47,58 @@ def _using_threadpool(method: Callable) -> Callable:
     return apply
 
 
-# OK so we share this between threads/greenlets, but
-# ultimately the worst that will happen with
-# simultaneous updates is that a query will move between
-# being considered a fast query and a slow query
-# so it isn't really worth locking (the GIL is enough here)
-query_speed: Dict[str, Union[object, Sequence[Optional[float]]]] = {}
 FAST_ENOUGH = object()
-too_slow = 0.001
+TOO_SLOW = 0.001
 
 
-def _maybe_execute_using_threadpool(method: Callable) -> Callable:
-    timefunc = time.time
+class GeventQueryContext:
+    """
+     OK so we share this between threads/greenlets, but
+     ultimately the worst that will happen with
+     simultaneous updates is that a query will move between
+     being considered a fast query and a slow query
+     so it isn't really worth locking (the GIL is enough here)
+    """
 
-    @wraps(method, ['__name__', '__doc__'])
-    def apply(*args: Any, **kwargs: Any) -> Any:
-        sql: str = args[1:2]  # type: ignore
-        moving_average = query_speed.get(sql, None)
-        if moving_average is FAST_ENOUGH:
-            t0 = timefunc()
-            # this query is usually fast so run it directly
-            result = method(*args, **kwargs)
-            duration = timefunc() - t0
-            if duration >= too_slow:
-                query_speed[sql] = init_moving_average(duration)
-        else:
-            t0 = timefunc()
-            # this query is usually slow so run it in another thread
-            result = get_hub().threadpool.apply(method, args, kwargs)
-            duration = timefunc() - t0
-            if moving_average is not None:
-                avg = update_average(duration, moving_average)  # type: ignore
-                if avg < too_slow:
-                    query_speed[sql] = FAST_ENOUGH
+    def __init__(self) -> None:
+        self.query_speed: Dict[str, Union[object, Sequence[Optional[float]]]] = {}
+
+    def maybe_execute_using_threadpool(self, method: Callable) -> Callable:
+        timefunc = time.time
+
+        @wraps(method, ['__name__', '__doc__'])
+        def apply(*args: Any, **kwargs: Any) -> Any:
+            sql: str = args[1:2]  # type: ignore
+            moving_average = self.query_speed.get(sql, None)
+            moving_average = FAST_ENOUGH
+            if moving_average is FAST_ENOUGH:
+                t0 = timefunc()
+                # this query is usually fast so run it directly
+                result = method(*args, **kwargs)
+                duration = timefunc() - t0
+                if duration >= TOO_SLOW:
+                    self.query_speed[sql] = init_moving_average(duration)
             else:
-                # first time we've seen this query
-                if duration > too_slow:
-                    query_speed[sql] = init_moving_average(duration)
+                t0 = timefunc()
+                # this query is usually slow so run it in another thread
+                result = get_hub().threadpool.apply(method, args, kwargs)
+                duration = timefunc() - t0
+                if moving_average is not None:
+                    avg = update_average(duration, moving_average)  # type: ignore
+                    if avg < TOO_SLOW:
+                        self.query_speed[sql] = FAST_ENOUGH
                 else:
-                    query_speed[sql] = FAST_ENOUGH
-        return result
-    return apply
+                    # first time we've seen this query
+                    if duration > TOO_SLOW:
+                        self.query_speed[sql] = init_moving_average(duration)
+                    else:
+                        self.query_speed[sql] = FAST_ENOUGH
+            return result
+        return apply
 
 
 def _make_gevent_friendly(
-        # dbdriver: Literal[sqlite3, sqlcipher],
+        context: GeventQueryContext,
         dbdriver: ModuleType,
         dbdriver_name: Literal['sqlite', 'sqlcipher'],
 ) -> Tuple[Callable, Type, Type]:
@@ -87,15 +106,15 @@ def _make_gevent_friendly(
 
     cursor_class = type(f'{dbdriver_name.capitalize()}Cursor', (dbdriver.Cursor,), {})
     for method in [
-            attrgetter('Cursor.executemany')(dbdriver),
-            attrgetter('Cursor.executescript')(dbdriver),
-            attrgetter('Cursor.fetchone')(dbdriver),
-            attrgetter('Cursor.fetchmany')(dbdriver),
-            attrgetter('Cursor.fetchall')(dbdriver),
+            dbdriver.Cursor.executemany,
+            dbdriver.Cursor.executescript,
+            dbdriver.Cursor.fetchone,
+            dbdriver.Cursor.fetchmany,
+            dbdriver.Cursor.fetchall,
     ]:
         setattr(cursor_class, method.__name__, _using_threadpool(method))
-        cursor_class.execute = _maybe_execute_using_threadpool(  # type: ignore
-            attrgetter('Cursor.execute')(dbdriver),
+        cursor_class.execute = context.maybe_execute_using_threadpool(  # type: ignore
+            dbdriver.Cursor.execute,
         )
 
     def connection_init(self: Type, *args: Any, **kwargs: Any) -> None:
@@ -117,12 +136,12 @@ def _make_gevent_friendly(
         },
     )
 
-    connection_class.execute = _maybe_execute_using_threadpool(  # type: ignore
+    connection_class.execute = context.maybe_execute_using_threadpool(  # type: ignore
         attrgetter('Connection.execute')(dbdriver),
     )
     for method in [
-            attrgetter('Connection.commit')(dbdriver),
-            attrgetter('Connection.rollback')(dbdriver),
+            dbdriver.Connection.commit,
+            dbdriver.Connection.rollback,
     ]:
         setattr(connection_class, method.__name__, _using_threadpool(method))
 
@@ -134,39 +153,35 @@ def _make_gevent_friendly(
     return new_connect, cursor_class, connection_class
 
 
-sqlite_connect, _, _ = _make_gevent_friendly(sqlite3, 'sqlite')
-sqlcipher_connect, _, _ = _make_gevent_friendly(sqlcipher, 'sqlcipher')  # noqa: E501
+SQLITE_CONTEXT = GeventQueryContext()
+sqlite_connect, _, _ = _make_gevent_friendly(
+    context=SQLITE_CONTEXT,
+    dbdriver=sqlite3,
+    dbdriver_name='sqlite',
+)
+SQLCIPHER_CONTEXT = GeventQueryContext()
+sqlcipher_connect, _, _ = _make_gevent_friendly(
+    context=SQLCIPHER_CONTEXT,
+    dbdriver=sqlcipher,
+    dbdriver_name='sqlcipher',
+)
 
-
-class SqliteCursor(sqlite3.Cursor):
-    """
-    This is only used for typing, since the dynamically created class from
-    _make_gevent_friendly can not be used in typing
-    """
-
-
-class SqliteConnection(sqlite3.Connection):
-    """
-    This is only used for typing, since the dynamically created class from
-    _make_gevent_friendly can not be used in typing
-    """
-
-    def cursor(self) -> SqliteCursor:  # type: ignore  # pylint: disable=no-self-use
+if TYPE_CHECKING:
+    # These are only used for typing, since the dynamically created class from
+    # _make_gevent_friendly can not be used in typing
+    class SqliteCursor(sqlite3.Cursor):
         ...
 
+    class SqliteConnection(sqlite3.Connection):
 
-class SqlcipherCursor(sqlcipher.Cursor):  # pylint: disable=no-member
-    """
-    This is only used for typing, since the dynamically created class from
-    _make_gevent_friendly can not be used in typing
-    """
+        def cursor(self) -> SqliteCursor:  # type: ignore  # pylint: disable=no-self-use
+            ...
 
-
-class SqlcipherConnection(sqlcipher.Connection):  # pylint: disable=no-member
-    """
-    This is only used for typing, since the dynamically created class from
-    _make_gevent_friendly can not be used in typing
-    """
-
-    def cursor(self) -> SqlcipherCursor:  # pylint: disable=no-self-use
+    class SqlcipherCursor(sqlcipher.Cursor):  # pylint: disable=no-member
         ...
+
+    class SqlcipherConnection(sqlcipher.Connection):  # pylint: disable=no-member
+        ...
+
+        def cursor(self) -> SqlcipherCursor:  # pylint: disable=no-self-use
+            ...
