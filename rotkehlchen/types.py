@@ -502,3 +502,8 @@ class EnsMapping(NamedTuple):
     address: ChecksumEthAddress
     name: str
     last_update: Timestamp = Timestamp(0)
+
+
+class CostBasisMethod(SerializableEnumMixin):
+    FIFO = 1
+    LIFO = 2

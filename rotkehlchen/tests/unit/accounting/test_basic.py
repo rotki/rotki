@@ -114,7 +114,7 @@ def test_buy_event_creation(accountant):
     ]
     accounting_history_process(accountant, 1436979735, 1519693374, history)
     no_message_errors(accountant.msg_aggregator)
-    buys = accountant.pots[0].cost_basis.get_events(A_BTC).acquisitions
+    buys = accountant.pots[0].cost_basis.get_events(A_BTC).acquisitions_manager.get_acquisitions()
     assert len(buys) == 2
     assert buys[0].amount == FVal(5)
     assert buys[0].timestamp == 1476979735

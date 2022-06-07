@@ -65,6 +65,7 @@ from rotkehlchen.types import (
     AssetAmount,
     AssetMovementCategory,
     BlockchainAccountData,
+    CostBasisMethod,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -353,6 +354,7 @@ def test_writing_fetching_data(data_dir, username):
         'ssf_0graph_multiplier': DEFAULT_SSF_0GRAPH_MULTIPLIER,
         'last_data_migration': DEFAULT_LAST_DATA_MIGRATION,
         'non_syncing_exchanges': [],
+        'cost_basis_method': CostBasisMethod.FIFO,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

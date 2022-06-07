@@ -1,9 +1,12 @@
 import pytest
 
 from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
+from rotkehlchen.accounting.types import MissingAcquisition
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_WETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.fval import FVal
+from rotkehlchen.types import CostBasisMethod
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
@@ -11,7 +14,7 @@ def test_calculate_spend_cost_basis_after_year(accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(5),
             timestamp=1446979735,  # 08/11/2015
@@ -19,7 +22,7 @@ def test_calculate_spend_cost_basis_after_year(accountant):
             index=1,
         ),
     )
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(15),
             timestamp=1467378304,  # 31/06/2016
@@ -27,7 +30,7 @@ def test_calculate_spend_cost_basis_after_year(accountant):
             index=2,
         ),
     )
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(3),  # 25/10/2016
             timestamp=1477378304,
@@ -56,9 +59,10 @@ def test_calculate_spend_cost_basis_after_year(accountant):
     assert cinfo.matched_acquisitions[1].event.amount == FVal(15)
     assert cinfo.matched_acquisitions[1].event.remaining_amount == FVal(12)
 
-    acquisitions_num = len(asset_events.acquisitions)
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    acquisitions_num = len(acquisitions)
     assert acquisitions_num == 2, 'first buy should have been used'
-    remaining_amount = asset_events.acquisitions[0].remaining_amount
+    remaining_amount = acquisitions[0].remaining_amount
     assert remaining_amount == FVal(12), '3 of 15 should have been consumed'
 
 
@@ -70,9 +74,8 @@ def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
-
             amount=FVal(5),
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
@@ -96,7 +99,7 @@ def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant):
     assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
     assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
 
-    acquisitions_num = len(asset_events.acquisitions)
+    acquisitions_num = len(asset_events.acquisitions_manager)
     assert acquisitions_num == 0, 'only buy should have been used'
 
 
@@ -109,7 +112,7 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(5),
             timestamp=1446979735,  # 08/11/2015
@@ -134,9 +137,10 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
     assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
     assert cinfo.matched_acquisitions[0].event.remaining_amount == FVal(2)
 
-    acquisitions_num = len(asset_events.acquisitions)
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    acquisitions_num = len(acquisitions)
     assert acquisitions_num == 1, 'whole buy was not used'
-    remaining_amount = asset_events.acquisitions[0].remaining_amount
+    remaining_amount = acquisitions[0].remaining_amount
     assert remaining_amount == FVal(2), '3 of 5 should have been consumed'
 
     # now eat up all the rest
@@ -156,7 +160,7 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
     assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
     assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
 
-    acquisitions_num = len(asset_events.acquisitions)
+    acquisitions_num = len(asset_events.acquisitions_manager)
     assert acquisitions_num == 0, 'the buy should have been used'
 
 
@@ -170,7 +174,7 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(5),
             timestamp=1446979735,  # 08/11/2015
@@ -195,9 +199,10 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
     assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
     assert cinfo.matched_acquisitions[0].event.remaining_amount == FVal(2)
 
-    acquisitions_num = len(asset_events.acquisitions)
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    acquisitions_num = len(acquisitions)
     assert acquisitions_num == 1, 'whole buy was not used'
-    remaining_amount = asset_events.acquisitions[0].remaining_amount
+    remaining_amount = acquisitions[0].remaining_amount
     assert remaining_amount == FVal(2), '3 of 5 should have been consumed'
 
     spending_amount = FVal(2)
@@ -216,7 +221,7 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
     assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
     assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
 
-    acquisitions_num = len(asset_events.acquisitions)
+    acquisitions_num = len(asset_events.acquisitions_manager)
     assert acquisitions_num == 0, 'the buy should have been used'
 
 
@@ -225,7 +230,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(1),
             timestamp=1446979735,  # 08/11/2015
@@ -233,7 +238,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
             index=1,
         ),
     )
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(1),
             timestamp=1467378304,  # 31/06/2016
@@ -262,7 +267,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
     assert cinfo.matched_acquisitions[1].event.amount == FVal(1)
     assert cinfo.matched_acquisitions[1].event.remaining_amount == ZERO
 
-    acquisitions_num = len(asset_events.acquisitions)
+    acquisitions_num = len(asset_events.acquisitions_manager)
     assert acquisitions_num == 0, 'only buy should have been used'
 
 
@@ -271,7 +276,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(1),
             timestamp=1446979735,  # 08/11/2015
@@ -279,7 +284,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
             index=1,
         ),
     )
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(1),
             timestamp=1467378304,  # 31/06/2016
@@ -308,7 +313,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
     assert cinfo.matched_acquisitions[1].event.amount == FVal(1)
     assert cinfo.matched_acquisitions[1].event.remaining_amount == ZERO
 
-    acquisitions_num = len(asset_events.acquisitions)
+    acquisitions_num = len(asset_events.acquisitions_manager)
     assert acquisitions_num == 0, 'only buy should have been used'
 
 
@@ -316,7 +321,7 @@ def test_reduce_asset_amount(accountant):
     asset = A_ETH
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(1),
             timestamp=1446979735,  # 08/11/2015
@@ -324,7 +329,7 @@ def test_reduce_asset_amount(accountant):
             index=1,
         ),
     )
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(1),
             timestamp=1467378304,  # 31/06/2016
@@ -332,7 +337,7 @@ def test_reduce_asset_amount(accountant):
             index=2,
         ),
     )
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(3),  # 25/10/2016
             timestamp=1477378304,
@@ -342,21 +347,22 @@ def test_reduce_asset_amount(accountant):
     )
 
     assert cost_basis.reduce_asset_amount(asset=asset, amount=FVal(1.5), timestamp=0)
-    acquisitions_num = len(asset_events.acquisitions)
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    acquisitions_num = len(acquisitions)
     assert acquisitions_num == 2, '1 buy should be used'
-    remaining_amount = asset_events.acquisitions[0].remaining_amount
+    remaining_amount = acquisitions[0].remaining_amount
     assert remaining_amount == FVal(0.5), '0.5 of 2nd buy should remain'
 
     # make sure same thing works for WETH
     equivalent_events = cost_basis.get_events(A_WETH)
-    assert equivalent_events.acquisitions[0].remaining_amount == FVal(0.5)
+    assert equivalent_events.acquisitions_manager.get_acquisitions()[0].remaining_amount == FVal(0.5)  # noqa: E501
 
 
 def test_reduce_asset_amount_exact(accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(1),
             timestamp=1446979735,  # 08/11/2015
@@ -364,7 +370,7 @@ def test_reduce_asset_amount_exact(accountant):
             index=1,
         ),
     )
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(1),
             timestamp=1467378304,  # 31/06/2016
@@ -374,7 +380,7 @@ def test_reduce_asset_amount_exact(accountant):
     )
 
     assert cost_basis.reduce_asset_amount(asset, FVal(2), 0)
-    acquisitions_num = len(asset_events.acquisitions)
+    acquisitions_num = len(asset_events.acquisitions_manager)
     assert acquisitions_num == 0, 'all buys should be used'
 
 
@@ -383,11 +389,11 @@ def test_reduce_asset_amount_not_bought(accountant):
     assert not accountant.pots[0].cost_basis.reduce_asset_amount(asset, FVal(3), 0)
 
 
-def test_reduce_asset_amount_more_that_bought(accountant):
+def test_reduce_asset_amount_more_than_bought(accountant):
     asset = A_ETH
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(1),
             timestamp=1446979735,  # 08/11/2015
@@ -395,7 +401,7 @@ def test_reduce_asset_amount_more_that_bought(accountant):
             index=1,
         ),
     )
-    asset_events.acquisitions.append(
+    asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
             amount=FVal(1),
             timestamp=1467378304,  # 31/06/2016
@@ -406,5 +412,171 @@ def test_reduce_asset_amount_more_that_bought(accountant):
 
     # Also reduce WETH, to make sure it's counted same as ETH
     assert not cost_basis.reduce_asset_amount(A_WETH, FVal(3), 0)
-    acquisitions_num = len(asset_events.acquisitions)
+    acquisitions_num = len(asset_events.acquisitions_manager)
     assert acquisitions_num == 0, 'all buys should be used'
+
+
+def test_accounting_lifo_order(accountant):
+    asset = A_ETH
+    cost_basis = accountant.pots[0].cost_basis
+    cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.LIFO))
+    asset_events = cost_basis.get_events(asset)
+    # first we do a simple test that from 2 events the second is used
+    event1 = AssetAcquisitionEvent(
+        amount=FVal(1),
+        timestamp=1,
+        rate=FVal(1),
+        index=1,
+    )
+    event2 = AssetAcquisitionEvent(
+        amount=FVal(1),
+        timestamp=2,
+        rate=FVal(1),
+        index=2,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event1)
+    asset_events.acquisitions_manager.add_acquisition(event2)
+    assert cost_basis.reduce_asset_amount(A_ETH, FVal(1), 0)
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    assert len(acquisitions) == 1 and acquisitions[0] == event1
+    # then test to reset
+    cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.LIFO))
+    asset_events = cost_basis.get_events(asset)
+    # checking what happens if one of the events has non-zero remaining_amount
+    event3 = AssetAcquisitionEvent(
+        amount=FVal(2),
+        timestamp=1,
+        rate=FVal(1),
+        index=1,
+    )
+    event4 = AssetAcquisitionEvent(
+        amount=FVal(5),
+        timestamp=2,
+        rate=FVal(1),
+        index=2,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event3)
+    asset_events.acquisitions_manager.add_acquisition(event4)
+    assert cost_basis.calculate_spend_cost_basis(
+        spending_amount=3,
+        spending_asset=A_ETH,
+        timestamp=1,
+    ).is_complete is True
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    assert acquisitions[0].remaining_amount == FVal(2) and acquisitions[1] == event3
+    # checking that new event after processing previous is added properly
+    event5 = AssetAcquisitionEvent(
+        amount=FVal(1),
+        timestamp=1,
+        rate=FVal(1),
+        index=1,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event5)
+    assert cost_basis.calculate_spend_cost_basis(
+        spending_amount=4,
+        spending_asset=A_ETH,
+        timestamp=2,
+    ).is_complete is True
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    assert len(acquisitions) == 1 and acquisitions[0].amount == FVal(2) and acquisitions[0].remaining_amount == FVal(1)  # noqa: E501
+    # check what happens if we use all remaining events
+    event6 = AssetAcquisitionEvent(
+        amount=FVal(1),
+        timestamp=1,
+        rate=FVal(1),
+        index=1,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event6)
+    assert cost_basis.calculate_spend_cost_basis(
+        spending_amount=2,
+        spending_asset=A_ETH,
+        timestamp=3,
+    ).is_complete is True
+    acquisitions = asset_events.acquisitions_manager.get_acquisitions()
+    assert len(acquisitions) == 0
+    # check what happens if we try to use more than available
+    event7 = AssetAcquisitionEvent(
+        amount=FVal(1),
+        timestamp=1,
+        rate=FVal(1),
+        index=1,
+    )
+    asset_events.acquisitions_manager.add_acquisition(event7)
+    assert cost_basis.calculate_spend_cost_basis(
+        spending_amount=2,
+        spending_asset=A_ETH,
+        timestamp=4,
+    ).is_complete is False
+    assert cost_basis.missing_acquisitions == [
+        MissingAcquisition(
+            asset=A_ETH,
+            time=4,
+            found_amount=FVal(1),
+            missing_amount=FVal(1),
+        ),
+    ]
+
+
+def test_missing_acquisitions(accountant):
+    """Test that missing acquisitions are added properly by
+    reduce_asset_amount and calculate_spend_cost_basis
+    """
+    expected_missing_acquisitions = []
+    cost_basis = accountant.pots[0].cost_basis
+    all_events = cost_basis.get_events(A_ETH)
+    # Test when there are no documented acquisitions
+    cost_basis.reduce_asset_amount(
+        asset=A_ETH,
+        amount=1,
+        timestamp=1,
+    )
+    assert cost_basis.missing_acquisitions == expected_missing_acquisitions
+    cost_basis.calculate_spend_cost_basis(
+        spending_asset=A_ETH,
+        spending_amount=1,
+        timestamp=1,
+    )
+    expected_missing_acquisitions.append(MissingAcquisition(
+        asset=A_ETH,
+        missing_amount=1,
+        found_amount=0,
+        time=1,
+    ))
+    assert cost_basis.missing_acquisitions == expected_missing_acquisitions
+    # Test when there are documented acquisitions (1 in this case)
+    all_events.acquisitions_manager.add_acquisition(AssetAcquisitionEvent(
+        amount=2,
+        rate=1,
+        index=1,
+        timestamp=2,
+    ))
+    cost_basis.reduce_asset_amount(
+        asset=A_ETH,
+        amount=3,
+        timestamp=3,
+    )
+    expected_missing_acquisitions.append(MissingAcquisition(
+        asset=A_ETH,
+        missing_amount=1,
+        found_amount=2,
+        time=3,
+    ))
+    assert cost_basis.missing_acquisitions == expected_missing_acquisitions
+    all_events.acquisitions_manager.add_acquisition(AssetAcquisitionEvent(
+        amount=2,
+        rate=1,
+        index=2,
+        timestamp=3,
+    ))
+    cost_basis.calculate_spend_cost_basis(
+        spending_asset=A_ETH,
+        spending_amount=3,
+        timestamp=4,
+    )
+    expected_missing_acquisitions.append(MissingAcquisition(
+        asset=A_ETH,
+        missing_amount=1,
+        found_amount=2,
+        time=4,
+    ))
+    assert cost_basis.missing_acquisitions == expected_missing_acquisitions
