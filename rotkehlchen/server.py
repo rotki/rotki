@@ -48,6 +48,11 @@ class RotkehlchenServer():
         self.stop_event.set()
 
     def main(self) -> None:
+        # disable printing hub exceptions in stderr. With using the hub to do various
+        # tasks that should raise exceptions and have them handled outside the hub
+        # printing them in stdout is now too much spam (and would worry users too)
+        hub = gevent.hub.get_hub()
+        hub.exception_stream = None
         if os.name != 'nt':
             gevent.hub.signal(signal.SIGQUIT, self.shutdown)
         gevent.hub.signal(signal.SIGINT, self.shutdown)
