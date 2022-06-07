@@ -41,10 +41,11 @@ export default defineComponent({
     identifier: { required: true, type: String as PropType<TradeLocation> },
     icon: { required: false, type: Boolean, default: false },
     size: { required: false, type: String, default: '24px' },
-    opensDetails: { required: false, type: Boolean, default: true }
+    opensDetails: { required: false, type: Boolean, default: true },
+    isAccount: { required: false, type: Boolean, default: false }
   },
   setup(props) {
-    const { identifier } = toRefs(props);
+    const { identifier, isAccount } = toRefs(props);
 
     const { getLocation } = setupLocationInfo();
 
@@ -52,12 +53,18 @@ export default defineComponent({
       getLocation(get(identifier))
     );
 
-    const route = {
-      path: Routes.LOCATIONS.route.replace(
-        ':identifier',
-        get(location).identifier
-      )
-    };
+    const route = computed<{ path: string }>(() => {
+      const path = get(isAccount)
+        ? `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}#blockchain-balances-${
+            get(location).identifier
+          }`
+        : Routes.LOCATIONS.route.replace(
+            ':identifier',
+            get(location).identifier
+          );
+
+      return { path };
+    });
 
     return {
       location,
