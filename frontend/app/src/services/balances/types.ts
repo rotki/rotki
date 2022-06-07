@@ -67,6 +67,7 @@ const PerAccountBalances = z.object({
   [Blockchain.ETH]: BlockchainAssetBalances.optional(),
   [Blockchain.ETH2]: BlockchainAssetBalances.optional(),
   [Blockchain.BTC]: BtcBalances.optional(),
+  [Blockchain.BCH]: BtcBalances.optional(),
   [Blockchain.KSM]: BlockchainAssetBalances.optional(),
   [Blockchain.DOT]: BlockchainAssetBalances.optional(),
   [Blockchain.AVAX]: BlockchainAssetBalances.optional()

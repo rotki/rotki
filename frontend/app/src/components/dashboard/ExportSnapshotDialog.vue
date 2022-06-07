@@ -35,7 +35,7 @@
           <v-icon class="mr-2">mdi-delete-outline</v-icon>
           {{ $t('dashboard.snapshot.delete_snapshot') }}
         </v-btn>
-        <v-btn depressed color="primary" @click="exportSnapshot">
+        <v-btn color="primary" @click="exportSnapshot">
           <v-icon class="mr-2">mdi-download</v-icon>
           {{ $t('dashboard.snapshot.download_snapshot') }}
         </v-btn>

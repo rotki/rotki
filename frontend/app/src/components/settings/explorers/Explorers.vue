@@ -37,7 +37,7 @@
         <v-btn
           icon
           :disabled="!isValid(address)"
-          class="pb-3"
+          class="mt-n2"
           @click="saveAddress(address)"
         >
           <v-icon>mdi-content-save</v-icon>
@@ -58,7 +58,7 @@
         <v-btn
           icon
           :disabled="!isValid(tx)"
-          class="pb-3"
+          class="mt-n2"
           @click="saveTransaction(tx)"
         >
           <v-icon>mdi-content-save</v-icon>

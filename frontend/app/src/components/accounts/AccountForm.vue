@@ -200,7 +200,7 @@ const AccountForm = defineComponent({
       if (get(edit)) {
         return;
       }
-      if (value === Blockchain.BTC) {
+      if ([Blockchain.BTC, Blockchain.BCH].includes(value)) {
         set(inputMode, XPUB_ADD);
       } else {
         set(inputMode, MANUAL_ADD);
@@ -215,7 +215,6 @@ const AccountForm = defineComponent({
 
     const isEth = computed(() => get(blockchain) === Blockchain.ETH);
     const isEth2 = computed(() => get(blockchain) === Blockchain.ETH2);
-    const isBtc = computed(() => get(blockchain) === Blockchain.BTC);
     const isXpub = computed(() => get(inputMode) === XPUB_ADD);
     const isMetamask = computed(() => get(inputMode) === METAMASK_IMPORT);
 
@@ -441,7 +440,6 @@ const AccountForm = defineComponent({
       errorMessages,
       isEth,
       isEth2,
-      isBtc,
       isXpub,
       isMetamask,
       loading,

@@ -94,6 +94,23 @@
     />
 
     <account-balances
+      v-if="bchAccounts.length > 0"
+      id="blockchain-balances-BCH"
+      v-intersect="{
+        handler: observers.BCH,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="$t('blockchain_balances.balances.bch')"
+      blockchain="BCH"
+      :balances="bchAccounts"
+      data-cy="blockchain-balances-BCH"
+      @edit-account="editAccount($event)"
+    />
+
+    <account-balances
       v-if="kusamaBalances.length > 0"
       id="blockchain-balances-KSM"
       v-intersect="{
@@ -261,6 +278,7 @@ const BlockchainBalances = defineComponent({
       [Blockchain.ETH]: false,
       [Blockchain.ETH2]: false,
       [Blockchain.BTC]: false,
+      [Blockchain.BCH]: false,
       [Blockchain.KSM]: false,
       [Blockchain.DOT]: false,
       [Blockchain.AVAX]: false
@@ -285,6 +303,8 @@ const BlockchainBalances = defineComponent({
 
       if (hasData(data.btcAccounts)) {
         return Blockchain.BTC;
+      } else if (hasData(data.bchAccounts)) {
+        return Blockchain.BCH;
       } else if (hasData(data.kusamaBalances)) {
         return Blockchain.KSM;
       } else if (hasData(data.polkadotBalances)) {
@@ -315,6 +335,8 @@ const BlockchainBalances = defineComponent({
         updateWhenRatio(entries, Blockchain.ETH2),
       [Blockchain.BTC]: (entries: IntersectionObserverEntry[]) =>
         updateWhenRatio(entries, Blockchain.BTC),
+      [Blockchain.BCH]: (entries: IntersectionObserverEntry[]) =>
+        updateWhenRatio(entries, Blockchain.BCH),
       [Blockchain.KSM]: (entries: IntersectionObserverEntry[]) =>
         updateWhenRatio(entries, Blockchain.KSM),
       [Blockchain.DOT]: (entries: IntersectionObserverEntry[]) =>

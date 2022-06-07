@@ -44,6 +44,7 @@ export interface BalanceGetters {
   eth2Balances: BlockchainAccountWithBalance[];
   ethAddresses: string[];
   btcAccounts: BlockchainAccountWithBalance[];
+  bchAccounts: BlockchainAccountWithBalance[];
   kusamaBalances: BlockchainAccountWithBalance[];
   avaxAccounts: BlockchainAccountWithBalance[];
   polkadotBalances: BlockchainAccountWithBalance[];
@@ -163,7 +164,6 @@ export const getters: Getters<
   kusamaBalances: ({ ksmAccounts, ksm }) => {
     return balances(ksmAccounts, ksm, Blockchain.KSM);
   },
-
   avaxAccounts: ({
     avaxAccounts,
     avax
@@ -221,6 +221,65 @@ export const getters: Getters<
           index >= 0 ? xpubs[index].addresses[address] : zeroBalance();
         accounts.push({
           chain: Blockchain.BTC,
+          xpub: xpub,
+          derivationPath: derivationPath ?? '',
+          address: address,
+          label: label ?? '',
+          tags: tags ?? [],
+          balance: balance
+        });
+      }
+    }
+    return accounts;
+  },
+  bchAccounts({
+    bch,
+    bchAccounts
+  }: BalanceState): BlockchainAccountWithBalance[] {
+    const accounts: BlockchainAccountWithBalance[] = [];
+
+    const { standalone, xpubs } = bchAccounts;
+    const zeroBalance = () => ({
+      amount: Zero,
+      usdValue: Zero
+    });
+
+    for (const { address, label, tags } of standalone) {
+      const balance = bch.standalone?.[address] ?? zeroBalance();
+      accounts.push({
+        address,
+        label: label ?? '',
+        tags: tags ?? [],
+        chain: Blockchain.BCH,
+        balance
+      });
+    }
+
+    for (const { addresses, derivationPath, label, tags, xpub } of xpubs) {
+      accounts.push({
+        chain: Blockchain.BCH,
+        xpub,
+        derivationPath: derivationPath ?? '',
+        address: '',
+        label: label ?? '',
+        tags: tags ?? [],
+        balance: zeroBalance()
+      });
+
+      if (!addresses) {
+        continue;
+      }
+
+      for (const { address, label, tags } of addresses) {
+        const { xpubs } = bch;
+        if (!xpubs) {
+          continue;
+        }
+        const index = xpubs.findIndex(xpub => xpub.addresses[address]) ?? -1;
+        const balance =
+          index >= 0 ? xpubs[index].addresses[address] : zeroBalance();
+        accounts.push({
+          chain: Blockchain.BCH,
           xpub: xpub,
           derivationPath: derivationPath ?? '',
           address: address,
@@ -471,6 +530,7 @@ export const getters: Getters<
     const totals: BlockchainTotal[] = [];
     const ethAccounts: BlockchainAccountWithBalance[] = getters.ethAccounts;
     const btcAccounts: BlockchainAccountWithBalance[] = getters.btcAccounts;
+    const bchAccounts: BlockchainAccountWithBalance[] = getters.bchAccounts;
     const kusamaBalances: BlockchainAccountWithBalance[] =
       getters.kusamaBalances;
     const polkadotBalances: BlockchainAccountWithBalance[] =
@@ -524,6 +584,16 @@ export const getters: Getters<
         l2: [],
         usdValue: sum(btcAccounts),
         loading: btcStatus === Status.NONE || btcStatus === Status.LOADING
+      });
+    }
+
+    if (bchAccounts.length > 0) {
+      const bchStatus = getStatus(Section.BLOCKCHAIN_BCH);
+      totals.push({
+        chain: Blockchain.BCH,
+        l2: [],
+        usdValue: sum(bchAccounts),
+        loading: bchStatus === Status.NONE || bchStatus === Status.LOADING
       });
     }
 
@@ -629,10 +699,18 @@ export const getters: Getters<
 
   accounts: (
     _,
-    { ethAccounts, btcAccounts, kusamaBalances, polkadotBalances, avaxAccounts }
+    {
+      ethAccounts,
+      btcAccounts,
+      bchAccounts,
+      kusamaBalances,
+      polkadotBalances,
+      avaxAccounts
+    }
   ): GeneralAccount[] => {
     return ethAccounts
       .concat(btcAccounts)
+      .concat(bchAccounts)
       .concat(kusamaBalances)
       .concat(polkadotBalances)
       .concat(avaxAccounts)
@@ -666,8 +744,10 @@ export const getters: Getters<
   },
   assetBreakdown:
     ({
-      btc: { standalone, xpubs },
+      btc,
       btcAccounts,
+      bch,
+      bchAccounts,
       ksmAccounts,
       dotAccounts,
       avaxAccounts,
@@ -754,6 +834,7 @@ export const getters: Getters<
       }
 
       if (asset === Blockchain.BTC) {
+        const { standalone, xpubs } = btc;
         if (standalone) {
           for (const address in standalone) {
             const btcBalance = standalone[address];
@@ -783,6 +864,44 @@ export const getters: Getters<
                 address,
                 location: Blockchain.BTC,
                 balance: btcBalance,
+                tags
+              });
+            }
+          }
+        }
+      }
+
+      if (asset === Blockchain.BCH) {
+        const { standalone, xpubs } = bch;
+        if (standalone) {
+          for (const address in standalone) {
+            const bchBalance = standalone[address];
+            const tags =
+              bchAccounts?.standalone.find(
+                bchAccount => bchAccount.address === address
+              )?.tags || [];
+
+            breakdown.push({
+              address,
+              location: Blockchain.BCH,
+              balance: bchBalance,
+              tags
+            });
+          }
+        }
+
+        if (xpubs) {
+          for (let i = 0; i < xpubs.length; i++) {
+            const xpub = xpubs[i];
+            const addresses = xpub.addresses;
+            const tags = bchAccounts?.xpubs[i].tags;
+            for (const address in addresses) {
+              const bchBalance = addresses[address];
+
+              breakdown.push({
+                address,
+                location: Blockchain.BCH,
+                balance: bchBalance,
                 tags
               });
             }

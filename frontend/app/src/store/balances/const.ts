@@ -3,6 +3,7 @@ import { Section } from '@/store/const';
 
 export const chainSection: ChainSections = {
   BTC: Section.BLOCKCHAIN_BTC,
+  BCH: Section.BLOCKCHAIN_BCH,
   ETH: Section.BLOCKCHAIN_ETH,
   ETH2: Section.BLOCKCHAIN_ETH2,
   KSM: Section.BLOCKCHAIN_KSM,

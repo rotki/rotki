@@ -654,9 +654,10 @@ export class RotkehlchenApi {
   }
 
   async editBtcAccount(
-    payload: BlockchainAccountPayload
+    payload: BlockchainAccountPayload,
+    blockchain: Blockchain.BTC | Blockchain.BCH = Blockchain.BTC
   ): Promise<BtcAccountData> {
-    let url = '/blockchains/BTC';
+    let url = `/blockchains/${blockchain}`;
     const { address, label, tags } = payload;
 
     let data: {};
@@ -719,11 +720,12 @@ export class RotkehlchenApi {
   }
 
   async deleteXpub({
+    blockchain,
     derivationPath,
     xpub
   }: XpubPayload): Promise<PendingTask> {
     return this.axios
-      .delete<ActionResult<PendingTask>>(`/blockchains/BTC/xpub`, {
+      .delete<ActionResult<PendingTask>>(`/blockchains/${blockchain}/xpub`, {
         data: axiosSnakeCaseTransformer({
           xpub,
           derivationPath: derivationPath ? derivationPath : undefined,
@@ -912,9 +914,11 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async btcAccounts(): Promise<BtcAccountData> {
+  async btcAccounts(
+    blockchain: Blockchain.BTC | Blockchain.BCH
+  ): Promise<BtcAccountData> {
     return this.axios
-      .get<ActionResult<BtcAccountData>>('/blockchains/BTC', {
+      .get<ActionResult<BtcAccountData>>(`/blockchains/${blockchain}`, {
         validateStatus: validWithSessionStatus,
         transformResponse: basicAxiosTransformer
       })

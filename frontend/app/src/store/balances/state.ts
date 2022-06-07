@@ -10,6 +10,10 @@ export const defaultState = (): BalanceState => ({
     standalone: {},
     xpubs: []
   },
+  bch: {
+    standalone: {},
+    xpubs: []
+  },
   totals: {},
   liabilities: {},
   usdToFiatExchangeRates: {},
@@ -20,6 +24,10 @@ export const defaultState = (): BalanceState => ({
   dotAccounts: [],
   avaxAccounts: [],
   btcAccounts: {
+    standalone: [],
+    xpubs: []
+  },
+  bchAccounts: {
     standalone: [],
     xpubs: []
   },

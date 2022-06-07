@@ -49,7 +49,11 @@
           {{ xpub.derivationPath }}
         </span>
       </div>
-      <tag-display wrapper-class="mt-1 ms-8" :tags="xpubTags" />
+      <tag-display
+        v-if="xpubTags && xpubTags.length > 0"
+        wrapper-class="mt-1 ms-8"
+        :tags="xpubTags"
+      />
     </td>
     <td class="text-end" :class="mobileClass">
       <amount-display
@@ -67,30 +71,31 @@
       />
     </td>
     <td class="text-end" :class="mobileClass">
-      <v-tooltip top>
-        <template #activator="{ on, attrs }">
-          <v-btn
-            small
-            v-bind="attrs"
-            icon
-            :disabled="false"
-            class="mx-1"
-            v-on="on"
-            @click="editClicked(xpub)"
-          >
-            <v-icon small> mdi-pencil-outline </v-icon>
-          </v-btn>
-        </template>
-        <span>{{ $t('account_group_header.edit_tooltip') }}</span>
-      </v-tooltip>
-      <v-tooltip top open-delay="400">
-        <template #activator="{ on }">
-          <v-btn small icon class="mr-1" v-on="on" @click="deleteClicked(xpub)">
-            <v-icon small>mdi-delete-outline</v-icon>
-          </v-btn>
-        </template>
-        <span> {{ $t('account_group_header.delete_tooltip') }} </span>
-      </v-tooltip>
+      <div class="d-flex">
+        <v-tooltip top>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              v-bind="attrs"
+              icon
+              :disabled="false"
+              class="mx-1"
+              v-on="on"
+              @click="editClicked(xpub)"
+            >
+              <v-icon small> mdi-pencil-outline </v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('account_group_header.edit_tooltip') }}</span>
+        </v-tooltip>
+        <v-tooltip top open-delay="400">
+          <template #activator="{ on }">
+            <v-btn icon class="mr-1" v-on="on" @click="deleteClicked(xpub)">
+              <v-icon small>mdi-delete-outline</v-icon>
+            </v-btn>
+          </template>
+          <span> {{ $t('account_group_header.delete_tooltip') }} </span>
+        </v-tooltip>
+      </div>
     </td>
   </fragment>
 </template>
