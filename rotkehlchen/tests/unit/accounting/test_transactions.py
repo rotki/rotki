@@ -12,7 +12,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
@@ -69,7 +69,7 @@ def test_gas_fees_after_year(accountant, google_service):
             timestamp=Timestamp(1539713238),  # 178.615 EUR/ETH
             action_type=LedgerActionType.GIFT,  # gift so not counting as income
             location=Location.KRAKEN,
-            amount=FVal(1),
+            amount=ONE,
             asset=A_ETH,
             rate=None,
             rate_asset=None,

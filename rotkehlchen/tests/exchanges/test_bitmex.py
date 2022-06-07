@@ -76,7 +76,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(sandbox_bitmex)
             asset=A_BTC,
             amount=FVal('0.46966992'),
             fee_asset=A_BTC,
-            fee=FVal(0),
+            fee=ZERO,
             link='166b9aac-70ac-cedc-69a0-dbd12c0661bf',
         ),
         AssetMovement(
@@ -100,7 +100,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(sandbox_bitmex)
             asset=A_BTC,
             amount=FVal('0.38474377'),
             fee_asset=A_BTC,
-            fee=FVal(0),
+            fee=ZERO,
             link='72500751-d052-5bbb-18d7-08363edef812',
         ),
         AssetMovement(

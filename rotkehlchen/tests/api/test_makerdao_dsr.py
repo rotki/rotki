@@ -18,7 +18,7 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_POT,
     MAKERDAO_VAT,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -449,8 +449,8 @@ def assert_dsr_current_result_is_correct(result: Dict[str, Any], setup: DSRTestS
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: ONE}])
 def test_query_current_dsr_balance(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -533,8 +533,8 @@ def assert_dsr_history_result_is_correct(result: Dict[str, Any], setup: DSRTestS
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: ONE}])
 def test_query_historical_dsr(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -572,8 +572,8 @@ def test_query_historical_dsr(
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: FVal(1)}])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('mocked_current_prices', [{A_DAI: ONE}])
 def test_query_historical_dsr_with_a_zero_withdrawal(
         rotkehlchen_api_server,
         ethereum_accounts,

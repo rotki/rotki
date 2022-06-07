@@ -11,7 +11,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.base import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants import YEAR_IN_SECONDS
+from rotkehlchen.constants import ONE, YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler, detect_sqlcipher_version
@@ -600,8 +600,8 @@ def test_query_owned_assets(data_dir, username):
             base_asset=A_ETH,
             quote_asset=A_BTC,
             trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(1)),
-            rate=Price(FVal(1)),
+            amount=AssetAmount(ONE),
+            rate=Price(ONE),
             fee=Fee(FVal('0.1')),
             fee_currency=A_BTC,
             link='',
@@ -613,7 +613,7 @@ def test_query_owned_assets(data_dir, username):
             quote_asset=A_BTC,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal(2)),
-            rate=Price(FVal(1)),
+            rate=Price(ONE),
             fee=Fee(FVal('0.1')),
             fee_currency=A_BTC,
             link='',
@@ -624,8 +624,8 @@ def test_query_owned_assets(data_dir, username):
             base_asset=A_SDC,
             quote_asset=A_SDT2,
             trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(1)),
-            rate=Price(FVal(1)),
+            amount=AssetAmount(ONE),
+            rate=Price(ONE),
             fee=Fee(FVal('0.1')),
             fee_currency=A_BTC,
             link='',
@@ -636,8 +636,8 @@ def test_query_owned_assets(data_dir, username):
             base_asset=A_SUSHI,
             quote_asset=A_1INCH,
             trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(1)),
-            rate=Price(FVal(1)),
+            amount=AssetAmount(ONE),
+            rate=Price(ONE),
             fee=Fee(FVal('0.1')),
             fee_currency=A_BTC,
             link='',
@@ -649,7 +649,7 @@ def test_query_owned_assets(data_dir, username):
             quote_asset=A_1INCH,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal(2)),
-            rate=Price(FVal(1)),
+            rate=Price(ONE),
             fee=Fee(FVal('0.1')),
             fee_currency=A_BTC,
             link='',
@@ -1234,7 +1234,7 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
         address='0xfoo',
         transaction_id=99999999999999999999999999999999999999999,
         asset=A_BTC,
-        amount=FVal(1),
+        amount=ONE,
         fee_asset=A_BTC,
         fee=Fee(FVal('0.0001')),
         link='a link',

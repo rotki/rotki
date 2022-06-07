@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -25,7 +26,7 @@ def test_query_ledger_actions(events_historian, function_scope_messages_aggregat
         timestamp=selected_timestamp - 2,
         action_type=LedgerActionType.INCOME,
         location=Location.EXTERNAL,
-        amount=FVal(1),
+        amount=ONE,
         asset=A_ETH,
         rate=None,
         rate_asset=None,

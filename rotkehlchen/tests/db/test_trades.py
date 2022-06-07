@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from rotkehlchen.chain.ethereum.trades import AMMSwap
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_GNO, A_UNI, A_USDC
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.filtering import TradesFilterQuery
@@ -38,7 +38,7 @@ def test_query_trades_including_ammswaps(data_dir, username):
             base_asset=A_ETH,
             quote_asset=A_USDC,
             trade_type=TradeType.BUY,
-            amount=FVal(1),
+            amount=ONE,
             rate=Price(FVal(1.5)),
             fee=None,
             fee_currency=None,
@@ -50,7 +50,7 @@ def test_query_trades_including_ammswaps(data_dir, username):
             base_asset=A_BTC,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=FVal(1),
+            amount=ONE,
             rate=Price(FVal(1.5)),
             fee=None,
             fee_currency=None,
@@ -81,7 +81,7 @@ def test_query_trades_including_ammswaps(data_dir, username):
             location=Location.UNISWAP,
             token0=A_DAI,
             token1=A_USDC,
-            amount0_in=FVal(1),
+            amount0_in=ONE,
             amount1_in=ZERO,
             amount0_out=ZERO,
             amount1_out=FVal(2),
@@ -95,7 +95,7 @@ def test_query_trades_including_ammswaps(data_dir, username):
             location=Location.BALANCER,
             token0=A_UNI,
             token1=A_USDC,
-            amount0_in=FVal(1),
+            amount0_in=ONE,
             amount1_in=ZERO,
             amount0_out=ZERO,
             amount1_out=FVal(1.5),

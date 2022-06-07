@@ -10,6 +10,7 @@ from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_CRV, A_ETH, A_USDC
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
@@ -105,7 +106,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
             asset=A_ETH,
             balance=Balance(
                 amount=FVal(0.01212979988),
-                usd_value=FVal(0),
+                usd_value=ZERO,
             ),
             location_label='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',
             notes='Burned 0.01212979988 ETH in gas from 0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',  # noqa: E501
@@ -118,7 +119,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
-            balance=Balance(amount=FVal(45), usd_value=FVal(0)),
+            balance=Balance(amount=FVal(45), usd_value=ZERO),
             location_label='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',
             notes='Swap 45 USDC in kyber',
             counterparty='kyber legacy',
@@ -132,7 +133,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
             asset=A_ETH,
             balance=Balance(
                 amount=FVal('0.187603293406027635'),
-                usd_value=FVal(0),
+                usd_value=ZERO,
             ),
             location_label='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',
             notes='Receive 0.187603293406027635 ETH from kyber swap',
@@ -225,7 +226,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
             asset=A_ETH,
             balance=Balance(
                 amount=FVal(0.066614401),
-                usd_value=FVal(0),
+                usd_value=ZERO,
             ),
             location_label='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
             notes='Burned 0.066614401 ETH in gas from 0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',  # noqa: E501
@@ -238,7 +239,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
-            balance=Balance(amount=FVal(8139.77872), usd_value=FVal(0)),
+            balance=Balance(amount=FVal(8139.77872), usd_value=ZERO),
             location_label='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
             notes='Swap 8139.77872 USDC in kyber',
             counterparty='kyber legacy',
@@ -249,7 +250,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_CRV,
-            balance=Balance(amount=FVal('2428.33585390706162556'), usd_value=FVal(0)),
+            balance=Balance(amount=FVal('2428.33585390706162556'), usd_value=ZERO),
             location_label='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
             notes='Receive 2428.33585390706162556 CRV from kyber swap',
             counterparty='kyber legacy',

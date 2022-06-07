@@ -240,7 +240,7 @@ def test_add_and_query_manually_tracked_balances(
 A_CYFM = EthereumToken('0x3f06B5D78406cD97bdf10f5C420B241D32759c80')
 
 
-@pytest.mark.parametrize('mocked_current_prices', [{A_CYFM.identifier: FVal(0)}])
+@pytest.mark.parametrize('mocked_current_prices', [{A_CYFM.identifier: ZERO}])
 def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
     """Test that adding a manually tracked balance of an asset for which we cant
     query a price is handled properly both in the adding and querying part

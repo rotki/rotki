@@ -10,7 +10,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
@@ -247,7 +247,7 @@ def test_margin_events_affect_gained_lost_amount(accountant, google_service):
             base_asset=A_BTC,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=FVal(1),
+            amount=ONE,
             rate=FVal('2519.62'),
             fee=FVal('0.02'),
             fee_currency=A_EUR,

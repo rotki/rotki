@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 import pytest
 import requests
 
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
@@ -890,9 +891,9 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
         base_asset=A_ETH,
         quote_asset=A_EUR,
         trade_type=TradeType.BUY,
-        amount=FVal(1),
-        rate=FVal(1),
-        fee=FVal(1),
+        amount=ONE,
+        rate=ONE,
+        fee=ONE,
         fee_currency=A_EUR,
         link='',
         notes='',
@@ -907,7 +908,7 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
         asset=A_BTC,
         amount=FVal(100),
         fee_asset=A_BTC,
-        fee=FVal(1),
+        fee=ONE,
         link='') for x in (Location.CRYPTOCOM, Location.KRAKEN)]
     rotki.data.db.add_asset_movements(movements)
     assert len(rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)) == 2  # noqa: E501

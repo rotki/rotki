@@ -11,7 +11,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_ADA,
     A_BCH,
@@ -379,7 +379,7 @@ def test_kraken_trade_with_spend_receive(function_scope_kraken):
 
     assert len(trades) == 1
     trade = trades[0]
-    assert trade.amount == FVal(1)
+    assert trade.amount == ONE
     assert trade.trade_type == TradeType.BUY
     assert trade.rate == FVal(100)
     assert trade.base_asset == A_ETH

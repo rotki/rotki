@@ -13,7 +13,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS
+from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ONE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
@@ -504,7 +504,7 @@ def test_custom_asset_delete_guard(rotkehlchen_api_server):
         id=-1,
         asset=Asset(custom1_id),
         label='manual1',
-        amount=FVal(1),
+        amount=ONE,
         location=Location.EXTERNAL,
         tags=None,
         balance_type=BalanceType.ASSET,

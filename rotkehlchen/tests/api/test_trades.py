@@ -11,7 +11,7 @@ from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_WETH
 from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -288,8 +288,8 @@ def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_wi
         quote_asset=A_EUR,
         trade_type=TradeType.BUY,
         amount=FVal(x + 1),
-        rate=FVal(1),
-        fee=FVal(0),
+        rate=ONE,
+        fee=ZERO,
         fee_currency=A_EUR,
         link='',
         notes='') for x in range(FREE_TRADES_LIMIT + 50)

@@ -10,7 +10,7 @@ from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_BAL,
@@ -526,7 +526,7 @@ class MakerdaoVaults(HasDSProxy):
             usd_price = query_usd_price_or_use_default(
                 asset=A_DAI,
                 time=timestamp,
-                default_value=FVal(1),
+                default_value=ONE,
                 location='vault debt generation',
             )
             vault_events.append(VaultEvent(
@@ -565,7 +565,7 @@ class MakerdaoVaults(HasDSProxy):
             usd_price = query_usd_price_or_use_default(
                 asset=A_DAI,
                 time=timestamp,
-                default_value=FVal(1),
+                default_value=ONE,
                 location='vault debt payback',
             )
 

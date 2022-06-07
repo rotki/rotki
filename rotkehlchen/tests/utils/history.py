@@ -11,7 +11,7 @@ from rotkehlchen.accounting.structures.base import (
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_USDC, A_USDT
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -124,7 +124,7 @@ prices = {
             1439994442: FVal(1.134),
             1446979735: FVal(0.8583),
             1448994442: FVal(0.83195),
-            1457279735: FVal(1),
+            1457279735: ONE,
             1459024920: FVal('9.875'),
             1461021812: FVal('7.875'),
             1463184190: FVal(9.187),
@@ -1205,7 +1205,7 @@ def maybe_mock_historical_price_queries(
 
     def mock_historical_price_query(from_asset, to_asset, timestamp):
         if from_asset == to_asset:
-            return FVal(1)
+            return ONE
 
         if from_asset == A_ETH2:
             from_asset = A_ETH

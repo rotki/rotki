@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
 from rotkehlchen.accounting.types import MissingAcquisition
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_WETH
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import CostBasisMethod
@@ -232,7 +232,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
     asset_events = cost_basis.get_events(asset)
     asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
-            amount=FVal(1),
+            amount=ONE,
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
             index=1,
@@ -240,7 +240,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
     )
     asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
-            amount=FVal(1),
+            amount=ONE,
             timestamp=1467378304,  # 31/06/2016
             rate=FVal(612.45),
             index=2,
@@ -260,11 +260,11 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
     matched_sum = sum(x.amount for x in cinfo.matched_acquisitions)
     assert matched_sum < spending_amount
     assert cinfo.is_complete is False
-    assert cinfo.matched_acquisitions[0].amount == FVal(1)
-    assert cinfo.matched_acquisitions[0].event.amount == FVal(1)
+    assert cinfo.matched_acquisitions[0].amount == ONE
+    assert cinfo.matched_acquisitions[0].event.amount == ONE
     assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
-    assert cinfo.matched_acquisitions[1].amount == FVal(1)
-    assert cinfo.matched_acquisitions[1].event.amount == FVal(1)
+    assert cinfo.matched_acquisitions[1].amount == ONE
+    assert cinfo.matched_acquisitions[1].event.amount == ONE
     assert cinfo.matched_acquisitions[1].event.remaining_amount == ZERO
 
     acquisitions_num = len(asset_events.acquisitions_manager)
@@ -278,7 +278,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
     asset_events = cost_basis.get_events(asset)
     asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
-            amount=FVal(1),
+            amount=ONE,
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
             index=1,
@@ -286,7 +286,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
     )
     asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
-            amount=FVal(1),
+            amount=ONE,
             timestamp=1467378304,  # 31/06/2016
             rate=FVal(612.45),
             index=2,
@@ -306,11 +306,11 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
     matched_sum = sum(x.amount for x in cinfo.matched_acquisitions)
     assert matched_sum < spending_amount
     assert cinfo.is_complete is False
-    assert cinfo.matched_acquisitions[0].amount == FVal(1)
-    assert cinfo.matched_acquisitions[0].event.amount == FVal(1)
+    assert cinfo.matched_acquisitions[0].amount == ONE
+    assert cinfo.matched_acquisitions[0].event.amount == ONE
     assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
-    assert cinfo.matched_acquisitions[1].amount == FVal(1)
-    assert cinfo.matched_acquisitions[1].event.amount == FVal(1)
+    assert cinfo.matched_acquisitions[1].amount == ONE
+    assert cinfo.matched_acquisitions[1].event.amount == ONE
     assert cinfo.matched_acquisitions[1].event.remaining_amount == ZERO
 
     acquisitions_num = len(asset_events.acquisitions_manager)
@@ -323,7 +323,7 @@ def test_reduce_asset_amount(accountant):
     asset_events = cost_basis.get_events(asset)
     asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
-            amount=FVal(1),
+            amount=ONE,
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
             index=1,
@@ -331,7 +331,7 @@ def test_reduce_asset_amount(accountant):
     )
     asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
-            amount=FVal(1),
+            amount=ONE,
             timestamp=1467378304,  # 31/06/2016
             rate=FVal(612.45),
             index=2,
@@ -364,7 +364,7 @@ def test_reduce_asset_amount_exact(accountant):
     asset_events = cost_basis.get_events(asset)
     asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
-            amount=FVal(1),
+            amount=ONE,
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
             index=1,
@@ -372,7 +372,7 @@ def test_reduce_asset_amount_exact(accountant):
     )
     asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
-            amount=FVal(1),
+            amount=ONE,
             timestamp=1467378304,  # 31/06/2016
             rate=FVal(612.45),
             index=2,
@@ -395,7 +395,7 @@ def test_reduce_asset_amount_more_than_bought(accountant):
     asset_events = cost_basis.get_events(asset)
     asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
-            amount=FVal(1),
+            amount=ONE,
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
             index=1,
@@ -403,7 +403,7 @@ def test_reduce_asset_amount_more_than_bought(accountant):
     )
     asset_events.acquisitions_manager.add_acquisition(
         AssetAcquisitionEvent(
-            amount=FVal(1),
+            amount=ONE,
             timestamp=1467378304,  # 31/06/2016
             rate=FVal(612.45),
             index=2,
@@ -423,20 +423,20 @@ def test_accounting_lifo_order(accountant):
     asset_events = cost_basis.get_events(asset)
     # first we do a simple test that from 2 events the second is used
     event1 = AssetAcquisitionEvent(
-        amount=FVal(1),
+        amount=ONE,
         timestamp=1,
-        rate=FVal(1),
+        rate=ONE,
         index=1,
     )
     event2 = AssetAcquisitionEvent(
-        amount=FVal(1),
+        amount=ONE,
         timestamp=2,
-        rate=FVal(1),
+        rate=ONE,
         index=2,
     )
     asset_events.acquisitions_manager.add_acquisition(event1)
     asset_events.acquisitions_manager.add_acquisition(event2)
-    assert cost_basis.reduce_asset_amount(A_ETH, FVal(1), 0)
+    assert cost_basis.reduce_asset_amount(A_ETH, ONE, 0)
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     assert len(acquisitions) == 1 and acquisitions[0] == event1
     # then test to reset
@@ -446,13 +446,13 @@ def test_accounting_lifo_order(accountant):
     event3 = AssetAcquisitionEvent(
         amount=FVal(2),
         timestamp=1,
-        rate=FVal(1),
+        rate=ONE,
         index=1,
     )
     event4 = AssetAcquisitionEvent(
         amount=FVal(5),
         timestamp=2,
-        rate=FVal(1),
+        rate=ONE,
         index=2,
     )
     asset_events.acquisitions_manager.add_acquisition(event3)
@@ -466,9 +466,9 @@ def test_accounting_lifo_order(accountant):
     assert acquisitions[0].remaining_amount == FVal(2) and acquisitions[1] == event3
     # checking that new event after processing previous is added properly
     event5 = AssetAcquisitionEvent(
-        amount=FVal(1),
+        amount=ONE,
         timestamp=1,
-        rate=FVal(1),
+        rate=ONE,
         index=1,
     )
     asset_events.acquisitions_manager.add_acquisition(event5)
@@ -478,12 +478,12 @@ def test_accounting_lifo_order(accountant):
         timestamp=2,
     ).is_complete is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
-    assert len(acquisitions) == 1 and acquisitions[0].amount == FVal(2) and acquisitions[0].remaining_amount == FVal(1)  # noqa: E501
+    assert len(acquisitions) == 1 and acquisitions[0].amount == FVal(2) and acquisitions[0].remaining_amount == ONE  # noqa: E501
     # check what happens if we use all remaining events
     event6 = AssetAcquisitionEvent(
-        amount=FVal(1),
+        amount=ONE,
         timestamp=1,
-        rate=FVal(1),
+        rate=ONE,
         index=1,
     )
     asset_events.acquisitions_manager.add_acquisition(event6)
@@ -496,9 +496,9 @@ def test_accounting_lifo_order(accountant):
     assert len(acquisitions) == 0
     # check what happens if we try to use more than available
     event7 = AssetAcquisitionEvent(
-        amount=FVal(1),
+        amount=ONE,
         timestamp=1,
-        rate=FVal(1),
+        rate=ONE,
         index=1,
     )
     asset_events.acquisitions_manager.add_acquisition(event7)
@@ -511,8 +511,8 @@ def test_accounting_lifo_order(accountant):
         MissingAcquisition(
             asset=A_ETH,
             time=4,
-            found_amount=FVal(1),
-            missing_amount=FVal(1),
+            found_amount=ONE,
+            missing_amount=ONE,
         ),
     ]
 

@@ -1,5 +1,6 @@
 import pytest
 
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.serialization import ConversionError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.serialization import rlk_jsondumps
@@ -10,7 +11,7 @@ def test_simple_arithmetic():
     b = FVal(2.12)
     c = FVal(-23.124)
     d = FVal(5006337207657766294397)
-    e = FVal(0)
+    e = ZERO
     FVal(b'0')
 
     assert a + b == FVal('7.33')

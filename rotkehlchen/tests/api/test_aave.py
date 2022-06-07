@@ -9,7 +9,7 @@ import requests
 
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants.assets import A_BUSD, A_WBTC
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.aave import (
@@ -110,7 +110,7 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_aave_history_with_borrowing_v2(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -244,7 +244,7 @@ def _query_simple_aave_history_test_v2(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data.
 
@@ -270,7 +270,7 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylin
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_aave_history2(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data.
 
@@ -346,7 +346,7 @@ def _query_borrowing_aave_history_test(setup: BalancesTestSetup, server: APIServ
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -407,7 +407,7 @@ def _test_for_duplicates_and_negatives(setup: BalancesTestSetup, server: APIServ
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_aave_history_no_duplicates(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy avoids duplicate event data and keeps totals positive"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
