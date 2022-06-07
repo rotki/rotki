@@ -134,5 +134,39 @@ def _make_gevent_friendly(
     return new_connect, cursor_class, connection_class
 
 
-sqlite_connect, SqliteCursor, SqliteConnection = _make_gevent_friendly(sqlite3, 'sqlite')
-sqlcipher_connect, SqlcipherCursor, SqlcipherConnection = _make_gevent_friendly(sqlcipher, 'sqlcipher')  # noqa: E501
+sqlite_connect, _, _ = _make_gevent_friendly(sqlite3, 'sqlite')
+sqlcipher_connect, _, _ = _make_gevent_friendly(sqlcipher, 'sqlcipher')  # noqa: E501
+
+
+class SqliteCursor(sqlite3.Cursor):
+    """
+    This is only used for typing, since the dynamically created class from
+    _make_gevent_friendly can not be used in typing
+    """
+
+
+class SqliteConnection(sqlite3.Connection):
+    """
+    This is only used for typing, since the dynamically created class from
+    _make_gevent_friendly can not be used in typing
+    """
+
+    def cursor(self) -> SqliteCursor:  # type: ignore  # pylint: disable=no-self-use
+        ...
+
+
+class SqlcipherCursor(sqlcipher.Cursor):  # pylint: disable=no-member
+    """
+    This is only used for typing, since the dynamically created class from
+    _make_gevent_friendly can not be used in typing
+    """
+
+
+class SqlcipherConnection(sqlcipher.Connection):  # pylint: disable=no-member
+    """
+    This is only used for typing, since the dynamically created class from
+    _make_gevent_friendly can not be used in typing
+    """
+
+    def cursor(self) -> SqlcipherCursor:  # pylint: disable=no-self-use
+        ...
