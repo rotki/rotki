@@ -53,6 +53,9 @@ class RotkehlchenServer():
         # printing them in stdout is now too much spam (and would worry users too)
         hub = gevent.hub.get_hub()
         hub.exception_stream = None
+        # we don't use threadpool much so go to 2 instead of default 10
+        hub.threadpool_size = 2
+        hub.threadpool.maxsize = 2
         if os.name != 'nt':
             gevent.hub.signal(signal.SIGQUIT, self.shutdown)
         gevent.hub.signal(signal.SIGINT, self.shutdown)
