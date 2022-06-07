@@ -6,7 +6,20 @@ import shutil
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -55,7 +68,7 @@ from rotkehlchen.db.constants import (
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
-from rotkehlchen.db.drivers.gevent import SqlcipherConnection, sqlcipher_connect
+from rotkehlchen.db.drivers.gevent import sqlcipher_connect
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
@@ -119,6 +132,9 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import SqlcipherConnection
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -248,8 +264,8 @@ class DBHandler:
         self.user_data_dir = user_data_dir
         self.sqlcipher_version = detect_sqlcipher_version()
         self.last_write_ts: Optional[Timestamp] = None
-        self.conn: SqlcipherConnection = None  # type: ignore
-        self.conn_transient: SqlcipherConnection = None  # type: ignore
+        self.conn: 'SqlcipherConnection' = None  # type: ignore
+        self.conn_transient: 'SqlcipherConnection' = None  # type: ignore
         self._connect(password)
         self._run_actions_after_first_connection(password)
         if initial_settings is not None:
@@ -368,7 +384,7 @@ class DBHandler:
         else:
             fullpath = self.user_data_dir / TRANSIENT_DB_NAME
         try:
-            conn: SqlcipherConnection = sqlcipher_connect(str(fullpath))  # pylint: disable=no-member  # noqa: E501
+            conn: 'SqlcipherConnection' = sqlcipher_connect(str(fullpath))  # pylint: disable=no-member  # noqa: E501
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             raise SystemPermissionError(
                 f'Could not open database file: {fullpath}. Permission errors?',
