@@ -492,6 +492,16 @@ class MockKraken(Kraken):
         # Not required in the real Kraken instance but we use it in the tests
         self.tradeable_pairs = self.api_query('AssetPairs')
 
+    @staticmethod
+    def _load_results_from_file(filename: str) -> Dict[str, Any]:
+        dir_path = Path(__file__).resolve().parent.parent
+        filepath = dir_path / 'data' / filename
+        with open(filepath) as f:
+            return jsonloads_dict(f.read())
+
+    def online_api_query(self, method: str, req: Optional[dict] = None) -> dict:
+        return super().api_query(method, req)
+
     def api_query(self, method: str, req: Optional[dict] = None) -> dict:
         # Pretty ugly ... mock a kraken remote eror
         if self.remote_errors:
@@ -516,10 +526,11 @@ class MockKraken(Kraken):
             # else
             return jsonloads_dict(KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE)
         if method == 'AssetPairs':
-            dir_path = Path(__file__).resolve().parent.parent
-            filepath = dir_path / 'data' / 'assets_kraken.json'
-            with open(filepath) as f:
-                return jsonloads_dict(f.read())['result']
+            data = self._load_results_from_file('assets_kraken.json')
+            return data['result']
+        if method == 'Assets':
+            data = self._load_results_from_file('assets_only_kraken.json')
+            return data['result']
         if method == 'Ledgers':
             if req is None:
                 req = {}
