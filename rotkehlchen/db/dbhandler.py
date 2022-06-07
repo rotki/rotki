@@ -55,6 +55,7 @@ from rotkehlchen.db.constants import (
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
+from rotkehlchen.db.drivers.gevent import SqlcipherConnection, sqlcipher_connect
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
@@ -168,7 +169,7 @@ def _protect_password_sqlcipher(password: str) -> str:
 
 def detect_sqlcipher_version() -> int:
     """Returns the major part of the version of the system's sqlcipher package"""
-    conn = sqlcipher.connect(':memory:')  # pylint: disable=no-member
+    conn = sqlcipher_connect(':memory:')  # pylint: disable=no-member
     query = conn.execute('PRAGMA cipher_version;')
     version = query.fetchall()[0][0]
 
@@ -247,8 +248,8 @@ class DBHandler:
         self.user_data_dir = user_data_dir
         self.sqlcipher_version = detect_sqlcipher_version()
         self.last_write_ts: Optional[Timestamp] = None
-        self.conn: sqlcipher.Connection = None  # pylint: disable=no-member
-        self.conn_transient: sqlcipher.Connection = None  # pylint: disable=no-member
+        self.conn: SqlcipherConnection = None  # type: ignore
+        self.conn_transient: SqlcipherConnection = None  # type: ignore
         self._connect(password)
         self._run_actions_after_first_connection(password)
         if initial_settings is not None:
@@ -326,7 +327,7 @@ class DBHandler:
         - SystemPermissionError if there are permission errors when accessing the DB
         """
         assert self.conn is None, 'md5hash should be taken only with a closed DB'
-        if transient:
+        if transient:  # type: ignore
             return file_md5(self.user_data_dir / TRANSIENT_DB_NAME)
         return file_md5(self.user_data_dir / MAIN_DB_NAME)
 
@@ -367,7 +368,7 @@ class DBHandler:
         else:
             fullpath = self.user_data_dir / TRANSIENT_DB_NAME
         try:
-            conn: sqlcipher.Connection = sqlcipher.connect(str(fullpath))  # pylint: disable=no-member  # noqa: E501
+            conn: SqlcipherConnection = sqlcipher_connect(str(fullpath))  # pylint: disable=no-member  # noqa: E501
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             raise SystemPermissionError(
                 f'Could not open database file: {fullpath}. Permission errors?',
@@ -465,7 +466,7 @@ class DBHandler:
                 f.write(unencrypted_db_data)
 
             # Now attach to the unencrypted DB and copy it to our DB and encrypt it
-            self.conn = sqlcipher.connect(tempdbpath)  # pylint: disable=no-member
+            self.conn = sqlcipher_connect(tempdbpath)  # pylint: disable=no-member
             password_for_sqlcipher = _protect_password_sqlcipher(password)
             script = f'ATTACH DATABASE "{rdbpath}" AS encrypted KEY "{password_for_sqlcipher}";'
             if self.sqlcipher_version == 3:

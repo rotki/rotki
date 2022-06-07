@@ -22,6 +22,7 @@ from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import CONSTANT_ASSETS
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.drivers.gevent import SqliteConnection, SqliteCursor, sqlite_connect
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -41,7 +42,7 @@ log = RotkehlchenLogsAdapter(logger)
 GLOBAL_DB_VERSION = 2
 
 
-def _get_setting_value(cursor: sqlite3.Cursor, name: str, default_value: int) -> int:
+def _get_setting_value(cursor: SqliteCursor, name: str, default_value: int) -> int:
     query = cursor.execute(
         'SELECT value FROM settings WHERE name=?;', (name,),
     )
@@ -53,8 +54,8 @@ def _get_setting_value(cursor: sqlite3.Cursor, name: str, default_value: int) ->
     return int(result[0][0])
 
 
-def initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
-    connection = sqlite3.connect(dbpath)
+def initialize_globaldb(dbpath: Path) -> SqliteConnection:
+    connection = sqlite_connect(dbpath)
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     cursor = connection.cursor()
     db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
@@ -74,7 +75,7 @@ def initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
     return connection
 
 
-def _initialize_global_db_directory(data_dir: Path) -> sqlite3.Connection:
+def _initialize_global_db_directory(data_dir: Path) -> SqliteConnection:
     global_dir = data_dir / 'global_data'
     global_dir.mkdir(parents=True, exist_ok=True)
     dbname = global_dir / 'global.db'
@@ -90,7 +91,7 @@ class GlobalDBHandler():
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
     _data_directory: Optional[Path] = None
-    conn: sqlite3.Connection
+    conn: SqliteConnection
 
     def __new__(
             cls,
@@ -399,7 +400,7 @@ class GlobalDBHandler():
 
     @staticmethod
     def _add_underlying_tokens(
-            connection: sqlite3.Connection,
+            connection: SqliteConnection,
             parent_token_address: ChecksumEthAddress,
             underlying_tokens: List[UnderlyingToken],
     ) -> None:
