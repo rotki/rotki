@@ -128,7 +128,7 @@ def test_buying_selling_btc_before_bchfork(accountant, google_service):
     no_message_errors(accountant.msg_aggregator)
     amount_bch = FVal(3.9)
     amount_btc = FVal(4.8)
-    buys = accountant.pots[0].cost_basis.get_events(A_BCH).acquisitions
+    buys = accountant.pots[0].cost_basis.get_events(A_BCH).acquisitions_manager.get_acquisitions()
     assert len(buys) == 1
     assert buys[0].remaining_amount == amount_bch
     assert buys[0].timestamp == 1491593374
@@ -236,12 +236,12 @@ def test_buying_selling_bch_before_bsvfork(accountant, google_service):
     amount_btc = FVal(4.8)
     amount_bch = FVal(4.1)
     amount_bsv = FVal(4.6)
-    bch_buys = accountant.pots[0].cost_basis.get_events(A_BCH).acquisitions
+    bch_buys = accountant.pots[0].cost_basis.get_events(A_BCH).acquisitions_manager.get_acquisitions()  # noqa: E501
     assert len(bch_buys) == 2
     assert sum(x.remaining_amount for x in bch_buys) == amount_bch
     assert bch_buys[0].timestamp == 1491593374
     assert bch_buys[1].timestamp == 1524937600
-    bsv_buys = accountant.pots[0].cost_basis.get_events(A_BSV).acquisitions
+    bsv_buys = accountant.pots[0].cost_basis.get_events(A_BSV).acquisitions_manager.get_acquisitions()  # noqa: E501
     assert len(bsv_buys) == 2
     assert sum(x.remaining_amount for x in bsv_buys) == amount_bsv
     assert bsv_buys[0].timestamp == 1491593374

@@ -1,5 +1,6 @@
 import logging
-from collections import defaultdict
+from abc import ABCMeta, abstractmethod
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
@@ -7,6 +8,7 @@ from typing import (
     Callable,
     DefaultDict,
     Dict,
+    Iterator,
     List,
     Literal,
     NamedTuple,
@@ -25,7 +27,7 @@ from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.types import CostBasisMethod, Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -98,17 +100,80 @@ class AssetSpendEvent:
         )
 
 
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class CostBasisEvents:
-    used_acquisitions: List[AssetAcquisitionEvent] = field(init=False)
-    acquisitions: List[AssetAcquisitionEvent] = field(init=False)
-    spends: List[AssetSpendEvent] = field(init=False)
+class BaseAcquisitionsOrder(metaclass=ABCMeta):
+    _acquisitions: deque[AssetAcquisitionEvent]
 
-    def __post_init__(self) -> None:
-        """Using this since can't use mutable default arguments"""
-        self.used_acquisitions = []
-        self.acquisitions = []
+    def __init__(self) -> None:
+        self._acquisitions = deque()
+
+    @abstractmethod
+    def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
+        """The core method. Should be implemented by subclasses.
+        This method takes a new acquisition and decides where to insert it
+        and thus determines the PnL order.
+        """
+        ...
+
+    def processing_iterator(self) -> Iterator[AssetAcquisitionEvent]:
+        """Iteration method over acquisition events.
+        We can't return here Tuple of AssetAcquisitionEvents as we need to return
+        the first event each time but _acquisitions may be not modified between iterations.
+        """
+        while len(self._acquisitions) > 0:
+            yield self._acquisitions[0]
+
+    def get_acquisitions(self) -> Tuple[AssetAcquisitionEvent, ...]:
+        """Returns read-only _acquisitions"""
+        return tuple(self._acquisitions)
+
+    def consume_result(self, used_amount: FVal) -> None:
+        """This function should be used to consume results of the
+        currently processed event (received from __next__)
+        The current event's remaining_amount will be decreased by used_amount
+        If event's remaining_amount will become ZERO, the event will be deleted
+        May raise:
+        - IndexError if the method was called when acquisitions were empty
+        """
+        # this is a temporary assertion to test that new accounting tools work properly.
+        # Written on 06.06.2022 and can be removed after a couple of months if everything goes well
+        assert ZERO <= used_amount <= self._acquisitions[0].remaining_amount, \
+            f'Used amount must be in the interval [0, {self._acquisitions[0].remaining_amount}] but it was {used_amount}'  # noqa: E501
+
+        self._acquisitions[0].remaining_amount -= used_amount
+        if self._acquisitions[0].remaining_amount == ZERO:
+            self._acquisitions.popleft()
+
+    def __len__(self) -> int:
+        return len(self._acquisitions)
+
+
+class FIFOAcquisitionsOrder(BaseAcquisitionsOrder):
+    """Accounting in FIFO (first-in-first-out) order"""
+    def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
+        self._acquisitions.append(acquisition)
+
+
+class LIFOAcquisitionsOrder(BaseAcquisitionsOrder):
+    """Accounting in LIFO (last-in-first-out) order"""
+    def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
+        self._acquisitions.appendleft(acquisition)
+
+
+class CostBasisEvents:
+    used_acquisitions: List[AssetAcquisitionEvent]
+    acquisitions_manager: BaseAcquisitionsOrder
+    spends: List[AssetSpendEvent]
+
+    def __init__(self, cost_basis_method: CostBasisMethod) -> None:
+        """This class contains data about acquisitions and spends. `acquisitions` field contains
+        custom Iterable that provides acquisitions in the order defined by `cost_basis_method`
+        """
+        if cost_basis_method == CostBasisMethod.FIFO:
+            self.acquisitions_manager = FIFOAcquisitionsOrder()
+        elif cost_basis_method == CostBasisMethod.LIFO:
+            self.acquisitions_manager = LIFOAcquisitionsOrder()
         self.spends = []
+        self.used_acquisitions = []
 
 
 class MatchedAcquisition(NamedTuple):
@@ -234,7 +299,7 @@ class CostBasisCalculator(CustomizableDateMixin):
     def reset(self, settings: DBSettings) -> None:
         self.settings = settings
         self.profit_currency = settings.main_currency
-        self._events: DefaultDict[Asset, CostBasisEvents] = defaultdict(CostBasisEvents)
+        self._events: DefaultDict[Asset, CostBasisEvents] = defaultdict(lambda: CostBasisEvents(settings.cost_basis_method))  # noqa: E501
         self.missing_acquisitions: List[MissingAcquisition] = []
         self.missing_prices: Set[MissingPrice] = set()
 
@@ -256,34 +321,22 @@ class CostBasisCalculator(CustomizableDateMixin):
         This function does the same as calculate_spend_cost_basis as far as consuming
         acquisitions is concerned but does not calculate bought cost.
         """
-        # No need to do anything if amount is to be reduced by zero
-        if amount == ZERO:
-            return True
-
         asset_events = self.get_events(asset)
-        if len(asset_events.acquisitions) == 0:
+        if len(asset_events.acquisitions_manager) == 0:
             return False
 
-        remaining_amount_from_last_buy = FVal('-1')
         remaining_amount = amount
-        for idx, acquisition_event in enumerate(asset_events.acquisitions):
+        for acquisition_event in asset_events.acquisitions_manager.processing_iterator():
             if remaining_amount < acquisition_event.remaining_amount:
-                stop_index = idx
-                remaining_amount_from_last_buy = acquisition_event.remaining_amount - remaining_amount  # noqa: E501
+                asset_events.acquisitions_manager.consume_result(remaining_amount)
+                remaining_amount = ZERO
                 # stop iterating since we found all acquisitions to satisfy reduction
                 break
 
-            # else
             remaining_amount -= acquisition_event.remaining_amount
-            if idx == len(asset_events.acquisitions) - 1:
-                stop_index = idx + 1
+            asset_events.acquisitions_manager.consume_result(acquisition_event.remaining_amount)
 
-        # Otherwise, delete all the used up acquisitions from the list
-        del asset_events.acquisitions[:stop_index]
-        # and modify the amount of the buy where we stopped if there is one
-        if remaining_amount_from_last_buy != FVal('-1'):
-            asset_events.acquisitions[0].remaining_amount = remaining_amount_from_last_buy
-        elif remaining_amount != ZERO:
+        if remaining_amount != ZERO:
             self.missing_acquisitions.append(
                 MissingAcquisition(
                     asset=asset,
@@ -303,7 +356,7 @@ class CostBasisCalculator(CustomizableDateMixin):
         """Adds an acquisition event for an asset"""
         asset_event = AssetAcquisitionEvent.from_processed_event(event=event)
         asset_events = self.get_events(event.asset)
-        asset_events.acquisitions.append(asset_event)
+        asset_events.acquisitions_manager.add_acquisition(asset_event)
 
     @overload
     def spend_asset(
@@ -372,7 +425,7 @@ class CostBasisCalculator(CustomizableDateMixin):
                 spending_asset=asset,
                 timestamp=timestamp,
             )
-        # else just reduce the amount's acquisition without counting anything
+        # just reduce the amount's acquisition without counting anything
         self.reduce_asset_amount(asset=asset, amount=amount, timestamp=timestamp)
         return None
 
@@ -392,13 +445,11 @@ class CostBasisCalculator(CustomizableDateMixin):
         been found.
         """
         remaining_sold_amount = spending_amount
-        stop_index = -1
         taxfree_bought_cost = taxable_bought_cost = taxable_amount = taxfree_amount = ZERO  # noqa: E501
-        remaining_amount_from_last_buy = FVal('-1')
         matched_acquisitions = []
         asset_events = self.get_events(spending_asset)
 
-        for idx, acquisition_event in enumerate(asset_events.acquisitions):
+        for acquisition_event in asset_events.acquisitions_manager.processing_iterator():
             if self.settings.taxfree_after_period is None:
                 at_taxfree_period = False
             else:
@@ -407,7 +458,6 @@ class CostBasisCalculator(CustomizableDateMixin):
                 )
 
             if remaining_sold_amount < acquisition_event.remaining_amount:
-                stop_index = idx
                 acquisition_cost = acquisition_event.rate * remaining_sold_amount
 
                 taxable = True
@@ -419,7 +469,6 @@ class CostBasisCalculator(CustomizableDateMixin):
                     taxable_amount += remaining_sold_amount
                     taxable_bought_cost += acquisition_cost
 
-                remaining_amount_from_last_buy = acquisition_event.remaining_amount - remaining_sold_amount  # noqa: E501
                 log.debug(
                     'Spend uses up part of historical acquisition',
                     tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
@@ -435,6 +484,8 @@ class CostBasisCalculator(CustomizableDateMixin):
                     event=acquisition_event,
                     taxable=taxable,
                 ))
+                asset_events.acquisitions_manager.consume_result(remaining_sold_amount)
+                remaining_sold_amount = ZERO
                 # stop iterating since we found all acquisitions to satisfy this spend
                 break
 
@@ -463,43 +514,13 @@ class CostBasisCalculator(CustomizableDateMixin):
                 event=acquisition_event,
                 taxable=taxable,
             ))
-            # and since this events is going to be removed, reduce its remaining to zero
+            asset_events.used_acquisitions.append(acquisition_event)
+            asset_events.acquisitions_manager.consume_result(acquisition_event.remaining_amount)
+            # and since this event is going to be removed, reduce its remaining to zero
             acquisition_event.remaining_amount = ZERO
 
-            # If the sell used up the last historical acquisition
-            if idx == len(asset_events.acquisitions) - 1:
-                stop_index = idx + 1
-
-        if len(asset_events.acquisitions) == 0:
-            self.missing_acquisitions.append(
-                MissingAcquisition(
-                    asset=spending_asset,
-                    time=timestamp,
-                    found_amount=ZERO,
-                    missing_amount=spending_amount,
-                ),
-            )
-            # That means we had no documented acquisition for that asset. This is not good
-            # because we can't prove a corresponding acquisition and as such we are burdened
-            # calculating the entire spend as profit which needs to be taxed
-            return CostBasisInfo(
-                taxable_amount=spending_amount,
-                taxable_bought_cost=ZERO,
-                taxfree_bought_cost=ZERO,
-                matched_acquisitions=[],
-                is_complete=False,
-            )
-
         is_complete = True
-        # Otherwise, delete all the used up acquisitions from the list
-        asset_events.used_acquisitions.extend(
-            asset_events.acquisitions[:stop_index],
-        )
-        del asset_events.acquisitions[:stop_index]
-        # and modify the amount of the buy where we stopped if there is one
-        if remaining_amount_from_last_buy != FVal('-1'):
-            asset_events.acquisitions[0].remaining_amount = remaining_amount_from_last_buy  # noqa: E501
-        elif remaining_sold_amount != ZERO:
+        if remaining_sold_amount != ZERO:
             # if we still have sold amount but no acquisitions to satisfy it then we only
             # found acquisitions to partially satisfy the sell
             adjusted_amount = spending_amount - taxfree_amount
@@ -527,10 +548,8 @@ class CostBasisCalculator(CustomizableDateMixin):
         the history has been processed
         """
         asset_events = self.get_events(asset)
-        if len(asset_events.acquisitions) == 0:
-            return None
 
-        amount = FVal(0)
-        for acquisition_event in asset_events.acquisitions:
+        amount = ZERO
+        for acquisition_event in asset_events.acquisitions_manager.get_acquisitions():
             amount += acquisition_event.remaining_amount
-        return amount
+        return amount if amount != ZERO else None

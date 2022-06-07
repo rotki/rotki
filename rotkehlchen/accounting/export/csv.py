@@ -30,6 +30,7 @@ ACCOUNTING_SETTINGS = (
     'include_gas_costs',
     'account_for_assets_movements',
     'calculate_past_cost_basis',
+    'cost_basis_method',
 )
 
 CSV_INDEX_OFFSET = 2  # skip title row and since counting starts from 1
