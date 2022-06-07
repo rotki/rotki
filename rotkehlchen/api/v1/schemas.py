@@ -58,6 +58,7 @@ from rotkehlchen.types import (
     AssetMovementCategory,
     BTCAddress,
     ChecksumEthAddress,
+    CostBasisMethod,
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -800,6 +801,7 @@ class ModifiableSettingsSchema(Schema):
         # Check that all values are unique
         validate=lambda data: len(data) == len(set(data)),
     )
+    cost_basis_method = SerializableEnumField(enum_class=CostBasisMethod, load_default=None)
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -847,6 +849,7 @@ class ModifiableSettingsSchema(Schema):
             pnl_csv_have_summary=data['pnl_csv_have_summary'],
             ssf_0graph_multiplier=data['ssf_0graph_multiplier'],
             non_syncing_exchanges=data['non_syncing_exchanges'],
+            cost_basis_method=data['cost_basis_method'],
         )
 
 

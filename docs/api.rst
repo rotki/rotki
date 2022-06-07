@@ -595,7 +595,8 @@ Getting or modifying settings
               "historical_price_oracles": ["cryptocompare", "coingecko"],
               "taxable_ledger_actions": ["income", "airdrop"],
               "ssf_0graph_multiplier": 2,
-              "non_sync_exchanges": [{"location": "binance", "name": "binance1"}]
+              "non_sync_exchanges": [{"location": "binance", "name": "binance1"}],
+              "cost_basis_method": "fifo",
           },
           "message": ""
       }
@@ -623,6 +624,7 @@ Getting or modifying settings
    :resjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
    :resjson list taxable_ledger_actions: A list of strings denoting the ledger action types that will be taken into account in the profit/loss calculation during accounting. All others will only be taken into account in the cost basis and will not be taxed.
    :resjson int ssf_0graph_multiplier: A multiplier to the snapshot saving frequency for 0 amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
+   :resjson string cost_basis_method: Defines which method to use during the cost basis calculation. Currently supported: fifo, lifo.
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user

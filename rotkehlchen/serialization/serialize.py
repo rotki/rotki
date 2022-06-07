@@ -69,6 +69,7 @@ from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.types import (
     AssetMovementCategory,
     BlockchainAccountData,
+    CostBasisMethod,
     EthereumTransaction,
     ExchangeLocationID,
     Location,
@@ -190,6 +191,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             TroveOperation,
             LiquityStakeEventType,
             BalanceType,
+            CostBasisMethod,
     )):
         return str(entry)
 
