@@ -554,5 +554,10 @@ class MockKraken(Kraken):
             new_data['count'] = len(new_data['ledger'])
             response = json.dumps(new_data)
             return jsonloads_dict(response)
+        if method == 'Assets':
+            dir_path = Path(__file__).resolve().parent.parent
+            filepath = dir_path / 'data' / 'assets_only_kraken.json'
+            with open(filepath) as f:
+                return jsonloads_dict(f.read())['result']
         # else
         return super().api_query(method, req)
