@@ -68,11 +68,19 @@ export const BaseAccountingSettings = z.object({
 
 export type BaseAccountingSettings = z.infer<typeof BaseAccountingSettings>;
 
+export enum CostBasisMethod {
+  Fifo = 'fifo',
+  Lifo = 'lifo'
+}
+
+export const CostBasisMethodEnum = z.nativeEnum(CostBasisMethod);
+
 const AccountingSettings = z
   .object({
     pnlCsvWithFormulas: z.boolean(),
     pnlCsvHaveSummary: z.boolean(),
-    taxableLedgerActions: z.array(LedgerActionEnum)
+    taxableLedgerActions: z.array(LedgerActionEnum),
+    costBasisMethod: CostBasisMethodEnum.default(CostBasisMethod.Fifo)
   })
   .merge(BaseAccountingSettings);
 
@@ -112,7 +120,8 @@ const getAccountingSettings = (settings: UserSettings): AccountingSettings => ({
   includeCrypto2crypto: settings.includeCrypto2crypto,
   accountForAssetsMovements: settings.accountForAssetsMovements,
   calculatePastCostBasis: settings.calculatePastCostBasis,
-  taxableLedgerActions: settings.taxableLedgerActions
+  taxableLedgerActions: settings.taxableLedgerActions,
+  costBasisMethod: settings.costBasisMethod
 });
 
 const getGeneralSettings = (settings: UserSettings): GeneralSettings => ({

@@ -139,7 +139,7 @@ const getHeaders = (currency: Ref<string>) =>
   });
 
 export default defineComponent({
-  name: 'CostBasicTable',
+  name: 'CostBasisTable',
   components: { DataTable },
   props: {
     costBasis: { required: true, type: Object as PropType<CostBasis> },

@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`44` Add option to change cost basis method (FIFO and LIFO order).
+
 * :release:`1.24.1 <2022-06-03>`
 * :bug:`4383` Removing an address while running a PnL report should now work.
 * :bug:`4379` For many ethereum transactions the entire app should no longer hang. This is a temporary fix until a proper one is implemented. With this fix we temporarily remove the ability to filter in the ethereum transactions view.

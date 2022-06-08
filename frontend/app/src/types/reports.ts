@@ -44,6 +44,7 @@ export const CostBasis = z.object({
   isComplete: z.boolean().nullish(),
   matchedAcquisitions: z.array(MatchedAcquisitions).nullish()
 });
+
 export type CostBasis = z.infer<typeof CostBasis>;
 
 export const ProfitLossEvent = z.object({

@@ -37,7 +37,7 @@
           <v-text-field
             v-model="taxFreeAfterPeriod"
             outlined
-            class="accounting-settings__taxfree-period-days"
+            class="accounting-settings__taxfree-period-days pt-4"
             :success-messages="settingsMessages['taxFreePeriodAfter'].success"
             :error-messages="settingsMessages['taxFreePeriodAfter'].error"
             :disabled="!taxFreePeriod"
@@ -71,6 +71,15 @@
             :label="$t('accounting_settings.labels.calculate_past_cost_basis')"
             color="primary"
             @change="onCalculatePastCostBasisChange($event)"
+          />
+          <cost-basis-method-settings
+            v-model="costBasisMethod"
+            class="accounting-settings__cost-basis-method pt-4"
+            :success-messages="settingsMessages['costBasisMethod'].success"
+            :error-messages="settingsMessages['costBasisMethod'].error"
+            :label="$t('accounting_settings.labels.cost_basis_method')"
+            color="primary"
+            @change="onCostBasisMethodChange($event)"
           />
         </card>
       </v-col>
@@ -204,9 +213,10 @@
 <script lang="ts">
 import { Ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { mapState, mapActions } from 'pinia';
+import { mapActions, mapState } from 'pinia';
 import { Component, Mixins } from 'vue-property-decorator';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import CostBasisMethodSettings from '@/components/settings/accounting/CostBasisMethodSettings.vue';
 import LedgerActionSettings from '@/components/settings/accounting/LedgerActionSettings.vue';
 import { settingsMessages } from '@/components/settings/utils';
 import AssetMixin from '@/mixins/asset-mixin';
@@ -215,6 +225,7 @@ import { useIgnoredAssetsStore } from '@/store/assets';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { TaskType } from '@/types/task-type';
+import { CostBasisMethod } from '@/types/user';
 
 const haveCSVSummary = 'haveCSVSummary';
 const exportCSVFormulas = 'exportCSVFormulas';
@@ -226,6 +237,7 @@ const addIgnoreAsset = 'addIgnoreAsset';
 const remIgnoreAsset = 'remIgnoreAsset';
 const accountForAssetsMovements = 'accountForAssetsMovements';
 const calculatePastCostBasis = 'calculatePastCostBasis';
+const costBasisMethod = 'costBasisMethod';
 
 const SETTINGS = [
   haveCSVSummary,
@@ -237,13 +249,15 @@ const SETTINGS = [
   addIgnoreAsset,
   remIgnoreAsset,
   accountForAssetsMovements,
-  calculatePastCostBasis
+  calculatePastCostBasis,
+  costBasisMethod
 ] as const;
 
 type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
   components: {
+    CostBasisMethodSettings,
     LedgerActionSettings,
     AssetSelect
   },
@@ -276,6 +290,7 @@ export default class Accounting extends Mixins<
   taxFreePeriod: boolean = false;
   accountForAssetsMovements: boolean = false;
   calculatePastCostBasis: boolean = false;
+  costBasisMethod: CostBasisMethod = CostBasisMethod.Fifo;
 
   assetToIgnore: string = '';
   assetToRemove: string = '';
@@ -310,6 +325,7 @@ export default class Accounting extends Mixins<
       this.accountingSettings.accountForAssetsMovements;
     this.calculatePastCostBasis =
       this.accountingSettings.calculatePastCostBasis;
+    this.costBasisMethod = this.accountingSettings.costBasisMethod;
   }
 
   get isUpdateIgnoredAssetsLoading(): boolean {
@@ -527,9 +543,28 @@ export default class Accounting extends Mixins<
       result.success ? 'success' : 'error',
       result.success
         ? enabled
-          ? this.$t('account_settings.messages.cost_basics.enabled').toString()
-          : this.$t('account_settings.messages.cost_basics.disabled').toString()
-        : this.$t('account_settings.messages.cost_basics.error', {
+          ? this.$t('account_settings.messages.cost_basis.enabled').toString()
+          : this.$t('account_settings.messages.cost_basis.disabled').toString()
+        : this.$t('account_settings.messages.cost_basis.error', {
+            message: result.message
+          }).toString()
+    );
+  }
+
+  async onCostBasisMethodChange(costBasisMethod: CostBasisMethod) {
+    const result = await this.settingsUpdate({
+      costBasisMethod
+    });
+    const method = costBasisMethod.toUpperCase();
+    this.validateSettingChange(
+      'costBasisMethod',
+      result.success ? 'success' : 'error',
+      result.success
+        ? this.$t('account_settings.messages.cost_basis_method.success', {
+            method
+          }).toString()
+        : this.$t('account_settings.messages.cost_basis_method.error', {
+            method,
             message: result.message
           }).toString()
     );
