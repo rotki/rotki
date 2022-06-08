@@ -13,6 +13,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.contracts import EthereumContract
@@ -48,6 +49,7 @@ ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS = [
         "type": "function",
     },
 ]
+MULTICALL_CHUNKS = 20
 
 
 def token_normalized_value_decimals(token_amount: int, token_decimals: Optional[int]) -> FVal:
@@ -112,15 +114,20 @@ def multicall(
         require_success: bool = True,  # pylint: disable=unused-argument
         call_order: Optional[Sequence['NodeName']] = None,
         block_identifier: BlockIdentifier = 'latest',
+        calls_chunk_size: int = MULTICALL_CHUNKS,
 ) -> Any:
-    multicall_result = ETH_MULTICALL.call(
-        ethereum=ethereum,
-        method_name='aggregate',
-        arguments=[calls],
-        call_order=call_order,
-        block_identifier=block_identifier,
-    )
-    _, output = multicall_result
+    calls_chunked = list(get_chunks(calls, n=calls_chunk_size))
+    output = []
+    for call_chunk in calls_chunked:
+        multicall_result = ETH_MULTICALL.call(
+            ethereum=ethereum,
+            method_name='aggregate',
+            arguments=[call_chunk],
+            call_order=call_order,
+            block_identifier=block_identifier,
+        )
+        _, chunk_output = multicall_result
+        output += chunk_output
     return output
 
 
