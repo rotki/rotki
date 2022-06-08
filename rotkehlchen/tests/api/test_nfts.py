@@ -57,7 +57,7 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
 
             assert entry['name'] == 'MoonCat #129: 0x0082206dcb'
             assert entry['external_link'] == 'https://purrse.mooncat.community/129'
-            assert entry['image_url'] == 'https://lh3.googleusercontent.com/C5ceArerHdGigmSt9tCsUD67Nbxr-P05fSsP_Pye34zN78lr2519P66kANkb55nfWW-ZMWFM4oCawLF4fW2jfRPxWButdqIX0QM95DM'  # noqa: E501
+            assert 'image_url' in entry
             assert FVal(entry['price_eth']) > ZERO
             assert FVal(entry['price_usd']) > ZERO
             assert entry['collection']['name'] == 'MoonCats'
