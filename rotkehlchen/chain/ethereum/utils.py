@@ -137,6 +137,8 @@ def multicall_2(
         require_success: bool,
         call_order: Optional[Sequence['NodeName']] = None,
         block_identifier: BlockIdentifier = 'latest',
+        # only here to comply with multicall
+        calls_chunk_size: int = MULTICALL_CHUNKS,  # pylint: disable=unused-argument
 ) -> List[Tuple[bool, bytes]]:
     """
     Use a MULTICALL_2 contract for an aggregated query. If require_success
