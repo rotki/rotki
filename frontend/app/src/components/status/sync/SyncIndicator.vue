@@ -205,6 +205,7 @@
       :primary-action="
         $tc('sync_indicator.upload_confirmation.action', textChoice)
       "
+      :loading="isSyncing"
       :secondary-action="$tc('sync_indicator.upload_confirmation.cancel')"
       @cancel="cancel"
       @confirm="performSync"
@@ -224,7 +225,7 @@
   </fragment>
 </template>
 <script lang="ts">
-import { computed, defineComponent, ref } from '@vue/composition-api';
+import { computed, defineComponent, ref, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -241,8 +242,10 @@ import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
 import { AllBalancePayload } from '@/store/balances/types';
+import { useTasks } from '@/store/tasks';
 import { showError, showMessage } from '@/store/utils';
 import { Writeable } from '@/types';
+import { TaskType } from '@/types/task-type';
 
 export default defineComponent({
   name: 'SyncIndicator',
@@ -314,9 +317,17 @@ export default defineComponent({
       set(pending, true);
       await forceSync(get(syncAction));
       set(pending, false);
-      set(displayConfirmation, false);
-      set(confirmChecked, false);
     };
+
+    const { isTaskRunning } = useTasks();
+    const isSyncing = isTaskRunning(TaskType.FORCE_SYNC);
+
+    watch(isSyncing, (current, prev) => {
+      if (current !== prev && !current) {
+        set(displayConfirmation, false);
+        set(confirmChecked, false);
+      }
+    });
 
     const cancel = () => {
       set(displayConfirmation, false);
@@ -405,6 +416,7 @@ export default defineComponent({
       textChoice,
       message,
       isDownload,
+      isSyncing,
       cancel,
       performSync,
       showConfirmation,
