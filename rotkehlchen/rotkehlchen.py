@@ -50,7 +50,7 @@ from rotkehlchen.chain.substrate.utils import (
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
 from rotkehlchen.config import default_data_directory
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
@@ -756,7 +756,7 @@ class Rotkehlchen():
                         for balance_entry in nft_balances:
                             balances[str(Location.BLOCKCHAIN)][Asset(
                                 balance_entry['id'])] = Balance(
-                                amount=FVal(1),
+                                amount=ONE,
                                 usd_value=balance_entry['usd_price'],
                             )
 

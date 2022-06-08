@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -40,7 +40,7 @@ def test_all_action_types_writtable_in_db(database, function_scope_messages_aggr
             timestamp=1,
             action_type=entry,
             location=Location.EXTERNAL,
-            amount=FVal(1),
+            amount=ONE,
             asset=A_ETH,
             rate=None,
             rate_asset=None,
@@ -69,7 +69,7 @@ def test_ledger_action_can_be_removed(database, function_scope_messages_aggregat
         timestamp=1,
         action_type=LedgerActionType.INCOME,
         location=Location.EXTERNAL,
-        amount=FVal(1),
+        amount=ONE,
         asset=A_ETH,
         rate=None,
         rate_asset=None,
@@ -98,7 +98,7 @@ def test_ledger_action_can_be_edited(database, function_scope_messages_aggregato
         timestamp=1,
         action_type=LedgerActionType.INCOME,
         location=Location.EXTERNAL,
-        amount=FVal(1),
+        amount=ONE,
         asset=A_ETH,
         rate=None,
         rate_asset=None,
@@ -156,7 +156,7 @@ def test_taxable_ledger_action_setting(accountant, expected, google_service):
             timestamp=1476979735,
             action_type=LedgerActionType.INCOME,
             location=Location.EXTERNAL,
-            amount=FVal(1),  # 578.505 EUR/BTC from mocked prices
+            amount=ONE,  # 578.505 EUR/BTC from mocked prices
             asset=A_BTC,
             rate=None,
             rate_asset=None,
@@ -189,7 +189,7 @@ def test_taxable_ledger_action_setting(accountant, expected, google_service):
             timestamp=1501062064,
             action_type=LedgerActionType.EXPENSE,
             location=Location.BLOCKCHAIN,
-            amount=FVal(1),
+            amount=ONE,
             asset=A_ETH,
             rate=FVal(400),
             rate_asset=A_EUR,
@@ -223,7 +223,7 @@ def test_ledger_actions_accounting(accountant, google_service):
         action_type=LedgerActionType.INCOME,
         location=Location.EXTERNAL,
         asset=A_ETH,
-        amount=AssetAmount(FVal(1)),
+        amount=AssetAmount(ONE),
         rate=None,
         rate_asset=None,
         link=None,
@@ -234,7 +234,7 @@ def test_ledger_actions_accounting(accountant, google_service):
         action_type=LedgerActionType.INCOME,
         location=Location.BLOCKCHAIN,
         asset=A_BTC,
-        amount=AssetAmount(FVal(1)),
+        amount=AssetAmount(ONE),
         rate=FVal('400'),
         rate_asset=A_EUR,
         link='foo',

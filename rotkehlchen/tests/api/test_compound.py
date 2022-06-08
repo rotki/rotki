@@ -10,6 +10,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.compound.compound import A_COMP, CompoundEvent
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_CDAI, A_CUSDC, A_DAI, A_ETH, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
@@ -132,7 +133,7 @@ mocked_historical_prices: Dict[str, Any] = {
     },
     A_USDC.identifier: {
         'USD': {
-            1585558039: FVal(1),
+            1585558039: ONE,
         },
     },
     'ETH': {
@@ -503,7 +504,7 @@ EXPECTED_EVENTS = [CompoundEvent(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [mocked_current_prices])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the compound history endpoint works. Uses real data"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

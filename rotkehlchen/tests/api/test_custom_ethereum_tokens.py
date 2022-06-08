@@ -8,6 +8,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BAT
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.fval import FVal
@@ -531,7 +532,7 @@ def test_custom_tokens_delete_guard(rotkehlchen_api_server):
         id=-1,
         asset=Asset(token0_id),
         label='manual1',
-        amount=FVal(1),
+        amount=ONE,
         location=Location.EXTERNAL,
         tags=None,
         balance_type=BalanceType.ASSET,

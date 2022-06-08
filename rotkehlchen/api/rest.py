@@ -68,7 +68,7 @@ from rotkehlchen.constants.limits import (
     FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
 )
-from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ZERO
+from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
 from rotkehlchen.db.ens import DBEns
@@ -373,7 +373,7 @@ class RestAPI():
                     f'will not be selectable as a native currency in the app',
                 )
             else:
-                asset_rates[asset] = Price(FVal(1) / usd_price)
+                asset_rates[asset] = Price(ONE / usd_price)
 
         fiat_rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
         for fiat, rate in fiat_rates.items():

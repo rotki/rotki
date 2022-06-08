@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.constants import ONE
 from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
@@ -14,7 +15,6 @@ if TYPE_CHECKING:
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.fval import FVal
 from rotkehlchen.types import EthereumTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
@@ -141,7 +141,7 @@ class BaseDecoderTools():
                 notes = f'{verb} {amount} {token.symbol} from {counterparty} to {location_label}'
         else:
             token_id = hex_or_bytes_to_int(tx_log.data)
-            amount = FVal(1)
+            amount = ONE
             if event_type == HistoryEventType.SPEND:
                 notes = f'{verb} {token.name} with id {token_id} from {location_label} to {counterparty}'  # noqa: E501
             else:

@@ -87,7 +87,7 @@ class AccountingPot(CustomizableDateMixin):
         or with reading the response returned by the server
         """
         if asset == self.profit_currency:
-            rate = Price(FVal(1))
+            rate = Price(ONE)
         else:
             rate = PriceHistorian().query_historical_price(
                 from_asset=asset,

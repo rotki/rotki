@@ -27,7 +27,7 @@ def test_kfee_price_in_accounting(accountant, google_service):
             timestamp=Timestamp(1539713238),  # 178.615 EUR/ETH
             action_type=LedgerActionType.INCOME,
             location=Location.KRAKEN,
-            amount=FVal(1),
+            amount=ONE,
             asset=A_ETH,
             rate=None,
             rate_asset=None,

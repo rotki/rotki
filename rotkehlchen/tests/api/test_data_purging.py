@@ -1,9 +1,9 @@
 import pytest
 import requests
 
+from rotkehlchen.constants import ONE
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
-from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_simple_ok_response
 from rotkehlchen.tests.utils.exchanges import (
     check_saved_events_for_exchange,
@@ -70,10 +70,10 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
             block_number=1,
             from_address=addr1,
             to_address=make_ethereum_address(),
-            value=FVal(1),
-            gas=FVal(1),
-            gas_price=FVal(1),
-            gas_used=FVal(1),
+            value=ONE,
+            gas=ONE,
+            gas_price=ONE,
+            gas_used=ONE,
             input_data=bytes(),
             nonce=1,
         )],

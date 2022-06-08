@@ -19,7 +19,7 @@ from rotkehlchen.assets.converters import (
 )
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_BSQ, A_BTC, A_DAI, A_SAI, A_USD
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.data.binance_import_utils import (
     BinanceCsvRow,
     BinanceDepositWithdrawEntry,
@@ -619,7 +619,7 @@ class DataImporter():
                     base_asset = asset_from_cryptocom(credited_row['Currency'])
                     quote_asset = asset_from_cryptocom(debited_row['Currency'])
                     part_of_total = (
-                        FVal(1)
+                        ONE
                         if len(debited_rows) == 1
                         else deserialize_asset_amount(
                             debited_row["Native Amount (in USD)"],

@@ -48,7 +48,6 @@ from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
@@ -1863,7 +1862,7 @@ class Eth2ValidatorSchema(Schema):
         ),
     )
     public_key = fields.String(load_default=None)
-    ownership_percentage = FloatingPercentageField(load_default=FVal(1))
+    ownership_percentage = FloatingPercentageField(load_default=ONE)
 
     @validates_schema
     def validate_eth2_validator_schema(  # pylint: disable=no-self-use

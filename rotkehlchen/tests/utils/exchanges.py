@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, Binance
@@ -842,8 +842,8 @@ def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
             base_asset=A_BTC,
             quote_asset=A_ETH,
             trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(1)),
-            rate=Price(FVal(1)),
+            amount=AssetAmount(ONE),
+            rate=Price(ONE),
             fee=Fee(FVal('0.1')),
             fee_currency=A_ETH,
             link='foo',

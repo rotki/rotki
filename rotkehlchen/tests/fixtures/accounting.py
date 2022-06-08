@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggreg
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.config import default_data_directory
+from rotkehlchen.constants import ONE
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
@@ -239,7 +240,7 @@ def create_inquirer(
         inquirer.find_usd_price = mock_some_usd_prices  # type: ignore
 
     def mock_query_fiat_pair(base, quote):  # pylint: disable=unused-argument
-        return FVal(1)
+        return ONE
 
     inquirer._query_fiat_pair = mock_query_fiat_pair  # type: ignore
 

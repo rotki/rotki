@@ -632,7 +632,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         self.balances.btc = {}
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
-        total = FVal(0)
+        total = ZERO
         balances = get_bitcoin_addresses_balances(self.accounts.btc)
         for account, balance in balances.items():
             total += balance
@@ -722,7 +722,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         # Query avax balance
         avax_usd_price = Inquirer().find_usd_price(A_AVAX)
         account_amount = self.avalanche.get_multiavax_balance(self.accounts.avax)
-        avax_total = FVal(0)
+        avax_total = ZERO
         for account, amount in account_amount.items():
             avax_total += amount
             usd_value = amount * avax_usd_price
@@ -1516,7 +1516,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         eth_accounts = self.accounts.eth
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
         balances = self.ethereum.get_multieth_balance(eth_accounts)
-        eth_total = FVal(0)
+        eth_total = ZERO
         for account, balance in balances.items():
             eth_total += balance
             usd_value = balance * eth_usd_price
@@ -1786,7 +1786,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 continue
 
             # Take into account the validator ownership proportion if is not 100%
-            validator_ownership = validators_ownership.get(stats_entry.validator_index, FVal(1))
+            validator_ownership = validators_ownership.get(stats_entry.validator_index, ONE)
             if validator_ownership != ONE:
                 stats_entry.pnl = stats_entry.pnl * validator_ownership
                 stats_entry.ownership_percentage = validator_ownership

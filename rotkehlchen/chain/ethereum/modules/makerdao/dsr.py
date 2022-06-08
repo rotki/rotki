@@ -7,7 +7,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import MAKERDAO_DAI_JOIN, MAKERDAO_POT
 from rotkehlchen.errors.misc import RemoteError
@@ -136,7 +136,7 @@ class MakerdaoDsr(HasDSProxy):
             try:
                 current_dai_price = Inquirer().find_usd_price(A_DAI)
             except RemoteError:
-                current_dai_price = Price(FVal(1))
+                current_dai_price = Price(ONE)
             for account, proxy in proxy_mappings.items():
                 guy_slice = MAKERDAO_POT.call(self.ethereum, 'pie', arguments=[proxy])
                 if guy_slice == 0:
@@ -259,7 +259,7 @@ class MakerdaoDsr(HasDSProxy):
             usd_price = query_usd_price_or_use_default(
                 asset=A_DAI,
                 time=timestamp,
-                default_value=FVal(1),
+                default_value=ONE,
                 location='DSR deposit',
             )
             movements.append(
@@ -313,7 +313,7 @@ class MakerdaoDsr(HasDSProxy):
             usd_price = query_usd_price_or_use_default(
                 asset=A_DAI,
                 time=timestamp,
-                default_value=FVal(1),
+                default_value=ONE,
                 location='DSR withdrawal',
             )
             movements.append(
@@ -354,7 +354,7 @@ class MakerdaoDsr(HasDSProxy):
             usd_price = query_usd_price_or_use_default(
                 asset=A_DAI,
                 time=m.timestamp,
-                default_value=FVal(1),
+                default_value=ONE,
                 location='DSR movement',
             )
             m.gain_so_far_usd_value = _dsrdai_to_dai(m.gain_so_far) * usd_price
@@ -371,7 +371,7 @@ class MakerdaoDsr(HasDSProxy):
         try:
             current_dai_price = Inquirer().find_usd_price(A_DAI)
         except RemoteError:
-            current_dai_price = Price(FVal(1))
+            current_dai_price = Price(ONE)
 
         # Calculate the total gain so far in USD
         unaccounted_gain = _dsrdai_to_dai(gain)

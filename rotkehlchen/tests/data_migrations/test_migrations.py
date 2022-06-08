@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.data_migrations.manager import (
     MIGRATION_LIST,
@@ -78,8 +79,8 @@ def test_migration_1(rotkehlchen_api_server):
             base_asset=A_BTC,
             quote_asset=A_ETH,
             trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(1)),
-            rate=Price(FVal(1)),
+            amount=AssetAmount(ONE),
+            rate=Price(ONE),
             fee=Fee(FVal('0.1')),
             fee_currency=A_ETH,
             link='foo',

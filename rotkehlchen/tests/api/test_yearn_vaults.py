@@ -51,7 +51,7 @@ TEST_V2_ACC2 = '0x915C4580dFFD112db25a6cf06c76cDd9009637b7'
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_yearn_vault_balances(rotkehlchen_api_server, ethereum_accounts):
     async_query = random.choice([True, False])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -473,7 +473,7 @@ def check_vault_history(name, expected_history, result_history):
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize(  # Force infura to make sure one of our history tests work with web3
     'ethrpc_endpoint,ethereum_manager_connect_at_start',
@@ -563,7 +563,7 @@ def test_query_yearn_vault_history_non_premium(rotkehlchen_api_server, ethereum_
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults_v2']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_yearn_vault_v2_balances(rotkehlchen_api_server, ethereum_accounts):
     async_query = random.choice([True, False])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -604,7 +604,7 @@ def test_query_yearn_vault_v2_balances(rotkehlchen_api_server, ethereum_accounts
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults_v2']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_query_yearn_vault_v2_history(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the yearn vaults v2 history endpoint works. Uses real data."""

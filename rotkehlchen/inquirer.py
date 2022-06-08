@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.curve_pools import get_curve_pools
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import multicall_2, token_normalized_value_decimals
-from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
+from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
     A_ALINK_V1,
@@ -414,7 +414,7 @@ class Inquirer():
         Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs
         """
         if asset == A_USD:
-            return Price(FVal(1))
+            return Price(ONE)
 
         instance = Inquirer()
         cache_key = (asset, A_USD)
@@ -661,7 +661,7 @@ class Inquirer():
         """Gets the USD exchange rate of any of the given assets
 
         In case of failure to query a rate it's returned as zero"""
-        rates = {A_USD: Price(FVal(1))}
+        rates = {A_USD: Price(ONE)}
         for currency in currencies:
             try:
                 rates[currency] = Inquirer()._query_fiat_pair(A_USD, currency)
