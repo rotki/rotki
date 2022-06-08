@@ -186,14 +186,12 @@ export default defineComponent({
       let valueToRender;
 
       // return a random number if scrambleData is on
-      if (get(scrambleData)) {
+      if (get(scrambleData) || !get(shouldShowAmount)) {
         const multiplier = [10, 100, 1000];
 
-        return BigNumber.random()
-          .multipliedBy(
-            multiplier[Math.floor(Math.random() * multiplier.length)]
-          )
-          .plus(BigNumber.random(2));
+        return BigNumber.random().multipliedBy(
+          multiplier[Math.floor(Math.random() * multiplier.length)]
+        );
       }
 
       if (get(amount) && get(fiatCurrency) === get(currencySymbol)) {
