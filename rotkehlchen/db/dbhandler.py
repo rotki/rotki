@@ -390,7 +390,6 @@ class DBHandler:
                 f'Could not open database file: {fullpath}. Permission errors?',
             ) from e
 
-        conn.text_factory = str
         password_for_sqlcipher = _protect_password_sqlcipher(password)
         script = f'PRAGMA key="{password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
@@ -422,7 +421,6 @@ class DBHandler:
                 f'database but no such DB connection exists',
             )
             return False
-        conn.text_factory = str
         new_password_for_sqlcipher = _protect_password_sqlcipher(new_password)
         script = f'PRAGMA rekey="{new_password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
