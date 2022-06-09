@@ -209,14 +209,16 @@ class BlockchainBalances:
         eth_balances = {k: v.serialize() for k, v in self.eth.items()}
         eth2_balances = {k: v.serialize() for k, v in self.eth2.items()}
         btc_balances: Dict[str, Any] = {}
-        bch_balances = {k: v.serialize() for k, v in self.bch.items()}
+        bch_balances: Dict[str, Any] = {}
         ksm_balances = {k: v.serialize() for k, v in self.ksm.items()}
         dot_balances = {k: v.serialize() for k, v in self.dot.items()}
         avax_balances = {k: v.serialize() for k, v in self.avax.items()}
 
-        xpub_mappings = self.db.get_addresses_to_xpub_mapping(list(self.btc.keys()))
+        btc_xpub_mappings = self.db.get_addresses_to_xpub_mapping(list(self.btc.keys()))
+        bch_xpub_mappings = self.db.get_addresses_to_xpub_mapping(list(self.bch.keys()))
+
         for btc_account, balances in self.btc.items():
-            xpub_result = xpub_mappings.get(btc_account, None)
+            xpub_result = btc_xpub_mappings.get(btc_account, None)
             if xpub_result is None:
                 if 'standalone' not in btc_balances:
                     btc_balances['standalone'] = {}
@@ -237,15 +239,47 @@ class BlockchainBalances:
                         break
 
                 if addresses_dict is None:  # new xpub, create the mapping
-                    new_entry: Dict[str, Any] = {
+                    btc_new_entry: Dict[str, Any] = {
                         'xpub': xpub_result.xpub.xpub,
                         'derivation_path': xpub_result.derivation_path,
                         'addresses': {},
                     }
-                    btc_balances['xpubs'].append(new_entry)
-                    addresses_dict = new_entry['addresses']
+                    btc_balances['xpubs'].append(btc_new_entry)
+                    addresses_dict = btc_new_entry['addresses']
 
             addresses_dict[btc_account] = balances.serialize()
+
+        for bch_account, balances in self.bch.items():
+            xpub_result = bch_xpub_mappings.get(bch_account, None)
+            if xpub_result is None:
+                if 'standalone' not in bch_balances:
+                    bch_balances['standalone'] = {}
+
+                addresses_dict = bch_balances['standalone']
+            else:
+                if 'xpubs' not in bch_balances:
+                    bch_balances['xpubs'] = []
+
+                addresses_dict = None
+                for xpub_entry in bch_balances['xpubs']:
+                    found = (
+                        xpub_result.xpub.xpub == xpub_entry['xpub'] and
+                        xpub_result.derivation_path == xpub_entry['derivation_path']
+                    )
+                    if found:
+                        addresses_dict = xpub_entry['addresses']
+                        break
+
+                if addresses_dict is None:  # new xpub, create the mapping
+                    bch_new_entry: Dict[str, Any] = {
+                        'xpub': xpub_result.xpub.xpub,
+                        'derivation_path': xpub_result.derivation_path,
+                        'addresses': {},
+                    }
+                    bch_balances['xpubs'].append(bch_new_entry)
+                    addresses_dict = bch_new_entry['addresses']
+
+            addresses_dict[bch_account] = balances.serialize()
 
         blockchain_balances: Dict[str, Dict] = {}
         if eth_balances != {}:
@@ -788,6 +822,29 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         balances = [balances_mapping.get(x, ZERO) for x in accounts_to_remove]
         self.modify_blockchain_accounts(
             blockchain=SupportedBlockchain.BITCOIN,
+            accounts=accounts_to_remove,
+            append_or_remove='remove',
+            add_or_sub=operator.sub,
+            already_queried_balances=balances,
+        )
+
+    def sync_bch_accounts_with_db(self) -> None:
+        """Call this function after having deleted BCH accounts from the DB to
+        sync the chain manager's balances and accounts with the DB
+
+        For example this is called after removing an xpub which deletes all derived
+        addresses from the DB.
+        """
+        db_bch_accounts = self.database.get_blockchain_accounts().bch
+        accounts_to_remove = []
+        for bch_account in self.accounts.bch:
+            if bch_account not in db_bch_accounts:
+                accounts_to_remove.append(bch_account)
+
+        balances_mapping = get_bitcoin_cash_addresses_balances(accounts_to_remove)
+        balances = [balances_mapping.get(x, ZERO) for x in accounts_to_remove]
+        self.modify_blockchain_accounts(
+            blockchain=SupportedBlockchain.BITCOIN_CASH,
             accounts=accounts_to_remove,
             append_or_remove='remove',
             add_or_sub=operator.sub,

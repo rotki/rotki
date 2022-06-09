@@ -8888,6 +8888,287 @@ Deleting BTC xpubs
    :statuscode 500: Internal rotki error
    :statuscode 502: Error occurred with some external service query such as blockstream. Check message for details.
 
+
+Adding BCH xpubs
+========================
+
+.. http:put:: /api/(version)/blockchains/BCH/xpub
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a PUT on the BCH xpubs endpoint will add an extended public key for bitcoin cash mainnet. All derived addresses that have ever had a transaction from this xpub and derivation path will be found and added for tracking in rotki.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/BCH/xpub HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+          "xpub_type": "p2sh_p2wpkh",
+          "derivation_path": "m/0/0",
+          "label": "my electrum xpub",
+          "tags": ["public", "old"]
+      }
+
+   :reqjson string xpub: The extended public key to add
+   :reqjsonarr string derivation_path: The derivation path from which to start deriving addresses relative to the xpub.
+   :reqjsonarr string[optional] xpub_type: An optional type to denote the type of the given xpub. If omitted the prefix xpub/ypub/zpub is used to determine the type. The valid xpub types are: ``"p2pkh"``, ``"p2sh_p2wpkh"`` and ``"wpkh"``.
+   :reqjsonarr string[optional] label: An optional label to describe the new extended public key
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the xpub
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "per_account": {
+                  "BCH": {
+                      "standalone": {
+                          "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                          }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                      }},
+                      "xpubs": [{
+                              "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+                              "derivation_path": "m/0/0",
+                              "addresses": {
+                                  "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
+                          }}, {
+                              "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
+                              "derivation_path": "m",
+                              "addresses": {
+                                  "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
+                          }}]
+                   },
+                   "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
+                       "assets": {
+                           "ETH": {"amount": "10", "usd_value": "1755.53"},
+                           "GNO": {"amount": "1", "usd_value": "50"},
+                           "RDN": {"amount": "1", "usd_value": "1.5"}
+                       },
+                      "liabilities": {}
+                  }}
+              },
+              "totals": {
+                  "assets": {
+                      "BCH": {"amount": "1", "usd_value": "7540.15"},
+                      "ETH": {"amount": "10", "usd_value": "1650.53"},
+                      "RDN": {"amount": "1", "usd_value": "1.5"},
+                      "GNO": {"amount": "1", "usd_value": "50"}
+                  },
+                  "liabilities": {
+                      "DAI": {"amount": "10", "usd_value": "10.2"}
+                  }
+          },
+          "message": ""
+      }
+
+   :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
+   :statuscode 200: Xpub successfully added
+   :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
+   :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Provided tags do not exist. Check message for details.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: Error occurred with some external service query such as haskoin. Check message for details.
+
+Editing BCH xpubs
+========================
+
+.. http:patch:: /api/(version)/blockchains/BCH/xpub
+
+   Doing a PATCH on the BCH xpubs endpoint will edit the label and tag of an extended public key for bitcoin cash mainnet.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/blockchains/BCH/xpub HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+          "derivation_path": "m/0/0",
+          "label": "my electrum xpub",
+          "tags": ["public", "old"]
+      }
+
+   :reqjson string xpub: The extended public key to edit
+   :reqjsonarr string derivation_path: The derivation path from which to start deriving addresses relative to the xpub.
+   :reqjsonarr string[optional] label: An optional label to describe the new extended public key
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the xpub
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "per_account": {
+                  "BCH": {
+                      "standalone": {
+                          "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                          }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                      }},
+                      "xpubs": [{
+                              "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+                              "derivation_path": "m/0/0",
+                              "addresses": {
+                                  "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
+                          }}, {
+                              "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
+                              "derivation_path": "m",
+                              "addresses": {
+                                  "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
+                          }}]
+                   },
+                   "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
+                       "assets": {
+                           "ETH": {"amount": "10", "usd_value": "1755.53"},
+                           "GNO": {"amount": "1", "usd_value": "50"},
+                           "RDN": {"amount": "1", "usd_value": "1.5"}
+                       },
+                       "total_usd_value": "1807.03",
+                  }}
+              },
+              "totals": {
+                  "BCH": {"amount": "1", "usd_value": "7540.15"},
+                  "ETH": {"amount": "10", "usd_value": "1650.53"},
+                  "RDN": {"amount": "1", "usd_value": "1.5"},
+                  "GNO": {"amount": "1", "usd_value": "50"}
+          },
+          "message": ""
+      }
+
+   :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
+   :statuscode 200: Xpub successfully edited
+   :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
+   :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Provided tags do not exist. Check message for details.
+   :statuscode 500: Internal rotki error
+
+Deleting BCH xpubs
+========================
+
+.. http:delete:: /api/(version)/blockchains/BCH/xpub
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a DELETE on the BCH xpubs endpoint will remove an extended public key for bitcoin cash mainnet. All derived addresses from the xpub will also be deleted.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/blockchains/BCH/xpub HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
+          "derivation_path": "m/0/0"
+      }
+
+   :reqjson string xpub: The extended public key to remove
+   :reqjsonarr string derivation_path: The derivation path from which addresses were derived.
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "per_account": {
+                  "BCH": {
+                      "standalone": {
+                          "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                          }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                              "amount": "0.5", "usd_value": "3770.075"
+                      }},
+                      "xpubs": [{
+                              "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
+                              "derivation_path": "m",
+                              "addresses": {
+                                  "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  },
+                                  "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+                                      "amount": "0.5", "usd_value": "3770.075"
+                                  }
+                          }}]
+                   },
+                   "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
+                       "assets": {
+                           "ETH": {"amount": "10", "usd_value": "1755.53"},
+                           "GNO": {"amount": "1", "usd_value": "50"},
+                           "RDN": {"amount": "1", "usd_value": "1.5"}
+                       },
+                       "liabilities": {}
+                  }}
+              },
+              "totals": {
+                  "assets": {
+                      "BCH": {"amount": "1", "usd_value": "7540.15"},
+                      "ETH": {"amount": "10", "usd_value": "1650.53"},
+                      "RDN": {"amount": "1", "usd_value": "1.5"},
+                      "GNO": {"amount": "1", "usd_value": "50"}
+                  },
+                  "liabilities": {}
+          },
+          "message": ""
+      }
+
+   :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
+   :statuscode 200: Xpub successfully removed
+   :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
+   :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Check message for details.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: Error occurred with some external service query such as blockstream. Check message for details.
+
+
 Editing blockchain account data
 =================================
 

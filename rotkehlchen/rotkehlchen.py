@@ -475,7 +475,7 @@ class Rotkehlchen():
             blockchain: SupportedBlockchain,
     ) -> Union[List[BlockchainAccountData], Dict[str, Any]]:
         account_data = self.data.db.get_blockchain_account_data(blockchain)
-        if blockchain != SupportedBlockchain.BITCOIN:
+        if blockchain not in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             return account_data
 
         xpub_data = self.data.db.get_bitcoin_xpub_data()

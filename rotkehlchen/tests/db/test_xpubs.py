@@ -59,6 +59,7 @@ def fixture_setup_db_for_xpub_tests(data_dir, username):
             XpubDerivedAddressData(0, 1, addr2, ZERO),
             XpubDerivedAddressData(0, 5, addr5, ZERO),
         ],
+        blockchain=SupportedBlockchain.BITCOIN,
     )
 
     xpub = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
@@ -88,6 +89,7 @@ def fixture_setup_db_for_xpub_tests(data_dir, username):
             XpubDerivedAddressData(1, 3, addr4, ZERO),
             XpubDerivedAddressData(1, 7, addr5, ZERO),
         ],
+        blockchain=SupportedBlockchain.BITCOIN,
     )
 
     # Finally also add the same xpub as xpub1 with no derivation path
@@ -139,7 +141,7 @@ def test_delete_bitcoin_xpub(setup_db_for_xpub_tests):
     db, xpub1, xpub2, _, all_addresses = setup_db_for_xpub_tests
     # Also add a non-existing address in there for fun
     all_addresses.append('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
-    db.delete_bitcoin_xpub(xpub1)
+    db.delete_bitcoin_xpub(xpub1, SupportedBlockchain.BITCOIN)
 
     result = db.get_addresses_to_xpub_mapping(all_addresses)
     assert len(result) == 5

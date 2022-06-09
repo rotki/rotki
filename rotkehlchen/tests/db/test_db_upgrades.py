@@ -6,6 +6,7 @@ from shutil import copyfile
 from unittest.mock import patch
 
 import pytest
+from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -2509,6 +2510,14 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     cursor.execute('SELECT COUNT(*), timestamp FROM history_events WHERE subtype="staking receive asset" AND type="unstaking"')  # noqa: E501
     assert cursor.fetchone() == (1, expected_timestamp)
 
+    # check that you cannot add blockchain column in xpub_mappings
+    with pytest.raises(sqlcipher.OperationalError) as exc_info:  # pylint: disable=no-member
+        cursor.execute(
+            'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: 501
+            'VALUES (1, 1, 1, 1, 1, 1);',
+        )
+    assert 'cannot INSERT into generated column "blockchain"' in str(exc_info)
+
     db_v31.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2600,6 +2609,15 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     assert cursor.fetchone() == (1, expected_timestamp // 10)
     cursor.execute('SELECT COUNT(*), timestamp FROM history_events WHERE subtype="remove asset" AND type="staking"')  # noqa: E501
     assert cursor.fetchone() == (1, expected_timestamp // 10)
+
+    # check that you can now add blockchain column in xpub_mappings
+    cursor.execute('INSERT INTO xpubs(xpub, derivation_path) VALUES("a", "b");')
+    cursor.execute('INSERT INTO blockchain_accounts(blockchain, account, label) VALUES("BTC", "xyz", "");')  # noqa: E501
+    cursor.execute(
+        'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: E501
+        'VALUES ("xyz", "a", "b", 1, 1, "BTC");',
+    )
+    assert cursor.rowcount == 1
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

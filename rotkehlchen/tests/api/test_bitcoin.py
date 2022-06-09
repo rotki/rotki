@@ -242,6 +242,43 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     result = cursor.execute('SELECT * from xpub_mappings WHERE xpub=?', (xpub1,)).fetchall()
     assert len(result) == 0, 'all xpub mappings should have been deleted'
 
+    # Test that adding a BCH xpub works
+    bch_xpub1 = 'xpub6By8JDaPr5L6oHfgQDc47quD69qH1hTwnFYbuia8paiYxSE9u84KZfYqn6xLMUqxKK3wNpsgP4Kwu1gzXHD5xBxj5HrLposEYL6PwZzpAMZ'  # noqa: 501
+    json_data = {
+        'async_query': async_query,
+        'xpub': bch_xpub1,
+        'derivation_path': None,
+    }
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "bchxpubresource",
+    ), json=json_data)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task_with_result(rotkehlchen_api_server, task_id, timeout=180)
+    else:
+        outcome = assert_proper_response_with_result(response)
+
+    # Test that deleting a BCH xpub works as expected
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        "bchxpubresource",
+    ), json=json_data)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task_with_result(rotkehlchen_api_server, task_id, timeout=180)
+    else:
+        outcome = assert_proper_response_with_result(response)
+
+    assert 'BCH' not in outcome['per_account']
+
+    # Also make sure all mappings are gone from the DB
+    cursor = rotki.data.db.conn.cursor()
+    result = cursor.execute('SELECT object_reference from tag_mappings;').fetchall()
+    assert len(result) == 0, 'all tag mappings should have been deleted'
+    result = cursor.execute('SELECT * from xpub_mappings WHERE xpub=?', (bch_xpub1,)).fetchall()
+    assert len(result) == 0, 'all xpub mappings should have been deleted'
+
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('btc_accounts', [[
