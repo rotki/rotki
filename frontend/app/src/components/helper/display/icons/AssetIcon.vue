@@ -53,10 +53,11 @@ export default defineComponent({
     size: { required: true, type: String },
     changeable: { required: false, type: Boolean, default: false },
     styled: { required: false, type: Object, default: () => null },
-    noTooltip: { required: false, type: Boolean, default: false }
+    noTooltip: { required: false, type: Boolean, default: false },
+    timestamp: { required: false, type: Number, default: null }
   },
   setup(props) {
-    const { symbol, changeable, identifier } = toRefs(props);
+    const { symbol, changeable, identifier, timestamp } = toRefs(props);
     const error = ref<boolean>(false);
 
     const { assetSymbol, assetName, assetIdentifierForSymbol } =
@@ -99,7 +100,8 @@ export default defineComponent({
         return `/assets/images/defi/weth.svg`;
       }
       const url = `${api.serverUrl}/api/1/assets/${id}/icon`;
-      return get(changeable) ? `${url}?t=${Date.now()}` : url;
+      const currentTimestamp = get(timestamp) || Date.now();
+      return get(changeable) ? `${url}?t=${currentTimestamp}` : url;
     });
 
     return {

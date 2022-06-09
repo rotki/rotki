@@ -206,31 +206,52 @@
       </v-expansion-panels>
     </v-sheet>
 
-    <v-row class="mt-4">
-      <v-col cols="auto">
-        <v-sheet outlined rounded class="asset-form__icon">
-          <asset-icon
-            v-if="preview"
-            :identifier="preview"
-            :symbol="symbol"
-            size="72px"
-            changeable
+    <div class="mb-4">
+      <v-row class="mt-4">
+        <v-col cols="auto">
+          <v-sheet outlined rounded class="asset-form__icon">
+            <v-tooltip v-if="preview" right>
+              <template #activator="{ on }">
+                <v-btn
+                  fab
+                  x-small
+                  depressed
+                  class="asset-form__icon__refresh"
+                  color="primary"
+                  :loading="refreshIconLoading"
+                  v-on="on"
+                  @click="refreshIcon"
+                >
+                  <v-icon>mdi-refresh</v-icon>
+                </v-btn>
+              </template>
+              {{ $t('asset_form.fetch_latest_icon.title') }}
+            </v-tooltip>
+
+            <asset-icon
+              v-if="preview"
+              :identifier="preview"
+              :symbol="symbol"
+              size="72px"
+              changeable
+              :timestamp="timestamp"
+            />
+          </v-sheet>
+        </v-col>
+        <v-col>
+          <file-upload
+            source="icon"
+            file-filter="image/*"
+            @selected="icon = $event"
           />
-        </v-sheet>
-      </v-col>
-      <v-col>
-        <file-upload
-          source="icon"
-          file-filter="image/*"
-          @selected="icon = $event"
-        />
-      </v-col>
-    </v-row>
-    <v-row v-if="icon">
-      <v-col class="text-caption">
-        {{ $t('asset_form.replaced', { name: icon.name }) }}
-      </v-col>
-    </v-row>
+        </v-col>
+      </v-row>
+      <v-row v-if="icon">
+        <v-col class="text-caption">
+          {{ $t('asset_form.replaced', { name: icon.name }) }}
+        </v-col>
+      </v-row>
+    </div>
   </fragment>
 </template>
 
@@ -263,6 +284,7 @@ import {
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useNotifications } from '@/store/notifications';
 import { showError } from '@/store/utils';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
@@ -321,6 +343,8 @@ export default defineComponent({
     const cryptocompareEnabled = ref<boolean>(false);
     const fetching = ref<boolean>(false);
     const dontAutoFetch = ref<boolean>(false);
+    const refreshIconLoading = ref<boolean>(false);
+    const timestamp = ref<number | null>(null);
 
     const underlyingTokens = ref<UnderlyingToken[]>([]);
     const icon = ref<File | null>(null);
@@ -561,6 +585,31 @@ export default defineComponent({
       }
     };
 
+    const { notify } = useNotifications();
+
+    const refreshIcon = async () => {
+      set(refreshIconLoading, true);
+      const identifierVal = get(identifier);
+      try {
+        await api.assets.refreshIcon(identifierVal);
+      } catch (e: any) {
+        notify({
+          title: i18n.tc('asset_form.fetch_latest_icon.title'),
+          message: i18n.tc(
+            'asset_form.fetch_latest_icon.description',
+            undefined,
+            {
+              identifier: identifierVal,
+              message: e.message
+            }
+          ),
+          display: true
+        });
+      }
+      set(refreshIconLoading, false);
+      set(timestamp, Date.now());
+    };
+
     return {
       address,
       name,
@@ -585,7 +634,10 @@ export default defineComponent({
       icon,
       input,
       isEthereumToken,
-      save
+      save,
+      refreshIcon,
+      timestamp,
+      refreshIconLoading
     };
   }
 });
@@ -600,6 +652,13 @@ export default defineComponent({
     justify-content: center;
     width: 96px;
     height: 100%;
+    position: relative;
+
+    &__refresh {
+      position: absolute;
+      right: -1rem;
+      top: -1rem;
+    }
   }
 
   &__protocol {

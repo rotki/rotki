@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`4443` Users will now be able to get the latest icon of the assets.
 * :feature:`44` Add option to change cost basis method (FIFO and LIFO order).
 
 * :release:`1.24.1 <2022-06-03>`
