@@ -8,6 +8,7 @@ from .types import AssetData
 
 class AssetResolver():
     __instance: Optional['AssetResolver'] = None
+    eth_equivalent_eth2 = False
     # A cache so that the DB is not hit every time
     assets_cache: Dict[str, AssetData] = {}
 

@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import REQUEST_DELTA_TS
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     Eth2Deposit,
@@ -14,9 +14,13 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 )
 from rotkehlchen.chain.ethereum.modules.eth2.utils import scrape_validator_daily_stats
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
+from rotkehlchen.db.settings import DBSettings
+from rotkehlchen.db.utils import DBAssetBalance
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -193,6 +197,49 @@ EXPECTED_DEPOSITS = [
         timestamp=Timestamp(int(1605044577)),
     ),
 ]
+
+
+def test_eth2_equivalent_eth_time_balances(database: DBHandler):
+    """
+    Test that the timed snapshot balances of ETH and ETH2 are
+    handled the same when the equivalent setting is activated.
+    """
+    balances = [
+        DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488326400),
+            asset=A_ETH,
+            amount='10',
+            usd_value='4517.4',
+        ),
+        DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488326400),
+            asset=A_ETH2,
+            amount='10',
+            usd_value='4517.4',
+        ),
+    ]
+    database.add_multiple_balances(balances)
+
+    # Test query_timed_balances for ETh
+    with patch(
+            'rotkehlchen.db.dbhandler.DBHandler.get_settings',
+            return_value=DBSettings(eth_equivalent_eth2=True),
+    ):
+        eth_balances = database.query_timed_balances(A_ETH)
+        assert len(eth_balances) == 1
+
+        eth2_balances = database.query_timed_balances(A_ETH2)
+        assert len(eth2_balances) == 0
+
+    # If we disable the ETH2 equivalent ETH, we should
+    # have 1 balance each for ETH and ETH2
+    eth2_balances = database.query_timed_balances(A_ETH2)
+    assert len(eth2_balances) == 1
+
+    eth_balances = database.query_timed_balances(A_ETH)
+    assert len(eth_balances) == 1
 
 
 @pytest.mark.freeze_time(datetime(2020, 11, 10, 21, 42, 57))

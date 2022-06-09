@@ -26,6 +26,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_CURRENT_PRICE_ORACLES,
     DEFAULT_DATE_DISPLAY_FORMAT,
     DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
+    DEFAULT_ETH_EQUIVALENT_ETH2,
     DEFAULT_HISTORICAL_PRICE_ORACLES,
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_GAS_COSTS,
@@ -356,6 +357,7 @@ def test_writing_fetching_data(data_dir, username):
         'last_data_migration': DEFAULT_LAST_DATA_MIGRATION,
         'non_syncing_exchanges': [],
         'cost_basis_method': CostBasisMethod.FIFO,
+        'eth_equivalent_eth2': DEFAULT_ETH_EQUIVALENT_ETH2,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

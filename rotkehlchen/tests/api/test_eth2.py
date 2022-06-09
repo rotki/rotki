@@ -784,3 +784,30 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
     assert FVal(totals['assets']['ETH2']['amount']) >= amount1 + amount2 + amount3
+
+    # Eth2 and eth equivalent tests for balances
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'blockchainbalancesresource',
+        ),
+        json={'async_query': False},
+    )
+    seperate_balances = assert_proper_response_with_result(response)['totals']['assets']
+
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, "settingsresource"),
+        json={'settings': {'eth_equivalent_eth2': True}},
+    )
+    assert_proper_response_with_result(response)
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'blockchainbalancesresource',
+        ),
+        json={'async_query': False},
+    )
+    combined_balances = assert_proper_response_with_result(response)['totals']['assets']
+
+    assert combined_balances['ETH'] == seperate_balances['ETH2']

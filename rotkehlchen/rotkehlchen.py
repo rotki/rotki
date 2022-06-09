@@ -27,6 +27,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
@@ -50,6 +51,7 @@ from rotkehlchen.chain.substrate.utils import (
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
 from rotkehlchen.config import default_data_directory
+from rotkehlchen.constants.assets import treat_eth_eth2_equal
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
@@ -371,7 +373,17 @@ class Rotkehlchen():
             sleep_time_secs=ICONS_QUERY_SLEEP,
         )
         self.user_is_logged_in = True
+
+        # Change or revert ETH2 -> ETH according to DBSettings
+        self._treat_eth_eth2_equal(settings.eth_equivalent_eth2)
+
         log.debug('User unlocking complete')
+
+    @staticmethod
+    def _treat_eth_eth2_equal(yes: bool) -> None:
+        """Change or revert ETH2 -> ETH according to DBSettings """
+        AssetResolver().eth_equivalent_eth2 = yes
+        treat_eth_eth2_equal(yes)
 
     def _logout(self) -> None:
         if not self.user_is_logged_in:
@@ -853,6 +865,9 @@ class Rotkehlchen():
             PriceHistorian().set_oracles_order(settings.historical_price_oracles)
         if settings.active_modules is not None:
             self.chain_manager.process_new_modules_list(settings.active_modules)
+
+        if settings.eth_equivalent_eth2 is not None:
+            self._treat_eth_eth2_equal(settings.eth_equivalent_eth2)
 
         self.data.db.set_settings(settings)
         return True, ''

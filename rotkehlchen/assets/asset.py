@@ -718,7 +718,14 @@ class Asset():
 
         # TODO: figure out a way to move this out. Moved in here due to cyclic imports
         from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
-        data = AssetResolver().get_asset_data(self.identifier, form_with_incomplete_data)
+
+        # Change identifier to 'ETH' if it's 'ETH' and has eth_equivalent_eth2
+        # setting to True
+        identifier = self.identifier
+        if self.identifier == 'ETH2' and AssetResolver().eth_equivalent_eth2:
+            identifier = 'ETH'
+
+        data = AssetResolver().get_asset_data(identifier, form_with_incomplete_data)
         # make sure same case of identifier as in  DB is saved in the structure
         object.__setattr__(self, 'identifier', data.identifier)
         # Ugly hack to set attributes of a frozen data class as post init

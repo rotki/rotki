@@ -2794,17 +2794,28 @@ class DBHandler:
 
         Can optionally filter by balance type
         """
+
         if from_ts is None:
             from_ts = Timestamp(0)
         if to_ts is None:
             to_ts = ts_now()
         settings = self.get_settings()
 
+        if settings.eth_equivalent_eth2 and asset.identifier == 'ETH2':
+            return []
+
         querystr = (
             'SELECT time, amount, usd_value, category FROM timed_balances '
             'WHERE time BETWEEN ? AND ? AND currency=?'
         )
         bindings = [from_ts, to_ts, asset.identifier]
+
+        if settings.eth_equivalent_eth2 and asset.identifier == 'ETH':
+            querystr = querystr.replace('currency=?', 'currency IN (?,?)')
+            querystr = querystr.replace('amount', 'SUM(amount)')
+            querystr = querystr.replace('usd_value', 'SUM(usd_value)')
+            bindings.append('ETH2')
+
         if balance_type is not None:
             querystr += ' AND category=?'
             bindings.append(balance_type.serialize_for_db())
@@ -2813,6 +2824,7 @@ class DBHandler:
         cursor = self.conn.cursor()
         results = cursor.execute(querystr, bindings)
         results = results.fetchall()
+
         balances = []
         results_length = len(results)
         for idx, result in enumerate(results):
