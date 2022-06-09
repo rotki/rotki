@@ -1251,14 +1251,15 @@ class BTCXpubResource(BaseMethodView):
     patch_schema = XpubPatchSchema()
 
     @require_loggedin_user()
-    @use_kwargs(put_schema, location='json')
+    @use_kwargs(put_schema, location='json_and_view_args')
     def put(
-            self,
-            xpub: 'HDKey',
-            derivation_path: Optional[str],
-            label: Optional[str],
-            tags: Optional[List[str]],
-            async_query: bool,
+        self,
+        xpub: 'HDKey',
+        derivation_path: Optional[str],
+        label: Optional[str],
+        tags: Optional[List[str]],
+        async_query: bool,
+        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
         return self.rest_api.add_xpub(
             xpub_data=XpubData(
@@ -1267,17 +1268,18 @@ class BTCXpubResource(BaseMethodView):
                 label=label,
                 tags=tags,
             ),
-            blockchain=SupportedBlockchain.BITCOIN,
+            blockchain=blockchain,
             async_query=async_query,
         )
 
     @require_loggedin_user()
-    @use_kwargs(delete_schema, location='json')
+    @use_kwargs(delete_schema, location='json_and_view_args')
     def delete(
-            self,
-            xpub: 'HDKey',
-            derivation_path: Optional[str],
-            async_query: bool,
+        self,
+        xpub: 'HDKey',
+        derivation_path: Optional[str],
+        async_query: bool,
+        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
         return self.rest_api.delete_xpub(
             xpub_data=XpubData(
@@ -1286,18 +1288,20 @@ class BTCXpubResource(BaseMethodView):
                 label=None,
                 tags=None,
             ),
-            blockchain=SupportedBlockchain.BITCOIN,
+            blockchain=blockchain,
             async_query=async_query,
         )
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json_and_view_args')
     def patch(
-            self,
-            xpub: 'HDKey',
-            derivation_path: Optional[str],
-            label: Optional[str],
-            tags: Optional[List[str]],
+        self,
+        xpub: 'HDKey',
+        derivation_path: Optional[str],
+        label: Optional[str],
+        tags: Optional[List[str]],
+        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+
     ) -> Response:
         return self.rest_api.edit_xpub(
             xpub_data=XpubData(
@@ -1306,73 +1310,7 @@ class BTCXpubResource(BaseMethodView):
                 label=label,
                 tags=tags,
             ),
-            blockchain=SupportedBlockchain.BITCOIN,
-        )
-
-
-class BCHXpubResource(BaseMethodView):
-
-    put_schema = XpubAddSchema()
-    delete_schema = BaseXpubSchema()
-    patch_schema = XpubPatchSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(put_schema, location='json')
-    def put(
-            self,
-            xpub: 'HDKey',
-            derivation_path: Optional[str],
-            label: Optional[str],
-            tags: Optional[List[str]],
-            async_query: bool,
-    ) -> Response:
-        return self.rest_api.add_xpub(
-            xpub_data=XpubData(
-                xpub=xpub,
-                derivation_path=derivation_path,
-                label=label,
-                tags=tags,
-            ),
-            blockchain=SupportedBlockchain.BITCOIN_CASH,
-            async_query=async_query,
-        )
-
-    @require_loggedin_user()
-    @use_kwargs(delete_schema, location='json')
-    def delete(
-            self,
-            xpub: 'HDKey',
-            derivation_path: Optional[str],
-            async_query: bool,
-    ) -> Response:
-        return self.rest_api.delete_xpub(
-            xpub_data=XpubData(
-                xpub=xpub,
-                derivation_path=derivation_path,
-                label=None,
-                tags=None,
-            ),
-            blockchain=SupportedBlockchain.BITCOIN_CASH,
-            async_query=async_query,
-        )
-
-    @require_loggedin_user()
-    @use_kwargs(patch_schema, location='json_and_view_args')
-    def patch(
-            self,
-            xpub: 'HDKey',
-            derivation_path: Optional[str],
-            label: Optional[str],
-            tags: Optional[List[str]],
-    ) -> Response:
-        return self.rest_api.edit_xpub(
-            xpub_data=XpubData(
-                xpub=xpub,
-                derivation_path=derivation_path,
-                label=label,
-                tags=tags,
-            ),
-            blockchain=SupportedBlockchain.BITCOIN_CASH,
+            blockchain=blockchain,
         )
 
 

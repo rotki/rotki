@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional
 from gevent.lock import Semaphore
 
 from rotkehlchen.chain.bitcoin import have_bitcoin_transactions
-from rotkehlchen.chain.bitcoin.bch import have_bitcoin_cash_transactions
+from rotkehlchen.chain.bitcoin.bch import have_bch_transactions
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.db.utils import insert_tag_mappings
 from rotkehlchen.errors.misc import RemoteError
@@ -87,7 +87,7 @@ def _derive_addresses_loop(
         if blockchain == SupportedBlockchain.BITCOIN:
             have_tx_mapping = have_bitcoin_transactions([x[1] for x in batch_addresses])
         else:
-            have_tx_mapping = have_bitcoin_cash_transactions([x[1] for x in batch_addresses])
+            have_tx_mapping = have_bch_transactions([x[1] for x in batch_addresses])
         should_continue = False
         for idx, address in batch_addresses:
             have_tx, balance = have_tx_mapping[address]
@@ -195,30 +195,18 @@ class XpubManager():
         new_addresses = []
         new_balances = []
         existing_address_data = []
-        if blockchain == SupportedBlockchain.BITCOIN:
-            known_btc_addresses = self.db.get_blockchain_accounts().btc
-            for entry in derived_addresses_data:
-                if entry.address not in known_btc_addresses:
-                    new_addresses.append(entry.address)
-                    new_balances.append(entry.balance)
-                elif new_xpub:
-                    existing_address_data.append(BlockchainAccountData(
-                        address=entry.address,
-                        label=None,
-                        tags=xpub_data.tags,
-                    ))
-        else:
-            known_bch_addresses = self.db.get_blockchain_accounts().bch
-            for entry in derived_addresses_data:
-                if entry.address not in known_bch_addresses:
-                    new_addresses.append(entry.address)
-                    new_balances.append(entry.balance)
-                elif new_xpub:
-                    existing_address_data.append(BlockchainAccountData(
-                        address=entry.address,
-                        label=None,
-                        tags=xpub_data.tags,
-                    ))
+
+        known_addresses = getattr(self.db.get_blockchain_accounts(), blockchain.value.lower())
+        for entry in derived_addresses_data:
+            if entry.address not in known_addresses:
+                new_addresses.append(entry.address)
+                new_balances.append(entry.balance)
+            elif new_xpub:
+                existing_address_data.append(BlockchainAccountData(
+                    address=entry.address,
+                    label=None,
+                    tags=xpub_data.tags,
+                ))
 
         if new_xpub and xpub_data.tags:
             insert_tag_mappings(  # if we got tags add them to the xpub
@@ -270,28 +258,15 @@ class XpubManager():
             # First try to add the xpub, and if it already exists raise
             self.db.add_bitcoin_xpub(xpub_data)
             # Then add tags if not existing
-            if blockchain == SupportedBlockchain.BITCOIN:
-                self.db.ensure_tags_exist(
-                    given_data=[xpub_data],
-                    action='adding',
-                    data_type='bitcoin xpub',
-                )
-            else:
-                self.db.ensure_tags_exist(
-                    given_data=[xpub_data],
-                    action='adding',
-                    data_type='bitcoin cash xpub',
-                )
+            self.db.ensure_tags_exist(
+                given_data=[xpub_data],
+                action='adding',
+                data_type='bitcoin xpub' if blockchain == SupportedBlockchain.BITCOIN else 'bitcoin cash xpub',  # noqa: 501
+            )
             self._derive_xpub_addresses(xpub_data, new_xpub=True, blockchain=blockchain)
-        if blockchain == SupportedBlockchain.BITCOIN:
-            if not self.chain_manager.balances.is_queried(SupportedBlockchain.BITCOIN):
-                self.chain_manager.query_balances(SupportedBlockchain.BITCOIN, ignore_cache=True)
-        else:
-            if not self.chain_manager.balances.is_queried(SupportedBlockchain.BITCOIN_CASH):
-                self.chain_manager.query_balances(
-                    SupportedBlockchain.BITCOIN_CASH,
-                    ignore_cache=True,
-                )
+
+        if not self.chain_manager.balances.is_queried(blockchain):
+            self.chain_manager.query_balances(blockchain, ignore_cache=True)
         return self.chain_manager.get_balances_update()
 
     def delete_bitcoin_xpub(
@@ -307,10 +282,7 @@ class XpubManager():
         with self.lock:
             # First try to delete the xpub, and if it does not exist raise InputError
             self.db.delete_bitcoin_xpub(xpub_data, blockchain)
-            if blockchain == SupportedBlockchain.BITCOIN:
-                self.chain_manager.sync_btc_accounts_with_db()
-            else:
-                self.chain_manager.sync_bch_accounts_with_db()
+            self.chain_manager.sync_btc_accounts_with_db(blockchain)
 
         return self.chain_manager.get_balances_update()
 
@@ -348,15 +320,8 @@ class XpubManager():
             # Update the xpub label
             self.db.edit_bitcoin_xpub(xpub_data)
             # Then add tags if not existing
-            if blockchain == SupportedBlockchain.BITCOIN:
-                self.db.ensure_tags_exist(
-                    given_data=[xpub_data],
-                    action='editing',
-                    data_type='bitcoin xpub',
-                )
-            else:
-                self.db.ensure_tags_exist(
-                    given_data=[xpub_data],
-                    action='editing',
-                    data_type='bitcoin cash xpub',
-                )
+            self.db.ensure_tags_exist(
+                given_data=[xpub_data],
+                action='editing',
+                data_type='bitcoin xpub' if blockchain == SupportedBlockchain.BITCOIN else 'bitcoin cash xpub',  # noqa: 501
+            )

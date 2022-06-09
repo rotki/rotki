@@ -1071,6 +1071,16 @@ class BlockchainAccountDataSchema(Schema):
 
 class BaseXpubSchema(AsyncQueryArgumentSchema):
     xpub = XpubField(required=True)
+    blockchain = BlockchainField(
+        required=True,
+        exclude_types=[
+            SupportedBlockchain.AVALANCHE,
+            SupportedBlockchain.POLKADOT,
+            SupportedBlockchain.ETHEREUM,
+            SupportedBlockchain.ETHEREUM_BEACONCHAIN,
+            SupportedBlockchain.KUSAMA,
+        ],
+    )
     derivation_path = DerivationPathField(load_default=None)
 
 
@@ -1078,6 +1088,16 @@ class XpubAddSchema(AsyncQueryArgumentSchema):
     xpub = fields.String(required=True)
     derivation_path = DerivationPathField(load_default=None)
     label = fields.String(load_default=None)
+    blockchain = BlockchainField(
+        required=True,
+        exclude_types=[
+            SupportedBlockchain.AVALANCHE,
+            SupportedBlockchain.POLKADOT,
+            SupportedBlockchain.ETHEREUM,
+            SupportedBlockchain.ETHEREUM_BEACONCHAIN,
+            SupportedBlockchain.KUSAMA,
+        ],
+    )
     xpub_type = fields.String(
         required=False,
         load_default=None,
@@ -1110,6 +1130,16 @@ class XpubPatchSchema(Schema):
     derivation_path = DerivationPathField(load_default=None)
     label = fields.String(load_default=None)
     tags = fields.List(fields.String(), load_default=None)
+    blockchain = BlockchainField(
+        required=True,
+        exclude_types=[
+            SupportedBlockchain.AVALANCHE,
+            SupportedBlockchain.POLKADOT,
+            SupportedBlockchain.ETHEREUM,
+            SupportedBlockchain.ETHEREUM_BEACONCHAIN,
+            SupportedBlockchain.KUSAMA,
+        ],
+    )
 
 
 class BlockchainAccountsGetSchema(Schema):

@@ -135,7 +135,8 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     }
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "btcxpubresource",
+        'btcxpubresource',
+        blockchain='BTC',
     ), json=json_data)
     if async_query:
         task_id = assert_ok_async_response(response)
@@ -153,7 +154,8 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     }
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "btcxpubresource",
+        'btcxpubresource',
+        blockchain='BTC',
     ), json=json_data)
     assert_error_response(
         response=response,
@@ -173,7 +175,8 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     }
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "btcxpubresource",
+        'btcxpubresource',
+        blockchain='BTC',
     ), json=json_data)
     if async_query:
         task_id = assert_ok_async_response(response)
@@ -217,7 +220,8 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     }
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
-        "btcxpubresource",
+        'btcxpubresource',
+        blockchain='BTC',
     ), json=json_data)
     if async_query:
         task_id = assert_ok_async_response(response)
@@ -251,7 +255,8 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     }
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "bchxpubresource",
+        'btcxpubresource',
+        blockchain='BCH',
     ), json=json_data)
     if async_query:
         task_id = assert_ok_async_response(response)
@@ -262,7 +267,8 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     # Test that deleting a BCH xpub works as expected
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
-        "bchxpubresource",
+        'btcxpubresource',
+        blockchain='BCH',
     ), json=json_data)
     if async_query:
         task_id = assert_ok_async_response(response)
@@ -297,7 +303,8 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server):
     }
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
-        "btcxpubresource",
+        'btcxpubresource',
+        blockchain='BTC',
     ), json=json_data)
     assert_error_response(
         response=response,
@@ -313,7 +320,8 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server):
     }
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
-        "btcxpubresource",
+        'btcxpubresource',
+        blockchain='BTC',
     ), json=json_data)
     assert_error_response(
         response=response,
@@ -337,7 +345,8 @@ def test_add_xpub_with_conversion_works(rotkehlchen_api_server):
     }
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "btcxpubresource",
+        'btcxpubresource',
+        blockchain='BTC',
     ), json=json_data)
     assert_proper_response_with_result(response)
     saved_xpubs = rotki.data.db.get_bitcoin_xpub_data()
@@ -349,7 +358,8 @@ def test_add_xpub_with_conversion_works(rotkehlchen_api_server):
     json_data['xpub_type'] = 'wpkh'
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "btcxpubresource",
+        'btcxpubresource',
+        blockchain='BTC',
     ), json=json_data)
     assert_proper_response_with_result(response)
     saved_xpubs = rotki.data.db.get_bitcoin_xpub_data()
@@ -373,7 +383,8 @@ def test_xpub_addition_errors(rotkehlchen_api_server):
     }
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "btcxpubresource",
+        'btcxpubresource',
+        blockchain='BTC',
     ), json=json_data)
     assert_error_response(
         response=response,
@@ -390,7 +401,8 @@ def test_xpub_addition_errors(rotkehlchen_api_server):
     }
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "btcxpubresource",
+        'btcxpubresource',
+        blockchain='BTC',
     ), json=json_data)
     assert_error_response(
         response=response,
@@ -403,7 +415,8 @@ def test_xpub_addition_errors(rotkehlchen_api_server):
     json_data = {'xpub': xpub}
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "btcxpubresource",
+        'btcxpubresource',
+        blockchain='BTC',
     ), json=json_data)
     assert_error_response(
         response=response,
