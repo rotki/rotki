@@ -4,8 +4,8 @@ import * as querystring from 'querystring';
 import { Request, Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { bodyParser, default as jsonServer } from 'json-server';
-import { statistics } from '@/mocked-apis/statistics';
-import { enableCors } from '@/setup';
+import { statistics } from './mocked-apis/statistics';
+import { enableCors } from './setup';
 
 const server = jsonServer.create();
 const router = jsonServer.router('db.json');
