@@ -40,6 +40,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import Generate from '@/components/profitloss/Generate.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
 import { useRoute, useRouter } from '@/composables/common';
+import { setupSession } from '@/composables/session';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
 import { useTasks } from '@/store/tasks';
@@ -83,7 +84,13 @@ export default defineComponent({
       }
     });
 
+    const { pinned, setPinned } = setupSession();
+
     const generate = async (period: ProfitLossReportPeriod) => {
+      if (get(pinned)?.name === 'report-actionable-card') {
+        setPinned(null);
+      }
+
       const reportId = await generateReport(period);
       if (reportId > 0) {
         router.push({

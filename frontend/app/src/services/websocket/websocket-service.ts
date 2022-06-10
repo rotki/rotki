@@ -66,7 +66,7 @@ class WebsocketService {
           const data = PremiumStatusUpdateData.parse(message.data);
           await handlePremiumStatusUpdate(data.is_premium_active);
         } else {
-          logger.warn(`Unsupported socket message received: ${message}`);
+          logger.warn(`Unsupported socket message received: ${event.data}`);
         }
       };
       this._connection.onopen = () => {

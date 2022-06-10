@@ -2,25 +2,31 @@
   <div>
     <data-table
       ref="tableRef"
-      :class="$style.table"
+      :class="{
+        [$style.table]: true,
+        [$style['table--pinned']]: isPinned
+      }"
       :headers="headers"
       :items="formattedItems"
       :container="tableContainer"
+      :dense="isPinned"
     >
       <template #item="{ item }">
         <tr :key="createKey(item)">
-          <td>
+          <td :class="isPinned ? 'px-2' : ''">
             <asset-details :asset="item.fromAsset" />
           </td>
-          <td>
+          <td :class="isPinned ? 'px-2' : ''">
             <asset-details :asset="item.toAsset" />
           </td>
-          <td>
+          <td :class="isPinned ? 'px-2' : ''">
             <date-display :timestamp="item.time" />
           </td>
-          <td class="py-3">
+          <td :class="isPinned ? 'px-2 py-1' : 'py-3'">
             <amount-input
               v-model="item.price"
+              :class="$style.input"
+              class="mb-n2"
               dense
               placeholder="Input price"
               outlined
@@ -71,10 +77,39 @@ export type EditableMissingPrice = MissingPrice & {
   saved: boolean;
 };
 
+const headers: DataTableHeader[] = [
+  {
+    text: i18n
+      .t('profit_loss_report.actionable.missing_prices.headers.from_asset')
+      .toString(),
+    value: 'fromAsset'
+  },
+  {
+    text: i18n
+      .t('profit_loss_report.actionable.missing_prices.headers.to_asset')
+      .toString(),
+    value: 'toAsset'
+  },
+  {
+    text: i18n
+      .t('profit_loss_report.actionable.missing_prices.headers.time')
+      .toString(),
+    value: 'time'
+  },
+  {
+    text: i18n
+      .t('profit_loss_report.actionable.missing_prices.headers.price')
+      .toString(),
+    value: 'price',
+    sortable: false
+  }
+];
+
 export default defineComponent({
   name: 'ReportMissingPrices',
   props: {
-    items: { required: true, type: Array as PropType<MissingPrice[]> }
+    items: { required: true, type: Array as PropType<MissingPrice[]> },
+    isPinned: { required: true, type: Boolean, default: false }
   },
   setup(props) {
     const { items } = toRefs(props);
@@ -91,38 +126,6 @@ export default defineComponent({
 
     onMounted(async () => {
       await fetchHistoricalPrices();
-    });
-
-    const headers = computed<DataTableHeader[]>(() => {
-      return [
-        {
-          text: i18n
-            .t(
-              'profit_loss_report.actionable.missing_prices.headers.from_asset'
-            )
-            .toString(),
-          value: 'fromAsset'
-        },
-        {
-          text: i18n
-            .t('profit_loss_report.actionable.missing_prices.headers.to_asset')
-            .toString(),
-          value: 'toAsset'
-        },
-        {
-          text: i18n
-            .t('profit_loss_report.actionable.missing_prices.headers.time')
-            .toString(),
-          value: 'time'
-        },
-        {
-          text: i18n
-            .t('profit_loss_report.actionable.missing_prices.headers.price')
-            .toString(),
-          value: 'price',
-          sortable: false
-        }
-      ];
     });
 
     const formattedItems = computed<EditableMissingPrice[]>(() => {
@@ -187,9 +190,9 @@ export default defineComponent({
     });
 
     return {
+      headers,
       updatePrice,
       formattedItems,
-      headers,
       errorMessages,
       createKey,
       tableRef,
@@ -204,5 +207,14 @@ export default defineComponent({
   scroll-behavior: smooth;
   max-height: calc(100vh - 310px);
   overflow: auto;
+
+  &--pinned {
+    max-height: 100%;
+    height: calc(100vh - 230px);
+  }
+}
+
+.input {
+  min-width: 150px;
 }
 </style>

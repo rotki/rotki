@@ -3424,6 +3424,8 @@
         "close": "Close",
         "finish": "Finish",
         "next": "Next",
+        "pin_section": "Pin Section",
+        "unpin_section": "Unpin Section",
         "regenerate_report": "Re-Generate Report",
         "yes": "Yes"
       },
@@ -3770,5 +3772,8 @@
     "task": {
       "title": "Querying ENS Names"
     }
+  },
+  "pinned": {
+    "tooltip": "Pinned Section"
   }
 }

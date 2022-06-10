@@ -10,6 +10,7 @@ import { defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import {
+  handleEthereumTransactionStatus,
   handleLegacyMessage,
   handleSnapshotError
 } from '@/services/websocket/message-handling';
@@ -34,8 +35,10 @@ const handleNotification = async (message: string, isWarning: boolean) => {
 
     if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
       await handleSnapshotError(object);
+    } else if (object.type === SocketMessageType.ETHEREUM_TRANSACTION_STATUS) {
+      await handleEthereumTransactionStatus(object);
     } else {
-      logger.error('unsupported message:', object);
+      logger.error('unsupported message:', message);
     }
   } catch (e: any) {
     await handleLegacyMessage(message, isWarning);

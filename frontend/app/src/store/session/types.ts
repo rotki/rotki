@@ -1,4 +1,4 @@
-import { BigNumber, NumericString } from '@rotki/common';
+import { BigNumber, NumericString, Nullable } from '@rotki/common';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { z } from 'zod';
 import {
@@ -12,6 +12,11 @@ export enum PrivacyMode {
   NORMAL = 0,
   SEMI_PRIVATE = 1,
   PRIVATE = 2
+}
+
+export interface Pinned {
+  name: string;
+  props: { [key: string]: any };
 }
 
 export interface SessionState {
@@ -35,6 +40,7 @@ export interface SessionState {
   timeframe: TimeFramePeriod;
   showUpdatePopup: boolean;
   animationsEnabled: boolean;
+  pinned: Nullable<Pinned>;
 }
 
 export const SyncConflictPayload = z.object({
