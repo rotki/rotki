@@ -300,9 +300,13 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
     derivation_path TEXT NOT NULL,
     account_index INTEGER,
     derived_index INTEGER,
-    blockchain TEXT GENERATED ALWAYS AS ("BTC") VIRTUAL,
-    FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE
-    FOREIGN KEY(xpub, derivation_path) REFERENCES xpubs(xpub, derivation_path) ON DELETE CASCADE
+    blockchain TEXT NOT NULL,
+    FOREIGN KEY(blockchain, address)
+    REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE
+    FOREIGN KEY(xpub, derivation_path) REFERENCES xpubs(
+        xpub,
+        derivation_path
+    ) ON DELETE CASCADE
     PRIMARY KEY (address, xpub, derivation_path)
 );
 """  # noqa: E501

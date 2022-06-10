@@ -1605,10 +1605,15 @@ class RestAPI():
         result = process_result(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    def _add_xpub(self, xpub_data: 'XpubData') -> Dict[str, Any]:
+    def _add_xpub(
+        self,
+        xpub_data: 'XpubData',
+        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+    ) -> Dict[str, Any]:
         try:
             result = XpubManager(self.rotkehlchen.chain_manager).add_bitcoin_xpub(
                 xpub_data=xpub_data,
+                blockchain=blockchain,
             )
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
@@ -1620,11 +1625,20 @@ class RestAPI():
         # success
         return {'result': result.serialize(), 'message': ''}
 
-    def add_xpub(self, xpub_data: 'XpubData', async_query: bool) -> Response:
+    def add_xpub(
+        self,
+        xpub_data: 'XpubData',
+        async_query: bool,
+        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+    ) -> Response:
         if async_query is True:
-            return self._query_async(command=self._add_xpub, xpub_data=xpub_data)
+            return self._query_async(
+                command=self._add_xpub,
+                xpub_data=xpub_data,
+                blockchain=blockchain,
+            )
 
-        response = self._add_xpub(xpub_data=xpub_data)
+        response = self._add_xpub(xpub_data=xpub_data, blockchain=blockchain)
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)
@@ -1636,10 +1650,15 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
-    def _delete_xpub(self, xpub_data: 'XpubData') -> Dict[str, Any]:
+    def _delete_xpub(
+        self,
+        xpub_data: 'XpubData',
+        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+    ) -> Dict[str, Any]:
         try:
             result = XpubManager(self.rotkehlchen.chain_manager).delete_bitcoin_xpub(
                 xpub_data=xpub_data,
+                blockchain=blockchain,
             )
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
@@ -1647,11 +1666,20 @@ class RestAPI():
         # success
         return {'result': result.serialize(), 'message': ''}
 
-    def delete_xpub(self, xpub_data: 'XpubData', async_query: bool) -> Response:
+    def delete_xpub(
+        self,
+        xpub_data: 'XpubData',
+        async_query: bool,
+        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+    ) -> Response:
         if async_query is True:
-            return self._query_async(command=self._delete_xpub, xpub_data=xpub_data)
+            return self._query_async(
+                command=self._delete_xpub,
+                xpub_data=xpub_data,
+                blockchain=blockchain,
+            )
 
-        response = self._delete_xpub(xpub_data=xpub_data)
+        response = self._delete_xpub(xpub_data=xpub_data, blockchain=blockchain)
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)
@@ -1663,15 +1691,20 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
-    def edit_xpub(self, xpub_data: 'XpubData') -> Response:
+    def edit_xpub(
+        self,
+        xpub_data: 'XpubData',
+        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+    ) -> Response:
         try:
             XpubManager(self.rotkehlchen.chain_manager).edit_bitcoin_xpub(
                 xpub_data=xpub_data,
+                blockchain=blockchain,
             )
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
-        data = self.rotkehlchen.get_blockchain_account_data(SupportedBlockchain.BITCOIN)
+        data = self.rotkehlchen.get_blockchain_account_data(blockchain)
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
     def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:

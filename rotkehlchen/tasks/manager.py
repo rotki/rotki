@@ -28,7 +28,14 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.types import ChecksumEthAddress, ExchangeLocationID, Location, Optional, Timestamp
+from rotkehlchen.types import (
+    ChecksumEthAddress,
+    ExchangeLocationID,
+    Location,
+    Optional,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
@@ -217,9 +224,17 @@ class TaskManager():
         log.debug('Scheduling task for Xpub derivation')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
-            task_name='Derive new xpub addresses',
+            task_name='Derive new xpub addresses for BTC',
             exception_is_error=True,
             method=XpubManager(self.chain_manager).check_for_new_xpub_addresses,
+            blockchain=SupportedBlockchain.BITCOIN,
+        )
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Derive new xpub addresses for BCH',
+            exception_is_error=True,
+            method=XpubManager(self.chain_manager).check_for_new_xpub_addresses,
+            blockchain=SupportedBlockchain.BITCOIN_CASH,
         )
         self.last_xpub_derivation_ts = now
 

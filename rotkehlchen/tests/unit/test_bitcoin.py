@@ -11,6 +11,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_p2sh_address,
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS, SupportedBlockchain
 from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.tests.utils.ens import ENS_BRUNO_BTC_ADDR, ENS_BRUNO_BTC_BYTES
 from rotkehlchen.tests.utils.factories import (
@@ -342,3 +343,10 @@ def test_scriptpubkey_to_p2sh_address():
 def test_scriptpubkey_to_bech32_address(scriptpubkey, expected_address):
     address = scriptpubkey_to_bech32_address(bytes.fromhex(scriptpubkey))
     assert address == expected_address
+
+
+def test_valid_bitcoin_chains():
+    """Test that checks that Bitcoin chains are not in `NON_BITCOIN_CHAIN` constant."""
+    for blockchain in SupportedBlockchain:
+        if blockchain not in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
+            assert blockchain in NON_BITCOIN_CHAINS

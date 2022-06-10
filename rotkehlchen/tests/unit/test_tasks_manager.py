@@ -122,7 +122,7 @@ def test_maybe_schedule_xpub_derivation(task_manager, database):
             with xpub_derive_patch as xpub_mock:
                 task_manager.schedule()
                 while True:
-                    if xpub_mock.call_count == 1:
+                    if xpub_mock.call_count == 2:
                         break
                     gevent.sleep(.2)
 

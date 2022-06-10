@@ -6,6 +6,7 @@ from shutil import copyfile
 from unittest.mock import patch
 
 import pytest
+from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -2600,6 +2601,59 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     assert cursor.fetchone() == (1, expected_timestamp // 10)
     cursor.execute('SELECT COUNT(*), timestamp FROM history_events WHERE subtype="remove asset" AND type="staking"')  # noqa: E501
     assert cursor.fetchone() == (1, expected_timestamp // 10)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
+    """Test upgrading the DB from version 32 to version 33.
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v32_rotkehlchen.db')
+    db_v32 = _init_db_with_target_version(
+        target_version=32,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db_v32.conn.cursor()
+    # check that you cannot add blockchain column in xpub_mappings
+    with pytest.raises(sqlcipher.OperationalError) as exc_info:  # pylint: disable=no-member
+        cursor.execute(
+            'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: 501
+            'VALUES ("1234", "abcd", "d", 3, 6, "BCH");',
+        )
+    assert 'cannot INSERT into generated column "blockchain"' in str(exc_info)
+    xpub_mapping_data = (
+        '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r',
+        'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk',  # noqa: 501
+        'm',
+        0,
+        0,
+        'BTC',
+    )
+    old_xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
+    assert len(old_xpub_mappings) == 1
+    assert old_xpub_mappings[0] == xpub_mapping_data
+
+    db_v32.logout()
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=33,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+    # check that xpubs mappings were not altered.
+    new_xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
+    assert new_xpub_mappings == old_xpub_mappings
+    # check that you can now add blockchain column in xpub_mappings
+    address = '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe'
+    cursor.execute(
+        'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: 501
+        'VALUES (?, ?, ?, ?, ?, ?);',
+        (address, xpub_mapping_data[1], 'm', 0, 1, 'BCH'),
+    )
+    all_xpubs_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
+    assert len(all_xpubs_mappings) == 2
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

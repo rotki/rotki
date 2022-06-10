@@ -21,6 +21,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.bch.utils import validate_bch_address_input
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
+from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.substrate.types import (
     KusamaAddress,
@@ -1070,6 +1071,10 @@ class BlockchainAccountDataSchema(Schema):
 
 class BaseXpubSchema(AsyncQueryArgumentSchema):
     xpub = XpubField(required=True)
+    blockchain = BlockchainField(
+        required=True,
+        exclude_types=NON_BITCOIN_CHAINS,
+    )
     derivation_path = DerivationPathField(load_default=None)
 
 
@@ -1077,6 +1082,10 @@ class XpubAddSchema(AsyncQueryArgumentSchema):
     xpub = fields.String(required=True)
     derivation_path = DerivationPathField(load_default=None)
     label = fields.String(load_default=None)
+    blockchain = BlockchainField(
+        required=True,
+        exclude_types=NON_BITCOIN_CHAINS,
+    )
     xpub_type = fields.String(
         required=False,
         load_default=None,
@@ -1109,6 +1118,10 @@ class XpubPatchSchema(Schema):
     derivation_path = DerivationPathField(load_default=None)
     label = fields.String(load_default=None)
     tags = fields.List(fields.String(), load_default=None)
+    blockchain = BlockchainField(
+        required=True,
+        exclude_types=NON_BITCOIN_CHAINS,
+    )
 
 
 class BlockchainAccountsGetSchema(Schema):

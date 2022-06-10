@@ -3166,7 +3166,7 @@ class DBHandler:
                 List[XpubData],
             ],
             action: Literal['adding', 'editing'],
-            data_type: Literal['blockchain accounts', 'manually tracked balances', 'bitcoin xpub'],
+            data_type: Literal['blockchain accounts', 'manually tracked balances', 'bitcoin xpub', 'bitcoin cash xpub'],  # noqa: 501
     ) -> None:
         """Make sure that tags included in the data exist in the DB
 
@@ -3215,7 +3215,11 @@ class DBHandler:
             ) from e
         self.update_last_write()
 
-    def delete_bitcoin_xpub(self, xpub_data: XpubData) -> None:
+    def delete_bitcoin_xpub(
+            self,
+            xpub_data: XpubData,
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+    ) -> None:
         """Deletes an xpub from the DB. Also deletes all derived addresses and mappings
 
         May raise:
@@ -3254,7 +3258,7 @@ class DBHandler:
             'DELETE FROM blockchain_accounts WHERE blockchain=? AND account IN ('
             'SELECT address from xpub_mappings WHERE xpub=? and derivation_path IS ?);',
             (
-                SupportedBlockchain.BITCOIN.value,
+                blockchain.value,
                 xpub_data.xpub.xpub,
                 xpub_data.serialize_derivation_path_for_db(),
             ),
@@ -3377,6 +3381,7 @@ class DBHandler:
             xpub: str,
             derivation_path: Optional[str],
             derived_addresses_data: List[XpubDerivedAddressData],
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """Create if not existing the mappings between the addresses and the xpub"""
         tuples = [
@@ -3386,6 +3391,7 @@ class DBHandler:
                 '' if derivation_path is None else derivation_path,
                 x.account_index,
                 x.derived_index,
+                blockchain.value,
             ) for x in derived_addresses_data
         ]
         cursor = self.conn.cursor()
@@ -3393,8 +3399,8 @@ class DBHandler:
             try:
                 cursor.execute(
                     'INSERT INTO xpub_mappings'
-                    '(address, xpub, derivation_path, account_index, derived_index) '
-                    'VALUES (?, ?, ?, ?, ?)',
+                    '(address, xpub, derivation_path, account_index, derived_index, blockchain) '
+                    'VALUES (?, ?, ?, ?, ?, ?)',
                     entry,
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member

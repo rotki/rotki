@@ -8609,15 +8609,19 @@ Adding blockchain accounts
    :statuscode 502: Error occurred with some external service query such as Etherscan. Check message for details.
 
 
-Adding BTC xpubs
+Adding BTC/BCH xpubs
 ========================
 
-.. http:put:: /api/(version)/blockchains/BTC/xpub
+.. http:put:: /api/(version)/blockchains/(blockhain)/xpub
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PUT on the BTC xpubs endpoint will add an extended public key for bitcoin mainnet. All derived addresses that have ever had a transaction from this xpub and derivation path will be found and added for tracking in rotki.
+   .. note::
+      Only ``"BCH"`` and ``"BTC"`` are the supported blockchain values for Xpubs.
+
+   Doing a PUT on the xpubs endpoint will add an extended public key for bitcoin/bitcoin cash mainnet.
+   All derived addresses that have ever had a transaction from this xpub and derivation path will be found and added for tracking in rotki.
 
 
    **Example Request**:
@@ -8710,14 +8714,17 @@ Adding BTC xpubs
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
-   :statuscode 502: Error occurred with some external service query such as blockstream. Check message for details.
+   :statuscode 502: Error occurred with some external service query such as blockstream or haskoin. Check message for details.
 
-Editing BTC xpubs
+Editing BTC/BCH xpubs
 ========================
 
-.. http:patch:: /api/(version)/blockchains/BTC/xpub
+.. http:patch:: /api/(version)/blockchains/(blockchain)/xpub
 
-   Doing a PATCH on the BTC xpubs endpoint will edit the label and tag of an extended public key for bitcoin mainnet.
+   .. note::
+      Only ``"BCH"`` and ``"BTC"`` are the supported blockchain values for Xpubs.
+
+   Doing a PATCH on the xpubs endpoint will edit the label and tag of an extended public key for bitcoin/bitcoin cash mainnet.
 
 
    **Example Request**:
@@ -8803,15 +8810,18 @@ Editing BTC xpubs
    :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
 
-Deleting BTC xpubs
+Deleting BTC/BCH xpubs
 ========================
 
-.. http:delete:: /api/(version)/blockchains/BTC/xpub
+.. http:delete:: /api/(version)/blockchains/(blockchain)/xpub
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a DELETE on the BTC xpubs endpoint will remove an extended public key for bitcoin mainnet. All derived addresses from the xpub will also be deleted.
+   .. note::
+      Only ``"BCH"`` and ``"BTC"`` are the supported blockchain values for Xpubs.
+
+   Doing a DELETE on the xpubs endpoint will remove an extended public key for bitcoin/bitcoin cash mainnet. All derived addresses from the xpub will also be deleted.
 
 
    **Example Request**:
@@ -8886,7 +8896,8 @@ Deleting BTC xpubs
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Check message for details.
    :statuscode 500: Internal rotki error
-   :statuscode 502: Error occurred with some external service query such as blockstream. Check message for details.
+   :statuscode 502: Error occurred with some external service query such as blockstream/haskoin. Check message for details.
+
 
 Editing blockchain account data
 =================================
