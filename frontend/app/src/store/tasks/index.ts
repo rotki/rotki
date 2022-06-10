@@ -123,8 +123,12 @@ export const useTasks = defineStore('tasks', () => {
         (actionResult, meta) => {
           unregisterHandler(type, id.toString());
           const { result, message } = actionResult;
-          if (message && result === null) {
-            reject(new Error(message));
+          if (result === null) {
+            const errorMessage = message
+              ? message
+              : `No message returned for ${TaskType[type]} with id ${id}`;
+
+            reject(new Error(errorMessage));
           } else {
             resolve({ result, meta });
           }
