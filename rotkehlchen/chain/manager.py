@@ -300,7 +300,7 @@ class BlockchainBalances:
         xpub_mappings: Dict[BTCAddress, XpubData],
         blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
-        """This is an helper function to serialize the balances for BTC & BCH accounts."""
+        """This is a helper function to serialize the balances for BTC & BCH accounts."""
         accounts_balances: Dict[BTCAddress, Balance] = getattr(self, blockchain.value.lower())
         for account, balances in accounts_balances.items():
             xpub_result = xpub_mappings.get(account, None)
@@ -793,7 +793,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             total_balance += balance
         self.totals.assets[A_DOT] = total_balance
 
-    def sync_btc_accounts_with_db(
+    def sync_bitcoin_accounts_with_db(
         self,
         blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
@@ -812,11 +812,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             if account not in db_btc_accounts:
                 accounts_to_remove.append(account)
 
-        get_blockchain_balances = {
-            'BCH': get_bitcoin_cash_addresses_balances,
-            'BTC': get_bitcoin_addresses_balances,
-        }
-        balances_mapping = get_blockchain_balances[blockchain.value](accounts_to_remove)
+        if blockchain == SupportedBlockchain.BITCOIN:
+            balances_mapping = get_bitcoin_addresses_balances(accounts_to_remove)
+        else:
+            balances_mapping = get_bitcoin_cash_addresses_balances(accounts_to_remove)
         balances = [balances_mapping.get(x, ZERO) for x in accounts_to_remove]
         self.modify_blockchain_accounts(
             blockchain=blockchain,

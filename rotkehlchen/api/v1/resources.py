@@ -1253,13 +1253,13 @@ class BTCXpubResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_view_args')
     def put(
-        self,
-        xpub: 'HDKey',
-        derivation_path: Optional[str],
-        label: Optional[str],
-        tags: Optional[List[str]],
-        async_query: bool,
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+            self,
+            xpub: 'HDKey',
+            derivation_path: Optional[str],
+            label: Optional[str],
+            tags: Optional[List[str]],
+            async_query: bool,
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
         return self.rest_api.add_xpub(
             xpub_data=XpubData(
@@ -1275,11 +1275,11 @@ class BTCXpubResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_view_args')
     def delete(
-        self,
-        xpub: 'HDKey',
-        derivation_path: Optional[str],
-        async_query: bool,
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+            self,
+            xpub: 'HDKey',
+            derivation_path: Optional[str],
+            async_query: bool,
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
         return self.rest_api.delete_xpub(
             xpub_data=XpubData(
@@ -1295,13 +1295,12 @@ class BTCXpubResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json_and_view_args')
     def patch(
-        self,
-        xpub: 'HDKey',
-        derivation_path: Optional[str],
-        label: Optional[str],
-        tags: Optional[List[str]],
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
-
+            self,
+            xpub: 'HDKey',
+            derivation_path: Optional[str],
+            label: Optional[str],
+            tags: Optional[List[str]],
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
         return self.rest_api.edit_xpub(
             xpub_data=XpubData(

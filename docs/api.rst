@@ -8618,7 +8618,7 @@ Adding BTC/BCH xpubs
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    .. note::
-      Only ``"BCH"`` and ``"BTC"`` are the supported blockchain for Xpubs.
+      Only ``"BCH"`` and ``"BTC"`` are the supported blockchain values for Xpubs.
 
    Doing a PUT on the xpubs endpoint will add an extended public key for bitcoin/bitcoin cash mainnet.
    All derived addresses that have ever had a transaction from this xpub and derivation path will be found and added for tracking in rotki.
@@ -8722,7 +8722,7 @@ Editing BTC/BCH xpubs
 .. http:patch:: /api/(version)/blockchains/(blockchain)/xpub
 
    .. note::
-      Only ``"BCH"`` and ``"BTC"`` are the supported blockchain for Xpubs.
+      Only ``"BCH"`` and ``"BTC"`` are the supported blockchain values for Xpubs.
 
    Doing a PATCH on the xpubs endpoint will edit the label and tag of an extended public key for bitcoin/bitcoin cash mainnet.
 
@@ -8819,7 +8819,7 @@ Deleting BTC/BCH xpubs
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    .. note::
-      Only ``"BCH"`` and ``"BTC"`` are the supported blockchain for Xpubs.
+      Only ``"BCH"`` and ``"BTC"`` are the supported blockchain values for Xpubs.
 
    Doing a DELETE on the xpubs endpoint will remove an extended public key for bitcoin/bitcoin cash mainnet. All derived addresses from the xpub will also be deleted.
 

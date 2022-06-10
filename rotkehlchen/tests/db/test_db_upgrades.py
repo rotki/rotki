@@ -2622,8 +2622,17 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
             'VALUES ("1234", "abcd", "d", 3, 6, "BCH");',
         )
     assert 'cannot INSERT into generated column "blockchain"' in str(exc_info)
-    xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
-    assert len(xpub_mappings) == 1
+    xpub_mapping_data = (
+        '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r',
+        'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk',  # noqa: 501
+        'm',
+        0,
+        0,
+        'BTC',
+    )
+    old_xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
+    assert len(old_xpub_mappings) == 1
+    assert old_xpub_mappings[0] == xpub_mapping_data
 
     db_v32.logout()
     # Execute upgrade
@@ -2633,13 +2642,18 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
         msg_aggregator=msg_aggregator,
     )
     cursor = db.conn.cursor()
+    # check that xpubs mappings were not altered.
+    new_xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
+    assert new_xpub_mappings == old_xpub_mappings
     # check that you can now add blockchain column in xpub_mappings
+    address = '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe'
     cursor.execute(
         'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: 501
-        'VALUES ("1234", "abcd", "d", 3, 6, "BCH");',
+        'VALUES (?, ?, ?, ?, ?, ?);',
+        (address, xpub_mapping_data[1], 'm', 0, 1, 'BCH'),
     )
-    xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
-    assert len(xpub_mappings) == 2
+    all_xpubs_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
+    assert len(all_xpubs_mappings) == 2
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

@@ -282,7 +282,7 @@ class XpubManager():
         with self.lock:
             # First try to delete the xpub, and if it does not exist raise InputError
             self.db.delete_bitcoin_xpub(xpub_data, blockchain)
-            self.chain_manager.sync_btc_accounts_with_db(blockchain)
+            self.chain_manager.sync_bitcoin_accounts_with_db(blockchain)
 
         return self.chain_manager.get_balances_update()
 

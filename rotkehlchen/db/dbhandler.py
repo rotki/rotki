@@ -3216,9 +3216,9 @@ class DBHandler:
         self.update_last_write()
 
     def delete_bitcoin_xpub(
-        self,
-        xpub_data: XpubData,
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+            self,
+            xpub_data: XpubData,
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """Deletes an xpub from the DB. Also deletes all derived addresses and mappings
 
@@ -3377,11 +3377,11 @@ class DBHandler:
         return data
 
     def ensure_xpub_mappings_exist(
-        self,
-        xpub: str,
-        derivation_path: Optional[str],
-        derived_addresses_data: List[XpubDerivedAddressData],
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+            self,
+            xpub: str,
+            derivation_path: Optional[str],
+            derived_addresses_data: List[XpubDerivedAddressData],
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """Create if not existing the mappings between the addresses and the xpub"""
         tuples = [

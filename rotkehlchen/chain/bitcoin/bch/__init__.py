@@ -99,15 +99,15 @@ def have_bch_transactions(accounts: List[BTCAddress]) -> Dict[BTCAddress, Tuple[
     try:
         have_transactions = _check_haskoin_for_transactions(accounts)
     except requests.exceptions.RequestException as e:
-        raise RemoteError(f'bitcoin external API request for transactions failed due to {str(e)}') from e  # noqa: E501
+        raise RemoteError(f'bitcoin cash external API request for transactions failed due to {str(e)}') from e  # noqa: E501
     except KeyError as e:
         raise RemoteError(
-            f'Malformed response when querying bitcoin blockchain via {HASKOIN_BASE_URL}. '
+            f'Malformed response when querying BCH blockchain via {HASKOIN_BASE_URL}. '
             f'Did not find key {str(e)}',
         ) from e
     except DeserializationError as e:
         raise RemoteError(
-            f'Malformed response when querying Bitcoin Cash blockchain via {HASKOIN_BASE_URL}. '
+            f'Malformed response when querying BCH blockchain via {HASKOIN_BASE_URL}. '
             'Unable to parse balance.',
         ) from e
     return have_transactions
