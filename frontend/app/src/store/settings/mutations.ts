@@ -1,8 +1,9 @@
 import {
-  DARK_MODE_ENABLED,
+  SELECTED_THEME,
   DARK_THEME,
   LIGHT_THEME,
-  ThemeColors
+  ThemeColors,
+  Theme
 } from '@rotki/common/lib/settings';
 import {
   TimeFramePeriod,
@@ -55,7 +56,7 @@ type Mutations<S = SettingsState> = {
   [ITEMS_PER_PAGE](state: S, itemsPerPage: number): void;
   [AMOUNT_ROUNDING_MODE](state: S, mode: RoundingMode): void;
   [VALUE_ROUNDING_MODE](state: S, mode: RoundingMode): void;
-  [DARK_MODE_ENABLED](state: S, enabled: boolean): void;
+  [SELECTED_THEME](state: S, selectedTheme: Theme): void;
   [LIGHT_THEME](state: S, theme: ThemeColors): void;
   [DARK_THEME](state: S, theme: ThemeColors): void;
   [GRAPH_ZERO_BASED](state: S, enabled: Boolean): void;
@@ -135,8 +136,8 @@ export const mutations: Mutations = {
   ) {
     state.valueRoundingMode = roundingMode;
   },
-  [DARK_MODE_ENABLED](state: Writeable<SettingsState>, enabled: boolean) {
-    state.darkModeEnabled = enabled;
+  [SELECTED_THEME](state: Writeable<SettingsState>, selectedTheme: Theme) {
+    state[SELECTED_THEME] = selectedTheme;
   },
   [LIGHT_THEME](state: Writeable<SettingsState>, theme: ThemeColors) {
     state[LIGHT_THEME] = theme;

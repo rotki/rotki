@@ -1,8 +1,9 @@
 import { BigNumber } from '@rotki/common';
 import {
-  DARK_MODE_ENABLED,
   DARK_THEME,
-  LIGHT_THEME
+  LIGHT_THEME,
+  SELECTED_THEME,
+  Theme
 } from '@rotki/common/lib/settings';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { SettingsState } from '@/store/settings/state';
@@ -66,7 +67,7 @@ describe('settings:mutations', () => {
       [ITEMS_PER_PAGE]: 25,
       [VALUE_ROUNDING_MODE]: BigNumber.ROUND_DOWN,
       [AMOUNT_ROUNDING_MODE]: BigNumber.ROUND_UP,
-      [DARK_MODE_ENABLED]: true,
+      [SELECTED_THEME]: Theme.AUTO,
       [LIGHT_THEME]: {
         primary: '#000000',
         accent: '#ffffff',
@@ -122,7 +123,7 @@ describe('settings:mutations', () => {
     expect(settings[ITEMS_PER_PAGE]).toBe(25);
     expect(settings[VALUE_ROUNDING_MODE]).toBe(BigNumber.ROUND_DOWN);
     expect(settings[AMOUNT_ROUNDING_MODE]).toBe(BigNumber.ROUND_UP);
-    expect(settings[DARK_MODE_ENABLED]).toBe(true);
+    expect(settings[SELECTED_THEME]).toBe(Theme.AUTO);
     expect(settings[LIGHT_THEME]).toStrictEqual({
       primary: '#000000',
       accent: '#ffffff',

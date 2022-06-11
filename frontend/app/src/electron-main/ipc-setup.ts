@@ -18,7 +18,7 @@ import {
   IPC_CLEAR_PASSWORD,
   IPC_CLOSE_APP,
   IPC_CONFIG,
-  IPC_DARK_MODE,
+  IPC_THEME,
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_GET_DEBUG,
@@ -115,14 +115,13 @@ function setupVersionInfo() {
   });
 }
 
-function setupDarkModeSupport() {
-  ipcMain.on(IPC_DARK_MODE, async (event, enabled) => {
-    if (enabled) {
-      nativeTheme.themeSource = 'dark';
-    } else {
-      nativeTheme.themeSource = 'light';
-    }
-    event.sender.send(IPC_DARK_MODE, nativeTheme.shouldUseDarkColors);
+function setupSelectedTheme() {
+  ipcMain.on(IPC_THEME, async (event, selectedTheme: number) => {
+    const source = ['dark', 'system', 'light'][selectedTheme];
+    // @ts-ignore
+    nativeTheme.themeSource = source;
+
+    event.sender.send(IPC_THEME, nativeTheme.shouldUseDarkColors);
   });
 }
 
@@ -238,7 +237,7 @@ export function ipcSetup(
   setupMetamaskImport();
   setupVersionInfo();
   setupUpdaterInterop(pyHandler, getWindow);
-  setupDarkModeSupport();
+  setupSelectedTheme();
   setupBackendRestart(getWindow, pyHandler);
   setupTrayInterop(tray);
   setupPasswordStorage();

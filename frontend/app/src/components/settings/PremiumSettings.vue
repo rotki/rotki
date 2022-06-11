@@ -8,7 +8,7 @@
         <template #subtitle>
           <i18n tag="div" path="premium_settings.subtitle">
             <base-external-link
-              :text="$t('premium_settings.rotki_premium')"
+              :text="$tc('premium_settings.rotki_premium')"
               :href="$interop.premiumURL"
             />
           </i18n>
@@ -19,7 +19,7 @@
           class="premium-settings__fields__api-key"
           :disabled="premium && !edit"
           :error-messages="errorMessages"
-          :label="$t('premium_settings.fields.api_key')"
+          :label="$tc('premium_settings.fields.api_key')"
           @paste="onApiKeyPaste"
         />
         <revealable-input
@@ -27,7 +27,7 @@
           class="premium-settings__fields__api-secret"
           prepend-icon="mdi-lock"
           :disabled="premium && !edit"
-          :label="$t('premium_settings.fields.api_secret')"
+          :label="$tc('premium_settings.fields.api_secret')"
           @paste="onApiSecretPaste"
         />
         <div v-if="premium" class="premium-settings__premium-active">
@@ -91,13 +91,13 @@
       :display="confirmDeletePremium"
       confirm-type="warning"
       :primary-action="
-        $t('premium_settings.delete_confirmation.actions.delete')
+        $tc('premium_settings.delete_confirmation.actions.delete')
       "
       :secondary-action="
-        $t('premium_settings.delete_confirmation.actions.cancel')
+        $tc('premium_settings.delete_confirmation.actions.cancel')
       "
-      :title="$t('premium_settings.delete_confirmation.title')"
-      :message="$t('premium_settings.delete_confirmation.message')"
+      :title="$tc('premium_settings.delete_confirmation.title')"
+      :message="$tc('premium_settings.delete_confirmation.message')"
       @confirm="remove"
       @cancel="confirmDeletePremium = false"
     />

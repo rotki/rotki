@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="privacy-mode-dropdown">
     <v-menu
       offset-y
       :max-width="300"
@@ -9,12 +9,21 @@
     >
       <template #activator="{ on }">
         <menu-tooltip-button
-          :tooltip="$t('user_dropdown.change_privacy_mode.label')"
+          :tooltip="$tc('user_dropdown.change_privacy_mode.label')"
           class-name="privacy-mode-dropdown secondary--text text--lighten-4"
-          :on-menu="on"
+          @click="togglePrivacyMode"
         >
           <v-icon>{{ privacyModeIcon }}</v-icon>
         </menu-tooltip-button>
+        <v-btn
+          class="privacy-mode-dropdown__expander pa-0"
+          depressed
+          fab
+          x-small
+          v-on="on"
+        >
+          <v-icon>mdi-chevron-down</v-icon>
+        </v-btn>
       </template>
       <v-card>
         <div class="slider-wrapper pa-8" :style="sliderWrapperStyle">
@@ -78,20 +87,40 @@ export default defineComponent({
       return ['mdi-eye', 'mdi-eye-minus', 'mdi-eye-off'][get(privacyMode)];
     });
 
+    const togglePrivacyMode = () => {
+      const newPrivacyMode = (get(privacyMode) + 1) % 3;
+      changePrivacyMode(newPrivacyMode);
+    };
+
     return {
       privacyModeIcon,
       privacyMode,
       changePrivacyMode,
+      togglePrivacyMode,
       tickLabels,
       sliderWrapperStyle
     };
   }
 });
 </script>
-
 <style scoped lang="scss">
 .privacy-mode-dropdown {
+  position: relative;
+
+  &__expander {
+    position: absolute;
+    z-index: 1;
+    width: 20px;
+    height: 20px;
+    top: 32px;
+    right: 0;
+    color: black;
+    background-color: #f5f5f5 !important;
+  }
+
   &__menu {
+    border-radius: 0.5rem;
+
     .slider-wrapper {
       .v-input {
         ::v-deep {
@@ -197,6 +226,11 @@ export default defineComponent({
 .theme {
   &--dark {
     .privacy-mode-dropdown {
+      &__expander {
+        color: white !important;
+        background: black !important;
+      }
+
       &__menu {
         .slider-wrapper {
           .v-input {
@@ -207,24 +241,6 @@ export default defineComponent({
                 }
               }
             }
-
-            /* stylelint-disable plugin/stylelint-bem-namics, rule-empty-line-before */
-            @for $i from 0 through 2 {
-              &.selected-#{$i} {
-                ::v-deep {
-                  .v-slider {
-                    &__tick {
-                      @for $j from 3-$i through 3 {
-                        &:nth-child(#{$j}) {
-                          --color: var(--v-primary-base);
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            /* stylelint-enable plugin/stylelint-bem-namics, rule-empty-line-before */
           }
         }
       }

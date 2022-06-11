@@ -5,7 +5,7 @@ import { BalancerBalanceWithOwner, BalancerEvent, BalancerProfitLoss, Pool } fro
 import { DexTrade } from "../defi/dex";
 import { XswapBalance, XswapEventDetails, XswapPool, XswapPoolProfit } from "../defi/xswap";
 import { AssetBalanceWithPrice, BigNumber } from "../index";
-import { DebugSettings, FrontendSettingsPayload, Themes, TimeUnit } from "../settings";
+import { Theme , DebugSettings, FrontendSettingsPayload, Themes, TimeUnit } from '../settings';
 import { AdexBalances, AdexHistory } from "../staking/adex";
 import { LocationData, NetValue, OwnedAssets, TimedAssetBalances, TimedBalances } from "../statistics";
 
@@ -114,9 +114,9 @@ export type UserSettingsApi = {
   shouldShowAmount: Ref<boolean>
   shouldShowPercentage: Ref<boolean>
   scrambleData: Ref<boolean>
-  darkModeEnabled: Ref<boolean>
+  selectedTheme: Ref<Theme>
   dateInputFormat: Ref<string>
-  privacyMode: Ref<boolean>
+  privacyMode: Ref<number>
   graphZeroBased: Ref<boolean>
 };
 

@@ -40,6 +40,7 @@ import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
@@ -124,5 +125,7 @@ export function registerComponents() {
   Vue.component('AmountInput', AmountInput);
   // Version 17 - 1.24
   Vue.component('ExportSnapshotDialog', ExportSnapshotDialog);
+  // Version 18 - 1.25
+  Vue.component('MenuTooltipButton', MenuTooltipButton);
   vuetifyRegister();
 }

@@ -1,10 +1,12 @@
 import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
-  DARK_MODE_ENABLED,
   DARK_THEME,
   LIGHT_THEME,
-  ThemeColors
+  ThemeColors,
+  SELECTED_THEME,
+  Theme,
+  ThemeEnum
 } from '@rotki/common/lib/settings';
 import {
   TimeFramePeriod,
@@ -168,7 +170,7 @@ export const FrontendSettings = z.object({
   [ITEMS_PER_PAGE]: z.number().positive().int().default(10),
   [AMOUNT_ROUNDING_MODE]: RoundingMode.default(BigNumber.ROUND_UP),
   [VALUE_ROUNDING_MODE]: RoundingMode.default(BigNumber.ROUND_DOWN),
-  [DARK_MODE_ENABLED]: z.boolean().default(false),
+  [SELECTED_THEME]: ThemeEnum.default(Theme.AUTO),
   [LIGHT_THEME]: ThemeColors.default(LIGHT_COLORS),
   [DARK_THEME]: ThemeColors.default(DARK_COLORS),
   [GRAPH_ZERO_BASED]: z.boolean().default(false),

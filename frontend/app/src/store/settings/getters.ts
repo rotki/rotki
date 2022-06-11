@@ -1,4 +1,4 @@
-import { DARK_MODE_ENABLED } from '@rotki/common/lib/settings';
+import { SELECTED_THEME, Theme } from '@rotki/common/lib/settings';
 import { TimeFrameSetting } from '@rotki/common/lib/settings/graphs';
 import { SettingsState } from '@/store/settings/state';
 import { RotkehlchenState } from '@/store/types';
@@ -23,7 +23,7 @@ type SettingsGetters = {
   [THOUSAND_SEPARATOR]: string;
   [DECIMAL_SEPARATOR]: string;
   [CURRENCY_LOCATION]: CurrencyLocation;
-  [DARK_MODE_ENABLED]: boolean;
+  [SELECTED_THEME]: Theme;
   [DASHBOARD_TABLES_VISIBLE_COLUMNS]: DashboardTablesVisibleColumns;
   [DATE_INPUT_FORMAT]: DateFormat;
   [VISIBLE_TIMEFRAMES]: TimeFrameSetting[];
@@ -40,7 +40,7 @@ export const getters: Getters<
   [THOUSAND_SEPARATOR]: state => state[THOUSAND_SEPARATOR],
   [DECIMAL_SEPARATOR]: state => state[DECIMAL_SEPARATOR],
   [CURRENCY_LOCATION]: state => state[CURRENCY_LOCATION],
-  [DARK_MODE_ENABLED]: state => state[DARK_MODE_ENABLED],
+  [SELECTED_THEME]: state => state[SELECTED_THEME],
   [DASHBOARD_TABLES_VISIBLE_COLUMNS]: state =>
     state[DASHBOARD_TABLES_VISIBLE_COLUMNS],
   [DATE_INPUT_FORMAT]: state => state[DATE_INPUT_FORMAT],
