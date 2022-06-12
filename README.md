@@ -46,6 +46,10 @@ rotki is an opensource project and as such any and all help is really appreciate
 
 If you would like to contribute by testing the software please open any issues you find in the github issue tracker. If you would like to contribute by code check out our open issues [here](https://github.com/rotki/rotki/issues) and if you would like to solve any of them please contribute by opening a PR all the while following the [contributing guide](https://rotki.readthedocs.io/en/latest/contribute.html).
 
+### Contributor badges
+
+If you have ever contributed even a single commit to our codebase you can get a contributor badge (a POAP) for each year you did. Go [here](https://www.gitpoap.io/rp/62) to claim yours.
+
 ### Work with us
 
 If you are interested to work in the project full-time or part-time we are always looking for skilled people to join our core team. Check out our open positions [here](https://rotki.com/jobs/).
