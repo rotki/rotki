@@ -5,6 +5,7 @@
     over
     class="big-dialog"
     width="98%"
+    max-width="900px"
     @click:outside="cancel()"
     @keydown.esc.stop="cancel()"
     @input="cancel"
