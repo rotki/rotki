@@ -38,7 +38,7 @@ from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
 # DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
 # From that pool find a holder and test
 LP_HOLDER_ADDRESS = string_to_ethereum_address('0xc4d15CbE36BE26596fA676Ff1B21421541d7e8e6')
-LP_V3_HOLDER_ADDRESS = string_to_ethereum_address('0xCC6A4c77D94957feADBD27DBdB4CDD3Ed00fc1E6')
+LP_V3_HOLDER_ADDRESS = string_to_ethereum_address('0x45357Da1E1cBE8aD673362C0E5eBB5CEB2f05168')
 
 # Uniswap Factory contract
 TEST_ADDRESS_FACTORY_CONTRACT = (
@@ -1199,7 +1199,7 @@ def test_get_uniswap_trades_history_v3(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [[LP_V3_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_v3_balances(rotkehlchen_api_server):
+def test_get_v3_balances_premium(rotkehlchen_api_server):
     """Check querying the uniswap balances v3 endpoint works."""
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'uniswapv3balancesresource'),
@@ -1241,3 +1241,32 @@ def test_get_v3_balances(rotkehlchen_api_server):
             assert len(lp_asset['user_balance']) == 2
             assert lp_asset['user_balance']['amount']
             assert lp_asset['user_balance']['usd_value']
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[LP_V3_HOLDER_ADDRESS]])
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+@pytest.mark.parametrize('start_with_valid_premium', [False])
+def test_get_v3_balances_no_premium(rotkehlchen_api_server):
+    """Check querying the uniswap balances v3 endpoint works."""
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server, 'uniswapv3balancesresource'),
+    )
+    result = assert_proper_response_with_result(response)
+
+    if LP_V3_HOLDER_ADDRESS not in result or len(result[LP_V3_HOLDER_ADDRESS]) == 0:
+        test_warnings.warn(
+            UserWarning(f'Test account {LP_V3_HOLDER_ADDRESS} has no uniswap balances'),
+        )
+        return
+
+    address_balances = result[LP_V3_HOLDER_ADDRESS]
+    for lp in address_balances:
+        # LiquidityPool attributes
+        assert lp['address'].startswith('0x')
+        assert len(lp['price_range']) == 2
+        assert isinstance(lp['price_range'], list)
+        assert lp['nft_id']
+        assert isinstance(lp['nft_id'], int)
+        assert len(lp['assets']) == 0
+        assert lp['user_balance']['amount']
+        assert lp['user_balance']['usd_value']

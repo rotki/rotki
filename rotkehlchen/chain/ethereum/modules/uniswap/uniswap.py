@@ -26,7 +26,10 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
     AddressToUniswapV3LPBalances,
     UniswapV3ProtocolBalance,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap.v3.utils import uniswap_v3_lp_token_balances
+from rotkehlchen.chain.ethereum.modules.uniswap.v3.utils import (
+    get_unknown_asset_price_chain,
+    uniswap_v3_lp_token_balances,
+)
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
@@ -538,8 +541,8 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         return protocol_balance.address_balances
 
     def get_v3_balances(
-        self,
-        addresses: List[ChecksumEthAddress],
+            self,
+            addresses: List[ChecksumEthAddress],
     ) -> AddressToUniswapV3LPBalances:
         """Get the addresses' balances in the Uniswap V3 protocol."""
         protocol_balance = self.get_v3_balances_chain(addresses)
@@ -551,14 +554,34 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         )
 
         unknown_asset_price: AssetToPrice = {}
-        unknown_asset_price = self._get_unknown_asset_price_chain(unknown_assets=unknown_assets)
+        unknown_asset_price = get_unknown_asset_price_chain(
+            ethereum=self.ethereum,
+            unknown_assets=unknown_assets,
+        )
 
         self._update_assets_prices_in_address_balances(
             address_balances=protocol_balance.address_balances,
             known_asset_price=known_asset_price,
             unknown_asset_price=unknown_asset_price,
         )
+        self._update_v3_balances_for_premium(
+            address_balances=protocol_balance.address_balances,
+        )
         return protocol_balance.address_balances
+
+    def _update_v3_balances_for_premium(
+            self,
+            address_balances: AddressToUniswapV3LPBalances,
+    ) -> AddressToUniswapV3LPBalances:
+        """Update the Uniswap V3 LP positions to remove certain fields depending
+        on the premium status of the user.
+        """
+        if self.premium is None:
+            for lps in address_balances.values():
+                for lp in lps:
+                    lp.total_supply = None
+                    lp.assets = []
+        return address_balances
 
     def get_trades_history(
         self,
