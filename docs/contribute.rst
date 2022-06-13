@@ -28,6 +28,12 @@ For running rotki in debug mode, you can do it either via a config file or the a
 
 You can open the app logs location by going to "Help" menu at the top and then choosing "Logs Directory".
 
+The default log locations are:
+
+- **Linux**: ``~/.config/rotki/logs``
+- **OSX**: ``~/Library/Application Support/rotki/logs``
+- **Windows**: ``%APPDATA%\rotki\logs``
+
 Feature Requests
 ******************
 
