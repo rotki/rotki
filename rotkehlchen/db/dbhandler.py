@@ -3191,7 +3191,11 @@ class DBHandler:
                 f'{", ".join(unknown_tags)} were found',
             )
 
-    def add_bitcoin_xpub(self, xpub_data: XpubData) -> None:
+    def add_bitcoin_xpub(
+            self,
+            xpub_data: XpubData,
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+    ) -> None:
         """Add the xpub to the DB
 
         May raise:
@@ -3200,17 +3204,18 @@ class DBHandler:
         cursor = self.conn.cursor()
         try:
             cursor.execute(
-                'INSERT INTO xpubs(xpub, derivation_path, label) '
-                'VALUES (?, ?, ?)',
+                'INSERT INTO xpubs(xpub, derivation_path, label, blockchain) '
+                'VALUES (?, ?, ?, ?)',
                 (
                     xpub_data.xpub.xpub,
                     xpub_data.serialize_derivation_path_for_db(),
                     xpub_data.label,
+                    blockchain.value,
                 ),
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
-                f'Xpub {xpub_data.xpub.xpub} with derivation path '
+                f'Xpub {xpub_data.xpub.xpub} for {blockchain.value} with derivation path '
                 f'{xpub_data.derivation_path} is already tracked',
             ) from e
         self.update_last_write()
@@ -3227,8 +3232,8 @@ class DBHandler:
         """
         cursor = self.conn.cursor()
         query = cursor.execute(
-            'SELECT COUNT(*) FROM xpubs WHERE xpub=? AND derivation_path IS ?;',
-            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db()),
+            'SELECT COUNT(*) FROM xpubs WHERE xpub=? AND derivation_path IS ? AND blockchain=?;',
+            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db(), blockchain.value),
         )
         if query.fetchone()[0] == 0:
             derivation_str = (
@@ -3236,7 +3241,7 @@ class DBHandler:
                 f'derivation path {xpub_data.derivation_path}'
             )
             raise InputError(
-                f'Tried to remove non existing xpub {xpub_data.xpub.xpub} '
+                f'Tried to remove non existing xpub {xpub_data.xpub.xpub} for {blockchain.value} '
                 f'with {derivation_str}',
             )
 

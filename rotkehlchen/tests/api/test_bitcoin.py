@@ -159,7 +159,7 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     ), json=json_data)
     assert_error_response(
         response=response,
-        contained_in_msg=f'Xpub {xpub1} with derivation path None is already tracked',
+        contained_in_msg=f'Xpub {xpub1} for BTC with derivation path None is already tracked',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -264,6 +264,23 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     else:
         outcome = assert_proper_response_with_result(response)
 
+    # test that adding the same BCH xpub for BTC works
+    json_data = {
+        'async_query': async_query,
+        'xpub': bch_xpub1,
+        'derivation_path': None,
+    }
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'btcxpubresource',
+        blockchain='BTC',
+    ), json=json_data)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task_with_result(rotkehlchen_api_server, task_id, timeout=180)
+    else:
+        outcome = assert_proper_response_with_result(response)
+
     # Test that deleting a BCH xpub works as expected
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
@@ -308,7 +325,7 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server):
     ), json=json_data)
     assert_error_response(
         response=response,
-        contained_in_msg=f'Tried to remove non existing xpub {xpub} with no derivation path',
+        contained_in_msg=f'Tried to remove non existing xpub {xpub} for BTC with no derivation path',  # noqa: 501
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -325,7 +342,7 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server):
     ), json=json_data)
     assert_error_response(
         response=response,
-        contained_in_msg=f'Tried to remove non existing xpub {xpub} with derivation path {path}',
+        contained_in_msg=f'Tried to remove non existing xpub {xpub} for BTC with derivation path {path}',  # noqa: 501
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

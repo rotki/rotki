@@ -12,7 +12,7 @@ from rotkehlchen.premium.premium import Premium, PremiumCredentials, Subscriptio
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tests.utils.ethereum import setup_ethereum_transactions_test
 from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET
-from rotkehlchen.types import Location
+from rotkehlchen.types import Location, SupportedBlockchain
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
@@ -109,7 +109,7 @@ def test_maybe_schedule_xpub_derivation(task_manager, database):
         xpub=HDKey.from_xpub(xpub=xpub, path='m'),
         derivation_path='m/0/0',
     )
-    database.add_bitcoin_xpub(xpub_data)
+    database.add_bitcoin_xpub(xpub_data, SupportedBlockchain.BITCOIN)
     task_manager.potential_tasks = [task_manager._maybe_schedule_xpub_derivation]
     xpub_derive_patch = patch(
         'rotkehlchen.chain.bitcoin.xpub.XpubManager.check_for_new_xpub_addresses',
