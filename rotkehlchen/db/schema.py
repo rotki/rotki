@@ -289,7 +289,8 @@ CREATE TABLE IF NOT EXISTS xpubs (
     xpub TEXT NOT NULL,
     derivation_path TEXT NOT NULL,
     label TEXT,
-    PRIMARY KEY (xpub, derivation_path)
+    blockchain TEXT DEFAULT('BTC'),
+    PRIMARY KEY (xpub, derivation_path, blockchain)
 );
 """
 
@@ -303,9 +304,10 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
     blockchain TEXT NOT NULL,
     FOREIGN KEY(blockchain, address)
     REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE
-    FOREIGN KEY(xpub, derivation_path) REFERENCES xpubs(
+    FOREIGN KEY(xpub, derivation_path, blockchain) REFERENCES xpubs(
         xpub,
-        derivation_path
+        derivation_path,
+        blockchain
     ) ON DELETE CASCADE
     PRIMARY KEY (address, xpub, derivation_path)
 );

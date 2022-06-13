@@ -256,7 +256,7 @@ class XpubManager():
         """
         with self.lock:
             # First try to add the xpub, and if it already exists raise
-            self.db.add_bitcoin_xpub(xpub_data)
+            self.db.add_bitcoin_xpub(xpub_data, blockchain)
             # Then add tags if not existing
             self.db.ensure_tags_exist(
                 given_data=[xpub_data],

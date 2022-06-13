@@ -34,7 +34,7 @@ def fixture_setup_db_for_xpub_tests(data_dir, username):
         object_reference_keys=['xpub.xpub', 'derivation_path'],
     )
 
-    data.db.add_bitcoin_xpub(xpub_data1)
+    data.db.add_bitcoin_xpub(xpub_data1, SupportedBlockchain.BITCOIN)
     addr1 = '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r'
     addr2 = '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe'
     addr3 = '12wxFzpjdymPk3xnHmdDLCTXUT9keY3XRd'
@@ -68,7 +68,7 @@ def fixture_setup_db_for_xpub_tests(data_dir, username):
         xpub=HDKey.from_xpub(xpub=xpub, path='m'),
         derivation_path=derivation_path,
     )
-    data.db.add_bitcoin_xpub(xpub_data2)
+    data.db.add_bitcoin_xpub(xpub_data2, SupportedBlockchain.BITCOIN)
     addr1 = 'bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5'
     addr2 = 'bc1qnus7355ecckmeyrmvv56mlm42lxvwa4wuq5aev'
     addr3 = 'bc1qup7f8g5k3h5uqzfjed03ztgn8hhe542w69wc0g'
@@ -99,7 +99,7 @@ def fixture_setup_db_for_xpub_tests(data_dir, username):
         xpub=HDKey.from_xpub(xpub=xpub, path='m'),
         derivation_path=derivation_path,
     )
-    data.db.add_bitcoin_xpub(xpub_data3)
+    data.db.add_bitcoin_xpub(xpub_data3, SupportedBlockchain.BITCOIN)
 
     return data.db, xpub_data1, xpub_data2, xpub_data3, all_addresses
 
