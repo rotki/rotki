@@ -1,3 +1,4 @@
+import { Nullable } from '@rotki/common';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { MutationTree } from 'vuex';
 import {
@@ -6,7 +7,7 @@ import {
   WatcherTypes
 } from '@/services/session/types';
 import { defaultState } from '@/store/session/state';
-import { SessionState, SyncConflict } from '@/store/session/types';
+import { Pinned, SessionState, SyncConflict } from '@/store/session/types';
 import {
   AccountingSettings,
   AccountingSettingsUpdate,
@@ -86,5 +87,8 @@ export const mutations: MutationTree<SessionState> = {
   },
   setAnimationsEnabled(state: SessionState, animationsEnabled: boolean) {
     state.animationsEnabled = animationsEnabled;
+  },
+  setPinned(state: SessionState, pinned: Nullable<Pinned>) {
+    state.pinned = pinned ? { ...pinned } : pinned;
   }
 };

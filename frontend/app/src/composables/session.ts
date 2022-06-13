@@ -1,8 +1,9 @@
+import { Nullable } from '@rotki/common';
 import { computed } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { SupportedCurrency } from '@/data/currencies';
 import { SyncAction } from '@/services/types-api';
-import { SessionState } from '@/store/session/types';
+import { Pinned, SessionState } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Currency } from '@/types/currency';
@@ -41,6 +42,7 @@ export const setupSession = () => {
   const lastBalanceSave = computed(() => state.lastBalanceSave);
   const lastDataUpload = computed(() => state.lastDataUpload);
   const nodeConnection = computed(() => state.nodeConnection);
+  const pinned = computed(() => state.pinned);
 
   const login = (payload: LoginCredentials): Promise<ActionStatus> => {
     return store.dispatch('session/login', payload);
@@ -72,6 +74,10 @@ export const setupSession = () => {
     store.commit('session/setAnimationsEnabled', enabled);
   };
 
+  const setPinned = (pinned: Nullable<Pinned>) => {
+    store.commit('session/setPinned', pinned);
+  };
+
   return {
     syncConflict,
     username,
@@ -80,13 +86,15 @@ export const setupSession = () => {
     lastBalanceSave,
     lastDataUpload,
     nodeConnection,
+    pinned,
     createAccount,
     login,
     logout,
     forceSync,
     updateSettings,
     changePrivacyMode,
-    setAnimationsEnabled
+    setAnimationsEnabled,
+    setPinned
   };
 };
 

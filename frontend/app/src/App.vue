@@ -62,6 +62,10 @@
             <v-icon>mdi-crane</v-icon>
           </v-btn>
           <app-update-indicator />
+          <pinned-indicator
+            :visible="showPinned"
+            @visible:update="showPinned = $event"
+          />
           <theme-switch v-if="premium" :dark-mode-enabled="darkModeEnabled" />
           <theme-switch-lock v-else />
           <notification-indicator
@@ -87,6 +91,10 @@
         :visible="showHelpBar"
         @visible:update="showHelpBar = $event"
         @about="showAbout = true"
+      />
+      <pinned-sidebar
+        :visible="showPinned"
+        @visible:update="showPinned = $event"
       />
       <div
         class="app-main"
@@ -149,6 +157,8 @@ import HelpIndicator from '@/components/help/HelpIndicator.vue';
 import HelpSidebar from '@/components/help/HelpSidebar.vue';
 import BackButton from '@/components/helper/BackButton.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
+import PinnedIndicator from '@/components/PinnedIndicator.vue';
+import PinnedSidebar from '@/components/PinnedSidebar.vue';
 import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
 import PrivacyModeDropdown from '@/components/PrivacyModeDropdown.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
@@ -201,7 +211,9 @@ export default defineComponent({
     CurrencyDropdown,
     NavigationMenu,
     UserDropdown,
-    PrivacyModeDropdown
+    PrivacyModeDropdown,
+    PinnedIndicator,
+    PinnedSidebar
   },
   setup() {
     const store = useMainStore();
@@ -212,6 +224,7 @@ export default defineComponent({
 
     const showNotificationBar = ref(false);
     const showHelpBar = ref(false);
+    const showPinned = ref(false);
     const showAbout = ref(false);
     const showDrawer = ref(false);
     const isMini = ref(false);
@@ -317,6 +330,14 @@ export default defineComponent({
 
     const premium = getPremium();
 
+    const { pinned } = setupSession();
+
+    watch(pinned, (current, prev) => {
+      if (current !== prev) {
+        set(showPinned, !!current);
+      }
+    });
+
     return {
       animationsEnabled,
       username,
@@ -330,6 +351,7 @@ export default defineComponent({
       showNotificationBar,
       showAbout,
       showHelpBar,
+      showPinned,
       isMini,
       startupErrorMessage,
       isMacOsVersionUnsupported,

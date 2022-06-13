@@ -29,7 +29,8 @@ export const defaultState: () => SessionState = () => ({
   lastDataUpload: 0,
   timeframe: TimeFramePeriod.ALL,
   showUpdatePopup: false,
-  animationsEnabled: isAnimationsEnabled?.() ?? false
+  animationsEnabled: isAnimationsEnabled?.() ?? false,
+  pinned: null
 });
 
 export const state: SessionState = defaultState();

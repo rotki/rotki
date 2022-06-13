@@ -2,13 +2,17 @@
   <div>
     <data-table
       ref="tableRef"
-      :class="$style.table"
+      :class="{
+        [$style.table]: true,
+        [$style['table--pinned']]: isPinned
+      }"
       :headers="headers"
       :items="groupedMissingAcquisitions"
       item-key="asset"
       single-expand
       :expanded.sync="expanded"
       :container="tableContainer"
+      :dense="isPinned"
     >
       <template #item.asset="{ item }">
         <asset-details :asset="item.asset" />
@@ -60,6 +64,7 @@ import {
   computed,
   defineComponent,
   PropType,
+  Ref,
   ref,
   toRefs
 } from '@vue/composition-api';
@@ -77,55 +82,83 @@ type MappedGroupedItems = {
   acquisitions: MissingAcquisition[];
 };
 
-const headers: DataTableHeader[] = [
-  {
-    text: i18n
-      .t('profit_loss_report.actionable.missing_acquisitions.headers.asset')
-      .toString(),
-    value: 'asset'
-  },
-  {
-    text: i18n
-      .t('profit_loss_report.actionable.missing_acquisitions.headers.time')
-      .toString(),
-    value: 'time'
-  },
-  {
-    text: i18n
-      .t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'
-      )
-      .toString(),
-    value: 'total_missing_acquisition',
-    sortable: false
-  },
-  { text: '', value: 'expand', align: 'end', sortable: false }
-];
+const headers = (isPinned: Ref<boolean>) => {
+  return computed<DataTableHeader[]>(() => {
+    const pinnedClass = get(isPinned)
+      ? { class: 'px-2', cellClass: 'px-2' }
+      : {};
 
-const childHeaders: DataTableHeader[] = [
-  {
-    text: i18n
-      .t('profit_loss_report.actionable.missing_acquisitions.headers.time')
-      .toString(),
-    value: 'time'
-  },
-  {
-    text: i18n
-      .t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.found_amount'
-      )
-      .toString(),
-    value: 'foundAmount'
-  },
-  {
-    text: i18n
-      .t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.missing_amount'
-      )
-      .toString(),
-    value: 'missingAmount'
-  }
-];
+    return [
+      {
+        text: i18n
+          .t('profit_loss_report.actionable.missing_acquisitions.headers.asset')
+          .toString(),
+        value: 'asset',
+        ...pinnedClass
+      },
+      {
+        text: i18n
+          .t('profit_loss_report.actionable.missing_acquisitions.headers.time')
+          .toString(),
+        value: 'time',
+        ...pinnedClass
+      },
+      {
+        text: i18n
+          .t(
+            'profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'
+          )
+          .toString(),
+        value: 'total_missing_acquisition',
+        sortable: false,
+        ...pinnedClass
+      },
+      {
+        text: '',
+        value: 'expand',
+        align: 'end',
+        sortable: false,
+        ...pinnedClass
+      }
+    ];
+  });
+};
+
+const childHeaders = (isPinned: Ref<boolean>) => {
+  return computed<DataTableHeader[]>(() => {
+    const pinnedClass = get(isPinned)
+      ? { class: 'px-2', cellClass: 'px-2' }
+      : {};
+
+    return [
+      {
+        text: i18n
+          .t('profit_loss_report.actionable.missing_acquisitions.headers.time')
+          .toString(),
+        value: 'time',
+        ...pinnedClass
+      },
+      {
+        text: i18n
+          .t(
+            'profit_loss_report.actionable.missing_acquisitions.headers.found_amount'
+          )
+          .toString(),
+        value: 'foundAmount',
+        ...pinnedClass
+      },
+      {
+        text: i18n
+          .t(
+            'profit_loss_report.actionable.missing_acquisitions.headers.missing_amount'
+          )
+          .toString(),
+        value: 'missingAmount',
+        ...pinnedClass
+      }
+    ];
+  });
+};
 
 export default defineComponent({
   name: 'ReportMissingAcquisitions',
@@ -137,10 +170,12 @@ export default defineComponent({
       required: true,
       type: Object as PropType<SelectedReport>
     },
-    items: { required: true, type: Array as PropType<MissingAcquisition[]> }
+    items: { required: true, type: Array as PropType<MissingAcquisition[]> },
+    isPinned: { required: true, type: Boolean, default: false }
   },
   setup(props) {
-    const { items } = toRefs(props);
+    const { items, isPinned } = toRefs(props);
+
     const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
       const grouped: GroupedItems = {};
 
@@ -175,8 +210,8 @@ export default defineComponent({
     });
 
     return {
-      headers,
-      childHeaders,
+      headers: headers(isPinned),
+      childHeaders: childHeaders(isPinned),
       expanded,
       groupedMissingAcquisitions,
       tableRef,
@@ -191,5 +226,10 @@ export default defineComponent({
   scroll-behavior: smooth;
   max-height: calc(100vh - 310px);
   overflow: auto;
+
+  &--pinned {
+    max-height: 100%;
+    height: calc(100vh - 230px);
+  }
 }
 </style>
