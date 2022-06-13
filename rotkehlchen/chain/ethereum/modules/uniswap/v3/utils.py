@@ -1,19 +1,22 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Set, Tuple
 
 from eth_abi import encode_abi
 from eth_abi.packed import encode_abi_packed
 from eth_utils import to_checksum_address
 from web3 import Web3
+from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPoolAsset
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import AssetToPrice, LiquidityPoolAsset
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import TokenDetails
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import NFTLiquidityPool
+from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV3Oracle
 from rotkehlchen.chain.ethereum.utils import multicall_2
+from rotkehlchen.constants.assets import A_USDC
 from rotkehlchen.constants.ethereum import (
     UNISWAP_V3_FACTORY,
     UNISWAP_V3_NFT_MANAGER,
@@ -21,9 +24,10 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
+from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress, Price
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
@@ -38,14 +42,15 @@ UNISWAP_V3_POSITIONS_PER_CHUNK = 45
 POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54'
 UNISWAP_V3_ERROR_MSG = 'Remote error calling multicall contract for uniswap v3 {} for address properties: {}'  # noqa: 501
 POW_96 = 2**96
+LOG_PRICE = FVal('1.0001')
 
 
 def uniswap_v3_lp_token_balances(
-    userdb: 'DBHandler',
-    address: ChecksumEthAddress,
-    ethereum: 'EthereumManager',
-    price_known_assets: Set[EthereumToken],
-    price_unknown_assets: Set[EthereumToken],
+        userdb: 'DBHandler',
+        address: ChecksumEthAddress,
+        ethereum: 'EthereumManager',
+        price_known_assets: Set[EthereumToken],
+        price_unknown_assets: Set[EthereumToken],
 ) -> List[NFTLiquidityPool]:
     """
     Fetches all the Uniswap V3 LP positions for the specified address.
@@ -62,8 +67,25 @@ def uniswap_v3_lp_token_balances(
     8. Calculate the amount of tokens in the LP position.
     9. Calculate the amount of tokens in the LP.
 
+    The indices returned from calling `positions` method on the NFT contract.
+    0 -> nonce	uint96
+    1 -> operator	address
+    2 -> token0	address
+    3 -> token1	address
+    4 -> fee	uint24
+    5 -> tickLower	int24
+    6 -> tickUpper	int24
+    7 -> liquidity	uint128
+    8 -> feeGrowthInside0LastX128  uint256
+    9 -> feeGrowthInside1LastX128  uint256
+    10 -> tokensOwed0	uint128
+    11 -> tokensOwed1	uint128
+    https://docs.uniswap.org/protocol/reference/periphery/interfaces/INonfungiblePositionManager#return-values
+
     If the multicall fails due to `RemoteError` or one of the calls isn't successful, it is omitted
     from the chunk.
+
+    May raise RemoteError if querying NFT manager contract fails.
     """
     nft_manager_contract = EthereumContract(
         address=UNISWAP_V3_NFT_MANAGER.address,
@@ -72,26 +94,25 @@ def uniswap_v3_lp_token_balances(
     )
     balances: List[NFTLiquidityPool] = []
     try:
-        my_positions = nft_manager_contract.call(
+        amount_of_positions = nft_manager_contract.call(
             ethereum=ethereum,
             method_name='balanceOf',
             arguments=[address],
         )
     except RemoteError as e:
-        log.error(
-            'Remote error calling nft manager contract to fetch of LP positions count for ',
+        raise RemoteError(
+            f'Error calling nft manager contract to fetch of LP positions count for '
             f'an address with properties: {str(e)}',
-        )
+        ) from e
+
+    if amount_of_positions == 0:
         return balances
 
-    if my_positions == 0:
-        return balances
-
-    chunks = list(get_chunks(list(range(my_positions)), n=UNISWAP_V3_POSITIONS_PER_CHUNK))
+    chunks = list(get_chunks(list(range(amount_of_positions)), n=UNISWAP_V3_POSITIONS_PER_CHUNK))
     for chunk in chunks:
         try:
             # Get tokens IDs from the Positions NFT contract using the user address and
-            # the indexes i.e from 0 to (total number of user positions - 1)
+            # the indexes i.e from 0 to (total number of user positions in the chunk - 1)
             tokens_ids_multicall = multicall_2(
                 ethereum=ethereum,
                 require_success=False,
@@ -175,42 +196,48 @@ def uniswap_v3_lp_token_balances(
             entry[0].decode(entry[1][1], 'slot0')
             for entry in zip(pool_contracts, slots_0_multicall) if entry[1][0] is True
         ]
-        tokens_a = []
-        tokens_b = []
+        tokens_a, tokens_b = [], []
         for position in positions:
-            tokens_a.append(ethereum.get_basic_contract_info(to_checksum_address(position[2])))
-            tokens_b.append(ethereum.get_basic_contract_info(to_checksum_address(position[3])))
+            try:
+                tokens_a.append(ethereum.get_basic_contract_info(to_checksum_address(position[2])))
+                tokens_b.append(ethereum.get_basic_contract_info(to_checksum_address(position[3])))
+            except (BadFunctionCallOutput, ValueError) as e:
+                log.error(
+                    f'Error retrieving contract information for address: {position[2]} '
+                    f'due to: {str(e)}',
+                )
+                continue
         # Get the ranges of price for which each position is valid for.
         # Get the amount of each token present in an LP position.
         price_ranges = []
         amounts_0 = []
         amounts_1 = []
-        for entry in zip(positions, slots_0, tokens_a, tokens_b):
+        for (position, slot_0, token_a, token_b) in zip(positions, slots_0, tokens_a, tokens_b):
             price_ranges.append(
                 calculate_price_range(
-                    tick_lower=entry[0][5],
-                    tick_upper=entry[0][6],
-                    decimal_0=entry[2]['decimals'],
-                    decimal_1=entry[3]['decimals'],
+                    tick_lower=position[5],
+                    tick_upper=position[6],
+                    decimal_0=token_a['decimals'],
+                    decimal_1=token_b['decimals'],
                 ),
             )
             amounts_0.append(
                 calculate_amount(
-                    tick_lower=entry[0][5],
-                    liquidity=entry[0][7],
-                    tick_upper=entry[0][6],
-                    decimals=entry[2]['decimals'],
-                    tick=entry[1][1],
+                    tick_lower=position[5],
+                    liquidity=position[7],
+                    tick_upper=position[6],
+                    decimals=token_a['decimals'],
+                    tick=slot_0[1],
                     token_position=0,
                 ),
             )
             amounts_1.append(
                 calculate_amount(
-                    tick_lower=entry[0][5],
-                    liquidity=entry[0][7],
-                    tick_upper=entry[0][6],
-                    decimals=entry[3]['decimals'],
-                    tick=entry[1][1],
+                    tick_lower=position[5],
+                    liquidity=position[7],
+                    tick_upper=position[6],
+                    decimals=token_b['decimals'],
+                    tick=slot_0[1],
                     token_position=1,
                 ),
             )
@@ -269,14 +296,19 @@ def uniswap_v3_lp_token_balances(
                     'address': item[2][3],
                     'total_amount': item[8][1],
                 })
-                balances.append(_decode_uniswap_v3_result(userdb, item, price_known_assets, price_unknown_assets))  # noqa: 501
+                balances.append(_decode_uniswap_v3_result(
+                    userdb=userdb,
+                    data=item,
+                    price_known_assets=price_known_assets,
+                    price_unknown_assets=price_unknown_assets,
+                ))
     return balances
 
 
 def compute_pool_address(
-    token0_address_raw: str,
-    token1_address_raw: str,
-    fee: int,
+        token0_address_raw: str,
+        token1_address_raw: str,
+        fee: int,
 ) -> ChecksumEthAddress:
     """
     Generate the pool address from the Uniswap Factory Address, pair of tokens
@@ -307,14 +339,14 @@ def compute_pool_address(
 
 
 def calculate_price_range(
-    tick_lower: int,
-    tick_upper: int,
-    decimal_0: int,
-    decimal_1: int,
+        tick_lower: int,
+        tick_upper: int,
+        decimal_0: int,
+        decimal_1: int,
 ) -> Tuple[FVal, FVal]:
     """Calculates the price range for a Uniswap V3 LP position."""
-    sqrt_a = FVal(1.0001)**tick_lower
-    sqrt_b = FVal(1.0001)**tick_upper
+    sqrt_a = LOG_PRICE**tick_lower
+    sqrt_b = LOG_PRICE**tick_upper
 
     sqrt_adjusted_a = sqrt_a * FVal(10**(decimal_0 - decimal_1))
     sqrt_adjusted_b = sqrt_b * FVal(10**(decimal_0 - decimal_1))
@@ -323,26 +355,26 @@ def calculate_price_range(
 
 
 def compute_sqrt_values_for_amounts(
-    tick_lower: int,
-    tick_upper: int,
-    tick: int,
+        tick_lower: int,
+        tick_upper: int,
+        tick: int,
 ) -> Tuple[FVal, FVal, FVal]:
     """Computes the values for `sqrt`, `sqrt_a`, sqrt_b`"""
-    sqrt_a = FVal(1.0001)**FVal(tick_lower / 2) * POW_96
-    sqrt_b = FVal(1.0001)**FVal(tick_upper / 2) * POW_96
-    sqrt = FVal(1.0001)**FVal(tick / 2) * POW_96
+    sqrt_a = LOG_PRICE**FVal(tick_lower / 2) * POW_96
+    sqrt_b = LOG_PRICE**FVal(tick_upper / 2) * POW_96
+    sqrt = LOG_PRICE**FVal(tick / 2) * POW_96
     sqrt = max(min(sqrt, sqrt_b), sqrt_a)
 
     return sqrt, sqrt_a, sqrt_b
 
 
 def calculate_amount(
-    tick_lower: int,
-    liquidity: int,
-    tick_upper: int,
-    decimals: int,
-    tick: int,
-    token_position: int,
+        tick_lower: int,
+        liquidity: int,
+        tick_upper: int,
+        decimals: int,
+        tick: int,
+        token_position: Literal[0, 1],
 ) -> FVal:
     """
     Calculates the amount of a token in the Uniswap V3 LP position.
@@ -362,11 +394,11 @@ def calculate_amount(
 
 
 def calculate_total_amounts_of_tokens(
-    liquidity: int,
-    tick: int,
-    fee: int,
-    decimal_0: int,
-    decimal_1: int,
+        liquidity: int,
+        tick: int,
+        fee: Literal[500, 3000, 10000],
+        decimal_0: int,
+        decimal_1: int,
 ) -> Tuple[FVal, FVal]:
     """
     Calculates the total amount of tokens present in a liquidity pool.
@@ -383,8 +415,8 @@ def calculate_total_amounts_of_tokens(
         tick_a = tick - (tick % 10)
         tick_b = tick + 10
 
-    sqrt_a = FVal(1.0001)**FVal(tick_a / 2) * POW_96
-    sqrt_b = FVal(1.0001)**FVal(tick_b / 2) * POW_96
+    sqrt_a = LOG_PRICE**FVal(tick_a / 2) * POW_96
+    sqrt_b = LOG_PRICE**FVal(tick_b / 2) * POW_96
     total_amount_0 = ((liquidity * POW_96 * (sqrt_b - sqrt_a) / sqrt_b / sqrt_a) / 10**decimal_0)
     total_amount_1 = liquidity * (sqrt_b - sqrt_a) / POW_96 / 10**decimal_1
 
@@ -460,3 +492,24 @@ def _decode_uniswap_v3_result(
         user_balance=Balance(amount=ZERO),
     )
     return pool
+
+
+def get_unknown_asset_price_chain(
+        ethereum: 'EthereumManager',
+        unknown_assets: Set[EthereumToken],
+) -> AssetToPrice:
+    """Get token price using Uniswap V3 Oracle."""
+    oracle = UniswapV3Oracle(eth_manager=ethereum)
+    asset_price: AssetToPrice = {}
+    for from_asset in unknown_assets:
+        try:
+            price = oracle.query_current_price(from_asset, A_USDC)
+            asset_price[from_asset.ethereum_address] = price
+        except (PriceQueryUnsupportedAsset, RemoteError) as e:
+            log.error(
+                f'Failed to find price for {str(from_asset)}/{str(A_USDC) } LP using '
+                f'Uniswap V3 oracle due to: {str(e)}.',
+            )
+            asset_price[from_asset.ethereum_address] = Price(ZERO)
+
+    return asset_price

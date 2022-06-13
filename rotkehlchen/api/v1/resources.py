@@ -1775,7 +1775,7 @@ class UniswapEventsHistoryResource(BaseMethodView):
 class UniswapV3BalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
-    
+
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:

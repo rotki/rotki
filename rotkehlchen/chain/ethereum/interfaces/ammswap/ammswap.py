@@ -39,13 +39,10 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     ProtocolBalance,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
-from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV3Oracle
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.ranges import DBQueryRanges
-from rotkehlchen.constants.assets import A_USDC
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
-from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -728,26 +725,6 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
         self.database.add_amm_swaps(list(all_swaps))
         return self._fetch_trades_from_db(addresses, from_timestamp, to_timestamp)
-
-    def _get_unknown_asset_price_chain(
-        self,
-        unknown_assets: Set[EthereumToken],
-    ) -> AssetToPrice:
-        """Get token price using Uniswap V3 Oracle."""
-        oracle = UniswapV3Oracle(eth_manager=self.ethereum)
-        asset_price: AssetToPrice = {}
-        for from_asset in unknown_assets:
-            try:
-                price = oracle.query_current_price(from_asset, A_USDC)
-                asset_price[from_asset.ethereum_address] = price
-            except (PriceQueryUnsupportedAsset, RemoteError) as e:
-                log.error(
-                    f'Failed to find price for {str(from_asset)}/{str(A_USDC) } LP using '
-                    f'Uniswap V3 oracle due to: {str(e)}.',
-                )
-                asset_price[from_asset.ethereum_address] = Price(ZERO)
-
-        return asset_price
 
     def _get_unknown_asset_price_graph(
             self,
