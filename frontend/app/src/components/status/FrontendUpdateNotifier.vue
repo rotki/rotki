@@ -1,6 +1,6 @@
 <template>
-  <div v-if="updateAvailable">
-    <v-snackbar v-model="updateAvailable" :timeout="-1" dark bottom right>
+  <div v-if="needRefresh">
+    <v-snackbar v-model="needRefresh" :timeout="-1" dark bottom right>
       {{ $t('update_notifier.update_available') }}
       <template #action>
         <v-btn text :loading="updating" @click="update">
@@ -12,42 +12,64 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { defineComponent, onMounted, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
+// eslint-disable-next-line import/no-unresolved
+import { registerSW } from 'virtual:pwa-register';
 
-@Component({
-  name: 'FrontendUpdateNotifier'
-})
-export default class FrontendUpdateNotifier extends Vue {
-  updating: boolean = false;
-  updateAvailable: boolean = false;
-  swRegistration: ServiceWorkerRegistration | null = null;
+export default defineComponent({
+  name: 'FrontendUpdateNotifier',
+  setup() {
+    const updateSW = ref<((refresh: boolean) => Promise<void>) | undefined>(
+      undefined
+    );
+    const offlineReady = ref<boolean>(false);
+    const needRefresh = ref<boolean>(false);
+    const updating = ref<boolean>(false);
 
-  created() {
-    document.addEventListener('swUpdated', this.handleUpdate, { once: true });
-
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      setTimeout(() => {
-        this.updateAvailable = false;
-        window.location.reload();
-      }, 2000);
+    onMounted(() => {
+      try {
+        set(
+          updateSW,
+          registerSW({
+            immediate: true,
+            onRegistered: (registration: ServiceWorkerRegistration) => {
+              setInterval(async () => {
+                await registration.update();
+              }, 1000 * 60);
+              console.log('Service worker has been registered.');
+            },
+            onOfflineReady: () => {
+              set(offlineReady, true);
+              console.log('Offline ready');
+            },
+            onNeedRefresh: () => {
+              set(needRefresh, true);
+              console.log('New content is available, please refresh.');
+            },
+            onRegisterError: (error: any) => {
+              console.error('Error during service worker registration:', error);
+            }
+          })
+        );
+      } catch {
+        console.log('PWA disabled.');
+      }
     });
-  }
 
-  beforeDestroy() {
-    document.removeEventListener('swUpdated', this.handleUpdate);
-  }
+    const update = () => {
+      set(updating, true);
+      const worker = get(updateSW);
+      if (worker) {
+        worker(true);
+      }
+    };
 
-  handleUpdate(event: any) {
-    this.swRegistration = event.detail;
-    this.updateAvailable = true;
+    return {
+      needRefresh,
+      updating,
+      update
+    };
   }
-
-  update() {
-    this.updating = true;
-    if (!this.swRegistration || !this.swRegistration.waiting) {
-      return;
-    }
-    this.swRegistration.waiting.postMessage('skipWaiting');
-  }
-}
+});
 </script>

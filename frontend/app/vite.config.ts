@@ -4,9 +4,10 @@ import { join, resolve } from 'path';
 import { VuetifyResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
 import ScriptSetup from 'unplugin-vue2-script-setup/vite';
-import { defineConfig } from 'vite';
+import { splitVendorChunkPlugin, defineConfig } from 'vite';
 // @ts-ignore
 import istanbul from 'vite-plugin-istanbul';
+import { VitePWA } from 'vite-plugin-pwa';
 import { createVuePlugin as vue } from 'vite-plugin-vue2';
 
 const PACKAGE_ROOT = __dirname;
@@ -35,7 +36,7 @@ export default defineConfig({
     coverage: {
       reportsDirectory: 'tests/unit/coverage',
       reporter: ['json'],
-      include: 'src/*',
+      include: ['src/*'],
       exclude: ['node_modules', 'tests/', '**/*.d.ts']
     }
   },
@@ -44,6 +45,7 @@ export default defineConfig({
     'process.env': { ...process.env }
   },
   plugins: [
+    splitVendorChunkPlugin(),
     vue(),
     ScriptSetup(),
     Components({
@@ -55,6 +57,11 @@ export default defineConfig({
       include: 'src/*',
       exclude: ['node_modules', 'tests/', '**/*.d.ts'],
       extension: ['.ts', '.vue']
+    }),
+    VitePWA({
+      base: '',
+      registerType: 'prompt',
+      manifest: false
     })
   ],
   server: {
@@ -71,9 +78,6 @@ export default defineConfig({
         'electron-devtools-installer',
         ...builtinModules.flatMap(p => [p, `node:${p}`])
       ],
-      output: {
-        entryFileNames: '[name].js'
-      },
       input: join(PACKAGE_ROOT, 'index.html')
     },
     emptyOutDir: false

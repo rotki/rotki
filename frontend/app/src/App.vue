@@ -131,7 +131,7 @@
     <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
       <about />
     </v-dialog>
-    <frontend-update-notifier />
+    <frontend-update-notifier v-if="!$interop.isPackaged" />
   </v-app>
   <dev-app v-else />
 </template>
