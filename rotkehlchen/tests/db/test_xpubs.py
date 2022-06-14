@@ -27,14 +27,14 @@ def fixture_setup_db_for_xpub_tests(data_dir, username):
         label='xpub1',
         tags=['public', 'desktop'],
     )
-    data.db.ensure_tags_exist([xpub_data1], action='adding', data_type='bitcoin_xpub')
+    data.db.ensure_tags_exist([xpub_data1], action='adding', data_type='bitcoin cash xpub')
     insert_tag_mappings(    # if we got tags add them to the xpub
         cursor=data.db.conn.cursor(),
         data=[xpub_data1],
         object_reference_keys=['xpub.xpub', 'derivation_path'],
     )
 
-    data.db.add_bitcoin_xpub(xpub_data1, SupportedBlockchain.BITCOIN)
+    data.db.add_bitcoin_xpub(xpub_data1, SupportedBlockchain.BITCOIN_CASH)
     addr1 = '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r'
     addr2 = '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe'
     addr3 = '12wxFzpjdymPk3xnHmdDLCTXUT9keY3XRd'
@@ -43,7 +43,7 @@ def fixture_setup_db_for_xpub_tests(data_dir, username):
     all_addresses = [addr1, addr2, addr3, addr4, addr5]
     account_data = [BlockchainAccountData(x) for x in [addr1, addr2, addr3, addr4, addr5]]
     data.db.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.BITCOIN,
+        blockchain=SupportedBlockchain.BITCOIN_CASH,
         account_data=account_data,
     )
     insert_tag_mappings(    # if we got tags add them to the existing addresses too
@@ -59,7 +59,7 @@ def fixture_setup_db_for_xpub_tests(data_dir, username):
             XpubDerivedAddressData(0, 1, addr2, ZERO),
             XpubDerivedAddressData(0, 5, addr5, ZERO),
         ],
-        blockchain=SupportedBlockchain.BITCOIN,
+        blockchain=SupportedBlockchain.BITCOIN_CASH,
     )
 
     xpub = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
@@ -141,7 +141,7 @@ def test_delete_bitcoin_xpub(setup_db_for_xpub_tests):
     db, xpub1, xpub2, _, all_addresses = setup_db_for_xpub_tests
     # Also add a non-existing address in there for fun
     all_addresses.append('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
-    db.delete_bitcoin_xpub(xpub1, SupportedBlockchain.BITCOIN)
+    db.delete_bitcoin_xpub(xpub1, SupportedBlockchain.BITCOIN_CASH)
 
     result = db.get_addresses_to_xpub_mapping(all_addresses)
     assert len(result) == 5

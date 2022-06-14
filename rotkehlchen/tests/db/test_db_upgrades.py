@@ -2631,8 +2631,12 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
         'BTC',
     )
     old_xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
-    assert len(old_xpub_mappings) == 1
+    assert len(old_xpub_mappings) == 2
     assert old_xpub_mappings[0] == xpub_mapping_data
+
+    # test that previous xpubs as what are expected
+    old_xpubs = cursor.execute('SELECT * FROM xpubs').fetchall()
+    assert len(old_xpubs) == 2
 
     db_v32.logout()
     # Execute upgrade
@@ -2650,10 +2654,16 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
     cursor.execute(
         'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: 501
         'VALUES (?, ?, ?, ?, ?, ?);',
-        (address, xpub_mapping_data[1], 'm', 0, 1, 'BCH'),
+        (address, xpub_mapping_data[1], 'm', 0, 1, 'BTC'),
     )
     all_xpubs_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
-    assert len(all_xpubs_mappings) == 2
+    assert len(all_xpubs_mappings) == 3
+
+    # check that previous xpubs blockchain columns are set to BTC
+    new_xpubs = cursor.execute('SELECT * FROM xpubs').fetchall()
+    assert len(new_xpubs) == len(old_xpubs)
+    for xpub in new_xpubs:
+        assert xpub[3] == 'BTC'
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
