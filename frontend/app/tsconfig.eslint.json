@@ -19,7 +19,6 @@
     "start-backend.js",
     "vue.config.js",
     "**/.eslintrc.js",
-    "src/sw.js",
     "tests/**/*.js",
     "scripts/**/*.js",
     "src/**/*.ts",

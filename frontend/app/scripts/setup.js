@@ -9,9 +9,6 @@ const LOG_LEVEL = 'info';
 /** @type {import('vite').InlineConfig} */
 const sharedConfig = {
   mode,
-  build: {
-    watch: {}
-  },
   logLevel: LOG_LEVEL
 };
 

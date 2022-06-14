@@ -37,10 +37,5 @@ export default defineConfig({
       }
     },
     emptyOutDir: false
-  },
-  css: {
-    modules: {
-      generateScopedName: '[hash:base64:8]'
-    }
   }
 });

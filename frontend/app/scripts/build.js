@@ -57,13 +57,9 @@ const setupRendererBuilder = () => {
       await setupMainBuilder();
     }
 
-    const watcher = await setupRendererBuilder();
-    watcher.on('event', event => {
-      if (event.code === 'END') {
-        console.log('Build is done!');
-        process.exit(0);
-      }
-    });
+    await setupRendererBuilder();
+    console.log('Build is done!');
+    process.exit(0);
   } catch (e) {
     console.error(e);
     process.exit(1);
