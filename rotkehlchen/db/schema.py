@@ -289,7 +289,7 @@ CREATE TABLE IF NOT EXISTS xpubs (
     xpub TEXT NOT NULL,
     derivation_path TEXT NOT NULL,
     label TEXT,
-    blockchain TEXT DEFAULT('BTC'),
+    blockchain TEXT NOT NULL,
     PRIMARY KEY (xpub, derivation_path, blockchain)
 );
 """
