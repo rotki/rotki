@@ -1784,6 +1784,17 @@ class DataImportSchema(AsyncQueryArgumentSchema):
     file = FileField(required=True, allowed_extensions=('.csv',))
     timestamp_format = fields.String(load_default=None)
 
+    @post_load
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        if data['timestamp_format'] is None:
+            # We need to pop it in order to use default parameters further down the line
+            data.pop('timestamp_format')
+        return data
+
 
 class AssetIconUploadSchema(Schema):
     asset = AssetField(required=True, form_with_incomplete_data=True)

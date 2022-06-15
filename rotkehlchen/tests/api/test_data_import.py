@@ -7,6 +7,12 @@ from tempfile import TemporaryDirectory
 import pytest
 import requests
 
+from rotkehlchen.db.filtering import (
+    AssetMovementsFilterQuery,
+    LedgerActionsFilterQuery,
+    TradesFilterQuery,
+)
+from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -268,6 +274,22 @@ def test_data_import_wrong_extension(rotkehlchen_api_server, file_upload):
 def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     """Test that errors in the data import endpoint are handled correctly"""
     dir_path = Path(__file__).resolve().parent.parent
+    corrupt_nexo_filepath = dir_path / 'data' / 'corrupt_nexo.csv'
+    json_data = {'source': 'cointracking', 'file': str(corrupt_nexo_filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    db_ledger = DBLedgerActions(database=database, msg_aggregator=database.msg_aggregator)
+    with database.conn.read_ctx() as cursor:
+        _, trades_count = database.get_trades_and_limit_info(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+    _, asset_movements_count = database.get_asset_movements_and_limit_info(filter_query=AssetMovementsFilterQuery.make(), has_premium=True)  # noqa: E501
+    _, ledger_actions_count = db_ledger.get_ledger_actions_and_limit_info(filter_query=LedgerActionsFilterQuery.make(), has_premium=True)  # noqa: E501
+    assert trades_count == asset_movements_count == ledger_actions_count == 0
+
     filepath = dir_path / 'data' / 'cointracking_trades_list.csv'
 
     # Test that if filepath is missing, an error is returned
@@ -308,7 +330,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='"source": ["Failed to deserialize DataSource value',
+        contained_in_msg='"source": ["Failed to deserialize DataImportSource value',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -322,7 +344,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='"source": ["Failed to deserialize DataSource value',
+        contained_in_msg='"source": ["Failed to deserialize DataImportSource value',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

@@ -2195,20 +2195,20 @@ class RestAPI():
             self,
             source: DataImportSource,
             filepath: Union[FileStorage, Path],
-            timestamp_format: Optional[str],
+            **kwargs: Any,
     ) -> Dict[str, Any]:
         if isinstance(filepath, Path):
             success, msg = self.rotkehlchen.data_importer.import_csv(
                 source=source,
                 filepath=filepath,
-                timestamp_format=timestamp_format,
+                **kwargs,
             )
         else:
             tmpfilepath = self.import_tmp_files[filepath]
             success, msg = self.rotkehlchen.data_importer.import_csv(
                 source=source,
                 filepath=tmpfilepath,
-                timestamp_format=timestamp_format,
+                **kwargs,
             )
             tmpfilepath.unlink(missing_ok=True)
             del self.import_tmp_files[filepath]
@@ -2225,8 +2225,8 @@ class RestAPI():
             self,
             source: DataImportSource,
             filepath: Union[FileStorage, Path],
-            timestamp_format: Optional[str],
             async_query: bool,
+            **kwargs: Any,
     ) -> Response:
         if not isinstance(filepath, Path):
             _, tmpfilepath = tempfile.mkstemp()
@@ -2238,10 +2238,10 @@ class RestAPI():
                 command=self._import_data,
                 source=source,
                 filepath=filepath,
-                timestamp_format=timestamp_format,
+                **kwargs,
             )
 
-        response = self._import_data(source=source, filepath=filepath, timestamp_format=timestamp_format)  # noqa: E501
+        response = self._import_data(source=source, filepath=filepath, **kwargs)
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(result_dict, status_code=status_code)
