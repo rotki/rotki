@@ -23,7 +23,7 @@ from typing import (
 import gevent
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
@@ -43,7 +43,7 @@ from rotkehlchen.chain.ethereum.manager import (
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
+from rotkehlchen.chain.manager import BlockchainBalances, BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateChain
 from rotkehlchen.chain.substrate.utils import (
@@ -51,7 +51,7 @@ from rotkehlchen.chain.substrate.utils import (
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
 from rotkehlchen.config import default_data_directory
-from rotkehlchen.constants.assets import treat_eth_eth2_equal
+from rotkehlchen.constants.assets import A_ETH, A_ETH2, treat_eth_eth2_equal
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
@@ -234,6 +234,8 @@ class Rotkehlchen():
             # has unauthenticable/invalid premium credentials remaining in his DB
 
         settings = self.get_settings()
+        # Change or revert ETH2 -> ETH according to DBSettings
+        self._treat_eth_eth2_equal(settings.eth_equivalent_eth2)
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='submit_usage_analytics',
@@ -373,17 +375,20 @@ class Rotkehlchen():
             sleep_time_secs=ICONS_QUERY_SLEEP,
         )
         self.user_is_logged_in = True
-
-        # Change or revert ETH2 -> ETH according to DBSettings
-        self._treat_eth_eth2_equal(settings.eth_equivalent_eth2)
-
         log.debug('User unlocking complete')
 
-    @staticmethod
-    def _treat_eth_eth2_equal(yes: bool) -> None:
+    def _treat_eth_eth2_equal(self, yes: bool) -> None:
         """Change or revert ETH2 -> ETH according to DBSettings """
         AssetResolver().eth_equivalent_eth2 = yes
         treat_eth_eth2_equal(yes)
+        if hasattr(self, 'chain_manager'):
+            self.chain_manager.balances = BlockchainBalances(db=self.chain_manager.database)
+            self.chain_manager.totals = BalanceSheet()
+            self.chain_manager.flush_cache('query_ethereum_balances', force_token_detection=False)
+            self.chain_manager.flush_cache('query_ethereum_balances', force_token_detection=True)
+            self.chain_manager.flush_cache('query_balances')
+            self.chain_manager.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM)
+            self.chain_manager.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
 
     def _logout(self) -> None:
         if not self.user_is_logged_in:

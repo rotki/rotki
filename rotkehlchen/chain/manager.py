@@ -381,6 +381,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
 
         self.eth2_details: List['ValidatorDetails'] = []
+        self.eth2_queried_balance = Balance()
+        self.eth2_queried_with_equivalence = False
 
         self.defi_lock = Semaphore()
         self.btc_lock = Semaphore()
@@ -613,13 +615,19 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         should_query_ksm = not blockchain or blockchain == SupportedBlockchain.KUSAMA
         should_query_dot = not blockchain or blockchain == SupportedBlockchain.POLKADOT
         should_query_avax = not blockchain or blockchain == SupportedBlockchain.AVALANCHE
+        eth_equivalent_eth2 = self.database.get_settings().eth_equivalent_eth2
 
         if should_query_eth:
             self.query_ethereum_balances(
                 force_token_detection=force_token_detection,
                 ignore_cache=ignore_cache,
             )
-        if should_query_eth2:
+            if eth_equivalent_eth2:
+                self.query_ethereum_beaconchain_balances(
+                    fetch_validators_for_eth1=force_token_detection,  # document this better
+                    ignore_cache=ignore_cache,
+                )
+        if should_query_eth2 and not eth_equivalent_eth2:
             self.query_ethereum_beaconchain_balances(
                 fetch_validators_for_eth1=force_token_detection,  # document this better
                 ignore_cache=ignore_cache,
@@ -1398,9 +1406,14 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         eth2 = self.get_module('eth2')
         if eth2 is None:
             return  # no eth2 module active -- do nothing
-
         # Before querying the new balances, delete the ones in memory if any
-        self.totals.assets.pop(A_ETH2, None)
+        eth_equivalent_eth2 = self.database.get_settings().eth_equivalent_eth2
+        log.debug(f'hhhhhhhhhhhh1 {self.totals.assets} - {eth_equivalent_eth2}')
+        log.debug(f'pppp {self.totals.assets} - {[x.identifier for x in self.totals.assets], self.totals.assets.keys()}')
+        #if eth_equivalent_eth2 is False or not self.eth2_queried_with_equivalence:
+        #    self.totals.assets.pop(A_ETH2, None)
+        log.debug(f'yyyyy111 {A_ETH.__hash__()}, {A_ETH2.__hash__()}, {[(asset.symbol, asset.__hash__()) for asset in self.totals.assets]}')
+        log.debug(f'pppp {self.totals.assets} - {[x.identifier for x in self.totals.assets], self.totals.assets.keys()}')
         self.balances.eth2.clear()
         balance_mapping = eth2.get_balances(
             addresses=self.queried_addresses_for_module('eth2'),
@@ -1413,7 +1426,17 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             )
             total += balance
         if total.amount != ZERO:
-            self.totals.assets[A_ETH2] = total
+            log.debug(f'yyyyy {A_ETH.__hash__()}, {A_ETH2.__hash__()}, {[(asset.symbol, asset.__hash__()) for asset in self.totals.assets]}')
+            log.debug(f'hhhhhh {A_ETH in self.totals.assets} {A_ETH2 in self.totals.assets} {any((asset.symbol == "ETH" for asset in self.totals.assets))} {[asset.symbol == "ETH" for asset in self.totals.assets]}')
+            if eth_equivalent_eth2 is True:
+                self.totals.assets[A_ETH] += total
+            else:
+                self.totals.assets[A_ETH2] = total
+
+            self.eth2_queried_balance = total
+            self.eth2_queried_with_equivalence = eth_equivalent_eth2
+        log.debug(f'hhhhhhhhhhhh {self.totals.assets}')
+        log.debug(f'pppp {self.totals.assets} - {[x.identifier for x in self.totals.assets], self.totals.assets.keys()}')   
 
     def _update_balances_after_token_query(
             self,
@@ -1554,11 +1577,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self.balances.eth[account] = BalanceSheet(
                 assets=defaultdict(Balance, {A_ETH: Balance(balance, usd_value)}),
             )
+        log.debug(f'pppp {self.totals.assets} {A_ETH.__hash__()}')
         self.totals.assets[A_ETH] = Balance(amount=eth_total, usd_value=eth_total * eth_usd_price)
-
+        log.debug(f'pppp {self.totals.assets} - {[x.identifier for x in self.totals.assets], self.totals.assets.keys()}')
         self.query_defi_balances()
         self.query_ethereum_tokens(force_token_detection)
         self._add_protocol_balances()
+        log.debug(f'pppp {self.totals.assets} - {[x.identifier for x in self.totals.assets], self.totals.assets.keys()}')
 
     def _add_protocol_balances(self) -> None:
         """Also count token balances that may come from various protocols"""

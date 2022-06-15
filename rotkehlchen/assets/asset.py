@@ -661,7 +661,7 @@ Z = TypeVar('Z', bound='Asset')
 
 
 @total_ordering
-@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=False)
 class Asset():
     identifier: str
     form_with_incomplete_data: InitVar[bool] = field(default=False)
@@ -921,7 +921,7 @@ EthereumTokenDBTuple = Tuple[
 Y = TypeVar('Y', bound='HasEthereumToken')
 
 
-@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=False)
 class HasEthereumToken(Asset):
     """ Marker to denote assets having an Ethereum token address """
     ethereum_address: ChecksumEthAddress = field(init=False)
@@ -1034,7 +1034,7 @@ class HasEthereumToken(Asset):
 T = TypeVar('T', bound='EthereumToken')
 
 
-@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=False)
 class EthereumToken(HasEthereumToken):
 
     def __str__(self) -> str:
