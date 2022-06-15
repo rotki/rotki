@@ -17,7 +17,7 @@ frontend/app/node_modules
 frontend/build
 frontend/common/node_modules
 frontend/dev-proxy/node_modules
-frontend/electron-build
+frontend/build
 frontend/logs
 frontend/node_modules
 node_modules

@@ -6,5 +6,5 @@ components.d.ts
 tsconfig.json
 tsconfig.eslint.json
 dist
-electron-build
+build
 coverage

@@ -1,3 +1,12 @@
+const isCI = !!process.env.CI;
+const macOsArch = process.env.MACOS_ELECTRON_ARCH
+const buildDebPackage = isCI || !!process.env.LINUX_BUILD_DEB
+
+const linuxTargets = ["AppImage", "tar.xz"];
+
+if (buildDebPackage) {
+  linuxTargets.push('deb')
+}
 /**
  * @type {import("electron-builder").Configuration}
  * @see https://www.electron.build/configuration/configuration
@@ -5,7 +14,7 @@
 const config = {
   appId: "com.rotki.app",
   directories: {
-    output: 'electron-build',
+    output: 'build',
     buildResources: 'buildResources',
   },
   files: [
@@ -16,13 +25,13 @@ const config = {
     vPrefixedTagName: true,
     releaseType: "draft"
   },
-  buildVersion: process.env.ROTKEHLCHEN_VERSION,
+  buildVersion: process.env.ROTKI_VERSION,
   artifactName:
     "${productName}-${platform}_${arch}-v${buildVersion}.${ext}",
   extraResources: [
     {
-      from: "../../rotkehlchen_py_dist",
-      to: "rotkehlchen_py_dist",
+      from: "../../build/backend",
+      to: "backend",
       filter: ["**/*"]
     }
   ],
@@ -34,9 +43,18 @@ const config = {
     createDesktopShortcut: false
   },
   mac: {
+    target: [
+      {
+        target: "default",
+        arch: macOsArch ? [macOsArch] : [
+          'x64',
+          'arm64'
+        ]
+      }
+    ],
     category: "public.app-category.finance",
     icon: "public/assets/images/rotki.icns",
-    ...(process.env.CI
+    ...(isCI
       ? {
         identity: "Rotki Solutions GmbH (6H86XUVS7L)",
         hardenedRuntime: true,
@@ -53,11 +71,11 @@ const config = {
     icon: "public/assets/images/rotki.ico"
   },
   linux: {
-    target: ["AppImage", "tar.xz", "deb"],
+    target: linuxTargets,
     icon: "public/assets/images/rotki_1024x1024.png",
     category: "Finance"
   },
-  ...(process.env.CI ? { afterSign: "scripts/notarize.js" } : {})
+  ...(isCI ? { afterSign: "scripts/notarize.js" } : {})
 };
 
 module.exports = config;

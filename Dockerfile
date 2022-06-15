@@ -59,7 +59,7 @@ RUN apt-get update && \
 COPY --from=backend-build-stage /tmp/dist /opt/rotki
 COPY --from=frontend-build-stage /app/app/dist /opt/rotki/frontend
 
-RUN APP=$(find "/opt/rotki" -name "rotkehlchen-*-linux"  | head -n 1) && \
+RUN APP=$(find "/opt/rotki" -name "rotki-core-*-linux"  | head -n 1) && \
     echo "${APP}" && \
     ln -s "${APP}" /usr/sbin/rotki
 

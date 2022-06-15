@@ -1,12 +1,12 @@
-LINT_PATHS = rotkehlchen/ tools/ setup.py conftest.py
+LINT_PATHS = rotkehlchen/ tools/ setup.py conftest.py package.py
 ISORT_PARAMS = --ignore-whitespace --settings-path ./ --skip-glob '*/node_modules/*' $(LINT_PATHS)
 ISORT_CHECK_PARAMS = --diff --check-only
 
 lint:
 	isort $(ISORT_PARAMS) $(ISORT_CHECK_PARAMS)
-	flake8 rotkehlchen/ tools/data_faker
-	mypy rotkehlchen/ tools/data_faker --install-types --non-interactive
-	pylint --rcfile .pylint.rc rotkehlchen/ tools/data_faker
+	flake8 rotkehlchen/ tools/data_faker package.py
+	mypy rotkehlchen/ tools/data_faker package.py --install-types --non-interactive
+	pylint --rcfile .pylint.rc rotkehlchen/ tools/data_faker package.py
 
 
 format:
@@ -14,7 +14,7 @@ format:
 
 
 clean:
-	rm -rf build/ rotkehlchen_py_dist/ htmlcov/ rotkehlchen.egg-info/ *.dmg frontend/app/dist/
+	rm -rf build/ dist/ rotkehlchen_py_dist/ htmlcov/ rotkehlchen.egg-info/ *.dmg frontend/app/dist/ frontend/app/build/
 
 docker-image:
 	packaging/docker-image.sh
