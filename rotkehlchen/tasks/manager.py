@@ -440,20 +440,29 @@ class TaskManager():
                 return
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
-                data={'is_premium_active': False},
+                data={
+                    'is_premium_active': False,
+                    'expired': False,
+                },
             )
             self.deactivate_premium()
         except PremiumAuthenticationError:
             self.deactivate_premium()
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
-                data={'is_premium_active': False},
+                data={
+                    'is_premium_active': False,
+                    'expired': True,
+                },
             )
         else:
             self.activate_premium(premium)
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
-                data={'is_premium_active': True},
+                data={
+                    'is_premium_active': True,
+                    'expired': False,
+                },
             )
             self.premium_check_retries = 0
         finally:
