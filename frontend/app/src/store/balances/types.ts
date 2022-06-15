@@ -50,6 +50,7 @@ export interface BalanceState {
   eth: BlockchainAssetBalances;
   eth2: BlockchainAssetBalances;
   btc: BtcBalances;
+  bch: BtcBalances;
   ksm: BlockchainAssetBalances;
   dot: BlockchainAssetBalances;
   avax: BlockchainAssetBalances;
@@ -60,6 +61,7 @@ export interface BalanceState {
   exchangeBalances: ExchangeData;
   ethAccounts: GeneralAccountData[];
   btcAccounts: BtcAccountData;
+  bchAccounts: BtcAccountData;
   ksmAccounts: GeneralAccountData[];
   dotAccounts: GeneralAccountData[];
   avaxAccounts: GeneralAccountData[];
@@ -100,6 +102,7 @@ export enum XpubKeyType {
 
 export interface XpubPayload {
   readonly xpub: string;
+  readonly blockchain: Blockchain.BTC | Blockchain.BCH;
   readonly derivationPath: string;
   readonly xpubType: XpubKeyType;
 }

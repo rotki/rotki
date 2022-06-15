@@ -16,7 +16,11 @@ import {
 } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
-import { GeneralAccountData, XpubAccountData } from '@/services/types-api';
+import {
+  BtcAccountData,
+  GeneralAccountData,
+  XpubAccountData
+} from '@/services/types-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
 import { useEnsNamesStore } from '@/store/balances/index';
@@ -372,6 +376,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       ETH: ethBalances,
       ETH2: eth2Balances,
       BTC: btcBalances,
+      BCH: bchBalances,
       KSM: ksmBalances,
       DOT: dotBalances,
       AVAX: avaxBalances
@@ -408,6 +413,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('updateBtc', btcBalances ?? {});
     }
 
+    if (!chain || chain === Blockchain.BCH) {
+      commit('updateBch', bchBalances ?? {});
+    }
+
     if (!chain || chain === Blockchain.AVAX) {
       commit('updateAvax', avaxBalances ?? {});
     }
@@ -442,12 +451,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
             xpub: payload.xpub
           }
         ),
-        blockchain: Blockchain.BTC,
+        blockchain: payload.blockchain,
         numericKeys: []
       } as BlockchainMetadata);
       const balances = BlockchainBalances.parse(result);
       await dispatch('updateBalances', {
-        chain: Blockchain.BTC,
+        chain: payload.blockchain,
         balances
       });
     } catch (e: any) {
@@ -755,8 +764,16 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async editAccount({ commit }, payload: BlockchainAccountPayload) {
     const { blockchain } = payload;
-    const isBTC = blockchain === Blockchain.BTC;
-    if (!isBTC) {
+    const isBtc = blockchain === Blockchain.BTC;
+    const isBch = blockchain === Blockchain.BCH;
+    if (isBtc || isBch) {
+      const accountData = await api.editBtcAccount(payload, blockchain);
+      if (isBtc) {
+        commit('btcAccounts', accountData);
+      } else {
+        commit('bchAccounts', accountData);
+      }
+    } else {
       const accountData = await api.editAccount(payload);
 
       if (blockchain === Blockchain.ETH) {
@@ -765,12 +782,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         commit('ksmAccounts', accountData);
       } else if (blockchain === Blockchain.DOT) {
         commit('dotAccounts', accountData);
-      } else {
+      } else if (blockchain === Blockchain.AVAX) {
         commit('avaxAccounts', accountData);
       }
-    } else {
-      const accountData = await api.editBtcAccount(payload);
-      commit('btcAccounts', accountData);
     }
   },
 
@@ -793,7 +807,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       });
     };
     const getAccounts = async (
-      blockchain: Exclude<Blockchain, Blockchain.BTC | Blockchain.ETH2>
+      blockchain: Exclude<
+        Blockchain,
+        Blockchain.BTC | Blockchain.BCH | Blockchain.ETH2
+      >
     ) => {
       try {
         const accounts = await api.accounts(blockchain);
@@ -817,12 +834,17 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       }
     };
 
-    const getBtcAccounts = async () => {
+    const getBtcAccounts = async (
+      blockchain: Blockchain.BTC | Blockchain.BCH
+    ) => {
       try {
-        const accounts = await api.btcAccounts();
-        commit('btcAccounts', accounts);
+        const accounts = await api.btcAccounts(blockchain);
+        commit(
+          blockchain === Blockchain.BTC ? 'btcAccounts' : 'bchAccounts',
+          accounts
+        );
       } catch (e) {
-        error(e, Blockchain.BTC);
+        error(e, blockchain);
       }
     };
 
@@ -856,7 +878,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     addRequest(Blockchain.ETH, chain => getAccounts(chain));
     addRequest(Blockchain.ETH2, () => getEth2Validators());
-    addRequest(Blockchain.BTC, () => getBtcAccounts());
+    addRequest(Blockchain.BTC, chain => getBtcAccounts(chain));
+    addRequest(Blockchain.BCH, chain => getBtcAccounts(chain));
     addRequest(Blockchain.KSM, chain => getAccounts(chain));
     addRequest(Blockchain.DOT, chain => getAccounts(chain));
     addRequest(Blockchain.AVAX, chain => getAccounts(chain));
@@ -865,27 +888,36 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
   /* Remove a tag from all accounts of the state */
   async removeTag({ commit, state }, tagName: string) {
-    commit('ethAccounts', removeTags(state.ethAccounts, tagName));
-    commit('ksmAccounts', removeTags(state.ksmAccounts, tagName));
-    commit('dotAccounts', removeTags(state.dotAccounts, tagName));
-    commit('avaxAccounts', removeTags(state.avaxAccounts, tagName));
-    const btcAccounts = state.btcAccounts;
-    const standalone = removeTags(btcAccounts.standalone, tagName);
+    // Other Network
+    ['ethAccounts', 'ksmAccounts', 'dotAccounts', 'avaxAccounts'].forEach(
+      stateName => {
+        const accounts = state[
+          stateName as keyof BalanceState
+        ] as GeneralAccountData[];
+        removeTags(accounts, tagName);
+      }
+    );
 
-    const xpubs: XpubAccountData[] = [];
+    // Bitcoin Network
+    ['btcAccounts', 'bchAccounts'].forEach(stateName => {
+      const accounts = state[stateName as keyof BalanceState] as BtcAccountData;
+      const standalone = removeTags(accounts.standalone, tagName);
 
-    for (let i = 0; i < btcAccounts.xpubs.length; i++) {
-      const xpub = btcAccounts.xpubs[i];
-      xpubs.push({
-        ...xpub,
-        tags: removeTag(xpub.tags, tagName),
-        addresses: xpub.addresses ? removeTags(xpub.addresses, tagName) : null
+      const xpubs: XpubAccountData[] = [];
+
+      for (let i = 0; i < accounts.xpubs.length; i++) {
+        const xpub = accounts.xpubs[i];
+        xpubs.push({
+          ...xpub,
+          tags: removeTag(xpub.tags, tagName),
+          addresses: xpub.addresses ? removeTags(xpub.addresses, tagName) : null
+        });
+      }
+
+      commit(stateName, {
+        standalone,
+        xpubs
       });
-    }
-
-    commit('btcAccounts', {
-      standalone,
-      xpubs
     });
   },
   async fetchNetvalueData({ commit, rootState: { session, settings } }) {
@@ -1102,6 +1134,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       standalone: state.btc.standalone ? { ...state.btc.standalone } : {},
       xpubs: state.btc.xpubs ? [...state.btc.xpubs] : []
     };
+    const bch: BtcBalances = {
+      standalone: state.bch.standalone ? { ...state.bch.standalone } : {},
+      xpubs: state.bch.xpubs ? [...state.bch.xpubs] : []
+    };
     const kusama = { ...state.ksm };
     const polkadot = { ...state.dot };
     const avalanche = { ...state.avax };
@@ -1165,6 +1201,32 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
 
     commit('updateBtc', btc);
+
+    const bchPrice = prices[Blockchain.BCH];
+    if (bchPrice) {
+      for (const address in bch.standalone) {
+        const balance = bch.standalone[address];
+        bch.standalone[address] = {
+          amount: balance.amount,
+          usdValue: balance.amount.times(bchPrice)
+        };
+      }
+      const xpubs = bch.xpubs;
+      if (xpubs) {
+        for (let i = 0; i < xpubs.length; i++) {
+          const xpub = xpubs[i];
+          for (const address in xpub.addresses) {
+            const balance = xpub.addresses[address];
+            xpub.addresses[address] = {
+              amount: balance.amount,
+              usdValue: balance.amount.times(bchPrice)
+            };
+          }
+        }
+      }
+    }
+
+    commit('updateBch', bch);
 
     for (const address in kusama) {
       const balances = kusama[address];

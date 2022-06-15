@@ -6,6 +6,7 @@
  * toSentenceCase('this is a sentence'); // This is a sentence
  */
 export const toSentenceCase = (string: string): string => {
+  if (!string) return '';
   return string[0].toUpperCase() + string.slice(1);
 };
 

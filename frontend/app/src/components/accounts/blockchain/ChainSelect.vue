@@ -46,6 +46,10 @@ const chains: SupportedChain[] = [
     name: 'Bitcoin'
   },
   {
+    symbol: Blockchain.BCH,
+    name: 'Bitcoin Cash'
+  },
+  {
     symbol: Blockchain.KSM,
     name: 'Kusama'
   },

@@ -26,7 +26,7 @@
           {{ $t('input_mode_select.metamask_import.label') }}
         </span>
       </v-btn>
-      <v-btn v-if="isBtc" :value="XPUB_ADD">
+      <v-btn v-if="isBtc || isBch" :value="XPUB_ADD">
         <v-icon>mdi-key-plus</v-icon>
         <span class="hidden-sm-and-down ml-1">
           {{ $t('input_mode_select.xpub_add.label') }}
@@ -149,6 +149,7 @@ export default defineComponent({
 
     const isEth = computed(() => get(blockchain) === Blockchain.ETH);
     const isBtc = computed(() => get(blockchain) === Blockchain.BTC);
+    const isBch = computed(() => get(blockchain) === Blockchain.BCH);
     const isMetaMask = computed(() => get(value) === METAMASK_IMPORT);
 
     const metamaskDownloadLink = 'https://metamask.io/download/';
@@ -171,6 +172,7 @@ export default defineComponent({
       METAMASK_IMPORT,
       isEth,
       isBtc,
+      isBch,
       isMetaMask,
       isMetaMaskSupported,
       input,

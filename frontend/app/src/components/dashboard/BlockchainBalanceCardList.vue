@@ -94,20 +94,18 @@ export default defineComponent({
 
     const name = computed<string>(() => {
       const chain = get(total).chain;
-      if (chain === Blockchain.ETH) {
-        return i18n.t('blockchains.eth').toString();
-      } else if (chain === Blockchain.BTC) {
-        return i18n.t('blockchains.btc').toString();
-      } else if (chain === Blockchain.KSM) {
-        return i18n.t('blockchains.ksm').toString();
-      } else if (chain === Blockchain.DOT) {
-        return i18n.t('blockchains.dot').toString();
-      } else if (chain === Blockchain.AVAX) {
-        return i18n.t('blockchains.avax').toString();
-      } else if (chain === Blockchain.ETH2) {
-        return i18n.t('blockchains.eth2').toString();
-      }
-      return '';
+
+      return (
+        {
+          [Blockchain.ETH]: i18n.t('blockchains.eth').toString(),
+          [Blockchain.ETH2]: i18n.t('blockchains.eth2').toString(),
+          [Blockchain.BTC]: i18n.t('blockchains.btc').toString(),
+          [Blockchain.BCH]: i18n.t('blockchains.bch').toString(),
+          [Blockchain.KSM]: i18n.t('blockchains.ksm').toString(),
+          [Blockchain.DOT]: i18n.t('blockchains.dot').toString(),
+          [Blockchain.AVAX]: i18n.t('blockchains.avax').toString()
+        }[chain] ?? ''
+      );
     });
 
     const l2Name = (protocol: SupportedL2Protocol) => {

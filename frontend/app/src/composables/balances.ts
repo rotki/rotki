@@ -60,6 +60,26 @@ export const setupGeneralBalances = () => {
     return store.getters['balances/blockchainTotals'];
   });
 
+  const hasDetails = (account: string) =>
+    computed<boolean>(() => {
+      return store.getters['balances/hasDetails'](account);
+    });
+
+  const accountAssets = (account: string) =>
+    computed<AssetBalance[]>(() => {
+      return store.getters['balances/accountAssets'](account);
+    });
+
+  const accountLiabilities = (account: string) =>
+    computed<AssetBalance[]>(() => {
+      return store.getters['balances/accountLiabilities'](account);
+    });
+
+  const loopringBalances = (account: string) =>
+    computed<AssetBalance[]>(() => {
+      return store.getters['balances/loopringBalances'](account);
+    });
+
   const fetchBalances: (
     payload: Partial<AllBalancePayload>
   ) => Promise<void> = async payload => {
@@ -110,6 +130,10 @@ export const setupGeneralBalances = () => {
     manualBalanceByLocation,
     liabilities,
     blockchainTotals,
+    hasDetails,
+    accountAssets,
+    accountLiabilities,
+    loopringBalances,
     fetchBalances,
     isEthereumToken,
     fetchTokenDetails,
@@ -123,6 +147,7 @@ export const setupGeneralBalances = () => {
 
 export type BlockchainData = {
   btcAccounts: Ref<BlockchainAccountWithBalance[]>;
+  bchAccounts: Ref<BlockchainAccountWithBalance[]>;
   polkadotBalances: Ref<BlockchainAccountWithBalance[]>;
   blockchainAssets: Ref<AssetBalanceWithPrice[]>;
   ethAccounts: Ref<BlockchainAccountWithBalance[]>;
@@ -144,6 +169,9 @@ export const setupBlockchainData = (): BlockchainData => {
   const btcAccounts = computed<BlockchainAccountWithBalance[]>(
     () => store.getters['balances/btcAccounts']
   );
+  const bchAccounts = computed<BlockchainAccountWithBalance[]>(
+    () => store.getters['balances/bchAccounts']
+  );
   const blockchainAssets = computed<AssetBalanceWithPrice[]>(
     () => store.getters['balances/blockchainAssets']
   );
@@ -164,6 +192,7 @@ export const setupBlockchainData = (): BlockchainData => {
     ethAccounts,
     eth2Balances,
     btcAccounts,
+    bchAccounts,
     blockchainAssets,
     kusamaBalances,
     polkadotBalances,

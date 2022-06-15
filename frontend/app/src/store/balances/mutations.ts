@@ -30,6 +30,9 @@ export const mutations: MutationTree<BalanceState> = {
   updateBtc(state: BalanceState, payload: BtcBalances) {
     state.btc = { ...payload };
   },
+  updateBch(state: BalanceState, payload: BtcBalances) {
+    state.bch = { ...payload };
+  },
   updateKsm(state: BalanceState, payload: BlockchainAssetBalances) {
     state.ksm = { ...payload };
   },
@@ -109,6 +112,9 @@ export const mutations: MutationTree<BalanceState> = {
   },
   btcAccounts(state: BalanceState, accounts: BtcAccountData) {
     state.btcAccounts = accounts;
+  },
+  bchAccounts(state: BalanceState, accounts: BtcAccountData) {
+    state.bchAccounts = accounts;
   },
   ksmAccounts(state: BalanceState, accounts: GeneralAccountData[]) {
     state.ksmAccounts = accounts;

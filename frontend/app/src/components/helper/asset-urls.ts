@@ -24,6 +24,10 @@ export const explorerUrls: AssetExplorerUrls = {
     address: 'https://blockstream.info/address/',
     transaction: 'https://blockstream.info/tx/'
   },
+  BCH: {
+    address: 'https://www.blockchain.com/bch/address/',
+    transaction: 'https://www.blockchain.com/bch/tx/'
+  },
   ETC: {
     address: 'https://blockscout.com/etc/mainnet/address/',
     transaction: 'https://blockscout.com/etc/mainnet/tx/'

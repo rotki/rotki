@@ -2,9 +2,9 @@
   <v-sheet rounded outlined>
     <data-table
       v-bind="$attrs"
-      :headers="headers"
+      :headers="tableHeaders"
       :items="visibleBalances"
-      :loading="accountOperation || refreshing"
+      :loading="accountOperation || loading"
       :loading-text="$t('account_balances.data_table.loading')"
       single-expand
       item-key="address"
@@ -12,7 +12,7 @@
       sort-by="balance.usdValue"
       :custom-group="groupBy"
       class="account-balances-list"
-      :group-by="isBtc ? ['xpub', 'derivationPath'] : undefined"
+      :group-by="isBtcNetwork ? ['xpub', 'derivationPath'] : undefined"
       v-on="$listeners"
     >
       <template #header.accountSelection>
@@ -60,7 +60,7 @@
           class="account-balance-table__actions"
           :no-delete="true"
           :edit-tooltip="$t('account_balances.edit_tooltip')"
-          :disabled="accountOperation || refreshing"
+          :disabled="accountOperation || loading"
           @edit-click="editClick(item)"
         />
       </template>
@@ -95,26 +95,24 @@
           <template v-if="!loopring">
             <account-asset-balances
               :title="$t('account_balance_table.assets')"
-              :assets="accountAssets(item.address)"
+              :assets="get(accountAssets(item.address))"
             />
             <account-asset-balances
-              v-if="accountLiabilities(item.address).length > 0"
+              v-if="get(accountLiabilities(item.address)).length > 0"
               :title="$t('account_balance_table.liabilities')"
-              :assets="accountLiabilities(item.address)"
+              :assets="get(accountLiabilities(item.address))"
             />
           </template>
           <account-asset-balances
-            v-if="
-              blockchain === 'ETH' && loopringBalances(item.address).length > 0
-            "
+            v-if="isEth && get(loopringBalances(item.address)).length > 0"
             :title="loopring ? '' : $t('account_balance_table.loopring')"
-            :assets="loopringBalances(item.address)"
+            :assets="get(loopringBalances(item.address))"
           />
         </table-expand-container>
       </template>
       <template #item.expand="{ item }">
         <row-expander
-          v-if="expandable && (hasDetails(item.address) || loopring)"
+          v-if="isEth && (get(hasDetails(item.address)) || loopring)"
           :expanded="expanded.includes(item)"
           @click="expanded = expanded.includes(item) ? [] : [item]"
         />
@@ -138,16 +136,19 @@
 </template>
 
 <script lang="ts">
-import { AssetBalance, Balance } from '@rotki/common';
+import { Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Ref } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs
+} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
-import { mapState as mapPiniaState } from 'pinia';
-import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapGetters } from 'vuex';
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
@@ -158,8 +159,11 @@ import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
+import { setupGeneralBalances } from '@/composables/balances';
+import { setupThemeCheck } from '@/composables/common';
+import { setupGeneralSettings } from '@/composables/session';
 import { balanceSum } from '@/filters';
-import StatusMixin from '@/mixins/status-mixin';
+import i18n from '@/i18n';
 import { chainSection } from '@/store/balances/const';
 import {
   BlockchainAccountWithBalance,
@@ -168,12 +172,13 @@ import {
 } from '@/store/balances/types';
 import { Section } from '@/store/const';
 import { useTasks } from '@/store/tasks';
+import { getStatusUpdater } from '@/store/utils';
 import { Properties } from '@/types';
-import { Currency } from '@/types/currency';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 
-@Component({
+export default defineComponent({
+  name: 'AccountBalanceTable',
   components: {
     RowAppend,
     Eth2ValidatorLimitRow,
@@ -186,344 +191,372 @@ import { Zero } from '@/utils/bignumbers';
     RowExpander,
     AccountAssetBalances
   },
-  computed: {
-    ...mapPiniaState(useTasks, ['isTaskRunning']),
-    ...mapGetters('session', ['currency']),
-    ...mapGetters('balances', [
-      'hasDetails',
-      'accountAssets',
-      'accountLiabilities',
-      'loopringBalances'
-    ])
-  }
-})
-export default class AccountBalanceTable extends Mixins(StatusMixin) {
-  @Prop({ required: true })
-  balances!: BlockchainAccountWithBalance[];
-  @Prop({ required: true })
-  blockchain!: Blockchain;
-  @Prop({ required: true, type: Array })
-  visibleTags!: string[];
-  @Prop({ required: true, type: Array })
-  selected!: string[];
-  @Prop({ required: false, type: Boolean, default: false })
-  loopring!: boolean;
+  props: {
+    balances: {
+      required: true,
+      type: Array as PropType<BlockchainAccountWithBalance[]>
+    },
+    blockchain: { required: true, type: String as PropType<Blockchain> },
+    visibleTags: { required: true, type: Array as PropType<string[]> },
+    selected: { required: true, type: Array as PropType<string[]> },
+    loopring: { required: false, type: Boolean, default: false }
+  },
+  emits: ['edit-click', 'delete-xpub', 'addresses-selected'],
+  setup(props, { emit }) {
+    const { balances, blockchain, visibleTags, selected, loopring } =
+      toRefs(props);
 
-  @Emit()
-  editClick(_account: BlockchainAccountWithBalance) {}
+    const { isTaskRunning } = useTasks();
+    const { currencySymbol } = setupGeneralSettings();
+    const { hasDetails, accountAssets, accountLiabilities, loopringBalances } =
+      setupGeneralBalances();
 
-  @Emit()
-  deleteXpub(_payload: XpubPayload) {}
-
-  @Emit()
-  addressesSelected(_selected: string[]) {}
-
-  section = !this.loopring
-    ? chainSection[this.blockchain]
-    : Section.L2_LOOPRING_BALANCES;
-  currency!: Currency;
-  isTaskRunning!: (type: TaskType) => Ref<boolean>;
-  accountAssets!: (account: string) => AssetBalance[];
-  accountLiabilities!: (account: string) => AssetBalance[];
-  loopringBalances!: (account: string) => AssetBalance[];
-  hasDetails!: (account: string) => boolean;
-
-  expanded = [];
-
-  collapsedXpubs: XpubAccountWithBalance[] = [];
-
-  get isEth2() {
-    return this.blockchain === Blockchain.ETH2;
-  }
-
-  get total(): Balance {
-    const balances = this.visibleBalances;
-    const collapsedAmount = this.collapsedXpubBalances.amount;
-    const collapsedUsd = this.collapsedXpubBalances.usdValue;
-    const amount = balanceSum(
-      balances.map(({ balance }) => balance.amount)
-    ).plus(collapsedAmount);
-    const usdValue = balanceSum(
-      balances.map(({ balance }) => balance.usdValue)
-    ).plus(collapsedUsd);
-    return {
-      amount,
-      usdValue
-    };
-  }
-
-  get collapsedXpubBalances(): Balance {
-    const balance: Balance = {
-      amount: Zero,
-      usdValue: Zero
+    const editClick = (account: BlockchainAccountWithBalance) => {
+      emit('edit-click', account);
     };
 
-    return this.collapsedXpubs
-      .filter(({ tags }) => this.visibleTags.every(tag => tags.includes(tag)))
-      .reduce(
-        (previousValue, currentValue) => ({
-          amount: previousValue.amount.plus(currentValue.balance.amount),
-          usdValue: previousValue.usdValue.plus(currentValue.balance.usdValue)
-        }),
-        balance
-      );
-  }
-
-  get mobileClass(): string | null {
-    return this.$vuetify.breakpoint.xsOnly ? 'v-data-table__mobile-row' : null;
-  }
-
-  setSelected(selected: boolean) {
-    const selection = [...this.selected];
-    if (!selected) {
-      const total = selection.length;
-      for (let i = 0; i < total; i++) {
-        selection.pop();
-      }
-    } else {
-      for (const { address } of this.visibleBalances) {
-        if (!address || selection.includes(address)) {
-          continue;
-        }
-        selection.push(address);
-      }
-    }
-
-    this.addressesSelected(selection);
-  }
-
-  selectionChanged(address: string, selected: boolean) {
-    const selection = [...this.selected];
-    if (!selected) {
-      const index = selection.indexOf(address);
-      if (index >= 0) {
-        selection.splice(index, 1);
-      }
-    } else if (address && !selection.includes(address)) {
-      selection.push(address);
-    }
-    this.addressesSelected(selection);
-  }
-
-  get allSelected(): boolean {
-    const strings = this.visibleBalances.map(value => value.address);
-    return (
-      strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
-    );
-  }
-
-  get collapsedKeys(): string[] {
-    return this.collapsedXpubs.map(
-      ({ derivationPath, xpub }) => `${xpub}::${derivationPath}`
-    );
-  }
-
-  expandXpub(
-    isOpen: boolean,
-    toggle: () => void,
-    xpub: XpubAccountWithBalance
-  ) {
-    toggle();
-    if (isOpen) {
-      this.collapsedXpubs.push(xpub);
-    } else {
-      const index = this.collapsedXpubs.findIndex(
-        key =>
-          key.xpub === xpub.xpub && key.derivationPath === xpub.derivationPath
-      );
-
-      this.collapsedXpubs.splice(index, 1);
-    }
-  }
-
-  groupBy(
-    items: BlockchainAccountWithBalance[],
-    groupBy: Properties<BlockchainAccountWithBalance, any>[]
-  ) {
-    const record = {} as Record<string, BlockchainAccountWithBalance[]>;
-
-    for (let item of items) {
-      const key =
-        'xpub' in item ? groupBy.map(value => item[value]).join(':') : '';
-      if (record[key]) {
-        if (!item.address) {
-          continue;
-        }
-        record[key].push(item);
-      } else {
-        record[key] = !item.address ? [] : [item];
-      }
-    }
-
-    return Object.keys(record).map(name => ({
-      name,
-      items: record[name]
-    }));
-  }
-
-  get headers(): DataTableHeader[] {
-    const currency = { symbol: this.currency.tickerSymbol };
-    const currencyHeader =
-      this.blockchain === 'ETH'
-        ? this.$t('account_balances.headers.usd_value_eth', currency)
-        : this.$t('account_balances.headers.usd_value', currency);
-
-    const accountHeader =
-      this.blockchain === 'ETH2'
-        ? this.$t('account_balances.headers.validator')
-        : this.$t('account_balances.headers.account');
-
-    const headers: DataTableHeader[] = [
-      { text: '', value: 'accountSelection', width: '34px', sortable: false },
-      { text: accountHeader.toString(), value: 'label' },
-      { text: this.blockchain, value: 'balance.amount', align: 'end' },
-      {
-        text: currencyHeader.toString(),
-        value: 'balance.usdValue',
-        align: 'end'
-      }
-    ];
-
-    if (this.isEth2) {
-      headers.push({
-        text: this.$t('account_balances.headers.ownership').toString(),
-        value: 'ownershipPercentage',
-        align: 'end',
-        width: '28'
+    const deleteXpub = (payload: XpubPayload) => {
+      emit('delete-xpub', {
+        ...payload,
+        blockchain: get(blockchain)
       });
-    }
+    };
 
-    headers.push({
-      text: this.$tc('account_balances.headers.actions'),
-      value: 'actions',
-      align: 'center',
-      sortable: false,
-      width: '28'
+    const addressesSelected = (selected: string[]) => {
+      emit('addresses-selected', selected);
+    };
+
+    const { currentBreakpoint } = setupThemeCheck();
+    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+    const mobileClass = computed<string | null>(() => {
+      return get(xsOnly) ? 'v-data-table__mobile-row' : null;
     });
 
-    if (this.blockchain !== Blockchain.BTC) {
-      headers.push({
-        text: '',
-        value: 'expand',
-        align: 'end',
-        sortable: false
-      } as DataTableHeader);
-    }
-    return headers;
-  }
+    const section = computed<Section>(() => {
+      return get(loopring)
+        ? Section.L2_LOOPRING_BALANCES
+        : chainSection[get(blockchain)];
+    });
 
-  getItems(xpub: string, derivationPath?: string) {
-    return this.balances.filter(
-      value =>
-        'xpub' in value &&
-        xpub === value.xpub &&
-        derivationPath === value?.derivationPath
+    const loading = computed<boolean>(() => {
+      return getStatusUpdater(get(section)).loading();
+    });
+
+    const expanded = ref<BlockchainAccountWithBalance[]>([]);
+    const collapsedXpubs = ref<XpubAccountWithBalance[]>([]);
+
+    const isEth = computed<boolean>(() => get(blockchain) === Blockchain.ETH);
+    const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
+    const isBtcNetwork = computed<boolean>(() =>
+      [Blockchain.BTC, Blockchain.BCH].includes(get(blockchain))
     );
-  }
 
-  get accountOperation(): boolean {
-    return (
-      get(this.isTaskRunning(TaskType.ADD_ACCOUNT)) ||
-      get(this.isTaskRunning(TaskType.REMOVE_ACCOUNT))
-    );
-  }
+    const withL2 = (
+      balances: BlockchainAccountWithBalance[]
+    ): BlockchainAccountWithBalance[] => {
+      if (!get(isEth) || get(loopring)) {
+        return balances;
+      }
 
-  get nonExpandedBalances(): BlockchainAccountWithBalance[] {
-    return this.balances
-      .filter(balance => {
-        return (
-          !('xpub' in balance) ||
-          ('xpub' in balance &&
-            !this.collapsedKeys.includes(
-              `${balance.xpub}::${balance.derivationPath}`
-            ))
-        );
-      })
-      .concat(
-        this.collapsedXpubs.map(({ derivationPath, xpub }) => {
-          const xpubEntry = this.balances.find(
-            balance =>
-              !balance.address &&
-              'xpub' in balance &&
-              balance.xpub === xpub &&
-              balance.derivationPath === derivationPath
-          );
+      return balances.map(value => {
+        const address = value.address;
+        const assetBalances = get(loopringBalances(address));
+        if (assetBalances.length === 0) {
+          return value;
+        }
+        const chainBalance = value.balance;
+        const loopringEth =
+          assetBalances.find(({ asset }) => asset === Blockchain.ETH)?.amount ??
+          Zero;
+
+        return {
+          ...value,
+          balance: {
+            usdValue: balanceSum(
+              assetBalances.map(({ usdValue }) => usdValue)
+            ).plus(chainBalance.usdValue),
+            amount: chainBalance.amount.plus(loopringEth)
+          }
+        };
+      });
+    };
+
+    const collapsedKeys = computed<string[]>(() => {
+      return get(collapsedXpubs).map(
+        ({ derivationPath, xpub }) => `${xpub}::${derivationPath}`
+      );
+    });
+
+    const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() => {
+      return get(balances)
+        .filter(balance => {
           return (
-            xpubEntry ?? {
-              xpub: xpub,
-              derivationPath: derivationPath,
-              address: '',
-              label: '',
-              tags: [],
-              balance: { amount: Zero, usdValue: Zero },
-              chain: Blockchain.BTC
-            }
+            !('xpub' in balance) ||
+            ('xpub' in balance &&
+              !get(collapsedKeys).includes(
+                `${balance.xpub}::${balance.derivationPath}`
+              ))
           );
         })
-      );
-  }
+        .concat(
+          get(collapsedXpubs).map(({ derivationPath, xpub }) => {
+            const xpubEntry = get(balances).find(
+              balance =>
+                !balance.address &&
+                'xpub' in balance &&
+                balance.xpub === xpub &&
+                balance.derivationPath === derivationPath
+            );
+            return (
+              xpubEntry ?? {
+                xpub: xpub,
+                derivationPath: derivationPath,
+                address: '',
+                label: '',
+                tags: [],
+                balance: { amount: Zero, usdValue: Zero },
+                chain: get(blockchain)
+              }
+            );
+          })
+        );
+    });
 
-  private withL2(
-    balances: BlockchainAccountWithBalance[]
-  ): BlockchainAccountWithBalance[] {
-    if (this.blockchain !== Blockchain.ETH || this.loopring) {
-      return balances;
-    }
-
-    return balances.map(value => {
-      const address = value.address;
-      const assetBalances = this.loopringBalances(address);
-      if (assetBalances.length === 0) {
-        return value;
+    const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
+      if (get(visibleTags).length === 0) {
+        return withL2(get(nonExpandedBalances));
       }
-      const chainBalance = value.balance;
-      const loopringEth =
-        assetBalances.find(({ asset }) => asset === Blockchain.ETH)?.amount ??
-        Zero;
+
+      return withL2(
+        get(nonExpandedBalances).filter(({ tags }) =>
+          get(visibleTags).every(tag => tags.includes(tag))
+        )
+      );
+    });
+
+    const collapsedXpubBalances = computed<Balance>(() => {
+      const balance: Balance = {
+        amount: Zero,
+        usdValue: Zero
+      };
+
+      return get(collapsedXpubs)
+        .filter(({ tags }) => get(visibleTags).every(tag => tags.includes(tag)))
+        .reduce(
+          (previousValue, currentValue) => ({
+            amount: previousValue.amount.plus(currentValue.balance.amount),
+            usdValue: previousValue.usdValue.plus(currentValue.balance.usdValue)
+          }),
+          balance
+        );
+    });
+
+    const total = computed<Balance>(() => {
+      const balances = get(visibleBalances);
+      const collapsedAmount = get(collapsedXpubBalances).amount;
+      const collapsedUsd = get(collapsedXpubBalances).usdValue;
+      const amount = balanceSum(
+        balances.map(({ balance }) => balance.amount)
+      ).plus(collapsedAmount);
+      const usdValue = balanceSum(
+        balances.map(({ balance }) => balance.usdValue)
+      ).plus(collapsedUsd);
 
       return {
-        ...value,
-        balance: {
-          usdValue: balanceSum(
-            assetBalances.map(({ usdValue }) => usdValue)
-          ).plus(chainBalance.usdValue),
-          amount: chainBalance.amount.plus(loopringEth)
-        }
+        amount,
+        usdValue
       };
     });
+
+    const setSelected = (isSelected: boolean) => {
+      const selection = [...get(selected)];
+      if (!isSelected) {
+        const total = selection.length;
+        for (let i = 0; i < total; i++) {
+          selection.pop();
+        }
+      } else {
+        for (const { address } of get(visibleBalances)) {
+          if (!address || selection.includes(address)) {
+            continue;
+          }
+          selection.push(address);
+        }
+      }
+
+      addressesSelected(selection);
+    };
+
+    const selectionChanged = (address: string, isSelected: boolean) => {
+      const selection = [...get(selected)];
+      if (!isSelected) {
+        const index = selection.indexOf(address);
+        if (index >= 0) {
+          selection.splice(index, 1);
+        }
+      } else if (address && !selection.includes(address)) {
+        selection.push(address);
+      }
+      addressesSelected(selection);
+    };
+
+    const allSelected = computed<boolean>(() => {
+      const strings = get(visibleBalances).map(value => value.address);
+      return (
+        strings.length > 0 && isEqual(sortBy(strings), sortBy(get(selected)))
+      );
+    });
+
+    const expandXpub = (
+      isOpen: boolean,
+      toggle: () => void,
+      xpub: XpubAccountWithBalance
+    ) => {
+      toggle();
+      if (isOpen) {
+        collapsedXpubs.value.push(xpub);
+      } else {
+        const index = get(collapsedXpubs).findIndex(
+          key =>
+            key.xpub === xpub.xpub && key.derivationPath === xpub.derivationPath
+        );
+
+        get(collapsedXpubs).splice(index, 1);
+      }
+    };
+
+    const groupBy = (
+      items: BlockchainAccountWithBalance[],
+      groupBy: Properties<BlockchainAccountWithBalance, any>[]
+    ) => {
+      const record = {} as Record<string, BlockchainAccountWithBalance[]>;
+
+      for (let item of items) {
+        const key =
+          'xpub' in item ? groupBy.map(value => item[value]).join(':') : '';
+        if (record[key]) {
+          if (!item.address) {
+            continue;
+          }
+          record[key].push(item);
+        } else {
+          record[key] = !item.address ? [] : [item];
+        }
+      }
+
+      return Object.keys(record).map(name => ({
+        name,
+        items: record[name]
+      }));
+    };
+
+    const tableHeaders = computed<DataTableHeader[]>(() => {
+      const currency = { symbol: get(currencySymbol) };
+
+      const currencyHeader = get(isEth)
+        ? i18n.t('account_balances.headers.usd_value_eth', currency)
+        : i18n.t('account_balances.headers.usd_value', currency);
+
+      const accountHeader = get(isEth2)
+        ? i18n.t('account_balances.headers.validator')
+        : i18n.t('account_balances.headers.account');
+
+      const headers: DataTableHeader[] = [
+        { text: '', value: 'accountSelection', width: '34px', sortable: false },
+        { text: accountHeader.toString(), value: 'label' },
+        { text: get(blockchain), value: 'balance.amount', align: 'end' },
+        {
+          text: currencyHeader.toString(),
+          value: 'balance.usdValue',
+          align: 'end'
+        }
+      ];
+
+      if (get(isEth2)) {
+        headers.push({
+          text: i18n.t('account_balances.headers.ownership').toString(),
+          value: 'ownershipPercentage',
+          align: 'end',
+          width: '28'
+        });
+      }
+
+      headers.push({
+        text: i18n.tc('account_balances.headers.actions'),
+        value: 'actions',
+        align: 'center',
+        sortable: false,
+        width: '28'
+      });
+
+      if (!get(isBtcNetwork)) {
+        headers.push({
+          text: '',
+          value: 'expand',
+          align: 'end',
+          sortable: false
+        });
+      }
+
+      return headers;
+    });
+
+    const getItems = (xpub: string, derivationPath?: string) => {
+      return get(balances).filter(
+        value =>
+          'xpub' in value &&
+          xpub === value.xpub &&
+          derivationPath === value?.derivationPath
+      );
+    };
+
+    const accountOperation = computed<boolean>(() => {
+      return (
+        get(isTaskRunning(TaskType.ADD_ACCOUNT)) ||
+        get(isTaskRunning(TaskType.REMOVE_ACCOUNT))
+      );
+    });
+
+    const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
+      const index = get(collapsedXpubs).findIndex(
+        collapsed =>
+          collapsed.derivationPath === derivationPath && collapsed.xpub === xpub
+      );
+
+      if (index >= 0) {
+        collapsedXpubs.value.splice(index, 1);
+      }
+    };
+
+    return {
+      mobileClass,
+      tableHeaders,
+      isEth2,
+      isEth,
+      isBtcNetwork,
+      visibleBalances,
+      accountOperation,
+      loading,
+      expanded,
+      nonExpandedBalances,
+      allSelected,
+      total,
+      accountAssets,
+      accountLiabilities,
+      loopringBalances,
+      hasDetails,
+      setSelected,
+      groupBy,
+      selectionChanged,
+      editClick,
+      getItems,
+      expandXpub,
+      deleteXpub,
+      removeCollapsed,
+      get
+    };
   }
-
-  get visibleBalances(): BlockchainAccountWithBalance[] {
-    if (this.visibleTags.length === 0) {
-      return this.withL2(this.nonExpandedBalances);
-    }
-
-    return this.withL2(
-      this.nonExpandedBalances.filter(({ tags }) =>
-        this.visibleTags.every(tag => tags.includes(tag))
-      )
-    );
-  }
-
-  get isBtc(): boolean {
-    return this.blockchain === Blockchain.BTC;
-  }
-
-  get expandable(): boolean {
-    return this.blockchain === Blockchain.ETH;
-  }
-
-  removeCollapsed({ derivationPath, xpub }: XpubPayload) {
-    const index = this.collapsedXpubs.findIndex(
-      collapsed =>
-        collapsed.derivationPath === derivationPath && collapsed.xpub === xpub
-    );
-
-    if (index >= 0) {
-      this.collapsedXpubs.splice(index, 1);
-    }
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">
