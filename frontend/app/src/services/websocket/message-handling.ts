@@ -4,6 +4,7 @@ import i18n from '@/i18n';
 import {
   BalanceSnapshotError,
   EthereumTransactionQueryData,
+  PremiumStatusUpdateData,
   SocketMessageType,
   WebsocketMessage
 } from '@/services/websocket/messages';
@@ -42,6 +43,33 @@ export async function handleLegacyMessage(message: string, isWarning: boolean) {
   });
 }
 
-export async function handlePremiumStatusUpdate(active: boolean) {
+export async function handlePremiumStatusUpdate(data: PremiumStatusUpdateData) {
+  const { notify } = useNotifications();
+  const { is_premium_active: active, expired } = data;
+
+  if (active) {
+    notify({
+      title: i18n.t('notification_messages.premium.active.title').toString(),
+      message: i18n
+        .t('notification_messages.premium.active.message')
+        .toString(),
+      display: true,
+      severity: Severity.INFO
+    });
+  } else {
+    notify({
+      title: i18n.t('notification_messages.premium.inactive.title').toString(),
+      message: expired
+        ? i18n
+            .t('notification_messages.premium.inactive.expired_message')
+            .toString()
+        : i18n
+            .t('notification_messages.premium.inactive.network_problem_message')
+            .toString(),
+      display: true,
+      severity: Severity.ERROR
+    });
+  }
+
   setPremium(active);
 }

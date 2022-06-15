@@ -38,6 +38,7 @@ export type EthereumTransactionQueryData = z.infer<
 >;
 
 export const PremiumStatusUpdateData = z.object({
+  expired: z.boolean(),
   is_premium_active: z.boolean()
 });
 export type PremiumStatusUpdateData = z.infer<typeof PremiumStatusUpdateData>;
