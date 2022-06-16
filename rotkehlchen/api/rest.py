@@ -153,6 +153,7 @@ from rotkehlchen.types import (
     TradeType,
 )
 from rotkehlchen.utils.misc import combine_dicts
+from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
@@ -4093,8 +4094,8 @@ class RestAPI():
             db_handler=self.rotkehlchen.data.db,
             msg_aggregator=self.rotkehlchen.msg_aggregator,
         )
-        balances = dbsnapshot.get_timed_balances(timestamp)
-        location_data = dbsnapshot.get_timed_location_data(timestamp)
+        balances = dbsnapshot.get_timed_balances(timestamp=timestamp)
+        location_data = dbsnapshot.get_timed_location_data(timestamp=timestamp)
         if len(balances) == 0 or len(location_data) == 0:
             return api_response(
                 wrap_in_fail_result('No snapshot data found for the given timestamp.'),
@@ -4113,10 +4114,10 @@ class RestAPI():
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def edit_user_db_snapshot(
-        self,
-        timestamp: Timestamp,
-        location_data_snapshot: List[LocationData],
-        balances_snapshot: List[DBAssetBalance],
+            self,
+            timestamp: Timestamp,
+            location_data_snapshot: List[LocationData],
+            balances_snapshot: List[DBAssetBalance],
     ) -> Response:
         dbsnapshot = DBSnapshot(
             db_handler=self.rotkehlchen.data.db,
@@ -4129,11 +4130,7 @@ class RestAPI():
         )
         if is_success is False:
             return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
-
-        return api_response(
-            _wrap_in_result(result='', message=message),
-            status_code=HTTPStatus.OK,
-        )
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def export_user_db_snapshot(self, timestamp: Timestamp, path: Path) -> Response:
         dbsnapshot = DBSnapshot(
@@ -4241,9 +4238,18 @@ class RestAPI():
             db_handler=self.rotkehlchen.data.db,
             msg_aggregator=self.rotkehlchen.msg_aggregator,
         )
-        is_success, message = dbsnapshot.import_snapshot(
+        error_or_empty, processed_balances, processed_location_data = parse_import_snapshot_data(
             balances_snapshot_file=balances_snapshot_file,
             location_data_snapshot_file=location_data_snapshot_file,
+        )
+        if error_or_empty != '':
+            return api_response(
+                result=wrap_in_fail_result(error_or_empty),
+                status_code=HTTPStatus.CONFLICT,
+            )
+        is_success, message = dbsnapshot.import_snapshot(
+            processed_balances_list=processed_balances,
+            processed_location_data_list=processed_location_data,
         )
         if is_success is False:
             return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)

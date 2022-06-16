@@ -45,7 +45,6 @@ from rotkehlchen.db.filtering import (
     TradesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.snapshots import DBSnapshot
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
@@ -2160,16 +2159,12 @@ class SnapshotEditingSchema(Schema):
 
     @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
-        self,
-        data: Dict[str, Any],
-        **_kwargs: Any,
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
     ) -> None:
         if not data['timestamp'] == data['balances_snapshot'][0].time == data['location_data_snapshot'][0].time:  # noqa: 501
-            raise ValidationError("timestamp does not match")
-        is_success, message = DBSnapshot.validate_import_data(
-            balances_data=[entry.serialize() for entry in data['balances_snapshot']],
-            location_data=[entry.serialize() for entry in data['location_data_snapshot']],
-            source='json',
-        )
-        if is_success is False:
-            raise ValidationError(message)
+            raise ValidationError(
+                f'timestamp provided {data["timestamp"]} is not the same as the '
+                f'one for the entries provided.',
+            )
