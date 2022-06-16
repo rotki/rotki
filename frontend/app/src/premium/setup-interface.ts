@@ -12,7 +12,7 @@ import {
 } from '@rotki/common/lib/settings';
 import * as CompositionAPI from '@vue/composition-api';
 import * as BigNumber from 'bignumber.js';
-import Chart from 'chart.js';
+import * as Chart from 'chart.js';
 import dayjs from 'dayjs';
 import Vue from 'vue';
 import * as zod from 'zod';

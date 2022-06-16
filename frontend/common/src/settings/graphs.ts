@@ -126,3 +126,12 @@ export const customTimeframe: Timeframe = {
   ...unitDefaults(TimeUnit.MONTH),
   xAxisStepSize: 1
 };
+
+export type TooltipDisplayOption = {
+  visible: boolean;
+  id: string;
+  left: number;
+  top: number;
+  xAlign: string;
+  yAlign: string;
+};

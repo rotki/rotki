@@ -4,7 +4,7 @@
       v-if="!premium"
       :text="$t('statistics.no_premium_label')"
     />
-    <premium-statistics v-else :service="$api" :floating-precision="0" />
+    <premium-statistics v-else />
   </v-container>
 </template>
 

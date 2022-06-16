@@ -146,6 +146,7 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { Chart, registerables } from 'chart.js';
 import About from '@/components/About.vue';
 import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropdown from '@/components/CurrencyDropdown.vue';
@@ -182,6 +183,7 @@ import { OverallPerformance } from '@/store/statistics/types';
 import { useMainStore } from '@/store/store';
 import { useStore } from '@/store/utils';
 import { logger } from '@/utils/logging';
+import 'chartjs-adapter-moment';
 
 export default defineComponent({
   name: 'App',
@@ -307,6 +309,11 @@ export default defineComponent({
       if (skipUpdate) {
         sessionStorage.setItem('skip_update', '1');
       }
+    });
+
+    onBeforeMount(() => {
+      Chart.defaults.font.family = 'Roboto';
+      Chart.register(...registerables);
     });
 
     watch(overall, overall => {
