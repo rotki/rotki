@@ -13,6 +13,8 @@ flake8-mutable==1.2.0
 pep8-naming==0.13.0
 isort==5.10.1
 
+typing-extensions==4.2.0  # used for typing.ParamSpec and typing.Concatenate (in stdlib since python 3.10)
+
 # type packages used by mypy
 # pinned here so that we can have reproducible mypy runs
 types-chardet==5.0.1
