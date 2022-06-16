@@ -2381,15 +2381,26 @@ class DBSnapshotsResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
-        self,
-        action: Optional[str],
-        timestamp: Timestamp,
-        path: Optional[Path],
+            self,
+            action: Optional[Literal['export', 'download']],
+            timestamp: Timestamp,
+            path: Optional[Path],
     ) -> Response:
+        """The behaviour of this method is as a result of the exhaustion of HTTP verbs
+        for this resource.
+
+        - GET with `?action=download` is for downloading a snapshot(Docker).
+        - GET with `?action=export&path=/home/xyz` is for exporting a snapshot(Electron).
+        - GET without action query parameter is for returning the snapshot as JSON
+        for editing the snapshot.
+        """
         if action == 'export':
-            if path is not None:
-                return self.rest_api.export_user_db_snapshot(timestamp=timestamp, path=path)
-        elif action == 'download':
+            # path cannot be `None` here because it is caught during schema validation.
+            return self.rest_api.export_user_db_snapshot(
+                timestamp=timestamp,
+                path=path,  # type: ignore
+            )
+        if action == 'download':
             return self.rest_api.download_user_db_snapshot(timestamp=timestamp)
 
         return self.rest_api.get_user_db_snapshot(timestamp=timestamp)
@@ -2405,9 +2416,9 @@ class DBSnapshotsResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(upload_schema, location='form_and_file')
     def post(
-        self,
-        balances_snapshot_file: FileStorage,
-        location_data_snapshot_file: FileStorage,
+            self,
+            balances_snapshot_file: FileStorage,
+            location_data_snapshot_file: FileStorage,
     ) -> Response:
         with TemporaryDirectory() as temp_directory:
             balance_snapshot_filename = balances_snapshot_file.filename if balances_snapshot_file.filename else 'balances_snapshot_import.csv'  # noqa: 501
@@ -2425,10 +2436,10 @@ class DBSnapshotsResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json_and_view_args')
     def patch(
-        self,
-        timestamp: Timestamp,
-        balances_snapshot: List[DBAssetBalance],
-        location_data_snapshot: List[LocationData],
+            self,
+            timestamp: Timestamp,
+            balances_snapshot: List[DBAssetBalance],
+            location_data_snapshot: List[LocationData],
     ) -> Response:
         return self.rest_api.edit_user_db_snapshot(
             timestamp=timestamp,

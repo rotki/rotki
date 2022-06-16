@@ -58,7 +58,10 @@ class DBAssetBalance(NamedTuple):
     amount: str
     usd_value: str
 
-    def serialize(self, export_data: Optional[Tuple[Asset, Price]] = None) -> Dict[str, str]:
+    def serialize(
+            self,
+            export_data: Optional[Tuple[Asset, Price]] = None,
+    ) -> Dict[str, Union[str, int]]:
         if export_data:
             return {
                 'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
@@ -68,7 +71,7 @@ class DBAssetBalance(NamedTuple):
                 f'{export_data[0].symbol.lower()}_value': str(FVal(self.usd_value) * export_data[1]),  # noqa: 501
             }
         return {
-            'timestamp': str(self.time),
+            'timestamp': int(self.time),
             'category': self.category.serialize(),
             'asset_identifier': str(self.asset.identifier),
             'amount': self.amount,
@@ -88,7 +91,10 @@ class LocationData(NamedTuple):
     location: str  # Location serialized in a DB enum
     usd_value: str
 
-    def serialize(self, export_data: Optional[Tuple[Asset, Price]] = None) -> Dict[str, str]:
+    def serialize(
+            self,
+            export_data: Optional[Tuple[Asset, Price]] = None,
+    ) -> Dict[str, Union[str, int]]:
         if export_data:
             return {
                 'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
@@ -96,7 +102,7 @@ class LocationData(NamedTuple):
                 f'{export_data[0].symbol.lower()}_value': str(FVal(self.usd_value) * export_data[1]),   # noqa: 501
             }
         return {
-            'timestamp': str(self.time),
+            'timestamp': int(self.time),
             'location': Location.deserialize_from_db(self.location).serialize(),
             'usd_value': self.usd_value,
         }

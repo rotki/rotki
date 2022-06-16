@@ -10816,7 +10816,7 @@ Handling snapshot manipulation
 
 .. http:get:: /api/(version)/snapshots/(timestamp)
 
-    Doing a GET on this endpoint without any action will return the database snapshot for the specified timestamp in JSON.
+   Doing a GET on this endpoint without any action query parameter will return the database snapshot for the specified timestamp in JSON.
 
    **Example Request**:
 
@@ -10837,7 +10837,7 @@ Handling snapshot manipulation
           "result": {
               "balances_snapshot": [
                     {
-                        "timestamp": "149095883",
+                        "timestamp": 149095883,
                         "category": "asset",
                         "asset_identifier": "AVAX",
                         "amount": "1000.00",
@@ -10846,17 +10846,17 @@ Handling snapshot manipulation
                 ],
               "location_data_snapshot": [
                     {
-                        "timestamp": "149095883",
+                        "timestamp": 149095883,
                         "location": "external",
                         "usd_value": "12929.00"
                     },
                     {
-                        "timestamp": "149095883",
+                        "timestamp": 149095883,
                         "location": "total",
                         "usd_value": "12929.00"
                     }
               ]
-        }
+          },
           "message": ""
       }
 
@@ -10896,7 +10896,7 @@ Handling snapshot manipulation
 
    :resjson bool result: Boolean denoting success or failure of the query.
    :statuscode 200: Files were exported successfully.
-   :statuscode 400: Provided query paramenter(s) is in some way malformed or given path is not a directory.
+   :statuscode 400: Provided query parameter(s) is in some way malformed or given path is not a directory.
    :statuscode 409: No user is currently logged in. No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal rotki error.
 
@@ -10941,9 +10941,7 @@ Handling snapshot manipulation
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {
-        "timestamp": 149095883
-      }
+      {"timestamp": 149095883}
 
    :reqjson int timestamp: The epoch timestamp representing the time of the snapshot to be deleted.
 
@@ -10963,7 +10961,7 @@ Handling snapshot manipulation
 
 .. http:patch:: /api/(version)/snapshots/(timestamp)
 
-   Doing either a PATCH on this endpoint will update the snapshot of the specified timestamp with the provided payload.
+   Doing a PATCH on this endpoint will replace the snapshot at the specified timestamp with the provided payload.
 
    **Example Request**:
 
@@ -10976,7 +10974,7 @@ Handling snapshot manipulation
         {
             "balances_snapshot": [
                 {
-                    "timestamp": "149095883",
+                    "timestamp": 149095883,
                     "category": "asset",
                     "asset_identifier": "AVAX",
                     "amount": "1000.00",
@@ -10985,20 +10983,20 @@ Handling snapshot manipulation
             ],
             "location_data_snapshot": [
                 {
-                    "timestamp": "149095883",
+                    "timestamp": 149095883,
                     "location": "external",
                     "usd_value": "12929.00"
                 },
                 {
-                    "timestamp": "149095883",
+                    "timestamp": 149095883,
                     "location": "total",
                     "usd_value": "12929.00"
                 }
             ]
         }
 
-   :reqjson list balances_snapshot: The list of objects represent the balances of an account to be updated.
-   :reqjson list location_data_snapshot: The list of objects representing the location data to be updated.
+   :reqjson list balances_snapshot: The list of objects representing the balances of an account to be updated. All fields are required i.e ``"timestamp"``, ``"category"``, ``"asset_identifier"``, ``"amount"``, ``"usd_value"``.
+   :reqjson list location_data_snapshot: The list of objects representing the location data to be updated. All fields are required i.e ``"timestamp"``, ``"location"``, ``"usd_value"``.
 
    **Example Response**:
 
@@ -11010,7 +11008,7 @@ Handling snapshot manipulation
 
    :statuscode 200: Snapshot was updated successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. JSON has different timestamps. Snapshot contains an unknown asset.JSON has invalid headers.Check error message.
+   :statuscode 409: No user is currently logged in. JSON has different timestamps. Snapshot contains an unknown asset. JSON has invalid headers. Check error message.
    :statuscode 500: Internal rotki error.
 
 
@@ -11018,6 +11016,7 @@ Handling snapshot manipulation
 .. http:post:: /api/(version)/snapshots
 
    Doing either a PUT or a POST on this import endpoint will import database snapshot from the specified paths in the request body.
+   PUT expect paths to the files to be imported. POST expects the files to be uploaded as multipart/form-data.
 
    **Example Request**:
 
@@ -11032,8 +11031,8 @@ Handling snapshot manipulation
           "location_data_snapshot_file": "/path/to/location_data_snapshot.csv"
       }
 
-   :reqjson str balances_snapshot_file: The path to a `balances_snapshot_import.csv` file that was previously exported for PUT. The file itself for POST.
-   :reqjson str location_data_snapshot_file: The path to a `location_data_snapshot.csv` file that was previously exported for PUT. The file itself for POST.
+   :reqjson str balances_snapshot_file: The path to a `balances_snapshot_import.csv` file that was previously exported.
+   :reqjson str location_data_snapshot_file: The path to a `location_data_snapshot.csv` file that was previously exported.
 
    **Example Response**:
 
@@ -11045,7 +11044,7 @@ Handling snapshot manipulation
 
    :statuscode 200: Snapshot was imported successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. Csv file has different timestamps. Snapshot contains an unknown asset.Csv file has invalid headers.Check error message.
+   :statuscode 409: No user is currently logged in. Csv file has different timestamps. Snapshot contains an unknown asset. Csv file has invalid headers. Check error message.
    :statuscode 500: Internal rotki error.
 
 

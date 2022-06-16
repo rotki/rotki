@@ -9,7 +9,7 @@ from typing import Optional
 import requests
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_ETH, A_EUR, A_USD
+from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import (
     BALANCES_FILENAME,
@@ -17,6 +17,7 @@ from rotkehlchen.db.snapshots import (
     LOCATION_DATA_FILENAME,
     LOCATION_DATA_IMPORT_FILENAME,
 )
+from rotkehlchen.db.utils import BalanceType, DBAssetBalance, LocationData
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -35,44 +36,43 @@ LOCATION_DATA_IMPORT_INVALID_HEADERS = ['timestamp', 'location', 'value']
 NFT_TOKEN_ID = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_11'
 
 
-def _populate_db_with_balances(connection, ts: Timestamp):
-    cursor = connection.cursor()
-    cursor.execute(
-        """
-        INSERT INTO timed_balances ("category", "time", "currency", "amount", "usd_value") VALUES
-        (?, ?, ?, ?, ?);
-        """, ('A', ts, 'BTC', '1.00', '178.44'),
-    )
-    cursor.execute(
-        """
-        INSERT INTO timed_balances ("category", "time", "currency", "amount", "usd_value") VALUES
-        (?, ?, ?, ?, ?);
-        """, ('A', ts, 'AVAX', '1.00', '87'),
-    )
-    connection.commit()
+def _populate_db_with_balances(db, ts: Timestamp):
+    db.add_multiple_balances([
+        DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=ts,
+            asset=A_BTC,
+            amount='1.00',
+            usd_value='178.44',
+        ),
+        DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=ts,
+            asset=A_AVAX,
+            amount='1.00',
+            usd_value='87',
+        ),
+    ])
 
 
-def _populate_db_with_location_data(connection, ts: Timestamp):
-    cursor = connection.cursor()
-    cursor.execute(
-        """
-        INSERT INTO timed_location_data ("time", "location", "usd_value") VALUES
-        (?, ?, ?);
-        """, (ts, 'A', '100.00'),
-    )
-    cursor.execute(
-        """
-        INSERT INTO timed_location_data ("time", "location", "usd_value") VALUES
-        (?, ?, ?);
-        """, (ts, 'B', '200.00'),
-    )
-    cursor.execute(
-        """
-        INSERT INTO timed_location_data ("time", "location", "usd_value") VALUES
-        (?, ?, ?);
-        """, (ts, 'H', '50.00'),
-    )
-    connection.commit()
+def _populate_db_with_location_data(db, ts: Timestamp):
+    db.add_multiple_location_data([
+        LocationData(
+            time=ts,
+            location='A',
+            usd_value='100.00',
+        ),
+        LocationData(
+            time=ts,
+            location='B',
+            usd_value='200.00',
+        ),
+        LocationData(
+            time=ts,
+            location='H',
+            usd_value='50.00',
+        ),
+    ])
 
 
 def _write_balances_csv_row(
@@ -315,12 +315,12 @@ def assert_csv_export_response(response, csv_dir, main_currency: Asset, is_downl
 
 
 def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
-    conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
-    ts = Timestamp(ts_now())
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    ts = ts_now()
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
-    _populate_db_with_balances(conn, ts)
-    _populate_db_with_location_data(conn, ts)
+    _populate_db_with_balances(db, ts)
+    _populate_db_with_location_data(db, ts)
 
     rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
     response = requests.get(
@@ -362,10 +362,10 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
 
 
 def test_download_snapshot(rotkehlchen_api_server):
-    conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
-    ts = Timestamp(ts_now())
-    _populate_db_with_balances(conn, ts)
-    _populate_db_with_location_data(conn, ts)
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    ts = ts_now()
+    _populate_db_with_balances(db, ts)
+    _populate_db_with_location_data(db, ts)
 
     rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
     response = requests.get(
@@ -386,10 +386,10 @@ def test_download_snapshot(rotkehlchen_api_server):
 
 
 def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
-    conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
-    ts = Timestamp(ts_now())
-    _populate_db_with_balances(conn, ts)
-    _populate_db_with_location_data(conn, ts)
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    ts = ts_now()
+    _populate_db_with_balances(db, ts)
+    _populate_db_with_location_data(db, ts)
     rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
 
     # check that importing a valid snapshot passes using PUT
@@ -509,10 +509,10 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
 
 
 def test_delete_snapshot(rotkehlchen_api_server):
-    conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
-    ts = Timestamp(ts_now())
-    _populate_db_with_balances(conn, ts)
-    _populate_db_with_location_data(conn, ts)
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    ts = ts_now()
+    _populate_db_with_balances(db, ts)
+    _populate_db_with_location_data(db, ts)
     rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
     response = requests.delete(
         api_url_for(
@@ -522,7 +522,7 @@ def test_delete_snapshot(rotkehlchen_api_server):
         json={'timestamp': ts},
     )
     assert_simple_ok_response(response)
-    cursor = conn.cursor()
+    cursor = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.cursor()
     assert len(cursor.execute('SELECT time FROM timed_balances WHERE time=?', (ts,)).fetchall()) == 0  # noqa: 501
     assert len(cursor.execute('SELECT time FROM timed_location_data WHERE time=?', (ts,)).fetchall()) == 0  # noqa: 501
 
@@ -541,11 +541,11 @@ def test_delete_snapshot(rotkehlchen_api_server):
     )
 
 
-def test_get_snapshot(rotkehlchen_api_server):
-    conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
-    ts = Timestamp(ts_now())
-    _populate_db_with_balances(conn, ts)
-    _populate_db_with_location_data(conn, ts)
+def test_get_snapshot_json(rotkehlchen_api_server):
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    ts = ts_now()
+    _populate_db_with_balances(db, ts)
+    _populate_db_with_location_data(db, ts)
 
     response = requests.get(
         api_url_for(
@@ -574,24 +574,31 @@ def test_get_snapshot(rotkehlchen_api_server):
 
 
 def test_edit_snapshot(rotkehlchen_api_server):
-    conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
-    ts = Timestamp(ts_now())
-    _populate_db_with_balances(conn, ts)
-    _populate_db_with_location_data(conn, ts)
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    ts = ts_now()
+    _populate_db_with_balances(db, ts)
+    _populate_db_with_location_data(db, ts)
 
     snapshot_payload = {
         'balances_snapshot': [
             {
-                'timestamp': str(ts),
+                'timestamp': ts,
                 'category': 'asset',
                 'asset_identifier': 'AVAX',
                 'amount': '1000.00',
                 'usd_value': '12929.00',
             },
+            {
+                'timestamp': ts,
+                'category': 'asset',
+                'asset_identifier': NFT_TOKEN_ID,
+                'amount': '1000.00',
+                'usd_value': '12929.00',
+            },
         ],
         'location_data_snapshot': [
-            {'timestamp': str(ts), 'location': 'external', 'usd_value': '12929.00'},
-            {'timestamp': str(ts), 'location': 'total', 'usd_value': '12929.00'},
+            {'timestamp': ts, 'location': 'external', 'usd_value': '12929.00'},
+            {'timestamp': ts, 'location': 'total', 'usd_value': '12929.00'},
         ],
     }
     response = requests.patch(
@@ -613,6 +620,6 @@ def test_edit_snapshot(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert len(result['balances_snapshot']) == 1
+    assert len(result['balances_snapshot']) == 2
     assert len(result['location_data_snapshot']) == 2
     assert result == snapshot_payload
