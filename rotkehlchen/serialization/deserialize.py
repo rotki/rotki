@@ -1,5 +1,16 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Tuple, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Literal,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from eth_utils import to_checksum_address
 
@@ -587,3 +598,12 @@ def deserialize_ethereum_transaction(
         raise DeserializationError(
             f'ethereum {"internal" if internal else ""}transaction from {source} missing expected key {str(e)}',  # noqa: E501
         ) from e
+
+
+def ensure_type(symbol: Any, expected_type: Type, location: str) -> Any:
+    if isinstance(symbol, expected_type) is True:
+        return symbol
+    raise DeserializationError(
+        f'Value "{symbol}" has type {type(symbol)} '
+        f'but expected {expected_type} at location "{location}"',
+    )
