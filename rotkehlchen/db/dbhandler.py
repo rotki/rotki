@@ -2794,14 +2794,13 @@ class DBHandler:
 
         Can optionally filter by balance type
         """
-
         if from_ts is None:
             from_ts = Timestamp(0)
         if to_ts is None:
             to_ts = ts_now()
         settings = self.get_settings()
 
-        if settings.eth_equivalent_eth2 and asset.identifier == 'ETH2':
+        if settings.treat_eth2_as_eth and asset.identifier == 'ETH2':
             return []
 
         querystr = (
@@ -2810,7 +2809,7 @@ class DBHandler:
         )
         bindings = [from_ts, to_ts, asset.identifier]
 
-        if settings.eth_equivalent_eth2 and asset.identifier == 'ETH':
+        if settings.treat_eth2_as_eth and asset.identifier == 'ETH':
             querystr = querystr.replace('currency=?', 'currency IN (?,?)')
             querystr = querystr.replace('amount', 'SUM(amount)')
             querystr = querystr.replace('usd_value', 'SUM(usd_value)')
@@ -2833,7 +2832,7 @@ class DBHandler:
             balances.append(
                 SingleDBAssetBalance(
                     time=entry_time,
-                    amount=result[1],
+                    amount=str(result[1]),
                     usd_value=result[2],
                     category=category,
                 ),

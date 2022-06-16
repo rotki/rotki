@@ -28,6 +28,7 @@ from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.utils import modify_eth2_eth_equivalence
 from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
@@ -51,7 +52,6 @@ from rotkehlchen.chain.substrate.utils import (
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
 from rotkehlchen.config import default_data_directory
-from rotkehlchen.constants.assets import A_ETH, A_ETH2, treat_eth_eth2_equal
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
@@ -234,8 +234,9 @@ class Rotkehlchen():
             # has unauthenticable/invalid premium credentials remaining in his DB
 
         settings = self.get_settings()
-        # Change or revert ETH2 -> ETH according to DBSettings
-        self._treat_eth_eth2_equal(settings.eth_equivalent_eth2)
+        # Change or revert ETH2 -> ETH according to DBSettings. We set this early to avoid
+        # eth2/eth getting into structures where the change can have side effects.
+        self._modify_eth2_eth_equivalence(are_equal=settings.treat_eth2_as_eth)
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='submit_usage_analytics',
@@ -377,18 +378,32 @@ class Rotkehlchen():
         self.user_is_logged_in = True
         log.debug('User unlocking complete')
 
-    def _treat_eth_eth2_equal(self, yes: bool) -> None:
-        """Change or revert ETH2 -> ETH according to DBSettings """
-        AssetResolver().eth_equivalent_eth2 = yes
-        treat_eth_eth2_equal(yes)
+    def _modify_eth2_eth_equivalence(self, are_equal: bool) -> None:
+        """Change or revert ETH2 -> ETH according to DBSettings"""
+        AssetResolver().treat_eth2_as_eth = are_equal
+        modify_eth2_eth_equivalence(are_equal=are_equal)
         if hasattr(self, 'chain_manager'):
+            # We also have to reset this balances stored in the chain_manager. The reason is that
+            # before whenever the balances were requeried we iterated over the needed dictionaries
+            # resetting the balances. Since we are changing the ETH2 identifier this created a
+            # a conflict where the assets were stored in the keys but were not retrievable.
+            # The best solution is to completly reset this structures and then requering the
+            # information again. The downside is that balances need to be requeried since they
+            # can't be trusted. Caches are also flushed.
             self.chain_manager.balances = BlockchainBalances(db=self.chain_manager.database)
             self.chain_manager.totals = BalanceSheet()
-            self.chain_manager.flush_cache('query_ethereum_balances', force_token_detection=False)
-            self.chain_manager.flush_cache('query_ethereum_balances', force_token_detection=True)
-            self.chain_manager.flush_cache('query_balances')
-            self.chain_manager.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM)
-            self.chain_manager.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
+            self.chain_manager.flush_cache(
+                name='query_balances',
+                blockchain=None,
+                force_token_detection=True,
+                ignore_cache=True,
+            )
+            self.chain_manager.flush_cache(
+                name='query_balances',
+                blockchain=None,
+                force_token_detection=False,
+                ignore_cache=False,
+            )
 
     def _logout(self) -> None:
         if not self.user_is_logged_in:
@@ -871,8 +886,8 @@ class Rotkehlchen():
         if settings.active_modules is not None:
             self.chain_manager.process_new_modules_list(settings.active_modules)
 
-        if settings.eth_equivalent_eth2 is not None:
-            self._treat_eth_eth2_equal(settings.eth_equivalent_eth2)
+        if settings.treat_eth2_as_eth is not None:
+            self._modify_eth2_eth_equivalence(are_equal=settings.treat_eth2_as_eth)
 
         self.data.db.set_settings(settings)
         return True, ''

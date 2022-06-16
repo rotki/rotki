@@ -50,7 +50,7 @@ DEFAULT_PNL_CSV_HAVE_SUMMARY = False
 DEFAULT_SSF_0GRAPH_MULTIPLIER = 0
 DEFAULT_LAST_DATA_MIGRATION = 0
 DEFAULT_COST_BASIS_METHOD = CostBasisMethod.FIFO
-DEFAULT_ETH_EQUIVALENT_ETH2 = False
+DEFAULT_TREAT_ETH2_AS_ETH = False
 
 JSON_KEYS = (
     'current_price_oracles',
@@ -69,7 +69,7 @@ BOOLEAN_KEYS = (
     'display_date_in_localtime',
     'pnl_csv_with_formulas',
     'pnl_csv_have_summary',
-    'eth_equivalent_eth2',
+    'treat_eth2_as_eth',
 )
 INTEGER_KEYS = (
     'version',
@@ -122,7 +122,7 @@ class DBSettings(NamedTuple):
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
     non_syncing_exchanges: List[ExchangeLocationID] = []
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
-    eth_equivalent_eth2: bool = DEFAULT_ETH_EQUIVALENT_ETH2
+    treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -152,7 +152,7 @@ class ModifiableDBSettings(NamedTuple):
     ssf_0graph_multiplier: Optional[int] = None
     non_syncing_exchanges: Optional[List[ExchangeLocationID]] = None
     cost_basis_method: Optional[CostBasisMethod] = None
-    eth_equivalent_eth2: Optional[bool] = None
+    treat_eth2_as_eth: Optional[bool] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}

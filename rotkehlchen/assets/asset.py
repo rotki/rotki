@@ -661,7 +661,7 @@ Z = TypeVar('Z', bound='Asset')
 
 
 @total_ordering
-@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=False)
+@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class Asset():
     identifier: str
     form_with_incomplete_data: InitVar[bool] = field(default=False)
@@ -719,10 +719,10 @@ class Asset():
         # TODO: figure out a way to move this out. Moved in here due to cyclic imports
         from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
 
-        # Change identifier to 'ETH' if it's 'ETH' and has eth_equivalent_eth2
+        # Change identifier to 'ETH' if it's 'ETH' and has treat_eth2_as_eth
         # setting to True
         identifier = self.identifier
-        if self.identifier == 'ETH2' and AssetResolver().eth_equivalent_eth2:
+        if self.identifier == 'ETH2' and AssetResolver().treat_eth2_as_eth:
             identifier = 'ETH'
 
         data = AssetResolver().get_asset_data(identifier, form_with_incomplete_data)
@@ -921,7 +921,7 @@ EthereumTokenDBTuple = Tuple[
 Y = TypeVar('Y', bound='HasEthereumToken')
 
 
-@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=False)
+@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class HasEthereumToken(Asset):
     """ Marker to denote assets having an Ethereum token address """
     ethereum_address: ChecksumEthAddress = field(init=False)
@@ -1034,7 +1034,7 @@ class HasEthereumToken(Asset):
 T = TypeVar('T', bound='EthereumToken')
 
 
-@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=False)
+@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class EthereumToken(HasEthereumToken):
 
     def __str__(self) -> str:

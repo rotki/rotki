@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, List, Optional
 
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
@@ -140,3 +140,17 @@ def symbol_to_ethereum_token(symbol: str) -> EthereumToken:
 
     # ignore type here since the identifier has to match an ethereum token at this point
     return EthereumToken.from_asset(maybe_asset)  # type: ignore
+
+
+def modify_eth2_eth_equivalence(are_equal: bool) -> None:
+    """
+    Here we use object.__setattr__ instead of setattr since the second is a wrapped for
+    __setattr__ and as per
+    https://github.com/python/cpython/blob/50e0866f8792941d2aea8937c63d1cb37bbc35cf/Lib/dataclasses.py#L84  # noqa: E501
+    since the Asset class is a dataclass with Frozen=True it raises an error at the moment of modifying the
+    attributes
+    """
+    identifier = A_ETH.identifier if are_equal else 'ETH2'
+    name = A_ETH.name if are_equal else 'Staked ETH in Phase 0'
+    object.__setattr__(A_ETH2, 'identifier', identifier)
+    object.__setattr__(A_ETH2, 'name', name)

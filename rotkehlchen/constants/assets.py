@@ -2802,10 +2802,3 @@ A_SAND = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_SAND)
-
-
-def treat_eth_eth2_equal(yes: bool) -> None:
-    identifier = A_ETH.identifier if yes else 'ETH2'
-    name = A_ETH.name if yes else 'Staked ETH in Phase 0'
-    setattr(A_ETH2, 'identifier', identifier)
-    setattr(A_ETH2, 'name', name)

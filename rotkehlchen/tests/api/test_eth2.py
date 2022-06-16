@@ -797,7 +797,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
 
     response = requests.put(
         api_url_for(rotkehlchen_api_server, "settingsresource"),
-        json={'settings': {'eth_equivalent_eth2': True}},
+        json={'settings': {'treat_eth2_as_eth': True}},
     )
     assert_proper_response_with_result(response)
 
@@ -806,8 +806,8 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ),
-        json={'async_query': False},
+        json={'async_query': False, 'ignore_cache': True},
     )
     combined_balances = assert_proper_response_with_result(response)['totals']['assets']
 
-    assert combined_balances['ETH'] == seperate_balances['ETH2']
+    assert FVal(combined_balances['ETH']['amount']) >= FVal(seperate_balances['ETH2']['amount'])

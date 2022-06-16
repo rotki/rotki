@@ -6,6 +6,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.assets.utils import modify_eth2_eth_equivalence
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import REQUEST_DELTA_TS
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     Eth2Deposit,
@@ -19,7 +20,6 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
-from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
@@ -199,6 +199,10 @@ EXPECTED_DEPOSITS = [
 ]
 
 
+@pytest.mark.parametrize('db_settings', [
+    {'treat_eth2_as_eth': True},
+    {'treat_eth2_as_eth': False},
+])
 def test_eth2_equivalent_eth_time_balances(database: DBHandler):
     """
     Test that the timed snapshot balances of ETH and ETH2 are
@@ -221,22 +225,22 @@ def test_eth2_equivalent_eth_time_balances(database: DBHandler):
         ),
     ]
     database.add_multiple_balances(balances)
-
+    eth2_equivalent_eth = database.get_settings().treat_eth2_as_eth
     # Test query_timed_balances for ETh
-    with patch(
-            'rotkehlchen.db.dbhandler.DBHandler.get_settings',
-            return_value=DBSettings(eth_equivalent_eth2=True),
-    ):
-        eth_balances = database.query_timed_balances(A_ETH)
-        assert len(eth_balances) == 1
+    eth_balances = database.query_timed_balances(A_ETH)
+    assert len(eth_balances) == 1
 
+    if eth2_equivalent_eth is True:
         eth2_balances = database.query_timed_balances(A_ETH2)
         assert len(eth2_balances) == 0
+        assert eth_balances[0].amount == '20'
 
-    # If we disable the ETH2 equivalent ETH, we should
-    # have 1 balance each for ETH and ETH2
-    eth2_balances = database.query_timed_balances(A_ETH2)
-    assert len(eth2_balances) == 1
+    modify_eth2_eth_equivalence(are_equal=not eth2_equivalent_eth)
+
+    if eth2_equivalent_eth is not True:
+        eth2_balances = database.query_timed_balances(A_ETH2)
+        assert len(eth2_balances) == 1
+        assert eth_balances[0].amount == '10'
 
     eth_balances = database.query_timed_balances(A_ETH)
     assert len(eth_balances) == 1

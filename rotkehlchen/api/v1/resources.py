@@ -2276,10 +2276,10 @@ class NFTSBalanceResource(BaseMethodView):
 
 
 class StakingResource(BaseMethodView):
-    get_schema = StakingQuerySchema
+    post_schema = StakingQuerySchema
 
     @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(post_schema, location='json_and_query')
     def post(
             self,
             async_query: bool,
