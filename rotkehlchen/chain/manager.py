@@ -1918,3 +1918,26 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 aggregated_balances[asset] += balance
 
         return dict(aggregated_balances)
+
+    def clean_balances_query(self) -> None:
+        self.balances = BlockchainBalances(db=self.database)
+        self.totals = BalanceSheet()
+        for cache_ignore in (True, False):
+            self.flush_cache(
+                name='query_balances',
+                blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN,
+                force_token_detection=True,
+                ignore_cache=cache_ignore,
+            )
+            self.flush_cache(
+                name='query_balances',
+                blockchain=SupportedBlockchain.ETHEREUM,
+                force_token_detection=False,
+                ignore_cache=cache_ignore,
+            )
+            self.flush_cache(
+                name='query_balances',
+                blockchain=None,
+                force_token_detection=True,
+                ignore_cache=cache_ignore,
+            )

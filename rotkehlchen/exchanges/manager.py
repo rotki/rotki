@@ -303,3 +303,14 @@ class ExchangeManager():
         if is_connected:
             return self.database.get_binance_pairs(name, location)
         return []
+
+    def clean_balances_cache(self) -> None:
+        for exchange in self.iterate_exchanges():
+            exchange.flush_cache(
+                name='query_balances',
+                ignore_cache=True,
+            )
+            exchange.flush_cache(
+                name='query_balances',
+                ignore_cache=False,
+            )

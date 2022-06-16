@@ -10,9 +10,11 @@ from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.base import ActionType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.utils import modify_eth2_eth_equivalence
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import ONE, YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_ETH2, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
@@ -705,6 +707,46 @@ def test_get_latest_asset_value_distribution(data_dir, username):
     assert FVal(assets[1].usd_value) > FVal(assets[2].usd_value)
     assert assets[3] == balances[2]
     assert FVal(assets[2].usd_value) > FVal(assets[3].usd_value)
+
+
+@pytest.mark.parametrize('db_settings', [
+    {'treat_eth2_as_eth': True},
+    {'treat_eth2_as_eth': False},
+])
+def test_get_latest_asset_value_distribution_eth_eth2_setting(database):
+    treat_eth2_as_eth = database.get_settings().treat_eth2_as_eth
+    balances = [
+        DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488326400),
+            asset=A_ETH,
+            amount='1',
+            usd_value='1222.66',
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488326400),
+            asset=A_ETH2,
+            amount='10',
+            usd_value='4517.4',
+        ),
+    ]
+    database.add_multiple_balances(balances)
+    database.conn.commit()
+    AssetResolver().treat_eth2_as_eth = treat_eth2_as_eth
+
+    modify_eth2_eth_equivalence(are_equal=treat_eth2_as_eth)
+    assets = database.get_latest_asset_value_distribution()
+    if treat_eth2_as_eth is True:
+        assert len(assets) == 1
+        assert assets[0].amount == str(FVal(11))
+        assert assets[0].usd_value == str(FVal(1222.66) + FVal(4517.4))
+    else:
+        assert len(assets) == 2
+        assert balances[0] == assets[1]
+        assert balances[1] == assets[0]
+
+    AssetResolver().treat_eth2_as_eth = False
+    modify_eth2_eth_equivalence(are_equal=False)
 
 
 def test_get_netvalue_data(data_dir, username):

@@ -45,7 +45,7 @@ from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.yearn.structures import YearnVault, YearnVaultEvent
 from rotkehlchen.chain.ethereum.trades import AMMSwap
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_ETH, A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
@@ -3033,16 +3033,42 @@ class DBHandler:
         )
         results = results.fetchall()
         asset_balances = []
+        eth_balances: Dict[Tuple[int, BalanceType], DBAssetBalance] = {}
+        treat_eth2_as_eth = self.get_settings().treat_eth2_as_eth
         for result in results:
-            asset_balances.append(
-                DBAssetBalance(
+            asset = Asset(result[1])
+            balance_type = BalanceType.deserialize_from_db(result[4])
+            if (
+                asset == A_ETH and
+                treat_eth2_as_eth is True and
+                (db_balance := eth_balances.get((result[0], balance_type))) is not None
+            ):
+                amount = str(FVal(db_balance.amount) + FVal(result[2]))
+                usd_value = str(FVal(db_balance.usd_value) + FVal(result[3]))
+                eth_balances[(result[0], balance_type)] = DBAssetBalance(
                     time=result[0],
                     asset=Asset(result[1]),
-                    amount=result[2],
-                    usd_value=result[3],
-                    category=BalanceType.deserialize_from_db(result[4]),
-                ),
+                    amount=amount,
+                    usd_value=usd_value,
+                    category=balance_type,
+                )
+                continue
+
+            db_balance = DBAssetBalance(
+                time=result[0],
+                asset=asset,
+                amount=result[2],
+                usd_value=result[3],
+                category=balance_type,
             )
+
+            if asset == A_ETH and treat_eth2_as_eth is True:
+                eth_balances[(result[0], balance_type)] = db_balance
+            else:
+                asset_balances.append(db_balance)
+
+        for eth_balance in eth_balances.values():
+            asset_balances.append(eth_balance)
 
         return asset_balances
 

@@ -23,7 +23,7 @@ from typing import (
 import gevent
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
+from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
@@ -44,7 +44,7 @@ from rotkehlchen.chain.ethereum.manager import (
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.chain.manager import BlockchainBalances, BlockchainBalancesUpdate, ChainManager
+from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateChain
 from rotkehlchen.chain.substrate.utils import (
@@ -383,27 +383,15 @@ class Rotkehlchen():
         AssetResolver().treat_eth2_as_eth = are_equal
         modify_eth2_eth_equivalence(are_equal=are_equal)
         if hasattr(self, 'chain_manager'):
-            # We also have to reset this balances stored in the chain_manager. The reason is that
+            # We also have to reset the balances stored in the chain_manager. The reason is that
             # before whenever the balances were requeried we iterated over the needed dictionaries
             # resetting the balances. Since we are changing the ETH2 identifier this created a
             # a conflict where the assets were stored in the keys but were not retrievable.
-            # The best solution is to completly reset this structures and then requering the
+            # The best solution is to completely reset these structures and then re querying the
             # information again. The downside is that balances need to be requeried since they
             # can't be trusted. Caches are also flushed.
-            self.chain_manager.balances = BlockchainBalances(db=self.chain_manager.database)
-            self.chain_manager.totals = BalanceSheet()
-            self.chain_manager.flush_cache(
-                name='query_balances',
-                blockchain=None,
-                force_token_detection=True,
-                ignore_cache=True,
-            )
-            self.chain_manager.flush_cache(
-                name='query_balances',
-                blockchain=None,
-                force_token_detection=False,
-                ignore_cache=False,
-            )
+            self.chain_manager.clean_balances_query()
+            self.exchange_manager.clean_balances_cache()
 
     def _logout(self) -> None:
         if not self.user_is_logged_in:
