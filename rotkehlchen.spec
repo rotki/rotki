@@ -66,7 +66,6 @@ def Entrypoint(dist, group, name, scripts=None, pathex=None, hiddenimports=None,
         datas=datas,
     )
 
-
 # We don't need Tk and friends
 sys.modules['FixTk'] = None
 

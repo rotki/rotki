@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from enum import auto
-from typing import TYPE_CHECKING, Dict, Iterator, List
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.types import Timestamp
@@ -73,4 +73,8 @@ class AccountingEventMixin(metaclass=ABCMeta):
 
         Returns the number of events consumed.
         """
+        ...
+
+    @abstractmethod
+    def serialize(self) -> Dict[str, Any]:
         ...

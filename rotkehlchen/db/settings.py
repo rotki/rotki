@@ -127,13 +127,12 @@ class DBSettings(NamedTuple):
         for key in settings_dict:
             value = settings_dict.get(key)
             if value is not None:
-                if key in JSON_KEYS:
-                    value = [x.serialize() for x in value]
-                elif key == 'cost_basis_method':
-                    value = value.serialize()  # pylint: disable=no-member
-                elif key == 'main_currency':
-                    value = value.serialize()
-            settings_dict[key] = value
+                serialized_value = serialize_db_setting(
+                    value=value,
+                    setting=key,
+                    is_modifiable=False,
+                )
+                settings_dict[key] = serialized_value
         return settings_dict
 
 
@@ -170,24 +169,12 @@ class ModifiableDBSettings(NamedTuple):
         for setting in ModifiableDBSettings._fields:
             value = getattr(self, setting)
             if value is not None:
-                # We need to save booleans as strings in the DB
-                if isinstance(value, bool):
-                    value = str(value)
-                # main currency needs to have only its identifier
-                elif setting == 'main_currency':
-                    value = value.identifier  # pylint: disable=no-member
-                # taxfree_after_period of -1 by the user means disable the setting
-                elif setting == 'taxfree_after_period' and value == -1:
-                    value = None
-                elif setting == 'active_modules':
-                    value = json.dumps(value)
-                elif setting == 'cost_basis_method':
-                    value = value.serialize()  # pylint: disable=no-member
-                elif setting in JSON_KEYS:
-                    value = json.dumps([x.serialize() for x in value])
-
-                settings_dict[setting] = value
-
+                serialized_value = serialize_db_setting(
+                    value=value,
+                    setting=setting,
+                    is_modifiable=True,
+                )
+                settings_dict[setting] = serialized_value
         return settings_dict
 
 
@@ -259,3 +246,28 @@ def db_settings_from_dict(
             )
 
     return DBSettings(**specified_args)
+
+
+def serialize_db_setting(value: Any, setting: Any, is_modifiable: bool) -> Any:
+    """Utility function to serialize a db setting.
+    `is_modifiable` represents `ModifiableDBSettings` specific flag.
+    """
+    # We need to save booleans as strings in the DB
+    if isinstance(value, bool) and is_modifiable is True:
+        value = str(value)
+    # taxfree_after_period of -1 by the user means disable the setting
+    elif setting == 'taxfree_after_period' and value == -1 and is_modifiable is True:
+        value = None
+    elif setting == 'active_modules' and is_modifiable is True:
+        value = json.dumps(value)
+    # main currency needs to have only its identifier
+    elif setting == 'main_currency':
+        value = value.serialize()  # pylint: disable=no-member
+    elif setting == 'cost_basis_method':
+        value = value.serialize()  # pylint: disable=no-member
+    elif setting in JSON_KEYS:
+        if is_modifiable is True:
+            value = json.dumps([x.serialize() for x in value])
+        else:
+            value = [x.serialize() for x in value]
+    return value

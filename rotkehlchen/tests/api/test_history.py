@@ -1,3 +1,4 @@
+import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
@@ -13,9 +14,14 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response_with_result,
     assert_simple_ok_response,
+    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
-from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
+from rotkehlchen.tests.utils.history import (
+    assert_pnl_debug_import,
+    prepare_rotki_for_history_processing_test,
+    prices,
+)
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import Location
 
@@ -302,13 +308,47 @@ def test_query_pnl_report_events_pagination_filtering(
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_history_debug_import(rotkehlchen_api_server):
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'historyprocessingdebugresource',
-            async_query=False,
-        ),
-        json={'filepath': str(Path(__file__).resolve().parent.parent / 'data' / 'pnl_debug.json')},
-    )
+    method = random.choice(['PATCH', 'PUT'])
+    async_query = random.choice([True, False])
+    filepath = Path(__file__).resolve().parent.parent / 'data' / 'pnl_debug.json'
+    if method == 'PUT':
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'historyprocessingdebugresource',
+            ),
+            json={
+                'filepath': str(filepath),
+                'async_query': async_query,
+            },
+        )
+        if async_query is True:
+            result = wait_for_async_task_with_result(
+                server=rotkehlchen_api_server,
+                task_id=response.json()['result']['task_id'],
+            )
+            assert result is True
 
-    assert_simple_ok_response(response)
+        else:
+            assert_simple_ok_response(response)
+    else:
+        response = requests.patch(
+            api_url_for(
+                rotkehlchen_api_server,
+                'historyprocessingdebugresource',
+            ),
+            files={'filepath': open(str(filepath))},
+            data={'async_query': async_query},
+        )
+        if async_query is True:
+            result = wait_for_async_task_with_result(
+                server=rotkehlchen_api_server,
+                task_id=response.json()['result']['task_id'],
+            )
+            assert result is True
+        else:
+            assert_simple_ok_response(response)
+    assert_pnl_debug_import(
+        filepath=filepath,
+        database=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+    )
