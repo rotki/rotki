@@ -2676,9 +2676,9 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     this is just to reminds us not to forget to add create table statements.
     """
     msg_aggregator = MessagesAggregator()
-    _use_prepared_db(user_data_dir, 'v31_rotkehlchen.db')
+    _use_prepared_db(user_data_dir, 'v32_rotkehlchen.db')
     last_db = _init_db_with_target_version(
-        target_version=31,
+        target_version=32,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
@@ -2689,7 +2689,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     last_db.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=32,
+        target_version=33,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
@@ -2701,12 +2701,12 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
     tables_after_creation = {x[0] for x in result}
 
-    removed_tables = {'gitcoin_grant_metadata', 'ledger_actions_gitcoin_data', 'gitcoin_tx_type'}
+    removed_tables = set()
     missing_tables = tables_before - tables_after_upgrade
     assert missing_tables == removed_tables
     assert tables_after_creation - tables_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'ens_mappings', 'ethereum_internal_transactions', 'ethtx_address_mappings', 'evm_tx_mappings', 'history_events_mappings'}  # noqa: E501
+    assert new_tables == {'address_book'}
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

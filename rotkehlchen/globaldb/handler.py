@@ -387,7 +387,7 @@ class GlobalDBHandler():
         """Fetch underlying tokens for a token address if they exist"""
         cursor = GlobalDBHandler().conn.cursor()
         query = cursor.execute(
-            'SELECT address, weight from underlying_tokens_list WHERE parent_token_entry=?;',
+            'SELECT address, weight FROM underlying_tokens_list WHERE parent_token_entry=?;',
             (address,),
         )
         results = query.fetchall()
@@ -574,6 +574,22 @@ class GlobalDBHandler():
                 )
 
         return tokens
+
+    @staticmethod
+    def get_tokens_mappings(addresses: List[ChecksumEthAddress]) -> Dict[ChecksumEthAddress, str]:  # noqa: E501
+        """Gets mappings: address -> name for tokens whose address is in the provided list"""
+        cursor = GlobalDBHandler().conn.cursor()
+        questionmarks = ','.join('?' * len(addresses))
+        query = cursor.execute(
+            f'SELECT address, name FROM ethereum_tokens INNER JOIN assets ON '
+            f'ethereum_tokens.address = assets.details_reference '
+            f'WHERE address IN ({questionmarks});',
+            addresses,
+        )
+        mappings = {}
+        for address, name in query:
+            mappings[address] = name
+        return mappings
 
     @staticmethod
     def add_ethereum_token_data(entry: EthereumToken) -> None:
@@ -1350,8 +1366,8 @@ class GlobalDBHandler():
         cursor.execute(detach_database)
         return True, ''
 
+    @staticmethod
     def get_user_added_assets(
-        self,
         user_db: 'DBHandler',
         only_owned: bool = False,
     ) -> Set[str]:
@@ -1361,7 +1377,7 @@ class GlobalDBHandler():
         May raise:
         - sqlite3.Error if the user_db couldn't be correctly attached
         """
-        connection = self.conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         root_dir = Path(__file__).resolve().parent.parent
         builtin_database = root_dir / 'data' / 'global.db'

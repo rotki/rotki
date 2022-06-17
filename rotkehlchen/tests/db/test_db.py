@@ -126,6 +126,7 @@ TABLES_AT_INIT = [
     'history_events',
     'history_events_mappings',
     'ens_mappings',
+    'address_book',
 ]
 
 

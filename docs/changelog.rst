@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`3095` The application will now notify the user if there is a status change for the premium subscription.
 * :feature:`1028` Native support for Bitcoin Cash blockchain.
+* :bug:`-` Now no missing acquisitions should appear for fiat assets during accounting.
 * :feature:`4268` Add a premium setting to follow the system's theme.
 * :feature:`4443` Users will now be able to get the latest icon of the assets.
 * :feature:`44` Add option to change cost basis method (FIFO and LIFO order).

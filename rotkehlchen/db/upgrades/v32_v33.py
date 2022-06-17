@@ -61,6 +61,17 @@ def _refactor_xpubs_and_xpub_mappings(cursor: 'Cursor') -> None:
     cursor.execute('ALTER TABLE xpub_mappings_copy RENAME TO xpub_mappings;')
 
 
+def _create_new_tables(cursor: 'Cursor') -> None:
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS address_book (
+        address TEXT NOT NULL,
+        blockchain TEXT NOT NULL DEFAULT "ETH",
+        name TEXT NOT NULL,
+        PRIMARY KEY(address, blockchain)
+    );
+""")
+
+
 def upgrade_v32_to_v33(db: 'DBHandler') -> None:
     """Upgrades the DB from v32 to v33
     - Change the schema of `blockchain` column in `xpub_mappings` table to be required.
@@ -68,4 +79,5 @@ def upgrade_v32_to_v33(db: 'DBHandler') -> None:
     """
     cursor = db.conn.cursor()
     _refactor_xpubs_and_xpub_mappings(cursor)
+    _create_new_tables(cursor)
     db.conn.commit()

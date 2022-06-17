@@ -507,3 +507,23 @@ class EnsMapping(NamedTuple):
 class CostBasisMethod(SerializableEnumMixin):
     FIFO = 1
     LIFO = 2
+
+
+class AddressbookEntry(NamedTuple):
+    address: ChecksumEthAddress
+    name: str
+
+    def serialize(self) -> Dict[str, Any]:
+        return {'address': self.address, 'name': self.name}
+
+    @classmethod
+    def deserialize(cls: Type['AddressbookEntry'], data: Dict[str, Any]) -> 'AddressbookEntry':
+        """May raise:
+        -KeyError if required keys are missing
+        """
+        return cls(address=data['address'], name=data['name'])
+
+
+class AddressbookType(SerializableEnumMixin):
+    GLOBAL = 1
+    PRIVATE = 2
