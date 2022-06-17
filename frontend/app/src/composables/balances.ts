@@ -10,6 +10,7 @@ import { useAssetInfoRetrieval } from '@/store/assets';
 import {
   AddAccountsPayload,
   AllBalancePayload,
+  AssetBreakdown,
   AssetPrices,
   BalanceByLocation,
   BasicBlockchainAccountPayload,
@@ -80,6 +81,11 @@ export const setupGeneralBalances = () => {
       return store.getters['balances/loopringBalances'](account);
     });
 
+  const assetBreakdown = (asset: string) =>
+    computed<AssetBreakdown[]>(() => {
+      return store.getters['balances/assetBreakdown'](asset);
+    });
+
   const fetchBalances: (
     payload: Partial<AllBalancePayload>
   ) => Promise<void> = async payload => {
@@ -134,6 +140,7 @@ export const setupGeneralBalances = () => {
     accountAssets,
     accountLiabilities,
     loopringBalances,
+    assetBreakdown,
     fetchBalances,
     isEthereumToken,
     fetchTokenDetails,
@@ -281,6 +288,11 @@ export const setupBlockchainAccounts = () => {
       getters['balances/account'](address)
     );
 
+  const eth2Account = (address: string) =>
+    computed<GeneralAccount | undefined>(() =>
+      getters['balances/eth2Account'](address)
+    );
+
   const accounts = computed<GeneralAccount[]>(
     () => getters['balances/accounts']
   );
@@ -321,6 +333,7 @@ export const setupBlockchainAccounts = () => {
 
   return {
     account,
+    eth2Account,
     accounts,
     addAccount,
     editAccount,
@@ -366,7 +379,7 @@ export const usePrices = () => {
   };
 };
 
-export const useExchanges = () => {
+export const setupExchanges = () => {
   const store = useStore();
 
   const exchanges = computed<ExchangeInfo[]>(() => {
@@ -388,10 +401,15 @@ export const useExchanges = () => {
     return await store.dispatch('balances/fetchExchangeBalances', payload);
   };
 
+  const fetchConnectedExchangeBalances = async () => {
+    return await store.dispatch('balances/fetchConnectedExchangeBalances');
+  };
+
   return {
     exchanges,
     exchangeBalances,
     connectedExchanges,
-    fetchExchangeBalances
+    fetchExchangeBalances,
+    fetchConnectedExchangeBalances
   };
 };

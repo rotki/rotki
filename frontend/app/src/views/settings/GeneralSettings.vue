@@ -1,5 +1,6 @@
 ﻿<template>
   <div class="general-settings">
+    <date-format-help v-model="formatHelp" />
     <v-row no-gutters>
       <v-col>
         <card>
@@ -142,7 +143,15 @@
             @change="onBtcDerivationGapLimitChanged($event)"
           />
 
-          <date-format-help v-model="formatHelp" />
+          <v-switch
+            v-model="treatEth2asEth"
+            class="general-settings__fields__treat-eth2-as-eth mb-4 mt-0"
+            color="primary"
+            :label="$t('general_settings.labels.treat_eth2_as_eth')"
+            :success-messages="settingsMessages[TREAT_ETH2_AS_ETH].success"
+            :error-messages="settingsMessages[TREAT_ETH2_AS_ETH].error"
+            @change="onTreatEth2AsEthChanged($event)"
+          />
         </card>
         <card class="mt-8">
           <template #title>
@@ -308,6 +317,7 @@
 </template>
 
 <script lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -322,6 +332,7 @@ import {
   makeMessage,
   settingsMessages
 } from '@/components/settings/utils';
+import { setupGeneralBalances } from '@/composables/balances';
 import { Constraints } from '@/data/constraints';
 import { currencies } from '@/data/currencies';
 import { displayDateFormatter } from '@/data/date_formatter';
@@ -359,6 +370,7 @@ const SETTING_SELECTED_CURRENCY = 'selectedCurrency';
 const SETTING_BTC_DERIVATION_GAP_LIMIT = 'btcDerivationGapLimit';
 const SETTING_DISPLAY_DATE_IN_LOCALTIME = 'displayDateInLocaltime';
 const SETTING_VERSION_UPDATE_CHECK_FREQUENCY = 'versionUpdateCheckFrequency';
+const SETTING_TREAT_ETH2_AS_ETH = 'treatEth2AsEth';
 
 const SETTINGS = [
   SETTING_FLOATING_PRECISION,
@@ -375,7 +387,8 @@ const SETTINGS = [
   SETTING_SELECTED_CURRENCY,
   SETTING_BTC_DERIVATION_GAP_LIMIT,
   SETTING_DISPLAY_DATE_IN_LOCALTIME,
-  SETTING_VERSION_UPDATE_CHECK_FREQUENCY
+  SETTING_VERSION_UPDATE_CHECK_FREQUENCY,
+  SETTING_TREAT_ETH2_AS_ETH
 ] as const;
 
 const MAX_BALANCE_SAVE_FREQUENCY = Constraints.MAX_HOURS_DELAY;
@@ -419,6 +432,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   displayDateInLocaltime: boolean = true;
   versionUpdateCheckFrequency: string = '';
   versionUpdateCheckEnabled: boolean = false;
+  treatEth2asEth: boolean = false;
 
   formatHelp: boolean = false;
   readonly now = new Date();
@@ -439,6 +453,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   readonly DISPLAY_DATE_IN_LOCALTIME = SETTING_DISPLAY_DATE_IN_LOCALTIME;
   readonly VERSION_UPDATE_CHECK_FREQUENCY =
     SETTING_VERSION_UPDATE_CHECK_FREQUENCY;
+  readonly TREAT_ETH2_AS_ETH = SETTING_TREAT_ETH2_AS_ETH;
 
   historicDateMenu: boolean = false;
   date: string = '';
@@ -482,6 +497,32 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
       SETTING_BTC_DERIVATION_GAP_LIMIT,
       message
     );
+  }
+
+  async onTreatEth2AsEthChanged(enabled: boolean) {
+    const message = makeMessage(
+      `${this.$t('general_settings.validation.treat_eth2_as_eth.error')}`
+    );
+
+    const success = await this.update(
+      { treatEth2AsEth: enabled },
+      SETTING_TREAT_ETH2_AS_ETH,
+      message
+    );
+
+    const { fetchBlockchainBalances, refreshPrices } = setupGeneralBalances();
+
+    if (success) {
+      await fetchBlockchainBalances({
+        ignoreCache: true
+      });
+      if (!enabled) {
+        await refreshPrices({
+          ignoreCache: true,
+          selectedAsset: 'ETH2'
+        });
+      }
+    }
   }
 
   async onVersionUpdateCheckFrequencyChange(frequency: string) {
@@ -969,6 +1010,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();
     this.dateDisplayFormat = settings.dateDisplayFormat;
     this.btcDerivationGapLimit = settings.btcDerivationGapLimit.toString();
+    this.treatEth2asEth = settings.treatEth2AsEth;
     const state = this.$store.state;
     this.thousandSeparator = state.settings![THOUSAND_SEPARATOR];
     this.decimalSeparator = state.settings![DECIMAL_SEPARATOR];

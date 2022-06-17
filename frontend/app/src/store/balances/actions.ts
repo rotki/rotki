@@ -1,4 +1,5 @@
 import { BigNumber } from '@rotki/common';
+import { Balance } from '@rotki/common/index';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Message, Severity } from '@rotki/common/lib/messages';
 import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
@@ -68,7 +69,7 @@ import { BlockchainMetadata, ExchangeMeta, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
 import { assert } from '@/utils/assertions';
-import { bigNumberify } from '@/utils/bignumbers';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { chunkArray } from '@/utils/data';
 import { convertFromTimestamp } from '@/utils/date';
 import { logger } from '@/utils/logging';
@@ -389,9 +390,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       if (ethBalances) {
         addresses.push(...Object.keys(ethBalances));
       }
-      if (eth2Balances) {
-        addresses.push(...Object.keys(eth2Balances));
-      }
 
       const { fetchEnsNames } = useEnsNamesStore();
       fetchEnsNames(addresses, forceUpdate);
@@ -425,8 +423,17 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('updateEth2', eth2Balances ?? {});
     }
 
-    commit('updateTotals', totals.assets);
-    commit('updateLiabilities', totals.liabilities);
+    if (chain === Blockchain.ETH2) {
+      const ETH2: Balance = {
+        amount: Zero,
+        usdValue: Zero
+      };
+      commit('updateTotals', { ETH2, ...totals.assets });
+      commit('updateLiabilities', { ETH2, ...totals.assets });
+    } else {
+      commit('updateTotals', totals.assets);
+      commit('updateLiabilities', totals.liabilities);
+    }
     const blockchainToRefresh = chain ? [chain] : null;
     dispatch('accounts', blockchainToRefresh).then();
   },

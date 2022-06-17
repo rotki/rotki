@@ -22,8 +22,8 @@
       <template #item.label="{ item }">
         <div class="py-4">
           <labeled-address-display
-            v-if="item.address"
-            :account="account(item.address).value"
+            v-if="item.account"
+            :account="item.account"
           />
           <tag-display :tags="item.tags" />
         </div>
@@ -48,6 +48,8 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
+import { GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { computed, defineComponent, ref, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
@@ -55,14 +57,22 @@ import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vu
 import DataTable from '@/components/helper/DataTable.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { setupBlockchainAccounts } from '@/composables/balances';
+import {
+  setupBlockchainAccounts,
+  setupGeneralBalances
+} from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { AssetBreakdown } from '@/store/balances/types';
 import { useMainStore } from '@/store/store';
-import { useStore } from '@/store/utils';
+
+type AssetLocations = (AssetBreakdown & {
+  readonly account: GeneralAccount | undefined;
+} & {
+  readonly label: string;
+})[];
 
 export default defineComponent({
   name: 'AssetLocations',
@@ -79,49 +89,10 @@ export default defineComponent({
     const { identifier } = toRefs(props);
 
     const { currencySymbol } = setupGeneralSettings();
-    const { account } = setupBlockchainAccounts();
+    const { account, eth2Account } = setupBlockchainAccounts();
     const { detailsLoading } = toRefs(useMainStore());
     const { assetPriceInfo } = useAssetInfoRetrieval();
-
-    const store = useStore();
-
-    const assetBreakdown = (asset: string) =>
-      computed<AssetBreakdown[]>(() => {
-        return store.getters['balances/assetBreakdown'](asset);
-      });
-
-    const tableHeaders: DataTableHeader[] = [
-      {
-        text: i18n.t('asset_locations.header.location').toString(),
-        value: 'location',
-        align: 'center',
-        width: '120px'
-      },
-      {
-        text: i18n.t('asset_locations.header.account').toString(),
-        value: 'label'
-      },
-      {
-        text: i18n.t('asset_locations.header.amount').toString(),
-        value: 'balance.amount',
-        align: 'end'
-      },
-      {
-        text: i18n
-          .t('asset_locations.header.value', {
-            symbol: get(currencySymbol) ?? CURRENCY_USD
-          })
-          .toString(),
-        value: 'balance.usdValue',
-        align: 'end'
-      },
-      {
-        text: i18n.t('asset_locations.header.percentage').toString(),
-        value: 'percentage',
-        sortable: false,
-        align: 'end'
-      }
-    ];
+    const { assetBreakdown } = setupGeneralBalances();
 
     const onlyTags = ref<string[]>([]);
 
@@ -129,18 +100,27 @@ export default defineComponent({
       return get(assetPriceInfo(get(identifier))).usdValue;
     });
 
-    const assetLocations = computed<
-      (AssetBreakdown & { readonly label: string })[]
-    >(() => {
-      return get(assetBreakdown(get(identifier))).map(value => ({
-        label: get(account(value.address))?.label ?? '',
-        ...value
-      }));
+    const getAccount = (item: AssetBreakdown) =>
+      computed<GeneralAccount | undefined>(() => {
+        if (item.location === Blockchain.ETH2) {
+          return get(eth2Account(item.address));
+        }
+        return get(account(item.address));
+      });
+
+    const assetLocations = computed<AssetLocations>(() => {
+      const breakdowns = get(assetBreakdown(get(identifier)));
+      return breakdowns.map((item: AssetBreakdown) => {
+        const account = get(getAccount(item));
+        return {
+          ...item,
+          account,
+          label: account?.label ?? ''
+        };
+      });
     });
 
-    const visibleAssetLocations = computed<
-      (AssetBreakdown & { readonly label: string })[]
-    >(() => {
+    const visibleAssetLocations = computed<AssetLocations>(() => {
       if (get(onlyTags).length === 0) {
         return get(assetLocations);
       }
@@ -160,13 +140,68 @@ export default defineComponent({
       return percentage.toFixed(2);
     };
 
+    const tableHeaders = computed<DataTableHeader[]>(() => {
+      const visibleItemsLength = get(visibleAssetLocations).length;
+      const eth2Length = get(visibleAssetLocations).filter(
+        account => account?.location === Blockchain.ETH2
+      ).length;
+
+      const labelAccount = i18n.t('asset_locations.header.account').toString();
+      const labelValidator = i18n
+        .t('asset_locations.header.validator')
+        .toString();
+
+      let label = '';
+      if (eth2Length === 0) {
+        label = labelAccount;
+      } else if (eth2Length === visibleItemsLength) {
+        label = labelValidator;
+      } else {
+        label = `${labelAccount} / ${labelValidator}`;
+      }
+
+      return [
+        {
+          text: i18n.t('asset_locations.header.location').toString(),
+          value: 'location',
+          align: 'center',
+          width: '120px'
+        },
+        {
+          text: label,
+          value: 'label'
+        },
+        {
+          text: i18n.t('asset_locations.header.amount').toString(),
+          value: 'balance.amount',
+          align: 'end'
+        },
+        {
+          text: i18n
+            .t('asset_locations.header.value', {
+              symbol: get(currencySymbol) ?? CURRENCY_USD
+            })
+            .toString(),
+          value: 'balance.usdValue',
+          align: 'end'
+        },
+        {
+          text: i18n.t('asset_locations.header.percentage').toString(),
+          value: 'percentage',
+          sortable: false,
+          align: 'end'
+        }
+      ];
+    });
+
     return {
       onlyTags,
       tableHeaders,
       visibleAssetLocations,
       detailsLoading,
       account,
-      getPercentage
+      getPercentage,
+      getAccount
     };
   }
 });

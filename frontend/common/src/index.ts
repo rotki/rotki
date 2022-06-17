@@ -9,7 +9,7 @@ export type AddressIndexed<T> = {
   readonly [address: string]: T
 }
 
-export const NumericString = z.string().transform(arg => new BigNumber(arg));
+export const NumericString = z.number().or(z.string()).transform(arg => new BigNumber(arg));
 
 export const Balance = z.object({
   amount: NumericString,

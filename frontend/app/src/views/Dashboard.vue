@@ -158,7 +158,7 @@ import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import SummaryCard from '@/components/dashboard/SummaryCard.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { setupGeneralBalances, useExchanges } from '@/composables/balances';
+import { setupGeneralBalances, setupExchanges } from '@/composables/balances';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
@@ -186,7 +186,7 @@ export default defineComponent({
       fetchManualBalances
     } = setupGeneralBalances();
 
-    const { exchanges, fetchExchangeBalances } = useExchanges();
+    const { exchanges, fetchExchangeBalances } = setupExchanges();
 
     const isBlockchainLoading = isTaskRunning(
       TaskType.QUERY_BLOCKCHAIN_BALANCES

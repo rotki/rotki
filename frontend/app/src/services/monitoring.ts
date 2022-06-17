@@ -1,3 +1,4 @@
+import { setupExchanges, setupGeneralBalances } from '@/composables/balances';
 import { websocket } from '@/services/websocket/websocket-service';
 import { useNotifications } from '@/store/notifications';
 import store from '@/store/store';
@@ -25,12 +26,19 @@ class Monitoring {
   }
 
   private static async fetchBalances() {
-    const dispatch = store.dispatch;
-    await dispatch('balances/fetchManualBalances');
-    await dispatch('balances/fetchBlockchainBalances', { ignoreCache: true });
-    await dispatch('balances/fetchLoopringBalances', true);
-    await dispatch('balances/fetchConnectedExchangeBalances');
-    await dispatch('balances/refreshPrices', { ignoreCache: true });
+    const {
+      fetchManualBalances,
+      fetchBlockchainBalances,
+      fetchLoopringBalances,
+      refreshPrices
+    } = setupGeneralBalances();
+    const { fetchConnectedExchangeBalances } = setupExchanges();
+
+    await fetchManualBalances();
+    await fetchBlockchainBalances({ ignoreCache: true });
+    await fetchLoopringBalances(true);
+    await fetchConnectedExchangeBalances();
+    await refreshPrices({ ignoreCache: true });
   }
 
   /**
