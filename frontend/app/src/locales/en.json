@@ -744,6 +744,17 @@
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
+    },
+    "premium": {
+      "active": {
+        "title": "Premium features activated",
+        "message": "Your premium subscription is detected."
+      },
+      "inactive": {
+        "title": "Premium features deactivated",
+        "expired_message": "Your premium subscription is expired. Go to rotki website to renew your subscription.",
+        "network_problem_message": "We couldn't verify your premium subscription due to network problems."
+      }
     }
   },
   "pagination": {

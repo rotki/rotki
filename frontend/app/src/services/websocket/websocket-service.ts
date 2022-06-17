@@ -64,7 +64,7 @@ class WebsocketService {
           await handleEthereumTransactionStatus(message);
         } else if (message.type === SocketMessageType.PREMIUM_STATUS_UPDATE) {
           const data = PremiumStatusUpdateData.parse(message.data);
-          await handlePremiumStatusUpdate(data.is_premium_active);
+          await handlePremiumStatusUpdate(data);
         } else {
           logger.warn(`Unsupported socket message received: ${event.data}`);
         }
