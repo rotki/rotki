@@ -53,7 +53,7 @@ RUN if [ "$TARGETARCH" != "amd64" ]; then \
 
 RUN pip install -e . && \
     python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
-    pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
+    pyinstaller --noconfirm --clean --exclude-module debugimporter --distpath /tmp/dist rotkehlchen.spec
 
 FROM nginx:1.21 as runtime
 

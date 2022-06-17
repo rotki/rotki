@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class HistoryJSONImporter:
+class DebugHistoryImporter:
     def __init__(self, db: DBHandler) -> None:
         self.db = db
 
@@ -33,13 +33,6 @@ class HistoryJSONImporter:
             error_msg = f'Failed to import history events due to: {str(e)}'
             return False, {'data': {}, 'msg': error_msg}
 
-        has_required_keys = (
-            'events' in debug_data and
-            'settings' in debug_data and
-            'ignored_events_ids' in debug_data
-        )
-        if has_required_keys is False:
-            return False, {'data': {}, 'msg': 'import history data does not contain required keys'}
         has_required_types = (
             isinstance(debug_data['events'], list) and
             isinstance(debug_data['settings'], dict) and
@@ -51,14 +44,18 @@ class HistoryJSONImporter:
                 'msg': 'import history data contains some invalid data types',
             }
 
-        # add history events.
-        log.debug('Trying to add history events')
+        log.debug('Clearing DB of all history events')
+        cursor = self.db.conn.cursor()
+        cursor.execute('DELETE FROM history_events')
+        self.db.update_last_write()
+
         history_db = DBHistoryEvents(self.db)
+        log.debug('Trying to add history events')
         try:
             for event in debug_data['events']:
                 event = HistoryBaseEntrySchema(identifier_required=False).load(event)
                 history_db.add_history_event(event['event'])
-        except ValidationError as e:
+        except (ValidationError, KeyError) as e:
             error_msg = f'Error while adding history events due to: {str(e)}'
             log.error(error_msg)
             return False, {'data': {}, 'msg': error_msg}
@@ -69,38 +66,37 @@ class HistoryJSONImporter:
             return False, {'data': {}, 'msg': error_msg}
         log.debug('Successfully added history events')
 
-        # add settings
         log.debug('Trying to add settings')
         try:
             settings = ModifiableSettingsSchema().load(debug_data['settings'], unknown=EXCLUDE)
-        except ValidationError as e:
+        except (ValidationError, KeyError) as e:
             error_msg = f'Error while adding settings due to: {str(e)}'
             log.error(error_msg)
             return False, {'data': {}, 'msg': error_msg}
         self.db.set_settings(settings)
         log.debug('Successfully added settings')
 
-        # add ignored events ids
         log.debug('Trying to add ignored actions identifiers')
-        for action_type, action_ids in debug_data['ignored_events_ids'].items():
-            try:
-                ignored_event_id = IgnoredActionsModifySchema().load(
-                    {'action_type': action_type, 'action_ids': action_ids},
-                )
-                self.db.add_to_ignored_action_ids(
-                    action_type=ignored_event_id['action_type'],
-                    identifiers=ignored_event_id['action_ids'],
-                )
-            except ValidationError as e:
-                error_msg = f'Error while adding ignored action identifiers due to: {str(e)}'
-                log.error(error_msg)
-                return False, {'data': {}, 'msg': error_msg}
-            except InputError as e:
-                error_msg = f'Error while adding ignored action identifiers due to: {str(e)}'
-                log.error(error_msg)
-                return False, {'data': {}, 'msg': error_msg}
-
+        try:
+            for action_type, action_ids in debug_data['ignored_events_ids'].items():
+                try:
+                    ignored_event_id = IgnoredActionsModifySchema().load(
+                        {'action_type': action_type, 'action_ids': action_ids},
+                    )
+                    self.db.add_to_ignored_action_ids(
+                        action_type=ignored_event_id['action_type'],
+                        identifiers=ignored_event_id['action_ids'],
+                    )
+                except (ValidationError, InputError) as e:
+                    error_msg = f'Error while adding ignored action identifiers due to: {str(e)}'
+                    log.error(error_msg)
+                    return False, {'data': {}, 'msg': error_msg}
+        except KeyError as e:
+            error_msg = f'Error while adding history events due to: {str(e)}'
+            log.error(error_msg)
+            return False, {'data': {}, 'msg': error_msg}
         log.debug('Successfully added ignored actions identifiers')
+
         first_event = HistoryBaseEntrySchema(identifier_required=False).load(
             data=debug_data['events'][0],
         )['event']

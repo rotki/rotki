@@ -102,9 +102,18 @@ class AssetMovement(AccountingEventMixin):
         return hash_id(string)
 
     def serialize(self) -> Dict[str, Any]:
-        result = self.__dict__
-        result['identifier'] = self.identifier
-        return result
+        return {
+            'identifier': self.identifier,
+            'location': self.location.serialize(),
+            'category': self.category.serialize(),
+            'address': self.address,
+            'transaction_id': self.transaction_id,
+            'asset': self.asset.serialize(),
+            'amount': str(self.amount),
+            'fee_asset': self.fee_asset.serialize(),
+            'fee': str(self.fee),
+            'link': self.link,
+        }
 
     @classmethod
     def deserialize_from_db(cls, entry: AssetMovementDBTuple) -> 'AssetMovement':
@@ -553,7 +562,7 @@ class Loan(AccountingEventMixin):
             'location': self.location.serialize(),
             'open_time': self.open_time,
             'close_time': self.close_time,
-            'currency': self.currency.serialize(),
+            'currency': self.currency.identifier,
             'fee': str(self.fee),
             'earned': str(self.earned),
             'amount_lent': str(self.amount_lent),

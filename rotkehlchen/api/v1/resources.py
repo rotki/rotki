@@ -1,3 +1,4 @@
+import sys
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
@@ -1115,7 +1116,7 @@ class HistoryProcessingDebugResource(BaseMethodView):
     upload_schema = HistoryProcessingDebugImportSchema()
 
     @require_loggedin_user()
-    @use_kwargs(post_schema, location='json')
+    @use_kwargs(post_schema, location='json_and_query')
     def post(
             self,
             from_timestamp: Timestamp,
@@ -1128,21 +1129,22 @@ class HistoryProcessingDebugResource(BaseMethodView):
             async_query=async_query,
         )
 
-    @require_loggedin_user()
-    @use_kwargs(upload_schema, location='json')
-    def put(self, async_query: bool, filepath: Path) -> Response:
-        return self.rest_api.import_history_debug(
-            async_query=async_query,
-            filepath=filepath,
-        )
+    if getattr(sys, 'frozen', False) is False:
+        @require_loggedin_user()
+        @use_kwargs(upload_schema, location='json')
+        def put(self, async_query: bool, filepath: Path) -> Response:
+            return self.rest_api.import_history_debug(
+                async_query=async_query,
+                filepath=filepath,
+            )
 
-    @require_loggedin_user()
-    @use_kwargs(upload_schema, location='form_and_file')
-    def patch(self, async_query: bool, filepath: FileStorage) -> Response:
-        return self.rest_api.import_history_debug(
-            async_query=async_query,
-            filepath=filepath,
-        )
+        @require_loggedin_user()
+        @use_kwargs(upload_schema, location='form_and_file')
+        def patch(self, async_query: bool, filepath: FileStorage) -> Response:
+            return self.rest_api.import_history_debug(
+                async_query=async_query,
+                filepath=filepath,
+            )
 
 
 class HistoryActionableItemsResource(BaseMethodView):

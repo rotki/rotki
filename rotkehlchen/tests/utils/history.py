@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, cast
 from unittest.mock import _patch, patch
 
@@ -13,6 +14,9 @@ from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -1236,3 +1240,33 @@ def maybe_mock_historical_price_queries(
         return price
 
     historian.query_historical_price = mock_historical_price_query
+
+
+def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
+    """This function asserts that the debug PnL data in the DB matches
+    the one in the file uploaded.
+    """
+    with open(filepath) as f:
+        pnl_debug_json = json.load(f)
+
+    events_from_file = pnl_debug_json['events']
+    settings_from_file = pnl_debug_json['settings']
+    settings_from_file.pop('last_write_ts')
+    ignored_actions_ids_from_file = pnl_debug_json['ignored_events_ids']
+
+    settings_from_db = database.get_settings().serialize()
+    settings_from_db.pop('last_write_ts')
+    ignored_actions_ids_from_db = database.get_ignored_action_ids(None)
+    serialized_ignored_actions_from_db = {
+        k.serialize(): v for k, v in ignored_actions_ids_from_db.items()
+    }
+    dbevents = DBHistoryEvents(database)
+    events_from_db = dbevents.get_history_events(
+        filter_query=HistoryEventFilterQuery.make(),
+        has_premium=False,
+    )
+    serialized_events_from_db = [entry.serialize() for entry in events_from_db]
+
+    assert settings_from_file == settings_from_db
+    assert serialized_ignored_actions_from_db == ignored_actions_ids_from_file
+    assert events_from_file == serialized_events_from_db

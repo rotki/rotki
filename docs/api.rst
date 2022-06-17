@@ -4458,7 +4458,6 @@ Export PnL report debug data
 
    Doing a POST on the PnL report debug endpoint will trigger a query and export of the history of all actions (trades, deposits, withdrawals, loans, eth transactions) within a specific time range alongside the user settings and ignored events identifiers.
 
-
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
@@ -4475,11 +4474,7 @@ Export PnL report debug data
 
    :reqjson int from_timestamp: The timestamp after which to return action history. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return action history. If not given all balances until now are returned.
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :param int from_timestamp: The timestamp after which to return action history. If not given zero is considered as the start.
-   :param int to_timestamp: The timestamp until which to return action history. If not given all balances until now are returned.
-   :param bool async_query: Boolean denoting whether this is an asynchronous query or not.
-
+   :reqjson bool async_query: Optional boolean denoting whether this is an asynchronous query or not. Defaults to false.
 
    **Example Response**:
 
@@ -4593,11 +4588,11 @@ Export PnL report debug data
           "message": ""
       }
 
-   :resjson object result: This returns the requested Pnl debug data. ``"events"`` represent the history events created within specified timestamps. ``"settings"`` represent the user settings as at when the pnl debug was exported. ``"ignored_events_ids"`` represent action identifiers ignored by the user.
+   :resjson object result: This returns the requested Pnl debug data. ``"events"`` represent the history events created within specified timestamps. ``"settings"`` represent the user settings at the point when the pnl debug was exported. ``"ignored_events_ids"`` represent action identifiers ignored by the user.
 
    :statuscode 200: Debugging history data returned successfully
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 409: No user is currently logged in. Error occured when creating history events for pnl debug data.
    :statuscode 500: Internal rotki error.
 
 
@@ -4611,6 +4606,7 @@ Import PnL report debug data
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a PUT on the PnL report debug endpoint with a path to the debug PnL json file will import the history events, settings and ignored action identifiers.
+   Doing a PATCH on the PnL report debug endpoint with the debug PnL json file will import the history events, settings and ignored action identifiers uploaded as multipart/form-data.
 
 
    **Example Request**:
@@ -4646,7 +4642,7 @@ Import PnL report debug data
 
    :statuscode 200: Import of debug history data successfully
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 409: No user is currently logged in. Import history data does not contain required keys. Import history data contains some invalid data types. Error importing history debug data.
    :statuscode 500: Internal rotki error.
 
 
