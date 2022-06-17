@@ -633,7 +633,7 @@
       "title": "Import"
     },
     "title": "Export/Import Custom Assets",
-    "warning": "This functionality is designed to allow you to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result to errors."
+    "warning": "This functionality is designed to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result to errors."
   },
   "merge_dialog": {
     "cancel": "Cancel",
