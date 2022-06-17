@@ -10646,7 +10646,7 @@ Deleting a database snapshot
 Get ENS names
 =============================================
 
-.. http:post:: /api/(version)/ens/reverse
+.. http:post:: /api/(version)/names/ens/reverse
 
    Doing a POST on the ENS reverse endpoint will return the ENS names for
    the given ethereum addresses from cache if found and from blockchain otherwise.
@@ -10659,7 +10659,7 @@ Get ENS names
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/ens/reverse HTTP/1.1
+      POST /api/1/names/ens/reverse HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -10669,7 +10669,7 @@ Get ENS names
 
     .. http:example:: curl wget httpie python-requests
 
-          POST /api/1/ens/reverse HTTP/1.1
+          POST /api/1/naminens/reverse HTTP/1.1
           Host: localhost:5042
           Content-Type: application/json;charset=UTF-8
 
@@ -10696,7 +10696,7 @@ Get ENS names
           "message": "",
       }
 
-   :resjson bool result: A dictionary of ethereum address to ENS name.
+   :resjson object result: A dictionary of ethereum address to ENS name.
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Names were returned successfully.
    :statuscode 400: Provided JSON is in some way malformed.
@@ -10740,3 +10740,220 @@ Importing a database snapshot
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is currently logged in. Csv file has different timestamps. Snapshot contains an unknown asset.Csv file has invalid headers.Check error message.
    :statuscode 500: Internal rotki error.
+
+
+Get mappings from addressbook
+==============================
+
+.. http:post:: /api/(version)/names/addressbook
+
+    Doing a POST on the addressbook endpoint with either /global or /private postfix with a list of addresses will return found address mappings for specified addresses. If addresses parameter isn't specified, all known mappings are returned.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        POST /api/1/names/addressbook/global HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "addresses": ["0x9531c059098e3d194ff87febb587ab07b30b1306", "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD"]
+        }
+
+    :reqjson object addresses: List of addresses that the backend should find names for
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/zip
+
+        {
+            "result": {
+                "0x9531c059098e3d194ff87febb587ab07b30b1306": "My dear friend Tom",
+                "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD": "Neighbour Frank",
+            },
+            "message": ""
+        }
+
+    :resjson object result: A dictionary of mappings. Address -> name.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Mappings were returned successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: No user is currently logged in or addresses have incorrect format.
+    :statuscode 500: Internal rotki error.
+
+
+Insert mappings into addressbook
+================================
+
+.. http:put:: /api/(version)/names/addressbook
+
+    Doing a PUT on the addressbook endpoint with either /global or /private postfix with a list of entries, each entry containing address and a name will add these entries to the addressbook.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        PUT /api/1/names/addressbook/private HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "entries": [
+            {"address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "name": "Dude ABC"},
+            {"address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD", "name": "Dude XYZ"}
+          ]
+        }
+
+    :reqjson object entries: A list of entries to be added to the addressbook
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/zip
+
+        {
+            "result": True,
+            "message": ""
+        }
+
+    :resjson bool result: A boolean which is true in the case that entries were added successfully.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Entries were added successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: Some of the provided entries already exist in the addressbook or no user is currently logged in or addresses have incorrect format.
+    :statuscode 500: Internal rotki error.
+
+
+Update mappings in the addressbook
+==================================
+
+.. http:patch:: /api/(version)/names/addressbook
+
+    Doing a PATCH on the addressbook endpoint with either /global or /private postfix with a list of entries, each entry containing address and a name will updates these entries' names in the addressbook
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        PATCH /api/1/names/addressbook/private HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "entries": [
+            {"address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "name": "Dude ABC"},
+            {"address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD", "name": "Dude XYZ"}
+          ]
+        }
+
+    :reqjson object entries: A list of entries to be updated in the addressbook
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/zip
+
+        {
+            "result": True,
+            "message": ""
+        }
+
+    :resjson bool result: A boolean which is true in case if entries were updated successfully.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Entries were updated successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: Some of the provided entries don't exist in the addressbook or no user is currently logged in or addresses have incorrect format.
+    :statuscode 500: Internal rotki error.
+
+
+Delete mappings in the addressbook
+==================================
+
+.. http:delete:: /api/(version)/names/addressbook
+
+    Doing a DELETE on the addressbook endpoint with either /global or /private postfix with a list of addresses will delete mappings in the addressbook of the specified addresses
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        DELETE /api/1/names/addressbook/global HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "addresses": ["0x9531c059098e3d194ff87febb587ab07b30b1306", "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD"]
+        }
+
+    :reqjson object entries: A list of addresses to be deleted from the addressbook
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/zip
+
+        {
+            "result": True,
+            "message": ""
+        }
+
+    :resjson bool result: A boolean which is true in case if entries were deleted successfully.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Entries were deleted successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: Some of the provided entries don't exist in the addressbook or no user is currently logged in or addresses have incorrect format.
+    :statuscode 500: Internal rotki error.
+
+
+Search for all known names of an address
+========================================
+
+.. http:post:: /api/(version)/names
+
+    Doing a POST on all names endpoint with a list of addresses will search for names of these addresses in all places and return a name for each address if found. Only one name is returned. The priority of the returned names adheres to the following order: private addressbook > blockchain account labels > global addressbook > ethereum tokens > hardcoded mappings > ENS names.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        POST /api/1/names HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "addresses": ["0x9531c059098e3d194ff87febb587ab07b30b1306", "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD"]
+        }
+
+    :reqjson object addresses: List of addresses that the backend should find names for
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/zip
+
+        {
+            "result": {
+                "0x9531c059098e3d194ff87febb587ab07b30b1306": "My blockchain account 1",
+                "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD": "Neighbour Frank",
+            },
+            "message": ""
+        }
+
+    :resjson object result: A dictionary of mappings. Address -> name.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Mappings were returned successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: No user is currently logged in or addresses have incorrect format.
+    :statuscode 500: Internal rotki error.

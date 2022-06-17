@@ -57,8 +57,8 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
-from rotkehlchen.chain.ethereum.decoding.constants import ETHADDRESS_TO_KNOWN_NAME
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
+from rotkehlchen.chain.ethereum.names import search_for_addresses_names
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
@@ -70,6 +70,7 @@ from rotkehlchen.constants.limits import (
 )
 from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.ethtx import DBEthTx
@@ -127,6 +128,8 @@ from rotkehlchen.serialization.serialize import process_result, process_result_l
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     IMPORTABLE_LOCATIONS,
+    AddressbookEntry,
+    AddressbookType,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -4052,16 +4055,7 @@ class RestAPI():
             mappings_to_send=mappings_to_send,
         )
 
-        wrapped_mappings = {}
-        # TODO: Ugly. Organize better, don't mix with ENS like this in one function
-        # Check if address has any mapping in constant names before ENS
-        for address in addresses:
-            constant_name = ETHADDRESS_TO_KNOWN_NAME.get(address)
-            if constant_name is not None:
-                wrapped_mappings[address] = constant_name
-
-        wrapped_mappings |= mappings_to_send
-        return {'result': wrapped_mappings, 'message': '', 'status_code': HTTPStatus.OK}
+        return {'result': mappings_to_send, 'message': '', 'status_code': HTTPStatus.OK}
 
     def get_ens_mappings(
             self,
@@ -4125,3 +4119,68 @@ class RestAPI():
                 'message': '',
             },
         )
+
+    def get_addressbook_entries(
+            self,
+            book_type: AddressbookType,
+            addresses: Optional[List[ChecksumEthAddress]],
+    ) -> Response:
+        db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
+        entries = db_addressbook.get_addressbook_entries(
+            book_type=book_type,
+            addresses=addresses,
+        )
+        serialized = [entry.serialize() for entry in entries]
+        return api_response(_wrap_in_ok_result(serialized))
+
+    def add_addressbook_entries(
+            self,
+            book_type: AddressbookType,
+            entries: List[AddressbookEntry],
+    ) -> Response:
+        db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
+        try:
+            db_addressbook.add_addressbook_entries(book_type=book_type, entries=entries)
+            return api_response(result=OK_RESULT)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(str(e)),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+    def update_addressbook_entries(
+            self,
+            book_type: AddressbookType,
+            entries: List[AddressbookEntry],
+    ) -> Response:
+        db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
+        try:
+            db_addressbook.update_addressbook_entries(book_type=book_type, entries=entries)
+            return api_response(result=OK_RESULT)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(str(e)),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+    def delete_addressbook_entries(
+            self,
+            book_type: AddressbookType,
+            addresses: List[ChecksumEthAddress],
+    ) -> Response:
+        db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
+        try:
+            db_addressbook.delete_addressbook_entries(book_type=book_type, addresses=addresses)
+            return api_response(result=OK_RESULT)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(str(e)),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+    def search_for_names_everywhere(self, addresses: List[ChecksumEthAddress]) -> Response:
+        mappings = search_for_addresses_names(
+            database=self.rotkehlchen.data.db,
+            addresses=addresses,
+        )
+        return api_response(_wrap_in_ok_result(mappings))

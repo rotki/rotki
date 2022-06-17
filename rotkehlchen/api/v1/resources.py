@@ -19,7 +19,10 @@ from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
     AccountingReportDataSchema,
     AccountingReportsSchema,
+    AddressbookAddressesSchema,
+    AddressbookUpdateSchema,
     AllBalancesQuerySchema,
+    AllNamesSchema,
     AppInfoSchema,
     AssetIconUploadSchema,
     AssetMovementsQuerySchema,
@@ -132,6 +135,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.types import (
     IMPORTABLE_LOCATIONS,
+    AddressbookEntry,
+    AddressbookType,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -180,7 +185,7 @@ def load_json_viewargs_data(request: Request, schema: Schema) -> Dict[str, Any]:
     view_args = parser.load_view_args(request, schema)  # type: ignore
     data = parser.load_json(request, schema)
     if data is missing:
-        return data
+        data = {}
 
     data = _combine_parser_data(data, view_args, schema)
     return data
@@ -2378,7 +2383,7 @@ class DBSnapshotDeletingResource(BaseMethodView):
 
 
 class ReverseEnsResource(BaseMethodView):
-    post_schema = ReverseEnsSchema
+    post_schema = ReverseEnsSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
@@ -2398,3 +2403,44 @@ class ReverseEnsResource(BaseMethodView):
 class CounterpartiesResource(BaseMethodView):
     def get(self) -> Response:
         return self.rest_api.get_all_counterparties()
+
+
+class AddressbookResource(BaseMethodView):
+    post_delete_schema = AddressbookAddressesSchema()
+    update_schema = AddressbookUpdateSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_delete_schema, location='json_and_view_args')
+    def post(
+        self,
+        book_type: AddressbookType,
+        addresses: Optional[List[ChecksumEthAddress]],
+    ) -> Response:
+        return self.rest_api.get_addressbook_entries(
+            book_type=book_type,
+            addresses=addresses,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(update_schema, location='json_and_view_args')
+    def put(self, book_type: AddressbookType, entries: List[AddressbookEntry]) -> Response:
+        return self.rest_api.add_addressbook_entries(book_type=book_type, entries=entries)
+
+    @require_loggedin_user()
+    @use_kwargs(update_schema, location='json_and_view_args')
+    def patch(self, book_type: AddressbookType, entries: List[AddressbookEntry]) -> Response:
+        return self.rest_api.update_addressbook_entries(book_type=book_type, entries=entries)
+
+    @require_loggedin_user()
+    @use_kwargs(post_delete_schema, location='json_and_view_args')
+    def delete(self, book_type: AddressbookType, addresses: List[ChecksumEthAddress]) -> Response:
+        return self.rest_api.delete_addressbook_entries(book_type=book_type, addresses=addresses)
+
+
+class AllNamesResource(BaseMethodView):
+    post_schema = AllNamesSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, addresses: List[ChecksumEthAddress]) -> Response:
+        return self.rest_api.search_for_names_everywhere(addresses=addresses)
