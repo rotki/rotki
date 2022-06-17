@@ -7,6 +7,7 @@ import {
 } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 import { get } from '@vueuse/core';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
@@ -64,6 +65,7 @@ export interface BalanceGetters {
   manualLabels: string[];
   accounts: GeneralAccount[];
   account: (address: string) => GeneralAccount | undefined;
+  eth2Account: (publicKey: string) => GeneralAccount | undefined;
   isEthereumToken: (asset: string) => boolean;
   assetBreakdown: (asset: string) => AssetBreakdown[];
   loopringBalances: (address: string) => AssetBalance[];
@@ -650,6 +652,24 @@ export const getters: Getters<
     return accounts.find(acc => acc.address === address);
   },
 
+  eth2Account:
+    ({ eth2Validators }: BalanceState) =>
+    (publicKey: string) => {
+      const validator = eth2Validators.entries.find(
+        (eth2Validator: Eth2ValidatorEntry) =>
+          eth2Validator.publicKey === publicKey
+      );
+
+      if (!validator) return undefined;
+
+      return {
+        address: validator.publicKey,
+        label: validator.validatorIndex.toString() ?? '',
+        tags: [],
+        chain: Blockchain.ETH2
+      };
+    },
+
   isEthereumToken: () => (asset: string) => {
     const { assetInfo } = useAssetInfoRetrieval();
     const match = get(assetInfo(asset));
@@ -673,6 +693,8 @@ export const getters: Getters<
       avaxAccounts,
       eth,
       ethAccounts,
+      eth2,
+      eth2Validators,
       exchangeBalances,
       ksm,
       dot,
@@ -844,6 +866,27 @@ export const getters: Getters<
           balance: assetBalance,
           tags
         });
+      }
+
+      if (asset === 'ETH2') {
+        for (const { publicKey } of eth2Validators.entries) {
+          const validatorBalances = eth2[publicKey];
+          let balance: Balance = { amount: Zero, usdValue: Zero };
+          if (validatorBalances && validatorBalances.assets) {
+            const assets = validatorBalances.assets;
+            balance = {
+              amount: assets[asset].amount,
+              usdValue: assetSum(assets)
+            };
+          }
+
+          breakdown.push({
+            address: publicKey,
+            location: Blockchain.ETH2,
+            balance,
+            tags: []
+          });
+        }
       }
 
       return breakdown;
