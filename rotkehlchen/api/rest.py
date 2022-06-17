@@ -2036,7 +2036,7 @@ class RestAPI():
     @require_loggedin_user()
     def get_ignored_action_ids(self, action_type: Optional[ActionType]) -> Response:
         mapping = self.rotkehlchen.data.db.get_ignored_action_ids(action_type)
-        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
+        result_dict = _wrap_in_ok_result({k.serialize(): v for k, v in mapping.items()})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
@@ -2052,7 +2052,7 @@ class RestAPI():
         mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
             action_type=action_type,
         )
-        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
+        result_dict = _wrap_in_ok_result({k.serialize(): v for k, v in mapping.items()})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
@@ -2071,7 +2071,7 @@ class RestAPI():
         mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
             action_type=action_type,
         )
-        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
+        result_dict = _wrap_in_ok_result({k.serialize(): v for k, v in mapping.items()})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
