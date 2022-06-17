@@ -18,9 +18,9 @@ from rotkehlchen.types import Location
 def _populate_ignored_actions(rotkehlchen_api_server) -> List[Tuple[str, List[str]]]:
     data = [
         ('trade', ['1', '2', '3']),
-        ('asset movement', ['1', '4', '5', '7']),
-        ('ethereum transaction', ['5a', 'aa', 'ba']),
-        ('ledger action', ['1', '2', '3']),
+        ('asset_movement', ['1', '4', '5', '7']),
+        ('ethereum_transaction', ['5a', 'aa', 'ba']),
+        ('ledger_action', ['1', '2', '3']),
     ]
 
     for action_type, action_ids in data:
@@ -113,17 +113,17 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "ignoredactionsresource",
-        ), json={'action_type': 'asset movement', 'action_ids': ['1', '7']},
+        ), json={'action_type': 'asset_movement', 'action_ids': ['1', '7']},
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'asset movement': ['4', '5']}
+    assert result == {'asset_movement': ['4', '5']}
 
     # remove all entries of one type
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             "ignoredactionsresource",
-        ), json={'action_type': 'ethereum transaction', 'action_ids': data[2][1]},
+        ), json={'action_type': 'ethereum_transaction', 'action_ids': data[2][1]},
     )
     result = assert_proper_response_with_result(response)
     assert result == {}
@@ -133,7 +133,7 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "ignoredactionsresource",
-        ), json={'action_type': 'ledger action', 'action_ids': ['1', '5', '2']},
+        ), json={'action_type': 'ledger_action', 'action_ids': ['1', '5', '2']},
     )
     result = assert_error_response(
         response=response,
@@ -150,8 +150,8 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert result == {
-        'asset movement': ['4', '5'],
-        'ledger action': ['1', '2', '3'],
+        'asset_movement': ['4', '5'],
+        'ledger_action': ['1', '2', '3'],
         'trade': ['1', '2', '3'],
     }
 
@@ -191,10 +191,10 @@ def test_ignore_ledger_actions_in_accountant(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'ledger action', 'action_ids': ['2']},
+        ), json={'action_type': 'ledger_action', 'action_ids': ['2']},
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'ledger action': ['2']}
+    assert result == {'ledger_action': ['2']}
 
     # Retrieve ignored actions mapping. Should contain 2
     ignored_actions = accountant.db.get_ignored_action_ids(action_type=None)

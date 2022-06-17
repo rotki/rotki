@@ -97,10 +97,10 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server, start_with_valid_p
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'ledger action', 'action_ids': ['3', '4']},  # external ones
+        ), json={'action_type': 'ledger_action', 'action_ids': ['3', '4']},  # external ones
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'ledger action': [str(a['identifier']) for a in actions[0:2][::-1]]}
+    assert result == {'ledger_action': [str(a['identifier']) for a in actions[0:2][::-1]]}
 
     # Now filter by location with json body
     response = requests.get(

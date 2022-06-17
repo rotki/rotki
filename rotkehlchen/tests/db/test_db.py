@@ -1269,7 +1269,7 @@ def test_enum_in_db(database, enum_class, query, deserialize_from_db, deserializ
         deserialized = deserialize_from_db(letter)
         assert deserialized.value == seq
         assert enum_class(seq).serialize_for_db() == letter
-        name = deserialize(str(deserialized))
+        name = deserialize(deserialized.serialize())
         assert name == deserialized
 
 
