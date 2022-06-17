@@ -55,6 +55,8 @@ from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    AddressbookEntry,
+    AddressbookType,
     AssetMovementCategory,
     BTCAddress,
     ChecksumEthAddress,
@@ -2052,3 +2054,28 @@ class ReverseEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
 class SnapshotImportingSchema(Schema):
     balances_snapshot_file = FileField(allowed_extensions=['.csv'], required=True)
     location_data_snapshot_file = FileField(allowed_extensions=['.csv'], required=True)
+
+
+class BaseAddressbookSchema(Schema):
+    book_type = SerializableEnumField(enum_class=AddressbookType, required=True)
+
+
+class AddressbookAddressesSchema(BaseAddressbookSchema):
+    addresses = fields.List(EthereumAddressField(required=True), load_default=None)
+
+
+class AddressbookEntrySchema(Schema):
+    address = EthereumAddressField(required=True)
+    name = fields.String(required=True)
+
+    @post_load()
+    def make_addressbook_entry(self, data: Dict[str, Any], **_kwargs: Any) -> AddressbookEntry:  # pylint: disable=no-self-use  # noqa: E501
+        return AddressbookEntry(address=data['address'], name=data['name'])
+
+
+class AddressbookUpdateSchema(BaseAddressbookSchema):
+    entries = fields.List(fields.Nested(AddressbookEntrySchema), required=True)
+
+
+class AllNamesSchema(Schema):
+    addresses = fields.List(EthereumAddressField(required=True), required=True)

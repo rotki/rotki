@@ -17,6 +17,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
+    AddressbookEntry,
     ApiKey,
     ApiSecret,
     ChecksumEthAddress,
@@ -127,6 +128,23 @@ def generate_tx_entries_response(
             'ignored_in_accounting': False,
         })
     return result
+
+
+def make_addressbook_entries() -> List[AddressbookEntry]:
+    return [
+        AddressbookEntry(
+            address=to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57'),
+            name='My dear friend Fred',
+        ),
+        AddressbookEntry(
+            address=to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
+            name='Neighbour Thomas',
+        ),
+        AddressbookEntry(
+            address=to_checksum_address('0x3D61AEBB1238062a21BE5CC79df308f030BF0c1B'),
+            name='Secret agent Rose',
+        ),
+    ]
 
 
 UNIT_BTC_ADDRESS1 = '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2'

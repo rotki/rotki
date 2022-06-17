@@ -22,10 +22,12 @@ from rotkehlchen.api.v1.resources import (
     AaveHistoryResource,
     AccountingReportDataResource,
     AccountingReportsResource,
+    AddressbookResource,
     AdexBalancesResource,
     AdexHistoryResource,
     AllAssetsResource,
     AllBalancesResource,
+    AllNamesResource,
     AssetIconsResource,
     AssetMovementsResource,
     AssetsReplaceResource,
@@ -282,7 +284,9 @@ URLS_V1: URLS = [
     ('/snapshot/export', DBSnapshotExportingResource),
     ('/snapshot/import', DBSnapshotImportingResource),
     ('/snapshot/delete', DBSnapshotDeletingResource),
-    ('/ens/reverse', ReverseEnsResource),
+    ('/names', AllNamesResource),
+    ('/names/ens/reverse', ReverseEnsResource),
+    ('/names/addressbook/<string:book_type>', AddressbookResource),
 ]
 
 logger = logging.getLogger(__name__)
