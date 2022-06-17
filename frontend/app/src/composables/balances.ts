@@ -252,6 +252,11 @@ export const setupBlockchainAccounts = () => {
       getters['balances/account'](address)
     );
 
+  const eth2Account = (address: string) =>
+    computed<GeneralAccount | undefined>(() =>
+      getters['balances/eth2Account'](address)
+    );
+
   const accounts = computed<GeneralAccount[]>(
     () => getters['balances/accounts']
   );
@@ -292,6 +297,7 @@ export const setupBlockchainAccounts = () => {
 
   return {
     account,
+    eth2Account,
     accounts,
     addAccount,
     editAccount,

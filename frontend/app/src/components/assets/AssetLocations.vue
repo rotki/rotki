@@ -25,8 +25,8 @@
       <template #item.label="{ item }">
         <div class="py-4">
           <labeled-address-display
-            v-if="item.address"
-            :account="account(item.address).value"
+            v-if="item.address && getAccount(item).value"
+            :account="getAccount(item).value"
           />
           <tag-display :tags="item.tags" />
         </div>
@@ -51,6 +51,7 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
+import { GeneralAccount } from '@rotki/common/lib/account';
 import { computed, defineComponent, ref, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
@@ -82,7 +83,7 @@ export default defineComponent({
     const { identifier } = toRefs(props);
 
     const { currencySymbol } = setupGeneralSettings();
-    const { account } = setupBlockchainAccounts();
+    const { account, eth2Account } = setupBlockchainAccounts();
     const { detailsLoading } = toRefs(useMainStore());
     const { assetPriceInfo } = useAssetInfoRetrieval();
 
@@ -93,6 +94,8 @@ export default defineComponent({
         return store.getters['balances/assetBreakdown'](asset);
       });
 
+    const isEth2 = computed<boolean>(() => get(identifier) === 'ETH2');
+
     const tableHeaders: DataTableHeader[] = [
       {
         text: i18n.t('asset_locations.header.location').toString(),
@@ -101,7 +104,9 @@ export default defineComponent({
         width: '120px'
       },
       {
-        text: i18n.t('asset_locations.header.account').toString(),
+        text: get(isEth2)
+          ? i18n.t('asset_locations.header.validator').toString()
+          : i18n.t('asset_locations.header.account').toString(),
         value: 'label'
       },
       {
@@ -163,13 +168,22 @@ export default defineComponent({
       return percentage.toFixed(2);
     };
 
+    const getAccount = (item: AssetBreakdown & { readonly label: string }) =>
+      computed<GeneralAccount | undefined>(() => {
+        if (get(isEth2)) {
+          return get(eth2Account(item.address));
+        }
+        return get(account(item.address));
+      });
+
     return {
       onlyTags,
       tableHeaders,
       visibleAssetLocations,
       detailsLoading,
       account,
-      getPercentage
+      getPercentage,
+      getAccount
     };
   }
 });
