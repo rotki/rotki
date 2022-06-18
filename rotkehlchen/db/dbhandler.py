@@ -310,7 +310,9 @@ class DBHandler:
             if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
                 # "upgrade" transient DB
                 tables = list(cursor.execute('select name from sqlite_master where type is "table"'))  # noqa: E501
+                cursor.executescript('PRAGMA foreign_keys = OFF;')
                 cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))  # noqa: E501
+                cursor.executescript('PRAGMA foreign_keys = ON;')
             self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
             cursor.execute(
                 'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
