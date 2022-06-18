@@ -207,7 +207,7 @@ export default defineComponent({
       toRefs(props);
 
     const { isTaskRunning } = useTasks();
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol, treatEth2AsEth } = setupGeneralSettings();
     const { hasDetails, accountAssets, accountLiabilities, loopringBalances } =
       setupGeneralBalances();
 
@@ -464,7 +464,11 @@ export default defineComponent({
       const headers: DataTableHeader[] = [
         { text: '', value: 'accountSelection', width: '34px', sortable: false },
         { text: accountHeader.toString(), value: 'label' },
-        { text: get(blockchain), value: 'balance.amount', align: 'end' },
+        {
+          text: get(isEth2) && get(treatEth2AsEth) ? 'ETH' : get(blockchain),
+          value: 'balance.amount',
+          align: 'end'
+        },
         {
           text: currencyHeader.toString(),
           value: 'balance.usdValue',

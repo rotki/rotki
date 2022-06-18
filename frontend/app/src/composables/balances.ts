@@ -401,8 +401,11 @@ export const setupExchanges = () => {
     return await store.dispatch('balances/fetchExchangeBalances', payload);
   };
 
-  const fetchConnectedExchangeBalances = async () => {
-    return await store.dispatch('balances/fetchConnectedExchangeBalances');
+  const fetchConnectedExchangeBalances = async (refresh: boolean) => {
+    return await store.dispatch(
+      'balances/fetchConnectedExchangeBalances',
+      refresh
+    );
   };
 
   return {

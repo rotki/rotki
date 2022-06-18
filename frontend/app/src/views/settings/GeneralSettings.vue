@@ -317,7 +317,6 @@
 </template>
 
 <script lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -332,14 +331,16 @@ import {
   makeMessage,
   settingsMessages
 } from '@/components/settings/utils';
-import { setupGeneralBalances } from '@/composables/balances';
+import { setupExchanges, setupGeneralBalances } from '@/composables/balances';
 import { Constraints } from '@/data/constraints';
 import { currencies } from '@/data/currencies';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { Defaults } from '@/data/defaults';
 import SettingsMixin from '@/mixins/settings-mixin';
 import { monitor } from '@/services/monitoring';
+import { Section, Status } from '@/store/const';
 import { ActionStatus } from '@/store/types';
+import { setStatus } from '@/store/utils';
 import { Currency } from '@/types/currency';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
@@ -510,16 +511,27 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
       message
     );
 
-    const { fetchBlockchainBalances, refreshPrices } = setupGeneralBalances();
+    const { fetchBlockchainBalances, fetchManualBalances, refreshPrices } =
+      setupGeneralBalances();
+    const { fetchConnectedExchangeBalances } = setupExchanges();
 
     if (success) {
-      await fetchBlockchainBalances({
-        ignoreCache: true
-      });
+      setStatus(Status.NONE, Section.TRADES);
+      setStatus(Status.NONE, Section.ASSET_MOVEMENT);
+      setStatus(Status.NONE, Section.TX);
+      setStatus(Status.NONE, Section.LEDGER_ACTIONS);
+
+      await Promise.all([
+        fetchBlockchainBalances({
+          ignoreCache: true
+        }),
+        fetchConnectedExchangeBalances(true),
+        fetchManualBalances()
+      ]);
+
       if (!enabled) {
         await refreshPrices({
-          ignoreCache: true,
-          selectedAsset: 'ETH2'
+          ignoreCache: true
         });
       }
     }

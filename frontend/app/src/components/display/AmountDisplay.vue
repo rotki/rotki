@@ -305,8 +305,12 @@ export default defineComponent({
       return rounding;
     });
 
+    const valueToCopy = computed<string>(() => {
+      return get(fullValue).toString();
+    });
+
     const { copy: copyText } = useClipboard({
-      source: get(fullValue).toString()
+      source: valueToCopy
     });
 
     const { start, stop, isPending } = useTimeoutFn(

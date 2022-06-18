@@ -1,5 +1,4 @@
-import { BigNumber } from '@rotki/common';
-import { Balance } from '@rotki/common/index';
+import { BigNumber, Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Message, Severity } from '@rotki/common/lib/messages';
 import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
@@ -154,14 +153,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     await dispatch('accounts');
   },
 
-  async fetchConnectedExchangeBalances({
-    dispatch,
-    state: { connectedExchanges: exchanges }
-  }): Promise<void> {
+  async fetchConnectedExchangeBalances(
+    { dispatch, state: { connectedExchanges: exchanges } },
+    refresh: boolean = false
+  ): Promise<void> {
     for (const exchange of exchanges) {
       await dispatch('fetchExchangeBalances', {
         location: exchange.location,
-        ignoreCache: false
+        ignoreCache: refresh
       } as ExchangeBalancePayload);
     }
   },

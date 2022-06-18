@@ -89,7 +89,7 @@ function balances(
 
     const balance: Balance = accountAssets
       ? {
-          amount: accountAssets.assets[blockchain].amount,
+          amount: accountAssets?.assets[blockchain]?.amount ?? Zero,
           usdValue: assetSum(accountAssets.assets)
         }
       : { amount: Zero, usdValue: Zero };
@@ -116,7 +116,6 @@ export const getters: Getters<
     ethAccounts,
     loopringBalances
   }: BalanceState): BlockchainAccountWithBalance[] {
-    console.log('ethAccounts', ethAccounts, eth);
     const accounts = balances(ethAccounts, eth, Blockchain.ETH);
 
     // check if account is loopring account
