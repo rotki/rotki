@@ -12,8 +12,14 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import AssetToPrice, LiquidityPoolAsset
-from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import TokenDetails
-from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import NFTLiquidityPool
+from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import (
+    TokenDetails,
+    update_asset_price_in_lp_balances,
+)
+from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
+    AddressToUniswapV3LPBalances,
+    NFTLiquidityPool,
+)
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV3Oracle
 from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants.assets import A_USDC
@@ -28,6 +34,7 @@ from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, Price
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
@@ -45,10 +52,15 @@ POW_96 = 2**96
 LOG_PRICE = FVal('1.0001')
 
 
+class UnrecognizedFeeTierException(Exception):
+    """Exception raised when a Uniswap V3 LP fee tier is not recognized."""
+
+
 def uniswap_v3_lp_token_balances(
         userdb: 'DBHandler',
         address: ChecksumEthAddress,
         ethereum: 'EthereumManager',
+        msg_aggregator: MessagesAggregator,
         price_known_assets: Set[EthereumToken],
         price_unknown_assets: Set[EthereumToken],
 ) -> List[NFTLiquidityPool]:
@@ -256,6 +268,7 @@ def uniswap_v3_lp_token_balances(
         except RemoteError as e:
             log.error(UNISWAP_V3_ERROR_MSG.format('pool contract liquidity', str(e)))
             continue
+
         for _entry in zip(
             pool_contracts,
             liquidity_in_pools_multicall,
@@ -265,15 +278,22 @@ def uniswap_v3_lp_token_balances(
             tokens_b,
         ):
             liquidity_in_pool = _entry[0].decode(_entry[1][1], 'liquidity')[0]
-            total_tokens_in_pools.append(
-                calculate_total_amounts_of_tokens(
-                    liquidity=liquidity_in_pool,
-                    tick=_entry[3][1],
-                    fee=_entry[2][4],
-                    decimal_0=_entry[4]['decimals'],
-                    decimal_1=_entry[5]['decimals'],
-                ),
-            )
+            try:
+                total_tokens_in_pools.append(
+                    calculate_total_amounts_of_tokens(
+                        liquidity=liquidity_in_pool,
+                        tick=_entry[3][1],
+                        fee=_entry[2][4],
+                        decimal_0=_entry[4]['decimals'],
+                        decimal_1=_entry[5]['decimals'],
+                    ),
+                )
+            except UnrecognizedFeeTierException as e:
+                error_msg = f'Error calculating total amount of tokens in pool due to: {str(e)}'
+                log.error(error_msg)
+                msg_aggregator.add_error(error_msg)
+                continue
+
         for item in zip(
             tokens_ids,
             pool_addresses,
@@ -396,7 +416,7 @@ def calculate_amount(
 def calculate_total_amounts_of_tokens(
         liquidity: int,
         tick: int,
-        fee: Literal[500, 3000, 10000],
+        fee: Literal[100, 500, 3000, 10000],
         decimal_0: int,
         decimal_1: int,
 ) -> Tuple[FVal, FVal]:
@@ -414,6 +434,15 @@ def calculate_total_amounts_of_tokens(
     elif fee == 500:
         tick_a = tick - (tick % 10)
         tick_b = tick + 10
+    elif fee == 100:
+        tick_a = tick - (tick % 1)
+        tick_b = tick + 1
+    # This is to prevent new fee tiers from raising `referenced before initialised` error.
+    else:
+        raise UnrecognizedFeeTierException(
+            f'Encountered an unrecognised Uniswap V3 LP fee tier: {fee}. '
+            f'Please open a Github issue: https://github.com/rotki/rotki/issues',
+        )
 
     sqrt_a = LOG_PRICE**FVal(tick_a / 2) * POW_96
     sqrt_b = LOG_PRICE**FVal(tick_b / 2) * POW_96
@@ -442,6 +471,10 @@ def _decode_uniswap_v3_result(
     """
     Takes the data aggregated from the Positions NFT contract & LP contract and converts it
     into an `NFTLiquidityPool` which is a representation of a Uniswap V3 LP position.
+
+    The tokens dictionaries in `data` argument contain the following keys;
+    address, name, symbol, decimals & amount.
+    They are present at all times, although values might be empty.
 
     Edge cases whereby a token does not conform to ERC20 standard,the user balance is set to ZERO.
     """
@@ -513,3 +546,16 @@ def get_unknown_asset_price_chain(
             asset_price[from_asset.ethereum_address] = Price(ZERO)
 
     return asset_price
+
+
+def update_asset_price_in_uniswap_v3_lp_balances(
+        address_balances: AddressToUniswapV3LPBalances,
+        known_asset_price: 'AssetToPrice',
+        unknown_asset_price: 'AssetToPrice',
+) -> None:
+    """Update the Uniswap V3 pools underlying assets prices in USD"""
+    update_asset_price_in_lp_balances(
+        address_balances=address_balances,
+        known_asset_price=known_asset_price,
+        unknown_asset_price=unknown_asset_price,
+    )

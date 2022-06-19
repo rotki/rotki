@@ -29,6 +29,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.utils import (
     get_unknown_asset_price_chain,
     uniswap_v3_lp_token_balances,
+    update_asset_price_in_uniswap_v3_lp_balances,
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
@@ -133,6 +134,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             pool_balances = uniswap_v3_lp_token_balances(
                 userdb=self.database,
                 address=address,
+                msg_aggregator=self.msg_aggregator,
                 ethereum=self.ethereum,
                 price_known_assets=price_known_assets,
                 price_unknown_assets=price_unknown_assets,
@@ -559,7 +561,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             unknown_assets=unknown_assets,
         )
 
-        self._update_assets_prices_in_address_balances(
+        update_asset_price_in_uniswap_v3_lp_balances(
             address_balances=protocol_balance.address_balances,
             known_asset_price=known_asset_price,
             unknown_asset_price=unknown_asset_price,

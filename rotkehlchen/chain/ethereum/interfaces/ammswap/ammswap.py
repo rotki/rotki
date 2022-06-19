@@ -11,7 +11,7 @@ import abc
 import logging
 from collections import defaultdict
 from datetime import datetime, time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from gevent.lock import Semaphore
 
@@ -38,7 +38,10 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPoolEventsBalance,
     ProtocolBalance,
 )
-from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
+from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import (
+    SUBGRAPH_REMOTE_ERROR_MSG,
+    update_asset_price_in_lp_balances,
+)
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.ranges import DBQueryRanges
@@ -70,7 +73,6 @@ from .graph import (
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -322,35 +324,16 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     @staticmethod
     def _update_assets_prices_in_address_balances(
-            address_balances: Union[AddressToLPBalances, 'AddressToUniswapV3LPBalances'],
+            address_balances: AddressToLPBalances,
             known_asset_price: AssetToPrice,
             unknown_asset_price: AssetToPrice,
     ) -> None:
-        """Update the pools underlying assets prices in USD (prices obtained
-        via Inquirer and the subgraph)
-        """
-        for lps in address_balances.values():
-            for lp in lps:
-                # Try to get price from either known or unknown asset price.
-                # Otherwise keep existing price (zero)
-                total_user_balance = ZERO
-                for asset in lp.assets:
-                    asset_ethereum_address = asset.asset.ethereum_address
-                    asset_usd_price = known_asset_price.get(
-                        asset_ethereum_address,
-                        unknown_asset_price.get(asset_ethereum_address, Price(ZERO)),
-                    )
-                    # Update <LiquidityPoolAsset> if asset USD price exists
-                    if asset_usd_price != Price(ZERO):
-                        asset.usd_price = asset_usd_price
-                        asset.user_balance.usd_value = FVal(
-                            asset.user_balance.amount * asset_usd_price,
-                        )
-
-                    total_user_balance += asset.user_balance.usd_value
-
-                # Update <LiquidityPool> total balance in USD
-                lp.user_balance.usd_value = total_user_balance
+        """Update the Uniswap V2 & SushiSwap pools underlying assets prices in USD"""
+        update_asset_price_in_lp_balances(
+            address_balances=address_balances,
+            known_asset_price=known_asset_price,
+            unknown_asset_price=unknown_asset_price,
+        )
 
     def _get_events_graph(
             self,

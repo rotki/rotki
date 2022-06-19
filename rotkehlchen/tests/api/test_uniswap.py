@@ -38,7 +38,7 @@ from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
 # DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
 # From that pool find a holder and test
 LP_HOLDER_ADDRESS = string_to_ethereum_address('0xc4d15CbE36BE26596fA676Ff1B21421541d7e8e6')
-LP_V3_HOLDER_ADDRESS = string_to_ethereum_address('0x45357Da1E1cBE8aD673362C0E5eBB5CEB2f05168')
+LP_V3_HOLDER_ADDRESS = string_to_ethereum_address('0xE545F1385740278E54052A53a93C198b05f6F687')
 
 # Uniswap Factory contract
 TEST_ADDRESS_FACTORY_CONTRACT = (
