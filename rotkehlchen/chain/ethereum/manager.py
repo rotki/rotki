@@ -1207,6 +1207,9 @@ class EthereumManager():
         - Decimals
         - name
         - symbol
+        At all times, the dictionary returned contains the keys; decimals, name & symbol.
+        Although the values might be empty.
+
         if it is provided in the contract. This method may raise:
         - BadFunctionCallOutput: If there is an error calling a bad address
         """

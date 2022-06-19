@@ -1,17 +1,23 @@
 import logging
-from typing import TYPE_CHECKING, NamedTuple, Set, Tuple
+from typing import TYPE_CHECKING, NamedTuple, Set, Tuple, Union
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
+    AddressToLPBalances,
+    AssetToPrice,
+    LiquidityPool,
+    LiquidityPoolAsset,
+)
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress
-
-from .types import LiquidityPool, LiquidityPoolAsset
+from rotkehlchen.types import ChecksumEthAddress, Price
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -82,3 +88,35 @@ def _decode_result(
         user_balance=Balance(amount=pool_token.amount),
     )
     return pool
+
+
+def update_asset_price_in_lp_balances(
+        address_balances: Union[AddressToLPBalances, 'AddressToUniswapV3LPBalances'],
+        known_asset_price: AssetToPrice,
+        unknown_asset_price: AssetToPrice,
+) -> None:
+    """Utility function to update the pools underlying assets prices in USD
+    (prices obtained via Inquirer and the subgraph) used by all AMM platforms.
+    """
+    for lps in address_balances.values():
+        for lp in lps:
+            # Try to get price from either known or unknown asset price.
+            # Otherwise keep existing price (zero)
+            total_user_balance = ZERO
+            for asset in lp.assets:
+                asset_ethereum_address = asset.asset.ethereum_address
+                asset_usd_price = known_asset_price.get(
+                    asset_ethereum_address,
+                    unknown_asset_price.get(asset_ethereum_address, Price(ZERO)),
+                )
+                # Update <LiquidityPoolAsset> if asset USD price exists
+                if asset_usd_price != Price(ZERO):
+                    asset.usd_price = asset_usd_price
+                    asset.user_balance.usd_value = FVal(
+                        asset.user_balance.amount * asset_usd_price,
+                    )
+
+                total_user_balance += asset.user_balance.usd_value
+
+            # Update <LiquidityPool> total balance in USD
+            lp.user_balance.usd_value = total_user_balance
