@@ -350,16 +350,6 @@ Linux
 
 Make sure you have `node.js <https://nodejs.org/en/>`_ and `npm <https://www.npmjs.com/>`_. If you don't, use your linux distro's package manager to get them.
 
-Get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_ version 4:
-
-- If you are running Archlinux you can install the `package <https://www.archlinux.org/packages/community/x86_64/sqlcipher/>`_ with ``pacman``.
-
-- If you are running Ubuntu, at the time of writing of this article Ubuntu is still using sqlcipher v3 which is not supported by rotki. So you should build sqlcipher v4 by hand. We have a script for that `here <https://github.com/rotki/rotki/blob/7203c09e9fc89e38950f89a5f452f57bf3d2542a/sqlcipher_ubuntu.sh>`__. Run this script inside venv and then run ``export $(cat sqlcipher.env)``. Install libssl-dev and tclsh by running ``sudo apt-get install libssl-dev tclsh`` if not already installed.
-
-- If you are running openSUSE Tumbleweed, you can install sqlcipher v4 as follows::
-
-    sudo zypper install sqlcipher sqlcipher-devel
-
 rotki uses npm v8. To check if you have version 8 of npm you can run::
 
     npm --version
@@ -404,7 +394,6 @@ OSX
 =====
 
 The tl;dr version is:
-- Install ``sqlcipher``
 - Use a virtual env with Python 3.9.x
 - Confirm ``pip``(pip3) install correctly and up to date
 - Get your node under control with ``nvm``. It has been tested with v16
@@ -412,16 +401,6 @@ The tl;dr version is:
 The following recipe has been tested using `Anaconda <https://conda.io>`_. `VirtualEnv <https://virtualenv.pypa.io>`_ works as well, refer to the documentations of those projects to install and use them.
 
 Install `Homebrew <https://brew.sh/>`_ first if not installed yet.
-rotki uses an encrypted database called `SQLCipher <https://www.zetetic.net/sqlcipher/>`_. Before we can proceed, we need to install it. Homebrew makes it simple::
-
-    $ brew update
-    $ cd "$(brew --repo homebrew/core)"
-    $ git checkout 9ad779deb6076d0fc251fddc579ee2eb72acbb99 Formula/sqlcipher.rb #This formula installs 4.5.0 of sqlcipher
-    $ brew install sqlcipher
-
-Also these are some dependencies that may or may not be properly installed in your system so make sure you have them. ::
-
-    $ brew install gmp
 
 If you wish to use Conda, use the following commands::
 
@@ -467,13 +446,6 @@ If you want to also have the developer requirements in order to develop rotki
 then do::
 
     $ pip3 install -r requirements_dev.txt
-
-.. NOTE::
-    Make sure that pysqlcipher3 is properly installed. If ``$ pip3 freeze | grep pysqlcipher3`` returns nothing for you then it was not installed. Try to manually install only that dependency with the verbose option to see where it fails. ``$ pip3 install pysqlcipher3 -v``. If it fails at the stage of finding the library for ``-lsqlcipher`` or ``sqlcipher/sqlite3.h file not found`` then ``brew install sqlciper`` did not place the installed lib directory to the ``LIBRARY_PATH`` and you will have to do it manually.
-    For example, if ``sqlcipher`` was installed using Homebrew, the library path resembles this ``/opt/homebrew/Cellar/sqlcipher/<version>/lib`` on Mac ARM based chips and ``/usr/local/Cellar/sqlcipher/<version>/lib`` on Mac Intel based chips by default.
-    Afterwards, install ``pysqlcipher3`` using the command below:
-    ``$ LIBRARY_PATH=/opt/homebrew/Cellar/sqlcipher/4.5.1/lib C_INCLUDE_PATH=/opt/homebrew/Cellar/sqlcipher/4.5.1/include pip3 install pysqlcipher3``.
-    Assuming ``version`` = 4.5.1.
 
 Since the electron application is located in a different directory you also need to do::
 
@@ -536,30 +508,6 @@ Git
 ^^^^^^^^^^^^^^^^^^^^
 Get `latest git <https://gitforwindows.org/>`_.
 
-OpenSSL, Sqlcipher and pysqlcipher3
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In order to build rotki on Windows, you will need to have installed and built pysqlcipher3 (instructions on this further down) which needs sqlcipher which needs OpenSSL.
-
-1. The guide requires you to get ``OpenSSL``. You can do that from `here <https://slproweb.com/products/Win32OpenSSL.html>`__.
-
-    .. NOTE::
-        a) Because of some pysqlcipher3 dependencies, and because it most closely matches the version used in the sqlcipher build guide, you should get OpenSSL 1.0.2 and not 1.1.1 (the naming of libs and dlls has changed between versions and the building of some dependencies will fail).
-
-        b) Get the version of OpenSSL that matches the architecture of your Windows and python installs (i.e. 32- or 64-bit)
-
-        c) When prompted for an install directory for OpenSSL, choose one that does not have spaces in it (i.e. avoid \Program Files\) as installing it in a directory with spaces will cause you numerous headaches when trying to edit the Makefile mentioned in the sqlcipher build instructions.
-
-        d) Verify that the ``<OpenSSL Install Dir>\bin`` directory is on your path after installation, pysqlcipher3 will not build/install correctly if it is missing
-
-2. As no pre-compiled Windows binaries and dlls are readily available for sqlcipher, you will need to build it from source. `Here <https://github.com/sqlitebrowser/sqlitebrowser/wiki/Win64-setup-%E2%80%94-Compiling-SQLCipher>`__ is a good guide on how to compile SQLCipher for Windows.
-
-    .. NOTE::
-        a) Follow the instructions in the sqlcipher build guide regarding changes to ``Makefile.msc`` very closely, ensuring that variables that point to the directory where you have actually installed OpenSSL.
-
-
-3. Once you have completed up to and including Step 6 in the sqlcipher build guide (you can ignore Step 7), you will have compiled sqlcipher and built the necessary headers and libraries that pysqlcipher3 depends on. In the directory you should now see ``sqlcipher.dll``, copy and paste this file to your ``<Windows>\System32`` directory. These files will be used later; you can now move on to setting up your rotki dev environment.
-
 Downloading source and installing python dependencies
 ------------------------------------------------------
 
@@ -593,39 +541,17 @@ If at any time you want to dissasociate with the virtual env, you can use the co
 
 Pay close attention to the results of the command. Sometimes modules are reported as successfully installed but in reality the build has failed. You should carefully scroll through the buffer to ensure everything has been built & installed correct.
 
-At this point, it's likely that pysqlcipher3 has not been built and installed correctly, and you will need to install it manually. If pysqlcipher3 installed successfully, you can skip Steps 7 - 9 and move on to the next section.
-
-Since the electron application is located in a different directory you also need to do (NOTE: execute this only after pysqlcipher3 has successfully installed)::
-
     pip install -e .
 
-7. Go back to your development directory and download / clone (if you want to use git but don't want to clone the whole project, check out `degit <https://www.npmjs.com/package/degit>`_) the source for `pysqlcipher3 <https://github.com/rigglemania/pysqlcipher3>`_.
+7. You need to download `miniupnpc for windows <https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/miniupnpc_64bit_py39-2.2.24.zip>`
 
-8. With your code editor of choice, edit the ``setup.py`` file in ``\pysqlcipher3\``, make the following changes and save the file::
+After the download extract the zip contents and copy the `miniupnpc.dll` to your virtual environment's `Lib\site-packages` directory
 
-    Lines 165 - 169 Before
-            ext_modules=[Extension(
-            name=PACKAGE_NAME + EXTENSION_MODULE_NAME,
-            sources=sources,
-            define_macros=define_macros)
-        ],
-    Lines 165 ... AFTER
-            ext_modules=[Extension(
-            name=PACKAGE_NAME + EXTENSION_MODULE_NAME,
-            sources=sources,
-            library_dirs=[r'<DIRECTORY WHERE YOU BUILT SQLCIPHER TO (i.e. where the compiled sqlcipher.exe and sqlcipher.dll are)>'],
-            include_dirs=[r'<THE PARENT DIRECTORY OF THE ABOVE DIRECTORY>'],
-            define_macros=define_macros)
-        ],
+To make sure that rotki works you can try starting using the following::
 
-9. Going back to the open terminal that you have, and ensuring that you are still in the rotki virtualenv that you created, navigate to the directory where you have downloaded the ``pysqlcipher3`` source.
+    python -m rotkehlchen
 
-In the terminal execute the two following commands in succession::
-
-    python setup.py build
-    python setup.py install
-
-If all went well, pysqlcipher3 should have successfuly built and installed. If it didn't, try going back and ensuring that you have properly built sqlcipher and pointed to the right directories in the setup.py file, or consult the troubleshooting section.
+This should great you with the following message: `rotki REST API server is running at: 127.0.0.1:5042.
 
 Installing Electron and Running rotki
 -------------------------------------
@@ -652,8 +578,7 @@ After the app is built, if everything went well you should see the below text in
 
 If you get any errors about missing dependencies, try to install them via npm and run again; consult the troubleshooting section for other errors.
 
-3. Alternatively, you can also choose to build the application. In order to do so, navigate to your rotki development directory and execute the ``package.bat`` file.
-NOTE: You will need to edit the directories in the batch file to point to where you built pysqlcipher3 and your rotki development directory (`see here <https://github.com/rotki/rotki/blob/5f55522efc8faa1992b64e8b27c96ce8c844d70c/package.bat#L27-L30>`_).
+3. Alternatively, you can also choose to build the application. In order to do so, navigate to your rotki development directory and execute the ``package.ps1`` file.
 
 Troubleshooting
 ---------------
@@ -678,27 +603,6 @@ Then go `here <https://visualstudio.microsoft.com/downloads/>`__ and get the mic
 
 You also need to add them to the path. The tools were probably installed here: ``C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools``
 Environment variable should be: ``VS140COMNTOOLS``
-
-
-Alternative dependencies with sqlciper amalgamation
--------------------------------------------------------------
-
-This is a not so well tested way but some work has been done by cryptomental in `this <https://github.com/rotki/rotki/issues/28>`__ issue for it. With the amalgamation you can obtain all sqlcipher dependencies precompiled and amalgamated in one big blog. But ... it's tricky, hense not so well tested.
-
-Read the issue for a lot of details and also the ``appveyor.yml`` for what needs to be done to build sqlcipher and keep the following in mind:
-
-1. Replace ``robocopy`` with ``copy -r`` and make sure to copy into python system include and not the venv one.
-2. If while building the amalgamation you get: ``"Fatal error: OpenSSL could not be detected!"`` try `this SO answer <https://stackoverflow.com/a/38969408>`__. and make sure to add ``OPENSSL_CONF`` to the environment variables pointing to the location of ``openssl.conf``.
-3. In addition copy the amalgamation dir's ssl include folder to the python include folder::
-
-       $ cp -r sqlcipher-amalgamation-3020001/openssl-include/openssl/ /c/Users/lefteris/AppData/Local/Programs/Python/Python37-32/include/openssl
-
-4. Copy the amalgamation dir's ssl libraries to the python lib folder::
-
-       $ cp sqlcipher-amalgamation-3020001/OpenSSL-Win32/* /c/Users/lefteris/AppData/Local/Programs/Python/Python37-32/libs/
-
-   Note it has to be the OpenSSL-Win32 part.
-
 
 Docker
 =========
