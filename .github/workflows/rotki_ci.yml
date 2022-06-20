@@ -7,24 +7,28 @@ on:
       - develop
       - bugfixes
 
+env:
+  PYTHON_VERSION: 3.9.13
+  NODE_VERSION: 16
+  PIP_VERSION: 22.1.2
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
   check-changes:
-    strategy:
-      matrix:
-        os: [ ubuntu-18.04 ]
-        node-version: [ 16.x ]
-    runs-on: ${{ matrix.os }}
+    name: 'Required job check'
+    runs-on: ubuntu-18.04
     outputs:
       backend_tasks: ${{ steps.checker.outputs.backend_tasks }}
       frontend_tasks: ${{ steps.checker.outputs.frontend_tasks }}
       documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: ./.github/actions/job-checker
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Run check action
+        uses: ./.github/actions/job-checker
         id: checker
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -40,28 +44,26 @@ jobs:
 
 
   lint-frontend:
+    name: 'Frontend lint'
     needs: ['check-changes']
     if: ${{ needs.check-changes.outputs.frontend_tasks }}
-    strategy:
-      matrix:
-        os: [ubuntu-18.04]
-        node-version: [16.x]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
-      - name: Setup
-        uses: actions/setup-node@v1
+      - name: Setup node
+        uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
-      - name: Store npm cache
-        uses: actions/cache@v2
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - name: Cache cypress
+        uses: actions/cache@v3
         with:
-          path: |
-            ~/.npm
-            ~/.cache/Cypress
-          key: ${{ runner.os }}-node--ci-${{ hashFiles('**/app/package-lock.json') }}
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-node--ci-${{ hashFiles('frontend/package-lock.json') }}
       - name: Install dependencies
         working-directory: ./frontend
         run: |
@@ -80,28 +82,26 @@ jobs:
         run: npm run lint:style
 
   unittest-frontend:
+    name: 'Frontend unit tests'
     needs: [ 'check-changes' ]
     if: ${{ needs.check-changes.outputs.frontend_tasks }}
-    strategy:
-      matrix:
-        os: [ ubuntu-18.04 ]
-        node-version: [ 16.x ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
-      - name: Setup
-        uses: actions/setup-node@v1
+      - name: Setup node
+        uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
-      - name: Store npm cache
-        uses: actions/cache@v2
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - name: Cache cypress
+        uses: actions/cache@v3
         with:
-          path: |
-            ~/.npm
-            ~/.cache/Cypress
-          key: ${{ runner.os }}-node--ci-${{ hashFiles('**/app/package-lock.json') }}
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-node--ci-${{ hashFiles('frontend/package-lock.json') }}
       - name: Install dependencies
         working-directory: ./frontend
         run: |
@@ -118,21 +118,21 @@ jobs:
         run: cd ../.. && ./.github/.codecov -F frontend_unit
 
   docs:
+    name: 'Documentation build'
     needs: [ 'check-changes' ]
     if: ${{ needs.check-changes.outputs.documentation_tasks }}
-    strategy:
-      matrix:
-        os: [ubuntu-18.04]
-        python-version: [3.9]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup
-        uses: actions/setup-python@v1
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
       - name: Install dependencies
         run: |
+          pip install --upgrade pip==${{ env.PIP_VERSION }}
           pip install -r requirements_docs.txt
           pip install -e .
           git rev-parse HEAD
@@ -140,21 +140,21 @@ jobs:
         run: cd docs && make html
 
   lint-backend:
+    name: 'Backend lint'
     needs: ['check-changes']
     if: ${{ needs.check-changes.outputs.backend_tasks }}
-    strategy:
-      matrix:
-        os: [ubuntu-18.04]
-        python-version: [3.9]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup
-        uses: actions/setup-python@v1
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
       - name: Install dependencies
         run: |
+          pip install --upgrade pip==${{ env.PIP_VERSION }}
           pip install -r requirements_lint.txt
           pip install -e .
           git rev-parse HEAD
@@ -162,49 +162,36 @@ jobs:
         run: make lint
 
   test-backend:
+    name: 'Backend tests'
     if: ${{ needs.check-changes.outputs.backend_tasks }}
     needs: ['lint-backend', 'check-changes']
     timeout-minutes: 60
     env:
       CI: true
-    strategy:
-      matrix:
-        os: [ubuntu-18.04]
-        python-version: [3.9]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
-      - name: Setup SQLCipher
-        run: |
-          sudo apt-get update
-          sudo apt-get install libxml2-utils
-          ./install_deps.sh
-          sudo ldconfig
-      - name: Set up python
-        uses: actions/setup-python@v1
+      - name: Setup python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
-      - name: Store python cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-      - name: Store test dir
-        uses: actions/cache@v2
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Store test directory
+        uses: actions/cache@v3
         with:
           path: ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-testdir-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-testdir-
+          restore-keys: ${{ runner.os }}-testdir-
       - name: Install dependencies
         run: |
-          pip install --upgrade pip==21.3.1 wheel
+          pip install --upgrade pip==${{ env.PIP_VERSION }} wheel
           pip install codecov pytest-cov
           pip install -r requirements_dev.txt
           pip install -e .
-      - name: Run Test
+      - name: Run tests
         run: |
           COVERAGE_ARGS='--cov=./'
           python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
@@ -212,61 +199,47 @@ jobs:
         run: ./.github/.codecov -F backend
 
   test-e2e:
+    name: 'Frontend e2e tests'
     needs: [ 'check-changes' ]
     if: |
       contains(needs.check-changes.outputs.frontend_tasks, true) ||
       contains(needs.check-changes.outputs.backend_tasks, true)
-    strategy:
-      matrix:
-        os: [ubuntu-18.04]
-        python-version: [3.9]
-        node-version: [16.x]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
-      - name: Set up python
-        uses: actions/setup-python@v1
+      - name: Setup python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
-      - name: Store python cache
-        uses: actions/cache@v2
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - name: Cache Cypress
+        uses: actions/cache@v3
         with:
-          path: |
-            ~/.cache/pip
-            ~/.cache/.rotkehlchen-test-dir
-          key: ${{ runner.os }}-pip-e2e-${{ hashFiles('**/requirements.txt') }}
-      - name: Store npm cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.npm
-            ~/.cache/Cypress
-          key: ${{ runner.os }}-node--e2e-${{ hashFiles('**/app/package-lock.json') }}
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-node--e2e-${{ hashFiles('frontend/package-lock.json') }}
       - name: Store frontend cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/rotki-e2e/price_history
             ~/rotki-e2e/icons
             ~/rotki-e2e/global_data
-          key: ${{ runner.os }}-e2e-cache-${{ hashFiles('**/app/package-lock.json') }}
+          key: ${{ runner.os }}-e2e-cache-${{ hashFiles('frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-e2e-cache-
-      - name: Setup SQLCipher
-        run: |
-          sudo apt-get update
-          sudo apt-get install libxml2-utils
-          ./install_deps.sh
-          sudo ldconfig
       - name: Setup backend
         run: |
-          pip install -r requirements_dev.txt
+          pip install --upgrade pip==${{ env.PIP_VERSION }}
+          pip install -r requirements.txt
           pip install -e .
       - name: Restore dependencies
         working-directory: ./frontend
@@ -276,7 +249,7 @@ jobs:
             npm ci
           fi
           npm run build -w @rotki/common
-      - name: Run integration tests
+      - name: Run e2e tests
         uses: cypress-io/github-action@v2
         env:
           ARGS: "--browser chrome"
@@ -287,29 +260,29 @@ jobs:
       - name: Upload coverage
         working-directory: ./frontend/app
         run: cd ../.. && ./.github/.codecov -F frontend_integration
-      - uses: actions/upload-artifact@v2
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: screenshots-${{ runner.os }}
           path: ./frontend/app/tests/e2e/screenshots
       - name: Upload backend logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: backend-logs-${{ runner.os }}
           path: ~/rotki-e2e-logs/*.log
-      - uses: actions/upload-artifact@v2
+      - name: Upload cypress videos
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: videos-${{ runner.os }}
           path: ./frontend/app/tests/e2e/videos
   done:
+    name: 'Success check'
     if: ${{ always() }}
     needs: [ 'check-changes', 'lint-frontend', 'unittest-frontend', 'docs', 'lint-backend', 'test-backend', 'test-e2e' ]
-    strategy:
-      matrix:
-        os: [ubuntu-18.04]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
     steps:
       - name: Check if any task failed
         run: |

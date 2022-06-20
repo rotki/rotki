@@ -7,56 +7,52 @@ on:
     branches:
       - build
 
-jobs:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
+env:
+  PYTHON_VERSION: 3.9.13
+  NODE_VERSION: 16
+  PYTHON_MACOS: 10.9
+  PIP_VERSION: 22.1.2
+
+jobs:
   build-linux:
+    name: Build linux binary
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    strategy:
-      matrix:
-        os: [ ubuntu-18.04 ]
-        python-version: [ 3.9 ]
-        node-version: [ 16.x ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Set up python
-        uses: actions/setup-python@v1
+      - name: Setup python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
-      - name: pip cache persistence
-        uses: actions/cache@v2
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - name: Cache cypress
+        uses: actions/cache@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
-      - name: npm cache persistence
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.npm
-            ~/cache/Cypress
-          key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
-      - name: Setup SQLCipher
-        run: |
-          sudo apt-get update
-          sudo apt-get install libxml2-utils
-          ./install_deps.sh
-          sudo ldconfig
+          path: ~/cache/Cypress
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/package-lock.json') }}
       - name: Package
         id: packaging
         run: |
           npm install -g npm@8
-          pip3 install --upgrade pip
+          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
           ./package.sh
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
+      - name: Upload files
+        uses: actions/upload-artifact@v3
         with:
           name: nightly-linux
           path: |
@@ -74,47 +70,39 @@ jobs:
 
 
   build-macos:
+    name: 'Build macOS binary'
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     environment: macos_sign
-    strategy:
-      matrix:
-        os: [ macos-10.15 ]
-        python-version: [ 3.9 ]
-        node-version: [ 16.x ]
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-10.15
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Cache python pkg
+        uses: actions/cache@v3
+        with:
+          path: ~/python*.pkg
+          key: ${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-${{ env.PYTHON_MACOS }}
       - name: Set up python
-        run: packaging/setup-osx.sh
+        run: packaging/setup-macos-python.sh ${{ env.PYTHON_VERSION }} ${{ env.PYTHON_MACOS }}
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
-      - name: pip cache persistence
-        uses: actions/cache@v2
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - name: Cache cypress
+        uses: actions/cache@v3
         with:
-          path: ~/Library/Caches/pip
-          key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
-      - name: npm cache persistence
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.npm
-            ~/Library/Caches/Cypress
-          key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
-      - name: Setup SQLCipher
-        run: |
-          cd "$(brew --repo homebrew/core)"
-          git checkout 9ad779deb6076d0fc251fddc579ee2eb72acbb99 Formula/sqlcipher.rb #This formula installs 4.5.0 of sqlcipher
-          brew install sqlcipher
+          path: ~/Library/Caches/Cypress
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/package-lock.json') }}
       - name: Package
         id: packaging
         run: |
-          pip3 install --upgrade pip
+          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
           pip3 install virtualenv
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
@@ -126,10 +114,10 @@ jobs:
           IDENTITY: ${{ secrets.IDENTITY }}
           APPLEID: ${{ secrets.APPLEID }}
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
+      - name: Upload files
+        uses: actions/upload-artifact@v3
         with:
-          name: nightly-osx
+          name: nightly-macos
           path: |
             ${{ steps.packaging.outputs.binary }}
             ${{ steps.packaging.outputs.binary_checksum }}
@@ -144,62 +132,47 @@ jobs:
           }'
 
   build-windows:
+    name: Build windows binary
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SQLCIPHER_VERSION: 'v4.5.0'
-      PYSQLCIPHER3_VERSION: '1f1b703b9e35205946c820e735f58799e1b72d2d'
       BUILD_DEPENDENCIES: "build-dependencies"
-    strategy:
-      matrix:
-        os: [ windows-latest ]
-        python-version: [ 3.9 ]
-        node-version: [ 16.x ]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
-      - name: pip cache persistence
-        uses: actions/cache@v2
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      - name: Cache cypress
+        uses: actions/cache@v3
         with:
-          path: ~\AppData\Local\pip\Cache
-          key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
-      - name: Get npm cache directory
-        id: npm-cache
-        run: |
-          echo "::set-output name=dir::$(npm config get cache)"
-      - name: npm cache persistence
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ steps.npm-cache.outputs.dir }}
-            ~\AppData\Local\Cypress
-          key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
+          path: ~\AppData\Local\Cypress
+          key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/package-lock.json') }}
       - name: Persist Build Dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
-          path: |
-            ~\${{ env.BUILD_DEPENDENCIES }}\
-            ~\AppData\Local\Temp\chocolatey\
-          key: ${{ matrix.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
+          path: ~\${{ env.BUILD_DEPENDENCIES }}\
+          key: ${{ runner.os }}-build-dependencies
       - name: Build rotki
         id: packaging
         run: |
           npm install -g npm@8
-          pip3 install --upgrade pip
+          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
           .\package.ps1
         shell: powershell
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
+      - name: Upload files
+        uses: actions/upload-artifact@v3
         with:
           name: nightly-windows
           path: |
@@ -215,19 +188,22 @@ jobs:
           Invoke-RestMethod -Method Post -Uri $uri -ContentType "application/json" -Body $body
 
   build-docker:
+    name: Build docker image
     runs-on: ubuntu-18.04
     environment: docker
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -252,7 +228,7 @@ jobs:
           echo "::set-output name=platforms::$PLATFORMS"
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: ./Dockerfile

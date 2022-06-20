@@ -34,10 +34,24 @@ function install_mac_cpython {
     local py_inst
     py_version="$1"
     py_stripped=$(strip_ver_suffix "$py_version")
-    py_inst=python-${py_version}-macosx${py_osx_ver}.pkg
-    local inst_path=$DOWNLOADS_SDIR/$py_inst
+
+    local postfix
+    if [[ ${py_osx_ver} == 11 ]]; then
+      postfix="macos"
+    else
+      postfix="macosx"
+    fi
+
+    py_inst=python-${py_version}-${postfix}${py_osx_ver}.pkg
+    local inst_path=$DOWNLOADS_SDIR$py_inst
     mkdir -p "$DOWNLOADS_SDIR"
-    curl $MACPYTHON_URL/"$py_stripped"/"${py_inst}" > "$inst_path"
+    DOWNLOAD_URL=$MACPYTHON_URL/"$py_stripped"/"${py_inst}"
+    if [[ ! -f $inst_path ]]; then
+      echo downloading "$DOWNLOAD_URL"
+      curl "$DOWNLOAD_URL" > "$inst_path"
+    else
+      echo "Using cached $inst_path"
+    fi
     sudo installer -pkg "$inst_path" -target /
     local py_mm=${py_version:0:3}
     export PYTHON_EXE=$MACPYTHON_PY_PREFIX/$py_mm/bin/python$py_mm
@@ -51,5 +65,5 @@ function install_mac_cpython {
     codesign --remove-signature "$PYTHON_DIR/Python"
 }
 
-install_mac_cpython "3.9.10" "10.9"
+install_mac_cpython "$1" "$2"
 echo "PATH=$PYTHON_DIR:$PYTHON_DIR/bin:$PATH" >> $GITHUB_ENV

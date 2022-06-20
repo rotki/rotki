@@ -3,7 +3,7 @@ greenlet==1.1.2
 gevent-websocket==0.10.1
 wsaccel==0.6.3  # recommended for acceleration of gevent-websocket. But abandoned.
 web3==5.29.1
-pysqlcipher3==1.0.4
+rotki-pysqlcipher3==2022.6.1
 requests==2.27.1
 urllib3==1.26.9
 coincurve==17.0.0

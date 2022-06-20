@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+env:
+  PYTHON_VERSION: 3.9.13
+  NODE_VERSION: 16
+  PIP_VERSION: 22.1.2
+
 jobs:
   test-backend:
     env:
@@ -11,54 +16,31 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-18.04, macos-10.15 ]
-        python-version: [ 3.9 ]
+        os: [ ubuntu-18.04, macos-10.5 ]
     runs-on: ${{ matrix.os }}
+    name: 'Backend tests on ${{ matrix.os }}'
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
-      - name: Setup SQLCipher
-        run: |
-          if [ ${{ matrix.os }} == 'ubuntu-18.04' ];
-          then
-            sudo apt-get update
-            sudo apt-get install libxml2-utils
-            ./install_deps.sh
-            sudo ldconfig
-          fi
-          if [ ${{ matrix.os }} == 'macos-10.15' ];
-          then
-            brew install sqlcipher
-          fi
-      - name: Set up python
-        uses: actions/setup-python@v1
+      - name: Setup python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
-      - name: Store python Cache (linux)
-        uses: actions/cache@v2
-        if: startsWith(runner.os, 'Linux')
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-      - name: Store python Cache (macOS)
-        uses: actions/cache@v2
-        if: startsWith(runner.os, 'macOS')
-        with:
-          path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-      - name: Store test dir
-        uses: actions/cache@v2
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - name: Cache rotkehlchen test directory
+        uses: actions/cache@v3
         with:
           path: ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-testdir
       - name: Install dependencies
         run: |
-          pip install --upgrade pip==21.3.1 wheel
+          pip install --upgrade pip==${{ env.PIP_VERSION }} wheel
           pip install codecov pytest-cov
           pip install -r requirements_dev.txt
           pip install -e .
-      - name: Run Test
+      - name: Run tests
         run: |
           COVERAGE_ARGS='--cov=./'
           if [ ${{ matrix.os }} == 'macos-10.15' ];
@@ -70,62 +52,40 @@ jobs:
         run: bash ./.github/.codecov -F backend
 
   test-integration:
-    needs: [ test-backend ]
+    name: 'Frontend e2e tests'
     env:
       CI: true
-      FILTER: '[ui tests]'
-    strategy:
-      matrix:
-        os: [ ubuntu-18.04 ]
-        python-version: [ 3.9 ]
-        node-version: [ 16.x ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
-      - name: Set up python
-        uses: actions/setup-python@v1
+      - name: Setup python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
-      - name: Store python cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.cache/.rotkehlchen-test-dir
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-      - name: Store npm cache
-        uses: actions/cache@v2
-        if: contains(steps.check.outputs.ui-tests, true)
-        with:
-          path: |
-            ~/.npm
-            ~/.cache/Cypress
-          key: ${{ runner.os }}-node-${{ hashFiles('**/requirements.txt') }}
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
       - name: Store frontend cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
+            ~/.cache/Cypress
             ~/rotki-e2e/price_history
             ~/rotki-e2e/icons
             ~/rotki-e2e/global_data
-          key: ${{ runner.os }}-e2e-cache-${{ hashFiles('**/app/package-lock.json') }}
+          key: ${{ runner.os }}-e2e-cache-${{ hashFiles('frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-e2e-cache-
-      - name: Setup SQLCipher
-        run: |
-          sudo apt-get update
-          sudo apt-get install libxml2-utils
-          ./install_deps.sh
-          sudo ldconfig
       - name: Setup backend
         run: |
-          pip install --upgrade pip==21.3.1 wheel
+          pip install --upgrade pip==${{ env.PIP_VERSION }} wheel
           pip install -r requirements.txt
           pip install -e .
       - name: Restore dependencies
@@ -136,7 +96,7 @@ jobs:
             npm ci
           fi
           npm run build -w @rotki/common
-      - name: Run integration tests
+      - name: Run e2e tests
         uses: cypress-io/github-action@v2
         env:
           ARGS: "--browser chrome"
@@ -147,18 +107,20 @@ jobs:
       - name: Upload coverage
         working-directory: ./frontend/app
         run: cd ../.. && ./.github/.codecov -F frontend_integration
-      - uses: actions/upload-artifact@v2
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: screenshots-${{ runner.os }}
           path: ./frontend/app/tests/e2e/screenshots
       - name: Upload backend logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: backend-logs-${{ runner.os }}
           path: ~/rotki-e2e-logs/*.log
-      - uses: actions/upload-artifact@v2
+      - name: Upload videos
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: videos-${{ runner.os }}
