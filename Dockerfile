@@ -17,19 +17,6 @@ ARG PYINSTALLER_VERSION=v4.8
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-RUN apt-get update && apt-get install -y build-essential zlib1g-dev --no-install-recommends
-
-RUN git clone https://github.com/sqlcipher/sqlcipher && \
-    cd sqlcipher && \
-    git checkout v4.4.0 && \
-    ./configure \
-    --enable-tempstore=yes \
-    CFLAGS="-DSQLITE_HAS_CODEC -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS" \
-    LDFLAGS="-lcrypto" && \
-    make && \
-    make install && \
-    ldconfig
-
 RUN if [ "$TARGETARCH" != "amd64" ]; then curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; fi
 ENV PATH="/root/.cargo/bin:${PATH}"
 RUN if [ "$TARGETARCH" != "amd64" ]; then rustup default nightly-2021-03-24; fi
