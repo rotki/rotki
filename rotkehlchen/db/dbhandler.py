@@ -223,6 +223,29 @@ def db_tuple_to_str(
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
 
 
+def aggregate_eth_asset_balances(
+    last_eth_and_eth2_assets: List[SingleDBAssetBalance],
+    last_eth_and_eth2_liabilities: List[SingleDBAssetBalance],
+    balances: List[SingleDBAssetBalance],
+):
+    if len(last_eth_and_eth2_assets) != 0:
+        entry = SingleDBAssetBalance(
+            time=last_eth_and_eth2_assets[0].time,
+            amount=str(sum((FVal(entry.amount) for entry in last_eth_and_eth2_assets))),
+            usd_value=str(sum((FVal(entry.usd_value) for entry in last_eth_and_eth2_assets))),
+            category=BalanceType.ASSET,
+        )
+        balances.append(entry)
+    elif len(last_eth_and_eth2_liabilities) != 0:
+        entry = SingleDBAssetBalance(
+            time=last_eth_and_eth2_liabilities[0].time,
+            amount=str(sum((FVal(entry.amount) for entry in last_eth_and_eth2_liabilities))),
+            usd_value=str(sum((FVal(entry.usd_value) for entry in last_eth_and_eth2_liabilities))),
+            category=BalanceType.LIABILITY,
+        )
+        balances.append(entry)
+
+
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types
 
@@ -2805,6 +2828,11 @@ class DBHandler:
             'WHERE time BETWEEN ? AND ? AND currency=?'
         )
         bindings = [from_ts, to_ts, asset.identifier]
+
+        if settings.treat_eth2_as_eth and asset.identifier == 'ETH':
+            querystr = querystr.replace('currency=?', 'currency IN (?,?)')
+            bindings.append('ETH2')
+
         if balance_type is not None:
             querystr += ' AND category=?'
             bindings.append(balance_type.serialize_for_db())
@@ -2814,18 +2842,39 @@ class DBHandler:
         results = cursor.execute(querystr, bindings)
         results = results.fetchall()
         balances = []
+        # In the case of eth and ETH2 we have to agregate their value
+        last_eth_timestamp = 0
+        last_eth_and_eth2_assets = []
+        last_eth_and_eth2_liabilities = []
+
         results_length = len(results)
         for idx, result in enumerate(results):
             entry_time = result[0]
             category = BalanceType.deserialize_from_db(result[3])
-            balances.append(
-                SingleDBAssetBalance(
-                    time=entry_time,
-                    amount=result[1],
-                    usd_value=result[2],
-                    category=category,
-                ),
+            if settings.treat_eth2_as_eth is True and entry_time > last_eth_timestamp:
+                aggregate_eth_asset_balances(
+                    last_eth_and_eth2_assets=last_eth_and_eth2_assets,
+                    last_eth_and_eth2_liabilities=last_eth_and_eth2_liabilities,
+                    balances=balances,
+                )
+                last_eth_and_eth2_assets = []
+                last_eth_and_eth2_liabilities = []
+                last_eth_timestamp = entry_time
+
+            new_entry = SingleDBAssetBalance(
+                time=entry_time,
+                amount=result[1],
+                usd_value=result[2],
+                category=category,
             )
+            if settings.treat_eth2_as_eth:
+                if category == BalanceType.ASSET:
+                    last_eth_and_eth2_assets.append(new_entry)
+                else:
+                    last_eth_and_eth2_liabilities.append(new_entry)
+            else:    
+                balances.append(new_entry)
+
             if settings.ssf_0graph_multiplier == 0 or idx == results_length - 1:
                 continue
 
@@ -2844,7 +2893,11 @@ class DBHandler:
                         category=category,
                     ),
                 )
-
+        aggregate_eth_asset_balances(
+            last_eth_and_eth2_assets=last_eth_and_eth2_assets,
+            last_eth_and_eth2_liabilities=last_eth_and_eth2_liabilities,
+            balances=balances,
+        )
         return balances
 
     def query_owned_assets(self) -> List[Asset]:

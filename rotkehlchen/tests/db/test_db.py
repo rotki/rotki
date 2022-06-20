@@ -12,7 +12,7 @@ from rotkehlchen.accounting.structures.base import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import ONE, YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_ETH2, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
@@ -35,12 +35,13 @@ from rotkehlchen.db.settings import (
     DEFAULT_PNL_CSV_WITH_FORMULAS,
     DEFAULT_SSF_0GRAPH_MULTIPLIER,
     DEFAULT_TAXABLE_LEDGER_ACTIONS,
+    DEFAULT_TREAT_ETH2_AS_ETH,
     DEFAULT_UI_FLOATING_PRECISION,
     ROTKEHLCHEN_DB_VERSION,
     DBSettings,
     ModifiableDBSettings,
 )
-from rotkehlchen.db.utils import BlockchainAccounts, DBAssetBalance, LocationData
+from rotkehlchen.db.utils import BlockchainAccounts, DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -356,6 +357,7 @@ def test_writing_fetching_data(data_dir, username):
         'last_data_migration': DEFAULT_LAST_DATA_MIGRATION,
         'non_syncing_exchanges': [],
         'cost_basis_method': CostBasisMethod.FIFO,
+        'treat_eth2_as_eth': DEFAULT_TREAT_ETH2_AS_ETH,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 
@@ -1067,6 +1069,135 @@ def test_timed_balances_primary_key_works(user_data_dir):
     ]
     db.add_multiple_balances(balances)
     assert len(balances) == 2
+
+
+@pytest.mark.parametrize('db_settings', [{'treat_eth2_as_eth': True}])
+def test_timed_balances_treat_eth2_as_eth(user_data_dir, database):
+    """
+    Test that adding two timed_balances with the same primary key
+    i.e (time, currency, category) fails.
+    """
+    msg_aggregator = MessagesAggregator()
+    balances = [
+        DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=1590676728,
+            asset=A_ETH,
+            amount='1.0',
+            usd_value='4000',
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=1590676728,
+            asset=A_ETH2,
+            amount='0.4',
+            usd_value='5000',
+        ), DBAssetBalance(
+            category=BalanceType.LIABILITY,
+            time=1590676729,
+            asset=A_ETH2,
+            amount='0.3',
+            usd_value='2000',
+        ), DBAssetBalance(
+            category=BalanceType.LIABILITY,
+            time=1590676829,
+            asset=A_ETH,
+            amount='0.3',
+            usd_value='2000',
+        ), DBAssetBalance(
+            category=BalanceType.LIABILITY,
+            time=1590677829,
+            asset=A_ETH,
+            amount='0.8',
+            usd_value='1000',
+        ), DBAssetBalance(
+            category=BalanceType.LIABILITY,
+            time=1590677829,
+            asset=A_ETH2,
+            amount='0.5',
+            usd_value='2000',
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=1590777829,
+            asset=A_ETH2,
+            amount='0.5',
+            usd_value='2000',
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=1590877829,
+            asset=A_BTC,
+            amount='0.3',
+            usd_value='500',
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=1590877829,
+            asset=A_ETH,
+            amount='0.5',
+            usd_value='2000',
+        ), DBAssetBalance(
+            category=BalanceType.LIABILITY,
+            time=1590877829,
+            asset=A_ETH,
+            amount='0.5',
+            usd_value='2000',
+        ),
+    ]
+
+    database.add_multiple_balances(balances)
+    balances = database.query_timed_balances(asset=A_BTC)
+    assert len(balances) == 1
+    expected_balances = [
+        SingleDBAssetBalance(
+            time=1590877829,
+            amount='0.3',
+            usd_value='500',
+            category=BalanceType.ASSET,
+        ),
+    ]
+    assert balances == expected_balances
+
+    balances = database.query_timed_balances(asset=A_ETH)
+    expected_balances = [
+        SingleDBAssetBalance(
+            category=BalanceType.ASSET,
+            time=1590676728,
+            amount='1.4',
+            usd_value='9000',
+        ), SingleDBAssetBalance(
+            time=1590676729,
+            amount='0.3',
+            usd_value='2000',
+            category=BalanceType.LIABILITY,
+        ), SingleDBAssetBalance(
+            time=1590676829,
+            amount='0.3',
+            usd_value='2000',
+            category=BalanceType.LIABILITY,
+        ), SingleDBAssetBalance(
+            time=1590677829,
+            amount='1.3',
+            usd_value='3000',
+            category=BalanceType.LIABILITY,
+        ), SingleDBAssetBalance(
+            time=1590777829,
+            amount='0.5',
+            usd_value='2000',
+            category=BalanceType.ASSET,
+        ), SingleDBAssetBalance(
+            time=1590877829,
+            amount='0.5',
+            usd_value='2000',
+            category=BalanceType.ASSET,
+        ), SingleDBAssetBalance(
+            time=1590877829,
+            amount='0.5',
+            usd_value='2000',
+            category=BalanceType.LIABILITY,
+        ),
+    ]
+    print(balances)
+    print(expected_balances)
+    assert len(balances) == 7
+    assert balances == expected_balances
 
 
 def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
