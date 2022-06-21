@@ -188,18 +188,26 @@ jobs:
           Invoke-RestMethod -Method Post -Uri $uri -ContentType "application/json" -Body $body
 
   build-docker:
-    name: Build docker image
+    name: Build docker image (${{ matrix.arch.name }})
     runs-on: ubuntu-18.04
     environment: docker
+    strategy:
+      matrix:
+        arch:
+          - name: x86_64
+            platform: linux/amd64
+          - name: arm64
+            platform: linux/arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up QEMU
+        if: startsWith(matrix.arch.name, 'arm64')
         uses: docker/setup-qemu-action@v2
         with:
-          platforms: arm64
+          platforms: ${{ matrix.arch.name }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to DockerHub
@@ -217,11 +225,10 @@ jobs:
       - name: Build Information
         id: build_information
         run: |
-          if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then
-            PLATFORMS='linux/amd64,linux/arm64'
+          PLATFORMS='${{ matrix.arch.platform }}'
+          if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then            
             TAG=nightly
-          else
-            PLATFORMS=linux/amd64
+          else            
             TAG=dev
           fi
           echo "::set-output name=tag::$TAG"
