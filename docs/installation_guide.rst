@@ -502,7 +502,9 @@ Python
     pip install --upgrade pip
 
 6. Using pip, install virtualenvironment and the virtualenvwrapper-win. `See instructions here for installing them on Windows <http://timmyreilly.azurewebsites.net/python-pip-virtualenv-installation-on-windows/>`_. You can choose to follow the rest of the guide as an example or just read the instructions.
-7. Lastly, make sure you have the Microsoft Visual Studio build tools. Check the troubleshooting guide's relevant section :ref:`microsoft_visual_studio_build_tools_required`.
+7. Lastly, make sure you have the Microsoft Visual Studio build tools. For some reason installing the build tools alone won't work; you'll need to install the "Desktop development with C++" workload from Visual Studio. To do this, head over to `Microsoft's Website <https://visualstudio.microsoft.com/vs/>`_ and install Visual Studio. After doing that open up the Visual Studio Installer (can open it from the windows start menu) then click on "Modify" button. Under the "Workloads" tab, select `Desktop development with C++ <https://i.stack.imgur.com/C292w.png/>`_ (under the Desktop & Mobile section). Then finally, click on the "modify" button to download and install it. You may need to restart you PC.
+
+Check the troubleshooting guide's relevant section :ref:`microsoft_visual_studio_build_tools_required`.
 
 Git
 ^^^^^^^^^^^^^^^^^^^^
@@ -545,7 +547,15 @@ Pay close attention to the results of the command. Sometimes modules are reporte
 
 7. You need to download `miniupnpc for windows <https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/miniupnpc_64bit_py39-2.2.24.zip>`
 
-After the download extract the zip contents and copy the `miniupnpc.dll` to your virtual environment's `Lib\site-packages` directory
+After the download, extract the zip contents and copy the `miniupnpc.dll` to your virtual environment's `Lib > site-packages` directory. To locate this directory you can use command::
+
+    pip show <any package name from requirements.txt file>
+
+For example, you can use:: 
+
+    pip show cryptography
+
+The Location attribute is where the `miniupnpc.dll` should be placed (mine was located in the C:\\users\\<your computer name>\\envs\\rotki-develop\\lib\\site-packages).
 
 To make sure that rotki works you can try starting using the following::
 
