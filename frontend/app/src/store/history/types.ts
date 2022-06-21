@@ -15,9 +15,9 @@ export type EthTransactionEventEntry = EthTransactionEvent & EntryMeta;
 
 export enum IgnoreActionType {
   TRADES = 'trade',
-  MOVEMENTS = 'asset movement',
-  ETH_TRANSACTIONS = 'ethereum transaction',
-  LEDGER_ACTIONS = 'ledger action'
+  MOVEMENTS = 'asset_movement',
+  ETH_TRANSACTIONS = 'ethereum_transaction',
+  LEDGER_ACTIONS = 'ledger_action'
 }
 
 export type IgnoreActionPayload = {
