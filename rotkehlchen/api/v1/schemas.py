@@ -734,6 +734,7 @@ class ModifiableSettingsSchema(Schema):
     premium_should_sync = fields.Bool(load_default=None)
     include_crypto2crypto = fields.Bool(load_default=None)
     submit_usage_analytics = fields.Bool(load_default=None)
+    treat_eth2_as_eth = fields.Bool(load_default=None)
     ui_floating_precision = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
@@ -853,6 +854,7 @@ class ModifiableSettingsSchema(Schema):
             ssf_0graph_multiplier=data['ssf_0graph_multiplier'],
             non_syncing_exchanges=data['non_syncing_exchanges'],
             cost_basis_method=data['cost_basis_method'],
+            treat_eth2_as_eth=data['treat_eth2_as_eth'],
         )
 
 
