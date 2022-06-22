@@ -53,7 +53,7 @@ const date: DateUtilities = {
     return dayjs(date, format).unix();
   },
   epochStartSubtract(amount: number, unit: TimeUnit): number {
-    return dayjs().subtract(amount, unit).startOf(unit).unix();
+    return dayjs().subtract(amount, unit).unix();
   },
   toUserSelectedFormat(timestamp: number): string {
     return displayDateFormatter.format(

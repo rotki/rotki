@@ -94,12 +94,7 @@ export class ElectronInterop {
   }
 
   async isMac(): Promise<boolean> {
-    const version = await this.version();
-
-    return (
-      (version as SystemVersion)?.os === 'darwin' ||
-      (version as WebVersion)?.platform?.startsWith?.('Mac')
-    );
+    return window.interop?.isMac() ?? false;
   }
 
   onAbout(cb: () => void) {

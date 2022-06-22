@@ -33,6 +33,7 @@ export interface Timeframe {
   readonly xAxisStepSize: number;
   readonly xAxisLabelDisplayFormat: string;
   readonly tooltipTimeFormat: string;
+  readonly timestampRange: number;
 }
 
 export type Timeframes = {
@@ -52,13 +53,15 @@ function unitDefaults(timeUnit: TimeUnit): TimeframeDefaults {
       xAxisLabelDisplayFormat: 'ddd',
       tooltipTimeFormat: 'ddd'
     };
-  } else if (timeUnit === TimeUnit.WEEK) {
+  }
+  if (timeUnit === TimeUnit.WEEK) {
     return {
       xAxisTimeUnit: timeUnit,
       xAxisLabelDisplayFormat: 'MMM D',
       tooltipTimeFormat: 'MMM D'
     };
-  } else if (timeUnit === TimeUnit.MONTH) {
+  }
+  if (timeUnit === TimeUnit.MONTH) {
     return {
       xAxisTimeUnit: timeUnit,
       xAxisLabelDisplayFormat: 'MMMM YYYY',
@@ -68,6 +71,8 @@ function unitDefaults(timeUnit: TimeUnit): TimeframeDefaults {
   throw new Error(`Invalid time unit selected: ${timeUnit}`);
 }
 
+const dayTimestamp = 24 * 60 * 60 * 1000;
+
 function createTimeframe(
   startingDate: StartingDateCalculator,
   frame: TimeFramePeriod,
@@ -75,16 +80,22 @@ function createTimeframe(
   amount = 1
 ): Timeframe {
   let start: () => number;
+  let timestampRange: number = 0;
+
   if (frame === TimeFramePeriod.ALL) {
     start = () => 0;
+    timestampRange = Infinity;
   } else {
     let startUnit: TimeUnit;
     if ([TimeFramePeriod.TWO_YEARS, TimeFramePeriod.YEAR].includes(frame)) {
       startUnit = TimeUnit.YEAR;
+      timestampRange = 365 * dayTimestamp * amount;
     } else if ([TimeFramePeriod.MONTH, TimeFramePeriod.THREE_MONTHS, TimeFramePeriod.SIX_MONTHS].includes(frame)) {
       startUnit = TimeUnit.MONTH;
+      timestampRange = 30 * dayTimestamp * amount;
     } else if ([TimeFramePeriod.WEEK, TimeFramePeriod.TWO_WEEKS].includes(frame)) {
       startUnit = TimeUnit.WEEK;
+      timestampRange = 7 * dayTimestamp * amount;
     } else {
       throw new Error(`unsupported timeframe: ${frame}`);
     }
@@ -94,7 +105,8 @@ function createTimeframe(
     text: frame,
     startingDate: start,
     ...unitDefaults(displayUnit),
-    xAxisStepSize: 1
+    xAxisStepSize: 1,
+    timestampRange,
   };
 }
 
@@ -124,8 +136,39 @@ export const customTimeframe: Timeframe = {
   text: TIMEFRAME_CUSTOM,
   startingDate: () => -1,
   ...unitDefaults(TimeUnit.MONTH),
-  xAxisStepSize: 1
+  xAxisStepSize: 1,
+  timestampRange: -1
 };
+
+export const getTimeframeByRange = (startDate: number, endDate: number): Timeframe => {
+  const range = endDate - startDate;
+  const current = Math.abs(endDate - Date.now()) < dayTimestamp;
+  const definedTimeframes = timeframes(() => 0);
+  const sortedByRange = Object.values(definedTimeframes).sort((a, b) =>
+    a.timestampRange - b.timestampRange
+  );
+
+  let usedTimeframe: Timeframe = sortedByRange[0];
+  let skip = false;
+  sortedByRange.forEach((timeframe) => {
+    if (skip) return;
+
+    if (timeframe.timestampRange >= range) {
+      usedTimeframe = timeframe;
+      skip = true;
+    }
+  })
+
+  if (usedTimeframe.xAxisTimeUnit === TimeUnit.DAY && !current) {
+    usedTimeframe = {
+      ...usedTimeframe,
+      xAxisLabelDisplayFormat: 'MMM D',
+      tooltipTimeFormat: 'MMM D',
+    }
+  }
+
+  return usedTimeframe;
+}
 
 export type TooltipDisplayOption = {
   visible: boolean;

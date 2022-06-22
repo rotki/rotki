@@ -34,7 +34,8 @@ import {
   IPC_SERVER_URL,
   IPC_STORE_PASSWORD,
   IPC_TRAY_UPDATE,
-  IPC_VERSION
+  IPC_VERSION,
+  IPC_IS_MAC
 } from '@/electron-main/ipc-commands';
 import { debugSettings, getUserMenu, MenuActions } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
@@ -104,14 +105,23 @@ function setupBackendRestart(getWindow: WindowProvider, pyHandler: PyHandler) {
 }
 
 function setupVersionInfo() {
+  const version: SystemVersion = {
+    os: process.platform,
+    arch: process.arch,
+    osVersion: process.getSystemVersion(),
+    electron: process.versions.electron
+  };
+
   ipcMain.on(IPC_VERSION, event => {
-    const version: SystemVersion = {
-      os: process.platform,
-      arch: process.arch,
-      osVersion: process.getSystemVersion(),
-      electron: process.versions.electron
-    };
     event.sender.send(IPC_VERSION, version);
+  });
+
+  ipcMain.on(IPC_IS_MAC, event => {
+    const isMac =
+      (version as SystemVersion)?.os === 'darwin' ||
+      navigator.platform?.startsWith?.('Mac');
+
+    event.sender.send(IPC_IS_MAC, isMac);
   });
 }
 

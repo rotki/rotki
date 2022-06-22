@@ -5,6 +5,7 @@ export const IPC_DOWNLOAD_PROGRESS = 'DOWNLOAD_PROGRESS' as const;
 export const IPC_INSTALL_UPDATE = 'INSTALL_UPDATE' as const;
 export const IPC_THEME = 'THEME' as const;
 export const IPC_VERSION = 'VERSION' as const;
+export const IPC_IS_MAC = 'IS_MAC' as const;
 export const IPC_ABOUT = 'ABOUT' as const;
 export const IPC_OPEN_PATH = 'OPEN_PATH' as const;
 export const IPC_CONFIG = 'CONFIG' as const;

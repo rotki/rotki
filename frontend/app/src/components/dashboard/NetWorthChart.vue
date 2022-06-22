@@ -1,7 +1,11 @@
 <template>
   <div :class="$style.wrapper">
     <div :class="$style.canvas">
-      <canvas :id="canvasId" @click="canvasClicked" />
+      <canvas
+        :id="canvasId"
+        @click.stop="canvasClicked"
+        @dblclick.stop="resetZoom"
+      />
       <graph-tooltip-wrapper :tooltip-option="tooltipDisplayOption">
         <template #content>
           <div>
@@ -31,6 +35,7 @@
 
 <script lang="ts">
 import {
+  getTimeframeByRange,
   Timeframe,
   TimeFramePeriod,
   Timeframes
@@ -61,6 +66,7 @@ import { setupThemeCheck } from '@/composables/common';
 import { useGraph, useTooltip } from '@/composables/graphs';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
+import { interop } from '@/electron-interop';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -83,7 +89,7 @@ export default defineComponent({
     chartData: { required: true, type: Object as PropType<NetValue> }
   },
   setup(props) {
-    const { timeframe, timeframes, chartData } = toRefs(props);
+    const { chartData } = toRefs(props);
     const { graphZeroBased } = setupSettings();
     const { currencySymbol } = setupGeneralSettings();
     const { dark } = setupThemeCheck();
@@ -91,6 +97,7 @@ export default defineComponent({
     const selectedTimestamp = ref<number>(0);
     const selectedBalance = ref<number>(0);
     const showExportSnapshotDialog = ref<boolean>(false);
+    const isDblClick = ref<boolean>(false);
 
     const canvasId = 'net-worth-chart__chart';
     const tooltipId = 'net-worth-chart__tooltip';
@@ -108,9 +115,45 @@ export default defineComponent({
       return chart;
     };
 
-    const activeTimeframe = computed<Timeframe>(() => {
-      return get(timeframes)[get(timeframe)];
+    const updateChart = () => {
+      chart?.update('resize');
+      calculateXRange();
+    };
+
+    const displayedXMin = ref<number>(0);
+    const displayedXMax = ref<number>(0);
+
+    const calculateXRange = () => {
+      if (!chart) {
+        set(displayedXMin, 0);
+        set(displayedXMax, 0);
+        return;
+      }
+
+      const xAxis = chart.options!.scales!.x!;
+
+      set(displayedXMin, xAxis.min);
+      set(displayedXMax, xAxis.max);
+    };
+
+    const dataTimeRange = computed<{ min: number; max: number } | null>(() => {
+      const data = get(balanceData);
+      if (data.length === 0) return null;
+
+      const first = data[0];
+      const last = data[data.length - 1];
+
+      return {
+        min: first.x,
+        max: last.x
+      };
     });
+
+    const activeTimeframe = computed<Timeframe>(() => {
+      return getTimeframeByRange(get(displayedXMin), get(displayedXMax));
+    });
+
+    watch(activeTimeframe, () => chart?.update('resize'));
 
     const xAxisStepSize = computed<number>(
       () => get(activeTimeframe).xAxisStepSize
@@ -142,7 +185,29 @@ export default defineComponent({
 
       const chartVal = getChart();
       chartVal.data!.datasets![0].data = newBalances;
-      chartVal.update('resize');
+      setZoomLevel();
+      updateChart();
+    };
+
+    const setZoomLevel = () => {
+      const chartVal = getChart();
+
+      const range = get(dataTimeRange);
+      if (!range) return;
+
+      const { min, max } = range;
+      const xAxis = chartVal.options!.scales!.x!;
+      xAxis.min = min;
+      xAxis.max = max;
+
+      const zoom = chartVal.options!.plugins!.zoom!;
+      zoom.limits = {
+        x: {
+          min: 'original',
+          max: 'original',
+          minRange: 28 * 60 * 60 * 1000
+        }
+      };
     };
 
     const clearData = () => {
@@ -179,17 +244,6 @@ export default defineComponent({
     };
 
     const createScales = () => {
-      const labelFormat: (period: TimeFramePeriod) => string = period => {
-        return get(timeframes)[period].xAxisLabelDisplayFormat;
-      };
-
-      const displayFormats = {
-        month: labelFormat(TimeFramePeriod.ALL),
-        week: labelFormat(TimeFramePeriod.MONTH),
-        day: labelFormat(TimeFramePeriod.WEEK),
-        hour: labelFormat(TimeFramePeriod.WEEK)
-      };
-
       return {
         x: {
           type: 'time',
@@ -202,7 +256,14 @@ export default defineComponent({
           time: {
             unit: () => get(xAxisTimeUnit),
             stepSize: () => get(xAxisStepSize),
-            displayFormats
+            displayFormats: () => {
+              const format = get(activeTimeframe).xAxisLabelDisplayFormat;
+              return {
+                month: format,
+                week: format,
+                day: format
+              };
+            }
           }
         },
         y: {
@@ -211,7 +272,22 @@ export default defineComponent({
             color: () => get(gridColor),
             borderColor: () => get(gridColor)
           },
-          beginAtZero: () => get(graphZeroBased)
+          suggestedMin: () => {
+            const data = get(balanceData);
+            if (data.length === 0) return 0;
+
+            let min = Math.min(...data.map(datum => datum.y));
+            if (get(graphZeroBased)) {
+              min = Math.min(0, min);
+            }
+            return min;
+          },
+          suggestedMax: () => {
+            const data = get(balanceData);
+            if (data.length === 0) return 0;
+
+            return Math.max(...data.map(datum => datum.y));
+          }
         }
       };
     };
@@ -255,7 +331,7 @@ export default defineComponent({
       };
     };
 
-    const createChart = (): Chart => {
+    const createChart = (modifierKey: 'ctrl' | 'meta'): Chart => {
       const context = getCanvasCtx();
       const datasets = createDatasets();
       const scales = createScales();
@@ -277,7 +353,19 @@ export default defineComponent({
           legend: {
             display: false
           },
-          tooltip
+          tooltip,
+          zoom: {
+            zoom: {
+              wheel: {
+                enabled: true,
+                modifierKey
+              },
+              mode: 'x',
+              onZoomComplete: () => {
+                calculateXRange();
+              }
+            }
+          }
         }
       };
 
@@ -290,10 +378,11 @@ export default defineComponent({
       return new Chart(context, config);
     };
 
-    const setup = () => {
+    const setup = async () => {
       chart?.destroy();
       clearData();
-      chart = createChart();
+      const modifierKey = (await interop.isMac()) ? 'meta' : 'ctrl';
+      chart = createChart(modifierKey);
       prepareData();
     };
 
@@ -302,36 +391,50 @@ export default defineComponent({
     });
 
     watch(dark, () => {
-      chart?.update('resize');
+      updateChart();
     });
 
     const canvasClicked = (event: PointerEvent) => {
-      const axisData = chart?.getElementsAtEventForMode(
-        event,
-        'index',
-        { intersect: false },
-        false
-      );
+      set(isDblClick, false);
+      setTimeout(() => {
+        if (get(isDblClick)) return;
 
-      if (axisData && axisData.length > 0) {
-        const index = axisData[0].index;
-        const balanceDataVal = get(balanceData);
-        const data = balanceDataVal[index];
+        const axisData = chart?.getElementsAtEventForMode(
+          event,
+          'index',
+          { intersect: false },
+          false
+        );
 
-        if (
-          data.x &&
-          data.y &&
-          !(showVirtualCurrentData.value && index === balanceDataVal.length - 1)
-        ) {
-          set(selectedTimestamp, data.x / 1000);
-          set(selectedBalance, data.y);
+        if (axisData && axisData.length > 0) {
+          const index = axisData[0].index;
+          const balanceDataVal = get(balanceData);
+          const data = balanceDataVal[index];
 
-          set(showExportSnapshotDialog, true);
+          if (
+            data.x &&
+            data.y &&
+            !(
+              showVirtualCurrentData.value &&
+              index === balanceDataVal.length - 1
+            )
+          ) {
+            set(selectedTimestamp, data.x / 1000);
+            set(selectedBalance, data.y);
+
+            set(showExportSnapshotDialog, true);
+          }
         }
-      }
+      }, 200);
+    };
+
+    const resetZoom = () => {
+      set(isDblClick, true);
+      chart?.resetZoom();
     };
 
     return {
+      resetZoom,
       currencySymbol,
       dark,
       canvasId,
