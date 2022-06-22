@@ -102,51 +102,52 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
     expected_ignored_assets = set(ignored_assets + [KICK_TOKEN.identifier])
     assert expected_ignored_assets <= set(result)
 
-    # check they are there
-    assert set(rotki.data.db.get_ignored_assets()) >= expected_ignored_assets
-    # Query for ignored assets and check that the response returns them
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            'ignoredassetsresource',
-        ),
-    )
-    result = assert_proper_response_with_result(response)
-    assert expected_ignored_assets <= set(result)
+    with rotki.data.db.user_write() as cursor:
+        # check they are there
+        assert set(rotki.data.db.get_ignored_assets(cursor)) >= expected_ignored_assets
+        # Query for ignored assets and check that the response returns them
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'ignoredassetsresource',
+            ),
+        )
+        result = assert_proper_response_with_result(response)
+        assert expected_ignored_assets <= set(result)
 
-    # remove 3 assets from ignored assets
-    response = requests.delete(
-        api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            'ignoredassetsresource',
-        ), json={'assets': [A_GNO.identifier, 'XMR', kick_token_id]},
-    )
-    assets_after_deletion = {A_RDN.identifier}
-    result = assert_proper_response_with_result(response)
-    assert assets_after_deletion <= set(result)
+        # remove 3 assets from ignored assets
+        response = requests.delete(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'ignoredassetsresource',
+            ), json={'assets': [A_GNO.identifier, 'XMR', kick_token_id]},
+        )
+        assets_after_deletion = {A_RDN.identifier}
+        result = assert_proper_response_with_result(response)
+        assert assets_after_deletion <= set(result)
 
-    # check that the changes are reflected
-    assert set(rotki.data.db.get_ignored_assets()) >= assets_after_deletion
-    # Query for ignored assets and check that the response returns them
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            'ignoredassetsresource',
-        ),
-    )
-    result = assert_proper_response_with_result(response)
-    assert assets_after_deletion <= set(result)
+        # check that the changes are reflected
+        assert set(rotki.data.db.get_ignored_assets(cursor)) >= assets_after_deletion
+        # Query for ignored assets and check that the response returns them
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'ignoredassetsresource',
+            ),
+        )
+        result = assert_proper_response_with_result(response)
+        assert assets_after_deletion <= set(result)
 
-    # Fetch remote assets to be ignored
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            'ignoredassetsresource',
-        ),
-    )
-    result = assert_proper_response_with_result(response)
-    assert result >= 1
-    assert len(rotki.data.db.get_ignored_assets()) > len(assets_after_deletion)
+        # Fetch remote assets to be ignored
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'ignoredassetsresource',
+            ),
+        )
+        result = assert_proper_response_with_result(response)
+        assert result >= 1
+        assert len(rotki.data.db.get_ignored_assets(cursor)) > len(assets_after_deletion)
 
     # Simulate remote error from cryptoscamdb
     with mock_cryptoscamdb_request():
@@ -232,29 +233,30 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Check that assets did not get modified
-    expected_tokens = set(
-        ignored_assets +
-        [KICK_TOKEN],
-    )
-    assert set(rotki.data.db.get_ignored_assets()) >= expected_tokens
+    with rotki.data.db.user_write() as cursor:
+        expected_tokens = set(
+            ignored_assets +
+            [KICK_TOKEN],
+        )
+        assert set(rotki.data.db.get_ignored_assets(cursor)) >= expected_tokens
 
-    # Test the adding an already existing asset or removing a non-existing asset is an error
-    if method == 'put':
-        asset = A_RDN.identifier
-        expected_msg = f'{A_RDN.identifier} is already in ignored assets'
-    else:
-        asset = 'ETH'
-        expected_msg = 'ETH is not in ignored assets'
-    response = getattr(requests, method)(
-        api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            'ignoredassetsresource',
-        ), json={'assets': [asset]},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg=expected_msg,
-        status_code=HTTPStatus.CONFLICT,
-    )
-    # Check that assets did not get modified
-    assert set(rotki.data.db.get_ignored_assets()) >= expected_tokens
+        # Test the adding an already existing asset or removing a non-existing asset is an error
+        if method == 'put':
+            asset = A_RDN.identifier
+            expected_msg = f'{A_RDN.identifier} is already in ignored assets'
+        else:
+            asset = 'ETH'
+            expected_msg = 'ETH is not in ignored assets'
+        response = getattr(requests, method)(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'ignoredassetsresource',
+            ), json={'assets': [asset]},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg=expected_msg,
+            status_code=HTTPStatus.CONFLICT,
+        )
+        # Check that assets did not get modified
+        assert set(rotki.data.db.get_ignored_assets(cursor)) >= expected_tokens

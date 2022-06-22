@@ -15,7 +15,7 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
     """
     cursor = db.conn.cursor()
     # Should exist -- but we are being extremely pedantic here
-    ignored_actions_exists = cursor.execute(
+    ignored_actions_exists = cursor.execute(  # always returns value
         'SELECT count(*) FROM sqlite_master WHERE type="table" AND name="ignored_actions";',
     ).fetchone()[0]
     # Delete all ignored ethereum transaction ids

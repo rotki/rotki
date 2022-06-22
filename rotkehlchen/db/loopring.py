@@ -4,6 +4,7 @@ from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 class DBLoopring():
@@ -11,32 +12,34 @@ class DBLoopring():
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
-    def add_accountid_mapping(self, address: ChecksumEthAddress, account_id: int) -> None:
-        cursor = self.db.conn.cursor()
-        cursor.execute(
+    def add_accountid_mapping(  # pylint: disable=no-self-use
+            self,
+            write_cursor: 'DBCursor',
+            address: ChecksumEthAddress,
+            account_id: int,
+    ) -> None:
+        write_cursor.execute(
             'INSERT INTO multisettings(name, value) VALUES(?, ?)',
             (f'loopring_{address}_account_id', str(account_id)),
         )
-        self.db.conn.commit()
-        self.db.update_last_write()
 
-    def remove_accountid_mapping(self, address: ChecksumEthAddress) -> None:
-        cursor = self.db.conn.cursor()
-        cursor.execute(
+    def remove_accountid_mapping(self, write_cursor: 'DBCursor', address: ChecksumEthAddress) -> None:  # pylint: disable=no-self-use  # noqa: E501
+        write_cursor.execute(
             'DELETE FROM multisettings WHERE name=?;',
             (f'loopring_{address}_account_id',),
         )
-        self.db.conn.commit()
-        self.db.update_last_write()
 
-    def get_accountid_mapping(self, address: ChecksumEthAddress) -> Optional[int]:
-        cursor = self.db.conn.cursor()
-        query = cursor.execute(
+    def get_accountid_mapping(  # pylint: disable=no-self-use
+            self,
+            cursor: 'DBCursor',
+            address: ChecksumEthAddress,
+    ) -> Optional[int]:
+        cursor.execute(
             'SELECT value FROM multisettings WHERE name=?;',
             (f'loopring_{address}_account_id',),
         )
-        query = query.fetchall()
-        if len(query) == 0 or query[0][0] is None:
+        query = cursor.fetchone()
+        if query is None or query[0] is None:
             return None
 
-        return int(query[0][0])
+        return int(query[0])

@@ -309,7 +309,8 @@ def populate_db_and_check_for_asset_renaming(
     assert trades[1]['pair'] == f'{renamed_asset}_EUR'
     assert trades[2]['pair'] == f'{renamed_asset}_EUR'
 
-    assert new_db.get_version() == target_version
+    with new_db.conn.read_ctx() as cursor:
+        assert new_db.get_setting(cursor, 'version') == target_version
     with mock_dbhandler_update_owned_assets():
         new_db.logout()  # logout the db so update_owned_assets still runs mocked
 
@@ -336,9 +337,10 @@ def test_upgrade_db_1_to_2(data_dir, username):
         data = DataHandler(data_dir, msg_aggregator)
         with target_patch(target_version=2):
             data.unlock(username, '123', create_new=False)
-    accounts = data.db.get_blockchain_accounts()
+    accounts = data.db.get_blockchain_accounts(cursor)
     assert accounts.eth[0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
-    version = data.db.get_version()
+    with data.db.conn.read_ctx() as cursor:
+        version = data.db.get_setting(cursor, 'version')
     # Also make sure that we have updated to the target_version
     assert version == 2
     with mock_dbhandler_update_owned_assets():
@@ -398,7 +400,8 @@ def test_upgrade_db_3_to_4(data_dir, username):
     query = cursor.execute('SELECT value FROM settings where name="eth_rpc_port";')
     query = query.fetchall()
     assert len(query) == 0
-    version = data.db.get_version()
+    with data.db.conn.read_ctx() as cursor:
+        version = data.db.get_setting(cursor, 'version')
     # Also make sure that we have updated to the target_version
     assert version == 4
     with mock_dbhandler_update_owned_assets():
@@ -514,7 +517,8 @@ def test_upgrade_db_5_to_6(user_data_dir):
     for filename in fake_cache_files:
         assert not os.path.exists(filename)
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 6
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 6
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -576,7 +580,8 @@ def test_upgrade_db_6_to_7(user_data_dir):
     assert results == expected_results
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 7
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 7
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -736,7 +741,8 @@ def test_upgrade_db_7_to_8(user_data_dir):
     assert count == 2, '2 saved balances should have been found'
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 8
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 8
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -782,7 +788,8 @@ def test_upgrade_db_8_to_9(user_data_dir):
 
     assert len(names) == 0, 'not all exchanges were found in the new DB'
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 9
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 9
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -805,7 +812,8 @@ def test_upgrade_db_9_to_10(user_data_dir):
     )
     assert len(results.fetchall()) == 0
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 10
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 10
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -836,7 +844,8 @@ def test_upgrade_db_10_to_11(user_data_dir):
         assert entry == expected_results[idx]
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 11
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 11
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -862,7 +871,8 @@ def test_upgrade_db_11_to_12(user_data_dir):
     results = cursor.execute('SELECT * FROM used_query_ranges;')
     assert len(results.fetchall()) == 1
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 12
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 12
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -916,7 +926,8 @@ def test_upgrade_db_12_to_13(user_data_dir):
     assert results[0][1] == 'APIKEYVALUE'
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 13
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 13
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -966,7 +977,8 @@ def test_upgrade_db_13_to_14(user_data_dir):
     assert result[0][1] == 'DAO'
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 14
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 14
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -994,7 +1006,7 @@ def test_upgrade_db_15_to_16(user_data_dir):
     assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges;').fetchone()[0] == 2
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 16
+    assert db.get_setting(cursor, 'version') == 16
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -1042,7 +1054,8 @@ def test_upgrade_db_16_to_17(user_data_dir):
     assert cursor.execute('SELECT COUNT(*) FROM ethereum_transactions;').fetchone()[0] == 2
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 17
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 17
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -1070,7 +1083,8 @@ def test_upgrade_db_18_to_19(user_data_dir):
     cursor.execute('SELECT asset2usd_value_accruedinterest_feeusdvalue FROM aave_events;')
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 19
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 19
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -1102,7 +1116,8 @@ def test_upgrade_db_19_to_20(user_data_dir):
     assert length == 3
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 20
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 20
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -1167,7 +1182,8 @@ def test_upgrade_db_20_to_21(user_data_dir):
         '185.7646591376060274165290659',
     )
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 21
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 21
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -1203,7 +1219,8 @@ def test_upgrade_db_21_to_22(user_data_dir):  # pylint: disable=unused-argument
         length += 1
     assert length == 0
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 22
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 22
     with mock_dbhandler_update_owned_assets():
         db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
@@ -1286,7 +1303,8 @@ def test_upgrade_db_22_to_23_with_frontend_settings(user_data_dir):
     ).fetchone()[0] == 0
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 23
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 23
     with mock_dbhandler_update_owned_assets():
         db.logout()
 
@@ -1369,7 +1387,8 @@ def test_upgrade_db_22_to_23_without_frontend_settings(data_dir, user_data_dir):
     assert (data_dir / 'random.txt').is_file()
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 23
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'vexrsion') == 23
     with mock_dbhandler_update_owned_assets():
         db.logout()
 
@@ -1431,7 +1450,8 @@ def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
     assert len(query.fetchall()) == 0
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 24
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 24
     with mock_dbhandler_update_owned_assets():
         db.logout()
 
@@ -1627,7 +1647,8 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
         ("bec34827cd9ce879e91d45dfe11942752f810504439701ff7f3d005850f458a8", "A", 0, 5, "1", "_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", "1", "_ceth_0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b", "", ""),  # noqa: E501
     ]
     # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
-    margins = db.get_margin_positions()
+    with db.conn.read_ctx() as cursor:
+        margins = db.get_margin_positions(cursor)
     assert all(x.identifier == raw_upgraded[idx][0] for idx, x in enumerate(margins))
 
     # check that the asset movements were upgraded
@@ -1643,10 +1664,12 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     ]
     assert len(raw_upgraded) == asset_movements_count - 2, 'coinbase/pro movements should have been deleted'  # noqa: E501
     # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
-    movements = db.get_asset_movements(
-        filter_query=AssetMovementsFilterQuery.make(),
-        has_premium=True,
-    )
+    with db.conn.read_ctx() as cursor:
+        movements = db.get_asset_movements(
+            cursor=cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
     assert all(x.identifier == raw_upgraded[idx][0] for idx, x in enumerate(movements))
 
     # check that the timed balances had the currency properly changed
@@ -1771,7 +1794,8 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     errors = msg_aggregator.consume_errors()
     assert len(errors) == 0
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 25
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 25
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -2100,7 +2124,8 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
     assert len(errors) == 0
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 26
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 26
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -2142,7 +2167,8 @@ def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) from balancer_events;').fetchone()[0] == 0
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 27
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 27
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -2191,7 +2217,8 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) FROM aave_events;').fetchone()[0] == 0
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 28
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 28
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -2311,7 +2338,8 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.fetchone()[0] == 1
 
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 29
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 29
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -2328,7 +2356,8 @@ def test_upgrade_db_29_to_30(user_data_dir):  # pylint: disable=unused-argument
         msg_aggregator=msg_aggregator,
     )
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 30
+    with db.conn.read_ctx() as cursor:
+        assert db.get_setting(cursor, 'version') == 30
     cursor = db.conn.cursor()
     # Check that existing balances are not considered as liabilities after migration
     cursor.execute('SELECT category FROM manually_tracked_balances;')
@@ -2388,7 +2417,7 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
         msg_aggregator=msg_aggregator,
     )
     # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 31
+    assert db.get_setting(cursor, 'version') == 31
     cursor = db.conn.cursor()
     # Check that the new table is created
     result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="eth2_validators"')  # noqa: E501

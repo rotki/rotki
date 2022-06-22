@@ -9,6 +9,10 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.manager import NodeName
+from rotkehlchen.chain.ethereum.modules.yearn.db import (
+    get_yearn_vaults_events,
+    get_yearn_vaults_v2_events,
+)
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YEARN_VAULTS,
     YearnVaultEvent,
@@ -515,10 +519,13 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
                 result = assert_proper_response_with_result(response)
 
         # Make sure some data was saved in the DB after first call
-        events = rotki.data.db.get_yearn_vaults_events(
-            TEST_ACC1,
-            YEARN_VAULTS['yyDAI+yUSDC+yUSDT+yTUSD'],
-        )
+        with rotki.data.db.conn.read_ctx() as cursor:
+            events = get_yearn_vaults_events(
+                cursor,
+                TEST_ACC1,
+                YEARN_VAULTS['yyDAI+yUSDC+yUSDT+yTUSD'],
+                rotki.data.msg_aggregator,
+            )
         assert len(events) >= 11
 
         result = result[TEST_ACC1]
@@ -537,10 +544,13 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
         module_name='yearn_vaults',
     ))
     assert_simple_ok_response(response)
-    events = rotki.data.db.get_yearn_vaults_events(
-        TEST_ACC1,
-        YEARN_VAULTS['yyDAI+yUSDC+yUSDT+yTUSD'],
-    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = rotki.data.db.get_yearn_vaults_events(
+            cursor,
+            TEST_ACC1,
+            YEARN_VAULTS['yyDAI+yUSDC+yUSDT+yTUSD'],
+            rotki.data.msg_aggregator,
+        )
     assert len(events) == 0
 
 
@@ -638,7 +648,8 @@ def test_query_yearn_vault_v2_history(rotkehlchen_api_server, ethereum_accounts)
             result = assert_proper_response_with_result(response)
 
     # Make sure some data was saved in the DB after first call
-    events = rotki.data.db.get_yearn_vaults_v2_events(TEST_V2_ACC2, 0, 12770065)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = get_yearn_vaults_v2_events(cursor, TEST_V2_ACC2, 0, 12770065, rotki.data.msg_aggregator)  # noqa: E501
     assert len(events) >= 11
 
     result = result[TEST_V2_ACC2]
@@ -656,5 +667,6 @@ def test_query_yearn_vault_v2_history(rotkehlchen_api_server, ethereum_accounts)
         module_name='yearn_vaults_v2',
     ))
     assert_simple_ok_response(response)
-    events = rotki.data.db.get_yearn_vaults_v2_events(TEST_V2_ACC2, 0, 12770065)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = get_yearn_vaults_v2_events(cursor, TEST_V2_ACC2, 0, 12770065, rotki.data.msg_aggregator)  # noqa: E501
     assert len(events) == 0

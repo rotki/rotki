@@ -84,15 +84,16 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
         value=187603293406027635,
     )
     dbethtx = DBEthTx(database)
-    dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    dbethtx.add_ethereum_internal_transactions([internal_tx], relevant_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b')  # noqa: E501
-    decoder = EVMTransactionDecoder(
-        database=database,
-        ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
-        msg_aggregator=msg_aggregator,
-    )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b')  # noqa: E501
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            eth_transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -205,14 +206,15 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
     )
 
     dbethtx = DBEthTx(database)
-    dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(
-        database=database,
-        ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
-        msg_aggregator=msg_aggregator,
-    )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            eth_transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [

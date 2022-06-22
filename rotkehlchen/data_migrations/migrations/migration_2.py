@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.utils.mixins.common import function_sig_key
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
@@ -21,7 +22,10 @@ def _do_query_validator_data(rotki: 'Rotkehlchen') -> None:
         eth2.fetch_eth1_validator_data(addresses)
 
 
-def data_migration_2(rotki: 'Rotkehlchen') -> None:
+def data_migration_2(
+        write_cursor: 'DBCursor',  # pylint: disable=unused-argument
+        rotki: 'Rotkehlchen',
+) -> None:
     """
     At v1.23.0 we added a new eth2 validators table and all validators are detected
     from there. But for already existing addresses there is no validators detected

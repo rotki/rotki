@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.export.csv import CSVWriteError, _dict_to_csv_file
@@ -17,6 +17,9 @@ from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.snapshots import get_main_currency_price
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBCursor
+
 BALANCES_FILENAME = 'balances_snapshot.csv'
 BALANCES_FOR_IMPORT_FILENAME = 'balances_snapshot_import.csv'
 LOCATION_DATA_FILENAME = 'location_data_snapshot.csv'
@@ -31,19 +34,19 @@ class DBSnapshot:
         self.db = db_handler
         self.msg_aggregator = msg_aggregator
 
+    @staticmethod
     def get_timed_balances(
-            self,
+            cursor: 'DBCursor',
             timestamp: Timestamp,
     ) -> List[DBAssetBalance]:
         """Retrieves the timed_balances from the db for a given timestamp."""
         balances_data = []
-        cursor = self.db.conn.cursor()
-        timed_balances_result = cursor.execute(
+        cursor.execute(
             'SELECT category, time, amount, currency, usd_value FROM timed_balances '
             'WHERE time=?', (timestamp,),
         )
 
-        for data in timed_balances_result:
+        for data in cursor:
             balances_data.append(
                 DBAssetBalance(
                     category=BalanceType.deserialize_from_db(data[0]),
@@ -55,19 +58,19 @@ class DBSnapshot:
             )
         return balances_data
 
+    @staticmethod
     def get_timed_location_data(
-            self,
+            cursor: 'DBCursor',
             timestamp: Timestamp,
     ) -> List[LocationData]:
         """Retrieves the timed_location_data from the db for a given timestamp."""
         location_data = []
-        cursor = self.db.conn.cursor()
-        timed_location_data = cursor.execute(
+        cursor.execute(
             'SELECT time, location, usd_value FROM timed_location_data '
             'WHERE time=?',
             (timestamp,),
         )
-        for data in timed_location_data:
+        for data in cursor:
             location_data.append(
                 LocationData(
                     time=data[0],
@@ -129,13 +132,15 @@ class DBSnapshot:
         Otherwise, a zip file is created and the snapshot generated is written to the file
         and a path to the zip file is returned.
         """
-        main_currency, main_currency_price = get_main_currency_price(
-            db=self.db,
-            timestamp=timestamp,
-            msg_aggregator=self.msg_aggregator,
-        )
-        timed_balances = self.get_timed_balances(timestamp=timestamp)
-        timed_location_data = self.get_timed_location_data(timestamp=timestamp)
+        with self.db.conn.read_ctx() as cursor:
+            main_currency, main_currency_price = get_main_currency_price(
+                cursor=cursor,
+                db=self.db,
+                timestamp=timestamp,
+                msg_aggregator=self.msg_aggregator,
+            )
+            timed_balances = self.get_timed_balances(cursor=cursor, timestamp=timestamp)
+            timed_location_data = self.get_timed_location_data(cursor=cursor, timestamp=timestamp)
 
         if len(timed_balances) == 0 or len(timed_location_data) == 0:
             return False, 'No snapshot data found for the given timestamp.'
@@ -201,12 +206,14 @@ class DBSnapshot:
             processed_location_data_list: List[LocationData],
     ) -> Tuple[bool, str]:
         """Import the validated snapshot data to the database."""
-        self.add_nft_asset_ids([entry.asset.identifier for entry in processed_balances_list])
-        try:
-            self.db.add_multiple_balances(processed_balances_list)
-            self.db.add_multiple_location_data(processed_location_data_list)
-        except InputError as err:
-            return False, str(err)
+        with self.db.user_write() as cursor:
+            self.add_nft_asset_ids(cursor, [entry.asset.identifier for entry in processed_balances_list])  # noqa: E501
+            try:
+                self.db.add_multiple_balances(cursor, processed_balances_list)
+                self.db.add_multiple_location_data(cursor, processed_location_data_list)
+            except InputError as err:
+                return False, str(err)
+
         return True, ''
 
     def update(
@@ -230,21 +237,20 @@ class DBSnapshot:
 
     def delete(self, timestamp: Timestamp) -> Tuple[bool, str]:
         """Deletes a snapshot of the database at a given timestamp"""
-        cursor = self.db.conn.cursor()
-        cursor.execute('DELETE FROM timed_balances WHERE time=?', (timestamp,))
-        if cursor.rowcount == 0:
-            return False, 'No snapshot found for the specified timestamp'
-        cursor.execute('DELETE FROM timed_location_data WHERE time=?', (timestamp,))
-        if cursor.rowcount == 0:
-            self.db.conn.rollback()
-            return False, 'No snapshot found for the specified timestamp'
-        self.db.update_last_write()
+        with self.db.user_write() as cursor:
+            cursor.execute('DELETE FROM timed_balances WHERE time=?', (timestamp,))
+            if cursor.rowcount == 0:
+                return False, 'No snapshot found for the specified timestamp'
+            cursor.execute('DELETE FROM timed_location_data WHERE time=?', (timestamp,))
+            if cursor.rowcount == 0:
+                return False, 'No snapshot found for the specified timestamp'
+
         return True, ''
 
-    def add_nft_asset_ids(self, entries: List[str]) -> None:
+    def add_nft_asset_ids(self, write_cursor: 'DBCursor', entries: List[str]) -> None:
         """Add NFT identifiers to the DB to prevent unknown asset error."""
         nft_ids = []
         for entry in entries:
             if entry.startswith(NFT_DIRECTIVE):
                 nft_ids.append(entry)
-        self.db.add_asset_identifiers(nft_ids)
+        self.db.add_asset_identifiers(write_cursor, nft_ids)

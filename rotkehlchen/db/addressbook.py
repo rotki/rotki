@@ -1,5 +1,7 @@
 import sqlite3
-from typing import List, Optional
+from collections.abc import Generator
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, List, Optional
 
 from pysqlcipher3 import dbapi2
 
@@ -8,24 +10,40 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.types import AddressbookEntry, AddressbookType, ChecksumEthAddress
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBCursor
+
 
 class DBAddressbook:
 
     def __init__(self, db_handler: DBHandler) -> None:
         self.db = db_handler
 
-    def _get_connection(self, book_type: AddressbookType) -> sqlite3.Connection:
+    @contextmanager
+    def read_ctx(self, book_type: AddressbookType) -> Generator['DBCursor', None, None]:
         if book_type == AddressbookType.GLOBAL:
-            return GlobalDBHandler().conn
-        return self.db.conn
+            with GlobalDBHandler().conn.read_ctx() as cursor:
+                yield cursor
+                return
+        # else
+        with self.db.conn.read_ctx() as cursor:
+            yield cursor
 
-    def get_addressbook_entries(
+    @contextmanager
+    def write_ctx(self, book_type: AddressbookType) -> Generator['DBCursor', None, None]:
+        if book_type == AddressbookType.GLOBAL:
+            with GlobalDBHandler().conn.write_ctx() as cursor:
+                yield cursor
+                return
+        # else
+        with self.db.user_write() as cursor:
+            yield cursor
+
+    def get_addressbook_entries(  # pylint: disable=no-self-use
             self,
-            book_type: AddressbookType,
+            cursor: 'DBCursor',
             addresses: Optional[List[ChecksumEthAddress]] = None,
     ) -> List[AddressbookEntry]:
-        connection = self._get_connection(book_type)
-        cursor = connection.cursor()
         if addresses is None:
             cursor.execute('SELECT address, name FROM address_book')
         else:
@@ -46,58 +64,49 @@ class DBAddressbook:
             book_type: AddressbookType,
             entries: List[AddressbookEntry],
     ) -> None:
-        connection = self._get_connection(book_type)
-        cursor = connection.cursor()
-        # We iterate here with for loop instead of executemany in order to catch
-        # which identifier is duplicated
-        for entry in entries:
-            try:
-                cursor.execute(
-                    'INSERT INTO address_book (address, name) VALUES (?, ?)',
-                    (entry.address, entry.name),
-                )
-            # Handling both private db (pysqlcipher) and global db (raw sqlite3)
-            except (dbapi2.IntegrityError, sqlite3.IntegrityError) as e:  # pylint: disable=no-member  # noqa: E501
-                connection.rollback()
-                raise InputError(
-                    f'Addressbook entry with address "{entry.address}" and name "{entry.name}"'
-                    f' already exists in the address book. Identifier must be unique.',
-                ) from e
-        connection.commit()
+        with self.write_ctx(book_type) as write_cursor:
+            # We iterate here with for loop instead of executemany in order to catch
+            # which identifier is duplicated
+            for entry in entries:
+                try:
+                    write_cursor.execute(
+                        'INSERT INTO address_book (address, name) VALUES (?, ?)',
+                        (entry.address, entry.name),
+                    )
+                # Handling both private db (pysqlcipher) and global db (raw sqlite3)
+                except (dbapi2.IntegrityError, sqlite3.IntegrityError) as e:  # pylint: disable=no-member  # noqa: E501
+                    raise InputError(
+                        f'Addressbook entry with address "{entry.address}" and name "{entry.name}"'
+                        f' already exists in the address book. Identifier must be unique.',
+                    ) from e
 
     def update_addressbook_entries(
             self,
             book_type: AddressbookType,
             entries: List[AddressbookEntry],
     ) -> None:
-        connection = self._get_connection(book_type)
-        cursor = connection.cursor()
-        for entry in entries:
-            cursor.execute(
-                'UPDATE address_book SET name = ? WHERE address = ?',
-                (entry.name, entry.address),
-            )
-            if cursor.rowcount == 0:
-                connection.rollback()
-                raise InputError(
-                    f'Addressbook entry with address "{entry.address}" and name "{entry.name}"'
-                    f' doesn\'t exist in the address book. So it cannot be modified.',
+        with self.write_ctx(book_type) as write_cursor:
+            for entry in entries:
+                write_cursor.execute(
+                    'UPDATE address_book SET name = ? WHERE address = ?',
+                    (entry.name, entry.address),
                 )
-        connection.commit()
+                if write_cursor.rowcount == 0:
+                    raise InputError(
+                        f'Addressbook entry with address "{entry.address}" and name "{entry.name}"'
+                        f' doesn\'t exist in the address book. So it cannot be modified.',
+                    )
 
     def delete_addressbook_entries(
             self,
             book_type: AddressbookType,
             addresses: List[ChecksumEthAddress],
     ) -> None:
-        connection = self._get_connection(book_type)
-        cursor = connection.cursor()
-        for address in addresses:
-            cursor.execute('DELETE FROM address_book WHERE address = ?', (address,))
-            if cursor.rowcount == 0:
-                connection.rollback()
-                raise InputError(
-                    f'Addressbook entry with address "{address}" '
-                    f'doesn\'t exist in the address book. So it cannot be deleted.',
-                )
-        connection.commit()
+        with self.write_ctx(book_type) as write_cursor:
+            for address in addresses:
+                write_cursor.execute('DELETE FROM address_book WHERE address = ?', (address,))
+                if write_cursor.rowcount == 0:
+                    raise InputError(
+                        f'Addressbook entry with address "{address}" '
+                        f'doesn\'t exist in the address book. So it cannot be deleted.',
+                    )

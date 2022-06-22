@@ -32,77 +32,78 @@ from rotkehlchen.utils.misc import ts_now
 ])
 def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_settings):
     """Test our side of uploading data to the server"""
-    last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
-    assert last_ts == 0
+    with rotkehlchen_instance.data.db.user_write() as cursor:
+        last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+        assert last_ts == 0
 
-    # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_GBP))
-    last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
-    remote_hash = get_different_hash(our_hash)
+        # Write anything in the DB to set a non-zero last_write_ts
+        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_GBP))  # noqa: E501
+        last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+        remote_hash = get_different_hash(our_hash)
 
-    def mock_succesfull_upload_data_to_server(
-            url,  # pylint: disable=unused-argument
-            data,
-            timeout,  # pylint: disable=unused-argument
-    ):
-        # Can't compare data blobs as they are encrypted and as such can be
-        # different each time
-        assert 'data_blob' in data
-        assert data['original_hash'] == our_hash
-        assert data['last_modify_ts'] == last_write_ts
-        assert 'index' in data
-        assert len(data['data_blob']) == data['length']
-        assert 'nonce' in data
-        assert data['compression'] == 'zlib'
+        def mock_succesfull_upload_data_to_server(
+                url,  # pylint: disable=unused-argument
+                data,
+                timeout,  # pylint: disable=unused-argument
+        ):
+            # Can't compare data blobs as they are encrypted and as such can be
+            # different each time
+            assert 'data_blob' in data
+            assert data['original_hash'] == our_hash
+            assert data['last_modify_ts'] == last_write_ts
+            assert 'index' in data
+            assert len(data['data_blob']) == data['length']
+            assert 'nonce' in data
+            assert data['compression'] == 'zlib'
 
-        return MockResponse(200, '{"success": true}')
+            return MockResponse(200, '{"success": true}')
 
-    patched_put = patch.object(
-        rotkehlchen_instance.premium.session,
-        'put',
-        side_effect=mock_succesfull_upload_data_to_server,
-    )
-    patched_get = create_patched_requests_get_for_premium(
-        session=rotkehlchen_instance.premium.session,
-        metadata_last_modify_ts=0,
-        metadata_data_hash=remote_hash,
-        # Smaller Remote DB size
-        metadata_data_size=2,
-        saved_data='foo',
-    )
+        patched_put = patch.object(
+            rotkehlchen_instance.premium.session,
+            'put',
+            side_effect=mock_succesfull_upload_data_to_server,
+        )
+        patched_get = create_patched_requests_get_for_premium(
+            session=rotkehlchen_instance.premium.session,
+            metadata_last_modify_ts=0,
+            metadata_data_hash=remote_hash,
+            # Smaller Remote DB size
+            metadata_data_size=2,
+            saved_data='foo',
+        )
 
-    now = ts_now()
-    with patched_get, patched_put:
-        rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
+        now = ts_now()
+        with patched_get, patched_put:
+            rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
 
-    if db_settings['premium_should_sync'] is False:
-        assert rotkehlchen_instance.data.db.get_last_data_upload_ts() == 0
-        assert rotkehlchen_instance.premium_sync_manager.last_data_upload_ts == 0
-        return
+        if db_settings['premium_should_sync'] is False:
+            assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+            assert rotkehlchen_instance.premium_sync_manager.last_data_upload_ts == 0
+            return
 
-    last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
-    msg = 'The last data upload timestamp should have been saved in the db as now'
-    assert last_ts >= now and last_ts - now < 50, msg
-    last_ts = rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
-    msg = 'The last data upload timestamp should also be in memory'
-    assert last_ts >= now and last_ts - now < 50, msg
+        last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+        msg = 'The last data upload timestamp should have been saved in the db as now'
+        assert last_ts >= now and last_ts - now < 50, msg
+        last_ts = rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
+        msg = 'The last data upload timestamp should also be in memory'
+        assert last_ts >= now and last_ts - now < 50, msg
 
-    # and now logout and login again and make sure that the last_data_upload_ts is correct
-    rotkehlchen_instance.logout()
-    rotkehlchen_instance.data.unlock(username, db_password, create_new=False)
-    assert last_ts == rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
-    assert last_ts == rotkehlchen_instance.data.db.get_last_data_upload_ts()
+        # and now logout and login again and make sure that the last_data_upload_ts is correct
+        rotkehlchen_instance.logout()
+        rotkehlchen_instance.data.unlock(username, db_password, create_new=False)
+        assert last_ts == rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
+        assert last_ts == rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')  # noqa: E501
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     """Test that if the server has same data hash as we no upload happens"""
-    last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
-    assert last_ts == 0
-
-    # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))
+    with rotkehlchen_instance.data.db.user_write() as cursor:
+        last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+        assert last_ts == 0
+        # Write anything in the DB to set a non-zero last_write_ts
+        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = our_hash
 
@@ -129,11 +130,11 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_password):
     """Test that if the server has bigger DB size no upload happens"""
-    last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
-    assert last_ts == 0
-
-    # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))
+    with rotkehlchen_instance.data.db.user_write() as cursor:
+        last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+        assert last_ts == 0
+        # Write anything in the DB to set a non-zero last_write_ts
+        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = get_different_hash(our_hash)
 
@@ -200,7 +201,8 @@ def test_try_premium_at_start_new_account_rejects_data(
     )
     msg = 'Test default main currency should be different from the restored currency'
     assert DEFAULT_TESTS_MAIN_CURRENCY != A_GBP, msg
-    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+        assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -293,7 +295,8 @@ def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
         db_can_sync_setting=False,
     )
     # DB should not have changed
-    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+        assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -314,7 +317,8 @@ def test_try_premium_at_start_old_account_older_remote_ts_smaller_remote_size(
         db_can_sync_setting=True,
     )
     # DB should not have changed
-    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+        assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -388,10 +392,12 @@ def test_try_premium_at_start_first_time_no_previous_db(
         remote_data=None,
     )
     # DB should not have changed and no exception raised
-    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
-    # DB should have the given rotki premium credentials saved in it since premium
-    # was succesfully initialized
-    credentials = rotkehlchen_instance.data.db.get_rotkehlchen_premium()
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+        assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
+        # DB should have the given rotki premium credentials saved in it since premium
+        # was succesfully initialized
+        credentials = rotkehlchen_instance.data.db.get_rotkehlchen_premium(cursor)
+
     assert credentials is not None
     assert credentials.api_key == rotki_premium_credentials.api_key
     assert credentials.api_secret == rotki_premium_credentials.api_secret

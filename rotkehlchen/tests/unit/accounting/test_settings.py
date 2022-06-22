@@ -138,10 +138,12 @@ def test_ignored_transactions(accountant, google_service):
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
     tx_hash = '0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a'
     ignored_tx_hash = '0x1000e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde11'
-    accountant.db.add_to_ignored_action_ids(
-        action_type=ActionType.ETHEREUM_TRANSACTION,
-        identifiers=[ignored_tx_hash],
-    )
+    with accountant.db.user_write() as cursor:
+        accountant.db.add_to_ignored_action_ids(
+            write_cursor=cursor,
+            action_type=ActionType.ETHEREUM_TRANSACTION,
+            identifiers=[ignored_tx_hash],
+        )
     history = [
         Trade(
             timestamp=1539388574,

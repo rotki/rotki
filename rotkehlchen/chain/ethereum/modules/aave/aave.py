@@ -201,7 +201,8 @@ class Aave(EthereumModule):
         latest_block = self.ethereum.get_latest_block_number()
         with self.history_lock:
             if reset_db_data is True:
-                self.database.delete_aave_data()
+                with self.database.user_write() as cursor:
+                    self.database.delete_aave_data(cursor)
 
             aave_balances = self.get_balances(given_defi_balances)
             return self.graph_inquirer.get_history_for_addresses(
@@ -307,4 +308,5 @@ class Aave(EthereumModule):
         pass
 
     def deactivate(self) -> None:
-        self.database.delete_aave_data()
+        with self.database.user_write() as cursor:
+            self.database.delete_aave_data(cursor)

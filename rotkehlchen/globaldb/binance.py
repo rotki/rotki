@@ -49,7 +49,7 @@ class GlobalDBBinance:
         cursor = self.db.conn.cursor()
         cursor.execute(
             'SELECT pair, base_asset, quote_asset, location FROM binance_pairs WHERE location=?',
-            location.serialize_for_db(),
+            (location.serialize_for_db(),),
         )
         pairs = []
         for pair in cursor:

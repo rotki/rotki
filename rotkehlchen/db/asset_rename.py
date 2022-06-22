@@ -1,6 +1,6 @@
-from sqlite3 import Cursor
 from typing import TYPE_CHECKING, List, Tuple
 
+from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.fval import FVal
 
 if TYPE_CHECKING:
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 def rename_asset_in_timed_balances_before_v21(
-        cursor: Cursor,
+        cursor: DBCursor,
         from_name: str,
         to_name: str,
 ) -> None:
@@ -21,7 +21,7 @@ def rename_asset_in_timed_balances_before_v21(
     query = cursor.execute(
         'SELECT COUNT(*) FROM timed_balances WHERE currency=?', (to_name,),
     )
-    if query.fetchone()[0] == 0:
+    if query.fetchone()[0] == 0:  # always returns value
         # We are in luck, this means no possibility of merging so executemany
         # should work without any problems
         cursor.execute(
@@ -102,7 +102,7 @@ def rename_asset_in_timed_balances_before_v21(
 
 
 def rename_assets_in_timed_balances_before_v21(
-        cursor: Cursor,
+        cursor: DBCursor,
         rename_pairs: List[Tuple[str, str]],
 ) -> None:
     """
@@ -133,49 +133,49 @@ def rename_assets_in_db(db: 'DBHandler', rename_pairs: List[Tuple[str, str]]) ->
 
     Good from DB version 1 until now.
     """
-    cursor = db.conn.cursor()
-    # [(to_name_1, from_name_1), (to_name_2, from_name_2), ...]
-    changed_symbols = [(e[1], e[0]) for e in rename_pairs]
+    with db.user_write() as cursor:
+        # [(to_name_1, from_name_1), (to_name_2, from_name_2), ...]
+        changed_symbols = [(e[1], e[0]) for e in rename_pairs]
 
-    cursor.executemany(
-        'UPDATE multisettings SET value=? WHERE value=? and name="ignored_asset";',
-        changed_symbols,
-    )
-    db_version = db.get_version()
-    if db_version <= 20:
-        rename_assets_in_timed_balances_before_v21(cursor, rename_pairs)
-    else:
-        raise NotImplementedError('Need to implement asset renaming during upgrade for > v21')
+        cursor.executemany(
+            'UPDATE multisettings SET value=? WHERE value=? and name="ignored_asset";',
+            changed_symbols,
+        )
+        db_version = db.get_setting(cursor, 'version')
+        if db_version <= 20:
+            rename_assets_in_timed_balances_before_v21(cursor, rename_pairs)
+        else:
+            raise NotImplementedError('Need to implement asset renaming during upgrade for > v21')
 
-    replaced_symbols = [e[0] for e in rename_pairs]
-    replaced_symbols_q = ['pair LIKE "%' + s + '%"' for s in replaced_symbols]
-    query_str = (
-        f'SELECT id, pair, fee_currency FROM trades WHERE fee_currency IN '
-        f'({",".join("?"*len(replaced_symbols))}) OR ('
-        f'{" OR ".join(replaced_symbols_q)})'
-    )
-    cursor.execute(query_str, replaced_symbols)
-    updated_trades = []
-    for q in cursor:
-        new_pair = q[1]
-        for rename_pair in rename_pairs:
-            from_asset = rename_pair[0]
-            to_asset = rename_pair[1]
+        replaced_symbols = [e[0] for e in rename_pairs]
+        replaced_symbols_q = ['pair LIKE "%' + s + '%"' for s in replaced_symbols]
+        query_str = (
+            f'SELECT id, pair, fee_currency FROM trades WHERE fee_currency IN '
+            f'({",".join("?"*len(replaced_symbols))}) OR ('
+            f'{" OR ".join(replaced_symbols_q)})'
+        )
+        cursor.execute(query_str, replaced_symbols)
+        updated_trades = []
+        for q in cursor:
+            new_pair = q[1]
+            for rename_pair in rename_pairs:
+                from_asset = rename_pair[0]
+                to_asset = rename_pair[1]
 
-            if from_asset not in q[1] and from_asset != q[2]:
-                # It's not this rename pair
-                continue
+                if from_asset not in q[1] and from_asset != q[2]:
+                    # It's not this rename pair
+                    continue
 
-            if from_asset in q[1]:
-                new_pair = q[1].replace(from_asset, to_asset)
+                if from_asset in q[1]:
+                    new_pair = q[1].replace(from_asset, to_asset)
 
-            new_fee_currency = q[2]
-            if from_asset == q[2]:
-                new_fee_currency = to_asset
+                new_fee_currency = q[2]
+                if from_asset == q[2]:
+                    new_fee_currency = to_asset
 
-            updated_trades.append((new_pair, new_fee_currency, q[0]))
+                updated_trades.append((new_pair, new_fee_currency, q[0]))
 
-    cursor.executemany(
-        'UPDATE trades SET pair=?, fee_currency=? WHERE id=?',
-        updated_trades,
-    )
+        cursor.executemany(
+            'UPDATE trades SET pair=?, fee_currency=? WHERE id=?',
+            updated_trades,
+        )

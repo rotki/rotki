@@ -294,7 +294,8 @@ def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_wi
         link='',
         notes='') for x in range(FREE_TRADES_LIMIT + 50)
     ]
-    rotki.data.db.add_trades(spam_trades)
+    with rotki.data.db.user_write() as cursor:
+        rotki.data.db.add_trades(cursor, spam_trades)
 
     # Check that we get all trades correctly even if we query two times
     for _ in range(2):
@@ -1092,7 +1093,8 @@ def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges
     )]
 
     # Add multiple entries for same exchange + connected exchange
-    rotki.data.db.add_trades(trades)
+    with rotki.data.db.user_write() as cursor:
+        rotki.data.db.add_trades(cursor, trades)
 
     # Simply get all trades without any filtering
     with setup.binance_patch, setup.polo_patch:
@@ -1169,8 +1171,6 @@ def test_measure_trades_api_query(rotkehlchen_api_server, start_with_valid_premi
         link='',
         notes='',
     ) for x in range(1, 10000)]
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.data.db.add_trades(trades)
     swaps = [AMMSwap(
         tx_hash='0x' + str(x),
         log_index=x + i,
@@ -1186,7 +1186,10 @@ def test_measure_trades_api_query(rotkehlchen_api_server, start_with_valid_premi
         amount0_out=ZERO,
         amount1_out=FVal(4.95),
     ) for x in range(2000) for i in range(2)]
-    rotki.data.db.add_amm_swaps(swaps)
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.user_write() as cursor:
+        rotki.data.db.add_trades(cursor, trades)
+        rotki.data.db.add_amm_swaps(cursor, swaps)
 
     start = time.time()
     requests.get(

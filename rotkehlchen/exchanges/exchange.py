@@ -109,7 +109,8 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         passphrase = kwargs.get('passphrase')
         old_passphrase = None
         if passphrase is not None:  # backup old passphrase
-            mapping = self.db.get_exchange_credentials(name=self.name, location=self.location)
+            with self.db.conn.read_ctx() as cursor:
+                mapping = self.db.get_exchange_credentials(cursor, name=self.name, location=self.location)  # noqa: E501
             credentials = mapping.get(self.location)
             if not credentials or len(credentials) == 0 or credentials[0].passphrase is None:
                 old_passphrase = None  # should not happen, unless passphrase is optional
@@ -258,25 +259,28 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         only what is already saved in the DB without performing an exchange query
         """
         log.debug(f'Querying trade history for {self.name} exchange')
-        filter_query = TradesFilterQuery.make(
-            from_ts=start_ts,
-            to_ts=end_ts,
-            location=self.location,
-        )
-        trades = self.db.get_trades(
-            filter_query=filter_query,
-            has_premium=True,  # this is okay since the returned trades don't make it to the user
-        )
-        if only_cache:
-            return trades
+        with self.db.conn.read_ctx() as cursor:
+            filter_query = TradesFilterQuery.make(
+                from_ts=start_ts,
+                to_ts=end_ts,
+                location=self.location,
+            )
+            trades = self.db.get_trades(
+                cursor=cursor,
+                filter_query=filter_query,
+                has_premium=True,  # is okay since the returned trades don't make it to the user
+            )
+            if only_cache:
+                return trades
 
-        ranges = DBQueryRanges(self.db)
-        location_string = f'{str(self.location)}_trades_{self.name}'
-        ranges_to_query = ranges.get_location_query_ranges(
-            location_string=location_string,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        )
+            ranges = DBQueryRanges(self.db)
+            location_string = f'{str(self.location)}_trades_{self.name}'
+            ranges_to_query = ranges.get_location_query_ranges(
+                cursor=cursor,
+                location_string=location_string,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            )
 
         for query_start_ts, query_end_ts in ranges_to_query:
             # If we have a time frame we have not asked the exchange for trades then
@@ -291,14 +295,16 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             )
 
             # make sure to add them to the DB
-            if new_trades != []:
-                self.db.add_trades(new_trades)
+            with self.db.user_write() as cursor:
+                if new_trades != []:
+                    self.db.add_trades(write_cursor=cursor, trades=new_trades)
 
-            # and also set the used queried timestamp range for the exchange
-            ranges.update_used_query_range(
-                location_string=location_string,
-                queried_ranges=[queried_range],
-            )
+                # and also set the used queried timestamp range for the exchange
+                ranges.update_used_query_range(
+                    write_cursor=cursor,
+                    location_string=location_string,
+                    queried_ranges=[queried_range],
+                )
             # finally append them to the already returned DB trades
             trades.extend(new_trades)
 
@@ -312,39 +318,45 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         """Queries the local DB and the remote exchange for the margin positions history of the user
         """
         log.debug(f'Querying margin history for {self.name} exchange')
-        margin_positions = self.db.get_margin_positions(
-            from_ts=start_ts,
-            to_ts=end_ts,
-            location=self.location,
-        )
-        ranges = DBQueryRanges(self.db)
-        location_string = f'{str(self.location)}_margins_{self.name}'
-        ranges_to_query = ranges.get_location_query_ranges(
-            location_string=location_string,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        )
-        for query_start_ts, query_end_ts in ranges_to_query:
-            log.debug(
-                f'Querying online margin history for {self.name} between '
-                f'{query_start_ts} and {query_end_ts}',
+        with self.db.conn.read_ctx() as cursor:
+            margin_positions = self.db.get_margin_positions(
+                cursor=cursor,
+                from_ts=start_ts,
+                to_ts=end_ts,
+                location=self.location,
             )
-            new_positions = self.query_online_margin_history(
-                start_ts=query_start_ts,
-                end_ts=query_end_ts,
-            )
-
-            # make sure to add them to the DB
-            if len(new_positions) != 0:
-                self.db.add_margin_positions(new_positions)
-
-            # and also set the last queried timestamp for the exchange
-            ranges.update_used_query_range(
+            ranges = DBQueryRanges(self.db)
+            location_string = f'{str(self.location)}_margins_{self.name}'
+            ranges_to_query = ranges.get_location_query_ranges(
+                cursor=cursor,
                 location_string=location_string,
-                queried_ranges=[(query_start_ts, query_end_ts)],
+                start_ts=start_ts,
+                end_ts=end_ts,
             )
-            # finally append them to the already returned DB margin positions
-            margin_positions.extend(new_positions)
+
+        with self.db.user_write() as cursor:
+            for query_start_ts, query_end_ts in ranges_to_query:
+                log.debug(
+                    f'Querying online margin history for {self.name} between '
+                    f'{query_start_ts} and {query_end_ts}',
+                )
+                new_positions = self.query_online_margin_history(
+                    start_ts=query_start_ts,
+                    end_ts=query_end_ts,
+                )
+
+                # make sure to add them to the DB
+                if len(new_positions) != 0:
+                    self.db.add_margin_positions(cursor, new_positions)
+
+                # and also set the last queried timestamp for the exchange
+                ranges.update_used_query_range(
+                    write_cursor=cursor,
+                    location_string=location_string,
+                    queried_ranges=[(query_start_ts, query_end_ts)],
+                )
+                # finally append them to the already returned DB margin positions
+                margin_positions.extend(new_positions)
 
         return margin_positions
 
@@ -366,38 +378,44 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             to_ts=end_ts,
             location=self.location,
         )
-        asset_movements = self.db.get_asset_movements(
-            filter_query=filter_query,
-            has_premium=True,  # this is okay since the returned trades don't make it to the user
-        )
-        if only_cache:
-            return asset_movements
-
-        ranges = DBQueryRanges(self.db)
-        location_string = f'{str(self.location)}_asset_movements_{self.name}'
-        ranges_to_query = ranges.get_location_query_ranges(
-            location_string=location_string,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        )
-        for query_start_ts, query_end_ts in ranges_to_query:
-            log.debug(
-                f'Querying online deposits/withdrawals for {self.name} between '
-                f'{query_start_ts} and {query_end_ts}',
+        with self.db.conn.read_ctx() as cursor:
+            asset_movements = self.db.get_asset_movements(
+                cursor=cursor,
+                filter_query=filter_query,
+                has_premium=True,  # is okay since the returned trades don't make it to the user
             )
-            new_movements = self.query_online_deposits_withdrawals(
-                start_ts=query_start_ts,
-                end_ts=query_end_ts,
-            )
+            if only_cache:
+                return asset_movements
 
-            if len(new_movements) != 0:
-                self.db.add_asset_movements(new_movements)
-
-            ranges.update_used_query_range(
+            ranges = DBQueryRanges(self.db)
+            location_string = f'{str(self.location)}_asset_movements_{self.name}'
+            ranges_to_query = ranges.get_location_query_ranges(
+                cursor=cursor,
                 location_string=location_string,
-                queried_ranges=[(query_start_ts, query_end_ts)],
+                start_ts=start_ts,
+                end_ts=end_ts,
             )
-            asset_movements.extend(new_movements)
+
+        with self.db.user_write() as cursor:
+            for query_start_ts, query_end_ts in ranges_to_query:
+                log.debug(
+                    f'Querying online deposits/withdrawals for {self.name} between '
+                    f'{query_start_ts} and {query_end_ts}',
+                )
+                new_movements = self.query_online_deposits_withdrawals(
+                    start_ts=query_start_ts,
+                    end_ts=query_end_ts,
+                )
+
+                if len(new_movements) != 0:
+                    self.db.add_asset_movements(cursor, new_movements)
+
+                ranges.update_used_query_range(
+                    write_cursor=cursor,
+                    location_string=location_string,
+                    queried_ranges=[(query_start_ts, query_end_ts)],
+                )
+                asset_movements.extend(new_movements)
 
         return asset_movements
 
@@ -419,31 +437,37 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             to_ts=end_ts,
             location=self.location,
         )
-        # has_premium True is fine here since the result of this is not user facing atm
-        ledger_actions = db.get_ledger_actions(filter_query=filter_query, has_premium=True)
-        if only_cache:
-            return ledger_actions
 
-        ranges = DBQueryRanges(self.db)
-        location_string = f'{str(self.location)}_ledger_actions_{self.name}'
-        ranges_to_query = ranges.get_location_query_ranges(
-            location_string=location_string,
-            start_ts=start_ts,
-            end_ts=end_ts,
-        )
-        for query_start_ts, query_end_ts in ranges_to_query:
-            new_ledger_actions = self.query_online_income_loss_expense(
-                start_ts=query_start_ts,
-                end_ts=query_end_ts,
-            )
-            if len(new_ledger_actions) != 0:
-                db.add_ledger_actions(new_ledger_actions)
+        with self.db.conn.read_ctx() as cursor:
+            # has_premium True is fine here since the result of this is not user facing atm
+            ledger_actions = db.get_ledger_actions(cursor, filter_query=filter_query, has_premium=True)  # noqa: E501
+            if only_cache:
+                return ledger_actions
 
-            ranges.update_used_query_range(
+            ranges = DBQueryRanges(self.db)
+            location_string = f'{str(self.location)}_ledger_actions_{self.name}'
+            ranges_to_query = ranges.get_location_query_ranges(
+                cursor=cursor,
                 location_string=location_string,
-                queried_ranges=[(query_start_ts, query_end_ts)],
+                start_ts=start_ts,
+                end_ts=end_ts,
             )
-            ledger_actions.extend(new_ledger_actions)
+
+        with self.db.user_write() as cursor:
+            for query_start_ts, query_end_ts in ranges_to_query:
+                new_ledger_actions = self.query_online_income_loss_expense(
+                    start_ts=query_start_ts,
+                    end_ts=query_end_ts,
+                )
+                if len(new_ledger_actions) != 0:
+                    db.add_ledger_actions(cursor, new_ledger_actions)
+
+                ranges.update_used_query_range(
+                    write_cursor=cursor,
+                    location_string=location_string,
+                    queried_ranges=[(query_start_ts, query_end_ts)],
+                )
+                ledger_actions.extend(new_ledger_actions)
 
         return ledger_actions
 

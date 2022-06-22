@@ -11,6 +11,7 @@ from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
@@ -27,7 +28,8 @@ class BaseDecoderTools():
 
     def __init__(self, database: 'DBHandler') -> None:
         self.database = database
-        self.tracked_accounts = self.database.get_blockchain_accounts()
+        with self.database.conn.read_ctx() as cursor:
+            self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
         self.sequence_counter = 0
 
     def reset_sequence_counter(self) -> None:
@@ -47,8 +49,8 @@ class BaseDecoderTools():
         sequence index and the event's log index"""
         return self.sequence_counter + tx_log.log_index
 
-    def refresh_tracked_accounts(self) -> None:
-        self.tracked_accounts = self.database.get_blockchain_accounts()
+    def refresh_tracked_accounts(self, cursor: 'DBCursor') -> None:
+        self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
 
     def is_tracked(self, adddress: ChecksumEthAddress) -> bool:
         return adddress in self.tracked_accounts.eth

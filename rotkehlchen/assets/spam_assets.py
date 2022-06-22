@@ -15,11 +15,13 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SPAM_PROTOCOL, ChecksumEthAddress
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
 
 MISSING_NAME_SPAM_TOKEN = 'Autodetected spam token'
 MISSING_SYMBOL_SPAM_TOKEN = 'SPAM-TOKEN'
@@ -208,7 +210,7 @@ def query_token_spam_list(db: 'DBHandler') -> Set[EthereumToken]:
     return tokens_to_ignore
 
 
-def update_spam_assets(db: 'DBHandler') -> int:
+def update_spam_assets(write_cursor: 'DBCursor', db: 'DBHandler') -> int:
     """
     Update the list of ignored assets using query_token_spam_list and avoiding
     the addition of duplicates. It returns the amount of assets that were added
@@ -218,12 +220,12 @@ def update_spam_assets(db: 'DBHandler') -> int:
     # order maters here. Make sure ignored_assets are queried after spam tokens creation
     # since it's possible for a token to exist in ignored assets but not global DB.
     # and in that case query_token_spam_list add it to the global DB
-    ignored_assets = {asset.identifier for asset in db.get_ignored_assets()}
+    ignored_assets = {asset.identifier for asset in db.get_ignored_assets(write_cursor)}
     assets_added = 0
     for token in spam_tokens:
         if token.identifier in ignored_assets:
             continue
 
-        db.add_to_ignored_assets(token)
+        db.add_to_ignored_assets(write_cursor=write_cursor, asset=token)
         assets_added += 1
     return assets_added

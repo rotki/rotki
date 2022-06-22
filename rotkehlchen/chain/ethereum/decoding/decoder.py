@@ -66,6 +66,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.transactions import EthTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -154,12 +155,12 @@ class EVMTransactionDecoder():
         # update with counterparties not in any module
         self.all_counterparties.update([CPT_GAS, CPT_GNOSIS_CHAIN])
 
-    def reload_from_db(self) -> None:
+    def reload_from_db(self, cursor: 'DBCursor') -> None:
         """Reload all related settings from DB so that decoding happens with latest"""
-        self.base.refresh_tracked_accounts()
+        self.base.refresh_tracked_accounts(cursor)
         for _, decoder in self.decoders.items():
             if isinstance(decoder, CustomizableDateMixin):
-                decoder.reload_settings()
+                decoder.reload_settings(cursor)
 
     def try_all_rules(
             self,
@@ -212,11 +213,11 @@ class EVMTransactionDecoder():
 
     def decode_transaction(
             self,
+            write_cursor: 'DBCursor',
             transaction: EthereumTransaction,
             tx_receipt: EthereumTxReceipt,
     ) -> List[HistoryBaseEntry]:
         """Decodes an ethereum transaction and its receipt and saves result in the DB"""
-        cursor = self.database.conn.cursor()
         self.base.reset_sequence_counter()
         # check if any eth transfer happened in the transaction, including in internal transactions
         events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
@@ -236,12 +237,12 @@ class EVMTransactionDecoder():
             if event:
                 events.append(event)
 
-        self.dbevents.add_history_events(events)
-        cursor.execute(
-            'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, blockchain, value) VALUES(?, ?, ?)',
+        self.dbevents.add_history_events(write_cursor=write_cursor, history=events)
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, blockchain, value) VALUES(?, ?, ?)',  # noqa: E501
             (transaction.tx_hash, 'ETH', HISTORY_MAPPING_DECODED),
         )
-        self.database.update_last_write()
+
         return sorted(events, key=lambda x: x.sequence_index, reverse=False)
 
     def get_and_decode_undecoded_transactions(self, limit: Optional[int] = None) -> None:
@@ -263,55 +264,58 @@ class EVMTransactionDecoder():
         - InputError if the transaction hash is not found in the DB
         """
         events = []
-        self.reload_from_db()
+        with self.database.conn.read_ctx() as cursor:
+            self.reload_from_db(cursor)
+            # If no transaction hashes are passed, decode all transactions.
+            if tx_hashes is None:
+                tx_hashes = []
+                for entry in cursor.execute('SELECT tx_hash FROM ethereum_transactions'):
+                    tx_hashes.append(EVMTxHash(entry[0]))
 
-        # If no transaction hashes are passed, decode all transactions.
-        if tx_hashes is None:
-            tx_hashes = []
-            cursor = self.database.conn.cursor()
-            for entry in cursor.execute('SELECT tx_hash FROM ethereum_transactions'):
-                tx_hashes.append(EVMTxHash(entry[0]))
+        with self.database.user_write() as cursor:
+            for tx_hash in tx_hashes:
+                try:
+                    receipt = self.eth_transactions.get_or_query_transaction_receipt(cursor, tx_hash)  # noqa: E501
+                except RemoteError as e:
+                    raise InputError(f'Hash {tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
 
-        for tx_hash in tx_hashes:
-            try:
-                receipt = self.eth_transactions.get_or_query_transaction_receipt(tx_hash)
-            except RemoteError as e:
-                raise InputError(f'Hash {tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
-
-            # TODO: Change this if transaction filter query can accept multiple hashes
-            txs = self.dbethtx.get_ethereum_transactions(
-                filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
-                has_premium=True,  # ignore limiting here
-            )
-            events.extend(self.get_or_decode_transaction_events(
-                transaction=txs[0],
-                tx_receipt=receipt,
-                ignore_cache=ignore_cache,
-            ))
+                # TODO: Change this if transaction filter query can accept multiple hashes
+                txs = self.dbethtx.get_ethereum_transactions(
+                    cursor=cursor,
+                    filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
+                    has_premium=True,  # ignore limiting here
+                )
+                events.extend(self.get_or_decode_transaction_events(
+                    write_cursor=cursor,
+                    transaction=txs[0],
+                    tx_receipt=receipt,
+                    ignore_cache=ignore_cache,
+                ))
 
         return events
 
     def get_or_decode_transaction_events(
             self,
+            write_cursor: 'DBCursor',
             transaction: EthereumTransaction,
             tx_receipt: EthereumTxReceipt,
             ignore_cache: bool,
     ) -> List[HistoryBaseEntry]:
         """Get a transaction's events if existing in the DB or decode them"""
-        cursor = self.database.conn.cursor()
         if ignore_cache is True:  # delete all decoded events
-            self.dbevents.delete_events_by_tx_hash([transaction.tx_hash])
-            cursor.execute(
+            self.dbevents.delete_events_by_tx_hash(write_cursor, [transaction.tx_hash])
+            write_cursor.execute(
                 'DELETE from evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
                 (transaction.tx_hash, 'ETH', HISTORY_MAPPING_DECODED),
             )
         else:  # see if events are already decoded and return them
-            results = cursor.execute(
+            write_cursor.execute(
                 'SELECT COUNT(*) from evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',  # noqa: E501
                 (transaction.tx_hash, 'ETH', HISTORY_MAPPING_DECODED),
             )
-            if results.fetchone()[0] != 0:  # already decoded and in the DB
+            if write_cursor.fetchone()[0] != 0:  # already decoded and in the DB
                 events = self.dbevents.get_history_events(
+                    cursor=write_cursor,
                     filter_query=HistoryEventFilterQuery.make(
                         event_identifier=transaction.tx_hash.hex(),
                     ),
@@ -320,7 +324,7 @@ class EVMTransactionDecoder():
                 return events
 
         # else we should decode now
-        events = self.decode_transaction(transaction, tx_receipt)
+        events = self.decode_transaction(write_cursor, transaction, tx_receipt)
         return events
 
     def _maybe_decode_internal_transactions(

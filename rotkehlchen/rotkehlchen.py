@@ -92,6 +92,7 @@ from rotkehlchen.utils.misc import combine_dicts
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
+    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 logger = logging.getLogger(__name__)
@@ -204,7 +205,6 @@ class Rotkehlchen():
             method=self.data.db.ensure_data_integrity,
         )
         self.data_importer = DataImporter(db=self.data.db)
-        self.last_data_upload_ts = self.data.db.get_last_data_upload_ts()
         self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)
         # set the DB in the external services instances that need it
         self.cryptocompare.set_database(self.data.db)
@@ -231,31 +231,33 @@ class Rotkehlchen():
             # else let's just continue. User signed in succesfully, but he just
             # has unauthenticable/invalid premium credentials remaining in his DB
 
-        settings = self.get_settings()
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='submit_usage_analytics',
-            exception_is_error=False,
-            method=maybe_submit_usage_analytics,
-            data_dir=self.data_dir,
-            should_submit=settings.submit_usage_analytics,
-        )
-        self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
-        self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)
-        eth_rpc_endpoint = settings.eth_rpc_endpoint
-        # Initialize the price historian singleton
-        PriceHistorian(
-            data_directory=self.data_dir,
-            cryptocompare=self.cryptocompare,
-            coingecko=self.coingecko,
-        )
-        PriceHistorian().set_oracles_order(settings.historical_price_oracles)
+        with self.data.db.conn.read_ctx() as cursor:
+            settings = self.get_settings(cursor)
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name='submit_usage_analytics',
+                exception_is_error=False,
+                method=maybe_submit_usage_analytics,
+                data_dir=self.data_dir,
+                should_submit=settings.submit_usage_analytics,
+            )
+            self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
+            self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
+            eth_rpc_endpoint = settings.eth_rpc_endpoint
+            # Initialize the price historian singleton
+            PriceHistorian(
+                data_directory=self.data_dir,
+                cryptocompare=self.cryptocompare,
+                coingecko=self.coingecko,
+            )
+            PriceHistorian().set_oracles_order(settings.historical_price_oracles)
 
-        exchange_credentials = self.data.db.get_exchange_credentials()
-        self.exchange_manager.initialize_exchanges(
-            exchange_credentials=exchange_credentials,
-            database=self.data.db,
-        )
+            exchange_credentials = self.data.db.get_exchange_credentials(cursor)
+            self.exchange_manager.initialize_exchanges(
+                exchange_credentials=exchange_credentials,
+                database=self.data.db,
+            )
+            blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
 
         # Initialize blockchain querying modules
         ethereum_manager = EthereumManager(
@@ -270,7 +272,7 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
             greenlet_manager=self.greenlet_manager,
             connect_at_start=KUSAMA_NODES_TO_CONNECT_AT_START,
-            connect_on_startup=self._connect_ksm_manager_on_startup(),
+            connect_on_startup=len(blockchain_accounts.ksm) != 0,
             own_rpc_endpoint=settings.ksm_rpc_endpoint,
         )
         polkadot_manager = SubstrateManager(
@@ -278,7 +280,7 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
             greenlet_manager=self.greenlet_manager,
             connect_at_start=POLKADOT_NODES_TO_CONNECT_AT_START,
-            connect_on_startup=self._connect_dot_manager_on_startup(),
+            connect_on_startup=len(blockchain_accounts.dot) != 0,
             own_rpc_endpoint=settings.dot_rpc_endpoint,
         )
         self.eth_transactions = EthTransactions(ethereum=ethereum_manager, database=self.data.db)
@@ -305,7 +307,7 @@ class Rotkehlchen():
         Inquirer().set_oracles_order(settings.current_price_oracles)
 
         self.chain_manager = ChainManager(
-            blockchain_accounts=self.data.db.get_blockchain_accounts(),
+            blockchain_accounts=blockchain_accounts,
             ethereum_manager=ethereum_manager,
             kusama_manager=kusama_manager,
             polkadot_manager=polkadot_manager,
@@ -452,7 +454,7 @@ class Rotkehlchen():
         """Deletes the premium credentials for rotki"""
         msg = ''
 
-        success = self.data.db.del_rotkehlchen_premium()
+        success = self.data.db.delete_premium_credentials()
         if success is False:
             msg = 'The database was unable to delete the Premium keys for the logged-in user'
         self.deactivate_premium_status()
@@ -472,15 +474,17 @@ class Rotkehlchen():
 
     def get_blockchain_account_data(
             self,
+            cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
     ) -> Union[List[BlockchainAccountData], Dict[str, Any]]:
-        account_data = self.data.db.get_blockchain_account_data(blockchain)
+        account_data = self.data.db.get_blockchain_account_data(cursor, blockchain)
         if blockchain not in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             return account_data
 
-        xpub_data = self.data.db.get_bitcoin_xpub_data()
+        xpub_data = self.data.db.get_bitcoin_xpub_data(cursor)
         addresses_to_account_data = {x.address: x for x in account_data}
         address_to_xpub_mappings = self.data.db.get_addresses_to_xpub_mapping(
+            cursor,
             list(addresses_to_account_data.keys()),  # type: ignore
         )
 
@@ -521,25 +525,29 @@ class Rotkehlchen():
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem with its query.
         """
-        self.data.db.ensure_tags_exist(
-            given_data=account_data,
-            action='adding',
-            data_type='blockchain accounts',
-        )
-        address_type = blockchain.get_address_type()
-        updated_balances = self.chain_manager.add_blockchain_accounts(
-            blockchain=blockchain,
-            accounts=[address_type(entry.address) for entry in account_data],
-        )
-        self.data.db.add_blockchain_accounts(
-            blockchain=blockchain,
-            account_data=account_data,
-        )
+        with self.data.db.user_write() as cursor:
+            self.data.db.ensure_tags_exist(
+                cursor,
+                given_data=account_data,
+                action='adding',
+                data_type='blockchain accounts',
+            )
+            address_type = blockchain.get_address_type()
+            updated_balances = self.chain_manager.add_blockchain_accounts(
+                blockchain=blockchain,
+                accounts=[address_type(entry.address) for entry in account_data],
+            )
+            self.data.db.add_blockchain_accounts(
+                cursor,
+                blockchain=blockchain,
+                account_data=account_data,
+            )
 
         return updated_balances
 
     def edit_blockchain_accounts(
             self,
+            write_cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
             account_data: List[BlockchainAccountData],
     ) -> None:
@@ -564,13 +572,14 @@ class Rotkehlchen():
             )
 
         self.data.db.ensure_tags_exist(
+            write_cursor,
             given_data=account_data,
             action='editing',
             data_type='blockchain accounts',
         )
-
         # Finally edit the accounts
         self.data.db.edit_blockchain_accounts(
+            write_cursor,
             blockchain=blockchain,
             account_data=account_data,
         )
@@ -596,11 +605,12 @@ class Rotkehlchen():
         )
         eth_addresses: List[ChecksumEthAddress] = cast(List[ChecksumEthAddress], accounts) if blockchain == SupportedBlockchain.ETHEREUM else []  # noqa: E501
         with contextlib.ExitStack() as stack:
+            cursor = stack.enter_context(self.data.db.user_write())
             if blockchain == SupportedBlockchain.ETHEREUM:
                 stack.enter_context(self.eth_transactions.wait_until_no_query_for(eth_addresses))
                 stack.enter_context(self.eth_transactions.missing_receipts_lock)
                 stack.enter_context(self.evm_tx_decoder.undecoded_tx_query_lock)
-            self.data.db.remove_blockchain_accounts(blockchain, accounts)
+            self.data.db.remove_blockchain_accounts(cursor, blockchain, accounts)
 
         return balances_update
 
@@ -809,20 +819,20 @@ class Rotkehlchen():
             'location': location_stats,
             'net_usd': net_usd,
         }
-        allowed_to_save = requested_save_data or self.data.db.should_save_balances()
-
-        if (problem_free or save_despite_errors) and allowed_to_save:
-            if not timestamp:
-                timestamp = Timestamp(int(time.time()))
-            self.data.db.save_balances_data(data=result_dict, timestamp=timestamp)
-            log.debug('query_balances data saved')
-        else:
-            log.debug(
-                'query_balances data not saved',
-                allowed_to_save=allowed_to_save,
-                problem_free=problem_free,
-                save_despite_errors=save_despite_errors,
-            )
+        with self.data.db.user_write() as cursor:
+            allowed_to_save = requested_save_data or self.data.db.should_save_balances(cursor)
+            if (problem_free or save_despite_errors) and allowed_to_save:
+                if not timestamp:
+                    timestamp = Timestamp(int(time.time()))
+                self.data.db.save_balances_data(cursor, data=result_dict, timestamp=timestamp)
+                log.debug('query_balances data saved')
+            else:
+                log.debug(
+                    'query_balances data not saved',
+                    allowed_to_save=allowed_to_save,
+                    problem_free=problem_free,
+                    save_despite_errors=save_despite_errors,
+                )
 
         return result_dict
 
@@ -855,13 +865,13 @@ class Rotkehlchen():
         if settings.active_modules is not None:
             self.chain_manager.process_new_modules_list(settings.active_modules)
 
-        self.data.db.set_settings(settings)
+        with self.data.db.user_write() as cursor:
+            self.data.db.set_settings(cursor, settings)
         return True, ''
 
-    def get_settings(self) -> DBSettings:
+    def get_settings(self, cursor: 'DBCursor') -> DBSettings:
         """Returns the db settings with a check whether premium is active or not"""
-        db_settings = self.data.db.get_settings(have_premium=self.premium is not None)
-        return db_settings
+        return self.data.db.get_settings(cursor, have_premium=self.premium is not None)
 
     def setup_exchange(
             self,
@@ -908,10 +918,11 @@ class Rotkehlchen():
 
         self.exchange_manager.delete_exchange(name=name, location=location)
         # Success, remove it also from the DB
-        self.data.db.remove_exchange(name=name, location=location)
-        if self.exchange_manager.connected_exchanges.get(location) is None:
-            # was last exchange of the location type. Delete used query ranges
-            self.data.db.delete_used_query_range_for_exchange(location)
+        with self.data.db.user_write() as cursor:
+            self.data.db.remove_exchange(write_cursor=cursor, name=name, location=location)
+            if self.exchange_manager.connected_exchanges.get(location) is None:
+                # was last exchange of the location type. Delete used query ranges
+                self.data.db.delete_used_query_range_for_exchange(write_cursor=cursor, location=location)  # noqa: E501
         return True, ''
 
     def query_periodic_data(self) -> Dict[str, Union[bool, Timestamp]]:
@@ -919,20 +930,15 @@ class Rotkehlchen():
         result: Dict[str, Union[bool, Timestamp]] = {}
 
         if self.user_is_logged_in:
-            result['last_balance_save'] = self.data.db.get_last_balance_save_time()
-            result['eth_node_connection'] = self.chain_manager.ethereum.web3_mapping.get(NodeName.OWN, None) is not None  # noqa : E501
-            result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa : E501
+            with self.data.db.conn.read_ctx() as cursor:
+                result['last_balance_save'] = self.data.db.get_last_balance_save_time(cursor)
+                result['eth_node_connection'] = self.chain_manager.ethereum.web3_mapping.get(NodeName.OWN, None) is not None  # noqa : E501
+                result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa : E501
         return result
 
     def shutdown(self) -> None:
         self.logout()
         self.shutdown_event.set()
-
-    def _connect_ksm_manager_on_startup(self) -> bool:
-        return bool(self.data.db.get_blockchain_accounts().ksm)
-
-    def _connect_dot_manager_on_startup(self) -> bool:
-        return bool(self.data.db.get_blockchain_accounts().dot)
 
     def create_oracle_cache(
             self,

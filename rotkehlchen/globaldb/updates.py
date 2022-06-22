@@ -13,6 +13,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -29,7 +30,7 @@ log = RotkehlchenLogsAdapter(logger)
 ASSETS_VERSION_KEY = 'assets_version'
 
 
-def executeall(cursor: sqlite3.Cursor, statements: str) -> None:
+def executeall(cursor: DBCursor, statements: str) -> None:
     """Splits all statements and execute()s one by one to avoid the
     commit that executescript would do.
 
@@ -42,7 +43,7 @@ def executeall(cursor: sqlite3.Cursor, statements: str) -> None:
 
 
 def _replace_assets_from_db(
-        connection: sqlite3.Connection,
+        connection: DBConnection,
         sourcedb_path: Path,
 ) -> None:
     cursor = connection.cursor()
@@ -65,7 +66,7 @@ def _replace_assets_from_db(
     """)
 
 
-def _force_remote(cursor: sqlite3.Cursor, local_asset: Asset, full_insert: str) -> None:
+def _force_remote(cursor: DBCursor, local_asset: Asset, full_insert: str) -> None:
     """Force the remote entry into the database by deleting old one and doing the full insert.
 
     May raise an sqlite3 error if something fails.
@@ -283,7 +284,7 @@ class AssetsUpdater():
 
     def _apply_single_version_update(
             self,
-            cursor: sqlite3.Cursor,
+            cursor: DBCursor,
             version: int,
             text: str,
             conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
@@ -411,7 +412,7 @@ class AssetsUpdater():
 
     def _perform_update(
             self,
-            connection: sqlite3.Connection,
+            connection: DBConnection,
             conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
             local_schema_version: int,
             infojson: Dict[str, Any],

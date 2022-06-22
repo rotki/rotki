@@ -500,15 +500,17 @@ def test_custom_asset_delete_guard(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     custom1_id = result['identifier']
-    user_db.add_manually_tracked_balances([ManuallyTrackedBalance(
-        id=-1,
-        asset=Asset(custom1_id),
-        label='manual1',
-        amount=ONE,
-        location=Location.EXTERNAL,
-        tags=None,
-        balance_type=BalanceType.ASSET,
-    )])
+    with user_db.user_write() as cursor:
+        user_db.add_manually_tracked_balances(cursor, [ManuallyTrackedBalance(
+            id=-1,
+            asset=Asset(custom1_id),
+            label='manual1',
+            amount=ONE,
+            location=Location.EXTERNAL,
+            tags=None,
+            balance_type=BalanceType.ASSET,
+        )])
+
     # Try to delete the asset and see it fails because a user owns it
     response = requests.delete(
         api_url_for(

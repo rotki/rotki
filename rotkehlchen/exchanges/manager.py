@@ -5,6 +5,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.ftx import FTX_BASE_URL, FTXUS_BASE_URL
@@ -84,7 +85,8 @@ class ExchangeManager():
 
     def iterate_exchanges(self) -> Iterator[ExchangeInterface]:
         """Iterate all connected exchanges"""
-        excluded = self.database.get_settings().non_syncing_exchanges
+        with self.database.conn.read_ctx() as cursor:
+            excluded = self.database.get_settings(cursor).non_syncing_exchanges
         for _, exchanges in self.connected_exchanges.items():
             for exchange in exchanges:
                 # We are not yielding excluded exchanges
@@ -115,38 +117,35 @@ class ExchangeManager():
             return False, f'Could not find {str(location)} exchange {name} for editing'
 
         # First edit the database entries. This may raise InputError
-        self.database.edit_exchange(
-            name=name,
-            location=location,
-            new_name=new_name,
-            api_key=api_key,
-            api_secret=api_secret,
-            passphrase=passphrase,
-            kraken_account_type=kraken_account_type,
-            PAIRS=PAIRS,
-            ftx_subaccount=ftx_subaccount,
-            should_commit=False,
-        )
+        with self.database.user_write() as cursor:
+            self.database.edit_exchange(
+                cursor,
+                name=name,
+                location=location,
+                new_name=new_name,
+                api_key=api_key,
+                api_secret=api_secret,
+                passphrase=passphrase,
+                kraken_account_type=kraken_account_type,
+                PAIRS=PAIRS,
+                ftx_subaccount=ftx_subaccount,
+            )
 
-        # Edit the exchange object
-        success, msg = exchangeobj.edit_exchange(
-            name=new_name,
-            api_key=api_key,
-            api_secret=api_secret,
-            passphrase=passphrase,
-            kraken_account_type=kraken_account_type,
-            PAIRS=PAIRS,
-            ftx_subaccount=ftx_subaccount,
-        )
-        if success is False:
-            self.database.conn.rollback()  # the database changes that happened need rollback
-            return False, msg
+            # Edit the exchange object
+            success, msg = exchangeobj.edit_exchange(
+                name=new_name,
+                api_key=api_key,
+                api_secret=api_secret,
+                passphrase=passphrase,
+                kraken_account_type=kraken_account_type,
+                PAIRS=PAIRS,
+                ftx_subaccount=ftx_subaccount,
+            )
+            if success is False:
+                # by raising we also rollback the DB writes due to user_write()
+                raise InputError(msg)
 
-        # At this point all is great so we should also commit to the database
-        self.database.conn.commit()
-        self.database.update_last_write()
-
-        return True, ''
+            return True, ''
 
     def delete_exchange(self, name: str, location: Location) -> None:
         """Deletes exchange only from the manager. Not from the DB"""

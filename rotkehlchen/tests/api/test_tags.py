@@ -99,7 +99,8 @@ def test_add_and_query_tags(
     assert data['result']['private'] == tag2
 
     # And finally also check the DB to be certain
-    db_response = rotki.data.db.get_tags()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_response = rotki.data.db.get_tags(cursor)
     assert len(db_response) == 2
     assert db_response['Public'].serialize() == tag1
     assert db_response['private'].serialize() == tag2
@@ -140,7 +141,8 @@ def test_add_tag_without_description(
     assert data['result']['Public'] == tag1
 
     # And finally also check the DB to be certain
-    db_response = rotki.data.db.get_tags()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_response = rotki.data.db.get_tags(cursor)
     assert len(db_response) == 1
     assert db_response['Public'].serialize() == tag1
 
@@ -461,7 +463,8 @@ def test_edit_tags(
     assert data['result']['private'] == tag2
 
     # And finally also check the DB to be certain
-    db_response = rotki.data.db.get_tags()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_response = rotki.data.db.get_tags(cursor)
     assert len(db_response) == 2
     assert db_response['Public'].serialize() == tag1
     assert db_response['private'].serialize() == tag2
@@ -558,7 +561,8 @@ def test_delete_tags(
     assert data['result']['private'] == tag2
 
     # And finally also check the DB to be certain
-    db_response = rotki.data.db.get_tags()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_response = rotki.data.db.get_tags(cursor)
     assert len(db_response) == 1
     assert db_response['private'].serialize() == tag2
 

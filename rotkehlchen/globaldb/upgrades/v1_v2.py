@@ -1,20 +1,20 @@
 import logging
-import sqlite3
 from collections import defaultdict
 
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
+from rotkehlchen.db.drivers.gevent import DBConnection
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def upgrade_ethereum_asset_ids(connection: sqlite3.Connection) -> None:
+def upgrade_ethereum_asset_ids(connection: DBConnection) -> None:
     # Get all old data from the DB
     cursor = connection.cursor()
     result = cursor.execute('SELECT * from underlying_tokens_list;')
     underlying_tokens_list_tuples = result.fetchall()
-    result = cursor.execute(
+    cursor.execute(
         'SELECT A.identifier, B.address, B.decimals, B.name, B.symbol, B.started, '
         'B.swapped_for, B.coingecko, B.cryptocompare, B.protocol FROM assets '
         'AS A LEFT OUTER JOIN ethereum_tokens '
@@ -26,7 +26,7 @@ def upgrade_ethereum_asset_ids(connection: sqlite3.Connection) -> None:
     ethereum_details_tuples = []
 
     # run through all entries first to populate old_ethereum_id_to_new
-    for entry in result:
+    for entry in cursor:
         new_id = ETHEREUM_DIRECTIVE + entry[1]
         old_ethereum_id_to_new[entry[0]] = new_id
         old_ethereum_data.append((new_id, *entry[1:]))

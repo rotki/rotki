@@ -15,11 +15,12 @@ def upgrade_v27_to_v28(db: 'DBHandler') -> None:
     cursor.execute(
         'SELECT COUNT(*) FROM sqlite_master WHERE type="yearn_vaults_events" AND name="version"',
     )
-    if cursor.fetchone()[0] == 0:
+    if cursor.fetchone()[0] == 0:  # should return a value here
         cursor.execute(
             'ALTER TABLE yearn_vaults_events ADD COLUMN version INTEGER NOT NULL DEFAULT 1;',
         )
-    db.delete_aave_data()
+    cursor.execute('DELETE FROM aave_events;')
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
     # Create the gitcoin tables that are added in this DB version
     cursor.executescript("""
     CREATE TABLE IF NOT EXISTS gitcoin_tx_type (

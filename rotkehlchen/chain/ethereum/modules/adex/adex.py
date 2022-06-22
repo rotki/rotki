@@ -65,6 +65,7 @@ from .utils import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -481,14 +482,15 @@ class Adex(EthereumModule):
         min_from_timestamp: Timestamp = to_timestamp
 
         # Get addresses' last used query range for AdEx events
-        for address in addresses:
-            entry_name = f'{ADEX_EVENTS_PREFIX}_{address}'
-            events_range = self.database.get_used_query_range(name=entry_name)
-            if not events_range:
-                new_addresses.append(address)
-            else:
-                existing_addresses.append(address)
-                min_from_timestamp = min(min_from_timestamp, events_range[1])
+        with self.database.conn.read_ctx() as cursor:
+            for address in addresses:
+                entry_name = f'{ADEX_EVENTS_PREFIX}_{address}'
+                events_range = self.database.get_used_query_range(cursor, name=entry_name)
+                if not events_range:
+                    new_addresses.append(address)
+                else:
+                    existing_addresses.append(address)
+                    min_from_timestamp = min(min_from_timestamp, events_range[1])
 
         # Request new addresses' events
         all_new_events: List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]] = []
@@ -511,20 +513,22 @@ class Adex(EthereumModule):
             )
             all_new_events.extend(new_events)
 
-        # Add new events in DB
-        if all_new_events:
-            new_staking_events = self._get_addresses_staking_events_grouped_by_type(
-                events=all_new_events,
-                addresses=set(addresses),
-            )
-            self._update_events_value(staking_events=new_staking_events)
-            self.database.add_adex_events(new_staking_events.get_all())
+        with self.database.user_write() as cursor:
+            # Add new events in DB
+            if all_new_events:
+                new_staking_events = self._get_addresses_staking_events_grouped_by_type(
+                    events=all_new_events,
+                    addresses=set(addresses),
+                )
+                self._update_events_value(cursor=cursor, staking_events=new_staking_events)
+                self.database.add_adex_events(cursor, new_staking_events.get_all())
 
-        # Fetch all DB events within the time range
-        db_events = self.database.get_adex_events(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
+            # Fetch all DB events within the time range
+            db_events = self.database.get_adex_events(
+                cursor=cursor,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
         staking_events = self._get_addresses_staking_events_grouped_by_type(
             events=db_events,
             addresses=set(addresses),
@@ -749,12 +753,14 @@ class Adex(EthereumModule):
 
             all_events.extend(events)
 
-        for address in addresses:
-            self.database.update_used_query_range(
-                name=f'{ADEX_EVENTS_PREFIX}_{address}',
-                start_ts=from_timestamp,
-                end_ts=to_timestamp,
-            )
+        with self.database.user_write() as cursor:
+            for address in addresses:
+                self.database.update_used_query_range(
+                    write_cursor=cursor,
+                    name=f'{ADEX_EVENTS_PREFIX}_{address}',
+                    start_ts=from_timestamp,
+                    end_ts=to_timestamp,
+                )
         return all_events
 
     @staticmethod
@@ -768,6 +774,7 @@ class Adex(EthereumModule):
 
     def _update_events_value(
             self,
+            cursor: 'DBCursor',
             staking_events: ADXStakingEvents,
     ) -> None:
         # Update amounts for unbonds and unbond requests
@@ -786,6 +793,7 @@ class Adex(EthereumModule):
             elif event.bond_id not in bond_id_bond_map:
                 bond_id_bond_map[event.bond_id] = None
                 db_bonds = cast(List[Bond], self.database.get_adex_events(
+                    cursor=cursor,
                     bond_id=event.bond_id,
                     event_type=AdexEventType.BOND,
                 ))
@@ -885,7 +893,9 @@ class Adex(EthereumModule):
         deserializing the events.
         """
         if reset_db_data is True:
-            self.database.delete_adex_events_data()
+            with self.database.user_write() as cursor:
+                self.database.delete_adex_events_data(cursor)
+
         identity_address_map = self._get_identity_address_map(addresses)
         staking_events = self._get_staking_events(
             addresses=addresses,
@@ -970,4 +980,5 @@ class Adex(EthereumModule):
         pass
 
     def deactivate(self) -> None:
-        self.database.delete_adex_events_data()
+        with self.database.user_write() as cursor:
+            self.database.delete_adex_events_data(cursor)

@@ -4,12 +4,11 @@ from typing import TYPE_CHECKING, Dict, Set
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 
 if TYPE_CHECKING:
-    from sqlite3 import Cursor
-
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
-def _upgrade_history_events(cursor: 'Cursor') -> None:
+def _upgrade_history_events(cursor: 'DBCursor') -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS history_events_copy (
         identifier INTEGER NOT NULL PRIMARY KEY,
@@ -48,7 +47,7 @@ def _upgrade_history_events(cursor: 'Cursor') -> None:
     )
 
 
-def _remove_gitcoin(cursor: 'Cursor') -> None:
+def _remove_gitcoin(cursor: 'DBCursor') -> None:
     cursor.execute('DELETE from ledger_actions WHERE identifier IN (SELECT parent_id FROM ledger_actions_gitcoin_data)')  # noqa: E501
     cursor.execute('DELETE from used_query_ranges WHERE name LIKE "gitcoingrants_%"')
     cursor.execute('DROP TABLE IF exists gitcoin_grant_metadata')
@@ -56,7 +55,7 @@ def _remove_gitcoin(cursor: 'Cursor') -> None:
     cursor.execute('DROP TABLE IF exists gitcoin_tx_type')
 
 
-def _add_new_tables(cursor: 'Cursor') -> None:
+def _add_new_tables(cursor: 'DBCursor') -> None:
     cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("d", 36)')
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS ethereum_internal_transactions (
@@ -103,7 +102,7 @@ def _add_new_tables(cursor: 'Cursor') -> None:
 """)
 
 
-def _refactor_manual_balance_id(cursor: 'Cursor') -> None:
+def _refactor_manual_balance_id(cursor: 'DBCursor') -> None:
     cursor.execute("""
     CREATE TABLE manually_tracked_balances_copy (
         id INTEGER PRIMARY KEY,
@@ -126,12 +125,12 @@ def _refactor_manual_balance_id(cursor: 'Cursor') -> None:
     )
 
 
-def _update_fee_for_existing_trades(cursor: 'Cursor') -> None:
+def _update_fee_for_existing_trades(cursor: 'DBCursor') -> None:
     cursor.execute('UPDATE trades SET fee = NULL WHERE fee_currency IS NULL')
     cursor.execute('UPDATE trades SET fee_currency = NULL WHERE fee IS NULL')
 
 
-def _update_history_entries_from_kraken(cursor: 'Cursor') -> None:
+def _update_history_entries_from_kraken(cursor: 'DBCursor') -> None:
     """The logic for kraken was adding additional entries for trades when fee + kfee was
     being used. This function makes the state of the database consistent with the upgraded
     logic by:
@@ -169,13 +168,13 @@ def _update_history_entries_from_kraken(cursor: 'Cursor') -> None:
         )
 
 
-def _update_settings_name_for_selected_binance_markets(cursor: 'Cursor') -> None:
+def _update_settings_name_for_selected_binance_markets(cursor: 'DBCursor') -> None:
     cursor.execute("""
     UPDATE user_credentials_mappings SET setting_name = ? WHERE setting_name = "PAIRS"
     """, (BINANCE_MARKETS_KEY,))
 
 
-def _update_manual_balances_tags(cursor_fetch: 'Cursor', cursor_update: 'Cursor') -> None:
+def _update_manual_balances_tags(cursor_fetch: 'DBCursor', cursor_update: 'DBCursor') -> None:
     manual_balances = cursor_fetch.execute('SELECT id, label FROM manually_tracked_balances')
     for balance_id, label in manual_balances:
         cursor_update.execute('UPDATE tag_mappings SET object_reference=? WHERE object_reference=?', (balance_id, label))  # noqa: E501

@@ -784,7 +784,8 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
             notes='',
         ),
     ]
-    mock_bitstamp.db.add_trades(trades)
+    with mock_bitstamp.db.user_write() as cursor:
+        mock_bitstamp.db.add_trades(cursor, trades)
 
     end_ts = Timestamp(1606995000)
     expected_call = call(

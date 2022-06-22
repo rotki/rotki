@@ -29,7 +29,8 @@ def main() -> None:
         print('SERVER IS NOW SHUTTING DOWN')
     elif args.command == 'statistics':
         stats_faker = StatisticsFaker(args)
-        stats_faker.create_fake_data(args)
+        with stats_faker.db.user_write() as cursor:
+            stats_faker.create_fake_data(cursor, args)
     else:
         raise AssertionError(f'Should not happen. Unexpected command {args.command} given')
 

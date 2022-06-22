@@ -87,7 +87,8 @@ def get_or_create_ethereum_token(
         )
         # This can but should not raise InputError since it should not already exist
         ethereum_token = add_ethereum_token_to_db(token_data)
-        userdb.add_asset_identifiers([ethereum_token.identifier])
+        with userdb.user_write() as cursor:
+            userdb.add_asset_identifiers(cursor, [ethereum_token.identifier])
 
     return ethereum_token
 

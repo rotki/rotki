@@ -8,6 +8,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Location, Timestamp
@@ -88,7 +89,7 @@ class StatisticsFaker():
 
         return from_ts, to_ts
 
-    def create_fake_data(self, args: argparse.Namespace) -> None:
+    def create_fake_data(self, cursor: DBCursor, args: argparse.Namespace) -> None:
         self._clean_tables()
         from_ts, to_ts = StatisticsFaker._get_timestamps(args)
         starting_amount, min_amount, max_amount = StatisticsFaker._get_amounts(args)
@@ -106,7 +107,7 @@ class StatisticsFaker():
                 usd_value=str(value),
             ))
         # add the location data + total to the DB
-        self.db.add_multiple_location_data(location_data + [LocationData(
+        self.db.add_multiple_location_data(cursor, location_data + [LocationData(
             time=from_ts,
             location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
             usd_value=str(total_amount),
@@ -122,7 +123,7 @@ class StatisticsFaker():
                 amount=str(random.randint(1, 20)),
                 usd_value=str(value),
             ))
-        self.db.add_multiple_balances(assets_data)
+        self.db.add_multiple_balances(cursor, assets_data)
 
         while from_ts < to_ts:
             print(f'At timestamp: {from_ts}/{to_ts} wih total net worth: ${total_amount}')
@@ -160,7 +161,7 @@ class StatisticsFaker():
                     usd_value=str(action(FVal(location_data[idx].usd_value), value)),
                 ))
             # add the location data + total to the DB
-            self.db.add_multiple_location_data(new_location_data + [LocationData(
+            self.db.add_multiple_location_data(cursor, new_location_data + [LocationData(
                 time=from_ts,
                 location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
                 usd_value=str(total_amount),
@@ -178,7 +179,7 @@ class StatisticsFaker():
                     amount=str(new_amount),
                     usd_value=str(action(FVal(assets_data[idx].usd_value), value)),
                 ))
-            self.db.add_multiple_balances(new_assets_data)
+            self.db.add_multiple_balances(cursor, new_assets_data)
 
             location_data = new_location_data
             assets_data = new_assets_data

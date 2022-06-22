@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.transactions import EthTransactions
     from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -66,9 +67,6 @@ class EventsHistorian:
         self.chain_manager = chain_manager
         self.evm_tx_decoder = evm_tx_decoder
         self.eth_transactions = eth_transactions
-        db_settings = self.db.get_settings()
-        self.dateformat = db_settings.date_display_format
-        self.datelocaltime = db_settings.display_date_in_localtime
         self._reset_variables()
 
     def timestamp_to_date(self, timestamp: Timestamp) -> str:
@@ -82,7 +80,8 @@ class EventsHistorian:
         # Keeps how many trades we have found per location. Used for free user limiting
         self.processing_state_name = 'Starting query of historical events'
         self.progress = ZERO
-        db_settings = self.db.get_settings()
+        with self.db.conn.read_ctx() as cursor:
+            db_settings = self.db.get_settings(cursor)
         self.dateformat = db_settings.date_display_format
         self.datelocaltime = db_settings.display_date_in_localtime
 
@@ -163,10 +162,12 @@ class EventsHistorian:
             self._query_services_for_trades(filter_query=filter_query)
 
         has_premium = self.chain_manager.premium is not None
-        trades, filter_total_found = self.db.get_trades_and_limit_info(
-            filter_query=filter_query,
-            has_premium=has_premium,
-        )
+        with self.db.conn.read_ctx() as cursor:
+            trades, filter_total_found = self.db.get_trades_and_limit_info(
+                cursor=cursor,
+                filter_query=filter_query,
+                has_premium=has_premium,
+            )
         return trades, filter_total_found
 
     def query_location_latest_trades(
@@ -251,14 +252,16 @@ class EventsHistorian:
 
     def query_history_events(
         self,
-        filter_query: HistoryEventFilterQuery,
-        only_cache: bool,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventFilterQuery,
+            only_cache: bool,
     ) -> Tuple[List[HistoryBaseEntry], int]:
         if only_cache is False:
             exchanges_list = self.exchange_manager.connected_exchanges.get(Location.KRAKEN, [])
             kraken_names = []
             for kraken_instance in exchanges_list:
                 with_errors = kraken_instance.query_kraken_ledgers(   # type: ignore
+                    cursor=cursor,
                     start_ts=filter_query.from_ts,
                     end_ts=filter_query.to_ts,
                 )
@@ -273,6 +276,7 @@ class EventsHistorian:
         db = DBHistoryEvents(self.db)
         has_premium = self.chain_manager.premium is not None
         events, filter_total_found = db.get_history_events_and_limit_info(
+            cursor=cursor,
             filter_query=filter_query,
             has_premium=has_premium,
         )
@@ -376,10 +380,12 @@ class EventsHistorian:
         # Include all external trades and trades from external exchanges
         for location in EXTERNAL_LOCATION:
             self.processing_state_name = f'Querying {location} trades history'
-            external_trades = self.db.get_trades(
-                filter_query=TradesFilterQuery.make(location=location),
-                has_premium=True,  # we need all trades for accounting -- limit happens later
-            )
+            with self.db.conn.read_ctx() as cursor:
+                external_trades = self.db.get_trades(
+                    cursor,
+                    filter_query=TradesFilterQuery.make(location=location),
+                    has_premium=True,  # we need all trades for accounting -- limit happens later
+                )
             history.extend(external_trades)
             step = self._increase_progress(step, total_steps)
 
@@ -411,14 +417,16 @@ class EventsHistorian:
 
         # Include base history entries
         history_events_db = DBHistoryEvents(self.db)
-        base_entries, _ = history_events_db.get_history_events_and_limit_info(
-            filter_query=HistoryEventFilterQuery.make(
-                # We need to have history since before the range
-                from_ts=Timestamp(0),
-                to_ts=end_ts,
-            ),
-            has_premium=True,  # ignore limits here. Limit applied at processing
-        )
+        with self.db.conn.read_ctx() as cursor:
+            base_entries, _ = history_events_db.get_history_events_and_limit_info(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(
+                    # We need to have history since before the range
+                    from_ts=Timestamp(0),
+                    to_ts=end_ts,
+                ),
+                has_premium=True,  # ignore limits here. Limit applied at processing
+            )
         history.extend(base_entries)
         self._increase_progress(step, total_steps)
 

@@ -213,8 +213,9 @@ def test_query_trades_including_ammswaps(data_dir, username):
             amount1_out=FVal(5.4),
         ),
     ]
-    data.db.add_trades(trades)
-    data.db.add_amm_swaps(swaps)
+    with data.db.user_write() as cursor:
+        data.db.add_trades(cursor, trades)
+        data.db.add_amm_swaps(cursor, swaps)
     swap1_trade = Trade(
         timestamp=swaps[0].timestamp,
         location=swaps[0].location,
@@ -308,77 +309,83 @@ def test_query_trades_including_ammswaps(data_dir, username):
     )
 
     # Get all trades
-    returned_trades = data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
-    assert len(returned_trades) == 10
-    assert returned_trades[0] == trades[0]
-    assert returned_trades[2] == trades[1]
-    assert returned_trades[4] == trades[2]
-    assert_trades_equal(returned_trades[1], swap1_trade)
-    assert_trades_equal(returned_trades[3], swap2_trade)
-    assert_trades_equal(returned_trades[5], swap3_trade)
-    assert_trades_equal(returned_trades[6], swap4_trade2)
-    assert_trades_equal(returned_trades[7], swap4_trade1)
-    assert_trades_equal(returned_trades[8], swap5_trade1)
-    assert_trades_equal(returned_trades[9], swap5_trade2)
+    with data.db.conn.read_ctx() as cursor:
+        returned_trades = data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+        assert len(returned_trades) == 10
+        assert returned_trades[0] == trades[0]
+        assert returned_trades[2] == trades[1]
+        assert returned_trades[4] == trades[2]
+        assert_trades_equal(returned_trades[1], swap1_trade)
+        assert_trades_equal(returned_trades[3], swap2_trade)
+        assert_trades_equal(returned_trades[5], swap3_trade)
+        assert_trades_equal(returned_trades[6], swap4_trade2)
+        assert_trades_equal(returned_trades[7], swap4_trade1)
+        assert_trades_equal(returned_trades[8], swap5_trade1)
+        assert_trades_equal(returned_trades[9], swap5_trade2)
 
-    # Get last 5 trades
-    returned_trades = data.db.get_trades(
-        filter_query=TradesFilterQuery.make(limit=5, offset=5),
-        has_premium=True,
-    )
-    assert len(returned_trades) == 5
-    assert_trades_equal(returned_trades[0], swap3_trade)
-    assert_trades_equal(returned_trades[1], swap4_trade2)
-    assert_trades_equal(returned_trades[2], swap4_trade1)
-    assert_trades_equal(returned_trades[3], swap5_trade1)
-    assert_trades_equal(returned_trades[4], swap5_trade2)
-
-    # Get first 5 trades that are in uniswap and that buy USDC
-    returned_trades = data.db.get_trades(
-        filter_query=TradesFilterQuery.make(
-            limit=5, offset=0, location=Location.UNISWAP, base_assets=(A_USDC,),
-        ), has_premium=True,
-    )
-    assert len(returned_trades) == 1
-    assert_trades_equal(returned_trades[0], swap1_trade)
-
-    # Get all trades with quote asset USDC
-    returned_trades = data.db.get_trades(
-        filter_query=TradesFilterQuery.make(quote_assets=(A_USDC,)),
-        has_premium=True,
-    )
-    assert len(returned_trades) == 3
-    assert_trades_equal(returned_trades[0], trades[0])
-    assert_trades_equal(returned_trades[1], swap4_trade2)
-    assert_trades_equal(returned_trades[2], swap5_trade1)
-
-    # Get all trades as non premium user with 2 free trades as limit
-    limit_patch = patch(
-        target='rotkehlchen.db.dbhandler.FREE_TRADES_LIMIT',
-        new=2,
-    )
-    with limit_patch:
-        returned_trades, total_found = data.db.get_trades_and_limit_info(
-            filter_query=TradesFilterQuery.make(),
-            has_premium=False,
+        # Get last 5 trades
+        returned_trades = data.db.get_trades(
+            cursor,
+            filter_query=TradesFilterQuery.make(limit=5, offset=5),
+            has_premium=True,
         )
-    # trades should be the latest 2
-    assert total_found == 3  # the 3 normal trades -- free users don't see swaps
-    assert len(returned_trades) == 2
-    assert_trades_equal(returned_trades[0], trades[1])
-    assert_trades_equal(returned_trades[1], trades[2])
+        assert len(returned_trades) == 5
+        assert_trades_equal(returned_trades[0], swap3_trade)
+        assert_trades_equal(returned_trades[1], swap4_trade2)
+        assert_trades_equal(returned_trades[2], swap4_trade1)
+        assert_trades_equal(returned_trades[3], swap5_trade1)
+        assert_trades_equal(returned_trades[4], swap5_trade2)
 
-    # Get filtered trades as non premium user with 2 free trades as limit
-    limit_patch = patch(
-        target='rotkehlchen.db.dbhandler.FREE_TRADES_LIMIT',
-        new=2,
-    )
-    with limit_patch:
-        returned_trades, total_found = data.db.get_trades_and_limit_info(
-            filter_query=TradesFilterQuery.make(from_ts=1, to_ts=2),
-            has_premium=False,
+        # Get first 5 trades that are in uniswap and that buy USDC
+        returned_trades = data.db.get_trades(
+            cursor,
+            filter_query=TradesFilterQuery.make(
+                limit=5, offset=0, location=Location.UNISWAP, base_assets=(A_USDC,),
+            ), has_premium=True,
         )
-    # trades should be the second one since the free limit includes the last 2 only
-    assert total_found == 2, 'total found for filter should be 2'
-    assert len(returned_trades) == 1
-    assert_trades_equal(returned_trades[0], trades[1])
+        assert len(returned_trades) == 1
+        assert_trades_equal(returned_trades[0], swap1_trade)
+
+        # Get all trades with quote asset USDC
+        returned_trades = data.db.get_trades(
+            cursor,
+            filter_query=TradesFilterQuery.make(quote_assets=(A_USDC,)),
+            has_premium=True,
+        )
+        assert len(returned_trades) == 3
+        assert_trades_equal(returned_trades[0], trades[0])
+        assert_trades_equal(returned_trades[1], swap4_trade2)
+        assert_trades_equal(returned_trades[2], swap5_trade1)
+
+        # Get all trades as non premium user with 2 free trades as limit
+        limit_patch = patch(
+            target='rotkehlchen.db.dbhandler.FREE_TRADES_LIMIT',
+            new=2,
+        )
+        with limit_patch:
+            returned_trades, total_found = data.db.get_trades_and_limit_info(
+                cursor,
+                filter_query=TradesFilterQuery.make(),
+                has_premium=False,
+            )
+        # trades should be the latest 2
+        assert total_found == 3  # the 3 normal trades -- free users don't see swaps
+        assert len(returned_trades) == 2
+        assert_trades_equal(returned_trades[0], trades[1])
+        assert_trades_equal(returned_trades[1], trades[2])
+
+        # Get filtered trades as non premium user with 2 free trades as limit
+        limit_patch = patch(
+            target='rotkehlchen.db.dbhandler.FREE_TRADES_LIMIT',
+            new=2,
+        )
+        with limit_patch:
+            returned_trades, total_found = data.db.get_trades_and_limit_info(
+                cursor,
+                filter_query=TradesFilterQuery.make(from_ts=1, to_ts=2),
+                has_premium=False,
+            )
+        # trades should be the second one since the free limit includes the last 2 only
+        assert total_found == 2, 'total found for filter should be 2'
+        assert len(returned_trades) == 1
+        assert_trades_equal(returned_trades[0], trades[1])

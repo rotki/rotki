@@ -74,7 +74,8 @@ class CSVExporter(CustomizableDateMixin):
     def reset(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
         self.start_ts = start_ts
         self.end_ts = end_ts
-        self.reload_settings()
+        with self.database.conn.read_ctx() as cursor:
+            self.reload_settings(cursor)
         try:
             frontend_settings = json.loads(self.settings.frontend_settings)
             if (

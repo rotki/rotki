@@ -1,12 +1,11 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from sqlite3 import Cursor
-
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
-def _refactor_xpubs_and_xpub_mappings(cursor: 'Cursor') -> None:
+def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor') -> None:
     # Keep a copy of the xpub_mappings because it will get deleted once
     # xpubs table is dropped.
     xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
@@ -61,7 +60,7 @@ def _refactor_xpubs_and_xpub_mappings(cursor: 'Cursor') -> None:
     cursor.execute('ALTER TABLE xpub_mappings_copy RENAME TO xpub_mappings;')
 
 
-def _create_new_tables(cursor: 'Cursor') -> None:
+def _create_new_tables(cursor: 'DBCursor') -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS address_book (
         address TEXT NOT NULL,

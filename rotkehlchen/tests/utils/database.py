@@ -51,14 +51,17 @@ def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bo
 
 def add_blockchain_accounts_to_db(db: DBHandler, blockchain_accounts: BlockchainAccounts) -> None:
     try:
-        db.add_blockchain_accounts(
-            SupportedBlockchain.ETHEREUM,
-            [BlockchainAccountData(address=x) for x in blockchain_accounts.eth],
-        )
-        db.add_blockchain_accounts(
-            SupportedBlockchain.BITCOIN,
-            [BlockchainAccountData(address=x) for x in blockchain_accounts.btc],
-        )
+        with db.user_write() as cursor:
+            db.add_blockchain_accounts(
+                cursor,
+                SupportedBlockchain.ETHEREUM,
+                [BlockchainAccountData(address=x) for x in blockchain_accounts.eth],
+            )
+            db.add_blockchain_accounts(
+                cursor,
+                SupportedBlockchain.BITCOIN,
+                [BlockchainAccountData(address=x) for x in blockchain_accounts.btc],
+            )
     except InputError as e:
         raise AssertionError(
             f'Got error at test setup blockchain account addition: {str(e)} '
@@ -82,7 +85,8 @@ def add_settings_to_test_db(
     if db_settings is not None:
         for key, value in db_settings.items():
             settings[key] = value
-    db.set_settings(ModifiableDBSettings(**settings))  # type: ignore
+    with db.user_write() as cursor:
+        db.set_settings(cursor, ModifiableDBSettings(**settings))  # type: ignore
 
     if ignored_assets:
         for asset in ignored_assets:
@@ -97,20 +101,23 @@ def add_settings_to_test_db(
 
 
 def add_tags_to_test_db(db: DBHandler, tags: List[Dict[str, Any]]) -> None:
-    for tag in tags:
-        db.add_tag(
-            name=tag['name'],
-            description=tag.get('description', None),
-            background_color=tag['background_color'],
-            foreground_color=tag['foreground_color'],
-        )
+    with db.user_write() as cursor:
+        for tag in tags:
+            db.add_tag(
+                cursor,
+                name=tag['name'],
+                description=tag.get('description', None),
+                background_color=tag['background_color'],
+                foreground_color=tag['foreground_color'],
+            )
 
 
 def add_manually_tracked_balances_to_test_db(
         db: DBHandler,
         balances: List[ManuallyTrackedBalance],
 ) -> None:
-    db.add_manually_tracked_balances(balances)
+    with db.user_write() as cursor:
+        db.add_manually_tracked_balances(cursor, balances)
 
 
 def mock_dbhandler_update_owned_assets() -> _patch:

@@ -498,8 +498,9 @@ def test_global_db_restore(globaldb, database):
         },
     )
 
-    database.add_asset_identifiers('1')
-    database.add_asset_identifiers('2')
+    with database.user_write() as cursor:
+        database.add_asset_identifiers(cursor, '1')
+        database.add_asset_identifiers(cursor, '2')
 
     # Try to reset DB it if we have a trade that uses a custom asset
     buy_asset = symbol_to_asset_or_token('LOLZ2')
@@ -521,11 +522,12 @@ def test_global_db_restore(globaldb, database):
         notes="",
     )
 
-    database.add_trades([trade])
-    status, _ = GlobalDBHandler().hard_reset_assets_list(database)
-    assert status is False
-    # Now do it without the trade
-    database.delete_trade(trade.identifier)
+    with database.user_write() as cursor:
+        database.add_trades(cursor, [trade])
+        status, _ = GlobalDBHandler().hard_reset_assets_list(database)
+        assert status is False
+        # Now do it without the trade
+        database.delete_trade(cursor, trade.identifier)
     status, msg = GlobalDBHandler().hard_reset_assets_list(database, True)
     assert status, msg
     cursor = globaldb.conn.cursor()

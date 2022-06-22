@@ -16,6 +16,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 class DBLedgerActions():
@@ -33,15 +34,16 @@ class DBLedgerActions():
 
         Also returns how many are the total found for the filter
         """
-        actions = self.get_ledger_actions(filter_query=filter_query, has_premium=has_premium)
-        cursor = self.db.conn.cursor()
-        query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from ledger_actions ' + query
-        total_found_result = cursor.execute(query, bindings)
-        return actions, total_found_result.fetchone()[0]
+        with self.db.conn.read_ctx() as cursor:
+            actions = self.get_ledger_actions(cursor, filter_query=filter_query, has_premium=has_premium)  # noqa: E501
+            query, bindings = filter_query.prepare(with_pagination=False)
+            query = 'SELECT COUNT(*) from ledger_actions ' + query
+            total_found_result = cursor.execute(query, bindings)
+            return actions, total_found_result.fetchone()[0]
 
     def get_ledger_actions(
             self,
+            cursor: 'DBCursor',
             filter_query: LedgerActionsFilterQuery,
             has_premium: bool,
     ) -> List[LedgerAction]:
@@ -49,7 +51,6 @@ class DBLedgerActions():
 
         Returned list is ordered according to the passed filter query
         """
-        cursor = self.db.conn.cursor()
         query_filter, bindings = filter_query.prepare()
         if has_premium:
             query = 'SELECT * from ledger_actions ' + query_filter
@@ -79,26 +80,24 @@ class DBLedgerActions():
 
         return actions
 
-    def add_ledger_action(self, action: LedgerAction) -> int:
+    def add_ledger_action(self, write_cursor: 'DBCursor', action: LedgerAction) -> int:  # pylint: disable=no-self-use  # noqa: E501
         """Adds a new ledger action to the DB and returns its identifier for success
 
         May raise:
         - sqlcipher.IntegrityError if there is a conflict at addition in  _add_gitcoin_extra_data.
          If this error is raised connection needs to be rolled back by the caller.
         """
-        cursor = self.db.conn.cursor()
         query = """
         INSERT INTO ledger_actions(
             timestamp, type, location, amount, asset, rate, rate_asset, link, notes
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
-        cursor.execute(query, action.serialize_for_db())
-        identifier = cursor.lastrowid
+        write_cursor.execute(query, action.serialize_for_db())
+        identifier = write_cursor.lastrowid
         action.identifier = identifier
-        self.db.conn.commit()
         return identifier
 
-    def add_ledger_actions(self, actions: List[LedgerAction]) -> None:
+    def add_ledger_actions(self, write_cursor: 'DBCursor', actions: List[LedgerAction]) -> None:
         """Adds multiple ledger action to the DB
 
         Is slow due to not using executemany since the ledger actions table
@@ -106,28 +105,25 @@ class DBLedgerActions():
         """
         for action in actions:
             try:
-                self.add_ledger_action(action)
+                self.add_ledger_action(write_cursor, action)
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 self.db.msg_aggregator.add_warning('Did not add ledger action to DB due to it already existing')  # noqa: E501
                 log.warning(f'Did not add ledger action {action} to the DB due to it already existing')  # noqa: E501
-                self.db.conn.rollback()  # undo the addition and rollack to last commit
 
-    def remove_ledger_action(self, identifier: int) -> Optional[str]:
+    def remove_ledger_action(self, write_cursor: 'DBCursor', identifier: int) -> Optional[str]:  # pylint: disable=no-self-use  # noqa: E501
         """Removes a ledger action from the DB by identifier
 
         Returns None for success or an error message for error
         """
         error_msg = None
-        cursor = self.db.conn.cursor()
-        cursor.execute(
+        write_cursor.execute(
             'DELETE from ledger_actions WHERE identifier = ?;', (identifier,),
         )
-        if cursor.rowcount < 1:
+        if write_cursor.rowcount < 1:
             error_msg = (
                 f'Tried to delete ledger action with identifier {identifier} but '
                 f'it was not found in the DB'
             )
-        self.db.conn.commit()
         return error_msg
 
     def edit_ledger_action(self, action: LedgerAction) -> Optional[str]:
@@ -138,16 +134,16 @@ class DBLedgerActions():
         Returns None for success or an error message for error
         """
         error_msg = None
-        cursor = self.db.conn.cursor()
         query = """
         UPDATE ledger_actions SET timestamp=?, type=?, location=?, amount=?,
         asset=?, rate=?, rate_asset=?, link=?, notes=? WHERE identifier=?"""
         db_action_tuple = action.serialize_for_db()
-        cursor.execute(query, (*db_action_tuple, action.identifier))
-        if cursor.rowcount != 1:
-            error_msg = (
-                f'Tried to edit ledger action with identifier {action.identifier} '
-                f'but it was not found in the DB'
-            )
-        self.db.conn.commit()
+        with self.db.user_write() as cursor:
+            cursor.execute(query, (*db_action_tuple, action.identifier))
+            if cursor.rowcount != 1:
+                error_msg = (
+                    f'Tried to edit ledger action with identifier {action.identifier} '
+                    f'but it was not found in the DB'
+                )
+
         return error_msg

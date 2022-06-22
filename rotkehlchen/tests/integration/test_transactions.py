@@ -21,7 +21,8 @@ def test_get_transaction_receipt(
         transaction_already_queried=transaction_already_queried,
         one_receipt_in_db=False,
     )
-    receipt = eth_transactions.get_or_query_transaction_receipt(transactions[0].tx_hash)
+    with database.user_write() as cursor:
+        receipt = eth_transactions.get_or_query_transaction_receipt(cursor, transactions[0].tx_hash)  # noqa: E501
     assert receipt == receipts[0]
     results, _ = eth_transactions.query(ETHTransactionsFilterQuery.make(tx_hash=transactions[0].tx_hash), only_cache=True, has_premium=True)  # noqa: E501
     assert len(results) == 1

@@ -383,7 +383,8 @@ def _add_blockchain_accounts_test_start(
         also_btc=query_balances_before_first_modification,
     )
     # Also make sure they are added in the DB
-    accounts = rotki.data.db.get_blockchain_accounts()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        accounts = rotki.data.db.get_blockchain_accounts(cursor)
     assert len(accounts.eth) == 4
     assert all(acc in accounts.eth for acc in all_eth_accounts)
     assert len(accounts.btc) == 2
@@ -463,7 +464,8 @@ def test_add_blockchain_accounts(
         also_eth=True,
     )
     # Also make sure it's added in the DB
-    accounts = rotki.data.db.get_blockchain_accounts()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        accounts = rotki.data.db.get_blockchain_accounts(cursor)
     assert len(accounts.eth) == 4
     assert all(acc in accounts.eth for acc in all_eth_accounts)
     assert len(accounts.btc) == 3
@@ -1498,7 +1500,8 @@ def _remove_blockchain_accounts_test_start(
         expected_liabilities=after_liabilities,
     )
     # Also make sure they are removed from the DB
-    accounts = rotki.data.db.get_blockchain_accounts()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        accounts = rotki.data.db.get_blockchain_accounts(cursor)
     assert len(accounts.eth) == 2
     assert all(acc in accounts.eth for acc in eth_accounts_after_removal)
     assert len(accounts.btc) == 2
@@ -1582,7 +1585,8 @@ def test_remove_blockchain_accounts(
         also_eth=True,
     )
     # Also make sure it's removed from the DB
-    accounts = rotki.data.db.get_blockchain_accounts()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        accounts = rotki.data.db.get_blockchain_accounts(cursor)
     assert len(accounts.eth) == 2
     assert all(acc in accounts.eth for acc in eth_accounts_after_removal)
     assert len(accounts.btc) == 1
@@ -1671,7 +1675,8 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Also make sure that no account was removed from the DB
-    accounts = rotki.data.db.get_blockchain_accounts()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        accounts = rotki.data.db.get_blockchain_accounts(cursor)
     assert len(accounts.eth) == 2
     assert all(acc in accounts.eth for acc in ethereum_accounts)
     # Also make sure no tag mappings were removed
@@ -1914,10 +1919,12 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server):
         BlockchainAccountData(address=KusamaAddress(SUBSTRATE_ACC1_KSM_ADDR)),
         BlockchainAccountData(address=KusamaAddress(SUBSTRATE_ACC2_KSM_ADDR)),
     ]
-    rotki.data.db.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.KUSAMA,
-        account_data=accounts_data,
-    )
+    with rotki.data.db.user_write() as cursor:
+        rotki.data.db.add_blockchain_accounts(
+            cursor,
+            blockchain=SupportedBlockchain.KUSAMA,
+            account_data=accounts_data,
+        )
     setup = setup_balances(
         rotki=rotki,
         ethereum_accounts=None,
@@ -1960,7 +1967,8 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server):
     assert FVal(total_ksm['usd_value']) >= ZERO
 
     # Also make sure it's removed from the DB
-    db_accounts = rotki.data.db.get_blockchain_accounts()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_accounts = rotki.data.db.get_blockchain_accounts(cursor)
     assert db_accounts.ksm[0] == SUBSTRATE_ACC1_KSM_ADDR
 
 
@@ -2063,10 +2071,12 @@ def test_remove_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
         BlockchainAccountData(address=KusamaAddress(SUBSTRATE_ACC1_KSM_ADDR)),
         BlockchainAccountData(address=KusamaAddress(ENS_BRUNO_KSM_ADDR)),
     ]
-    rotki.data.db.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.KUSAMA,
-        account_data=accounts_data,
-    )
+    with rotki.data.db.user_write() as cursor:
+        rotki.data.db.add_blockchain_accounts(
+            cursor,
+            blockchain=SupportedBlockchain.KUSAMA,
+            account_data=accounts_data,
+        )
     setup = setup_balances(
         rotki=rotki,
         ethereum_accounts=None,
@@ -2109,7 +2119,8 @@ def test_remove_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
     assert FVal(total_ksm['usd_value']) >= ZERO
 
     # Also make sure it's removed from the DB
-    db_accounts = rotki.data.db.get_blockchain_accounts()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_accounts = rotki.data.db.get_blockchain_accounts(cursor)
     assert db_accounts.ksm[0] == SUBSTRATE_ACC1_KSM_ADDR
 
 
@@ -2259,10 +2270,12 @@ def test_remove_avax_blockchain_account(rotkehlchen_api_server):
         BlockchainAccountData(address=AVALANCHE_ACC1_AVAX_ADDR),
         BlockchainAccountData(address=AVALANCHE_ACC2_AVAX_ADDR),
     ]
-    rotki.data.db.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.AVALANCHE,
-        account_data=accounts_data,
-    )
+    with rotki.data.db.user_write() as cursor:
+        rotki.data.db.add_blockchain_accounts(
+            cursor,
+            blockchain=SupportedBlockchain.AVALANCHE,
+            account_data=accounts_data,
+        )
     setup = setup_balances(
         rotki=rotki,
         ethereum_accounts=None,
@@ -2305,5 +2318,6 @@ def test_remove_avax_blockchain_account(rotkehlchen_api_server):
     assert FVal(total_avax['usd_value']) >= ZERO
 
     # Also make sure it's removed from the DB
-    db_accounts = rotki.data.db.get_blockchain_accounts()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_accounts = rotki.data.db.get_blockchain_accounts(cursor)
     assert db_accounts.avax[0] == AVALANCHE_ACC1_AVAX_ADDR

@@ -403,7 +403,8 @@ def test_get_trades_history(
         else:
             result = assert_proper_response_with_result(response)
 
-    db_trades = rotki.data.db.get_amm_swaps()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_trades = rotki.data.db.get_amm_swaps(cursor)
     assert len(db_trades) == 75
 
     address_trades = result[BALANCER_TEST_ADDR2]
@@ -447,7 +448,8 @@ def test_get_trade_with_1_token_pool(
         )
         result = assert_proper_response_with_result(response)
 
-    db_trades = rotki.data.db.get_amm_swaps()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_trades = rotki.data.db.get_amm_swaps(cursor)
     assert len(db_trades) == 29
 
     address_trades = result[BALANCER_TEST_ADDR4]

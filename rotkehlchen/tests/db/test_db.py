@@ -181,22 +181,25 @@ def test_add_remove_exchange(user_data_dir):
     # Test that an unknown exchange fails
     with pytest.raises(InputError):
         db.add_exchange('foo', Location.EXTERNAL, 'api_key', 'api_secret')
-    credentials = db.get_exchange_credentials()
-    assert len(credentials) == 0
 
-    kraken_api_key1 = ApiKey('kraken_api_key')
-    kraken_api_secret1 = ApiSecret(b'kraken_api_secret')
-    kraken_api_key2 = ApiKey('kraken_api_key2')
-    kraken_api_secret2 = ApiSecret(b'kraken_api_secret2')
-    binance_api_key = ApiKey('binance_api_key')
-    binance_api_secret = ApiSecret(b'binance_api_secret')
+    with db.conn.read_ctx() as cursor:
+        credentials = db.get_exchange_credentials(cursor)
+        assert len(credentials) == 0
 
-    # add mock kraken and binance
-    db.add_exchange('kraken1', Location.KRAKEN, kraken_api_key1, kraken_api_secret1)
-    db.add_exchange('kraken2', Location.KRAKEN, kraken_api_key2, kraken_api_secret2)
-    db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
-    # and check the credentials can be retrieved
-    credentials = db.get_exchange_credentials()
+        kraken_api_key1 = ApiKey('kraken_api_key')
+        kraken_api_secret1 = ApiSecret(b'kraken_api_secret')
+        kraken_api_key2 = ApiKey('kraken_api_key2')
+        kraken_api_secret2 = ApiSecret(b'kraken_api_secret2')
+        binance_api_key = ApiKey('binance_api_key')
+        binance_api_secret = ApiSecret(b'binance_api_secret')
+
+        # add mock kraken and binance
+        db.add_exchange('kraken1', Location.KRAKEN, kraken_api_key1, kraken_api_secret1)
+        db.add_exchange('kraken2', Location.KRAKEN, kraken_api_key2, kraken_api_secret2)
+        db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
+        # and check the credentials can be retrieved
+        credentials = db.get_exchange_credentials(cursor)
+
     assert len(credentials) == 2
     assert len(credentials[Location.KRAKEN]) == 2
     kraken1 = credentials[Location.KRAKEN][0]
@@ -214,8 +217,9 @@ def test_add_remove_exchange(user_data_dir):
     assert binance.api_secret == binance_api_secret
 
     # remove an exchange and see it works
-    db.remove_exchange('kraken1', Location.KRAKEN)
-    credentials = db.get_exchange_credentials()
+    with db.user_write() as cursor:
+        db.remove_exchange(cursor, 'kraken1', Location.KRAKEN)
+        credentials = db.get_exchange_credentials(cursor)
     assert len(credentials) == 2
     assert len(credentials[Location.KRAKEN]) == 1
     kraken2 = credentials[Location.KRAKEN][0]
@@ -229,8 +233,9 @@ def test_add_remove_exchange(user_data_dir):
     assert binance.api_secret == binance_api_secret
 
     # remove last exchange of a location and see nothing is returned
-    db.remove_exchange('kraken2', Location.KRAKEN)
-    credentials = db.get_exchange_credentials()
+    with db.user_write() as cursor:
+        db.remove_exchange(cursor, 'kraken2', Location.KRAKEN)
+        credentials = db.get_exchange_credentials(cursor)
     assert len(credentials) == 1
     assert len(credentials[Location.BINANCE]) == 1
     binance = credentials[Location.BINANCE][0]
@@ -253,13 +258,14 @@ def test_export_import_db(data_dir, username):
         tags=None,
         balance_type=BalanceType.ASSET,
     )
-    data.db.add_manually_tracked_balances([starting_balance])
-    encoded_data, _ = data.compress_and_encrypt_db('123')
+    with data.db.user_write() as cursor:
+        data.db.add_manually_tracked_balances(cursor, [starting_balance])
+        encoded_data, _ = data.compress_and_encrypt_db('123')
 
-    # The server would return them decoded
-    encoded_data = encoded_data.decode()  # pylint: disable=no-member
-    data.decompress_and_decrypt_db('123', encoded_data)
-    balances = data.db.get_manually_tracked_balances()
+        # The server would return them decoded
+        encoded_data = encoded_data.decode()  # pylint: disable=no-member
+        data.decompress_and_decrypt_db('123', encoded_data)
+        balances = data.db.get_manually_tracked_balances(cursor)
     assert balances == [starting_balance]
 
 
@@ -268,66 +274,74 @@ def test_writing_fetching_data(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
-    data.db.add_blockchain_accounts(
-        SupportedBlockchain.BITCOIN,
-        [BlockchainAccountData(address='1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS')],
-    )
-    data.db.add_blockchain_accounts(
-        SupportedBlockchain.ETHEREUM,
-        [
-            BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
-            BlockchainAccountData(address='0x80B369799104a47e98A553f3329812a44A7FaCDc'),
-        ],
-    )
-    accounts = data.db.get_blockchain_accounts()
-    assert isinstance(accounts, BlockchainAccounts)
-    assert accounts.btc == ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS']
-    # See that after addition the address has been checksummed
-    assert set(accounts.eth) == {
-        '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
-        '0x80B369799104a47e98A553f3329812a44A7FaCDc',
-    }
-    # Add existing account should fail
-    with pytest.raises(InputError):  # pylint: disable=no-member
+    with data.db.user_write() as cursor:
         data.db.add_blockchain_accounts(
-            SupportedBlockchain.ETHEREUM,
-            [BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D')],
+            cursor,
+            SupportedBlockchain.BITCOIN,
+            [BlockchainAccountData(address='1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS')],
         )
-    # Remove non-existing account
-    with pytest.raises(InputError):
+        data.db.add_blockchain_accounts(
+            cursor,
+            SupportedBlockchain.ETHEREUM,
+            [
+                BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
+                BlockchainAccountData(address='0x80B369799104a47e98A553f3329812a44A7FaCDc'),
+            ],
+        )
+        accounts = data.db.get_blockchain_accounts(cursor)
+        assert isinstance(accounts, BlockchainAccounts)
+        assert accounts.btc == ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS']
+        # See that after addition the address has been checksummed
+        assert set(accounts.eth) == {
+            '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+            '0x80B369799104a47e98A553f3329812a44A7FaCDc',
+        }
+        # Add existing account should fail
+        with pytest.raises(InputError):  # pylint: disable=no-member
+            data.db.add_blockchain_accounts(
+                cursor,
+                SupportedBlockchain.ETHEREUM,
+                [BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D')],
+            )
+        # Remove non-existing account
+        with pytest.raises(InputError):
+            data.db.remove_blockchain_accounts(
+                cursor,
+                SupportedBlockchain.ETHEREUM,
+                ['0x136029d76af6fE4A356528e4Dc66B2C18123597D'],
+            )
+        # Remove existing account
         data.db.remove_blockchain_accounts(
+            cursor,
             SupportedBlockchain.ETHEREUM,
-            ['0x136029d76af6fE4A356528e4Dc66B2C18123597D'],
+            ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
         )
-    # Remove existing account
-    data.db.remove_blockchain_accounts(
-        SupportedBlockchain.ETHEREUM,
-        ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
-    )
-    accounts = data.db.get_blockchain_accounts()
-    assert accounts.eth == ['0x80B369799104a47e98A553f3329812a44A7FaCDc']
+        accounts = data.db.get_blockchain_accounts(cursor)
+        assert accounts.eth == ['0x80B369799104a47e98A553f3329812a44A7FaCDc']
 
-    result, _ = data.add_ignored_assets([A_DAO])
-    assert result
-    result, _ = data.add_ignored_assets([A_DOGE])
-    assert result
-    result, _ = data.add_ignored_assets([A_DOGE])
-    assert result is None
+        result, _ = data.add_ignored_assets([A_DAO])
+        assert result
+        result, _ = data.add_ignored_assets([A_DOGE])
+        assert result
+        result, _ = data.add_ignored_assets([A_DOGE])
+        assert result is None
 
-    ignored_assets = data.db.get_ignored_assets()
-    assert all(isinstance(asset, Asset) for asset in ignored_assets)
-    assert set(ignored_assets) == {A_DAO, A_DOGE}
-    # Test removing asset that is not in the list
-    result, msg = data.remove_ignored_assets([A_RDN])
-    assert 'not in ignored assets' in msg
-    assert result is None
-    result, _ = data.remove_ignored_assets([A_DOGE])
-    assert result
-    assert data.db.get_ignored_assets() == [A_DAO]
+        with data.db.user_write() as cursor:
+            ignored_assets = data.db.get_ignored_assets(cursor)
+            assert all(isinstance(asset, Asset) for asset in ignored_assets)
+            assert set(ignored_assets) == {A_DAO, A_DOGE}
+            # Test removing asset that is not in the list
+            result, msg = data.remove_ignored_assets([A_RDN])
+            assert 'not in ignored assets' in msg
+            assert result is None
+            result, _ = data.remove_ignored_assets([A_DOGE])
+            assert result
+            assert data.db.get_ignored_assets(cursor) == [A_DAO]
 
-    # With nothing inserted in settings make sure default values are returned
-    result = data.db.get_settings()
-    last_write_diff = ts_now() - result.last_write_ts
+            # With nothing inserted in settings make sure default values are returned
+            result = data.db.get_settings(cursor)
+            last_write_diff = ts_now() - result.last_write_ts
+
     # make sure last_write was within 3 secs
     assert 0 <= last_write_diff < 3
     expected_dict = {
@@ -377,24 +391,24 @@ def test_writing_fetching_data(data_dir, username):
 
 
 def test_settings_entry_types(database):
-    database.set_settings(ModifiableDBSettings(
-        premium_should_sync=True,
-        include_crypto2crypto=True,
-        ui_floating_precision=1,
-        taxfree_after_period=1,
-        include_gas_costs=True,
-        eth_rpc_endpoint='http://localhost:8545',
-        balance_save_frequency=24,
-        date_display_format='%d/%m/%Y %H:%M:%S %z',
-        submit_usage_analytics=False,
-    ))
+    with database.user_write() as cursor:
+        database.set_settings(cursor, ModifiableDBSettings(
+            premium_should_sync=True,
+            include_crypto2crypto=True,
+            ui_floating_precision=1,
+            taxfree_after_period=1,
+            include_gas_costs=True,
+            eth_rpc_endpoint='http://localhost:8545',
+            balance_save_frequency=24,
+            date_display_format='%d/%m/%Y %H:%M:%S %z',
+            submit_usage_analytics=False,
+        ))
+        res = database.get_settings(cursor)
 
-    res = database.get_settings()
     assert isinstance(res.version, int)
     assert res.version == ROTKEHLCHEN_DB_VERSION
     assert isinstance(res.last_write_ts, int)
     assert isinstance(res.premium_should_sync, bool)
-    # assert res.premium_should_sync is DEFAULT_PREMIUM_SHOULD_SYNC
     assert res.premium_should_sync is True
     assert isinstance(res.include_crypto2crypto, bool)
     assert res.include_crypto2crypto is True
@@ -427,16 +441,17 @@ def test_balance_save_frequency_check(data_dir, username):
 
     now = int(time.time())
     data_save_ts = now - 24 * 60 * 60 + 20
-    data.db.add_multiple_location_data([LocationData(
-        time=data_save_ts, location=Location.KRAKEN.serialize_for_db(), usd_value='1500',  # pylint: disable=no-member  # noqa: E501
-    )])
+    with data.db.user_write() as cursor:
+        data.db.add_multiple_location_data(cursor, [LocationData(
+            time=data_save_ts, location=Location.KRAKEN.serialize_for_db(), usd_value='1500',  # pylint: disable=no-member  # noqa: E501
+        )])
 
-    assert not data.db.should_save_balances()
-    data.db.set_settings(ModifiableDBSettings(balance_save_frequency=5))
-    assert data.db.should_save_balances()
+        assert not data.db.should_save_balances(cursor)
+        data.db.set_settings(cursor, ModifiableDBSettings(balance_save_frequency=5))
+        assert data.db.should_save_balances(cursor)
 
-    last_save_ts = data.db.get_last_balance_save_time()
-    assert last_save_ts == data_save_ts
+        last_save_ts = data.db.get_last_balance_save_time(cursor)
+        assert last_save_ts == data_save_ts
 
 
 def test_sqlcipher_detect_version():
@@ -455,6 +470,9 @@ def test_sqlcipher_detect_version():
             return QueryMock(self.version)
 
         def close(self):
+            pass
+
+        def set_progress_handler(self, a, b) -> None:
             pass
 
     with patch('pysqlcipher3.dbapi2.connect') as sql_mock:
@@ -533,41 +551,45 @@ def test_query_timed_balances(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
-    data.db.add_multiple_balances(asset_balances)
 
-    result = data.db.query_timed_balances(
-        from_ts=1451606401,
-        to_ts=1485907100,
-        asset=A_USD,
-    )
-    assert len(result) == 1
-    assert result[0].time == 1465171200
-    assert result[0].category == BalanceType.ASSET
-    assert result[0].amount == FVal('500')
-    assert result[0].usd_value == FVal('500')
+    with data.db.user_write() as cursor:
+        data.db.add_multiple_balances(cursor, asset_balances)
+        result = data.db.query_timed_balances(
+            cursor=cursor,
+            from_ts=1451606401,
+            to_ts=1485907100,
+            asset=A_USD,
+        )
+        assert len(result) == 1
+        assert result[0].time == 1465171200
+        assert result[0].category == BalanceType.ASSET
+        assert result[0].amount == FVal('500')
+        assert result[0].usd_value == FVal('500')
 
-    all_data = data.db.query_timed_balances(
-        from_ts=1451606300,
-        to_ts=1485907000,
-        asset=A_ETH,
-    )
-    assert len(all_data) == 2
-    result = [x for x in all_data if x.amount != ZERO]
-    assert len(result) == 2
-    assert result[0].time == 1451606401
-    assert result[0].category == BalanceType.ASSET
-    assert result[0].amount == FVal('2')
-    assert result[0].usd_value == FVal('1.7068')
-    assert result[1].time == 1465171201
-    assert result[1].category == BalanceType.ASSET
-    assert result[1].amount == FVal('10')
-    assert result[1].usd_value == FVal('123')
+        all_data = data.db.query_timed_balances(
+            cursor=cursor,
+            from_ts=1451606300,
+            to_ts=1485907000,
+            asset=A_ETH,
+        )
+        assert len(all_data) == 2
+        result = [x for x in all_data if x.amount != ZERO]
+        assert len(result) == 2
+        assert result[0].time == 1451606401
+        assert result[0].category == BalanceType.ASSET
+        assert result[0].amount == FVal('2')
+        assert result[0].usd_value == FVal('1.7068')
+        assert result[1].time == 1465171201
+        assert result[1].category == BalanceType.ASSET
+        assert result[1].amount == FVal('10')
+        assert result[1].usd_value == FVal('123')
 
-    all_data = data.db.query_timed_balances(A_ETH)
-    assert len(all_data) == 4
-    result = [x for x in all_data if x.amount != ZERO]
-    assert len(result) == 4
-    result = data.db.query_timed_balances(A_ETH, balance_type=BalanceType.LIABILITY)
+        all_data = data.db.query_timed_balances(cursor, A_ETH)
+        assert len(all_data) == 4
+        result = [x for x in all_data if x.amount != ZERO]
+        assert len(result) == 4
+        result = data.db.query_timed_balances(cursor, A_ETH, balance_type=BalanceType.LIABILITY)
+
     assert len(result) == 1
     assert result[0].time == 1485907201
     assert result[0].category == BalanceType.LIABILITY
@@ -581,92 +603,95 @@ def test_query_owned_assets(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
-    balances = deepcopy(asset_balances)
-    balances.extend([
-        DBAssetBalance(
-            category=BalanceType.ASSET,
-            time=Timestamp(1488326400),
-            asset=A_BTC,
-            amount='1',
-            usd_value='1222.66',
-        ),
-        DBAssetBalance(
-            category=BalanceType.ASSET,
-            time=Timestamp(1489326500),
-            asset=A_XMR,
-            amount='2',
-            usd_value='33.8',
-        ),
-    ])
-    data.db.add_multiple_balances(balances)
-    data.db.conn.commit()
+    with data.db.user_write() as cursor:
+        balances = deepcopy(asset_balances)
+        balances.extend([
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=Timestamp(1488326400),
+                asset=A_BTC,
+                amount='1',
+                usd_value='1222.66',
+            ),
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=Timestamp(1489326500),
+                asset=A_XMR,
+                amount='2',
+                usd_value='33.8',
+            ),
+        ])
+        data.db.add_multiple_balances(cursor, balances)
 
-    # also make sure that assets from trades are included
-    data.db.add_trades([
-        Trade(
-            timestamp=Timestamp(1),
-            location=Location.EXTERNAL,
-            base_asset=A_ETH,
-            quote_asset=A_BTC,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(ONE),
-            rate=Price(ONE),
-            fee=Fee(FVal('0.1')),
-            fee_currency=A_BTC,
-            link='',
-            notes='',
-        ), Trade(
-            timestamp=Timestamp(99),
-            location=Location.EXTERNAL,
-            base_asset=A_ETH,
-            quote_asset=A_BTC,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(2)),
-            rate=Price(ONE),
-            fee=Fee(FVal('0.1')),
-            fee_currency=A_BTC,
-            link='',
-            notes='',
-        ), Trade(
-            timestamp=Timestamp(1),
-            location=Location.EXTERNAL,
-            base_asset=A_SDC,
-            quote_asset=A_SDT2,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(ONE),
-            rate=Price(ONE),
-            fee=Fee(FVal('0.1')),
-            fee_currency=A_BTC,
-            link='',
-            notes='',
-        ), Trade(
-            timestamp=Timestamp(1),
-            location=Location.EXTERNAL,
-            base_asset=A_SUSHI,
-            quote_asset=A_1INCH,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(ONE),
-            rate=Price(ONE),
-            fee=Fee(FVal('0.1')),
-            fee_currency=A_BTC,
-            link='',
-            notes='',
-        ), Trade(
-            timestamp=Timestamp(3),
-            location=Location.EXTERNAL,
-            base_asset=A_SUSHI,
-            quote_asset=A_1INCH,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(2)),
-            rate=Price(ONE),
-            fee=Fee(FVal('0.1')),
-            fee_currency=A_BTC,
-            link='',
-            notes='',
-        ),
-    ])
+        # also make sure that assets from trades are included
+        data.db.add_trades(
+            write_cursor=cursor,
+            trades=[
+                Trade(
+                    timestamp=Timestamp(1),
+                    location=Location.EXTERNAL,
+                    base_asset=A_ETH,
+                    quote_asset=A_BTC,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(ONE),
+                    rate=Price(ONE),
+                    fee=Fee(FVal('0.1')),
+                    fee_currency=A_BTC,
+                    link='',
+                    notes='',
+                ), Trade(
+                    timestamp=Timestamp(99),
+                    location=Location.EXTERNAL,
+                    base_asset=A_ETH,
+                    quote_asset=A_BTC,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(FVal(2)),
+                    rate=Price(ONE),
+                    fee=Fee(FVal('0.1')),
+                    fee_currency=A_BTC,
+                    link='',
+                    notes='',
+                ), Trade(
+                    timestamp=Timestamp(1),
+                    location=Location.EXTERNAL,
+                    base_asset=A_SDC,
+                    quote_asset=A_SDT2,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(ONE),
+                    rate=Price(ONE),
+                    fee=Fee(FVal('0.1')),
+                    fee_currency=A_BTC,
+                    link='',
+                    notes='',
+                ), Trade(
+                    timestamp=Timestamp(1),
+                    location=Location.EXTERNAL,
+                    base_asset=A_SUSHI,
+                    quote_asset=A_1INCH,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(ONE),
+                    rate=Price(ONE),
+                    fee=Fee(FVal('0.1')),
+                    fee_currency=A_BTC,
+                    link='',
+                    notes='',
+                ), Trade(
+                    timestamp=Timestamp(3),
+                    location=Location.EXTERNAL,
+                    base_asset=A_SUSHI,
+                    quote_asset=A_1INCH,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(FVal(2)),
+                    rate=Price(ONE),
+                    fee=Fee(FVal('0.1')),
+                    fee_currency=A_BTC,
+                    link='',
+                    notes='',
+                ),
+            ])
 
-    assets_list = data.db.query_owned_assets()
+    with data.db.conn.read_ctx() as cursor:
+        assets_list = data.db.query_owned_assets(cursor)
     assert set(assets_list) == {A_USD, A_ETH, A_BTC, A_XMR, A_SDC, A_SDT2, A_SUSHI, A_1INCH}  # noqa: E501
     assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
@@ -821,19 +846,21 @@ def test_add_trades(data_dir, username, caplog):
     )
 
     # Add and retrieve the first 2 trades. All should be fine.
-    data.db.add_trades([trade1, trade2])
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    returned_trades = data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
-    assert returned_trades == [trade1, trade2]
+    with data.db.user_write() as cursor:
+        data.db.add_trades(cursor, [trade1, trade2])
+        errors = msg_aggregator.consume_errors()
+        warnings = msg_aggregator.consume_warnings()
+        assert len(errors) == 0
+        assert len(warnings) == 0
+        returned_trades = data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+        assert returned_trades == [trade1, trade2]
 
-    # Add the last 2 trades. Since trade2 already exists in the DB it should be
-    # ignored and a warning should be logged
-    data.db.add_trades([trade2, trade3])
-    assert 'Did not add "buy trade with id a1ed19c8284940b4e59bdac941db2fd3c0ed004ddb10fdd3b9ef0a3a9b2c97bc' in caplog.text  # noqa: E501
-    returned_trades = data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
+        # Add the last 2 trades. Since trade2 already exists in the DB it should be
+        # ignored and a warning should be logged
+        data.db.add_trades(cursor, [trade2, trade3])
+        assert 'Did not add "buy trade with id a1ed19c8284940b4e59bdac941db2fd3c0ed004ddb10fdd3b9ef0a3a9b2c97bc' in caplog.text  # noqa: E501
+        returned_trades = data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+
     assert returned_trades == [trade1, trade2, trade3]
 
 
@@ -881,23 +908,24 @@ def test_add_margin_positions(data_dir, username, caplog):
     )
 
     # Add and retrieve the first 2 margins. All should be fine.
-    data.db.add_margin_positions([margin1, margin2])
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    returned_margins = data.db.get_margin_positions()
-    assert returned_margins == [margin1, margin2]
+    with data.db.user_write() as cursor:
+        data.db.add_margin_positions(cursor, [margin1, margin2])
+        errors = msg_aggregator.consume_errors()
+        warnings = msg_aggregator.consume_warnings()
+        assert len(errors) == 0
+        assert len(warnings) == 0
+        returned_margins = data.db.get_margin_positions(cursor)
+        assert returned_margins == [margin1, margin2]
 
-    # Add the last 2 margins. Since margin2 already exists in the DB it should be
-    # ignored and a warning should be logged
-    data.db.add_margin_positions([margin2, margin3])
-    assert (
-        'Did not add "Margin position with id 0a57acc1f4c09da0f194c59c4cd240e6'
-        '8e2d36e56c05b3f7115def9b8ee3943f'
-    ) in caplog.text
-    returned_margins = data.db.get_margin_positions()
-    assert returned_margins == [margin1, margin2, margin3]
+        # Add the last 2 margins. Since margin2 already exists in the DB it should be
+        # ignored and a warning should be logged
+        data.db.add_margin_positions(cursor, [margin2, margin3])
+        assert (
+            'Did not add "Margin position with id 0a57acc1f4c09da0f194c59c4cd240e6'
+            '8e2d36e56c05b3f7115def9b8ee3943f'
+        ) in caplog.text
+        returned_margins = data.db.get_margin_positions(cursor)
+        assert returned_margins == [margin1, margin2, margin3]
 
 
 def test_add_asset_movements(data_dir, username, caplog):
@@ -947,28 +975,31 @@ def test_add_asset_movements(data_dir, username, caplog):
     )
 
     # Add and retrieve the first 2 margins. All should be fine.
-    data.db.add_asset_movements([movement1, movement2])
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    returned_movements = data.db.get_asset_movements(
-        filter_query=AssetMovementsFilterQuery.make(),
-        has_premium=True,
-    )
-    assert returned_movements == [movement1, movement2]
+    with data.db.user_write() as cursor:
+        data.db.add_asset_movements(cursor, [movement1, movement2])
+        errors = msg_aggregator.consume_errors()
+        warnings = msg_aggregator.consume_warnings()
+        assert len(errors) == 0
+        assert len(warnings) == 0
+        returned_movements = data.db.get_asset_movements(
+            cursor=cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
+        assert returned_movements == [movement1, movement2]
 
-    # Add the last 2 movements. Since movement2 already exists in the DB it should be
-    # ignored and a warning should be logged
-    data.db.add_asset_movements([movement2, movement3])
-    assert (
-        'Did not add "withdrawal of ETH with id 94405f38c7b86dd2e7943164d'
-        '67ff44a32d56cef25840b3f5568e23c037fae0a'
-    ) in caplog.text
-    returned_movements = data.db.get_asset_movements(
-        filter_query=AssetMovementsFilterQuery.make(),
-        has_premium=True,
-    )
+        # Add the last 2 movements. Since movement2 already exists in the DB it should be
+        # ignored and a warning should be logged
+        data.db.add_asset_movements(cursor, [movement2, movement3])
+        assert (
+            'Did not add "withdrawal of ETH with id 94405f38c7b86dd2e7943164d'
+            '67ff44a32d56cef25840b3f5568e23c037fae0a'
+        ) in caplog.text
+        returned_movements = data.db.get_asset_movements(
+            cursor=cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
     assert returned_movements == [movement1, movement2, movement3]
 
 
@@ -997,7 +1028,7 @@ def test_non_checksummed_eth_account_in_db(database):
     )
     database.conn.commit()
 
-    blockchain_accounts = database.get_blockchain_accounts()
+    blockchain_accounts = database.get_blockchain_accounts(cursor)
     eth_accounts = blockchain_accounts.eth
     assert len(eth_accounts) == 1
     assert eth_accounts[0] == valid_address
@@ -1018,13 +1049,15 @@ def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
-    data.db.set_settings(ModifiableDBSettings(taxfree_after_period=-1))
+    with data.db.user_write() as cursor:
+        data.db.set_settings(cursor, ModifiableDBSettings(taxfree_after_period=-1))
 
     # now relogin and check that no exception is thrown
     del data
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=False)
-    settings = data.db.get_settings()
+    with data.db.conn.read_ctx() as cursor:
+        settings = data.db.get_settings(cursor)
     assert settings.taxfree_after_period is None
 
 
@@ -1050,30 +1083,30 @@ def test_timed_balances_primary_key_works(user_data_dir):
             usd_value='9100',
         ),
     ]
-    with pytest.raises(InputError) as exc_info:
-        db.add_multiple_balances(balances)
-    assert exc_info.errisinstance(InputError)
-    assert 'Adding timed_balance failed' in str(exc_info.value)
+    with db.user_write() as cursor:
+        with pytest.raises(InputError) as exc_info:
+            db.add_multiple_balances(cursor, balances)
+        assert exc_info.errisinstance(InputError)
+        assert 'Adding timed_balance failed' in str(exc_info.value)
 
-    balances = db.query_timed_balances(asset=A_BTC)
-    assert len(balances) == 0
-
-    balances = [
-        DBAssetBalance(
-            category=BalanceType.ASSET,
-            time=1590676728,
-            asset=A_ETH,
-            amount='1.0',
-            usd_value='8500',
-        ), DBAssetBalance(
-            category=BalanceType.LIABILITY,
-            time=1590676728,
-            asset=A_ETH,
-            amount='1.1',
-            usd_value='9100',
-        ),
-    ]
-    db.add_multiple_balances(balances)
+        balances = db.query_timed_balances(cursor, asset=A_BTC)
+        assert len(balances) == 0
+        balances = [
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=1590676728,
+                asset=A_ETH,
+                amount='1.0',
+                usd_value='8500',
+            ), DBAssetBalance(
+                category=BalanceType.LIABILITY,
+                time=1590676728,
+                asset=A_ETH,
+                amount='1.1',
+                usd_value='9100',
+            ),
+        ]
+        db.add_multiple_balances(cursor, balances)
     assert len(balances) == 2
 
 
@@ -1207,32 +1240,33 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
             usd_value='9100',
         ),
     ]
-    with pytest.raises(InputError) as exc_info:
-        db.add_multiple_balances(balances)
-    assert 'Adding timed_balance failed.' in str(exc_info.value)
-    assert exc_info.errisinstance(InputError)
+    with db.user_write() as cursor:
+        with pytest.raises(InputError) as exc_info:
+            db.add_multiple_balances(cursor, balances)
+        assert 'Adding timed_balance failed.' in str(exc_info.value)
+        assert exc_info.errisinstance(InputError)
 
-    balances = db.query_timed_balances(from_ts=0, to_ts=1590676728, asset=A_BTC)
-    assert len(balances) == 0
+        balances = db.query_timed_balances(cursor=cursor, from_ts=0, to_ts=1590676728, asset=A_BTC)
+        assert len(balances) == 0
 
-    locations = [
-        LocationData(
-            time=1590676728,
-            location='H',
-            usd_value='55',
-        ), LocationData(
-            time=1590676728,
-            location='H',
-            usd_value='56',
-        ),
-    ]
-    with pytest.raises(InputError) as exc_info:
-        db.add_multiple_location_data(locations)
-    assert 'Tried to add a timed_location_data for' in str(exc_info.value)
-    assert exc_info.errisinstance(InputError)
+        locations = [
+            LocationData(
+                time=1590676728,
+                location='H',
+                usd_value='55',
+            ), LocationData(
+                time=1590676728,
+                location='H',
+                usd_value='56',
+            ),
+        ]
+        with pytest.raises(InputError) as exc_info:
+            db.add_multiple_location_data(cursor, locations)
+        assert 'Tried to add a timed_location_data for' in str(exc_info.value)
+        assert exc_info.errisinstance(InputError)
 
-    locations = db.get_latest_location_value_distribution()
-    assert len(locations) == 0
+        locations = db.get_latest_location_value_distribution()
+        assert len(locations) == 0
 
 
 def test_set_get_rotkehlchen_premium_credentials(data_dir, username):
@@ -1254,7 +1288,8 @@ def test_set_get_rotkehlchen_premium_credentials(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
     data.db.set_rotkehlchen_premium(credentials)
-    returned_credentials = data.db.get_rotkehlchen_premium()
+    with data.db.conn.read_ctx() as cursor:
+        returned_credentials = data.db.get_rotkehlchen_premium(cursor)
     assert returned_credentials == credentials
     assert returned_credentials.serialize_key() == api_key
     assert returned_credentials.serialize_secret() == secret
@@ -1280,7 +1315,8 @@ def test_unlock_with_invalid_premium_data(data_dir, username):
     data.unlock(username, '123', create_new=False)
 
     # and that an error is logged when trying to get premium
-    assert not data.db.get_rotkehlchen_premium()
+    with data.db.conn.read_ctx() as cursor:
+        assert not data.db.get_rotkehlchen_premium(cursor)
     warnings = msg_aggregator.consume_warnings()
     errors = msg_aggregator.consume_errors()
 
@@ -1313,26 +1349,30 @@ def test_remove_queried_address_on_account_remove(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
-    data.db.add_blockchain_accounts(
-        SupportedBlockchain.ETHEREUM,
-        [
-            BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
-        ],
-    )
+    with data.db.user_write() as cursor:
+        data.db.add_blockchain_accounts(
+            cursor,
+            SupportedBlockchain.ETHEREUM,
+            [
+                BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
+            ],
+        )
 
-    queried_addresses = QueriedAddresses(data.db)
-    queried_addresses.add_queried_address_for_module(
-        'makerdao_vaults',
-        '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
-    )
-    addresses = queried_addresses.get_queried_addresses_for_module('makerdao_vaults')
-    assert '0xd36029d76af6fE4A356528e4Dc66B2C18123597D' in addresses
+        queried_addresses = QueriedAddresses(data.db)
+        queried_addresses.add_queried_address_for_module(
+            'makerdao_vaults',
+            '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+        )
+        addresses = queried_addresses.get_queried_addresses_for_module(cursor, 'makerdao_vaults')
+        assert '0xd36029d76af6fE4A356528e4Dc66B2C18123597D' in addresses
 
-    data.db.remove_blockchain_accounts(
-        SupportedBlockchain.ETHEREUM,
-        ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
-    )
-    addresses = queried_addresses.get_queried_addresses_for_module('makerdao_vaults')
+        data.db.remove_blockchain_accounts(
+            cursor,
+            SupportedBlockchain.ETHEREUM,
+            ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
+        )
+
+    addresses = queried_addresses.get_queried_addresses_for_module(cursor, 'makerdao_vaults')
     assert not addresses
 
 
@@ -1435,14 +1475,15 @@ def test_binance_pairs(user_data_dir):
 
     binance_api_key = ApiKey('binance_api_key')
     binance_api_secret = ApiSecret(b'binance_api_secret')
-    db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
+    with db.user_write() as cursor:
+        db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
 
-    db.set_binance_pairs('binance', ['ETHUSDC', 'ETHBTC', 'BNBBTC'], Location.BINANCE)
-    query = db.get_binance_pairs('binance', Location.BINANCE)
-    assert query == ['ETHUSDC', 'ETHBTC', 'BNBBTC']
+        db.set_binance_pairs(cursor, 'binance', ['ETHUSDC', 'ETHBTC', 'BNBBTC'], Location.BINANCE)
+        query = db.get_binance_pairs('binance', Location.BINANCE)
+        assert query == ['ETHUSDC', 'ETHBTC', 'BNBBTC']
 
-    db.set_binance_pairs('binance', [], Location.BINANCE)
-    query = db.get_binance_pairs('binance', Location.BINANCE)
+        db.set_binance_pairs(cursor, 'binance', [], Location.BINANCE)
+        query = db.get_binance_pairs('binance', Location.BINANCE)
     assert query == []
 
 

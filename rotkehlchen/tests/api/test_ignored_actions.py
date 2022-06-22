@@ -197,7 +197,8 @@ def test_ignore_ledger_actions_in_accountant(rotkehlchen_api_server):
     assert result == {'ledger action': ['2']}
 
     # Retrieve ignored actions mapping. Should contain 2
-    ignored_actions = accountant.db.get_ignored_action_ids(action_type=None)
+    with accountant.db.conn.read_ctx() as cursor:
+        ignored_actions = accountant.db.get_ignored_action_ids(cursor, action_type=None)
     ignored = []
     # Call the should_ignore method used in the accountant
     for action in ledger_actions_list:

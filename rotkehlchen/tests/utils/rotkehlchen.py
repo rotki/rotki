@@ -197,7 +197,8 @@ def setup_balances(
 
     if manually_tracked_balances is None:
         manually_tracked_balances = []
-    rotki.data.db.add_manually_tracked_balances(manually_tracked_balances)
+    with rotki.data.db.user_write() as cursor:
+        rotki.data.db.add_manually_tracked_balances(cursor, manually_tracked_balances)
 
     return BalancesTestSetup(
         eth_balances=eth_balances,
@@ -245,8 +246,8 @@ def add_starting_balances(datahandler) -> List[DBAssetBalance]:
             usd_value='135.6',
         ),
     ]
-    datahandler.db.add_multiple_balances(balances)
-    datahandler.db.conn.commit()
+    with datahandler.db.user_write() as cursor:
+        datahandler.db.add_multiple_balances(cursor, balances)
 
     location_data = [
         LocationData(
@@ -317,7 +318,6 @@ def add_starting_balances(datahandler) -> List[DBAssetBalance]:
 
 def add_starting_nfts(datahandler):
     """Adds a time series for an account owning a NFT"""
-    datahandler.db.add_asset_identifiers(['_nft_pickle'])
     balances = [
         DBAssetBalance(
             category=BalanceType.ASSET,
@@ -345,8 +345,10 @@ def add_starting_nfts(datahandler):
             usd_value='1000',
         ),
     ]
-    datahandler.db.add_multiple_balances(balances)
-    datahandler.db.conn.commit()
+    with datahandler.db.user_write() as cursor:
+        datahandler.db.add_asset_identifiers(['_nft_pickle'])
+        datahandler.db.add_multiple_balances(cursor, balances)
+
     location_data = [
         LocationData(
             time=Timestamp(1488326400),

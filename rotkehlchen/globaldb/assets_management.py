@@ -89,7 +89,8 @@ def import_assets_from_file(
             continue
         identifiers.append(asset_data['identifier'])
 
-    db_handler.add_asset_identifiers(identifiers)
+    with db_handler.user_write() as cursor:
+        db_handler.add_asset_identifiers(cursor, identifiers)
 
 
 def export_assets_from_file(
@@ -105,7 +106,8 @@ def export_assets_from_file(
         dirpath = Path(tempfile.TemporaryDirectory().name)
         dirpath.mkdir(parents=True, exist_ok=True)
 
-    assets = GlobalDBHandler().get_user_added_assets(user_db=db_handler)
+    with db_handler.user_write() as cursor:
+        assets = GlobalDBHandler().get_user_added_assets(cursor, user_db=db_handler)
     serialized = []
     for asset_identifier in assets:
         try:

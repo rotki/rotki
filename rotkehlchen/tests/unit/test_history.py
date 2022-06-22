@@ -21,52 +21,53 @@ def test_query_ledger_actions(events_historian, function_scope_messages_aggregat
     selected_timestamp = 10
     db = DBLedgerActions(events_historian.db, function_scope_messages_aggregator)
 
-    action = LedgerAction(
-        identifier=0,  # whatever
-        timestamp=selected_timestamp - 2,
-        action_type=LedgerActionType.INCOME,
-        location=Location.EXTERNAL,
-        amount=ONE,
-        asset=A_ETH,
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes=None,
-    )
-    db.add_ledger_action(action)
+    with events_historian.db.user_write() as cursor:
+        action = LedgerAction(
+            identifier=0,  # whatever
+            timestamp=selected_timestamp - 2,
+            action_type=LedgerActionType.INCOME,
+            location=Location.EXTERNAL,
+            amount=ONE,
+            asset=A_ETH,
+            rate=None,
+            rate_asset=None,
+            link=None,
+            notes=None,
+        )
+        db.add_ledger_action(cursor, action)
 
-    action = LedgerAction(
-        identifier=0,  # whatever
-        timestamp=selected_timestamp + 3,
-        action_type=LedgerActionType.EXPENSE,
-        location=Location.EXTERNAL,
-        amount=FVal(0.5),
-        asset=A_ETH,
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes=None,
-    )
-    db.add_ledger_action(action)
+        action = LedgerAction(
+            identifier=0,  # whatever
+            timestamp=selected_timestamp + 3,
+            action_type=LedgerActionType.EXPENSE,
+            location=Location.EXTERNAL,
+            amount=FVal(0.5),
+            asset=A_ETH,
+            rate=None,
+            rate_asset=None,
+            link=None,
+            notes=None,
+        )
+        db.add_ledger_action(cursor, action)
 
-    action = LedgerAction(
-        identifier=0,  # whatever
-        timestamp=selected_timestamp + 5,
-        action_type=LedgerActionType.INCOME,
-        location=Location.EXTERNAL,
-        amount=FVal(10),
-        asset=A_USDC,
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes=None,
-    )
-    db.add_ledger_action(action)
+        action = LedgerAction(
+            identifier=0,  # whatever
+            timestamp=selected_timestamp + 5,
+            action_type=LedgerActionType.INCOME,
+            location=Location.EXTERNAL,
+            amount=FVal(10),
+            asset=A_USDC,
+            rate=None,
+            rate_asset=None,
+            link=None,
+            notes=None,
+        )
+        db.add_ledger_action(cursor, action)
 
-    actions, length = events_historian.query_ledger_actions(
-        filter_query=LedgerActionsFilterQuery.make(to_ts=selected_timestamp + 4),
-        only_cache=False,
-    )
+        actions, length = events_historian.query_ledger_actions(
+            filter_query=LedgerActionsFilterQuery.make(to_ts=selected_timestamp + 4),
+            only_cache=False,
+        )
 
     assert any((action.timestamp < selected_timestamp for action in actions))
     assert length == 2

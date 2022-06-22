@@ -835,23 +835,26 @@ def try_get_first_exchange(
 
 def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
     db = rotki.data.db
-    for exchange_location in exchange_locations:
-        db.add_trades([Trade(
-            timestamp=Timestamp(1),
-            location=exchange_location,
-            base_asset=A_BTC,
-            quote_asset=A_ETH,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(ONE),
-            rate=Price(ONE),
-            fee=Fee(FVal('0.1')),
-            fee_currency=A_ETH,
-            link='foo',
-            notes='boo',
-        )])
-        db.update_used_query_range(name=f'{str(exchange_location)}_trades_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(name=f'{str(exchange_location)}_margins_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(name=f'{str(exchange_location)}_asset_movements_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+    with db.user_write() as cursor:
+        for exchange_location in exchange_locations:
+            db.add_trades(
+                write_cursor=cursor,
+                trades=[Trade(
+                    timestamp=Timestamp(1),
+                    location=exchange_location,
+                    base_asset=A_BTC,
+                    quote_asset=A_ETH,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(ONE),
+                    rate=Price(ONE),
+                    fee=Fee(FVal('0.1')),
+                    fee_currency=A_ETH,
+                    link='foo',
+                    notes='boo',
+                )])
+            db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_trades_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+            db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_margins_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+            db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_asset_movements_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
 
 
 def check_saved_events_for_exchange(
@@ -860,13 +863,15 @@ def check_saved_events_for_exchange(
         should_exist: bool,
         queryrange_formatstr: str = '{exchange}_{type}_{exchange}',
 ) -> None:
-    trades = db.get_trades(
-        filter_query=TradesFilterQuery.make(location=exchange_location),
-        has_premium=True,
-    )
-    trades_range = db.get_used_query_range(queryrange_formatstr.format(exchange=exchange_location, type='trades'))  # noqa: E501
-    margins_range = db.get_used_query_range(queryrange_formatstr.format(exchange=exchange_location, type='margins'))  # noqa: E501
-    movements_range = db.get_used_query_range(queryrange_formatstr.format(exchange=exchange_location, type='asset_movements'))  # noqa: E501
+    with db.conn.read_ctx() as cursor:
+        trades = db.get_trades(
+            cursor,
+            filter_query=TradesFilterQuery.make(location=exchange_location),
+            has_premium=True,
+        )
+        trades_range = db.get_used_query_range(cursor, queryrange_formatstr.format(exchange=exchange_location, type='trades'))  # noqa: E501
+        margins_range = db.get_used_query_range(cursor, queryrange_formatstr.format(exchange=exchange_location, type='margins'))  # noqa: E501
+        movements_range = db.get_used_query_range(cursor, queryrange_formatstr.format(exchange=exchange_location, type='asset_movements'))  # noqa: E501
     if should_exist:
         assert trades_range is not None
         assert margins_range is not None

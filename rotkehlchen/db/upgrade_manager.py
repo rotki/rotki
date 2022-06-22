@@ -71,11 +71,11 @@ def _eth_rpc_port_to_eth_rpc_endpoint(db: 'DBHandler') -> None:
     """Upgrade the eth_rpc_port setting to eth_rpc_endpoint"""
     cursor = db.conn.cursor()
     query = cursor.execute('SELECT value FROM settings where name="eth_rpc_port";')
-    query = query.fetchall()
-    if len(query) == 0:
+    result = query.fetchall()
+    if len(result) == 0:
         port = '8545'
     else:
-        port = query[0][0]
+        port = result[0][0]
 
     cursor.execute('DELETE FROM settings where name="eth_rpc_port";')
     cursor.execute(
@@ -238,40 +238,36 @@ class DBUpgradeManager():
         - DBUpgradeError if the user uses a newer version than the one we
         upgrade to or if there is a problem during upgrade.
         """
-        try:
-            our_version = self.db.get_version()
-        except sqlcipher.OperationalError:  # pylint: disable=no-member
-            return True  # fresh database. Nothing to upgrade.
+        with self.db.conn.write_ctx() as cursor:
+            try:
+                our_version = self.db.get_setting(cursor, 'version')
+            except sqlcipher.OperationalError:  # pylint: disable=no-member
+                return True  # fresh database. Nothing to upgrade.
 
-        if our_version > ROTKEHLCHEN_DB_VERSION:
-            raise DBUpgradeError(
-                'Your database version is newer than the version expected by the '
-                'executable. Did you perhaps try to revert to an older rotki version? '
-                'Please only use the latest version of the software.',
+            if our_version > ROTKEHLCHEN_DB_VERSION:
+                raise DBUpgradeError(
+                    'Your database version is newer than the version expected by the '
+                    'executable. Did you perhaps try to revert to an older rotki version? '
+                    'Please only use the latest version of the software.',
+                )
+
+            cursor.execute(
+                'SELECT value FROM settings WHERE name=?;', ('version',),
             )
-
-        cursor = self.db.conn.cursor()
-        version_query = cursor.execute(
-            'SELECT value FROM settings WHERE name=?;', ('version',),
-        )
-        if version_query.fetchone() is None:
-            # temporary due to https://github.com/rotki/rotki/issues/3744.
-            # Figure out if an upgrade needs to actually run.
-            cursor = self.db.conn.cursor()
-            result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="eth2_validators"')  # noqa: E501
-            if result.fetchone()[0] == 0:  # it's wrong and at least v30
-                self.db.set_version(30)
+            if cursor.fetchone() is None:
+                # temporary due to https://github.com/rotki/rotki/issues/3744.
+                # Figure out if an upgrade needs to actually run.
+                cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="eth2_validators"')  # noqa: E501
+                if cursor.fetchone()[0] == 0:  # count always returns
+                    # it's wrong and at least v30
+                    self.db.set_setting(write_cursor=cursor, name='version', value=30)
 
         for upgrade in UPGRADES_LIST:
             self._perform_single_upgrade(upgrade)
 
         # Finally make sure to always have latest version in the DB
-        cursor = self.db.conn.cursor()
-        cursor.execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            ('version', str(ROTKEHLCHEN_DB_VERSION)),
-        )
-        self.db.conn.commit()
+        with self.db.user_write() as cursor:
+            self.db.set_setting(cursor, name='version', value=ROTKEHLCHEN_DB_VERSION)
         return False
 
     def _perform_single_upgrade(self, upgrade: UpgradeRecord) -> None:
@@ -286,7 +282,8 @@ class DBUpgradeManager():
             5. If all went well set version and delete the backup
 
         """
-        current_version = self.db.get_version()
+        with self.db.conn.read_ctx() as cursor:
+            current_version = self.db.get_setting(cursor, 'version')
         if current_version != upgrade.from_version:
             return
         to_version = upgrade.from_version + 1
@@ -324,4 +321,5 @@ class DBUpgradeManager():
                 )
 
         # Upgrade success all is good
-        self.db.set_version(to_version)
+        with self.db.user_write() as cursor:
+            self.db.set_setting(write_cursor=cursor, name='version', value=to_version)

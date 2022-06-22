@@ -1,7 +1,7 @@
 import logging
 import random
 from collections import defaultdict
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
@@ -17,6 +17,9 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, Price
 from rotkehlchen.utils.misc import get_chunks, ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -65,6 +68,7 @@ class EthTokens():
 
     def detect_tokens_for_address(
             self,
+            write_cursor: 'DBCursor',
             address: ChecksumEthAddress,
             token_usd_price: Dict[EthereumToken, Price],
             etherscan_chunks: List[List[EthereumToken]],
@@ -97,7 +101,7 @@ class EthTokens():
                 )
 
         # now that detection happened we also have to save it in the DB for the address
-        self.db.save_tokens_for_address(address, list(balances.keys()))
+        self.db.save_tokens_for_address(write_cursor, address, list(balances.keys()))
 
         return balances
 
@@ -117,7 +121,9 @@ class EthTokens():
             'Querying/detecting token balances for all addresses',
             force_detection=force_detection,
         )
-        ignored_assets = self.db.get_ignored_assets()
+        with self.db.user_write() as cursor:
+            ignored_assets = self.db.get_ignored_assets(cursor)
+
         exceptions = [
             # Ignore the veCRV balance in token query. It's already detected by
             # defi SDK as part of locked CRV in Vote Escrowed CRV. Which is the right way
@@ -155,28 +161,30 @@ class EthTokens():
         result = {}
 
         for address in addresses:
-            saved_list = self.db.get_tokens_for_address_if_time(address=address, current_time=now)
-            if force_detection or saved_list is None:
-                balances = self.detect_tokens_for_address(
-                    address=address,
-                    token_usd_price=token_usd_price,
-                    etherscan_chunks=etherscan_chunks,
-                    other_chunks=other_chunks,
-                )
-            else:
-                if len(saved_list) == 0:
-                    continue  # Do not query if we know the address has no tokens
+            with self.db.user_write() as cursor:
+                saved_list = self.db.get_tokens_for_address_if_time(cursor, address=address, current_time=now)  # noqa: E501
+                if force_detection or saved_list is None:
+                    balances = self.detect_tokens_for_address(
+                        write_cursor=cursor,
+                        address=address,
+                        token_usd_price=token_usd_price,
+                        etherscan_chunks=etherscan_chunks,
+                        other_chunks=other_chunks,
+                    )
+                else:
+                    if len(saved_list) == 0:
+                        continue  # Do not query if we know the address has no tokens
 
                 balances = defaultdict(FVal)
                 self._get_tokens_balance_and_price(
                     address=address,
-                    tokens=saved_list,
+                    tokens=saved_list,  # type: ignore  # is not None here
                     balances=balances,
                     token_usd_price=token_usd_price,
                     call_order=None,  # use defaults
                 )
 
-            result[address] = balances
+            result[address] = dict(balances)
 
         return result, token_usd_price
 

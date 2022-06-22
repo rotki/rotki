@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.balance import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -70,6 +71,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
     def _get_events_balances(
             self,
+            write_cursor: 'DBCursor',
             addresses: List[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -89,7 +91,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         # Get addresses' last used query range for Sushiswap events
         for address in addresses:
             entry_name = f'{SUSHISWAP_EVENTS_PREFIX}_{address}'
-            events_range = self.database.get_used_query_range(name=entry_name)
+            events_range = self.database.get_used_query_range(cursor=write_cursor, name=entry_name)
 
             if not events_range:
                 new_addresses.append(address)
@@ -113,6 +115,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
                 # Insert new address' last used query range
                 self.database.update_used_query_range(
+                    write_cursor=write_cursor,
                     name=f'{SUSHISWAP_EVENTS_PREFIX}_{address}',
                     start_ts=start_ts,
                     end_ts=to_timestamp,
@@ -133,6 +136,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
                 # Update existing address' last used query range
                 self.database.update_used_query_range(
+                    write_cursor=write_cursor,
                     name=f'{SUSHISWAP_EVENTS_PREFIX}_{address}',
                     start_ts=min_end_ts,
                     end_ts=to_timestamp,
@@ -142,11 +146,12 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         all_events = []
         for address in filter(lambda x: x in address_events, addresses):
             all_events.extend(address_events[address])
-        self.database.add_amm_events(all_events)
+        self.database.add_amm_events(write_cursor, all_events)
 
         # Fetch all DB events within the time range
         for address in addresses:
             db_events = self.database.get_amm_events(
+                cursor=write_cursor,
                 events=[EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP],
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
@@ -219,7 +224,8 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         """Get the addresses' trades history in the Sushiswap protocol"""
         with self.trades_lock:
             if reset_db_data is True:
-                self.database.delete_sushiswap_trades_data()
+                with self.database.user_write() as cursor:
+                    self.database.delete_sushiswap_trades_data(cursor)
 
             trades = self._get_trades(
                 addresses=addresses,
@@ -246,12 +252,13 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
         return trades
 
-    def delete_events_data(self) -> None:
-        self.database.delete_sushiswap_events_data()
+    def delete_events_data(self, write_cursor: 'DBCursor') -> None:
+        self.database.delete_sushiswap_events_data(write_cursor)
 
     def deactivate(self) -> None:
-        self.database.delete_sushiswap_trades_data()
-        self.database.delete_sushiswap_events_data()
+        with self.database.user_write() as cursor:
+            self.database.delete_sushiswap_trades_data(cursor)
+            self.database.delete_sushiswap_events_data(cursor)
 
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
         pass

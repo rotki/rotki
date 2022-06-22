@@ -162,11 +162,6 @@ def initialize_mock_rotkehlchen_instance(
         'rotkehlchen.rotkehlchen.KUSAMA_NODES_TO_CONNECT_AT_START',
         new=kusama_manager_connect_at_start,
     )
-    ksm_connect_on_startup_patch = patch.object(
-        rotki,
-        '_connect_ksm_manager_on_startup',
-        return_value=bool(blockchain_accounts.ksm),
-    )
     # patch the constants to make sure that the periodic query for icons
     # does not run during tests
     size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
@@ -181,7 +176,6 @@ def initialize_mock_rotkehlchen_instance(
         stack.enter_context(settings_patch)
         stack.enter_context(eth_rpcconnect_patch)
         stack.enter_context(ksm_rpcconnect_patch)
-        stack.enter_context(ksm_connect_on_startup_patch)
         stack.enter_context(size_patch)
         stack.enter_context(sleep_patch)
 

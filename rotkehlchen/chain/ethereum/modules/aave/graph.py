@@ -721,8 +721,9 @@ class AaveGraphInquirer(AaveInquirer):
             address: ChecksumEthAddress,
             balances: AaveBalances,
     ) -> AaveHistory:
-        last_query = self.database.get_used_query_range(f'aave_events_{address}')
-        db_events = self.database.get_aave_events(address=address)
+        with self.database.conn.read_ctx() as cursor:
+            last_query = self.database.get_used_query_range(cursor, f'aave_events_{address}')
+            db_events = self.database.get_aave_events(cursor, address=address)
 
         now = ts_now()
         last_query_ts = 0
@@ -791,14 +792,16 @@ class AaveGraphInquirer(AaveInquirer):
 
         # Add all new events to the DB
         new_events: List[AaveEvent] = deposits + withdrawals + result.interest_events + borrows + repays + liquidation_calls  # type: ignore  # noqa: E501
-        self.database.add_aave_events(address, new_events)
-        # After all events have been queried then also update the query range.
-        # Even if no events are found for an address we need to remember the range
-        self.database.update_used_query_range(
-            name=f'aave_events_{address}',
-            start_ts=Timestamp(0),
-            end_ts=now,
-        )
+        with self.database.user_write() as cursor:
+            self.database.add_aave_events(cursor, address, new_events)
+            # After all events have been queried then also update the query range.
+            # Even if no events are found for an address we need to remember the range
+            self.database.update_used_query_range(
+                write_cursor=cursor,
+                name=f'aave_events_{address}',
+                start_ts=Timestamp(0),
+                end_ts=now,
+            )
 
         # Sort actions so that actions with same time are sorted deposit -> interest -> withdrawal
         all_events: List[AaveEvent] = new_events + db_events
