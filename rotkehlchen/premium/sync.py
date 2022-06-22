@@ -33,7 +33,8 @@ class PremiumSyncManager():
 
     def __init__(self, data: DataHandler, password: str) -> None:
         # Initialize this with the value saved in the DB
-        self.last_data_upload_ts = data.db.get_last_data_upload_ts()
+        with data.db.conn.read_ctx() as cursor:
+            self.last_data_upload_ts = data.db.get_setting(cursor, name='last_data_upload_ts')
         self.data = data
         self.password = password
         self.premium: Optional[Premium] = None
@@ -59,11 +60,13 @@ class PremiumSyncManager():
         if new_account:
             return SyncCheckResult(can_sync=CanSync.YES, message='', payload=None)
 
-        if not self.data.db.get_premium_sync():
-            # If it's not a new account and the db setting for premium syncing is off stop
-            return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
+        with self.data.db.conn.read_ctx() as cursor:
+            if not self.data.db.get_setting(cursor, name='premium_should_sync'):
+                # If it's not a new account and the db setting for premium syncing is off stop
+                return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
-        our_last_write_ts = self.data.db.get_last_write_ts()
+            our_last_write_ts = self.data.db.get_setting(cursor, name='last_write_ts')
+
         local_more_recent = our_last_write_ts >= metadata.last_modify_ts
         if local_more_recent:
             log.debug('sync from server stopped -- local is newer')
@@ -117,64 +120,66 @@ class PremiumSyncManager():
         if self.premium is None:
             return False
 
-        if not self.data.db.get_premium_sync() and not force_upload:
-            return False
+        with self.data.db.user_write() as cursor:
+            if not self.data.db.get_setting(cursor, 'premium_should_sync') and not force_upload:
+                return False
 
-        # upload only once per hour
-        diff = ts_now() - self.last_data_upload_ts
-        if diff < 3600 and not force_upload:
-            return False
+            # upload only once per hour
+            diff = ts_now() - self.last_data_upload_ts
+            if diff < 3600 and not force_upload:
+                return False
 
-        try:
-            metadata = self.premium.query_last_data_metadata()
-        except (RemoteError, PremiumAuthenticationError) as e:
-            log.debug('upload to server -- fetching metadata error', error=str(e))
-            return False
-        b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
+            try:
+                metadata = self.premium.query_last_data_metadata()
+            except (RemoteError, PremiumAuthenticationError) as e:
+                log.debug('upload to server -- fetching metadata error', error=str(e))
+                return False
+            b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
 
-        log.debug(
-            'CAN_PUSH',
-            ours=our_hash,
-            theirs=metadata.data_hash,
-        )
-        if our_hash == metadata.data_hash and not force_upload:
-            log.debug('upload to server stopped -- same hash')
-            # same hash -- no need to upload anything
-            return False
-
-        our_last_write_ts = self.data.db.get_last_write_ts()
-        if our_last_write_ts <= metadata.last_modify_ts and not force_upload:
-            # Server's DB was modified after our local DB
             log.debug(
-                f'upload to server stopped -- remote db({metadata.last_modify_ts}) '
-                f'more recent than local({our_last_write_ts})',
+                'CAN_PUSH',
+                ours=our_hash,
+                theirs=metadata.data_hash,
             )
-            return False
+            if our_hash == metadata.data_hash and not force_upload:
+                log.debug('upload to server stopped -- same hash')
+                # same hash -- no need to upload anything
+                return False
 
-        data_bytes_size = len(base64.b64decode(b64_encoded_data))
-        if data_bytes_size < metadata.data_size and not force_upload:
-            # Let's be conservative.
-            # TODO: Here perhaps prompt user in the future
-            log.debug(
-                f'upload to server stopped -- remote db({metadata.data_size}) '
-                f'bigger than local({data_bytes_size})',
-            )
-            return False
+            our_last_write_ts = self.data.db.get_setting(cursor=cursor, name='last_write_ts')
+            if our_last_write_ts <= metadata.last_modify_ts and not force_upload:
+                # Server's DB was modified after our local DB
+                log.debug(
+                    f'upload to server stopped -- remote db({metadata.last_modify_ts}) '
+                    f'more recent than local({our_last_write_ts})',
+                )
+                return False
 
-        try:
-            self.premium.upload_data(
-                data_blob=b64_encoded_data,
-                our_hash=our_hash,
-                last_modify_ts=our_last_write_ts,
-                compression_type='zlib',
-            )
-        except (RemoteError, PremiumAuthenticationError) as e:
-            log.debug('upload to server -- upload error', error=str(e))
-            return False
+            data_bytes_size = len(base64.b64decode(b64_encoded_data))
+            if data_bytes_size < metadata.data_size and not force_upload:
+                # Let's be conservative.
+                # TODO: Here perhaps prompt user in the future
+                log.debug(
+                    f'upload to server stopped -- remote db({metadata.data_size}) '
+                    f'bigger than local({data_bytes_size})',
+                )
+                return False
 
-        # update the last data upload value
-        self.last_data_upload_ts = ts_now()
-        self.data.db.update_last_data_upload_ts(self.last_data_upload_ts)
+            try:
+                self.premium.upload_data(
+                    data_blob=b64_encoded_data,
+                    our_hash=our_hash,
+                    last_modify_ts=our_last_write_ts,
+                    compression_type='zlib',
+                )
+            except (RemoteError, PremiumAuthenticationError) as e:
+                log.debug('upload to server -- upload error', error=str(e))
+                return False
+
+            # update the last data upload value
+            self.last_data_upload_ts = ts_now()
+            self.data.db.set_setting(cursor, name='last_data_upload_ts', value=self.last_data_upload_ts)  # noqa: E501
+
         log.debug('upload to server -- success')
         return True
 
@@ -255,7 +260,8 @@ class PremiumSyncManager():
                 self._abort_new_syncing_premium_user(username=username, original_exception=e)
 
         # else, if we got premium data in the DB initialize it and try to sync with the server
-        db_credentials = self.data.db.get_rotkehlchen_premium()
+        with self.data.db.conn.read_ctx() as cursor:
+            db_credentials = self.data.db.get_rotkehlchen_premium(cursor)
         if db_credentials:
             assert not create_new, 'We should never get here for a new account'
             try:

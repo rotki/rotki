@@ -1,3 +1,4 @@
+
 import logging
 from typing import TYPE_CHECKING, List, Literal, Optional, Sequence
 
@@ -19,6 +20,7 @@ from rotkehlchen.types import ChecksumEthAddress, Timestamp, Tuple, Union
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 ETH2_DEPOSITS_PREFIX = 'eth2_deposits'
 
@@ -52,7 +54,7 @@ class DBEth2():
         )
         return result.fetchall()
 
-    def add_eth2_deposits(self, deposits: Sequence[Eth2Deposit]) -> None:
+    def add_eth2_deposits(self, write_cursor: 'DBCursor', deposits: Sequence[Eth2Deposit]) -> None:
         """Inserts a list of Eth2Deposit"""
         query = (
             """
@@ -69,11 +71,10 @@ class DBEth2():
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
-        cursor = self.db.conn.cursor()
         for deposit in deposits:
             deposit_tuple = deposit.to_db_tuple()
             try:
-                cursor.execute(query, deposit_tuple)
+                write_cursor.execute(query, deposit_tuple)
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 self.db.msg_aggregator.add_warning(
                     f'Failed to add an ETH2 deposit to the DB. Either a duplicate or  '
@@ -81,16 +82,14 @@ class DBEth2():
                 )
                 continue
 
-        self.db.update_last_write()
-
-    def get_eth2_deposits(
+    def get_eth2_deposits(  # pylint: disable=no-self-use
             self,
+            cursor: 'DBCursor',
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             address: Optional[ChecksumEthAddress] = None,
     ) -> List[Eth2Deposit]:
         """Returns a list of Eth2Deposit filtered by time and address"""
-        cursor = self.db.conn.cursor()
         query = (
             'SELECT '
             'tx_hash, '
@@ -113,45 +112,43 @@ class DBEth2():
             query += 'AND '.join(filters)
 
         query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
-        results = cursor.execute(query, bindings)
-
-        return [Eth2Deposit.deserialize_from_db(deposit_tuple) for deposit_tuple in results]
+        cursor.execute(query, bindings)
+        return [Eth2Deposit.deserialize_from_db(deposit_tuple) for deposit_tuple in cursor]
 
     def add_validator_daily_stats(self, stats: List[ValidatorDailyStats]) -> None:
         """Adds given daily stats for validator in the DB. If an entry exists it's skipped"""
-        cursor = self.db.conn.cursor()
-        for entry in stats:  # not doing executemany to just ignore existing entry
-            try:
-                cursor.execute(
-                    'INSERT INTO eth2_daily_staking_details('
-                    '    validator_index,'
-                    '    timestamp,'
-                    '    start_usd_price,'
-                    '    end_usd_price,'
-                    '    pnl,'
-                    '    start_amount,'
-                    '    end_amount,'
-                    '    missed_attestations,'
-                    '    orphaned_attestations,'
-                    '    proposed_blocks,'
-                    '    missed_blocks,'
-                    '    orphaned_blocks,'
-                    '    included_attester_slashings,'
-                    '    proposer_attester_slashings,'
-                    '    deposits_number,'
-                    '    amount_deposited) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                    entry.to_db_tuple(),
-                )
-            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                log.debug(
-                    f'Cant insert Eth2 staking detail entry {str(entry)} to the DB '
-                    f'due to {str(e)}. Skipping ...',
-                )
-
-        self.db.update_last_write()
+        with self.db.user_write() as cursor:
+            for entry in stats:  # not doing executemany to just ignore existing entry
+                try:
+                    cursor.execute(
+                        'INSERT INTO eth2_daily_staking_details('
+                        '    validator_index,'
+                        '    timestamp,'
+                        '    start_usd_price,'
+                        '    end_usd_price,'
+                        '    pnl,'
+                        '    start_amount,'
+                        '    end_amount,'
+                        '    missed_attestations,'
+                        '    orphaned_attestations,'
+                        '    proposed_blocks,'
+                        '    missed_blocks,'
+                        '    orphaned_blocks,'
+                        '    included_attester_slashings,'
+                        '    proposer_attester_slashings,'
+                        '    deposits_number,'
+                        '    amount_deposited) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                        entry.to_db_tuple(),
+                    )
+                except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                    log.debug(
+                        f'Cant insert Eth2 staking detail entry {str(entry)} to the DB '
+                        f'due to {str(e)}. Skipping ...',
+                    )
 
     def get_validator_daily_stats_and_limit_info(
             self,
+            cursor: 'DBCursor',
             filter_query: Eth2DailyStatsFilterQuery,
     ) -> Tuple[List[ValidatorDailyStats], int, FVal, FVal]:
         """Gets all eth2 daily stats for the query from the DB
@@ -162,8 +159,7 @@ class DBEth2():
          - What is the PnL in ETH for the filter
          - What is the sum of the usd_value of the PnL counting price at the time of each entry
         """
-        stats = self.get_validator_daily_stats(filter_query=filter_query)
-        cursor = self.db.conn.cursor()
+        stats = self.get_validator_daily_stats(cursor, filter_query=filter_query)
         query, bindings = filter_query.prepare(with_pagination=False)
         query = (
             'SELECT COUNT(*), SUM(CAST(pnl AS REAL)), '
@@ -172,6 +168,7 @@ class DBEth2():
             'from eth2_daily_staking_details ' + query
         )
         result = cursor.execute(query, bindings).fetchone()
+
         try:
             pnl = FVal(result[1])
             usd_value_sum = FVal(result[2])
@@ -183,18 +180,18 @@ class DBEth2():
 
     def get_validator_daily_stats(
             self,
+            cursor: 'DBCursor',
             filter_query: Eth2DailyStatsFilterQuery,
     ) -> List[ValidatorDailyStats]:
         """Gets all DB entries for validator daily stats according to the given filter"""
-        cursor = self.db.conn.cursor()
         query, bindings = filter_query.prepare()
         query = 'SELECT * from eth2_daily_staking_details ' + query
-        results = cursor.execute(query, bindings)
-        daily_stats = [ValidatorDailyStats.deserialize_from_db(x) for x in results]
+        cursor.execute(query, bindings)
+        daily_stats = [ValidatorDailyStats.deserialize_from_db(x) for x in cursor]
         # Take into account the proportion of the validator owned
         validators_ownership = {
             validator.index: validator.ownership_proportion
-            for validator in self.get_validators()
+            for validator in self.get_validators(cursor)
         }
         for daily_stat in daily_stats:
             owned_proportion = validators_ownership.get(daily_stat.validator_index, ONE)
@@ -202,45 +199,41 @@ class DBEth2():
                 daily_stat.pnl = daily_stat.pnl * owned_proportion
         return daily_stats
 
-    def validator_exists(
+    def validator_exists(  # pylint: disable=no-self-use
             self,
+            cursor: 'DBCursor',
             field: Literal['validator_index', 'public_key'],
             arg: Union[int, str],
     ) -> bool:
-        cursor = self.db.conn.cursor()
-        result = cursor.execute(f'SELECT COUNT(*) from eth2_validators WHERE {field}=?', (arg,))
-        return result.fetchone()[0] == 1
+        cursor.execute(f'SELECT COUNT(*) from eth2_validators WHERE {field}=?', (arg,))
+        return cursor.fetchone()[0] == 1  # count always returns
 
-    def get_validators(self) -> List[Eth2Validator]:
-        cursor = self.db.conn.cursor()
-        results = cursor.execute('SELECT * from eth2_validators;')
-        return [Eth2Validator.deserialize_from_db(x) for x in results]
+    def get_validators(self, cursor: 'DBCursor') -> List[Eth2Validator]:  # pylint: disable=no-self-use  # noqa: E501
+        cursor.execute('SELECT * from eth2_validators;')
+        return [Eth2Validator.deserialize_from_db(x) for x in cursor]
 
-    def add_validators(self, validators: List[Eth2Validator]) -> None:
-        cursor = self.db.conn.cursor()
-        cursor.executemany(
+    def add_validators(self, write_cursor: 'DBCursor', validators: List[Eth2Validator]) -> None:  # pylint: disable=no-self-use  # noqa: E501
+        write_cursor.executemany(
             'INSERT OR IGNORE INTO '
             'eth2_validators(validator_index, public_key, ownership_proportion) VALUES(?, ?, ?)',
             [x.serialize_for_db() for x in validators],
         )
-        self.db.update_last_write()
 
     def edit_validator(self, validator_index: int, ownership_proportion: FVal) -> None:
         """Edits the ownership proportion for a validator identified by its index.
         May raise:
         - InputError if we try to edit a non existing validator.
         """
-        cursor = self.db.conn.cursor()
-        cursor.execute(
-            'UPDATE eth2_validators SET ownership_proportion=? WHERE validator_index = ?',
-            (str(ownership_proportion), validator_index),
-        )
-        if cursor.rowcount == 0:
-            raise InputError(
-                f'Tried to edit validator with index {validator_index} '
-                f'that is not in the database',
+        with self.db.user_write() as cursor:
+            cursor.execute(
+                'UPDATE eth2_validators SET ownership_proportion=? WHERE validator_index = ?',
+                (str(ownership_proportion), validator_index),
             )
-        self.db.update_last_write()
+            if cursor.rowcount == 0:
+                raise InputError(
+                    f'Tried to edit validator with index {validator_index} '
+                    f'that is not in the database',
+                )
 
     def delete_validator(self, validator_index: Optional[int], public_key: Optional[str]) -> None:
         """Deletes the given validator from the DB. Due to marshmallow here at least one
@@ -249,7 +242,6 @@ class DBEth2():
         May raise:
         - InputError if the given validator to delete does not exist in the DB
         """
-        cursor = self.db.conn.cursor()
         if validator_index is not None:
             field = 'validator_index'
             input_tuple = (validator_index,)
@@ -257,10 +249,10 @@ class DBEth2():
             field = 'public_key'
             input_tuple = (public_key,)  # type: ignore
 
-        cursor.execute(f'DELETE FROM eth2_validators WHERE {field} == ?', input_tuple)
-        if cursor.rowcount != 1:
-            raise InputError(
-                f'Tried to delete eth2 validator with {field} '
-                f'{input_tuple[0]} from the DB but it did not exist',
-            )
-        self.db.update_last_write()
+        with self.db.user_write() as cursor:
+            cursor.execute(f'DELETE FROM eth2_validators WHERE {field} == ?', input_tuple)
+            if cursor.rowcount != 1:
+                raise InputError(
+                    f'Tried to delete eth2 validator with {field} '
+                    f'{input_tuple[0]} from the DB but it did not exist',
+                )

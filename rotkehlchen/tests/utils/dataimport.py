@@ -48,11 +48,13 @@ def get_cryptocom_note(desc: str):
 
 def assert_cointracking_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from cointracking.info"""
-    trades = rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
-    asset_movements = rotki.data.db.get_asset_movements(
-        filter_query=AssetMovementsFilterQuery.make(),
-        has_premium=True,
-    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+        asset_movements = rotki.data.db.get_asset_movements(
+            cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -125,16 +127,19 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
 
 def assert_cryptocom_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from crypto.com"""
-    trades = rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
-    asset_movements = rotki.data.db.get_asset_movements(
-        filter_query=AssetMovementsFilterQuery.make(),
-        has_premium=True,
-    )
-    ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-    ledger_actions = ledger_db.get_ledger_actions(
-        filter_query=LedgerActionsFilterQuery.make(),
-        has_premium=True,
-    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+        asset_movements = rotki.data.db.get_asset_movements(
+            cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
+        ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
+        ledger_actions = ledger_db.get_ledger_actions(
+            cursor,
+            filter_query=LedgerActionsFilterQuery.make(),
+            has_premium=True,
+        )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -437,12 +442,14 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
 
 def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from crypto.com"""
-    trades = rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
-    ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-    ledger_actions = ledger_db.get_ledger_actions(
-        filter_query=LedgerActionsFilterQuery.make(),
-        has_premium=True,
-    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+        ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
+        ledger_actions = ledger_db.get_ledger_actions(
+            cursor,
+            filter_query=LedgerActionsFilterQuery.make(),
+            has_premium=True,
+        )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -548,14 +555,17 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
 def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from blockfi"""
     ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-    ledger_actions = ledger_db.get_ledger_actions(
-        filter_query=LedgerActionsFilterQuery.make(),
-        has_premium=True,
-    )
-    asset_movements = rotki.data.db.get_asset_movements(
-        filter_query=AssetMovementsFilterQuery.make(),
-        has_premium=True,
-    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        ledger_actions = ledger_db.get_ledger_actions(
+            cursor=cursor,
+            filter_query=LedgerActionsFilterQuery.make(),
+            has_premium=True,
+        )
+        asset_movements = rotki.data.db.get_asset_movements(
+            cursor=cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -647,7 +657,8 @@ def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
 
 def assert_blockfi_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from blockfi"""
-    trades = rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -671,15 +682,18 @@ def assert_blockfi_trades_import_results(rotki: Rotkehlchen):
 
 def assert_nexo_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from nexo"""
-    ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-    ledger_actions = ledger_db.get_ledger_actions(
-        filter_query=LedgerActionsFilterQuery.make(),
-        has_premium=True,
-    )
-    asset_movements = rotki.data.db.get_asset_movements(
-        filter_query=AssetMovementsFilterQuery.make(),
-        has_premium=True,
-    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
+        ledger_actions = ledger_db.get_ledger_actions(
+            cursor,
+            filter_query=LedgerActionsFilterQuery.make(),
+            has_premium=True,
+        )
+        asset_movements = rotki.data.db.get_asset_movements(
+            cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -816,7 +830,8 @@ def assert_nexo_results(rotki: Rotkehlchen):
 
 def assert_shapeshift_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from shapeshift"""
-    trades = rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     notes1 = """
@@ -873,16 +888,19 @@ Trade from ShapeShift with ShapeShift Deposit Address:
 
 def assert_uphold_transactions_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from uphold"""
-    trades = rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
-    asset_movements = rotki.data.db.get_asset_movements(
-        filter_query=AssetMovementsFilterQuery.make(),
-        has_premium=True,
-    )
-    ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-    ledger_actions = ledger_db.get_ledger_actions(
-        filter_query=LedgerActionsFilterQuery.make(),
-        has_premium=True,
-    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+        asset_movements = rotki.data.db.get_asset_movements(
+            cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
+        ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
+        ledger_actions = ledger_db.get_ledger_actions(
+            cursor,
+            filter_query=LedgerActionsFilterQuery.make(),
+            has_premium=True,
+        )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     notes1 = """
@@ -1008,10 +1026,12 @@ def assert_custom_cointracking(rotki: Rotkehlchen):
     A utility function to help assert on correctness of importing data from cointracking.info
     when using custom formats for dates
     """
-    asset_movements = rotki.data.db.get_asset_movements(
-        filter_query=AssetMovementsFilterQuery.make(),
-        has_premium=True,
-    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        asset_movements = rotki.data.db.get_asset_movements(
+            cursor=cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
     expected_movements = [AssetMovement(
         location=Location.POLONIEX,
         category=AssetMovementCategory.DEPOSIT,
@@ -1040,7 +1060,8 @@ def assert_custom_cointracking(rotki: Rotkehlchen):
 
 def assert_bisq_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from bisq"""
-    trades = rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -1393,19 +1414,22 @@ def assert_binance_import_results(rotki: Rotkehlchen):
         ),
     ]
 
-    trades = rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
-    warnings = rotki.msg_aggregator.consume_warnings()
-    asset_movements = rotki.data.db.get_asset_movements(
-        filter_query=AssetMovementsFilterQuery.make(),
-        has_premium=True,
-    )
-    ledger_actions = DBLedgerActions(
-        database=rotki.data.db,
-        msg_aggregator=rotki.data.msg_aggregator,
-    ).get_ledger_actions(
-        filter_query=LedgerActionsFilterQuery.make(),
-        has_premium=True,
-    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+        warnings = rotki.msg_aggregator.consume_warnings()
+        asset_movements = rotki.data.db.get_asset_movements(
+            cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
+        ledger_actions = DBLedgerActions(
+            database=rotki.data.db,
+            msg_aggregator=rotki.data.msg_aggregator,
+        ).get_ledger_actions(
+            cursor,
+            filter_query=LedgerActionsFilterQuery.make(),
+            has_premium=True,
+        )
     assert trades == expected_trades
     assert asset_movements == expected_asset_movements
     assert ledger_actions == expected_ledger_actions

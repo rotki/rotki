@@ -43,17 +43,18 @@ def test_loopring_accountid_mapping(database):
     addr1 = make_ethereum_address()
     addr2 = make_ethereum_address()
 
-    assert db.get_accountid_mapping(addr1) is None
-    db.add_accountid_mapping(addr1, id1)
-    assert db.get_accountid_mapping(addr1) == id1
-    db.add_accountid_mapping(addr2, id2)
-    assert db.get_accountid_mapping(addr2) == id2
+    with database.user_write() as cursor:
+        assert db.get_accountid_mapping(cursor, addr1) is None
+        db.add_accountid_mapping(cursor, addr1, id1)
+        assert db.get_accountid_mapping(cursor, addr1) == id1
+        db.add_accountid_mapping(cursor, addr2, id2)
+        assert db.get_accountid_mapping(cursor, addr2) == id2
 
-    # assure nothing happens with non existing address
-    db.remove_accountid_mapping(make_ethereum_address())
+        # assure nothing happens with non existing address
+        db.remove_accountid_mapping(cursor, make_ethereum_address())
 
-    db.remove_accountid_mapping(addr1)
-    assert db.get_accountid_mapping(addr1) is None
+        db.remove_accountid_mapping(cursor, addr1)
+        assert db.get_accountid_mapping(cursor, addr1) is None
 
 
 def test_get_account_balances(temp_loopring, inquirer):  # pylint: disable=W0613

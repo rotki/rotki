@@ -149,13 +149,15 @@ def setup_starting_environment(
     starts up his node either for the first time or logs in an already
     existing account
     """
-    if not first_time:
-        # Emulate already having the api keys in the DB
-        rotkehlchen_instance.data.db.set_rotkehlchen_premium(premium_credentials)
+    with rotkehlchen_instance.data.db.user_write() as cursor:
+        if not first_time:
+            # Emulate already having the api keys in the DB
+            rotkehlchen_instance.data.db.set_rotkehlchen_premium(premium_credentials)
 
-    rotkehlchen_instance.data.db.update_premium_sync(db_can_sync_setting)
-    our_last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
-    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
+        rotkehlchen_instance.data.db.set_setting(cursor, name='premium_should_sync', value=db_can_sync_setting)  # noqa: E501
+        our_last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
+        assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
+
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
 
     if same_hash_with_remote:
@@ -203,7 +205,8 @@ def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
     # At this point pulling data from rotkehlchen server should have worked
     # and our database should have been replaced. The new data have different
     # main currency
-    assert rotkehlchen_instance.data.db.get_main_currency() == A_GBP
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+        assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == A_GBP
     # Also check a copy of our old DB is kept around.
     directory = os.path.join(rotkehlchen_instance.data.data_directory, username)
     files = [

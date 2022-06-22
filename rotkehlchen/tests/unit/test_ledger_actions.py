@@ -31,14 +31,44 @@ def test_serialize_deserialize_for_db():
 def test_all_action_types_writtable_in_db(database, function_scope_messages_aggregator):
     db = DBLedgerActions(database, function_scope_messages_aggregator)
 
-    query = 'SELECT COUNT(*) FROM ledger_actions WHERE identifier=?'
-    cursor = database.conn.cursor()
+    with database.user_write() as cursor:
+        query = 'SELECT COUNT(*) FROM ledger_actions WHERE identifier=?'
+        for entry in LedgerActionType:
+            action = LedgerAction(
+                identifier=0,  # whatever
+                timestamp=1,
+                action_type=entry,
+                location=Location.EXTERNAL,
+                amount=FVal(1),
+                asset=A_ETH,
+                rate=None,
+                rate_asset=None,
+                link=None,
+                notes=None,
+            )
+            identifier = db.add_ledger_action(cursor, action)
+            # Check that changes have been committed to db
+            cursor.execute(query, (identifier,))
+            assert cursor.fetchone() == (1,)
 
-    for entry in LedgerActionType:
+        assert len(db.get_ledger_actions(
+            cursor,
+            filter_query=LedgerActionsFilterQuery.make(),
+            has_premium=True,
+        )) == len(LedgerActionType)
+
+
+def test_ledger_action_can_be_removed(database, function_scope_messages_aggregator):
+    db = DBLedgerActions(database, function_scope_messages_aggregator)
+    with database.user_write() as cursor:
+        query = 'SELECT COUNT(*) FROM ledger_actions WHERE identifier=?'
+        cursor = database.conn.cursor()
+
+        # Add the entry that we want to delete
         action = LedgerAction(
             identifier=0,  # whatever
             timestamp=1,
-            action_type=entry,
+            action_type=LedgerActionType.INCOME,
             location=Location.EXTERNAL,
             amount=ONE,
             asset=A_ETH,
@@ -47,43 +77,20 @@ def test_all_action_types_writtable_in_db(database, function_scope_messages_aggr
             link=None,
             notes=None,
         )
-        identifier = db.add_ledger_action(action)
-        # Check that changes have been committed to db
+        identifier = db.add_ledger_action(cursor, action)
+
+        # Delete ledger action
+        assert db.remove_ledger_action(cursor, identifier) is None
+
+        # Check that the change has been committed
         cursor.execute(query, (identifier,))
         assert cursor.fetchone() == (1,)
-    assert len(db.get_ledger_actions(
-        filter_query=LedgerActionsFilterQuery.make(),
-        has_premium=True,
-    )) == len(LedgerActionType)
 
-
-def test_ledger_action_can_be_removed(database, function_scope_messages_aggregator):
-    db = DBLedgerActions(database, function_scope_messages_aggregator)
-
-    query = 'SELECT COUNT(*) FROM ledger_actions WHERE identifier=?'
-    cursor = database.conn.cursor()
-
-    # Add the entry that we want to delete
-    action = LedgerAction(
-        identifier=0,  # whatever
-        timestamp=1,
-        action_type=LedgerActionType.INCOME,
-        location=Location.EXTERNAL,
-        amount=ONE,
-        asset=A_ETH,
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes=None,
-    )
-    identifier = db.add_ledger_action(action)
-
-    # Delete ledger action
-    assert db.remove_ledger_action(identifier) is None
-
-    # Check that the change has been committed
-    cursor.execute(query, (identifier,))
-    assert cursor.fetchone() == (0,)
+        assert len(db.get_ledger_actions(
+            cursor,
+            filter_query=LedgerActionsFilterQuery.make(),
+            has_premium=True,
+        )) == len(LedgerActionType)
 
 
 def test_ledger_action_can_be_edited(database, function_scope_messages_aggregator):
@@ -105,7 +112,8 @@ def test_ledger_action_can_be_edited(database, function_scope_messages_aggregato
         link=None,
         notes=None,
     )
-    identifier = db.add_ledger_action(action)
+    with database.user_write() as cursor:
+        identifier = db.add_ledger_action(cursor, action)
 
     # Data for the new entry
     new_entry = LedgerAction(

@@ -112,6 +112,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.nfts import Nfts
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.externalapis.beaconchain import BeaconChain
 
 logger = logging.getLogger(__name__)
@@ -215,8 +216,9 @@ class BlockchainBalances:
         dot_balances = {k: v.serialize() for k, v in self.dot.items()}
         avax_balances = {k: v.serialize() for k, v in self.avax.items()}
 
-        btc_xpub_mappings = self.db.get_addresses_to_xpub_mapping(list(self.btc.keys()))
-        bch_xpub_mappings = self.db.get_addresses_to_xpub_mapping(list(self.bch.keys()))
+        with self.db.conn.read_ctx() as cursor:
+            btc_xpub_mappings = self.db.get_addresses_to_xpub_mapping(cursor, list(self.btc.keys()))  # noqa: E501
+            bch_xpub_mappings = self.db.get_addresses_to_xpub_mapping(cursor, list(self.bch.keys()))  # noqa: E501
 
         self._serialize_bitcoin_balances(
             xpub_mappings=btc_xpub_mappings,
@@ -451,7 +453,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     def queried_addresses_for_module(self, module: ModuleName) -> List[ChecksumEthAddress]:
         """Returns the addresses to query for the given module/protocol"""
-        result = QueriedAddresses(self.database).get_queried_addresses_for_module(module)
+        with self.database.conn.read_ctx() as cursor:
+            result = QueriedAddresses(self.database).get_queried_addresses_for_module(cursor, module)  # noqa: E501
         return result if result is not None else self.accounts.eth
 
     def activate_module(self, module_name: ModuleName) -> Optional[EthereumModule]:
@@ -794,8 +797,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.totals.assets[A_DOT] = total_balance
 
     def sync_bitcoin_accounts_with_db(
-        self,
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+            self,
+            cursor: 'DBCursor',
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """Call this function after having deleted BTC/BCH accounts from the DB to
         sync the chain manager's balances and accounts with the DB
@@ -804,7 +808,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         addresses from the DB.
         """
         db_btc_accounts = getattr(
-            self.database.get_blockchain_accounts(),
+            self.database.get_blockchain_accounts(cursor),
             blockchain.value.lower(),
         )
         accounts_to_remove = []
@@ -1775,11 +1779,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant query eth2 daily stats details since eth2 module is not active')  # noqa: E501
-        return eth2.get_validator_daily_stats(
-            filter_query=filter_query,
-            only_cache=only_cache,
-            msg_aggregator=self.msg_aggregator,
-        )
+        with self.database.conn.read_ctx() as cursor:
+            return eth2.get_validator_daily_stats(
+                cursor=cursor,
+                filter_query=filter_query,
+                only_cache=only_cache,
+                msg_aggregator=self.msg_aggregator,
+            )
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -1807,11 +1813,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             for validator in self.get_eth2_validators()
         }
         # And now get all daily stats and create defi events for them
-        stats, _, _, _ = eth2.get_validator_daily_stats(
-            filter_query=Eth2DailyStatsFilterQuery.make(from_ts=from_timestamp, to_ts=to_timestamp),  # noqa: E501
-            only_cache=False,
-            msg_aggregator=self.msg_aggregator,
-        )
+        with self.database.conn.read_ctx() as cursor:
+            stats, _, _, _ = eth2.get_validator_daily_stats(
+                cursor=cursor,
+                filter_query=Eth2DailyStatsFilterQuery.make(from_ts=from_timestamp, to_ts=to_timestamp),  # noqa: E501
+                only_cache=False,
+                msg_aggregator=self.msg_aggregator,
+            )
         for stats_entry in stats:
             if stats_entry.pnl_balance.amount == ZERO:
                 continue
@@ -1831,7 +1839,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant get eth2 validators since the eth2 module is not active')
-        return DBEth2(self.database).get_validators()
+        with self.database.conn.read_ctx() as cursor:
+            return DBEth2(self.database).get_validators(cursor)
 
     def edit_eth2_validator(self, validator_index: int, ownership_proportion: FVal) -> None:
         """Edit a validator to modify its ownership proportion. May raise:
@@ -1864,11 +1873,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant add eth2 validator since eth2 module is not active')
-        eth2.add_validator(
-            validator_index=validator_index,
-            public_key=public_key,
-            ownership_proportion=ownership_proportion,
-        )
+        with self.database.user_write() as cursor:
+            eth2.add_validator(
+                write_cursor=cursor,
+                validator_index=validator_index,
+                public_key=public_key,
+                ownership_proportion=ownership_proportion,
+            )
         self.flush_cache('get_eth2_staking_deposits')
         self.flush_cache('get_eth2_staking_details')
         self.flush_cache('get_eth2_history_events')

@@ -109,7 +109,9 @@ def test_maybe_schedule_xpub_derivation(task_manager, database):
         xpub=HDKey.from_xpub(xpub=xpub, path='m'),
         derivation_path='m/0/0',
     )
-    database.add_bitcoin_xpub(xpub_data, SupportedBlockchain.BITCOIN)
+    with database.user_write() as cursor:
+        database.add_bitcoin_xpub(cursor, xpub_data, SupportedBlockchain.BITCOIN)
+
     task_manager.potential_tasks = [task_manager._maybe_schedule_xpub_derivation]
     xpub_derive_patch = patch(
         'rotkehlchen.chain.bitcoin.xpub.XpubManager.check_for_new_xpub_addresses',
@@ -185,15 +187,16 @@ def test_maybe_schedule_ethereum_txreceipts(
         with gevent.Timeout(timeout):
             with receipt_get_patch as receipt_task_mock:
                 task_manager.schedule()
-                while True:
-                    if len(queried_receipts) == 2:
-                        break
+                with database.conn.read_ctx() as cursor:
+                    while True:
+                        if len(queried_receipts) == 2:
+                            break
 
-                    for txhash in (tx_hash_1, tx_hash_2):
-                        if dbethtx.get_receipt(txhash) is not None:
-                            queried_receipts.add(txhash)
+                        for txhash in (tx_hash_1, tx_hash_2):
+                            if dbethtx.get_receipt(cursor, txhash) is not None:
+                                queried_receipts.add(txhash)
 
-                    gevent.sleep(.3)
+                        gevent.sleep(.3)
 
                 task_manager.schedule()
                 gevent.sleep(.5)
@@ -202,10 +205,11 @@ def test_maybe_schedule_ethereum_txreceipts(
     except gevent.Timeout as e:
         raise AssertionError(f'receipts query was not completed within {timeout} seconds') from e  # noqa: E501
 
-    receipt1 = eth_transactions.get_or_query_transaction_receipt(tx_hash_1)
-    assert receipt1 == receipts[0]
-    receipt2 = eth_transactions.get_or_query_transaction_receipt(tx_hash_2)
-    assert receipt2 == receipts[1]
+    with database.user_write() as cursor:
+        receipt1 = eth_transactions.get_or_query_transaction_receipt(cursor, tx_hash_1)
+        assert receipt1 == receipts[0]
+        receipt2 = eth_transactions.get_or_query_transaction_receipt(cursor, tx_hash_2)
+        assert receipt2 == receipts[1]
 
 
 @pytest.mark.parametrize('max_tasks_num', [7])

@@ -366,20 +366,22 @@ def test_add_xpub_with_conversion_works(rotkehlchen_api_server):
         blockchain='BTC',
     ), json=json_data)
     assert_proper_response_with_result(response)
-    saved_xpubs = rotki.data.db.get_bitcoin_xpub_data()
-    assert len(saved_xpubs) == 1
-    assert saved_xpubs[0].xpub.hint == 'ypub'
-    assert saved_xpubs[0].xpub.xpub == 'ypub6Xa42PMu934ALWV34BUZ5wttvRT6n6bMCR6Z4ZKB9Aj23zypTPvrSshYiXRCnhXY2jpyyLSKcqYrd5SWCCU3QeRVnfRzpUF6iRLxd55duzL'  # noqa: E501
+    with rotki.data.db.conn.read_ctx() as cursor:
+        saved_xpubs = rotki.data.db.get_bitcoin_xpub_data(cursor)
+        assert len(saved_xpubs) == 1
+        assert saved_xpubs[0].xpub.hint == 'ypub'
+        assert saved_xpubs[0].xpub.xpub == 'ypub6Xa42PMu934ALWV34BUZ5wttvRT6n6bMCR6Z4ZKB9Aj23zypTPvrSshYiXRCnhXY2jpyyLSKcqYrd5SWCCU3QeRVnfRzpUF6iRLxd55duzL'  # noqa: E501
 
-    # Test xpub asking conversion to zpub
-    json_data['xpub_type'] = 'wpkh'
-    response = requests.put(api_url_for(
-        rotkehlchen_api_server,
-        'btcxpubresource',
-        blockchain='BTC',
-    ), json=json_data)
-    assert_proper_response_with_result(response)
-    saved_xpubs = rotki.data.db.get_bitcoin_xpub_data()
+        # Test xpub asking conversion to zpub
+        json_data['xpub_type'] = 'wpkh'
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'btcxpubresource',
+            blockchain='BTC',
+        ), json=json_data)
+        assert_proper_response_with_result(response)
+        saved_xpubs = rotki.data.db.get_bitcoin_xpub_data(cursor)
+
     assert len(saved_xpubs) == 2
     assert saved_xpubs[1].xpub.hint == 'zpub'
     assert saved_xpubs[1].xpub.xpub == 'zpub6rQKL42pHibeBog9tYGBJ2zQ6PbYiiar7XcmqxD4XB6u76o3i46R4wMgjjNnncBTSNwnip2t5VuQWN44utt4Ct76f18RQP4az9Qc1eUEkSY'  # noqa: E501

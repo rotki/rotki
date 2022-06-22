@@ -1,12 +1,11 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from sqlite3 import Connection
-
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBConnection
 
 
-def _create_new_tables(conn: 'Connection') -> None:
+def _create_new_tables(conn: 'DBConnection') -> None:
     """Create new tables added at this upgrade
 
     Should be called at the end of the upgrade as it depends on the changes

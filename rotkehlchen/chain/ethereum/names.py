@@ -22,26 +22,31 @@ def search_for_addresses_names(
     db_addressbook = DBAddressbook(database)
     db_ens = DBEns(database)
 
-    reverse_ens = db_ens.get_reverse_ens(addresses=addresses).values()
-    mapped_tokens = GlobalDBHandler().get_tokens_mappings(addresses=addresses)
-    hardcoded_mappings = {}
-    for address in addresses:
-        constant_name = ETHADDRESS_TO_KNOWN_NAME.get(address)
-        if constant_name is not None:
-            hardcoded_mappings[address] = constant_name
-    global_addressbook = db_addressbook.get_addressbook_entries(
-        book_type=AddressbookType.GLOBAL,
-        addresses=addresses,
-    )
-    private_addressbook = db_addressbook.get_addressbook_entries(
-        book_type=AddressbookType.PRIVATE,
-        addresses=addresses,
-    )
-    addresses_set = set(addresses)
-    labels = {}
-    accounts_data = database.get_blockchain_account_data(
-        blockchain=SupportedBlockchain.ETHEREUM,
-    )
+    with database.conn.read_ctx() as cursor:
+        reverse_ens = db_ens.get_reverse_ens(cursor, addresses=addresses).values()
+        mapped_tokens = GlobalDBHandler().get_tokens_mappings(addresses=addresses)
+        hardcoded_mappings = {}
+        for address in addresses:
+            constant_name = ETHADDRESS_TO_KNOWN_NAME.get(address)
+            if constant_name is not None:
+                hardcoded_mappings[address] = constant_name
+
+        with db_addressbook.read_ctx(AddressbookType.GLOBAL) as global_cursor:
+            global_addressbook = db_addressbook.get_addressbook_entries(
+                cursor=global_cursor,
+                addresses=addresses,
+            )
+        private_addressbook = db_addressbook.get_addressbook_entries(
+            cursor=cursor,
+            addresses=addresses,
+        )
+        addresses_set = set(addresses)
+        labels = {}
+        accounts_data = database.get_blockchain_account_data(
+            cursor=cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        )
+
     for account in accounts_data:
         if account.address in addresses_set:
             labels[account.address] = account.label

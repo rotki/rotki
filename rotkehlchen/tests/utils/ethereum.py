@@ -159,13 +159,16 @@ def setup_ethereum_transactions_test(
     tx_hash1 = deserialize_evm_tx_hash('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
     addr1 = string_to_ethereum_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
     addr2 = string_to_ethereum_address('0x442068F934BE670aDAb81242C87144a851d56d16')
-    database.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.ETHEREUM,
-        account_data=[
-            BlockchainAccountData(address=addr1),
-            BlockchainAccountData(address=addr2),
-        ],
-    )
+    with database.user_write() as cursor:
+        database.add_blockchain_accounts(
+            cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            account_data=[
+                BlockchainAccountData(address=addr1),
+                BlockchainAccountData(address=addr2),
+            ],
+        )
+
     transaction1 = EthereumTransaction(
         tx_hash=tx_hash1,
         timestamp=Timestamp(1630532276),
@@ -195,9 +198,10 @@ def setup_ethereum_transactions_test(
     )
     transactions = [transaction1, transaction2]
     if transaction_already_queried is True:
-        dbethtx.add_ethereum_transactions(ethereum_transactions=[transaction1], relevant_address=addr1)  # noqa: E501
-        dbethtx.add_ethereum_transactions(ethereum_transactions=[transaction2], relevant_address=addr2)  # noqa: E501
-        result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(), True)
+        with database.user_write() as cursor:
+            dbethtx.add_ethereum_transactions(cursor, ethereum_transactions=[transaction1], relevant_address=addr1)  # noqa: E501
+            dbethtx.add_ethereum_transactions(cursor, ethereum_transactions=[transaction2], relevant_address=addr2)  # noqa: E501
+            result = dbethtx.get_ethereum_transactions(cursor, ETHTransactionsFilterQuery.make(), True)  # noqa: E501
         assert result == transactions
 
     expected_receipt1 = EthereumTxReceipt(
@@ -275,7 +279,8 @@ def setup_ethereum_transactions_test(
     )
 
     if one_receipt_in_db:
-        dbethtx.add_receipt_data(txreceipt_to_data(expected_receipt1))
+        with database.user_write() as cursor:
+            dbethtx.add_receipt_data(cursor, txreceipt_to_data(expected_receipt1))
 
     return transactions, [expected_receipt1, expected_receipt2]
 
@@ -288,7 +293,8 @@ def get_decoded_events_of_transaction(
 ) -> List[HistoryBaseEntry]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash"""
     transactions = EthTransactions(ethereum=ethereum_manager, database=database)
-    transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
+    with database.user_write() as cursor:
+        transactions.get_or_query_transaction_receipt(cursor, tx_hash=tx_hash)
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,

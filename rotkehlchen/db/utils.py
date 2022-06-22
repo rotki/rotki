@@ -1,13 +1,30 @@
 from dataclasses import dataclass
-from sqlite3 import Cursor
-from typing import TYPE_CHECKING, Dict, List, Literal, NamedTuple, Optional, Tuple, Union
+from functools import wraps
+from operator import attrgetter
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    NamedTuple,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from eth_utils import is_checksum_address
+from typing_extensions import Concatenate, ParamSpec
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import is_valid_kusama_address, is_valid_polkadot_address
+from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     BlockchainAccountData,
@@ -25,6 +42,84 @@ from rotkehlchen.utils.misc import pairwise_longest, rgetattr, timestamp_to_date
 if TYPE_CHECKING:
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.bitcoin.xpub import XpubData
+    from rotkehlchen.db.dbhandler import DBHandler
+
+P = ParamSpec('P')
+T = TypeVar('T', covariant=True)
+
+
+class MaybeInjectWriteCursor(Protocol[P, T]):
+    @overload
+    def __call__(self, write_cursor: 'DBCursor', *args: P.args, **kwargs: P.kwargs) -> T:
+        ...
+
+    @overload
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T:
+        ...
+
+
+def need_writable_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate['DBHandler', 'DBCursor', P], T]], MaybeInjectWriteCursor[P, T]]:  # noqa: E501
+    def _need_writable_cursor(method: Callable[Concatenate['DBHandler', 'DBCursor', P], T]) -> MaybeInjectWriteCursor[P, T]:  # noqa: E501
+        """Wraps the method of a class in a write cursor or uses one if passed.
+
+        The method should:
+        1. have the write_cursor as the first argument.
+        2. **NOT HAVE** a cursor as the 2nd argument
+
+        The class should have something that would return a cursor context manager
+
+        Typing guide: https://sobolevn.me/2021/12/paramspec-guide
+
+        Keeping this only as an advanced example for typing and not using
+        it much as I did not wanna add extra if checks in heavy calls
+        """
+        @wraps(method)
+        def _impl(self: 'DBHandler', *args: Any, **kwargs: Any) -> T:
+            if kwargs.get('write_cursor') or len(args) != 0 and isinstance(args[0], DBCursor):
+                return method(self, *args, **kwargs)
+
+            # else we need to wrap this in a new writable cursor
+            with attrgetter(path_to_context_manager)(self)() as cursor:
+                result = method(self, cursor, *args, **kwargs)
+
+            return result
+
+        return _impl  # type: ignore
+    return _need_writable_cursor
+
+
+class MaybeInjectCursor(Protocol[P, T]):
+    @overload
+    def __call__(self, cursor: 'DBCursor', *args: P.args, **kwargs: P.kwargs) -> T:
+        ...
+
+    @overload
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T:
+        ...
+
+
+def need_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate['DBHandler', 'DBCursor', P], T]], MaybeInjectCursor[P, T]]:  # noqa: E501
+    def _need_cursor(method: Callable[Concatenate['DBHandler', 'DBCursor', P], T]) -> MaybeInjectCursor[P, T]:  # noqa: E501
+        """Wraps the method of DBHandler in a read cursor or uses one if passed.
+
+        The method should:
+        1. have the cursor as the first argument.
+        2. **NOT HAVE** a cursor as the 2nd argument
+
+        Typing guide: https://sobolevn.me/2021/12/paramspec-guide
+        """
+        @wraps(method)
+        def _impl(self: 'DBHandler', *args: Any, **kwargs: Any) -> T:
+            if kwargs.get('cursor') or len(args) != 0 and isinstance(args[0], DBCursor):
+                return method(self, *args, **kwargs)
+
+            # else we need to wrap this in a new read only cursor
+            with attrgetter(path_to_context_manager)(self)() as cursor:
+                result = method(self, cursor, *args, **kwargs)
+            return result
+
+        return _impl  # type: ignore
+    return _need_cursor
 
 
 class BlockchainAccounts(NamedTuple):
@@ -164,7 +259,7 @@ def deserialize_tags_from_db(val: Optional[str]) -> Optional[List[str]]:
 
 
 def insert_tag_mappings(
-        cursor: Cursor,
+        write_cursor: 'DBCursor',
         data: Union[List['ManuallyTrackedBalance'], List[BlockchainAccountData], List['XpubData']],
         object_reference_keys: List[
             Literal['id', 'address', 'xpub.xpub', 'derivation_path'],
@@ -184,7 +279,7 @@ def insert_tag_mappings(
                     reference += str(value)
             mapping_tuples.extend([(reference, tag) for tag in entry.tags])
 
-    cursor.executemany(
+    write_cursor.executemany(
         'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,
     )
 

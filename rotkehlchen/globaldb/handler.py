@@ -22,7 +22,7 @@ from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import CONSTANT_ASSETS
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.db.drivers.gevent import sqlite_connect
+from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -35,7 +35,6 @@ from .schema import DB_SCRIPT_CREATE_TABLES
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import SqliteConnection, SqliteCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -43,7 +42,7 @@ log = RotkehlchenLogsAdapter(logger)
 GLOBAL_DB_VERSION = 2
 
 
-def _get_setting_value(cursor: 'SqliteCursor', name: str, default_value: int) -> int:
+def _get_setting_value(cursor: DBCursor, name: str, default_value: int) -> int:
     query = cursor.execute(
         'SELECT value FROM settings WHERE name=?;', (name,),
     )
@@ -55,8 +54,8 @@ def _get_setting_value(cursor: 'SqliteCursor', name: str, default_value: int) ->
     return int(result[0][0])
 
 
-def initialize_globaldb(dbpath: Path) -> 'SqliteConnection':
-    connection = sqlite_connect(dbpath)
+def initialize_globaldb(dbpath: Path) -> DBConnection:
+    connection = DBConnection(path=dbpath, use_sqlcipher=False)
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     cursor = connection.cursor()
     db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
@@ -76,7 +75,7 @@ def initialize_globaldb(dbpath: Path) -> 'SqliteConnection':
     return connection
 
 
-def _initialize_global_db_directory(data_dir: Path) -> 'SqliteConnection':
+def _initialize_global_db_directory(data_dir: Path) -> DBConnection:
     global_dir = data_dir / 'global_data'
     global_dir.mkdir(parents=True, exist_ok=True)
     dbname = global_dir / 'global.db'
@@ -92,7 +91,7 @@ class GlobalDBHandler():
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
     _data_directory: Optional[Path] = None
-    conn: 'SqliteConnection'
+    conn: DBConnection
 
     def __new__(
             cls,
@@ -401,7 +400,7 @@ class GlobalDBHandler():
 
     @staticmethod
     def _add_underlying_tokens(
-            connection: 'SqliteConnection',
+            connection: DBConnection,
             parent_token_address: ChecksumEthAddress,
             underlying_tokens: List[UnderlyingToken],
     ) -> None:
@@ -1252,60 +1251,60 @@ class GlobalDBHandler():
 
         connection = GlobalDBHandler().conn
         cursor = connection.cursor()
-        user_db_cursor = user_db.conn.cursor()
-        root_dir = Path(__file__).resolve().parent.parent
-        builtin_database = root_dir / 'data' / 'global.db'
+        with user_db.user_write() as user_db_cursor:
+            root_dir = Path(__file__).resolve().parent.parent
+            builtin_database = root_dir / 'data' / 'global.db'
 
-        # Update owned assets
-        user_db.update_owned_assets_in_globaldb()
+            # Update owned assets
+            user_db.update_owned_assets_in_globaldb(user_db_cursor)
 
-        try:
-            # First check that the operation can be made. If the difference
-            # is not the empty set the operation is dangerous and the user should be notified.
-            diff_ids = GlobalDBHandler().get_user_added_assets(user_db=user_db, only_owned=True)
-            if len(diff_ids) != 0 and not force:
-                msg = 'There are assets that can not be deleted. Check logs for more details.'
-                return False, msg
-            cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
-            # Check that versions match
-            query = cursor.execute('SELECT value from clean_db.settings WHERE name="version";')
-            version = query.fetchone()
-            if int(version[0]) != _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION):
+            try:
+                # First check that the operation can be made. If the difference
+                # is not the empty set the operation is dangerous and the user should be notified.
+                diff_ids = GlobalDBHandler().get_user_added_assets(user_db_cursor, user_db=user_db, only_owned=True)  # noqa: E501
+                if len(diff_ids) != 0 and not force:
+                    msg = 'There are assets that can not be deleted. Check logs for more details.'
+                    return False, msg
+                cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
+                # Check that versions match
+                query = cursor.execute('SELECT value from clean_db.settings WHERE name="version";')
+                version = query.fetchone()
+                if version is None or int(version[0]) != _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
+                    cursor.execute(detach_database)
+                    msg = (
+                        'Failed to restore assets. Global database is not '
+                        'updated to the latest version'
+                    )
+                    return False, msg
+                # If versions match drop tables
+                cursor.execute('PRAGMA foreign_keys = OFF;')
+                cursor.execute('DELETE FROM assets;')
+                cursor.execute('DELETE FROM ethereum_tokens;')
+                cursor.execute('DELETE FROM underlying_tokens_list;')
+                cursor.execute('DELETE FROM common_asset_details;')
+                cursor.execute('DELETE FROM user_owned_assets;')
+                # Copy assets
+                cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
+                cursor.execute('INSERT INTO ethereum_tokens SELECT * FROM clean_db.ethereum_tokens;')  # noqa: E501
+                cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
+                cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+                cursor.execute('PRAGMA foreign_keys = ON;')
+
+                user_db_cursor.execute('PRAGMA foreign_keys = OFF;')
+                user_db_cursor.execute('DELETE FROM assets;')
+                # Get ids for assets to insert them in the user db
+                cursor.execute('SELECT identifier from assets')
+                ids = cursor.fetchall()
+                ids_proccesed = ", ".join([f'("{id[0]}")' for id in ids])
+                user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')
+                user_db_cursor.execute('PRAGMA foreign_keys = ON;')
+                # Update the owned assets table
+                user_db.update_owned_assets_in_globaldb(user_db_cursor)
+            except sqlite3.Error as e:
+                connection.rollback()
                 cursor.execute(detach_database)
-                msg = (
-                    'Failed to restore assets. Global database is not '
-                    'updated to the latest version'
-                )
-                return False, msg
-            # If versions match drop tables
-            cursor.execute('PRAGMA foreign_keys = OFF;')
-            cursor.execute('DELETE FROM assets;')
-            cursor.execute('DELETE FROM ethereum_tokens;')
-            cursor.execute('DELETE FROM underlying_tokens_list;')
-            cursor.execute('DELETE FROM common_asset_details;')
-            cursor.execute('DELETE FROM user_owned_assets;')
-            # Copy assets
-            cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
-            cursor.execute('INSERT INTO ethereum_tokens SELECT * FROM clean_db.ethereum_tokens;')
-            cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
-            cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
-            cursor.execute('PRAGMA foreign_keys = ON;')
-
-            user_db_cursor.execute('PRAGMA foreign_keys = OFF;')
-            user_db_cursor.execute('DELETE FROM assets;')
-            # Get ids for assets to insert them in the user db
-            cursor.execute('SELECT identifier from assets')
-            ids = cursor.fetchall()
-            ids_proccesed = ", ".join([f'("{id[0]}")' for id in ids])
-            user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')
-            user_db_cursor.execute('PRAGMA foreign_keys = ON;')
-            # Update the owned assets table
-            user_db.update_owned_assets_in_globaldb()
-        except sqlite3.Error as e:
-            connection.rollback()
-            cursor.execute(detach_database)
-            log.error(f'Failed to restore assets in globaldb due to {str(e)}')
-            return False, 'Failed to restore assets. Read logs to get more information.'
+                log.error(f'Failed to restore assets in globaldb due to {str(e)}')
+                return False, 'Failed to restore assets. Read logs to get more information.'
 
         connection.commit()
         cursor.execute(detach_database)
@@ -1329,7 +1328,7 @@ class GlobalDBHandler():
             # Check that versions match
             query = cursor.execute('SELECT value from clean_db.settings WHERE name="version";')
             version = query.fetchone()
-            if int(version[0]) != _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION):
+            if version is None or int(version[0]) != _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
                 cursor.execute(detach_database)
                 msg = (
                     'Failed to restore assets. Global database is not '
@@ -1370,8 +1369,9 @@ class GlobalDBHandler():
 
     @staticmethod
     def get_user_added_assets(
-        user_db: 'DBHandler',
-        only_owned: bool = False,
+            user_db_write_cursor: 'DBCursor',
+            user_db: 'DBHandler',
+            only_owned: bool = False,
     ) -> Set[str]:
         """
         Create a list of the asset identifiers added by the user. If only_owned
@@ -1384,7 +1384,7 @@ class GlobalDBHandler():
         root_dir = Path(__file__).resolve().parent.parent
         builtin_database = root_dir / 'data' / 'global.db'
         # Update the list of owned assets
-        user_db.update_owned_assets_in_globaldb()
+        user_db.update_owned_assets_in_globaldb(user_db_write_cursor)
         if only_owned:
             query = cursor.execute('SELECT asset_id from user_owned_assets;')
         else:

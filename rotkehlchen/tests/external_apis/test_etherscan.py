@@ -28,7 +28,7 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory):
     # Test with etherscan API key
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)
     if api_key:
-        db.add_external_service_credentials(credentials=[
+        db.add_external_service_credentials(credentials=[  # pylint: disable=no-value-for-parameter
             ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=api_key),
         ])
     etherscan = Etherscan(database=db, msg_aggregator=function_scope_messages_aggregator)

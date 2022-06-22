@@ -32,6 +32,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
 
+from .db import add_balancer_events, get_balancer_events
 from .graph import (
     ADD_LIQUIDITIES_QUERY,
     BURNS_QUERY,
@@ -85,6 +86,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.balance import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.driver.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -176,6 +178,7 @@ class Balancer(EthereumModule):
 
     def _fetch_trades_from_db(
             self,
+            cursor: 'DBCursor',
             addresses: List[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -184,6 +187,7 @@ class Balancer(EthereumModule):
         db_address_to_trades: AddressToTrades = {}
         for address in addresses:
             db_swaps = self.database.get_amm_swaps(
+                cursor=cursor,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 location=Location.BALANCER,
@@ -340,12 +344,14 @@ class Balancer(EthereumModule):
             end_ts=to_timestamp,
             event_type=BalancerInvestEventType.REMOVE_LIQUIDITY,
         )
-        self._update_used_query_range(
-            addresses=addresses,
-            prefix='balancer_events',
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
+        with self.database.user_write() as cursor:
+            self._update_used_query_range(
+                write_cursor=cursor,
+                addresses=addresses,
+                prefix='balancer_events',
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
         addresses_with_events = (
             set(address_to_add_liquidity_events.keys())
             .union(set(address_to_remove_liquidity_events.keys()))
@@ -479,6 +485,7 @@ class Balancer(EthereumModule):
 
     def _get_address_to_pool_events_balances(
             self,
+            write_cursor: 'DBCursor',
             addresses: List[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -494,7 +501,7 @@ class Balancer(EthereumModule):
         # Get the events last used query range of the addresses
         for address in addresses:
             entry_name = f'{BALANCER_EVENTS_PREFIX}_{address}'
-            trades_range = self.database.get_used_query_range(name=entry_name)
+            trades_range = self.database.get_used_query_range(cursor=write_cursor, name=entry_name)
 
             if not trades_range:
                 new_addresses.append(address)
@@ -526,14 +533,16 @@ class Balancer(EthereumModule):
             balancer_events = self._get_balancer_aggregated_events_data(
                 address_to_events_data=address_to_events_data,
             )
-            self.database.add_balancer_events(balancer_events)
+            add_balancer_events(write_cursor, balancer_events, self.msg_aggregator)
 
         # Calculate the balance of the events per pool at the given timestamp per address.
         # NB: take into account the current balances of each address in the protocol
         db_address_to_events: AddressToEvents = {}
         db_pool_addresses: Set[EthereumToken] = set()
         for address in addresses:
-            db_events = self.database.get_balancer_events(
+            db_events = get_balancer_events(
+                cursor=write_cursor,
+                msg_aggregator=self.msg_aggregator,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
                 address=address,
@@ -675,66 +684,73 @@ class Balancer(EthereumModule):
         existing_addresses: List[ChecksumEthAddress] = []
         min_to_timestamp: Timestamp = to_timestamp
 
-        if only_cache:
+        with self.database.conn.read_ctx() as cursor:
+            if only_cache:
+                return self._fetch_trades_from_db(
+                    cursor=cursor,
+                    addresses=addresses,
+                    from_timestamp=from_timestamp,
+                    to_timestamp=to_timestamp,
+                )
+
+            # Get the trades last used query range of the addresses
+            for address in addresses:
+                entry_name = f'{BALANCER_TRADES_PREFIX}_{address}'
+                trades_range = self.database.get_used_query_range(cursor=cursor, name=entry_name)
+
+                if not trades_range:
+                    new_addresses.append(address)
+                else:
+                    existing_addresses.append(address)
+                    min_to_timestamp = min(min_to_timestamp, trades_range[1])
+
+        address_to_swaps: AddressToSwaps = {}
+        with self.database.user_write() as cursor:
+            # Request new addresses' trades
+            if new_addresses:
+                start_ts = Timestamp(0)
+                address_to_swaps_ = self._get_address_to_swaps_graph(
+                    addresses=new_addresses,
+                    start_ts=start_ts,
+                    end_ts=to_timestamp,
+                )
+                address_to_swaps.update(address_to_swaps_)
+                self._update_used_query_range(
+                    write_cursor=cursor,
+                    addresses=new_addresses,
+                    prefix='balancer_trades',
+                    from_timestamp=start_ts,
+                    to_timestamp=to_timestamp,
+                )
+
+            # Request existing DB addresses' trades
+            if existing_addresses and to_timestamp > min_to_timestamp:
+                address_to_swaps_ = self._get_address_to_swaps_graph(
+                    addresses=existing_addresses,
+                    start_ts=min_to_timestamp,
+                    end_ts=to_timestamp,
+                )
+                address_to_swaps.update(address_to_swaps_)
+                self._update_used_query_range(
+                    write_cursor=cursor,
+                    addresses=existing_addresses,
+                    prefix='balancer_trades',
+                    from_timestamp=min_to_timestamp,
+                    to_timestamp=to_timestamp,
+                )
+
+            # Insert all swaps to the DB
+            if address_to_swaps:
+                all_swaps = [swap for a_swaps in address_to_swaps.values() for swap in a_swaps]
+                self.database.add_amm_swaps(cursor, all_swaps)
+
+        with self.database.conn.read_ctx() as cursor:
             return self._fetch_trades_from_db(
+                cursor=cursor,
                 addresses=addresses,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
             )
-
-        # Get the trades last used query range of the addresses
-        for address in addresses:
-            entry_name = f'{BALANCER_TRADES_PREFIX}_{address}'
-            trades_range = self.database.get_used_query_range(name=entry_name)
-
-            if not trades_range:
-                new_addresses.append(address)
-            else:
-                existing_addresses.append(address)
-                min_to_timestamp = min(min_to_timestamp, trades_range[1])
-
-        address_to_swaps: AddressToSwaps = {}
-        # Request new addresses' trades
-        if new_addresses:
-            start_ts = Timestamp(0)
-            address_to_swaps_ = self._get_address_to_swaps_graph(
-                addresses=new_addresses,
-                start_ts=start_ts,
-                end_ts=to_timestamp,
-            )
-            address_to_swaps.update(address_to_swaps_)
-            self._update_used_query_range(
-                addresses=new_addresses,
-                prefix='balancer_trades',
-                from_timestamp=start_ts,
-                to_timestamp=to_timestamp,
-            )
-
-        # Request existing DB addresses' trades
-        if existing_addresses and to_timestamp > min_to_timestamp:
-            address_to_swaps_ = self._get_address_to_swaps_graph(
-                addresses=existing_addresses,
-                start_ts=min_to_timestamp,
-                end_ts=to_timestamp,
-            )
-            address_to_swaps.update(address_to_swaps_)
-            self._update_used_query_range(
-                addresses=existing_addresses,
-                prefix='balancer_trades',
-                from_timestamp=min_to_timestamp,
-                to_timestamp=to_timestamp,
-            )
-
-        # Insert all swaps to the DB
-        if address_to_swaps:
-            all_swaps = [swap for a_swaps in address_to_swaps.values() for swap in a_swaps]
-            self.database.add_amm_swaps(all_swaps)
-
-        return self._fetch_trades_from_db(
-            addresses=addresses,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
 
     def _get_balancer_aggregated_events_data(
             self,
@@ -1260,6 +1276,7 @@ class Balancer(EthereumModule):
 
     def _update_used_query_range(
             self,
+            write_cursor: 'DBCursor',
             addresses: List[ChecksumEthAddress],
             prefix: Literal['balancer_events', 'balancer_trades'],
             from_timestamp: Timestamp,
@@ -1268,6 +1285,7 @@ class Balancer(EthereumModule):
         for address in addresses:
             entry_name = f'{prefix}_{address}'
             self.database.update_used_query_range(
+                write_cursor=write_cursor,
                 name=entry_name,
                 start_ts=from_timestamp,
                 end_ts=to_timestamp,
@@ -1306,13 +1324,15 @@ class Balancer(EthereumModule):
         """
         with self.trades_lock:
             if reset_db_data is True:
-                self.database.delete_balancer_events_data()
+                with self.database.user_write() as cursor:
+                    self.database.delete_balancer_events_data(cursor)
 
-            address_to_pool_events_balances = self._get_address_to_pool_events_balances(
-                addresses=addresses,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
+                address_to_pool_events_balances = self._get_address_to_pool_events_balances(
+                    write_cursor=cursor,
+                    addresses=addresses,
+                    from_timestamp=from_timestamp,
+                    to_timestamp=to_timestamp,
+                )
 
         return address_to_pool_events_balances
 
@@ -1352,7 +1372,8 @@ class Balancer(EthereumModule):
         """
         with self.trades_lock:
             if reset_db_data is True:
-                self.database.delete_balancer_trades_data()
+                with self.database.user_write() as cursor:
+                    self.database.delete_balancer_trades_data(cursor)
 
             address_to_trades = self._get_address_to_trades(
                 addresses=addresses,
@@ -1371,5 +1392,6 @@ class Balancer(EthereumModule):
         pass
 
     def deactivate(self) -> None:
-        self.database.delete_balancer_events_data()
-        self.database.delete_balancer_trades_data()
+        with self.database.user_write() as cursor:
+            self.database.delete_balancer_events_data(cursor)
+            self.database.delete_balancer_trades_data(cursor)

@@ -322,43 +322,44 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
     _populate_db_with_balances(db, ts)
     _populate_db_with_location_data(db, ts)
 
-    rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'per_timestamp_db_snapshots_resource',
-            timestamp=ts,
-            path=csv_dir,
-            action='export',
-        ),
-    )
-    assert_csv_export_response(response, csv_dir, main_currency=A_EUR, is_download=False)
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
+        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'per_timestamp_db_snapshots_resource',
+                timestamp=ts,
+                path=csv_dir,
+                action='export',
+            ),
+        )
+        assert_csv_export_response(response, csv_dir, main_currency=A_EUR, is_download=False)
 
-    rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_ETH))  # noqa: E501
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'per_timestamp_db_snapshots_resource',
-            timestamp=ts,
-            path=csv_dir2,
-            action='export',
-        ),
-    )
-    assert_csv_export_response(response, csv_dir2, main_currency=A_ETH, is_download=False)
+        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_ETH))  # noqa: E501
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'per_timestamp_db_snapshots_resource',
+                timestamp=ts,
+                path=csv_dir2,
+                action='export',
+            ),
+        )
+        assert_csv_export_response(response, csv_dir2, main_currency=A_ETH, is_download=False)
 
-    rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_USD))  # noqa: E501
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'per_timestamp_db_snapshots_resource',
-            timestamp=ts,
-            action='export',
-        ),
-    )
-    assert_error_response(
-        response,
-        contained_in_msg='A path has to be provided when action is export',
-    )
+        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_USD))  # noqa: E501
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'per_timestamp_db_snapshots_resource',
+                timestamp=ts,
+                action='export',
+            ),
+        )
+        assert_error_response(
+            response,
+            contained_in_msg='A path has to be provided when action is export',
+        )
 
 
 def test_download_snapshot(rotkehlchen_api_server):
@@ -367,7 +368,8 @@ def test_download_snapshot(rotkehlchen_api_server):
     _populate_db_with_balances(db, ts)
     _populate_db_with_location_data(db, ts)
 
-    rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
+        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -390,7 +392,8 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     ts = ts_now()
     _populate_db_with_balances(db, ts)
     _populate_db_with_location_data(db, ts)
-    rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
+        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
 
     # check that importing a valid snapshot passes using PUT
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
@@ -513,7 +516,8 @@ def test_delete_snapshot(rotkehlchen_api_server):
     ts = ts_now()
     _populate_db_with_balances(db, ts)
     _populate_db_with_location_data(db, ts)
-    rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
+        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(cursor, main_currency=A_EUR))  # noqa: E501
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,

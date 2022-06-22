@@ -4,9 +4,8 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
-    from sqlite3 import Connection, Cursor
-
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
 
 
 class V25V26UpgradeHelper():
@@ -38,7 +37,7 @@ class V25V26UpgradeHelper():
         self.all_asset_ids = {x[0] for x in query}
 
     @staticmethod
-    def create_tables(conn: 'Connection') -> None:
+    def create_tables(conn: 'DBConnection') -> None:
         """Create tables that are used in this upgrade"""
         conn.executescript("""
         CREATE TABLE IF NOT EXISTS user_credentials_mappings (
@@ -55,7 +54,7 @@ class V25V26UpgradeHelper():
         );
         """)
 
-    def upgrade_user_credentials(self, cursor: 'Cursor') -> None:
+    def upgrade_user_credentials(self, cursor: 'DBCursor') -> None:
         # get old data
         query = cursor.execute(
             'SELECT name, api_key, api_secret, passphrase FROM user_credentials;',
@@ -99,7 +98,7 @@ class V25V26UpgradeHelper():
         )
 
     @staticmethod
-    def migrate_kraken_account_type(cursor: 'Cursor') -> None:
+    def migrate_kraken_account_type(cursor: 'DBCursor') -> None:
         settings = cursor.execute(
             'SELECT name, value from settings WHERE name="kraken_account_type";',
         ).fetchone()
@@ -123,7 +122,7 @@ class V25V26UpgradeHelper():
         )
 
     @staticmethod
-    def purge_binanceus(cursor: 'Cursor') -> None:
+    def purge_binanceus(cursor: 'DBCursor') -> None:
         # Delete the old way of naming binanceus in used query ranges
         cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
@@ -134,7 +133,7 @@ class V25V26UpgradeHelper():
 
     def _process_asset_identifiers(
             self,
-            cursor: 'Cursor',
+            cursor: 'DBCursor',
             asset_ids: Set[str],
             table_name: str,
     ) -> None:
@@ -162,7 +161,7 @@ class V25V26UpgradeHelper():
                 )
                 return
 
-    def upgrade_timed_balances(self, cursor: 'Cursor') -> None:
+    def upgrade_timed_balances(self, cursor: 'DBCursor') -> None:
         query = cursor.execute(
             'SELECT category, time, currency, amount, usd_value FROM timed_balances;',
         )
@@ -195,7 +194,7 @@ class V25V26UpgradeHelper():
             new_tuples,
         )
 
-    def upgrade_manually_tracked_balances(self, cursor: 'Cursor') -> None:
+    def upgrade_manually_tracked_balances(self, cursor: 'DBCursor') -> None:
         query = cursor.execute(
             'SELECT asset, label, amount, location FROM manually_tracked_balances;',
         )
@@ -226,7 +225,7 @@ class V25V26UpgradeHelper():
             new_tuples,
         )
 
-    def upgrade_margin_positions(self, cursor: 'Cursor') -> None:
+    def upgrade_margin_positions(self, cursor: 'DBCursor') -> None:
         query = cursor.execute(
             'SELECT id, location, open_time, close_time, profit_loss, pl_currency, fee, fee_currency, link, notes FROM margin_positions;',  # noqa: E501
         )
@@ -266,7 +265,7 @@ class V25V26UpgradeHelper():
             new_tuples,
         )
 
-    def upgrade_asset_movements(self, cursor: 'Cursor') -> None:
+    def upgrade_asset_movements(self, cursor: 'DBCursor') -> None:
         query = cursor.execute(
             'SELECT id, location, category, address, transaction_id, time, asset, amount, fee_asset, fee, link FROM asset_movements;',  # noqa: E501
         )
@@ -307,7 +306,7 @@ class V25V26UpgradeHelper():
             new_tuples,
         )
 
-    def upgrade_ledger_actions(self, cursor: 'Cursor') -> None:
+    def upgrade_ledger_actions(self, cursor: 'DBCursor') -> None:
         query = cursor.execute(
             'SELECT identifier, timestamp, type, location, amount, asset, rate, rate_asset, link, notes FROM ledger_actions;',  # noqa: E501
         )
@@ -346,7 +345,7 @@ class V25V26UpgradeHelper():
             new_tuples,
         )
 
-    def upgrade_trades(self, cursor: 'Cursor') -> None:
+    def upgrade_trades(self, cursor: 'DBCursor') -> None:
         query = cursor.execute(
             'SELECT id, time, location, base_asset, quote_asset, type, amount, rate, fee, fee_currency, link, notes FROM trades;',  # noqa: E501
         )
@@ -389,7 +388,7 @@ class V25V26UpgradeHelper():
             new_tuples,
         )
 
-    def introduce_assets_table(self, cursor: 'Cursor') -> None:
+    def introduce_assets_table(self, cursor: 'DBCursor') -> None:
         """
         Does the migration to the assets table.
         https://github.com/rotki/rotki/issues/2906

@@ -7,6 +7,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 class DBEns:
@@ -14,8 +15,9 @@ class DBEns:
     def __init__(self, db_handler: 'DBHandler') -> None:
         self.db = db_handler
 
-    def add_ens_mapping(
+    def add_ens_mapping(    # pylint: disable=no-self-use
             self,
+            write_cursor: 'DBCursor',
             address: ChecksumEthAddress,
             name: Optional[str],
             now: Timestamp,
@@ -27,17 +29,17 @@ class DBEns:
 
         May raise:
         """
-        cursor = self.db.conn.cursor()
-        cursor.execute(
+        write_cursor.execute(
             'INSERT INTO ens_mappings (ens_name, address, last_update) '
             'VALUES (?, ?, ?) ON CONFLICT(address) '
             'DO UPDATE SET ens_name=excluded.ens_name, last_update=excluded.last_update; ',
             (name, address, now),
         )
 
-    def get_reverse_ens(
-        self,
-        addresses: List[ChecksumEthAddress],
+    def get_reverse_ens(    # pylint: disable=no-self-use
+            self,
+            cursor: 'DBCursor',
+            addresses: List[ChecksumEthAddress],
     ) -> Dict[ChecksumEthAddress, Union[EnsMapping, Timestamp]]:
         """Returns a mapping of addresses to ens mappings if found in the DB
 
@@ -45,13 +47,12 @@ class DBEns:
         - If the address maps to None in the DB then address maps to last update in return dict
         - If address is not found in the DB it's not in the result
         """
-        cursor = self.db.conn.cursor()
-        data = cursor.execute(
+        cursor.execute(
             f'SELECT ens_name, address, last_update FROM ens_mappings WHERE address IN (? {", ?"*(len(addresses) - 1)})',  # noqa: E501
             addresses,
         )
         result = {}
-        for ens_name, raw_address, last_update in data:
+        for ens_name, raw_address, last_update in cursor:
             address = ChecksumEthAddress(raw_address)
             if ens_name is None:
                 result[address] = last_update
@@ -66,6 +67,7 @@ class DBEns:
 
     def update_values(
             self,
+            write_cursor: 'DBCursor',
             ens_lookup_results: Dict[ChecksumEthAddress, Optional[str]],
             mappings_to_send: Dict[ChecksumEthAddress, str],
     ) -> Dict[ChecksumEthAddress, str]:
@@ -73,15 +75,14 @@ class DBEns:
         now = ts_now()
         for address, name in ens_lookup_results.items():
             try:
-                self.add_ens_mapping(address=address, name=name, now=now)
+                self.add_ens_mapping(write_cursor, address=address, name=name, now=now)
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 # Means that we have an old name mapping in the DB which has by now expired
                 cursor = self.db.conn.cursor()
                 cursor.execute('DELETE FROM ens_mappings WHERE ens_name=?', (name,))
-                self.add_ens_mapping(address=address, name=name, now=now)
+                self.add_ens_mapping(write_cursor, address=address, name=name, now=now)
 
             if name is not None:
                 mappings_to_send[address] = name
 
-        self.db.update_last_write()
         return mappings_to_send

@@ -120,7 +120,8 @@ class HasDSProxy(EthereumModule):
         if now - self.last_proxy_mapping_query_ts < DS_REQUERY_PERIOD:
             return self.address_to_proxy
 
-        accounts = self.database.get_blockchain_accounts()
+        with self.database.conn.read_ctx() as cursor:
+            accounts = self.database.get_blockchain_accounts(cursor)
         eth_accounts = accounts.eth
         mapping = self._get_accounts_proxy(eth_accounts)
 

@@ -97,7 +97,8 @@ def test_deserialize_location(database):
     # Also write and read each location to DB to make sure that
     # location.serialize_for_db() and deserialize_location_from_db work fine
     add_manually_tracked_balances(database, balances)
-    balances = database.get_manually_tracked_balances()
+    with database.conn.read_ctx() as cursor:
+        balances = database.get_manually_tracked_balances(cursor)
     for data in Location:
         assert data in (x.location for x in balances)
 

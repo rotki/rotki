@@ -26,20 +26,22 @@ def test_get_associated_locations(
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     mock_exchange_data_in_db(added_exchanges, rotki)
     db = rotki.data.db
-
-    db.add_trades([Trade(
-        timestamp=Timestamp(1595833195),
-        location=Location.NEXO,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('1.0')),
-        rate=Price(FVal('281.14')),
-        fee=Fee(ZERO),
-        fee_currency=A_EUR,
-        link='',
-        notes='',
-    )])
+    with db.user_write() as cursor:
+        db.add_trades(
+            write_cursor=cursor,
+            trades=[Trade(
+                timestamp=Timestamp(1595833195),
+                location=Location.NEXO,
+                base_asset=A_ETH,
+                quote_asset=A_EUR,
+                trade_type=TradeType.BUY,
+                amount=AssetAmount(FVal('1.0')),
+                rate=Price(FVal('281.14')),
+                fee=Fee(ZERO),
+                fee_currency=A_EUR,
+                link='',
+                notes='',
+            )])
 
     # get locations
     response = requests.get(

@@ -361,15 +361,16 @@ def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_acco
     _query_borrowing_aave_history_test(setup, rotkehlchen_api_server)
 
     # Make sure events end up in the DB
-    assert len(rotki.data.db.get_aave_events(AAVE_TEST_ACC_3)) != 0
-    # test aave data purging from the db works
-    response = requests.delete(api_url_for(
-        rotkehlchen_api_server,
-        'namedethereummoduledataresource',
-        module_name='aave',
-    ))
-    assert_simple_ok_response(response)
-    assert len(rotki.data.db.get_aave_events(AAVE_TEST_ACC_3)) == 0
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(rotki.data.db.get_aave_events(cursor, AAVE_TEST_ACC_3)) != 0
+        # test aave data purging from the db works
+        response = requests.delete(api_url_for(
+            rotkehlchen_api_server,
+            'namedethereummoduledataresource',
+            module_name='aave',
+        ))
+        assert_simple_ok_response(response)
+        assert len(rotki.data.db.get_aave_events(cursor, AAVE_TEST_ACC_3)) == 0
 
 
 def _test_for_duplicates_and_negatives(setup: BalancesTestSetup, server: APIServer) -> None:

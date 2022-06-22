@@ -226,15 +226,17 @@ def test_add_and_query_manually_tracked_balances(
     assert len(liabilities) == 2
     assert liabilities['ETH']['amount'] == '2'
     assert liabilities['USD']['amount'] == '100'
+
     # Check DB to make sure a save happened
-    assert rotki.data.db.get_last_balance_save_time() >= now
-    assert set(rotki.data.db.query_owned_assets()) == {
-        'BTC',
-        'XMR',
-        A_BNB.identifier,
-        'ETH',
-        A_RDN.identifier,
-    }
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert rotki.data.db.get_last_balance_save_time(cursor) >= now
+        assert set(rotki.data.db.query_owned_assets(cursor)) == {
+            'BTC',
+            'XMR',
+            A_BNB.identifier,
+            'ETH',
+            A_RDN.identifier,
+        }
 
 
 A_CYFM = EthereumToken('0x3f06B5D78406cD97bdf10f5C420B241D32759c80')

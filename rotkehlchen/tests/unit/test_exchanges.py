@@ -44,12 +44,13 @@ def test_exchanges_filtering(database, exchange_manager, function_scope_messages
     exchange_manager.connected_exchanges[Location.FTX].append(ftx2)
     assert set(exchange_manager.iterate_exchanges()) == {kraken1, kraken2, ftx1, ftx2}
 
-    database.set_settings(ModifiableDBSettings(
-        non_syncing_exchanges=[kraken1.location_id(), kraken2.location_id()],
-    ))
-    assert set(exchange_manager.iterate_exchanges()) == {ftx1, ftx2}
+    with database.user_write() as cursor:
+        database.set_settings(cursor, ModifiableDBSettings(
+            non_syncing_exchanges=[kraken1.location_id(), kraken2.location_id()],
+        ))
+        assert set(exchange_manager.iterate_exchanges()) == {ftx1, ftx2}
 
-    database.set_settings(ModifiableDBSettings(
-        non_syncing_exchanges=[ftx1.location_id()],
-    ))
-    assert set(exchange_manager.iterate_exchanges()) == {ftx2, kraken1, kraken2}
+        database.set_settings(cursor, ModifiableDBSettings(
+            non_syncing_exchanges=[ftx1.location_id()],
+        ))
+        assert set(exchange_manager.iterate_exchanges()) == {ftx2, kraken1, kraken2}

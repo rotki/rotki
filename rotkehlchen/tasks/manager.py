@@ -151,8 +151,9 @@ class TaskManager():
         if len(self.cryptocompare_queries) != 0:
             return
 
-        assets = self.database.query_owned_assets()
-        main_currency = self.database.get_main_currency()
+        with self.database.conn.read_ctx() as cursor:
+            assets = self.database.query_owned_assets(cursor)
+            main_currency = self.database.get_setting(cursor=cursor, name='main_currency')
         for asset in assets:
 
             if asset.is_fiat() and main_currency.is_fiat():
@@ -217,7 +218,8 @@ class TaskManager():
         if now - self.last_xpub_derivation_ts <= XPUB_DERIVATION_FREQUENCY:
             return
 
-        xpubs = self.database.get_bitcoin_xpub_data()
+        with self.database.conn.read_ctx() as cursor:
+            xpubs = self.database.get_bitcoin_xpub_data(cursor)
         if len(xpubs) == 0:
             return
 
@@ -240,17 +242,18 @@ class TaskManager():
 
     def _maybe_query_ethereum_transactions(self) -> None:
         """Schedules the ethereum transaction query task if enough time has passed"""
-        accounts = self.database.get_blockchain_accounts().eth
-        if len(accounts) == 0:
-            return
+        with self.database.conn.read_ctx() as cursor:
+            accounts = self.database.get_blockchain_accounts(cursor).eth
+            if len(accounts) == 0:
+                return
 
-        now = ts_now()
-        dbethtx = DBEthTx(self.database)
-        queriable_accounts = []
-        for account in accounts:
-            _, end_ts = dbethtx.get_queried_range(account)
-            if now - max(self.last_eth_tx_query_ts[account], end_ts) > ETH_TX_QUERY_FREQUENCY:
-                queriable_accounts.append(account)
+            now = ts_now()
+            dbethtx = DBEthTx(self.database)
+            queriable_accounts = []
+            for account in accounts:
+                _, end_ts = dbethtx.get_queried_range(cursor, account)
+                if now - max(self.last_eth_tx_query_ts[account], end_ts) > ETH_TX_QUERY_FREQUENCY:
+                    queriable_accounts.append(account)
 
         if len(queriable_accounts) == 0:
             return
@@ -298,13 +301,14 @@ class TaskManager():
 
         now = ts_now()
         queriable_exchanges = []
-        for exchange in self.exchange_manager.iterate_exchanges():
-            if exchange.location in (Location.BINANCE, Location.BINANCEUS):
-                continue  # skip binance due to the way their history is queried and rate limiting
-            queried_range = self.database.get_used_query_range(f'{str(exchange.location)}_trades')
-            end_ts = queried_range[1] if queried_range else 0
-            if now - max(self.last_exchange_query_ts[exchange.location_id()], end_ts) > EXCHANGE_QUERY_FREQUENCY:  # noqa: E501
-                queriable_exchanges.append(exchange)
+        with self.database.conn.read_ctx() as cursor:
+            for exchange in self.exchange_manager.iterate_exchanges():
+                if exchange.location in (Location.BINANCE, Location.BINANCEUS):
+                    continue  # skip binance due to the way their history is queried
+                queried_range = self.database.get_used_query_range(cursor, f'{str(exchange.location)}_trades')  # noqa: E501
+                end_ts = queried_range[1] if queried_range else 0
+                if now - max(self.last_exchange_query_ts[exchange.location_id()], end_ts) > EXCHANGE_QUERY_FREQUENCY:  # noqa: E501
+                    queriable_exchanges.append(exchange)
 
         if len(queriable_exchanges) == 0:
             return
@@ -390,9 +394,8 @@ class TaskManager():
             updates.append((str(usd_value), identifier))
 
         query = 'UPDATE history_events SET usd_value=? WHERE rowid=?'
-        cursor = self.database.conn.cursor()
-        cursor.executemany(query, updates)
-        self.database.update_last_write()
+        with self.database.user_write() as cursor:
+            cursor.executemany(query, updates)
 
     def _maybe_decode_evm_transactions(self) -> None:
         """Schedules the evm transaction decoding task
@@ -426,7 +429,8 @@ class TaskManager():
         if now - self.last_premium_status_check < PREMIUM_STATUS_CHECK:
             return
 
-        db_credentials = self.database.get_rotkehlchen_premium()
+        with self.database.conn.read_ctx() as cursor:
+            db_credentials = self.database.get_rotkehlchen_premium(cursor)
         if db_credentials is None:
             self.last_premium_status_check = now
             return
@@ -473,19 +477,20 @@ class TaskManager():
         Update the balances of a user if the difference between last time they were updated
         and the current time exceeds the `balance_save_frequency`.
         """
-        if self.database.should_save_balances():
-            task_name = 'Periodically update snapshot balances'
-            log.debug(f'Scheduling task to {task_name}')
-            self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name=task_name,
-                exception_is_error=True,
-                method=self.query_balances,
-                requested_save_data=True,
-                save_despite_errors=False,
-                timestamp=None,
-                ignore_cache=True,
-            )
+        with self.database.conn.read_ctx() as cursor:
+            if self.database.should_save_balances(cursor):
+                task_name = 'Periodically update snapshot balances'
+                log.debug(f'Scheduling task to {task_name}')
+                self.greenlet_manager.spawn_and_track(
+                    after_seconds=None,
+                    task_name=task_name,
+                    exception_is_error=True,
+                    method=self.query_balances,
+                    requested_save_data=True,
+                    save_despite_errors=False,
+                    timestamp=None,
+                    ignore_cache=True,
+                )
 
     def _schedule(self) -> None:
         """Schedules background tasks"""

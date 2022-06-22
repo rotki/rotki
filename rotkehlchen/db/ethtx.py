@@ -33,6 +33,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
@@ -44,6 +45,7 @@ class DBEthTx():
 
     def add_ethereum_transactions(
             self,
+            write_cursor: 'DBCursor',
             ethereum_transactions: List[EthereumTransaction],
             relevant_address: Optional[ChecksumEthAddress],
     ) -> None:
@@ -80,6 +82,7 @@ class DBEthTx():
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.db.write_tuples(
+            write_cursor=write_cursor,
             tuple_type='ethereum_transaction',
             query=query,
             tuples=tx_tuples,
@@ -88,6 +91,7 @@ class DBEthTx():
 
     def add_ethereum_internal_transactions(
             self,
+            write_cursor: 'DBCursor',
             transactions: List[EthereumInternalTransaction],
             relevant_address: ChecksumEthAddress,
     ) -> None:
@@ -116,6 +120,7 @@ class DBEthTx():
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """
         self.db.write_tuples(
+            write_cursor=write_cursor,
             tuple_type='ethereum_transaction',
             query=query,
             tuples=tx_tuples,
@@ -149,6 +154,7 @@ class DBEthTx():
 
     def get_ethereum_transactions(
             self,
+            cursor: 'DBCursor',
             filter_: ETHTransactionsFilterQuery,
             has_premium: bool,
     ) -> List[EthereumTransaction]:
@@ -159,7 +165,6 @@ class DBEthTx():
         - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to invalid
         filtering arguments.
         """
-        cursor = self.db.conn.cursor()
         query, bindings = filter_.prepare()
         if has_premium:
             query = 'SELECT DISTINCT ethereum_transactions.tx_hash, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM ethereum_transactions ' + query  # noqa: E501
@@ -197,6 +202,7 @@ class DBEthTx():
 
     def get_ethereum_transactions_and_limit_info(
             self,
+            cursor: 'DBCursor',
             filter_: ETHTransactionsFilterQuery,
             has_premium: bool,
     ) -> Tuple[List[EthereumTransaction], int]:
@@ -204,27 +210,24 @@ class DBEthTx():
 
         Also returns how many are the total found for the filter.
         """
-        txs = self.get_ethereum_transactions(filter_=filter_, has_premium=has_premium)
-        cursor = self.db.conn.cursor()
+        txs = self.get_ethereum_transactions(cursor, filter_=filter_, has_premium=has_premium)
         query, bindings = filter_.prepare(with_pagination=False)
         query = 'SELECT COUNT(DISTINCT ethereum_transactions.tx_hash) FROM ethereum_transactions ' + query  # noqa: E501
         total_found_result = cursor.execute(query, bindings)
-        return txs, total_found_result.fetchone()[0]
+        return txs, total_found_result.fetchone()[0]  # always returns result
 
     def purge_ethereum_transaction_data(self) -> None:
         """Deletes all ethereum transaction related data from the DB"""
-        cursor = self.db.conn.cursor()
-        cursor.executemany(
-            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            [
-                (f'{RANGE_PREFIX_ETHTX}\\_%', '\\'),
-                (f'{RANGE_PREFIX_ETHINTERNALTX}\\_%', '\\'),
-                (f'{RANGE_PREFIX_ETHTOKENTX}\\_%', '\\'),
-            ],
-        )
-        cursor.execute('DELETE FROM ethereum_transactions;')
-        self.db.conn.commit()
-        self.db.update_last_write()
+        with self.db.user_write() as cursor:
+            cursor.executemany(
+                'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+                [
+                    (f'{RANGE_PREFIX_ETHTX}\\_%', '\\'),
+                    (f'{RANGE_PREFIX_ETHINTERNALTX}\\_%', '\\'),
+                    (f'{RANGE_PREFIX_ETHTOKENTX}\\_%', '\\'),
+                ],
+            )
+            cursor.execute('DELETE FROM ethereum_transactions;')
 
     def get_transaction_hashes_no_receipt(
             self,
@@ -269,7 +272,11 @@ class DBEthTx():
         cursor.execute(querystr, bindings)
         return [make_evm_tx_hash(x[0]) for x in cursor]
 
-    def add_receipt_data(self, data: Dict[str, Any]) -> None:
+    def add_receipt_data(  # pylint: disable=no-self-use
+            self,
+            write_cursor: 'DBCursor',
+            data: Dict[str, Any],
+    ) -> None:
         """Add tx receipt data as they are returned by the chain to the DB
 
         This assumes the transaction is already in the DB.
@@ -283,12 +290,11 @@ class DBEthTx():
         tx_hash_b = hexstring_to_bytes(data['transactionHash'])
         # some nodes miss the type field for older non EIP1559 transactions. So assume legacy (0)
         tx_type = hexstr_to_int(data.get('type', '0x0'))
-        cursor = self.db.conn.cursor()
         status = data.get('status', 1)  # status may be missing for older txs. Assume 1.
         if status is None:
             status = 1
         contract_address = deserialize_ethereum_address(data['contractAddress']) if data['contractAddress'] else None  # noqa: E501
-        cursor.execute(
+        write_cursor.execute(
             'INSERT INTO ethtx_receipts (tx_hash, contract_address, status, type) '
             'VALUES(?, ?, ?, ?) ',
             (tx_hash_b, contract_address, status, tx_type),
@@ -315,26 +321,22 @@ class DBEthTx():
                 ))
 
         if len(log_tuples) != 0:
-            cursor.executemany(
+            write_cursor.executemany(
                 'INSERT INTO ethtx_receipt_logs (tx_hash, log_index, data, address, removed) '
                 'VALUES(? ,? ,? ,? ,?)',
                 log_tuples,
             )
 
             if len(topic_tuples) != 0:
-                cursor.executemany(
+                write_cursor.executemany(
                     'INSERT INTO ethtx_receipt_log_topics (tx_hash, log_index, topic, topic_index) '  # noqa: E501
                     'VALUES(? ,? ,?, ?)',
                     topic_tuples,
                 )
 
-        self.db.conn.commit()
-        self.db.update_last_write()
-
-    def get_receipt(self, tx_hash: EVMTxHash) -> Optional[EthereumTxReceipt]:
-        cursor = self.db.conn.cursor()
-        results = cursor.execute('SELECT * from ethtx_receipts WHERE tx_hash=?', (tx_hash,))
-        result = results.fetchone()
+    def get_receipt(self, cursor: 'DBCursor', tx_hash: EVMTxHash) -> Optional[EthereumTxReceipt]:  # pylint: disable=no-self-use  # noqa: E501
+        cursor.execute('SELECT * from ethtx_receipts WHERE tx_hash=?', (tx_hash,))
+        result = cursor.fetchone()
         if result is None:
             return None
 
@@ -345,9 +347,9 @@ class DBEthTx():
             type=result[3],
         )
 
-        results = cursor.execute('SELECT * from ethtx_receipt_logs WHERE tx_hash=?', (tx_hash,)).fetchall()  # noqa: E501
+        cursor.execute('SELECT * from ethtx_receipt_logs WHERE tx_hash=?', (tx_hash,)).fetchall()  # noqa: E501
         # we do a fetchall since in each loop iteration another query of the cursor happens
-        for result in results:
+        for result in cursor:
             log_index = result[1]
             tx_receipt_log = EthereumTxReceiptLog(
                 log_index=log_index,
@@ -367,14 +369,13 @@ class DBEthTx():
 
         return tx_receipt
 
-    def delete_transactions(self, address: ChecksumEthAddress) -> None:
+    def delete_transactions(self, write_cursor: 'DBCursor', address: ChecksumEthAddress) -> None:
         """Delete all transactions related data to the given address from the DB
 
         So transactions, receipts, logs and decoded events
         """
-        cursor = self.db.conn.cursor()
         dbevents = DBHistoryEvents(self.db)
-        cursor.executemany(
+        write_cursor.executemany(
             'DELETE FROM used_query_ranges WHERE name=?;',
             [
                 (f'{RANGE_PREFIX_ETHTX}_{address}',),
@@ -383,27 +384,27 @@ class DBEthTx():
             ],
         )
         # Get all tx_hashes that are touched by this address and no other address
-        result = cursor.execute(
+        result = write_cursor.execute(
             'SELECT tx_hash from ethtx_address_mappings WHERE address=? AND tx_hash NOT IN ( '
             'SELECT tx_hash from ethtx_address_mappings WHERE address!=?'
             ')',
             (address, address),
         )
         tx_hashes = [make_evm_tx_hash(x[0]) for x in result]
-        dbevents.delete_events_by_tx_hash(tx_hashes)
+        dbevents.delete_events_by_tx_hash(write_cursor, tx_hashes)
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)
-        cursor.executemany(
+        write_cursor.executemany(
             'DELETE FROM ethereum_transactions WHERE tx_hash=? AND ? NOT IN (SELECT event_identifier FROM history_events)',  # noqa: E501
             [(x, x.hex()) for x in tx_hashes],
         )
         # Delete all remaining evm_tx_mappings so decoding can happen again for customized events
-        cursor.executemany(
+        write_cursor.executemany(
             'DELETE FROM evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
             [(x, 'ETH', HISTORY_MAPPING_DECODED) for x in tx_hashes],
         )
 
-    def get_queried_range(self, address: ChecksumEthAddress) -> Tuple[Timestamp, Timestamp]:
+    def get_queried_range(self, cursor: 'DBCursor', address: ChecksumEthAddress) -> Tuple[Timestamp, Timestamp]:  # noqa: E501
         """Gets the most conservative range that was queried for the ethereum
         transactions of an address.
 
@@ -412,7 +413,7 @@ class DBEthTx():
         starts = []
         ends = []
         for prefix in (RANGE_PREFIX_ETHTX, RANGE_PREFIX_ETHTOKENTX, RANGE_PREFIX_ETHINTERNALTX):
-            tx_range = self.db.get_used_query_range(f'{prefix}_{address}')
+            tx_range = self.db.get_used_query_range(cursor, f'{prefix}_{address}')
             if tx_range is None:  # if any range is missing then we gotta requery
                 return Timestamp(0), Timestamp(0)
 

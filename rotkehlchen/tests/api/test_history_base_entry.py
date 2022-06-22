@@ -114,7 +114,8 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     entries = _add_entries(rotkehlchen_api_server)
     db = DBHistoryEvents(rotki.data.db)
-    saved_events = db.get_history_events(HistoryEventFilterQuery.make(), True)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
     for idx, event in enumerate(saved_events):
         assert event == entries[idx]
 
@@ -177,46 +178,47 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     assert_simple_ok_response(response)
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
-    saved_events = db.get_history_events(HistoryEventFilterQuery.make(), True)
-    assert len(saved_events) == 5
-    for idx, event in enumerate(saved_events):
-        assert event == entries[idx]
+    with rotki.data.db.conn.read_ctx() as cursor:
+        saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        assert len(saved_events) == 5
+        for idx, event in enumerate(saved_events):
+            assert event == entries[idx]
 
-    # test deleting unknown fails
-    response = requests.delete(
-        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
-        json={'identifiers': [19, 1, 3]},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Tried to remove history event with id 19 which does not exist',
-        status_code=HTTPStatus.CONFLICT,
-    )
-    saved_events = db.get_history_events(HistoryEventFilterQuery.make(), True)
-    assert len(saved_events) == 5
-    for idx, event in enumerate(saved_events):
-        assert event == entries[idx]
+        # test deleting unknown fails
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+            json={'identifiers': [19, 1, 3]},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='Tried to remove history event with id 19 which does not exist',
+            status_code=HTTPStatus.CONFLICT,
+        )
+        saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        assert len(saved_events) == 5
+        for idx, event in enumerate(saved_events):
+            assert event == entries[idx]
 
-    # test deleting works
-    response = requests.delete(
-        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
-        json={'identifiers': [2, 4]},
-    )
-    result = assert_proper_response_with_result(response)
-    assert result is True
-    saved_events = db.get_history_events(HistoryEventFilterQuery.make(), True)
-    # entry is now last since the timestamp was modified
-    assert saved_events == [entries[0], entries[3], entry]
+        # test deleting works
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+            json={'identifiers': [2, 4]},
+        )
+        result = assert_proper_response_with_result(response)
+        assert result is True
+        saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        # entry is now last since the timestamp was modified
+        assert saved_events == [entries[0], entries[3], entry]
 
-    # test that deleting last event of a transaction hash fails
-    response = requests.delete(
-        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
-        json={'identifiers': [1]},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Tried to remove history event with id 1 which was the last event of a transaction',  # noqa: E501
-        status_code=HTTPStatus.CONFLICT,
-    )
-    saved_events = db.get_history_events(HistoryEventFilterQuery.make(), True)
-    assert saved_events == [entries[0], entries[3], entry]
+        # test that deleting last event of a transaction hash fails
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+            json={'identifiers': [1]},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='Tried to remove history event with id 1 which was the last event of a transaction',  # noqa: E501
+            status_code=HTTPStatus.CONFLICT,
+        )
+        saved_events = db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        assert saved_events == [entries[0], entries[3], entry]

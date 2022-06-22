@@ -100,14 +100,15 @@ def test_curve_deposit(database, ethereum_manager, eth_transactions):
     )
 
     dbethtx = DBEthTx(database)
-    dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(
-        database=database,
-        ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
-        msg_aggregator=msg_aggregator,
-    )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            eth_transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=tx_hex,
@@ -239,14 +240,15 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
     )
 
     dbethtx = DBEthTx(database)
-    dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(
-        database=database,
-        ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
-        msg_aggregator=msg_aggregator,
-    )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            eth_transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=tx_hex,
@@ -388,14 +390,15 @@ def test_curve_remove_liquidity(database, ethereum_manager, eth_transactions):
     )
 
     dbethtx = DBEthTx(database)
-    dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(
-        database=database,
-        ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
-        msg_aggregator=msg_aggregator,
-    )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            eth_transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=tx_hex,
@@ -502,15 +505,16 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager, eth_tr
         value=FVal('1.02930131799766041') * EXP18,
     )
     dbethtx = DBEthTx(database)
-    dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    dbethtx.add_ethereum_internal_transactions([internal_tx], relevant_address=location_label)  # noqa: E501
-    decoder = EVMTransactionDecoder(
-        database=database,
-        ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
-        msg_aggregator=msg_aggregator,
-    )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address=location_label)  # noqa: E501
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            eth_transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=tx_hex,
@@ -669,14 +673,15 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
         ],
     )
     dbethtx = DBEthTx(database)
-    dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(
-        database=database,
-        ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
-        msg_aggregator=msg_aggregator,
-    )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            eth_transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
             event_identifier=tx_hex,

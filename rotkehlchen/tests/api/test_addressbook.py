@@ -75,29 +75,30 @@ def test_insert_into_addressbook(rotkehlchen_api_server, book_type: AddressbookT
         },
     )
     assert_proper_response(response=response)
-    assert db_addressbook.get_addressbook_entries(book_type=book_type) == generated_entries + new_entries  # noqa: E501
+    with db_addressbook.read_ctx(book_type) as cursor:
+        assert db_addressbook.get_addressbook_entries(cursor) == generated_entries + new_entries  # noqa: E501
 
-    existing_entries = [
-        AddressbookEntry(address=to_checksum_address('0x9531c059098e3d194ff87febb587ab07b30b1306'), name='name 3'),  # noqa: E501
-        AddressbookEntry(address=to_checksum_address('0xa500A944c0dff775Ad89Ec28C82b20d4BF60A0b4'), name='name 4'),  # noqa: E501
-    ]
-    entries_in_db_before_bad_put = db_addressbook.get_addressbook_entries(book_type=book_type)
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'addressbookresource',
-            book_type=book_type,
-        ),
-        json={
-            'entries': [entry.serialize() for entry in existing_entries],
-        },
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='entry with address "0x9531C059098e3d194fF87FebB587aB07B30B1306"',
-        status_code=HTTPStatus.CONFLICT,
-    )
-    assert db_addressbook.get_addressbook_entries(book_type=book_type) == entries_in_db_before_bad_put  # noqa: E501
+        existing_entries = [
+            AddressbookEntry(address=to_checksum_address('0x9531c059098e3d194ff87febb587ab07b30b1306'), name='name 3'),  # noqa: E501
+            AddressbookEntry(address=to_checksum_address('0xa500A944c0dff775Ad89Ec28C82b20d4BF60A0b4'), name='name 4'),  # noqa: E501
+        ]
+        entries_in_db_before_bad_put = db_addressbook.get_addressbook_entries(cursor)
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'addressbookresource',
+                book_type=book_type,
+            ),
+            json={
+                'entries': [entry.serialize() for entry in existing_entries],
+            },
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='entry with address "0x9531C059098e3d194fF87FebB587aB07B30B1306"',
+            status_code=HTTPStatus.CONFLICT,
+        )
+        assert db_addressbook.get_addressbook_entries(cursor) == entries_in_db_before_bad_put  # noqa: E501
 
 
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
@@ -127,35 +128,37 @@ def test_update_addressbook(rotkehlchen_api_server, book_type: AddressbookType) 
     )
     assert_proper_response(response=response)
     expected_entries = entries_to_update + [generated_entries[2]]
-    assert db_addressbook.get_addressbook_entries(book_type=book_type) == expected_entries
 
-    nonexistent_entries = [
-        AddressbookEntry(
-            address=to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57'),
-            name='Hola amigos!',
-        ),
-        AddressbookEntry(
-            address=to_checksum_address('0x79B598976bD83a47CD8B428C824C8474311267b8'),
-            name='Have a good day, friend!',
-        ),
-    ]
+    with db_addressbook.read_ctx(book_type) as cursor:
+        assert db_addressbook.get_addressbook_entries(cursor) == expected_entries
 
-    entries_in_db_before_bad_patch = db_addressbook.get_addressbook_entries(book_type=book_type)
-    response = requests.patch(
-        api_url_for(
-            rotkehlchen_api_server,
-            'addressbookresource',
-            book_type=book_type,
-        ),
-        json={
-            'entries': [entry.serialize() for entry in nonexistent_entries],
-        },
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='entry with address "0x79B598976bD83a47CD8B428C824C8474311267b8"',
-        status_code=HTTPStatus.CONFLICT)
-    assert db_addressbook.get_addressbook_entries(book_type=book_type) == entries_in_db_before_bad_patch  # noqa: E501
+        nonexistent_entries = [
+            AddressbookEntry(
+                address=to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57'),
+                name='Hola amigos!',
+            ),
+            AddressbookEntry(
+                address=to_checksum_address('0x79B598976bD83a47CD8B428C824C8474311267b8'),
+                name='Have a good day, friend!',
+            ),
+        ]
+
+        entries_in_db_before_bad_patch = db_addressbook.get_addressbook_entries(cursor)
+        response = requests.patch(
+            api_url_for(
+                rotkehlchen_api_server,
+                'addressbookresource',
+                book_type=book_type,
+            ),
+            json={
+                'entries': [entry.serialize() for entry in nonexistent_entries],
+            },
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='entry with address "0x79B598976bD83a47CD8B428C824C8474311267b8"',
+            status_code=HTTPStatus.CONFLICT)
+        assert db_addressbook.get_addressbook_entries(cursor) == entries_in_db_before_bad_patch  # noqa: E501
 
 
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
@@ -178,30 +181,32 @@ def test_delete_addressbook(rotkehlchen_api_server, book_type: AddressbookType):
         },
     )
     assert_proper_response(response)
-    assert db_addressbook.get_addressbook_entries(book_type=book_type) == [generated_entries[1]]
 
-    nonexistent_addresses = [
-        to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
-        to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57'),
-    ]
+    with db_addressbook.read_ctx(book_type) as cursor:
+        assert db_addressbook.get_addressbook_entries(cursor) == [generated_entries[1]]
 
-    data_before_bad_request = db_addressbook.get_addressbook_entries(book_type=book_type)
-    response = requests.delete(
-        api_url_for(
-            rotkehlchen_api_server,
-            'addressbookresource',
-            book_type=book_type,
-        ),
-        json={
-            'addresses': nonexistent_addresses,
-        },
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Addressbook entry with address "0x9D904063e7e120302a13C6820561940538a2Ad57" doesn\'t exist ',  # noqa: E501
-        status_code=HTTPStatus.CONFLICT,
-    )
-    assert db_addressbook.get_addressbook_entries(book_type=book_type) == data_before_bad_request
+        nonexistent_addresses = [
+            to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67'),
+            to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57'),
+        ]
+
+        data_before_bad_request = db_addressbook.get_addressbook_entries(cursor)
+        response = requests.delete(
+            api_url_for(
+                rotkehlchen_api_server,
+                'addressbookresource',
+                book_type=book_type,
+            ),
+            json={
+                'addresses': nonexistent_addresses,
+            },
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='Addressbook entry with address "0x9D904063e7e120302a13C6820561940538a2Ad57" doesn\'t exist ',  # noqa: E501
+            status_code=HTTPStatus.CONFLICT,
+        )
+        assert db_addressbook.get_addressbook_entries(cursor) == data_before_bad_request
 
 
 def test_names_compilation(rotkehlchen_api_server):
@@ -228,11 +233,13 @@ def test_names_compilation(rotkehlchen_api_server):
     db_ens = DBEns(db_handler=db_handler)
     db_addressbook = DBAddressbook(db_handler=db_handler)
 
-    db_ens.add_ens_mapping(
-        address=address_rotki,
-        name='rotki.eth',
-        now=Timestamp(1),
-    )
+    with db_handler.user_write() as cursor:
+        db_ens.add_ens_mapping(
+            write_cursor=cursor,
+            address=address_rotki,
+            name='rotki.eth',
+            now=Timestamp(1),
+        )
     publicly_known_addresses = [
         address_rotki,
         address_1world,
@@ -270,14 +277,16 @@ def test_names_compilation(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert result == global_addressbook_expected
 
-    db_handler.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.ETHEREUM,
-        account_data=[
-            BlockchainAccountData(address=address_tylor, label='Tylor'),
-            BlockchainAccountData(address=address_rotki, label='Rotki label'),
-            BlockchainAccountData(address=address_nonlabel),
-        ],
-    )
+    with db_handler.user_write() as cursor:
+        db_handler.add_blockchain_accounts(
+            cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            account_data=[
+                BlockchainAccountData(address=address_tylor, label='Tylor'),
+                BlockchainAccountData(address=address_rotki, label='Rotki label'),
+                BlockchainAccountData(address=address_nonlabel),
+            ],
+        )
     labels_addresses = [
         address_tylor,
         address_nonlabel,  # address with None label

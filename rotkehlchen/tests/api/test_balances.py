@@ -91,51 +91,52 @@ def assert_all_balances(
         assert result['location']['external']['usd_value'] is not None
         assert result['location']['external']['percentage_of_net_value'] is not None
 
-    eth_tbalances = db.query_timed_balances(asset=A_ETH)
-    if not expected_data_in_db:
-        assert len(eth_tbalances) == 0
-    else:
-        assert len(eth_tbalances) == 1
-        assert FVal(eth_tbalances[0].amount) == total_eth
+    with db.conn.read_ctx() as cursor:
+        eth_tbalances = db.query_timed_balances(cursor=cursor, asset=A_ETH)
+        if not expected_data_in_db:
+            assert len(eth_tbalances) == 0
+        else:
+            assert len(eth_tbalances) == 1
+            assert FVal(eth_tbalances[0].amount) == total_eth
 
-    btc_tbalances = db.query_timed_balances(asset=A_BTC)
-    if not expected_data_in_db:
-        assert len(btc_tbalances) == 0
-    else:
-        assert len(btc_tbalances) == 1
-        assert FVal(btc_tbalances[0].amount) == total_btc
+        btc_tbalances = db.query_timed_balances(cursor=cursor, asset=A_BTC)
+        if not expected_data_in_db:
+            assert len(btc_tbalances) == 0
+        else:
+            assert len(btc_tbalances) == 1
+            assert FVal(btc_tbalances[0].amount) == total_btc
 
-    rdn_tbalances = db.query_timed_balances(asset=A_RDN)
-    if not expected_data_in_db:
-        assert len(rdn_tbalances) == 0
-    else:
-        assert len(rdn_tbalances) == 1
-        assert FVal(rdn_tbalances[0].amount) == total_rdn
+        rdn_tbalances = db.query_timed_balances(cursor=cursor, asset=A_RDN)
+        if not expected_data_in_db:
+            assert len(rdn_tbalances) == 0
+        else:
+            assert len(rdn_tbalances) == 1
+            assert FVal(rdn_tbalances[0].amount) == total_rdn
 
-    times, net_values = db.get_netvalue_data(Timestamp(0))
-    if not expected_data_in_db:
-        assert len(times) == 0
-        assert len(net_values) == 0
-    else:
-        assert len(times) == 1
-        assert len(net_values) == 1
+        times, net_values = db.get_netvalue_data(Timestamp(0))
+        if not expected_data_in_db:
+            assert len(times) == 0
+            assert len(net_values) == 0
+        else:
+            assert len(times) == 1
+            assert len(net_values) == 1
 
-    location_data = db.get_latest_location_value_distribution()
-    if not expected_data_in_db:
-        assert len(location_data) == 0
-    else:
-        expected_locations = {
-            Location.POLONIEX.serialize_for_db(),  # pylint: disable=no-member
-            Location.BINANCE.serialize_for_db(),  # pylint: disable=no-member
-            Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
-            Location.BLOCKCHAIN.serialize_for_db(),  # pylint: disable=no-member
-        }
-        if got_external:
-            expected_locations.add(Location.EXTERNAL.serialize_for_db())  # pylint: disable=no-member  # noqa: E501
-        if total_eur != ZERO:
-            expected_locations.add(Location.BANKS.serialize_for_db())  # pylint: disable=no-member
-        locations = {x.location for x in location_data}
-        assert locations == expected_locations
+        location_data = db.get_latest_location_value_distribution()
+        if not expected_data_in_db:
+            assert len(location_data) == 0
+        else:
+            expected_locations = {
+                Location.POLONIEX.serialize_for_db(),  # pylint: disable=no-member
+                Location.BINANCE.serialize_for_db(),  # pylint: disable=no-member
+                Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+                Location.BLOCKCHAIN.serialize_for_db(),  # pylint: disable=no-member
+            }
+            if got_external:
+                expected_locations.add(Location.EXTERNAL.serialize_for_db())  # pylint: disable=no-member  # noqa: E501
+            if total_eur != ZERO:
+                expected_locations.add(Location.BANKS.serialize_for_db())  # pylint: disable=no-member  # noqa: E501
+            locations = {x.location for x in location_data}
+            assert locations == expected_locations
 
 
 # Use real current price querying in this test since it's very extensive
@@ -198,38 +199,38 @@ def test_query_all_balances(
         setup=setup,
     )
 
-    last_save_timestamp = rotki.data.db.get_last_balance_save_time()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        last_save_timestamp = rotki.data.db.get_last_balance_save_time(cursor)
+        # now do the same but check to see if the balance save frequency delay works
+        # and thus data will not be saved
+        with ExitStack() as stack:
+            setup.enter_all_patches(stack)
+            response = requests.get(
+                api_url_for(
+                    rotkehlchen_api_server_with_exchanges,
+                    'allbalancesresource',
+                ),
+            )
+        assert_proper_response(response)
+        new_save_timestamp = rotki.data.db.get_last_balance_save_time(cursor)
+        assert last_save_timestamp == new_save_timestamp
 
-    # now do the same but check to see if the balance save frequency delay works
-    # and thus data will not be saved
-    with ExitStack() as stack:
-        setup.enter_all_patches(stack)
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                'allbalancesresource',
-            ),
-        )
-    assert_proper_response(response)
-    new_save_timestamp = rotki.data.db.get_last_balance_save_time()
-    assert last_save_timestamp == new_save_timestamp
-
-    # wait for at least 1 second to make sure that new balances can be saved.
-    # Can't save balances again if it's the same timestamp
-    gevent.sleep(1)
-    # now do the same but test that balance are saved since the balance save frequency delay
-    # is overriden via `save_data` = True
-    with ExitStack() as stack:
-        setup.enter_all_patches(stack)
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                'allbalancesresource',
-            ), json={'save_data': True},
-        )
-    assert_proper_response(response)
-    new_save_timestamp = rotki.data.db.get_last_balance_save_time()
-    assert last_save_timestamp != new_save_timestamp
+        # wait for at least 1 second to make sure that new balances can be saved.
+        # Can't save balances again if it's the same timestamp
+        gevent.sleep(1)
+        # now do the same but test that balance are saved since the balance save frequency delay
+        # is overriden via `save_data` = True
+        with ExitStack() as stack:
+            setup.enter_all_patches(stack)
+            response = requests.get(
+                api_url_for(
+                    rotkehlchen_api_server_with_exchanges,
+                    'allbalancesresource',
+                ), json={'save_data': True},
+            )
+        assert_proper_response(response)
+        new_save_timestamp = rotki.data.db.get_last_balance_save_time(cursor)
+        assert last_save_timestamp != new_save_timestamp
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])

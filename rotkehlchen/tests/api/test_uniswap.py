@@ -469,7 +469,8 @@ def test_get_uniswap_trades_history(
     )
     _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
     # make sure data are written in the DB
-    db_trades = rotki.data.db.get_amm_swaps()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_trades = rotki.data.db.get_amm_swaps(cursor)
     assert len(db_trades) == 14
     # Query a 2nd time to make sure that when retrieving from the database everything works fine
     _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
@@ -707,15 +708,16 @@ def test_get_uniswap_exotic_history(
         assert trade.serialize() == result[CRAZY_UNISWAP_ADDRESS2][found_idx + idx]
 
     # Make sure they end up in the DB
-    assert len(rotki.data.db.get_amm_swaps()) != 0
-    # test uniswap data purging from the db works
-    response = requests.delete(api_url_for(
-        rotkehlchen_api_server,
-        'namedethereummoduledataresource',
-        module_name='uniswap',
-    ))
-    assert_simple_ok_response(response)
-    assert len(rotki.data.db.get_amm_swaps()) == 0
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(rotki.data.db.get_amm_swaps(cursor)) != 0
+        # test uniswap data purging from the db works
+        response = requests.delete(api_url_for(
+            rotkehlchen_api_server,
+            'namedethereummoduledataresource',
+            module_name='uniswap',
+        ))
+        assert_simple_ok_response(response)
+        assert len(rotki.data.db.get_amm_swaps(cursor)) == 0
 
 
 # Get events history tests
@@ -881,51 +883,53 @@ def test_get_events_history_filtering_by_timestamp_case1(
         btc_accounts=None,
         original_queries=['zerion', 'logs', 'blocknobytime'],
     )
-    # Force insert address' last used query range, for avoiding query all
-    rotki.data.db.update_used_query_range(
-        name=f'{UNISWAP_EVENTS_PREFIX}_{TEST_EVENTS_ADDRESS_1}',
-        start_ts=Timestamp(0),
-        end_ts=from_timestamp,
-    )
-    with ExitStack() as stack:
-        # patch ethereum/etherscan to not autodetect tokens
-        setup.enter_ethereum_patches(stack)
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'uniswapeventshistoryresource',
-            ),
-            json={
-                'async_query': async_query,
-                'from_timestamp': from_timestamp,
-                'to_timestamp': to_timestamp,
-            },
+    with rotki.data.db.user_write() as cursor:
+        # Force insert address' last used query range, for avoiding query all
+        rotki.data.db.update_used_query_range(
+            write_cursor=cursor,
+            name=f'{UNISWAP_EVENTS_PREFIX}_{TEST_EVENTS_ADDRESS_1}',
+            start_ts=Timestamp(0),
+            end_ts=from_timestamp,
         )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
-            assert outcome['message'] == ''
-            result = outcome['result']
-        else:
-            result = assert_proper_response_with_result(response)
+        with ExitStack() as stack:
+            # patch ethereum/etherscan to not autodetect tokens
+            setup.enter_ethereum_patches(stack)
+            response = requests.get(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'uniswapeventshistoryresource',
+                ),
+                json={
+                    'async_query': async_query,
+                    'from_timestamp': from_timestamp,
+                    'to_timestamp': to_timestamp,
+                },
+            )
+            if async_query:
+                task_id = assert_ok_async_response(response)
+                outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
+                assert outcome['message'] == ''
+                result = outcome['result']
+            else:
+                result = assert_proper_response_with_result(response)
 
-    events_balances = result[TEST_EVENTS_ADDRESS_1]
+        events_balances = result[TEST_EVENTS_ADDRESS_1]
 
-    assert len(events_balances) == 1
-    assert EXPECTED_EVENTS_BALANCES_1[0].serialize() == events_balances[0]
+        assert len(events_balances) == 1
+        assert EXPECTED_EVENTS_BALANCES_1[0].serialize() == events_balances[0]
 
-    # Make sure they end up in the DB
-    events = rotki.data.db.get_amm_events([EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])
-    assert len(events) != 0
-    # test uniswap data purging from the db works
-    response = requests.delete(api_url_for(
-        rotkehlchen_api_server,
-        'namedethereummoduledataresource',
-        module_name='uniswap',
-    ))
-    assert_simple_ok_response(response)
-    events = rotki.data.db.get_amm_events([EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])
-    assert len(events) == 0
+        # Make sure they end up in the DB
+        events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])  # noqa: E501
+        assert len(events) != 0
+        # test uniswap data purging from the db works
+        response = requests.delete(api_url_for(
+            rotkehlchen_api_server,
+            'namedethereummoduledataresource',
+            module_name='uniswap',
+        ))
+        assert_simple_ok_response(response)
+        events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])  # noqa: E501
+        assert len(events) == 0
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_EVENTS_ADDRESS_1]])
@@ -962,52 +966,54 @@ def test_get_events_history_filtering_by_timestamp_case2(
         btc_accounts=None,
         original_queries=['zerion', 'logs', 'blocknobytime'],
     )
-    # Force insert address' last used query range, for avoiding query all
-    rotki.data.db.update_used_query_range(
-        name=f'{UNISWAP_EVENTS_PREFIX}_{TEST_EVENTS_ADDRESS_1}',
-        start_ts=Timestamp(0),
-        end_ts=from_timestamp,
-    )
-    with ExitStack() as stack:
-        # patch ethereum/etherscan to not autodetect tokens
-        setup.enter_ethereum_patches(stack)
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'uniswapeventshistoryresource',
-            ),
-            json={
-                'async_query': async_query,
-                'from_timestamp': from_timestamp,
-                'to_timestamp': to_timestamp,
-            },
+    with rotki.data.db.user_write() as cursor:
+        # Force insert address' last used query range, for avoiding query all
+        rotki.data.db.update_used_query_range(
+            write_cursor=cursor,
+            name=f'{UNISWAP_EVENTS_PREFIX}_{TEST_EVENTS_ADDRESS_1}',
+            start_ts=Timestamp(0),
+            end_ts=from_timestamp,
         )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
-            assert outcome['message'] == ''
-            result = outcome['result']
-        else:
-            result = assert_proper_response_with_result(response)
+        with ExitStack() as stack:
+            # patch ethereum/etherscan to not autodetect tokens
+            setup.enter_ethereum_patches(stack)
+            response = requests.get(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'uniswapeventshistoryresource',
+                ),
+                json={
+                    'async_query': async_query,
+                    'from_timestamp': from_timestamp,
+                    'to_timestamp': to_timestamp,
+                },
+            )
+            if async_query:
+                task_id = assert_ok_async_response(response)
+                outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
+                assert outcome['message'] == ''
+                result = outcome['result']
+            else:
+                result = assert_proper_response_with_result(response)
 
-    events_balances = result[TEST_EVENTS_ADDRESS_1]
+        events_balances = result[TEST_EVENTS_ADDRESS_1]
 
-    assert len(events_balances) == 4
-    expected_events_balances_2 = get_expected_events_balances_2()
-    assert expected_events_balances_2[0].serialize() == events_balances[0]
-    assert expected_events_balances_2[1].serialize() == events_balances[3]
+        assert len(events_balances) == 4
+        expected_events_balances_2 = get_expected_events_balances_2()
+        assert expected_events_balances_2[0].serialize() == events_balances[0]
+        assert expected_events_balances_2[1].serialize() == events_balances[3]
 
-    # Make sure they end up in the DB
-    events = rotki.data.db.get_amm_events([EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])
-    assert len(events) != 0
-    # test all data purging from the db works and also deletes uniswap data
-    response = requests.delete(api_url_for(
-        rotkehlchen_api_server,
-        'ethereummoduledataresource',
-    ))
-    assert_simple_ok_response(response)
-    events = rotki.data.db.get_amm_events([EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])
-    assert len(events) == 0
+        # Make sure they end up in the DB
+        events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])  # noqa: E501
+        assert len(events) != 0
+        # test all data purging from the db works and also deletes uniswap data
+        response = requests.delete(api_url_for(
+            rotkehlchen_api_server,
+            'ethereummoduledataresource',
+        ))
+        assert_simple_ok_response(response)
+        events = rotki.data.db.get_amm_events(cursor, [EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])  # noqa: E501
+        assert len(events) == 0
 
 
 PNL_TEST_ACC = '0x1F9fbD2F6a8754Cd56D4F56ED35338A63C5Bfd1f'

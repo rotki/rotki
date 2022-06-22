@@ -74,6 +74,7 @@ from .graph import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 logger = logging.getLogger(__name__)
@@ -649,65 +650,71 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         existing_addresses: List[ChecksumEthAddress] = []
         min_end_ts: Timestamp = to_timestamp
 
-        if only_cache:
-            return self._fetch_trades_from_db(addresses, from_timestamp, to_timestamp)
+        with self.database.conn.read_ctx() as cursor:
+            if only_cache:
+                return self._fetch_trades_from_db(cursor, addresses, from_timestamp, to_timestamp)
 
-        dbranges = DBQueryRanges(self.database)
-        # Get addresses' last used query range for this AMM's trades
-        for address in addresses:
-            entry_name = f'{self.trades_prefix}_{address}'
-            trades_range = self.database.get_used_query_range(name=entry_name)
-
-            if not trades_range:
-                new_addresses.append(address)
-            else:
-                existing_addresses.append(address)
-                min_end_ts = min(min_end_ts, trades_range[1])
-
-        # Request new addresses' trades
-        if new_addresses:
-            start_ts = Timestamp(0)
-            new_address_trades = self._get_trades_graph(
-                addresses=new_addresses,
-                start_ts=start_ts,
-                end_ts=to_timestamp,
-            )
-            address_amm_trades.update(new_address_trades)
-
-            # Insert last used query range for new addresses
-            for address in new_addresses:
+            dbranges = DBQueryRanges(self.database)
+            # Get addresses' last used query range for this AMM's trades
+            for address in addresses:
                 entry_name = f'{self.trades_prefix}_{address}'
-                dbranges.update_used_query_range(
-                    location_string=entry_name,
-                    queried_ranges=[(start_ts, to_timestamp)],
+                trades_range = self.database.get_used_query_range(cursor, name=entry_name)
+
+                if not trades_range:
+                    new_addresses.append(address)
+                else:
+                    existing_addresses.append(address)
+                    min_end_ts = min(min_end_ts, trades_range[1])
+
+        with self.database.user_write() as cursor:
+            # Request new addresses' trades
+            if new_addresses:
+                start_ts = Timestamp(0)
+                new_address_trades = self._get_trades_graph(
+                    addresses=new_addresses,
+                    start_ts=start_ts,
+                    end_ts=to_timestamp,
                 )
+                address_amm_trades.update(new_address_trades)
 
-        # Request existing DB addresses' trades
-        if existing_addresses and to_timestamp > min_end_ts:
-            address_new_trades = self._get_trades_graph(
-                addresses=existing_addresses,
-                start_ts=min_end_ts,
-                end_ts=to_timestamp,
-            )
-            address_amm_trades.update(address_new_trades)
+                # Insert last used query range for new addresses
+                for address in new_addresses:
+                    entry_name = f'{self.trades_prefix}_{address}'
+                    dbranges.update_used_query_range(
+                        write_cursor=cursor,
+                        location_string=entry_name,
+                        queried_ranges=[(start_ts, to_timestamp)],
+                    )
 
-            # Update last used query range for existing addresses
-            for address in existing_addresses:
-                entry_name = f'{self.trades_prefix}_{address}'
-                dbranges.update_used_query_range(
-                    location_string=entry_name,
-                    queried_ranges=[(min_end_ts, to_timestamp)],
+            # Request existing DB addresses' trades
+            if existing_addresses and to_timestamp > min_end_ts:
+                address_new_trades = self._get_trades_graph(
+                    addresses=existing_addresses,
+                    start_ts=min_end_ts,
+                    end_ts=to_timestamp,
                 )
+                address_amm_trades.update(address_new_trades)
 
-        # Insert all unique swaps to the DB
-        all_swaps = set()
-        for address in filter(lambda x: x in address_amm_trades, addresses):
-            for trade in address_amm_trades[address]:
-                for swap in trade.swaps:
-                    all_swaps.add(swap)
+                # Update last used query range for existing addresses
+                for address in existing_addresses:
+                    entry_name = f'{self.trades_prefix}_{address}'
+                    dbranges.update_used_query_range(
+                        write_cursor=cursor,
+                        location_string=entry_name,
+                        queried_ranges=[(min_end_ts, to_timestamp)],
+                    )
 
-        self.database.add_amm_swaps(list(all_swaps))
-        return self._fetch_trades_from_db(addresses, from_timestamp, to_timestamp)
+            # Insert all unique swaps to the DB
+            all_swaps = set()
+            for address in filter(lambda x: x in address_amm_trades, addresses):
+                for trade in address_amm_trades[address]:
+                    for swap in trade.swaps:
+                        all_swaps.add(swap)
+
+            self.database.add_amm_swaps(cursor, list(all_swaps))
+
+        with self.database.conn.read_ctx() as cursor:
+            return self._fetch_trades_from_db(cursor, addresses, from_timestamp, to_timestamp)
 
     def _get_unknown_asset_price_graph(
             self,
@@ -787,14 +794,16 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
     ) -> AddressEventsBalances:
         """Get the addresses' events history in the AMM"""
         with self.trades_lock:
-            if reset_db_data is True:
-                self.delete_events_data()
+            with self.database.user_write() as cursor:
+                if reset_db_data is True:
+                    self.delete_events_data(cursor)
 
-            address_events_balances = self._get_events_balances(
-                addresses=addresses,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
+                address_events_balances = self._get_events_balances(
+                    write_cursor=cursor,
+                    addresses=addresses,
+                    from_timestamp=from_timestamp,
+                    to_timestamp=to_timestamp,
+                )
 
         return address_events_balances
 
@@ -823,6 +832,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def _fetch_trades_from_db(
             self,
+            cursor: 'DBCursor',
             addresses: List[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -831,6 +841,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         db_address_trades: AddressTrades = {}
         for address in addresses:
             db_swaps = self.database.get_amm_swaps(
+                cursor=cursor,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 location=self.location,
@@ -1003,6 +1014,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _get_events_balances(
             self,
+            write_cursor: 'DBCursor',
             addresses: List[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -1015,5 +1027,5 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         raise NotImplementedError('should only be implemented by subclasses')
 
     @abc.abstractmethod
-    def delete_events_data(self) -> None:
+    def delete_events_data(self, write_cursor: 'DBCursor') -> None:
         raise NotImplementedError('should only be implemented by subclasses')

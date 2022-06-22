@@ -125,7 +125,7 @@ def _upgrade_asset_movements_table(db: 'DBHandler') -> None:
     # First delete all marked asset movements
     cursor.executemany('DELETE FROM asset_movements WHERE id = ?', entries_to_delete)
     # then insert all newly edited asset movements back in the DB
-    query = """
+    querystr = """
         INSERT INTO asset_movements(
           id,
           location,
@@ -138,7 +138,7 @@ def _upgrade_asset_movements_table(db: 'DBHandler') -> None:
           link)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
-    cursor.executemany(query, entries_to_edit)
+    cursor.executemany(querystr, entries_to_edit)
     db.conn.commit()
 
 

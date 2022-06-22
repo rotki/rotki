@@ -1,6 +1,6 @@
 from csv import DictReader
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import TYPE_CHECKING, Dict, List, Tuple
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
@@ -15,6 +15,9 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 def validate_import_data(
@@ -124,12 +127,13 @@ def _csv_to_dict(file: Path) -> List[Dict[str, str]]:
 
 
 def get_main_currency_price(
+        cursor: 'DBCursor',
         db: DBHandler,
         timestamp: Timestamp,
         msg_aggregator: MessagesAggregator,
 ) -> Tuple[Asset, Price]:
     """Gets the main currency and its equivalent price at a particular timestamp."""
-    main_currency = db.get_main_currency()
+    main_currency = db.get_setting(cursor, name='main_currency')
     main_currency_price = None
     try:
         main_currency_price = PriceHistorian.query_historical_price(

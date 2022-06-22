@@ -40,6 +40,7 @@ from .utils import scrape_validator_daily_stats
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.externalapis.beaconchain import BeaconChain
 
 logger = logging.getLogger(__name__)
@@ -67,11 +68,12 @@ class Eth2(EthereumModule):
 
     def _query_and_save_deposits(
             self,
+            write_cursor: 'DBCursor',
             dbeth2: DBEth2,
             indices_or_pubkeys: Union[List[int], List[Eth2PubKey]],
     ) -> List[Eth2Deposit]:
         new_deposits = self.beaconchain.get_validator_deposits(indices_or_pubkeys)
-        dbeth2.add_eth2_deposits(new_deposits)
+        dbeth2.add_eth2_deposits(write_cursor, new_deposits)
         return new_deposits
 
     def get_staking_deposits(
@@ -86,39 +88,41 @@ class Eth2(EthereumModule):
         relevant_pubkeys = set()
         relevant_validators = set()
         now = ts_now()
-        for address in addresses:
-            range_key = f'{ETH2_DEPOSITS_PREFIX}_{address}'
-            query_range = self.database.get_used_query_range(range_key)
-            if query_range is not None and now - query_range[1] <= REQUEST_DELTA_TS:
-                continue  # recently queried, skip
+        with self.database.user_write() as cursor:
+            for address in addresses:
+                range_key = f'{ETH2_DEPOSITS_PREFIX}_{address}'
+                query_range = self.database.get_used_query_range(cursor, range_key)
+                if query_range is not None and now - query_range[1] <= REQUEST_DELTA_TS:
+                    continue  # recently queried, skip
 
-            result = self.beaconchain.get_eth1_address_validators(address)
-            relevant_validators.update(result)
-            relevant_pubkeys.update([x.public_key for x in result])
-            self.database.update_used_query_range(range_key, Timestamp(0), now)
+                result = self.beaconchain.get_eth1_address_validators(address)
+                relevant_validators.update(result)
+                relevant_pubkeys.update([x.public_key for x in result])
+                self.database.update_used_query_range(cursor, range_key, Timestamp(0), now)
 
-        dbeth2 = DBEth2(self.database)
-        saved_deposits = dbeth2.get_eth2_deposits()
-        saved_deposits_pubkeys = {x.pubkey for x in saved_deposits}
+            dbeth2 = DBEth2(self.database)
+            saved_deposits = dbeth2.get_eth2_deposits(cursor)
+            saved_deposits_pubkeys = {x.pubkey for x in saved_deposits}
 
-        new_validators = []
-        pubkeys_query_deposits = set()
-        for validator in relevant_validators:
-            if validator.public_key not in saved_deposits_pubkeys and validator.index is not None:
-                new_validators.append(Eth2Validator(
-                    index=validator.index,
-                    public_key=validator.public_key,
-                    ownership_proportion=ONE,
-                ))
-                pubkeys_query_deposits.add(validator.public_key)
+            new_validators = []
+            pubkeys_query_deposits = set()
+            for validator in relevant_validators:
+                if validator.public_key not in saved_deposits_pubkeys and validator.index is not None:  # noqa: E501
+                    new_validators.append(Eth2Validator(
+                        index=validator.index,
+                        public_key=validator.public_key,
+                        ownership_proportion=ONE,
+                    ))
+                    pubkeys_query_deposits.add(validator.public_key)
 
-        dbeth2.add_validators(new_validators)
-        saved_validators = dbeth2.get_validators()
-        for saved_validator in saved_validators:
-            if saved_validator.public_key not in saved_deposits_pubkeys:
-                pubkeys_query_deposits.add(saved_validator.public_key)
+            dbeth2.add_validators(cursor, new_validators)
+            saved_validators = dbeth2.get_validators(cursor)
+            for saved_validator in saved_validators:
+                if saved_validator.public_key not in saved_deposits_pubkeys:
+                    pubkeys_query_deposits.add(saved_validator.public_key)
 
-        new_deposits = self._query_and_save_deposits(dbeth2, list(pubkeys_query_deposits))
+            new_deposits = self._query_and_save_deposits(cursor, dbeth2, list(pubkeys_query_deposits))  # noqa: E501
+
         result_deposits = saved_deposits + new_deposits
         result_deposits.sort(key=lambda deposit: (deposit.timestamp, deposit.tx_index))
         return result_deposits
@@ -141,31 +145,33 @@ class Eth2(EthereumModule):
         all_validators = []
         pubkeys = set()
         for address in addresses:
-            validators = self.beaconchain.get_eth1_address_validators(address)
-            if len(validators) == 0:
-                continue
+            with self.database.user_write() as cursor:
+                validators = self.beaconchain.get_eth1_address_validators(address)
+                if len(validators) == 0:
+                    continue
 
-            pubkeys.update([x.public_key for x in validators])
-            all_validators.extend(validators)
-            # if we already have any of those validators in the DB, no need to query deposits
-            tracked_validators = dbeth2.get_validators()
-            tracked_pubkeys = [x.public_key for x in tracked_validators]
-            new_validators = [
-                Eth2Validator(index=x.index, public_key=x.public_key, ownership_proportion=ONE)
-                for x in validators if x.public_key not in tracked_pubkeys and x.index is not None
-            ]
-            dbeth2.add_validators(new_validators)
-            self.beaconchain.get_validator_deposits([x.public_key for x in new_validators])
+                pubkeys.update([x.public_key for x in validators])
+                all_validators.extend(validators)
+                # if we already have any of those validators in the DB, no need to query deposits
+                tracked_validators = dbeth2.get_validators(cursor)
+                tracked_pubkeys = [x.public_key for x in tracked_validators]
+                new_validators = [
+                    Eth2Validator(index=x.index, public_key=x.public_key, ownership_proportion=ONE)
+                    for x in validators if x.public_key not in tracked_pubkeys and x.index is not None  # noqa: E501
+                ]
+                dbeth2.add_validators(cursor, new_validators)
+                self.beaconchain.get_validator_deposits([x.public_key for x in new_validators])
 
-        for x in dbeth2.get_validators():
-            if x.public_key not in pubkeys:
-                all_validators.append(
-                    ValidatorID(
-                        index=x.index,
-                        public_key=x.public_key,
-                        ownership_proportion=x.ownership_proportion,
-                    ),
-                )
+        with self.database.conn.read_ctx() as cursor:
+            for x in dbeth2.get_validators(cursor):
+                if x.public_key not in pubkeys:
+                    all_validators.append(
+                        ValidatorID(
+                            index=x.index,
+                            public_key=x.public_key,
+                            ownership_proportion=x.ownership_proportion,
+                        ),
+                    )
 
         return all_validators
 
@@ -189,7 +195,8 @@ class Eth2(EthereumModule):
         if fetch_validators_for_eth1:
             validators = self.fetch_eth1_validator_data(addresses)
         else:
-            validators = dbeth2.get_validators()
+            with self.database.conn.read_ctx() as cursor:
+                validators = dbeth2.get_validators(cursor)
 
         if validators == []:
             return {}  # nothing detected
@@ -256,34 +263,34 @@ class Eth2(EthereumModule):
 
         # make sure all validators we deal with are saved in the DB
         dbeth2 = DBEth2(self.database)
-        dbeth2.add_validators(address_validators)
+        with self.database.user_write() as cursor:
+            dbeth2.add_validators(cursor, address_validators)
+            # Also get all manually input validators
+            all_validators = dbeth2.get_validators(cursor)
+            saved_deposits = dbeth2.get_eth2_deposits(cursor)
+            pubkey_to_deposit = {x.pubkey: x for x in saved_deposits}
+            validators_to_query_for_deposits = []
+            for v in all_validators:
+                index_to_pubkey[v.index] = v.public_key
+                pubkey_to_index[v.public_key] = v.index
+                indices.append(v.index)
+                depositor = index_to_address.get(v.index)
+                if depositor is None:
+                    if v.public_key not in pubkey_to_deposit:
+                        validators_to_query_for_deposits.append(v.public_key)
 
-        # Also get all manually input validators
-        all_validators = dbeth2.get_validators()
-        saved_deposits = dbeth2.get_eth2_deposits()
-        pubkey_to_deposit = {x.pubkey: x for x in saved_deposits}
-        validators_to_query_for_deposits = []
-        for v in all_validators:
-            index_to_pubkey[v.index] = v.public_key
-            pubkey_to_index[v.public_key] = v.index
-            indices.append(v.index)
-            depositor = index_to_address.get(v.index)
-            if depositor is None:
-                if v.public_key not in pubkey_to_deposit:
-                    validators_to_query_for_deposits.append(v.public_key)
+            # Get new deposits if needed, and populate index_to_address
+            new_deposits = self._query_and_save_deposits(cursor, dbeth2, validators_to_query_for_deposits)  # noqa: E501
+            for deposit in saved_deposits + new_deposits:
+                index = pubkey_to_index.get(Eth2PubKey(deposit.pubkey))
+                if index is None:  # should never happen, unless returned data is off
+                    log.error(
+                        f'At eth2 staking details could not find index for pubkey '
+                        f'{deposit.pubkey} at deposit {deposit}.',
+                    )
+                    continue
 
-        # Get new deposits if needed, and populate index_to_address
-        new_deposits = self._query_and_save_deposits(dbeth2, validators_to_query_for_deposits)
-        for deposit in saved_deposits + new_deposits:
-            index = pubkey_to_index.get(Eth2PubKey(deposit.pubkey))
-            if index is None:  # should never happen, unless returned data is off
-                log.error(
-                    f'At eth2 staking details could not find index for pubkey '
-                    f'{deposit.pubkey} at deposit {deposit}.',
-                )
-                continue
-
-            index_to_address[index] = deposit.from_address
+                index_to_address[index] = deposit.from_address
 
         # Get current balance of all validator indices
         performance_result = self.beaconchain.get_performance(indices)
@@ -360,6 +367,7 @@ class Eth2(EthereumModule):
 
     def get_validator_daily_stats(
             self,
+            cursor: 'DBCursor',
             filter_query: Eth2DailyStatsFilterQuery,
             only_cache: bool,
             msg_aggregator: MessagesAggregator,
@@ -380,13 +388,14 @@ class Eth2(EthereumModule):
             )
 
         dbeth2 = DBEth2(self.database)
-        return dbeth2.get_validator_daily_stats_and_limit_info(filter_query=filter_query)
+        return dbeth2.get_validator_daily_stats_and_limit_info(cursor, filter_query=filter_query)
 
     def add_validator(
-        self,
-        validator_index: Optional[int],
-        public_key: Optional[Eth2PubKey],
-        ownership_proportion: FVal,
+            self,
+            write_cursor: 'DBCursor',
+            validator_index: Optional[int],
+            public_key: Optional[Eth2PubKey],
+            ownership_proportion: FVal,
     ) -> None:
         """Adds the given validator to the DB. Due to marshmallow here at least
         either validator_index or public key is not None.
@@ -399,7 +408,7 @@ class Eth2(EthereumModule):
         valid_pubkey: Eth2PubKey
         dbeth2 = DBEth2(self.database)
         if self.premium is None:
-            tracked_validators = dbeth2.get_validators()
+            tracked_validators = dbeth2.get_validators(write_cursor)
             if len(tracked_validators) >= FREE_VALIDATORS_LIMIT:
                 raise PremiumPermissionError(
                     f'Adding validator {validator_index} {public_key} would take you '
@@ -409,7 +418,7 @@ class Eth2(EthereumModule):
         if validator_index is not None and public_key is not None:
             valid_index = validator_index
             valid_pubkey = public_key
-            if dbeth2.validator_exists(field='validator_index', arg=valid_index):
+            if dbeth2.validator_exists(write_cursor, field='validator_index', arg=valid_index):
                 raise InputError(f'Validator {valid_index} already exists in the DB')
         else:  # we are missing one of the 2
             if validator_index is None:
@@ -419,7 +428,7 @@ class Eth2(EthereumModule):
                 field = 'validator_index'
                 arg = validator_index  # type: ignore
 
-            if dbeth2.validator_exists(field=field, arg=arg):  # type: ignore
+            if dbeth2.validator_exists(write_cursor, field=field, arg=arg):  # type: ignore
                 raise InputError(f'Validator {arg} already exists in the DB')
 
             # at this point we gotta query for one of the two
@@ -442,7 +451,7 @@ class Eth2(EthereumModule):
 
                 raise RemoteError(f'Failed to query beaconcha.in for validator data due to: {msg}') from e  # noqa: E501
         # by now we have a valid index and pubkey. Add to DB
-        dbeth2.add_validators([
+        dbeth2.add_validators(write_cursor, [
             Eth2Validator(
                 index=valid_index,
                 public_key=valid_pubkey,
@@ -470,5 +479,6 @@ class Eth2(EthereumModule):
         pass
 
     def deactivate(self) -> None:
-        self.database.delete_eth2_deposits()
-        self.database.delete_eth2_daily_stats()
+        with self.database.user_write() as cursor:
+            self.database.delete_eth2_deposits(cursor)
+            self.database.delete_eth2_daily_stats(cursor)

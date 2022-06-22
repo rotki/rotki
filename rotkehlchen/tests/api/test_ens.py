@@ -15,11 +15,12 @@ from rotkehlchen.types import ChecksumEthAddress
 
 def _get_timestamps(db: DBEns, addresses: List[ChecksumEthAddress]):
     timestamps = []
-    for value in db.get_reverse_ens(addresses).values():
-        if isinstance(value, int):
-            timestamps.append(value)
-        else:
-            timestamps.append(value.last_update)
+    with db.db.conn.read_ctx() as cursor:
+        for value in db.get_reverse_ens(cursor, addresses).values():
+            if isinstance(value, int):
+                timestamps.append(value)
+            else:
+                timestamps.append(value.last_update)
 
     return timestamps
 

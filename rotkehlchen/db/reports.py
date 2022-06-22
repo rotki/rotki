@@ -31,6 +31,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 @overload
@@ -83,33 +84,33 @@ class DBAccountingReports():
             end_ts: Timestamp,
             settings: DBSettings,
     ) -> int:
-        cursor = self.db.conn_transient.cursor()
-        timestamp = ts_now()
-        query = """
-        INSERT INTO pnl_reports(
-            timestamp, start_ts, end_ts, first_processed_timestamp,
-            last_processed_timestamp, processed_actions, total_actions
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?)"""
-        cursor.execute(
-            query,
-            (timestamp, start_ts, end_ts, first_processed_timestamp,
-             0, 0, 0,  # will be set later
-             ),
-        )
-        report_id = cursor.lastrowid
-        cursor.executemany(
-            'INSERT OR IGNORE INTO pnl_report_settings(report_id, name, type, value) '
-            'VALUES(?, ?, ?, ?)',
-            [
-                (report_id, 'profit_currency', 'string', settings.main_currency.identifier),
-                (report_id, 'taxfree_after_period', 'integer', settings.taxfree_after_period),
-                (report_id, 'include_crypto2crypto', 'bool', settings.include_crypto2crypto),
-                (report_id, 'calculate_past_cost_basis', 'bool', settings.calculate_past_cost_basis),  # noqa: E501
-                (report_id, 'include_gas_costs', 'bool', settings.include_gas_costs),
-                (report_id, 'account_for_assets_movements', 'bool', settings.account_for_assets_movements),  # noqa: E501
-            ])
-        self.db.conn_transient.commit()
+        with self.db.transient_write() as cursor:
+            timestamp = ts_now()
+            query = """
+            INSERT INTO pnl_reports(
+                timestamp, start_ts, end_ts, first_processed_timestamp,
+                last_processed_timestamp, processed_actions, total_actions
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)"""
+            cursor.execute(
+                query,
+                (timestamp, start_ts, end_ts, first_processed_timestamp,
+                 0, 0, 0,  # will be set later
+                 ),
+            )
+            report_id = cursor.lastrowid
+            cursor.executemany(
+                'INSERT OR IGNORE INTO pnl_report_settings(report_id, name, type, value) '
+                'VALUES(?, ?, ?, ?)',
+                [
+                    (report_id, 'profit_currency', 'string', settings.main_currency.identifier),
+                    (report_id, 'taxfree_after_period', 'integer', settings.taxfree_after_period),
+                    (report_id, 'include_crypto2crypto', 'bool', settings.include_crypto2crypto),
+                    (report_id, 'calculate_past_cost_basis', 'bool', settings.calculate_past_cost_basis),  # noqa: E501
+                    (report_id, 'include_gas_costs', 'bool', settings.include_gas_costs),
+                    (report_id, 'account_for_assets_movements', 'bool', settings.account_for_assets_movements),  # noqa: E501
+                ])
+
         return report_id
 
     def add_report_overview(
@@ -125,28 +126,27 @@ class DBAccountingReports():
         May raise:
         - InputError if the given report id does not exist
         """
-        cursor = self.db.conn_transient.cursor()
-        cursor.execute(
-            'UPDATE pnl_reports SET last_processed_timestamp=?,'
-            ' processed_actions=?, total_actions=? WHERE identifier=?',
-            (last_processed_timestamp, processed_actions, total_actions, report_id),
-        )
-        if cursor.rowcount != 1:
-            raise InputError(
-                f'Could not insert overview for {report_id}. '
-                f'Report id could not be found in the DB',
+        with self.db.transient_write() as cursor:
+            cursor.execute(
+                'UPDATE pnl_reports SET last_processed_timestamp=?,'
+                ' processed_actions=?, total_actions=? WHERE identifier=?',
+                (last_processed_timestamp, processed_actions, total_actions, report_id),
+            )
+            if cursor.rowcount != 1:
+                raise InputError(
+                    f'Could not insert overview for {report_id}. '
+                    f'Report id could not be found in the DB',
+                )
+
+            tuples = []
+            for event_type, entry in pnls.items():
+                tuples.append((report_id, event_type.serialize(), str(entry.taxable), str(entry.free)))  # noqa: E501
+            cursor.executemany(
+                'INSERT OR IGNORE INTO pnl_report_totals(report_id, name, taxable_value, free_value) VALUES(?, ?, ?, ?)',  # noqa: E501
+                tuples,
             )
 
-        tuples = []
-        for event_type, entry in pnls.items():
-            tuples.append((report_id, event_type.serialize(), str(entry.taxable), str(entry.free)))  # noqa: E501
-        cursor.executemany(
-            'INSERT OR IGNORE INTO pnl_report_totals(report_id, name, taxable_value, free_value) VALUES(?, ?, ?, ?)',  # noqa: E501
-            tuples,
-        )
-        self.db.conn_transient.commit()
-
-    def _get_report_size(self, report_id: int) -> int:
+    def _get_report_size(self, cursor: 'DBCursor', report_id: int) -> int:  # pylint: disable=no-self-use  # noqa: E501
         """Returns an approximation of the DB size in bytes for the given report.
 
         It's an approximation since length() in sqlite returns the string length
@@ -155,7 +155,6 @@ class DBAccountingReports():
         figure out the byte size. Finally there probably is various padding and
         prefixes which are not taken into account.
         """
-        cursor = self.db.conn_transient.cursor()
         result = cursor.execute(
             """SELECT SUM(row_size) FROM (SELECT
             8 + /*identifier - assume biggest int size */
@@ -176,55 +175,55 @@ class DBAccountingReports():
 
         If `with_limit` is true then the api limit is applied
         """
-        cursor = self.db.conn_transient.cursor()
         bindings: Union[Tuple, Tuple[int]] = ()
         query = 'SELECT * from pnl_reports'
+        reports: List[Dict[str, Any]] = []
         if report_id is not None:
             bindings = (report_id,)
             query += ' WHERE identifier=?'
-        results = cursor.execute(query, bindings)
 
-        reports: List[Dict[str, Any]] = []
-        for report in results:
-            this_report_id = report[0]
-            size_result = self._get_report_size(this_report_id)
-            other_cursor = self.db.conn_transient.cursor()
-            other_cursor.execute(
-                'SELECT name, taxable_value, free_value FROM pnl_report_totals WHERE report_id=?',
-                (this_report_id,),
-            )
-            overview = {x[0]: {'taxable': x[1], 'free': x[2]} for x in other_cursor}
-            other_cursor.execute(
-                'SELECT name, type, value FROM pnl_report_settings WHERE report_id=?',
-                (this_report_id,),
-            )
-            settings = {}
-            for x in other_cursor:
-                if x[1] == 'integer':
-                    settings[x[0]] = int(x[2])
-                elif x[1] == 'bool':
-                    settings[x[0]] = x[2] == '1'
-                else:
-                    settings[x[0]] = x[2]
-            reports.append({
-                'identifier': this_report_id,
-                'timestamp': report[1],
-                'start_ts': report[2],
-                'end_ts': report[3],
-                'first_processed_timestamp': report[4],
-                'size_on_disk': size_result,
-                'last_processed_timestamp': report[5],
-                'processed_actions': report[6],
-                'total_actions': report[7],
-                'overview': overview,
-                'settings': settings,
-            })
+        with self.db.conn_transient.read_ctx() as cursor:
+            cursor.execute(query, bindings)
+            for report in cursor:
+                this_report_id = report[0]
+                with self.db.conn_transient.read_ctx() as other_cursor:
+                    size_result = self._get_report_size(other_cursor, this_report_id)
+                    other_cursor.execute(
+                        'SELECT name, taxable_value, free_value FROM pnl_report_totals WHERE report_id=?',  # noqa: E501
+                        (this_report_id,),
+                    )
+                    overview = {x[0]: {'taxable': x[1], 'free': x[2]} for x in other_cursor}
+                    other_cursor.execute(
+                        'SELECT name, type, value FROM pnl_report_settings WHERE report_id=?',
+                        (this_report_id,),
+                    )
+                    settings = {}
+                    for x in other_cursor:
+                        if x[1] == 'integer':
+                            settings[x[0]] = int(x[2])
+                        elif x[1] == 'bool':
+                            settings[x[0]] = x[2] == '1'
+                        else:
+                            settings[x[0]] = x[2]
+                    reports.append({
+                        'identifier': this_report_id,
+                        'timestamp': report[1],
+                        'start_ts': report[2],
+                        'end_ts': report[3],
+                        'first_processed_timestamp': report[4],
+                        'size_on_disk': size_result,
+                        'last_processed_timestamp': report[5],
+                        'processed_actions': report[6],
+                        'total_actions': report[7],
+                        'overview': overview,
+                        'settings': settings,
+                    })
 
-        if report_id is not None:
-            results = cursor.execute('SELECT COUNT(*) FROM pnl_reports').fetchone()
-            total_filter_count = results[0]
-        else:
-            total_filter_count = len(reports)
+            if report_id is not None:
+                results = cursor.execute('SELECT COUNT(*) FROM pnl_reports').fetchone()
+                total_filter_count = results[0]
+            else:
+                total_filter_count = len(reports)
 
         return _get_reports_or_events_maybe_limit(
             entry_type='reports',
@@ -238,14 +237,12 @@ class DBAccountingReports():
 
         Raises InputError if the report did not exist in the DB.
         """
-        cursor = self.db.conn_transient.cursor()
-        cursor.execute('DELETE FROM pnl_reports WHERE identifier=?', (report_id,))
-        if cursor.rowcount != 1:
-            raise InputError(
-                f'Could not delete PnL report {report_id} from the DB. Report was not found',
-            )
-        self.db.conn.commit()
-        self.db.update_last_write()
+        with self.db.transient_write() as cursor:
+            cursor.execute('DELETE FROM pnl_reports WHERE identifier=?', (report_id,))
+            if cursor.rowcount != 1:
+                raise InputError(
+                    f'Could not delete PnL report {report_id} from the DB. Report was not found',
+                )
 
     def add_report_data(
             self,
@@ -259,21 +256,20 @@ class DBAccountingReports():
         - DeserializationError if there is a conflict at serialization of the event
         - InputError if the event can not be written to the DB. Probably report id does not exist.
         """
-        cursor = self.db.conn_transient.cursor()
         data = event.serialize_for_db(ts_converter)
         query = """
         INSERT INTO pnl_events(
             report_id, timestamp, data
         )
         VALUES(?, ?, ?);"""
-        try:
-            cursor.execute(query, (report_id, time, data))
-        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            raise InputError(
-                f'Could not write {event} data to the DB due to {str(e)}. '
-                f'Probably report {report_id} does not exist?',
-            ) from e
-        self.db.conn_transient.commit()
+        with self.db.transient_write() as cursor:
+            try:
+                cursor.execute(query, (report_id, time, data))
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                raise InputError(
+                    f'Could not write {event} data to the DB due to {str(e)}. '
+                    f'Probably report {report_id} does not exist?',
+                ) from e
 
     def get_report_data(
             self,
@@ -298,10 +294,10 @@ class DBAccountingReports():
 
         query, bindings = filter_.prepare()
         query = 'SELECT timestamp, data FROM pnl_events ' + query
-        results = cursor.execute(query, bindings)
+        cursor.execute(query, bindings)
 
         records = []
-        for result in results:
+        for result in cursor:
             try:
                 record = ProcessedAccountingEvent.deserialize_from_db(result[0], result[1])
             except DeserializationError as e:

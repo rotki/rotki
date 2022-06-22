@@ -4,7 +4,7 @@ import logging
 from collections import defaultdict
 from itertools import count
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import gevent
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -44,6 +44,9 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -122,7 +125,7 @@ class DataImporter():
         self.db = db
         self.db_ledger = DBLedgerActions(self.db, self.db.msg_aggregator)
 
-    def _consume_cointracking_entry(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:
+    def _consume_cointracking_entry(self, write_cursor: 'DBCursor', csv_row: Dict[str, Any], **kwargs: Any) -> None:  # noqa: E501
         """Consumes a cointracking entry row from the CSV and adds it into the database
         Can raise:
             - DeserializationError if something is wrong with the format of the expected values
@@ -182,7 +185,7 @@ class DataImporter():
                 link='',
                 notes=notes,
             )
-            self.db.add_trades([trade])
+            self.db.add_trades(write_cursor=write_cursor, trades=[trade])
         elif row_type in ('Deposit', 'Withdrawal'):
             category = deserialize_asset_movement_category(row_type.lower())
             if category == AssetMovementCategory.DEPOSIT:
@@ -204,7 +207,7 @@ class DataImporter():
                 fee_asset=fee_currency,
                 link='',
             )
-            self.db.add_asset_movements([asset_movement])
+            self.db.add_asset_movements(write_cursor=write_cursor, asset_movements=[asset_movement])  # noqa: E501
         else:
             raise UnsupportedCSVEntry(
                 f'Unknown entrype type "{row_type}" encountered during cointracking '
@@ -219,37 +222,38 @@ class DataImporter():
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.reader(csvfile, delimiter=',', quotechar='"')
             header = remap_header(next(data))
-            for idx, row in enumerate(data):
-                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
-                    gevent.sleep(0.1)
-                try:
-                    self._consume_cointracking_entry(dict(zip(header, row)), **kwargs)
-                except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During cointracking CSV import found action with unknown '
-                        f'asset {e.asset_name}. Ignoring entry',
-                    )
-                    continue
-                except IndexError:
-                    self.db.msg_aggregator.add_warning(
-                        'During cointracking CSV import found entry with '
-                        'unexpected number of columns',
-                    )
-                    continue
-                except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Error during cointracking CSV import deserialization. '
-                        f'Error was {str(e)}. Ignoring entry',
-                    )
-                    continue
-                except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
-                    continue
-                except KeyError as e:
-                    return False, str(e)
+            with self.db.user_write() as cursor:
+                for idx, row in enumerate(data):
+                    if idx % ROWS_PER_CONTEXT_SWITCH == 0:
+                        gevent.sleep()
+                    try:
+                        self._consume_cointracking_entry(cursor, dict(zip(header, row)), **kwargs)
+                    except UnknownAsset as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'During cointracking CSV import found action with unknown '
+                            f'asset {e.asset_name}. Ignoring entry',
+                        )
+                        continue
+                    except IndexError:
+                        self.db.msg_aggregator.add_warning(
+                            'During cointracking CSV import found entry with '
+                            'unexpected number of columns',
+                        )
+                        continue
+                    except DeserializationError as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'Error during cointracking CSV import deserialization. '
+                            f'Error was {str(e)}. Ignoring entry',
+                        )
+                        continue
+                    except UnsupportedCSVEntry as e:
+                        self.db.msg_aggregator.add_warning(str(e))
+                        continue
+                    except KeyError as e:
+                        return False, str(e)
         return True, ''
 
-    def _consume_cryptocom_entry(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:
+    def _consume_cryptocom_entry(self, write_cursor: 'DBCursor', csv_row: Dict[str, Any], **kwargs: Any) -> None:  # noqa: E501
         """Consumes a cryptocom entry row from the CSV and adds it into the database
         Can raise:
             - DeserializationError if something is wrong with the format of the expected values
@@ -330,7 +334,7 @@ class DataImporter():
                 link='',
                 notes=notes,
             )
-            self.db.add_trades([trade])
+            self.db.add_trades(write_cursor, [trade])
 
         elif row_type in (
             'crypto_withdrawal',
@@ -358,7 +362,7 @@ class DataImporter():
                 fee_asset=asset,
                 link='',
             )
-            self.db.add_asset_movements([asset_movement])
+            self.db.add_asset_movements(write_cursor, [asset_movement])
         elif row_type in (
             'airdrop_to_exchange_transfer',
             'mco_stake_reward',
@@ -389,7 +393,7 @@ class DataImporter():
                 link=None,
                 notes=notes,
             )
-            self.db_ledger.add_ledger_action(action)
+            self.db_ledger.add_ledger_action(write_cursor, action)
         elif row_type in ('crypto_payment', 'reimbursement_reverted'):
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = abs(deserialize_asset_amount(csv_row['Amount']))
@@ -405,7 +409,7 @@ class DataImporter():
                 link=None,
                 notes=notes,
             )
-            self.db_ledger.add_ledger_action(action)
+            self.db_ledger.add_ledger_action(write_cursor, action)
         elif row_type == 'invest_deposit':
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
@@ -421,7 +425,7 @@ class DataImporter():
                 fee_asset=fee_currency,
                 link='',
             )
-            self.db.add_asset_movements([asset_movement])
+            self.db.add_asset_movements(write_cursor, [asset_movement])
         elif row_type == 'invest_withdrawal':
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
@@ -437,7 +441,7 @@ class DataImporter():
                 fee_asset=fee_currency,
                 link='',
             )
-            self.db.add_asset_movements([asset_movement])
+            self.db.add_asset_movements(write_cursor, [asset_movement])
         elif row_type == 'crypto_transfer':
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
@@ -458,7 +462,7 @@ class DataImporter():
                 link=None,
                 notes=notes,
             )
-            self.db_ledger.add_ledger_action(action)
+            self.db_ledger.add_ledger_action(write_cursor, action)
         elif row_type in (
             'crypto_earn_program_created',
             'crypto_earn_program_withdrawn',
@@ -497,10 +501,11 @@ class DataImporter():
             )
 
     def _import_cryptocom_associated_entries(
-        self,
-        data: Any,
-        tx_kind: str,
-        **kwargs: Any,
+            self,
+            write_cursor: 'DBCursor',
+            data: Any,
+            tx_kind: str,
+            **kwargs: Any,
     ) -> None:
         """Look for events that have associated entries and handle them as trades.
 
@@ -650,7 +655,7 @@ class DataImporter():
                         link='',
                         notes=notes,
                     )
-                    self.db.add_trades([trade])
+                    self.db.add_trades(write_cursor, [trade])
 
         # Compute investments profit
         if len(investments_withdrawals) != 0:
@@ -715,84 +720,97 @@ class DataImporter():
                             link=None,
                             notes=f'Stake profit for asset {asset}',
                         )
-                        self.db_ledger.add_ledger_action(action)
+                        self.db_ledger.add_ledger_action(write_cursor, action)
 
     def import_cryptocom_csv(self, filepath: Path, **kwargs: Any) -> Tuple[bool, str]:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
-            data = csv.DictReader(csvfile)
-            try:
-                #  Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,
-                # `crypto_wallet_swap_*`, ...) into one entry named `dynamic_coin_swap_*`.
-                self._import_cryptocom_associated_entries(
-                    data=data,
-                    tx_kind='dynamic_coin_swap',
-                    **kwargs,
-                )
-                # reset the iterator
-                csvfile.seek(0)
-                # pass the header since seek(0) make the first row to be the header
-                next(data)
-
-                self._import_cryptocom_associated_entries(
-                    data=data,
-                    tx_kind='dust_conversion',
-                    **kwargs,
-                )
-                csvfile.seek(0)
-                next(data)
-
-                self._import_cryptocom_associated_entries(data, 'interest_swap', **kwargs)
-                csvfile.seek(0)
-                next(data)
-
-                self._import_cryptocom_associated_entries(data, 'invest', **kwargs)
-                csvfile.seek(0)
-                next(data)
-            except KeyError as e:
-                return False, f'Crypto.com csv missing entry for {str(e)}'
-            except UnknownAsset as e:
-                return False, f'Encountered unknown asset {str(e)} at crypto.com csv import'
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                self.db.conn.rollback()
-                self.db.msg_aggregator.add_warning(
-                    'Error during cryptocom CSV import consumption. '
-                    ' Entry already existed in DB. Ignoring.',
-                )
-                # continue, since they already are in DB
-
-            for idx, row in enumerate(data):
-                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
-                    gevent.sleep(0.1)
+            with self.db.user_write() as cursor:
+                data = csv.DictReader(csvfile)
                 try:
-                    self._consume_cryptocom_entry(row, **kwargs)
+                    #  Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,
+                    # `crypto_wallet_swap_*`, ...) into one entry named `dynamic_coin_swap_*`.
+                    self._import_cryptocom_associated_entries(
+                        write_cursor=cursor,
+                        data=data,
+                        tx_kind='dynamic_coin_swap',
+                        **kwargs,
+                    )
+                    # reset the iterator
+                    csvfile.seek(0)
+                    # pass the header since seek(0) make the first row to be the header
+                    next(data)
+
+                    self._import_cryptocom_associated_entries(
+                        write_cursor=cursor,
+                        data=data,
+                        tx_kind='dust_conversion',
+                        **kwargs,
+                    )
+                    csvfile.seek(0)
+                    next(data)
+
+                    self._import_cryptocom_associated_entries(
+                        write_cursor=cursor,
+                        data=data,
+                        tx_kind='interest_swap',
+                        **kwargs,
+                    )
+                    csvfile.seek(0)
+                    next(data)
+
+                    self._import_cryptocom_associated_entries(
+                        write_cursor=cursor,
+                        data=data,
+                        tx_kind='invest',
+                        **kwargs,
+                    )
+                    csvfile.seek(0)
+                    next(data)
+                except KeyError as e:
+                    return False, f'Crypto.com csv missing entry for {str(e)}'
                 except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During cryptocom CSV import found action with unknown '
-                        f'asset {e.asset_name}. Ignoring entry',
-                    )
-                    continue
-                except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Error during cryptocom CSV import deserialization. '
-                        f'Error was {str(e)}. Ignoring entry',
-                    )
-                    continue
+                    return False, f'Encountered unknown asset {str(e)} at crypto.com csv import'
                 except sqlcipher.IntegrityError:  # pylint: disable=no-member
                     self.db.conn.rollback()
                     self.db.msg_aggregator.add_warning(
                         'Error during cryptocom CSV import consumption. '
                         ' Entry already existed in DB. Ignoring.',
                     )
-                    log.warning(f'cryptocom csv entry {row} aleady existed in DB')
-                    continue
-                except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
-                    continue
-                except KeyError as e:
-                    return False, str(e)
+                    # continue, since they already are in DB
+
+                for idx, row in enumerate(data):
+                    if idx % ROWS_PER_CONTEXT_SWITCH == 0:
+                        gevent.sleep(0.1)
+                    try:
+                        self._consume_cryptocom_entry(cursor, row, **kwargs)
+                    except UnknownAsset as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'During cryptocom CSV import found action with unknown '
+                            f'asset {e.asset_name}. Ignoring entry',
+                        )
+                        continue
+                    except DeserializationError as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'Error during cryptocom CSV import deserialization. '
+                            f'Error was {str(e)}. Ignoring entry',
+                        )
+                        continue
+                    except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                        self.db.conn.rollback()
+                        self.db.msg_aggregator.add_warning(
+                            'Error during cryptocom CSV import consumption. '
+                            ' Entry already existed in DB. Ignoring.',
+                        )
+                        log.warning(f'cryptocom csv entry {row} aleady existed in DB')
+                        continue
+                    except UnsupportedCSVEntry as e:
+                        self.db.msg_aggregator.add_warning(str(e))
+                        continue
+                    except KeyError as e:
+                        return False, str(e)
         return True, ''
 
-    def _consume_blockfi_entry(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:
+    def _consume_blockfi_entry(self, write_cursor: 'DBCursor', csv_row: Dict[str, Any], **kwargs: Any) -> None:  # noqa: E501
         """
         Process entry for BlockFi transaction history. Trades for this file are ignored
         and istead should be extracted from the file containing only trades.
@@ -834,7 +852,7 @@ class DataImporter():
                 fee_asset=fee_asset,
                 link='',
             )
-            self.db.add_asset_movements([asset_movement])
+            self.db.add_asset_movements(write_cursor, [asset_movement])
         elif entry_type in ('Withdrawal', 'Wire Withdrawal', 'ACH Withdrawal'):
             asset_movement = AssetMovement(
                 location=Location.BLOCKFI,
@@ -848,7 +866,7 @@ class DataImporter():
                 fee_asset=fee_asset,
                 link='',
             )
-            self.db.add_asset_movements([asset_movement])
+            self.db.add_asset_movements(write_cursor, [asset_movement])
         elif entry_type == 'Withdrawal Fee':
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
@@ -862,7 +880,7 @@ class DataImporter():
                 link=None,
                 notes=f'{entry_type} from BlockFi',
             )
-            self.db_ledger.add_ledger_action(action)
+            self.db_ledger.add_ledger_action(write_cursor, action)
         elif entry_type in ('Interest Payment', 'Bonus Payment', 'Referral Bonus'):
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
@@ -876,7 +894,7 @@ class DataImporter():
                 link=None,
                 notes=f'{entry_type} from BlockFi',
             )
-            self.db_ledger.add_ledger_action(action)
+            self.db_ledger.add_ledger_action(write_cursor, action)
         elif entry_type == 'Crypto Transfer':
             category = (
                 AssetMovementCategory.WITHDRAWAL if raw_amount < ZERO
@@ -894,7 +912,7 @@ class DataImporter():
                 fee_asset=fee_asset,
                 link='',
             )
-            self.db.add_asset_movements([asset_movement])
+            self.db.add_asset_movements(write_cursor, [asset_movement])
         elif entry_type == 'Trade':
             pass
         else:
@@ -907,39 +925,40 @@ class DataImporter():
         """
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
-            for idx, row in enumerate(data):
-                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
-                    gevent.sleep(0.1)
-                try:
-                    self._consume_blockfi_entry(row, **kwargs)
-                except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During BlockFi CSV import found action with unknown '
-                        f'asset {e.asset_name}. Ignoring entry',
-                    )
-                    continue
-                except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during BlockFi CSV import. '
-                        f'{str(e)}. Ignoring entry',
-                    )
-                    continue
-                except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                    self.db.conn.rollback()
-                    self.db.msg_aggregator.add_warning(
-                        'Error during blockfi CSV import consumption. '
-                        ' Entry already existed in DB. Ignoring.',
-                    )
-                    log.warning(f'blocki csv entry {row} aleady existed in DB')
-                    continue
-                except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
-                    continue
-                except KeyError as e:
-                    return False, str(e)
+            with self.db.user_write() as cursor:
+                for idx, row in enumerate(data):
+                    if idx % ROWS_PER_CONTEXT_SWITCH == 0:
+                        gevent.sleep(0.1)
+                    try:
+                        self._consume_blockfi_entry(cursor, row, **kwargs)
+                    except UnknownAsset as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'During BlockFi CSV import found action with unknown '
+                            f'asset {e.asset_name}. Ignoring entry',
+                        )
+                        continue
+                    except DeserializationError as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'Deserialization error during BlockFi CSV import. '
+                            f'{str(e)}. Ignoring entry',
+                        )
+                        continue
+                    except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                        self.db.conn.rollback()
+                        self.db.msg_aggregator.add_warning(
+                            'Error during blockfi CSV import consumption. '
+                            ' Entry already existed in DB. Ignoring.',
+                        )
+                        log.warning(f'blocki csv entry {row} aleady existed in DB')
+                        continue
+                    except UnsupportedCSVEntry as e:
+                        self.db.msg_aggregator.add_warning(str(e))
+                        continue
+                    except KeyError as e:
+                        return False, str(e)
         return True, ''
 
-    def _consume_blockfi_trade(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:
+    def _consume_blockfi_trade(self, write_cursor: 'DBCursor', csv_row: Dict[str, Any], **kwargs: Any) -> None:  # noqa: E501
         """
         Consume the file containing only trades from BlockFi. As per my investigations
         (@yabirgb) this file can only contain confirmed trades.
@@ -974,7 +993,7 @@ class DataImporter():
             link='',
             notes=csv_row['Type'],
         )
-        self.db.add_trades([trade])
+        self.db.add_trades(write_cursor, [trade])
 
     def import_blockfi_trades_csv(self, filepath: Path, **kwargs: Any) -> Tuple[bool, str]:
         """
@@ -982,29 +1001,30 @@ class DataImporter():
         the issue in github #1674
         """
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
-            data = csv.DictReader(csvfile)
-            for idx, row in enumerate(data):
-                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
-                    gevent.sleep(0.1)
-                try:
-                    self._consume_blockfi_trade(row, **kwargs)
-                except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During BlockFi CSV import found action with unknown '
-                        f'asset {e.asset_name}. Ignoring entry',
-                    )
-                    continue
-                except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during BlockFi CSV import. '
-                        f'{str(e)}. Ignoring entry',
-                    )
-                    continue
-                except KeyError as e:
-                    return False, str(e)
+            with self.db.user_write() as cursor:
+                data = csv.DictReader(csvfile)
+                for idx, row in enumerate(data):
+                    if idx % ROWS_PER_CONTEXT_SWITCH == 0:
+                        gevent.sleep(0.1)
+                    try:
+                        self._consume_blockfi_trade(cursor, row, **kwargs)
+                    except UnknownAsset as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'During BlockFi CSV import found action with unknown '
+                            f'asset {e.asset_name}. Ignoring entry',
+                        )
+                        continue
+                    except DeserializationError as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'Deserialization error during BlockFi CSV import. '
+                            f'{str(e)}. Ignoring entry',
+                        )
+                        continue
+                    except KeyError as e:
+                        return False, str(e)
         return True, ''
 
-    def _consume_nexo(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:
+    def _consume_nexo(self, write_cursor: 'DBCursor', csv_row: Dict[str, Any], **kwargs: Any) -> None:  # noqa: E501
         """
         Consume CSV file from NEXO.
         This method can raise:
@@ -1057,7 +1077,7 @@ class DataImporter():
                 fee_asset=A_USD,
                 link=transaction,
             )
-            self.db.add_asset_movements([asset_movement])
+            self.db.add_asset_movements(write_cursor, [asset_movement])
         elif entry_type in ('Withdrawal', 'WithdrawExchanged'):
             asset_movement = AssetMovement(
                 location=Location.NEXO,
@@ -1071,7 +1091,7 @@ class DataImporter():
                 fee_asset=A_USD,
                 link=transaction,
             )
-            self.db.add_asset_movements([asset_movement])
+            self.db.add_asset_movements(write_cursor, [asset_movement])
         elif entry_type == 'Withdrawal Fee':
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
@@ -1085,7 +1105,7 @@ class DataImporter():
                 link=None,
                 notes=f'{entry_type} from Nexo',
             )
-            self.db_ledger.add_ledger_action(action)
+            self.db_ledger.add_ledger_action(write_cursor, action)
         elif entry_type in ('Interest', 'Bonus', 'Dividend', 'FixedTermInterest'):
             # A user shared a CSV file where some entries marked as interest had negative amounts.
             # we couldn't find information about this since they seem internal transactions made
@@ -1107,7 +1127,7 @@ class DataImporter():
                 link=transaction,
                 notes=f'{entry_type} from Nexo',
             )
-            self.db_ledger.add_ledger_action(action)
+            self.db_ledger.add_ledger_action(write_cursor, action)
         elif entry_type in ignored_entries:
             pass
         else:
@@ -1120,39 +1140,39 @@ class DataImporter():
         """
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
-            for idx, row in enumerate(data):
-                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
-                    gevent.sleep(0.1)
-                try:
-                    self._consume_nexo(row, **kwargs)
-                except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During Nexo CSV import found action with unknown '
-                        f'asset {e.asset_name}. Ignoring entry',
-                    )
-                    continue
-                except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during Nexo CSV import. '
-                        f'{str(e)}. Ignoring entry',
-                    )
-                    continue
-                except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                    self.db.conn.rollback()
-                    self.db.msg_aggregator.add_warning(
-                        'Error during nexro CSV import consumption. '
-                        ' Entry already existed in DB. Ignoring.',
-                    )
-                    log.warning(f'nexo csv entry {row} aleady existed in DB')
-                    continue
-                except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
-                    continue
-                except KeyError as e:
-                    return False, str(e)
+            with self.db.user_write() as cursor:
+                for idx, row in enumerate(data):
+                    if idx % ROWS_PER_CONTEXT_SWITCH == 0:
+                        gevent.sleep(0.1)
+                    try:
+                        self._consume_nexo(cursor, row, **kwargs)
+                    except UnknownAsset as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'During Nexo CSV import found action with unknown '
+                            f'asset {e.asset_name}. Ignoring entry',
+                        )
+                        continue
+                    except DeserializationError as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'Deserialization error during Nexo CSV import. '
+                            f'{str(e)}. Ignoring entry',
+                        )
+                        continue
+                    except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                        self.db.msg_aggregator.add_warning(
+                            'Error during nexro CSV import consumption. '
+                            ' Entry already existed in DB. Ignoring.',
+                        )
+                        log.warning(f'nexo csv entry {row} aleady existed in DB')
+                        continue
+                    except UnsupportedCSVEntry as e:
+                        self.db.msg_aggregator.add_warning(str(e))
+                        continue
+                    except KeyError as e:
+                        return False, str(e)
         return True, ''
 
-    def _consume_shapeshift_trade(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:
+    def _consume_shapeshift_trade(self, write_cursor: 'DBCursor', csv_row: Dict[str, Any], **kwargs: Any) -> None:  # noqa: E501
         """
         Consume the file containing only trades from ShapeShift.
         """
@@ -1210,7 +1230,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             link='',
             notes=notes,
         )
-        self.db.add_trades([trade])
+        self.db.add_trades(write_cursor, [trade])
 
     def import_shapeshift_trades_csv(self, filepath: Path, **kwargs: Any) -> Tuple[bool, str]:
         """
@@ -1218,28 +1238,29 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         """
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
-            for idx, row in enumerate(data):
-                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
-                    gevent.sleep(0.1)
-                try:
-                    self._consume_shapeshift_trade(row, **kwargs)
-                except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During ShapeShift CSV import found action with unknown '
-                        f'asset {e.asset_name}. Ignoring entry',
-                    )
-                    continue
-                except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during ShapeShift CSV import. '
-                        f'{str(e)}. Ignoring entry',
-                    )
-                    continue
-                except KeyError as e:
-                    return False, str(e)
+            with self.db.user_write() as cursor:
+                for idx, row in enumerate(data):
+                    if idx % ROWS_PER_CONTEXT_SWITCH == 0:
+                        gevent.sleep(0.1)
+                    try:
+                        self._consume_shapeshift_trade(cursor, row, **kwargs)
+                    except UnknownAsset as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'During ShapeShift CSV import found action with unknown '
+                            f'asset {e.asset_name}. Ignoring entry',
+                        )
+                        continue
+                    except DeserializationError as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'Deserialization error during ShapeShift CSV import. '
+                            f'{str(e)}. Ignoring entry',
+                        )
+                        continue
+                    except KeyError as e:
+                        return False, str(e)
         return True, ''
 
-    def _consume_uphold_transaction(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:
+    def _consume_uphold_transaction(self, write_cursor: 'DBCursor', csv_row: Dict[str, Any], **kwargs: Any) -> None:  # noqa: E501
         """
         Consume the file containing both trades and transactions from uphold.
         This method can raise:
@@ -1293,7 +1314,7 @@ Activity from uphold with uphold transaction id:
                     link='',
                     notes=notes,
                 )
-                self.db_ledger.add_ledger_action(action)
+                self.db_ledger.add_ledger_action(write_cursor, action)
             else:  # Assets or amounts differ (Trades)
                 # in uphold UI the exchanged amount includes the fee.
                 if fee_asset == destination_asset:
@@ -1312,7 +1333,7 @@ Activity from uphold with uphold transaction id:
                         link='',
                         notes=notes,
                     )
-                    self.db.add_trades([trade])
+                    self.db.add_trades(write_cursor, [trade])
                 else:
                     log.debug(f'Ignoring trade with Destination Amount: {destination_amount}.')
         elif origin == 'uphold':
@@ -1330,7 +1351,7 @@ Activity from uphold with uphold transaction id:
                         fee_asset=fee_asset,
                         link='',
                     )
-                    self.db.add_asset_movements([asset_movement])
+                    self.db.add_asset_movements(write_cursor, [asset_movement])
                 else:  # Trades (sell)
                     if origin_amount > 0:
                         trade = Trade(
@@ -1346,7 +1367,7 @@ Activity from uphold with uphold transaction id:
                             link='',
                             notes=notes,
                         )
-                        self.db.add_trades([trade])
+                        self.db.add_trades(write_cursor, [trade])
                     else:
                         log.debug(f'Ignoring trade with Origin Amount: {origin_amount}.')
         elif destination == 'uphold':
@@ -1364,7 +1385,7 @@ Activity from uphold with uphold transaction id:
                         fee_asset=fee_asset,
                         link='',
                     )
-                    self.db.add_asset_movements([asset_movement])
+                    self.db.add_asset_movements(write_cursor, [asset_movement])
                 else:  # Trades (buy)
                     if destination_amount > 0:
                         trade = Trade(
@@ -1380,7 +1401,7 @@ Activity from uphold with uphold transaction id:
                             link='',
                             notes=notes,
                         )
-                        self.db.add_trades([trade])
+                        self.db.add_trades(write_cursor, [trade])
                     else:
                         log.debug(f'Ignoring trade with Destination Amount: {destination_amount}.')
 
@@ -1390,28 +1411,29 @@ Activity from uphold with uphold transaction id:
         """
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
-            for idx, row in enumerate(data):
-                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
-                    gevent.sleep(0.1)
-                try:
-                    self._consume_uphold_transaction(row, **kwargs)
-                except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During uphold CSV import found action with unknown '
-                        f'asset {e.asset_name}. Ignoring entry',
-                    )
-                    continue
-                except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during uphold CSV import. '
-                        f'{str(e)}. Ignoring entry',
-                    )
-                    continue
-                except KeyError as e:
-                    return False, str(e)
+            with self.db.user_write() as cursor:
+                for idx, row in enumerate(data):
+                    if idx % ROWS_PER_CONTEXT_SWITCH == 0:
+                        gevent.sleep(0.1)
+                    try:
+                        self._consume_uphold_transaction(cursor, row, **kwargs)
+                    except UnknownAsset as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'During uphold CSV import found action with unknown '
+                            f'asset {e.asset_name}. Ignoring entry',
+                        )
+                        continue
+                    except DeserializationError as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'Deserialization error during uphold CSV import. '
+                            f'{str(e)}. Ignoring entry',
+                        )
+                        continue
+                    except KeyError as e:
+                        return False, str(e)
         return True, ''
 
-    def _consume_bisq_trade(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:
+    def _consume_bisq_trade(self, write_cursor: 'DBCursor', csv_row: Dict[str, Any], **kwargs: Any) -> None:  # noqa :E501
         """
         Consume the file containing only trades from Bisq.
         - UnknownAsset
@@ -1477,7 +1499,7 @@ Activity from uphold with uphold transaction id:
             link='',
             notes=f'ID: {csv_row["Trade ID"]}',
         )
-        self.db.add_trades([trade])
+        self.db.add_trades(write_cursor, [trade])
 
     def import_bisq_trades_csv(self, filepath: Path, **kwargs: Any) -> Tuple[bool, str]:
         """
@@ -1486,25 +1508,26 @@ Activity from uphold with uphold transaction id:
         """
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
-            for idx, row in enumerate(data):
-                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
-                    gevent.sleep(0.1)
-                try:
-                    self._consume_bisq_trade(row, **kwargs)
-                except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During Bisq CSV import found action with unknown '
-                        f'asset {e.asset_name}. Ignoring entry',
-                    )
-                    continue
-                except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during Bisq CSV import. '
-                        f'{str(e)}. Ignoring entry',
-                    )
-                    continue
-                except KeyError as e:
-                    return False, str(e)
+            with self.db.user_write() as cursor:
+                for idx, row in enumerate(data):
+                    if idx % ROWS_PER_CONTEXT_SWITCH == 0:
+                        gevent.sleep(0.1)
+                    try:
+                        self._consume_bisq_trade(cursor, row, **kwargs)
+                    except UnknownAsset as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'During Bisq CSV import found action with unknown '
+                            f'asset {e.asset_name}. Ignoring entry',
+                        )
+                        continue
+                    except DeserializationError as e:
+                        self.db.msg_aggregator.add_warning(
+                            f'Deserialization error during Bisq CSV import. '
+                            f'{str(e)}. Ignoring entry',
+                        )
+                        continue
+                    except KeyError as e:
+                        return False, str(e)
         return True, ''
 
     @staticmethod
@@ -1541,8 +1564,9 @@ Activity from uphold with uphold transaction id:
 
     def _process_single_binance_entries(
         self,
-        timestamp: Timestamp,
-        rows: List[BinanceCsvRow],
+            write_cursor: 'DBCursor',
+            timestamp: Timestamp,
+            rows: List[BinanceCsvRow],
     ) -> Tuple[Dict[BinanceSingleEntry, int], List[BinanceCsvRow]]:
         """Processes binance entries that are represented with a single row in a csv file"""
         processed: Dict[BinanceSingleEntry, int] = defaultdict(int)
@@ -1551,6 +1575,7 @@ Activity from uphold with uphold transaction id:
             for single_entry_class in SINGLE_BINANCE_ENTRIES:
                 if single_entry_class.is_entry(row['Operation']):
                     single_entry_class.process_entry(
+                        write_cursor=write_cursor,
                         db=self.db,
                         db_ledger=self.db_ledger,
                         timestamp=timestamp,
@@ -1564,13 +1589,15 @@ Activity from uphold with uphold transaction id:
 
     def _process_multiple_binance_entries(
         self,
-        timestamp: Timestamp,
-        rows: List[BinanceCsvRow],
+            write_cursor: 'DBCursor',
+            timestamp: Timestamp,
+            rows: List[BinanceCsvRow],
     ) -> Tuple[Optional[BinanceEntry], int]:
         """Processes binance entries that are represented with 2+ rows in a csv file"""
         for multiple_entry_class in MULTIPLE_BINANCE_ENTRIES:
             if multiple_entry_class.are_entries([row['Operation'] for row in rows]):
                 processed_count = multiple_entry_class.process_entries(
+                    write_cursor=write_cursor,
                     db=self.db,
                     timestamp=timestamp,
                     data=rows,
@@ -1581,37 +1608,41 @@ Activity from uphold with uphold transaction id:
     def _process_binance_rows(self, multi: Dict[Timestamp, List[BinanceCsvRow]]) -> None:
         stats: Dict[BinanceEntry, int] = defaultdict(int)
         skipped_rows: List[Any] = []
-        for idx, (timestamp, rows) in enumerate(multi.items()):
-            if idx % ROWS_PER_CONTEXT_SWITCH == 0:
-                gevent.sleep(0.1)
-            single_processed, rows_without_single = self._process_single_binance_entries(
-                timestamp=timestamp,
-                rows=rows,
-            )
-            for entry_type, amount in single_processed.items():
-                stats[entry_type] += amount
+        with self.db.user_write() as cursor:
+            for idx, (timestamp, rows) in enumerate(multi.items()):
+                if idx % ROWS_PER_CONTEXT_SWITCH == 0:
+                    gevent.sleep(0.1)
+                single_processed, rows_without_single = self._process_single_binance_entries(
+                    write_cursor=cursor,
+                    timestamp=timestamp,
+                    rows=rows,
+                )
+                for entry_type, amount in single_processed.items():
+                    stats[entry_type] += amount
 
-            multiple_type, multiple_count = self._process_multiple_binance_entries(
-                timestamp=timestamp,
-                rows=rows_without_single,
-            )
-            if multiple_type is not None and multiple_count > 0:
-                stats[multiple_type] += multiple_count
-                rows_without_multiple = []
-            else:
-                rows_without_multiple = rows_without_single
+                multiple_type, multiple_count = self._process_multiple_binance_entries(
+                    write_cursor=cursor,
+                    timestamp=timestamp,
+                    rows=rows_without_single,
+                )
+                if multiple_type is not None and multiple_count > 0:
+                    stats[multiple_type] += multiple_count
+                    rows_without_multiple = []
+                else:
+                    rows_without_multiple = rows_without_single
 
-            if len(rows_without_multiple) > 0:
-                skipped_rows.append([timestamp, rows_without_multiple])
+                if len(rows_without_multiple) > 0:
+                    skipped_rows.append([timestamp, rows_without_multiple])
 
-        skipped_nontrade_rows = []
-        skipped_trade_rows = []
-        for skipped_rows_group in skipped_rows:
-            cur_operations = {el['Operation'] for el in skipped_rows_group[1]}
-            if cur_operations.issubset(BINANCE_TRADE_OPERATIONS):
-                skipped_trade_rows.append(skipped_rows_group)
-            else:
-                skipped_nontrade_rows.append(skipped_trade_rows)
+            skipped_nontrade_rows = []
+            skipped_trade_rows = []
+            for skipped_rows_group in skipped_rows:
+                cur_operations = {el['Operation'] for el in skipped_rows_group[1]}
+                if cur_operations.issubset(BINANCE_TRADE_OPERATIONS):
+                    skipped_trade_rows.append(skipped_rows_group)
+                else:
+                    skipped_nontrade_rows.append(skipped_trade_rows)
+
         total_found = sum(stats.values())
         skipped_count = 0
         for _, rows in skipped_rows:

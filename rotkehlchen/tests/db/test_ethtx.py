@@ -29,14 +29,16 @@ def test_add_get_ethereum_transactions(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
     tx2_hash = make_evm_tx_hash(b'.h\xdd\x82\x85\x94\xeaq\xfe\n\xfc\xcf\xadwH\xc9\x0f\xfc\xd0\xf1\xad\xd4M\r$\x9b\xf7\x98\x87\xda\x93\x18')  # noqa: E501
-    data.db.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.ETHEREUM,
-        account_data=[
-            BlockchainAccountData(address=ETH_ADDRESS1),
-            BlockchainAccountData(address=ETH_ADDRESS2),
-            BlockchainAccountData(address=ETH_ADDRESS3),
-        ],
-    )
+    with data.db.user_write() as cursor:
+        data.db.add_blockchain_accounts(
+            write_cursor=cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            account_data=[
+                BlockchainAccountData(address=ETH_ADDRESS1),
+                BlockchainAccountData(address=ETH_ADDRESS2),
+                BlockchainAccountData(address=ETH_ADDRESS3),
+            ],
+        )
 
     tx1 = EthereumTransaction(
         tx_hash=make_evm_tx_hash(b'1'),
@@ -79,40 +81,41 @@ def test_add_get_ethereum_transactions(data_dir, username):
     )
 
     # Add and retrieve the first 2 tx. All should be fine.
-    dbethtx = DBEthTx(data.db)
-    dbethtx.add_ethereum_transactions([tx1, tx2], relevant_address=ETH_ADDRESS3)
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    filter_query = ETHTransactionsFilterQuery.make()
-    returned_transactions = dbethtx.get_ethereum_transactions(filter_query, True)
-    assert returned_transactions == [tx1, tx2]
+    with data.db.user_write() as cursor:
+        dbethtx = DBEthTx(data.db)
+        dbethtx.add_ethereum_transactions(cursor, [tx1, tx2], relevant_address=ETH_ADDRESS3)
+        errors = msg_aggregator.consume_errors()
+        warnings = msg_aggregator.consume_warnings()
+        assert len(errors) == 0
+        assert len(warnings) == 0
+        filter_query = ETHTransactionsFilterQuery.make()
+        returned_transactions = dbethtx.get_ethereum_transactions(cursor, filter_query, True)
+        assert returned_transactions == [tx1, tx2]
 
-    # Add the last 2 transactions. Since tx2 already exists in the DB it should be
-    # ignored (no errors shown for attempting to add already existing transaction)
-    dbethtx.add_ethereum_transactions([tx2, tx3], relevant_address=ETH_ADDRESS3)
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    returned_transactions = dbethtx.get_ethereum_transactions(filter_query, True)
-    assert returned_transactions == [tx1, tx2, tx3]
+        # Add the last 2 transactions. Since tx2 already exists in the DB it should be
+        # ignored (no errors shown for attempting to add already existing transaction)
+        dbethtx.add_ethereum_transactions(cursor, [tx2, tx3], relevant_address=ETH_ADDRESS3)
+        errors = msg_aggregator.consume_errors()
+        warnings = msg_aggregator.consume_warnings()
+        assert len(errors) == 0
+        assert len(warnings) == 0
+        returned_transactions = dbethtx.get_ethereum_transactions(cursor, filter_query, True)
+        assert returned_transactions == [tx1, tx2, tx3]
 
-    # Now add same transactions but with other relevant address
-    dbethtx.add_ethereum_transactions([tx1, tx3], relevant_address=ETH_ADDRESS1)
-    dbethtx.add_ethereum_transactions([tx2], relevant_address=ETH_ADDRESS2)
+        # Now add same transactions but with other relevant address
+        dbethtx.add_ethereum_transactions(cursor, [tx1, tx3], relevant_address=ETH_ADDRESS1)
+        dbethtx.add_ethereum_transactions(cursor, [tx2], relevant_address=ETH_ADDRESS2)
 
-    # try transaction query by tx_hash
-    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash), has_premium=True)  # noqa: E501
-    assert result == [tx2], 'querying transaction by hash in bytes failed'
-    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=b'dsadsad'), has_premium=True)  # noqa: E501
-    assert result == []
+        # try transaction query by tx_hash
+        result = dbethtx.get_ethereum_transactions(cursor, ETHTransactionsFilterQuery.make(tx_hash=tx2_hash), has_premium=True)  # noqa: E501
+        assert result == [tx2], 'querying transaction by hash in bytes failed'
+        result = dbethtx.get_ethereum_transactions(cursor, ETHTransactionsFilterQuery.make(tx_hash=b'dsadsad'), has_premium=True)  # noqa: E501
+        assert result == []
 
-    # TODO: Uncomment this when filtering is restored
-    # Now try transaction by relevant addresses
-    # result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1, make_ethereum_address()]), has_premium=True)  # noqa: E501
-    # assert result == [tx1, tx3]
+        # TODO: Uncomment this when filtering is restored
+        # Now try transaction by relevant addresses
+        # result = dbethtx.get_ethereum_transactions(cursor, ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1, make_ethereum_address()]), has_premium=True)  # noqa: E501
+        # assert result == [tx1, tx3]
 
 
 def test_query_also_internal_ethereum_transactions(data_dir, username):
@@ -124,15 +127,17 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
     data.unlock(username, '123', create_new=True)
     address_4 = make_ethereum_address()
 
-    data.db.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.ETHEREUM,
-        account_data=[
-            BlockchainAccountData(address=ETH_ADDRESS1),
-            BlockchainAccountData(address=ETH_ADDRESS2),
-            BlockchainAccountData(address=ETH_ADDRESS3),
-            BlockchainAccountData(address=address_4),
-        ],
-    )
+    with data.db.user_write() as cursor:
+        data.db.add_blockchain_accounts(
+            cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            account_data=[
+                BlockchainAccountData(address=ETH_ADDRESS1),
+                BlockchainAccountData(address=ETH_ADDRESS2),
+                BlockchainAccountData(address=ETH_ADDRESS3),
+                BlockchainAccountData(address=address_4),
+            ],
+        )
 
     tx1 = EthereumTransaction(
         tx_hash=make_evm_tx_hash(b'1'),
@@ -237,42 +242,47 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
     )
 
     dbethtx = DBEthTx(data.db)
-    dbethtx.add_ethereum_transactions([tx1, tx3, tx4, tx5], relevant_address=ETH_ADDRESS1)
-    dbethtx.add_ethereum_transactions([tx2], relevant_address=ETH_ADDRESS2)
-    dbethtx.add_ethereum_transactions([tx1, tx3], relevant_address=ETH_ADDRESS3)
-    dbethtx.add_ethereum_internal_transactions([internal_tx2, internal_tx3, internal_tx4], relevant_address=ETH_ADDRESS1)  # noqa: E501
-    dbethtx.add_ethereum_internal_transactions([internal_tx1, internal_tx4], relevant_address=ETH_ADDRESS3)  # noqa: E501
-    dbethtx.add_ethereum_internal_transactions([internal_tx1], relevant_address=address_4)  # noqa: E501
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
+    with data.db.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [tx1, tx3, tx4, tx5], relevant_address=ETH_ADDRESS1)  # noqa: E501
+        dbethtx.add_ethereum_transactions(cursor, [tx2], relevant_address=ETH_ADDRESS2)
+        dbethtx.add_ethereum_transactions(cursor, [tx1, tx3], relevant_address=ETH_ADDRESS3)
+        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx2, internal_tx3, internal_tx4], relevant_address=ETH_ADDRESS1)  # noqa: E501
+        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx1, internal_tx4], relevant_address=ETH_ADDRESS3)  # noqa: E501
+        dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx1], relevant_address=address_4)  # noqa: E501
+        errors = msg_aggregator.consume_errors()
+        warnings = msg_aggregator.consume_warnings()
+        assert len(errors) == 0
+        assert len(warnings) == 0
 
-    # TODO: Uncomment these when filtering is restored
-    # result, total_filter_count = dbethtx.get_ethereum_transactions_and_limit_info(
-    #     ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS3]),
-    #     has_premium=True,
-    # )
-    # assert {x.tx_hash for x in result} == {b'1', b'3', b'4'}
-    # assert total_filter_count == 3
+        # TODO: Uncomment these when filtering is restored
+        # result, total_filter_count = dbethtx.get_ethereum_transactions_and_limit_info(
+        #     cursor=cursor,
+        #     ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS3]),
+        #     has_premium=True,
+        # )
+        # assert {x.tx_hash for x in result} == {b'1', b'3', b'4'}
+        # assert total_filter_count == 3
 
-    # # Now try transaction query by relevant addresses and see we get more due to the
-    # # internal tx mappings
-    # result, total_filter_count = dbethtx.get_ethereum_transactions_and_limit_info(
-    #     ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1]),
-    #     has_premium=True,
-    # )
-    # assert result == [tx1, tx3, tx4, tx5]
-    # assert total_filter_count == 4
+        # # Now try transaction query by relevant addresses and see we get more due to the
+        # # internal tx mappings
+        # result, total_filter_count = dbethtx.get_ethereum_transactions_and_limit_info(
+        #     cursor=cursor,
+        #     ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1]),
+        #     has_premium=True,
+        # )
+        # assert result == [tx1, tx3, tx4, tx5]
+        # assert total_filter_count == 4
 
-    # result = dbethtx.get_ethereum_transactions(
-    #     ETHTransactionsFilterQuery.make(addresses=[address_4]),
-    #     has_premium=True,
-    # )
-    # assert result == [tx3]
+        # result = dbethtx.get_ethereum_transactions(
+        #     cursor=cursor,
+        #     ETHTransactionsFilterQuery.make(addresses=[address_4]),
+        #     has_premium=True,
+        # )
+        # assert result == [tx3]
 
-    # result = dbethtx.get_ethereum_transactions(
-    #     ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS3]),
-    #     has_premium=True,
-    # )
-    # assert result == [tx1, tx3, tx4]
+        # result = dbethtx.get_ethereum_transactions(
+        #     cursor=cursor,
+        #     ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS3]),
+        #     has_premium=True,
+        # )
+        # assert result == [tx1, tx3, tx4]

@@ -72,35 +72,39 @@ def test_get_transaction_receipt(
 
     from_addy = make_ethereum_address()
     to_addy = make_ethereum_address()
-    database.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.ETHEREUM,
-        account_data=[
-            BlockchainAccountData(address=from_addy),
-            BlockchainAccountData(address=to_addy),
-        ],
-    )
     db = DBEthTx(database)
-    db.add_ethereum_transactions(
-        [EthereumTransaction(  # need to add the tx first
-            tx_hash=tx_hash,
-            timestamp=1,  # all other fields don't matter for this test
-            block_number=1,
-            from_address=from_addy,
-            to_address=to_addy,
-            value=1,
-            gas=1,
-            gas_price=1,
-            gas_used=1,
-            input_data=b'',
-            nonce=1,
-        )],
-        relevant_address=from_addy,
-    )
+    with database.user_write() as cursor:
+        database.add_blockchain_accounts(
+            cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            account_data=[
+                BlockchainAccountData(address=from_addy),
+                BlockchainAccountData(address=to_addy),
+            ],
+        )
+        db.add_ethereum_transactions(
+            cursor,
+            [EthereumTransaction(  # need to add the tx first
+                tx_hash=tx_hash,
+                timestamp=1,  # all other fields don't matter for this test
+                block_number=1,
+                from_address=from_addy,
+                to_address=to_addy,
+                value=1,
+                gas=1,
+                gas_price=1,
+                gas_used=1,
+                input_data=b'',
+                nonce=1,
+            )],
+            relevant_address=from_addy,
+        )
 
-    # also test receipt can be stored and retrieved from the DB.
-    # This tests that all node types (say openethereum) are processed properly
-    db.add_receipt_data(result)
-    receipt = db.get_receipt(tx_hash)
+        # also test receipt can be stored and retrieved from the DB.
+        # This tests that all node types (say openethereum) are processed properly
+        db.add_receipt_data(cursor, result)
+        receipt = db.get_receipt(cursor, tx_hash)
+
     assert receipt == EthereumTxReceipt(
         tx_hash=tx_hash,
         contract_address=None,

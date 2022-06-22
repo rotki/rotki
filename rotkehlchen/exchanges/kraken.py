@@ -65,6 +65,7 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 logger = logging.getLogger(__name__)
@@ -717,23 +718,26 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         Query kraken events from database and create trades from them. May raise:
         - RemoteError if the kraken pairs couldn't be queried
         """
-        with_errors = self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
-        filter_query = HistoryEventFilterQuery.make(
-            from_ts=Timestamp(start_ts),
-            to_ts=Timestamp(end_ts),
-            event_types=[
-                HistoryEventType.TRADE,
-                HistoryEventType.RECEIVE,
-                HistoryEventType.SPEND,
-                HistoryEventType.ADJUSTMENT,
-            ],
-            location=Location.KRAKEN,
-            location_label=self.name,
-        )
-        trades_raw = self.history_events_db.get_history_events(
-            filter_query=filter_query,
-            has_premium=True,
-        )
+        with self.db.conn.read_ctx() as cursor:
+            with_errors = self.query_kraken_ledgers(cursor, start_ts=start_ts, end_ts=end_ts)
+            filter_query = HistoryEventFilterQuery.make(
+                from_ts=Timestamp(start_ts),
+                to_ts=Timestamp(end_ts),
+                event_types=[
+                    HistoryEventType.TRADE,
+                    HistoryEventType.RECEIVE,
+                    HistoryEventType.SPEND,
+                    HistoryEventType.ADJUSTMENT,
+                ],
+                location=Location.KRAKEN,
+                location_label=self.name,
+            )
+            trades_raw = self.history_events_db.get_history_events(
+                cursor=cursor,
+                filter_query=filter_query,
+                has_premium=True,
+            )
+
         trades, max_ts = self.process_kraken_trades(trades_raw)
         queried_range = (start_ts, Timestamp(max_ts)) if with_errors else (start_ts, end_ts)
         return trades, queried_range
@@ -761,21 +765,23 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
-        self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
-        filter_query = HistoryEventFilterQuery.make(
-            from_ts=Timestamp(start_ts),
-            to_ts=Timestamp(end_ts),
-            event_types=[
-                HistoryEventType.DEPOSIT,
-                HistoryEventType.WITHDRAWAL,
-            ],
-            location=Location.KRAKEN,
-            location_label=self.name,
-        )
-        events = self.history_events_db.get_history_events(
-            filter_query=filter_query,
-            has_premium=True,
-        )
+        with self.db.conn.read_ctx() as cursor:
+            self.query_kraken_ledgers(cursor, start_ts=start_ts, end_ts=end_ts)
+            filter_query = HistoryEventFilterQuery.make(
+                from_ts=Timestamp(start_ts),
+                to_ts=Timestamp(end_ts),
+                event_types=[
+                    HistoryEventType.DEPOSIT,
+                    HistoryEventType.WITHDRAWAL,
+                ],
+                location=Location.KRAKEN,
+                location_label=self.name,
+            )
+            events = self.history_events_db.get_history_events(
+                cursor=cursor,
+                filter_query=filter_query,
+                has_premium=True,
+            )
         log.debug('Kraken deposit/withdrawals query result', num_results=len(events))
         movements = []
         get_attr = operator.attrgetter('event_identifier')
@@ -1092,7 +1098,12 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return trades, Timestamp(max_ts)
 
     @protect_with_lock()
-    def query_kraken_ledgers(self, start_ts: Timestamp, end_ts: Timestamp) -> bool:
+    def query_kraken_ledgers(
+            self,
+            cursor: 'DBCursor',
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> bool:
         """
         Query Kraken's ledger to retrieve events and transform them to our internal representation
         of history events. Internally we look for the query range that needs to be queried in the
@@ -1104,6 +1115,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         ranges = DBQueryRanges(self.db)
         range_query_name = f'{self.location}_history_events_{self.name}'
         ranges_to_query = ranges.get_location_query_ranges(
+            cursor=cursor,
             location_string=range_query_name,
             start_ts=start_ts,
             end_ts=end_ts,
@@ -1156,18 +1168,20 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 new_events.extend(group_events)
 
             if len(new_events) != 0:
-                try:
-                    self.history_events_db.add_history_events(new_events)
-                except InputError as e:
-                    self.msg_aggregator.add_error(
-                        f'Failed to save kraken events from {query_start_ts} to {query_end_ts} '
-                        f'in database. {str(e)}',
-                    )
+                with self.db.user_write() as write_cursor:
+                    try:
+                        self.history_events_db.add_history_events(write_cursor=write_cursor, history=new_events)  # noqa: E501
+                    except InputError as e:
+                        self.msg_aggregator.add_error(
+                            f'Failed to save kraken events from {query_start_ts} '
+                            f'to {query_end_ts} in database. {str(e)}',
+                        )
 
-                ranges.update_used_query_range(
-                    location_string=range_query_name,
-                    queried_ranges=[(start_ts, end_ts)] + ranges_to_query,
-                )
+                    ranges.update_used_query_range(
+                        write_cursor=write_cursor,
+                        location_string=range_query_name,
+                        queried_ranges=[(start_ts, end_ts)] + ranges_to_query,
+                    )
 
             if with_errors is True:
                 return True  # we had errors so stop any further queries and quit

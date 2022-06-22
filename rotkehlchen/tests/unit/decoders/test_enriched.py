@@ -71,14 +71,15 @@ def test_1inch_claim(database, ethereum_manager, eth_transactions):
     )
 
     dbethtx = DBEthTx(database)
-    dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(
-        database=database,
-        ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
-        msg_aggregator=msg_aggregator,
-    )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            eth_transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(
@@ -177,14 +178,15 @@ def test_gnosis_chain_bridge(database, ethereum_manager, eth_transactions):
     )
 
     dbethtx = DBEthTx(database)
-    dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(
-        database=database,
-        ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
-        msg_aggregator=msg_aggregator,
-    )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            eth_transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(
@@ -269,14 +271,15 @@ def test_gitcoin_claim(database, ethereum_manager, eth_transactions):
     )
 
     dbethtx = DBEthTx(database)
-    dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
-    decoder = EVMTransactionDecoder(
-        database=database,
-        ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
-        msg_aggregator=msg_aggregator,
-    )
-    events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
+    with database.user_write() as cursor:
+        dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
+        decoder = EVMTransactionDecoder(
+            database=database,
+            ethereum_manager=ethereum_manager,
+            eth_transactions=eth_transactions,
+            msg_aggregator=msg_aggregator,
+        )
+        events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(

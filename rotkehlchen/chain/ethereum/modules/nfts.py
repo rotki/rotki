@@ -173,25 +173,23 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
 
         # save opensea data in the DB
         if len(db_data) != 0:
-            cursor = self.db.conn.cursor()
-            cursor.executemany(
-                'INSERT OR IGNORE INTO assets(identifier) VALUES(?)',
-                [(x[0],) for x in db_data],
-            )
-            for entry in db_data:
-                exist_result = cursor.execute(
-                    'SELECT manual_price FROM nfts WHERE identifier=?',
-                    (entry[0],),
-                ).fetchone()
-                if exist_result is None or bool(exist_result[0]) is False:
-                    cursor.execute(
-                        'INSERT OR IGNORE INTO nfts('
-                        'identifier, name, last_price, last_price_asset, manual_price, owner_address'  # noqa: E501
-                        ') VALUES(?, ?, ?, ?, ?, ?)',
-                        entry,
-                    )
-
-            self.db.update_last_write()
+            with self.db.user_write() as cursor:
+                cursor.executemany(
+                    'INSERT OR IGNORE INTO assets(identifier) VALUES(?)',
+                    [(x[0],) for x in db_data],
+                )
+                for entry in db_data:
+                    exist_result = cursor.execute(
+                        'SELECT manual_price FROM nfts WHERE identifier=?',
+                        (entry[0],),
+                    ).fetchone()
+                    if exist_result is None or bool(exist_result[0]) is False:
+                        cursor.execute(
+                            'INSERT OR IGNORE INTO nfts('
+                            'identifier, name, last_price, last_price_asset, manual_price, owner_address'  # noqa: E501
+                            ') VALUES(?, ?, ?, ?, ?, ?)',
+                            entry,
+                        )
 
         return result
 
@@ -245,35 +243,33 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         """May raise:
          - InputError
         """
-        cursor = self.db.conn.cursor()
-        try:
-            cursor.execute(
-                'UPDATE nfts SET last_price=?, last_price_asset=?, manual_price=? '
-                'WHERE identifier=?',
-                (str(price), to_asset.identifier, 1, from_asset.identifier),
-            )
-        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            raise InputError(f'Failed to write price for {from_asset.identifier} due to {str(e)}') from e  # noqa: E501
+        with self.db.user_write() as cursor:
+            try:
+                cursor.execute(
+                    'UPDATE nfts SET last_price=?, last_price_asset=?, manual_price=? '
+                    'WHERE identifier=?',
+                    (str(price), to_asset.identifier, 1, from_asset.identifier),
+                )
+            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                raise InputError(f'Failed to write price for {from_asset.identifier} due to {str(e)}') from e  # noqa: E501
 
-        if cursor.rowcount != 1:
-            raise InputError(f'Failed to write price for {from_asset.identifier}')
+            if cursor.rowcount != 1:
+                raise InputError(f'Failed to write price for {from_asset.identifier}')
 
-        self.db.update_last_write()
         return True
 
     def delete_price_for_nft(self, asset: Asset) -> bool:
-        cursor = self.db.conn.cursor()
-        try:
-            cursor.execute(
-                'UPDATE nfts SET last_price=?, last_price_asset=? WHERE identifier=?',
-                (None, None, asset.identifier),
-            )
-        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            raise InputError(f'Failed to delete price for {asset.identifier} due to {str(e)}') from e  # noqa: E501
-        if cursor.rowcount != 1:
-            raise InputError(f'Failed to delete price for unknown asset {asset.identifier}')
+        with self.db.user_write() as cursor:
+            try:
+                cursor.execute(
+                    'UPDATE nfts SET last_price=?, last_price_asset=? WHERE identifier=?',
+                    (None, None, asset.identifier),
+                )
+            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                raise InputError(f'Failed to delete price for {asset.identifier} due to {str(e)}') from e  # noqa: E501
+            if cursor.rowcount != 1:
+                raise InputError(f'Failed to delete price for unknown asset {asset.identifier}')
 
-        self.db.update_last_write()
         return True
 
     # -- Methods following the EthereumModule interface -- #

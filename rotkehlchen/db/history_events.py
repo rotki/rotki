@@ -19,6 +19,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -33,8 +34,9 @@ class DBHistoryEvents():
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
-    def add_history_event(
+    def add_history_event(    # pylint: disable=no-self-use
             self,
+            write_cursor: 'DBCursor',
             event: HistoryBaseEntry,
             mapping_value: Optional[str] = None,
     ) -> int:
@@ -47,66 +49,67 @@ class DBHistoryEvents():
         - DeserializationError if the event could not be serialized for the DB
         - sqlcipher.DatabaseError: If anything went wrong at insertion
         """
-        cursor = self.db.conn.cursor()
-        cursor.execute(HISTORY_INSERT, event.serialize_for_db())
-        identifier = cursor.lastrowid
+        write_cursor.execute(HISTORY_INSERT, event.serialize_for_db())
+        identifier = write_cursor.lastrowid
 
         if mapping_value is not None:
-            cursor.execute(
+            write_cursor.execute(
                 'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, value) '
                 'VALUES(?, ?)',
                 (identifier, mapping_value),
             )
 
-        self.db.update_last_write()
         return identifier
 
-    def add_history_events(self, history: List[HistoryBaseEntry]) -> None:
+    def add_history_events(    # pylint: disable=no-self-use
+            self,
+            write_cursor: 'DBCursor',
+            history: List[HistoryBaseEntry],
+    ) -> None:
         """Insert a list of history events in database.
 
         May raise:
-        - InputError if the events couldn't be stored in database
+        - InputError if the events couldn't be stored in the database
         """
         events = []
         for event in history:
             events.append(event.serialize_for_db())
         self.db.write_tuples(
+            write_cursor=write_cursor,
             tuple_type='history_event',
             query=HISTORY_INSERT,
             tuples=events,
         )
-        self.db.update_last_write()
 
     def edit_history_event(self, event: HistoryBaseEntry) -> Tuple[bool, str]:
         """Edit a history entry to the DB. Returns the edited entry"""
-        cursor = self.db.conn.cursor()
-        try:
+        with self.db.user_write() as cursor:
+            try:
+                cursor.execute(
+                    'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
+                    'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
+                    'type=?, subtype=?, counterparty=?, extra_data=? WHERE identifier=?',
+                    (*event.serialize_for_db(), event.identifier),
+                )
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                msg = (
+                    f'Tried to edit event to have event_identifier {event.event_identifier} and '
+                    f'sequence_index {event.sequence_index} but it already exists'
+                )
+                return False, msg
+
+            if cursor.rowcount != 1:
+                msg = f'Tried to edit event with id {event.identifier} but could not find it in the DB'  # noqa: E501
+                return False, msg
             cursor.execute(
-                'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
-                'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
-                'type=?, subtype=?, counterparty=?, extra_data=? WHERE identifier=?',
-                (*event.serialize_for_db(), event.identifier),
+                'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, value) '
+                'VALUES(?, ?)',
+                (event.identifier, HISTORY_MAPPING_CUSTOMIZED),
             )
-        except sqlcipher.IntegrityError:  # pylint: disable=no-member
-            msg = (
-                f'Tried to edit event to have event_identifier {event.event_identifier} and '
-                f'sequence_index {event.sequence_index} but it already exists'
-            )
-            return False, msg
 
-        if cursor.rowcount != 1:
-            msg = f'Tried to edit event with id {event.identifier} but could not find it in the DB'
-            return False, msg
-        cursor.execute(
-            'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, value) '
-            'VALUES(?, ?)',
-            (event.identifier, HISTORY_MAPPING_CUSTOMIZED),
-        )
-
-        self.db.update_last_write()
         return True, ''
 
-    def delete_history_events_by_identifier(self, identifiers: List[int]) -> Optional[str]:
+    def delete_history_events_by_identifier(self, identifiers: List[int]) -> Optional[str]:  # noqa: E501
         """
         Delete the history events with the given identifiers. If deleting an event
         makes it the last event of a transaction hash then do not allow deletion.
@@ -114,38 +117,34 @@ class DBHistoryEvents():
         If any identifier is missing the entire call fails and an error message
         is returned. Otherwise None is returned.
         """
-        cursor = self.db.conn.cursor()
-        for identifier in identifiers:
-            result = cursor.execute(
-                'SELECT COUNT(*) FROM history_events WHERE event_identifier=('
-                'SELECT event_identifier FROM history_events WHERE identifier=?)',
-                (identifier,),
-            )
-            if result.fetchone()[0] == 1:
-                self.db.conn.rollback()
-                return (
-                    f'Tried to remove history event with id {identifier} '
-                    f'which was the last event of a transaction'
+        with self.db.user_write() as cursor:
+            for identifier in identifiers:
+                cursor.execute(
+                    'SELECT COUNT(*) FROM history_events WHERE event_identifier=('
+                    'SELECT event_identifier FROM history_events WHERE identifier=?)',
+                    (identifier,),
                 )
+                if cursor.fetchone()[0] == 1:
+                    return (
+                        f'Tried to remove history event with id {identifier} '
+                        f'which was the last event of a transaction'
+                    )
 
-            cursor.execute(
-                'DELETE FROM history_events WHERE identifier=?', (identifier,),
-            )
-            affected_rows = cursor.rowcount
-            if affected_rows != 1:
-                self.db.conn.rollback()
-                return (
-                    f'Tried to remove history event with id {identifier} which does not exist'
+                cursor.execute(
+                    'DELETE FROM history_events WHERE identifier=?', (identifier,),
                 )
+                affected_rows = cursor.rowcount
+                if affected_rows != 1:
+                    return (
+                        f'Tried to remove history event with id {identifier} which does not exist'
+                    )
 
-        self.db.update_last_write()
-        return None
+            return None
 
-    def delete_events_by_tx_hash(self, tx_hashes: List[EVMTxHash]) -> None:
+    def delete_events_by_tx_hash(self, write_cursor: 'DBCursor', tx_hashes: List[EVMTxHash]) -> None:  # noqa: E501
         """Delete all relevant (by event_identifier) history events except those that
         are customized"""
-        cursor = self.db.conn.cursor()
-        customized_event_ids = self.get_customized_event_identifiers()
+        customized_event_ids = self.get_customized_event_identifiers(write_cursor)
         length = len(customized_event_ids)
         querystr = 'DELETE FROM history_events WHERE event_identifier=?'
         if length != 0:
@@ -154,37 +153,36 @@ class DBHistoryEvents():
         else:
             bindings = [(x.hex(),) for x in tx_hashes]
 
-        cursor.executemany(querystr, bindings)
+        write_cursor.executemany(querystr, bindings)
 
-    def get_customized_event_identifiers(self) -> List[int]:
+    def get_customized_event_identifiers(self, cursor: 'DBCursor') -> List[int]:      # pylint: disable=no-self-use  # noqa: E501
         """Returns the identifiers of all the events in the database that have been customized"""
-        cursor = self.db.conn.cursor()
-        result = cursor.execute(
+        cursor.execute(
             'SELECT parent_identifier FROM history_events_mappings WHERE value=?',
             (HISTORY_MAPPING_CUSTOMIZED,),
         )
-        return [x[0] for x in result]
+        return [x[0] for x in cursor]
 
-    def get_history_events(
-        self,
-        filter_query: HistoryEventFilterQuery,
-        has_premium: bool,
+    def get_history_events(      # pylint: disable=no-self-use
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventFilterQuery,
+            has_premium: bool,
     ) -> List[HistoryBaseEntry]:
         """
         Get history events using the provided query filter
         """
         query, bindings = filter_query.prepare()
-        cursor = self.db.conn.cursor()
 
         if has_premium:
             query = 'SELECT * from history_events ' + query
-            results = cursor.execute(query, bindings)
+            cursor.execute(query, bindings)
         else:
             query = 'SELECT * FROM (SELECT * from history_events ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) ' + query  # noqa: E501
-            results = cursor.execute(query, [FREE_HISTORY_EVENTS_LIMIT] + bindings)
+            cursor.execute(query, [FREE_HISTORY_EVENTS_LIMIT] + bindings)
 
         output = []
-        for entry in results:
+        for entry in cursor:
             try:
                 output.append(HistoryBaseEntry.deserialize_from_db(entry))
             except (DeserializationError, UnknownAsset) as e:
@@ -193,23 +191,24 @@ class DBHistoryEvents():
         return output
 
     def get_history_events_and_limit_info(
-        self,
-        filter_query: HistoryEventFilterQuery,
-        has_premium: bool,
+            self,
+            cursor: 'DBCursor',
+            filter_query: HistoryEventFilterQuery,
+            has_premium: bool,
     ) -> Tuple[List[HistoryBaseEntry], int]:
         """Gets all history events for the query from the DB
 
         Also returns how many are the total found for the filter
         """
         events = self.get_history_events(
+            cursor=cursor,
             filter_query=filter_query,
             has_premium=has_premium,
         )
-        cursor = self.db.conn.cursor()
         query, bindings = filter_query.prepare(with_pagination=False)
         query = 'SELECT COUNT(*) from history_events ' + query
-        total_found_result = cursor.execute(query, bindings)
-        return events, total_found_result.fetchone()[0]
+        cursor.execute(query, bindings)
+        return events, cursor.fetchone()[0]  # count always has value
 
     def rows_missing_prices_in_base_entries(
         self,
@@ -251,16 +250,16 @@ class DBHistoryEvents():
         return result
 
     def get_entries_assets_history_events(
-        self,
-        query_filter: HistoryEventFilterQuery,
+            self,
+            cursor: 'DBCursor',
+            query_filter: HistoryEventFilterQuery,
     ) -> List[Asset]:
         """Returns asset from base entry events using the desired filter"""
-        cursor = self.db.conn.cursor()
         query, bindings = query_filter.prepare(with_pagination=False)
         query = 'SELECT DISTINCT asset from history_events ' + query
-        result = cursor.execute(query, bindings)
         assets = []
-        for asset_id in result:
+        cursor.execute(query, bindings)
+        for asset_id in cursor:
             try:
                 assets.append(Asset(asset_id[0]))
             except (UnknownAsset, DeserializationError) as e:
@@ -270,26 +269,25 @@ class DBHistoryEvents():
                 )
         return assets
 
-    def get_history_events_count(self, query_filter: HistoryEventFilterQuery) -> int:
+    def get_history_events_count(self, cursor: 'DBCursor', query_filter: HistoryEventFilterQuery) -> int:  # noqa: E501  # pylint: disable=no-self-use
         """Returns how many of certain base entry events are in the database"""
-        cursor = self.db.conn.cursor()
         query, bindings = query_filter.prepare(with_pagination=False)
         query = 'SELECT COUNT(*) from history_events ' + query
-        result = cursor.execute(query, bindings)
-        return result.fetchone()[0]
+        cursor.execute(query, bindings)
+        return cursor.fetchone()[0]  # count(*) always returns
 
-    def get_value_stats(
-        self,
-        query_filter: HistoryEventFilterQuery,
+    def get_value_stats(      # pylint: disable=no-self-use
+            self,
+            cursor: 'DBCursor',
+            query_filter: HistoryEventFilterQuery,
     ) -> Tuple[FVal, List[Tuple[Asset, FVal, FVal]]]:
         """Returns the sum of the USD value at the time of acquisition and the amount received
         by asset"""
-        cursor = self.db.conn.cursor()
         usd_value = ZERO
         query_filters, bindings = query_filter.prepare(with_pagination=False, with_order=False)
         try:
             query = 'SELECT SUM(CAST(usd_value AS REAL)) FROM history_events ' + query_filters
-            result = cursor.execute(query, bindings).fetchone()[0]
+            result = cursor.execute(query, bindings).fetchone()[0]  # count(*) always returns
             if result is not None:
                 usd_value = deserialize_fval(
                     value=result,
@@ -305,9 +303,9 @@ class DBHistoryEvents():
             query_filters +
             ' GROUP BY asset;'
         )
-        result = cursor.execute(query, bindings)
+        cursor.execute(query, bindings)
         assets_amounts = []
-        for row in result:
+        for row in cursor:
             try:
                 asset = Asset(row[0])
                 amount = deserialize_fval(

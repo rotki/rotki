@@ -39,7 +39,8 @@ class DataHandler():
             self.username = 'no_user'
             self.password = ''
             self.user_data_dir: Optional[Path] = None
-            self.db.update_owned_assets_in_globaldb()
+            with self.db.user_write() as cursor:
+                self.db.update_owned_assets_in_globaldb(cursor)
             self.db.logout()
             self.logged_in = False
 
@@ -121,25 +122,23 @@ class DataHandler():
         self.password = password
         return user_data_dir
 
-    def main_currency(self) -> Asset:
-        return self.db.get_main_currency()
-
     def add_ignored_assets(self, assets: List[Asset]) -> Tuple[Optional[List[Asset]], str]:
         """Adds ignored assets to the DB.
 
         If any of the given assets is already in the DB the function does nothing
         and returns an error message.
         """
-        ignored_assets = self.db.get_ignored_assets()
-        for asset in assets:
-            if asset in ignored_assets:
-                msg = f'{asset.identifier} is already in ignored assets'
-                return None, msg
+        with self.db.user_write() as cursor:
+            ignored_assets = self.db.get_ignored_assets(cursor)
+            for asset in assets:
+                if asset in ignored_assets:
+                    msg = f'{asset.identifier} is already in ignored assets'
+                    return None, msg
 
-        for asset in assets:
-            self.db.add_to_ignored_assets(asset)
+            for asset in assets:
+                self.db.add_to_ignored_assets(write_cursor=cursor, asset=asset)
 
-        return self.db.get_ignored_assets(), ''
+            return self.db.get_ignored_assets(cursor), ''
 
     def remove_ignored_assets(self, assets: List[Asset]) -> Tuple[Optional[List[Asset]], str]:
         """Removes ignored assets from the DB.
@@ -147,16 +146,17 @@ class DataHandler():
         If any of the given assets is not in the DB the call function does nothing
         and returns an error message.
         """
-        ignored_assets = self.db.get_ignored_assets()
-        for asset in assets:
-            if asset not in ignored_assets:
-                msg = f'{asset.identifier} is not in ignored assets'
-                return None, msg
+        with self.db.user_write() as cursor:
+            ignored_assets = self.db.get_ignored_assets(cursor)
+            for asset in assets:
+                if asset not in ignored_assets:
+                    msg = f'{asset.identifier} is not in ignored assets'
+                    return None, msg
 
-        for asset in assets:
-            self.db.remove_from_ignored_assets(asset)
+            for asset in assets:
+                self.db.remove_from_ignored_assets(write_cursor=cursor, asset=asset)
 
-        return self.db.get_ignored_assets(), ''
+            return self.db.get_ignored_assets(cursor), ''
 
     def get_users(self) -> Dict[str, str]:
         """Returns a dict with all users in the system.

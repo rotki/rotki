@@ -1,7 +1,7 @@
 import abc
 import logging
 from collections import Counter, defaultdict
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.asset import Asset
@@ -23,6 +23,9 @@ from rotkehlchen.types import (
     TradeID,
     TradeType,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 BinanceCsvRow = Dict[str, Any]
 logger = logging.getLogger(__name__)
@@ -54,6 +57,7 @@ class BinanceSingleEntry(BinanceEntry, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def process_entry(
             self,
+            write_cursor: 'DBCursor',
             db: DBHandler,
             db_ledger: DBLedgerActions,
             timestamp: Timestamp,
@@ -74,9 +78,10 @@ class BinanceMultipleEntry(BinanceEntry, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def process_entries(
         self,
-        db: DBHandler,
-        timestamp: Timestamp,
-        data: List[BinanceCsvRow],
+            write_cursor: 'DBCursor',
+            db: DBHandler,
+            timestamp: Timestamp,
+            data: List[BinanceCsvRow],
     ) -> int:
         """Turns given csv rows into internal Rotki's representation"""
         ...
@@ -255,13 +260,14 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         return unique_trades
 
     def process_entries(
-        self,
-        db: DBHandler,
-        timestamp: Timestamp,
-        data: List[BinanceCsvRow],
+            self,
+            write_cursor: 'DBCursor',
+            db: DBHandler,
+            timestamp: Timestamp,
+            data: List[BinanceCsvRow],
     ) -> int:
         trades = self.process_trades(db=db, timestamp=timestamp, data=data)
-        db.add_trades(trades)
+        db.add_trades(write_cursor=write_cursor, trades=trades)
         return len(trades)
 
 
@@ -272,11 +278,12 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
     available_operations = ['Deposit', 'Withdraw']
 
     def process_entry(
-        self,
-        db: DBHandler,
-        db_ledger: DBLedgerActions,
-        timestamp: Timestamp,
-        data: BinanceCsvRow,
+            self,
+            write_cursor: 'DBCursor',
+            db: DBHandler,
+            db_ledger: DBLedgerActions,
+            timestamp: Timestamp,
+            data: BinanceCsvRow,
     ) -> None:
         amount = data['Change']
         asset = data['Coin']
@@ -296,7 +303,7 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
             fee_asset=A_USD,
             link=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
-        db.add_asset_movements([asset_movement])
+        db.add_asset_movements(write_cursor, [asset_movement])
 
 
 class BinanceStakingRewardsEntry(BinanceSingleEntry):
@@ -307,6 +314,7 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
 
     def process_entry(
             self,
+            write_cursor: 'DBCursor',
             db: DBHandler,
             db_ledger: DBLedgerActions,
             timestamp: Timestamp,
@@ -326,7 +334,7 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
             link=None,
             notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
-        db_ledger.add_ledger_action(ledger_action)
+        db_ledger.add_ledger_action(write_cursor, ledger_action)
 
 
 class BinancePOSEntry(BinanceSingleEntry):
@@ -341,6 +349,7 @@ class BinancePOSEntry(BinanceSingleEntry):
 
     def process_entry(
             self,
+            write_cursor: 'DBCursor',
             db: DBHandler,
             db_ledger: DBLedgerActions,
             timestamp: Timestamp,
@@ -362,4 +371,4 @@ class BinancePOSEntry(BinanceSingleEntry):
             link=None,
             notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
-        db_ledger.add_ledger_action(ledger_action)
+        db_ledger.add_ledger_action(write_cursor, ledger_action)

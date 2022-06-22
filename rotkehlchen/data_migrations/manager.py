@@ -7,6 +7,7 @@ from rotkehlchen.data_migrations.migrations.migration_3 import data_migration_3
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class MigrationRecord(NamedTuple):
     version: int
-    function: Callable
+    function: Callable[['DBCursor', 'Rotkehlchen'], None]
     kwargs: Optional[Dict[str, Any]] = None
 
 
@@ -33,26 +34,27 @@ class DataMigrationManager:
         self.rotki = rotki
 
     def maybe_migrate_data(self) -> None:
-        settings = self.rotki.data.db.get_settings()
+        with self.rotki.data.db.conn.read_ctx() as cursor:
+            settings = self.rotki.data.db.get_settings(cursor)
         current_migration = settings.last_data_migration
         for migration in MIGRATION_LIST:
             if current_migration < migration.version:
-                if self._perform_migration(migration) is False:
-                    break  # a migration failed -- no point continuing
+                with self.rotki.data.db.user_write() as cursor:
+                    if self._perform_migration(cursor, migration) is False:
+                        break  # a migration failed -- no point continuing
 
-                current_migration += 1
-                log.debug(f'Successfuly applied migration {current_migration}')
-                self.rotki.data.db.conn.cursor().execute(
-                    'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                    ('last_data_migration', current_migration),
-                )
-                self.rotki.data.db.conn.commit()
+                    current_migration += 1
+                    log.debug(f'Successfuly applied migration {current_migration}')
+                    cursor.execute(
+                        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                        ('last_data_migration', current_migration),
+                    )
 
-    def _perform_migration(self, migration: MigrationRecord) -> bool:
+    def _perform_migration(self, write_cursor: 'DBCursor', migration: MigrationRecord) -> bool:
         """Performs a single data migration and returns boolean for success/failure"""
         try:
             kwargs = migration.kwargs if migration.kwargs is not None else {}
-            migration.function(rotki=self.rotki, **kwargs)
+            migration.function(write_cursor, self.rotki, **kwargs)
         except BaseException as e:  # lgtm[py/catch-base-exception]
             error = f'Failed to run soft data migration to version {migration.version} due to {str(e)}'  # noqa: E501
             self.rotki.msg_aggregator.add_error(error)

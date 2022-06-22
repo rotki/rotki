@@ -120,6 +120,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
 
+from .db import add_yearn_vaults_events, get_yearn_vaults_events
 from .structures import YearnVault, YearnVaultEvent
 
 if TYPE_CHECKING:
@@ -129,6 +130,7 @@ if TYPE_CHECKING:
     )
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 BLOCKS_PER_YEAR = 2425846
 
@@ -669,6 +671,7 @@ class YearnVaults(EthereumModule):
 
     def get_vault_history(
             self,
+            write_cursor: 'DBCursor',
             defi_balances: List['DefiProtocolBalances'],
             vault: YearnVault,
             address: ChecksumEthAddress,
@@ -677,11 +680,12 @@ class YearnVaults(EthereumModule):
     ) -> Optional[YearnVaultHistory]:
         from_block = max(from_block, vault.contract.deployed_block)
         last_query = self.database.get_used_query_range(
+            cursor=write_cursor,
             name=f'{YEARN_VAULTS_PREFIX}_{vault.name.replace(" ", "_")}_{address}',
         )
         skip_query = last_query and to_block - last_query[1] < MAX_BLOCKTIME_CACHE
 
-        events = self.database.get_yearn_vaults_events(address=address, vault=vault)
+        events = get_yearn_vaults_events(cursor=write_cursor, address=address, vault=vault, msg_aggregator=self.msg_aggregator)  # noqa: E501
         if not skip_query:
             query_from_block = last_query[1] + 1 if last_query else from_block
             new_events = self._get_vault_deposit_events(vault, address, query_from_block, to_block)
@@ -689,6 +693,7 @@ class YearnVaults(EthereumModule):
                 # After all events have been queried then also update the query range.
                 # Even if no events are found for an address we need to remember the range
                 self.database.update_used_block_query_range(
+                    write_cursor=write_cursor,
                     name=f'{YEARN_VAULTS_PREFIX}_{vault.name.replace(" ", "_")}_{address}',
                     from_block=from_block,
                     to_block=to_block,
@@ -699,12 +704,13 @@ class YearnVaults(EthereumModule):
                 self._get_vault_withdraw_events(vault, address, query_from_block, to_block),
             )
             # Now update the DB with the new events
-            self.database.add_yearn_vaults_events(address, new_events)
+            add_yearn_vaults_events(write_cursor, address, new_events)
             events.extend(new_events)
 
         # After all events have been queried then also update the query range.
         # Even if no events are found for an address we need to remember the range
         self.database.update_used_block_query_range(
+            write_cursor=write_cursor,
             name=f'{YEARN_VAULTS_PREFIX}_{vault.name.replace(" ", "_")}_{address}',
             from_block=from_block,
             to_block=to_block,
@@ -748,34 +754,35 @@ class YearnVaults(EthereumModule):
             to_timestamp: Timestamp,  # pylint: disable=unused-argument
     ) -> Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]]:
         with self.history_lock:
+            with self.database.user_write() as cursor:
+                if reset_db_data is True:
+                    self.database.delete_yearn_vaults_data(write_cursor=cursor, version=1)
 
-            if reset_db_data is True:
-                self.database.delete_yearn_vaults_data()
+                if isinstance(given_defi_balances, dict):
+                    defi_balances = given_defi_balances
+                else:
+                    defi_balances = given_defi_balances()
 
-            if isinstance(given_defi_balances, dict):
-                defi_balances = given_defi_balances
-            else:
-                defi_balances = given_defi_balances()
+                from_block = self.ethereum.get_blocknumber_by_time(from_timestamp)
+                to_block = self.ethereum.get_blocknumber_by_time(to_timestamp)
+                history: Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]] = {}
 
-            from_block = self.ethereum.get_blocknumber_by_time(from_timestamp)
-            to_block = self.ethereum.get_blocknumber_by_time(to_timestamp)
-            history: Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]] = {}
+                for address in addresses:
+                    history[address] = {}
+                    for _, vault in YEARN_VAULTS.items():
+                        vault_history = self.get_vault_history(
+                            write_cursor=cursor,
+                            defi_balances=defi_balances.get(address, []),
+                            vault=vault,
+                            address=address,
+                            from_block=from_block,
+                            to_block=to_block,
+                        )
+                        if vault_history:
+                            history[address][vault.name] = vault_history
 
-            for address in addresses:
-                history[address] = {}
-                for _, vault in YEARN_VAULTS.items():
-                    vault_history = self.get_vault_history(
-                        defi_balances=defi_balances.get(address, []),
-                        vault=vault,
-                        address=address,
-                        from_block=from_block,
-                        to_block=to_block,
-                    )
-                    if vault_history:
-                        history[address][vault.name] = vault_history
-
-                if len(history[address]) == 0:
-                    del history[address]
+                    if len(history[address]) == 0:
+                        del history[address]
 
         return history
 
@@ -798,13 +805,15 @@ class YearnVaults(EthereumModule):
         events = []
         for address in addresses:
             for _, vault in YEARN_VAULTS.items():
-                vault_history = self.get_vault_history(
-                    defi_balances=[],
-                    vault=vault,
-                    address=address,
-                    from_block=from_block,
-                    to_block=to_block,
-                )
+                with self.database.user_write() as cursor:
+                    vault_history = self.get_vault_history(
+                        write_cursor=cursor,
+                        defi_balances=[],
+                        vault=vault,
+                        address=address,
+                        from_block=from_block,
+                        to_block=to_block,
+                    )
                 if vault_history is None:
                     continue
 
@@ -852,4 +861,5 @@ class YearnVaults(EthereumModule):
         pass
 
     def deactivate(self) -> None:
-        self.database.delete_yearn_vaults_data()
+        with self.database.user_write() as cursor:
+            self.database.delete_yearn_vaults_data(write_cursor=cursor, version=1)

@@ -17,9 +17,8 @@ from rotkehlchen.types import AssetMovementCategory, Location, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
-    from sqlite3 import Cursor
-
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 def pair_get_asset_ids(pair: str) -> Tuple[str, str]:
@@ -72,7 +71,7 @@ class V24V25UpgradeHelper():
         new_id = self.get_new_asset_identifier(identifier)
         return new_id if new_id else identifier
 
-    def update_multisettings(self, cursor: 'Cursor') -> None:
+    def update_multisettings(self, cursor: 'DBCursor') -> None:
         query = cursor.execute(
             'SELECT name, value FROM multisettings;',
         )
@@ -90,7 +89,7 @@ class V24V25UpgradeHelper():
             new_tuples,
         )
 
-    def update_timed_balances(self, cursor: 'Cursor') -> None:
+    def update_timed_balances(self, cursor: 'DBCursor') -> None:
         query = cursor.execute(
             'SELECT category, time, currency, amount, usd_value FROM timed_balances;',
         )
@@ -107,7 +106,7 @@ class V24V25UpgradeHelper():
             new_tuples,
         )
 
-    def update_manually_tracked_balances(self, cursor: 'Cursor') -> None:
+    def update_manually_tracked_balances(self, cursor: 'DBCursor') -> None:
         query = cursor.execute(
             'SELECT asset, label, amount, location FROM manually_tracked_balances;',
         )
@@ -124,7 +123,7 @@ class V24V25UpgradeHelper():
             new_tuples,
         )
 
-    def update_margin_positions(self, cursor: 'Cursor') -> None:
+    def update_margin_positions(self, cursor: 'DBCursor') -> None:
         """Upgrades the margin positions table to use the new asset ids if they are ethereum tokens
 
         And also makes sure the new primary key id matches the rules used in the app
@@ -173,7 +172,7 @@ class V24V25UpgradeHelper():
             new_tuples,
         )
 
-    def update_asset_movements(self, cursor: 'Cursor') -> None:
+    def update_asset_movements(self, cursor: 'DBCursor') -> None:
         """Upgrades the asset movements table to use the new asset ids if they are ethereum tokens
 
         And also makes sure the new primary key id matches the rules used in the app
@@ -222,7 +221,7 @@ class V24V25UpgradeHelper():
             new_tuples,
         )
 
-    def update_ledger_actions(self, cursor: 'Cursor') -> None:
+    def update_ledger_actions(self, cursor: 'DBCursor') -> None:
         """Upgrades the ledger_actions table
 
         Upgrades it to have an optional rate and asset
@@ -291,7 +290,7 @@ class V24V25UpgradeHelper():
         """
         cursor.executemany(executestr, new_tuples)
 
-    def update_trades(self, cursor: 'Cursor') -> None:
+    def update_trades(self, cursor: 'DBCursor') -> None:
         """Upgrades the trades table to use base/quote asset instead of a pair
 
         Also upgrades all asset ids if they are ethereum tokens

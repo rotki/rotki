@@ -127,7 +127,8 @@ def fixture_accountant(
     )
 
     if accounting_initialize_parameters:
-        db_settings = accountant.db.get_settings()
+        with accountant.db.conn.read_ctx() as cursor:
+            db_settings = accountant.db.get_settings(cursor)
         for pot in accountant.pots:
             pot.reset(
                 settings=db_settings,

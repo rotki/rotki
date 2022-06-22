@@ -69,37 +69,41 @@ def test_migration_1(rotkehlchen_api_server):
         'SELECT COUNT(*) from used_query_ranges WHERE name="bittrex_trades"',
     )
     assert result.fetchone()[0] == 0
-    assert rotki.data.db.get_settings().last_data_migration == 1
+    assert rotki.data.db.get_settings(cursor).last_data_migration == 1
 
     # Migration shouldn't execute and information should stay in database
-    for exchange_location in [Location.BINANCE, Location.KRAKEN]:
-        db.add_trades([Trade(
-            timestamp=Timestamp(1),
-            location=exchange_location,
-            base_asset=A_BTC,
-            quote_asset=A_ETH,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(ONE),
-            rate=Price(ONE),
-            fee=Fee(FVal('0.1')),
-            fee_currency=A_ETH,
-            link='foo',
-            notes='boo',
-        )])
-        db.update_used_query_range(name=f'{str(exchange_location)}_trades_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(name=f'{str(exchange_location)}_margins_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(name=f'{str(exchange_location)}_asset_movements_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+    with db.user_write() as cursor:
+        for exchange_location in [Location.BINANCE, Location.KRAKEN]:
+            db.add_trades(
+                write_cursor=cursor,
+                trades=[
+                    Trade(
+                        timestamp=Timestamp(1),
+                        location=exchange_location,
+                        base_asset=A_BTC,
+                        quote_asset=A_ETH,
+                        trade_type=TradeType.BUY,
+                        amount=AssetAmount(ONE),
+                        rate=Price(ONE),
+                        fee=Fee(FVal('0.1')),
+                        fee_currency=A_ETH,
+                        link='foo',
+                        notes='boo',
+                    )])
+            db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_trades_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+            db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_margins_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+            db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_asset_movements_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
 
-    with migration_patch:
-        DataMigrationManager(rotki).maybe_migrate_data()
-    errors = rotki.msg_aggregator.consume_errors()
-    warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    check_saved_events_for_exchange(Location.BINANCE, rotki.data.db, should_exist=True)
-    check_saved_events_for_exchange(Location.POLONIEX, rotki.data.db, should_exist=True)
-    check_saved_events_for_exchange(Location.KRAKEN, rotki.data.db, should_exist=True)
-    assert rotki.data.db.get_settings().last_data_migration == 1
+        with migration_patch:
+            DataMigrationManager(rotki).maybe_migrate_data()
+        errors = rotki.msg_aggregator.consume_errors()
+        warnings = rotki.msg_aggregator.consume_warnings()
+        assert len(errors) == 0
+        assert len(warnings) == 0
+        check_saved_events_for_exchange(Location.BINANCE, rotki.data.db, should_exist=True)
+        check_saved_events_for_exchange(Location.POLONIEX, rotki.data.db, should_exist=True)
+        check_saved_events_for_exchange(Location.KRAKEN, rotki.data.db, should_exist=True)
+        assert rotki.data.db.get_settings(cursor).last_data_migration == 1
 
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
@@ -122,7 +126,8 @@ def test_failed_migration(rotkehlchen_api_server):
     with migrate_mock:
         DataMigrationManager(rotki).maybe_migrate_data()
 
-    settings = db.get_settings()
+    with db.conn.read_ctx() as cursor:
+        settings = db.get_settings(cursor)
     assert settings.last_data_migration == 0, 'no upgrade should have happened'
     errors = rotki.msg_aggregator.consume_errors()
     warnings = rotki.msg_aggregator.consume_warnings()

@@ -318,7 +318,8 @@ def test_get_validators_to_query_for_stats(database):
     db = DBEth2(database)
     now = ts_now()
     assert db.get_validators_to_query_for_stats(now) == []
-    db.add_validators([Eth2Validator(index=1, public_key='0xfoo1', ownership_proportion=ONE)])
+    with database.user_write() as cursor:
+        db.add_validators(cursor, [Eth2Validator(index=1, public_key='0xfoo1', ownership_proportion=ONE)])  # noqa: E501
     assert db.get_validators_to_query_for_stats(now) == [(1, 0)]
 
     db.add_validator_daily_stats([ValidatorDailyStats(
@@ -357,11 +358,12 @@ def test_get_validators_to_query_for_stats(database):
     assert db.get_validators_to_query_for_stats(now) == []
 
     # Now add multiple validators and daily stats and assert on result
-    db.add_validators([
-        Eth2Validator(index=2, public_key='0xfoo2', ownership_proportion=ONE),
-        Eth2Validator(index=3, public_key='0xfoo3', ownership_proportion=ONE),
-        Eth2Validator(index=4, public_key='0xfoo4', ownership_proportion=ONE),
-    ])
+    with database.user_write() as cursor:
+        db.add_validators(cursor, [
+            Eth2Validator(index=2, public_key='0xfoo2', ownership_proportion=ONE),
+            Eth2Validator(index=3, public_key='0xfoo3', ownership_proportion=ONE),
+            Eth2Validator(index=4, public_key='0xfoo4', ownership_proportion=ONE),
+        ])
     db.add_validator_daily_stats([ValidatorDailyStats(
         validator_index=3,
         timestamp=1607126400,
@@ -679,105 +681,108 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
 
     validator_index = 33710
     public_key = '0x9882b4c33c0d5394205b12d62952c50fe03c6c9fe08faa36425f70afb7caac0689dcd981af35d0d03defb8286d50911d'  # noqa: E501
-    dbeth2 = DBEth2(database)
-    dbeth2.add_validators([
-        Eth2Validator(
-            index=validator_index,
-            public_key=public_key,
-            ownership_proportion=ONE,
-        ),
-    ])
-    with stats_call_patch as stats_call:
-        filter_query = Eth2DailyStatsFilterQuery.make(
-            validators=[validator_index],
-            from_ts=1613606300,
-            to_ts=1614038500,
-        )
-        stats, filter_total_found, sum_pnl, sum_usd_value = eth2.get_validator_daily_stats(
-            filter_query=filter_query,
-            only_cache=False,
-            msg_aggregator=function_scope_messages_aggregator,
-        )
-        assert stats_call.call_count == 1
-        assert len(stats) >= 6
-        assert filter_total_found >= 6
-        expected_stats = [ValidatorDailyStats(
-            validator_index=validator_index,
-            timestamp=1613606400,    # 2021/02/18
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
-            pnl=FVal('0.00784'),
-            start_amount=FVal('32.66'),
-            end_amount=FVal('32.67'),
-            missed_attestations=1,
-        ), ValidatorDailyStats(
-            validator_index=validator_index,
-            timestamp=1613692800,    # 2021/02/19
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
-            pnl=FVal('0.00683'),
-            start_amount=FVal('32.67'),
-            end_amount=FVal('32.68'),
-            missed_attestations=19,
-        ), ValidatorDailyStats(
-            validator_index=validator_index,
-            timestamp=1613779200,    # 2021/02/20
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
-            pnl=FVal('0.00798'),
-            start_amount=FVal('32.68'),
-            end_amount=FVal('32.68'),
-        ), ValidatorDailyStats(
-            validator_index=validator_index,
-            timestamp=1613865600,    # 2021/02/21
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
-            pnl=FVal('0.01114'),
-            start_amount=FVal('32.68'),
-            end_amount=FVal('32.69'),
-            missed_attestations=3,
-            proposed_blocks=1,
-        ), ValidatorDailyStats(
-            validator_index=validator_index,
-            timestamp=1613952000,    # 2021/02/22
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
-            pnl=FVal('0.00782'),
-            start_amount=FVal('32.69'),
-            end_amount=FVal('32.7'),
-            missed_attestations=1,
-        ), ValidatorDailyStats(
-            validator_index=validator_index,
-            timestamp=1614038400,    # 2021/02/23
-            start_usd_price=FVal(1.55),
-            end_usd_price=FVal(1.55),
-            pnl=FVal('0.00772'),
-            start_amount=FVal('32.7'),
-            end_amount=FVal('32.71'),
-            missed_attestations=1,
-        )]
-        assert stats[:len(expected_stats)] == expected_stats
-        assert sum_pnl >= sum(x.pnl for x in expected_stats)
-        assert sum_usd_value >= sum(x.pnl * ((x.start_usd_price + x.end_usd_price) / 2) for x in expected_stats)  # noqa: E501
+    with database.user_write() as cursor:
+        dbeth2 = DBEth2(database)
+        dbeth2.add_validators(cursor, [
+            Eth2Validator(
+                index=validator_index,
+                public_key=public_key,
+                ownership_proportion=ONE,
+            ),
+        ])
+        with stats_call_patch as stats_call:
+            filter_query = Eth2DailyStatsFilterQuery.make(
+                validators=[validator_index],
+                from_ts=1613606300,
+                to_ts=1614038500,
+            )
+            stats, filter_total_found, sum_pnl, sum_usd_value = eth2.get_validator_daily_stats(
+                cursor,
+                filter_query=filter_query,
+                only_cache=False,
+                msg_aggregator=function_scope_messages_aggregator,
+            )
+            assert stats_call.call_count == 1
+            assert len(stats) >= 6
+            assert filter_total_found >= 6
+            expected_stats = [ValidatorDailyStats(
+                validator_index=validator_index,
+                timestamp=1613606400,    # 2021/02/18
+                start_usd_price=FVal(1.55),
+                end_usd_price=FVal(1.55),
+                pnl=FVal('0.00784'),
+                start_amount=FVal('32.66'),
+                end_amount=FVal('32.67'),
+                missed_attestations=1,
+            ), ValidatorDailyStats(
+                validator_index=validator_index,
+                timestamp=1613692800,    # 2021/02/19
+                start_usd_price=FVal(1.55),
+                end_usd_price=FVal(1.55),
+                pnl=FVal('0.00683'),
+                start_amount=FVal('32.67'),
+                end_amount=FVal('32.68'),
+                missed_attestations=19,
+            ), ValidatorDailyStats(
+                validator_index=validator_index,
+                timestamp=1613779200,    # 2021/02/20
+                start_usd_price=FVal(1.55),
+                end_usd_price=FVal(1.55),
+                pnl=FVal('0.00798'),
+                start_amount=FVal('32.68'),
+                end_amount=FVal('32.68'),
+            ), ValidatorDailyStats(
+                validator_index=validator_index,
+                timestamp=1613865600,    # 2021/02/21
+                start_usd_price=FVal(1.55),
+                end_usd_price=FVal(1.55),
+                pnl=FVal('0.01114'),
+                start_amount=FVal('32.68'),
+                end_amount=FVal('32.69'),
+                missed_attestations=3,
+                proposed_blocks=1,
+            ), ValidatorDailyStats(
+                validator_index=validator_index,
+                timestamp=1613952000,    # 2021/02/22
+                start_usd_price=FVal(1.55),
+                end_usd_price=FVal(1.55),
+                pnl=FVal('0.00782'),
+                start_amount=FVal('32.69'),
+                end_amount=FVal('32.7'),
+                missed_attestations=1,
+            ), ValidatorDailyStats(
+                validator_index=validator_index,
+                timestamp=1614038400,    # 2021/02/23
+                start_usd_price=FVal(1.55),
+                end_usd_price=FVal(1.55),
+                pnl=FVal('0.00772'),
+                start_amount=FVal('32.7'),
+                end_amount=FVal('32.71'),
+                missed_attestations=1,
+            )]
+            assert stats[:len(expected_stats)] == expected_stats
+            assert sum_pnl >= sum(x.pnl for x in expected_stats)
+            assert sum_usd_value >= sum(x.pnl * ((x.start_usd_price + x.end_usd_price) / 2) for x in expected_stats)  # noqa: E501
 
-        # Make sure that calling it again does not make an external call
-        stats, filter_total_found, _, _ = eth2.get_validator_daily_stats(
-            filter_query=filter_query,
-            only_cache=False,
-            msg_aggregator=function_scope_messages_aggregator,
-        )
-        assert stats_call.call_count == 1
-        assert stats[:len(expected_stats)] == expected_stats
+            # Make sure that calling it again does not make an external call
+            stats, filter_total_found, _, _ = eth2.get_validator_daily_stats(
+                filter_query=filter_query,
+                only_cache=False,
+                msg_aggregator=function_scope_messages_aggregator,
+            )
+            assert stats_call.call_count == 1
+            assert stats[:len(expected_stats)] == expected_stats
 
-        # Check that changing ownership proportion works
-        dbeth2.edit_validator(
-            validator_index=validator_index,
-            ownership_proportion=FVal(0.45),
-        )
-        stats, filter_total_found, _, _ = eth2.get_validator_daily_stats(
-            filter_query=filter_query,
-            only_cache=False,
-            msg_aggregator=function_scope_messages_aggregator,
-        )
-        last_stat = stats[:len(expected_stats)][-1]
-        assert last_stat.pnl_balance.amount == expected_stats[-1].pnl_balance.amount * FVal(0.45)
+            # Check that changing ownership proportion works
+            dbeth2.edit_validator(
+                validator_index=validator_index,
+                ownership_proportion=FVal(0.45),
+            )
+            stats, filter_total_found, _, _ = eth2.get_validator_daily_stats(
+                cursor,
+                filter_query=filter_query,
+                only_cache=False,
+                msg_aggregator=function_scope_messages_aggregator,
+            )
+            last_stat = stats[:len(expected_stats)][-1]
+            assert last_stat.pnl_balance.amount == expected_stats[-1].pnl_balance.amount * FVal(0.45)  # noqa: E501

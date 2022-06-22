@@ -1254,17 +1254,19 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
     settings_from_file.pop('last_write_ts')
     ignored_actions_ids_from_file = pnl_debug_json['ignored_events_ids']
 
-    settings_from_db = database.get_settings().serialize()
-    settings_from_db.pop('last_write_ts')
-    ignored_actions_ids_from_db = database.get_ignored_action_ids(None)
-    serialized_ignored_actions_from_db = {
-        k.serialize(): v for k, v in ignored_actions_ids_from_db.items()
-    }
-    dbevents = DBHistoryEvents(database)
-    events_from_db = dbevents.get_history_events(
-        filter_query=HistoryEventFilterQuery.make(),
-        has_premium=False,
-    )
+    with database.conn.read_ctx() as cursor:
+        settings_from_db = database.get_settings(cursor).serialize()
+        settings_from_db.pop('last_write_ts')
+        ignored_actions_ids_from_db = database.get_ignored_action_ids(cursor, None)
+        serialized_ignored_actions_from_db = {
+            k.serialize(): v for k, v in ignored_actions_ids_from_db.items()
+        }
+        dbevents = DBHistoryEvents(database)
+        events_from_db = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=False,
+        )
     serialized_events_from_db = [entry.serialize() for entry in events_from_db]
 
     assert settings_from_file == settings_from_db

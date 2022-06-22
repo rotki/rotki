@@ -45,7 +45,8 @@ def get_manually_tracked_balances(
     balance_type: Optional[BalanceType] = None,
 ) -> List[ManuallyTrackedBalanceWithValue]:
     """Gets the manually tracked balances"""
-    balances = db.get_manually_tracked_balances(balance_type=balance_type)
+    with db.conn.read_ctx() as cursor:
+        balances = db.get_manually_tracked_balances(cursor, balance_type=balance_type)
     balances_with_value = []
     for entry in balances:
         try:
@@ -83,15 +84,17 @@ def add_manually_tracked_balances(
     """
     if len(data) == 0:
         raise InputError('Empty list of manually tracked balances to add was given')
-    db.ensure_tags_exist(
-        given_data=data,
-        action='adding',
-        data_type='manually tracked balances',
-    )
-    db.add_manually_tracked_balances(data=data)
+    with db.user_write() as cursor:
+        db.ensure_tags_exist(
+            cursor=cursor,
+            given_data=data,
+            action='adding',
+            data_type='manually tracked balances',
+        )
+        db.add_manually_tracked_balances(write_cursor=cursor, data=data)
 
 
-def edit_manually_tracked_balances(db: 'DBHandler', data: List[ManuallyTrackedBalance]) -> None:
+def edit_manually_tracked_balances(db: 'DBHandler', data: List[ManuallyTrackedBalance]) -> None:  # noqa: E501
     """Edits manually tracked balances
 
     May raise:
@@ -101,12 +104,14 @@ def edit_manually_tracked_balances(db: 'DBHandler', data: List[ManuallyTrackedBa
     """
     if len(data) == 0:
         raise InputError('Empty list of manually tracked balances to edit was given')
-    db.ensure_tags_exist(
-        given_data=data,
-        action='editing',
-        data_type='manually tracked balances',
-    )
-    db.edit_manually_tracked_balances(data)
+    with db.user_write() as cursor:
+        db.ensure_tags_exist(
+            cursor=cursor,
+            given_data=data,
+            action='editing',
+            data_type='manually tracked balances',
+        )
+        db.edit_manually_tracked_balances(cursor, data)
 
 
 def remove_manually_tracked_balances(db: 'DBHandler', ids: List[int]) -> None:
@@ -116,7 +121,8 @@ def remove_manually_tracked_balances(db: 'DBHandler', ids: List[int]) -> None:
     - InputError if the given list is empty or if
     any of the ids to remove do not exist in the DB.
     """
-    db.remove_manually_tracked_balances(ids)
+    with db.user_write() as cursor:
+        db.remove_manually_tracked_balances(cursor, ids)
 
 
 def account_for_manually_tracked_asset_balances(

@@ -42,7 +42,7 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
         cursor.execute(cmd, entry)
         rotki.data.db.conn.commit()
 
-    exchange_credentials = rotki.data.db.get_exchange_credentials()
+    exchange_credentials = rotki.data.db.get_exchange_credentials(cursor)
     rotki.exchange_manager.initialize_exchanges(
         exchange_credentials=exchange_credentials,
         database=database,
