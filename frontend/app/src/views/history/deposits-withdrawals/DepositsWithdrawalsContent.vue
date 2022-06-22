@@ -170,7 +170,6 @@ import {
   TradeEntry
 } from '@/store/history/types';
 import { Collection } from '@/types/collection';
-import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 import DepositWithdrawalDetails from '@/views/history/deposits-withdrawals/DepositWithdrawalDetails.vue';
 
@@ -279,9 +278,8 @@ export default defineComponent({
     const historyStore = useHistory();
     const assetMovementStore = useAssetMovements();
     const assetInfoRetrievalStore = useAssetInfoRetrieval();
-    const { supportedAssets } = toRefs(assetInfoRetrievalStore);
-    const { getAssetSymbol, getAssetIdentifierForSymbol } =
-      assetInfoRetrievalStore;
+    const { supportedAssetsSymbol } = toRefs(assetInfoRetrievalStore);
+    const { getAssetIdentifierForSymbol } = assetInfoRetrievalStore;
 
     const { associatedLocations } = storeToRefs(historyStore);
     const { assetMovements } = storeToRefs(assetMovementStore);
@@ -301,16 +299,6 @@ export default defineComponent({
     const options: Ref<PaginationOptions | null> = ref(null);
     const filters: Ref<MatchedKeyword<AssetMovementFilterValueKeys>> = ref({});
 
-    const availableAssets = computed<string[]>(() => {
-      return get(supportedAssets)
-        .map(value => getAssetSymbol(value.identifier))
-        .filter(uniqueStrings);
-    });
-
-    const availableLocations = computed<TradeLocation[]>(() => {
-      return get(associatedLocations);
-    });
-
     const matchers = computed<
       SearchMatcher<AssetMovementFilterKeys, AssetMovementFilterValueKeys>[]
     >(() => [
@@ -318,8 +306,8 @@ export default defineComponent({
         key: AssetMovementFilterKeys.ASSET,
         keyValue: AssetMovementFilterValueKeys.ASSET,
         description: i18n.t('deposit_withdrawals.filter.asset').toString(),
-        suggestions: () => get(availableAssets),
-        validate: (asset: string) => get(availableAssets).includes(asset),
+        suggestions: () => get(supportedAssetsSymbol),
+        validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
       },
       {
@@ -371,8 +359,8 @@ export default defineComponent({
         key: AssetMovementFilterKeys.LOCATION,
         keyValue: AssetMovementFilterValueKeys.LOCATION,
         description: i18n.t('deposit_withdrawals.filter.location').toString(),
-        suggestions: () => get(availableLocations),
-        validate: location => get(availableLocations).includes(location as any)
+        suggestions: () => get(associatedLocations),
+        validate: location => get(associatedLocations).includes(location as any)
       }
     ]);
 

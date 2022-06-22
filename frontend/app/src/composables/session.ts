@@ -153,11 +153,16 @@ export const setupGeneralSettings = () => {
     return sessionState.generalSettings.dateDisplayFormat;
   });
 
+  const treatEth2AsEth = computed<boolean>(() => {
+    return sessionState.generalSettings.treatEth2AsEth;
+  });
+
   return {
     currency,
     currencySymbol,
     floatingPrecision,
-    dateDisplayFormat
+    dateDisplayFormat,
+    treatEth2AsEth
   };
 };
 

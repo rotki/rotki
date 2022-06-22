@@ -65,7 +65,8 @@
       "amount": "Amount",
       "location": "Location",
       "value": "{symbol} value",
-      "percentage": "Percentage"
+      "percentage": "Percentage",
+      "validator": "Validator Index | Public Key"
     }
   },
   "amount_display": {
@@ -633,7 +634,7 @@
       "title": "Import"
     },
     "title": "Export/Import Custom Assets",
-    "warning": "This functionality is designed to allow you to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result to errors."
+    "warning": "This functionality is designed to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result in errors."
   },
   "merge_dialog": {
     "cancel": "Cancel",
@@ -1613,6 +1614,7 @@
       "rpc_endpoint": "Ethereum Node RPC Endpoint",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
       "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
+      "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
       "version_update_check": "Set the version update check period while in app",
       "version_update_check_enabled": "Enabled"
     },
@@ -1681,6 +1683,9 @@
       "thousand_separator": {
         "error": "Error setting thousand separator",
         "success": "Thousand separator set to {thousandSeparator}"
+      },
+      "treat_eth2_as_eth": {
+        "error": "Error change setting for treat ETH2 as ETH"
       },
       "decimal_separator": {
         "error": "Error setting decimal separator",

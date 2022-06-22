@@ -144,9 +144,6 @@ export default defineComponent({
           .sort((a, b) => compareSymbols(a, b, searchString))
           .map(sug => `${suggestedFilter}: ${sug}`)
           .slice(0, 5);
-        if (suggestions.includes(keyword)) {
-          return [keyword];
-        }
 
         return suggestions;
       }

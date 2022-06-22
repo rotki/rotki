@@ -3,12 +3,12 @@ import { SupportedAsset } from '@rotki/common/lib/data';
 import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { setupGeneralSettings } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { AssetUpdatePayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { SupportedAssets } from '@/services/types-api';
-import { convertSupportedAssets } from '@/store/assets/utils';
 import { AssetPriceInfo } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
@@ -24,6 +24,7 @@ import {
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
+import { uniqueStrings } from '@/utils/data';
 
 export const useAssets = defineStore('assets', () => {
   const { awaitTask } = useTasks();
@@ -176,18 +177,52 @@ export const useAssetInfoRetrieval = defineStore(
   'assets/infoRetrievals',
   () => {
     const store = useStore();
-    const supportedAssets = ref<SupportedAsset[]>([]);
     const supportedAssetsMap = ref<SupportedAssets>({});
 
+    const { treatEth2AsEth } = setupGeneralSettings();
+
+    const assetAssociationMap = computed<{ [key: string]: string }>(() => {
+      const associationMap: { [key: string]: string } = {};
+      if (get(treatEth2AsEth)) {
+        associationMap['ETH2'] = 'ETH';
+      }
+      return associationMap;
+    });
+
+    const getAssociatedAssetIdentifier = (identifier: string) =>
+      computed<string>(() => {
+        return get(assetAssociationMap)[identifier] ?? identifier;
+      });
+
+    const getAssociatedAsset = (identifier: string) =>
+      computed(() => {
+        const associatedIdentifier = get(
+          getAssociatedAssetIdentifier(identifier)
+        );
+        return get(supportedAssetsMap)[associatedIdentifier];
+      });
+
+    const supportedAssets = computed<SupportedAsset[]>(() => {
+      const assets: SupportedAsset[] = [];
+      const supportedAssetsMapVal = get(supportedAssetsMap);
+      Object.keys(supportedAssetsMapVal).forEach(identifier => {
+        if (Object.keys(get(assetAssociationMap)).includes(identifier)) return;
+        assets.push({
+          identifier,
+          ...supportedAssetsMapVal[identifier]
+        });
+      });
+      return assets;
+    });
+
     const fetchSupportedAssets = async (refresh: boolean = false) => {
-      set(supportedAssets, []);
+      set(supportedAssetsMap, {});
       if (get(supportedAssets).length > 0 && !refresh) {
         return;
       }
       try {
         const assets = await api.assets.allAssets();
         set(supportedAssetsMap, assets);
-        set(supportedAssets, convertSupportedAssets(assets));
       } catch (e: any) {
         const { notify } = useNotifications();
         notify({
@@ -226,7 +261,7 @@ export const useAssetInfoRetrieval = defineStore(
           }
         }
 
-        const asset = get(supportedAssetsMap)[identifier];
+        const asset = get(getAssociatedAsset(identifier));
 
         if (!asset) {
           return undefined;
@@ -302,10 +337,22 @@ export const useAssetInfoRetrieval = defineStore(
       });
     };
 
+    const supportedAssetsSymbol = computed<string[]>(() => {
+      const data = get(supportedAssets)
+        .map(value => get(assetSymbol(value.identifier)))
+        .filter(uniqueStrings);
+
+      if (get(treatEth2AsEth)) return data;
+      return [...data, 'ETH2'];
+    });
+
     return {
       supportedAssets,
       supportedAssetsMap,
+      supportedAssetsSymbol,
       fetchSupportedAssets,
+      getAssociatedAssetIdentifier,
+      getAssociatedAsset,
       assetInfo,
       assetSymbol,
       assetIdentifierForSymbol,

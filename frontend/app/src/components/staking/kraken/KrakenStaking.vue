@@ -22,8 +22,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
-import { storeToRefs } from 'pinia';
+import { defineComponent, toRefs } from '@vue/composition-api';
 import Fragment from '@/components/helper/Fragment';
 import KrakenStakingEvents from '@/components/staking/kraken/KrakenStakingEvents.vue';
 import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
@@ -42,7 +41,8 @@ export default defineComponent({
   },
   setup() {
     const store = useKrakenStakingStore();
-    const { events } = storeToRefs(store);
+    const { events } = toRefs(store);
+
     const { isSectionRefreshing } = setupStatusChecking();
 
     const { load, updatePagination } = store;

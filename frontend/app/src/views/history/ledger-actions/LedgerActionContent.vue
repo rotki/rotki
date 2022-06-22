@@ -214,7 +214,6 @@ import { useHistory, useLedgerActions } from '@/store/history';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
 import { Collection } from '@/types/collection';
 import { LedgerActionType } from '@/types/ledger-actions';
-import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 import LedgerActionDetails from '@/views/history/ledger-actions/LedgerActionDetails.vue';
 
@@ -326,9 +325,8 @@ export default defineComponent({
     const historyStore = useHistory();
     const ledgerActionStore = useLedgerActions();
     const assetInfoRetrievalStore = useAssetInfoRetrieval();
-    const { supportedAssets } = toRefs(assetInfoRetrievalStore);
-    const { getAssetSymbol, getAssetIdentifierForSymbol } =
-      assetInfoRetrievalStore;
+    const { supportedAssetsSymbol } = toRefs(assetInfoRetrievalStore);
+    const { getAssetIdentifierForSymbol } = assetInfoRetrievalStore;
 
     const { associatedLocations } = storeToRefs(historyStore);
     const { ledgerActions } = storeToRefs(ledgerActionStore);
@@ -430,16 +428,6 @@ export default defineComponent({
     const options: Ref<PaginationOptions | null> = ref(null);
     const filters: Ref<MatchedKeyword<LedgerActionFilterValueKeys>> = ref({});
 
-    const availableAssets = computed<string[]>(() => {
-      return get(supportedAssets)
-        .map(value => getAssetSymbol(value.identifier))
-        .filter(uniqueStrings);
-    });
-
-    const availableLocations = computed<TradeLocation[]>(() => {
-      return get(associatedLocations);
-    });
-
     const matchers = computed<
       SearchMatcher<LedgerActionFilterKeys, LedgerActionFilterValueKeys>[]
     >(() => [
@@ -447,8 +435,8 @@ export default defineComponent({
         key: LedgerActionFilterKeys.ASSET,
         keyValue: LedgerActionFilterValueKeys.ASSET,
         description: i18n.t('ledger_actions.filter.asset').toString(),
-        suggestions: () => get(availableAssets),
-        validate: (asset: string) => get(availableAssets).includes(asset),
+        suggestions: () => get(supportedAssetsSymbol),
+        validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
       },
       {
@@ -501,8 +489,8 @@ export default defineComponent({
         key: LedgerActionFilterKeys.LOCATION,
         keyValue: LedgerActionFilterValueKeys.LOCATION,
         description: i18n.t('ledger_actions.filter.location').toString(),
-        suggestions: () => get(availableLocations),
-        validate: location => get(availableLocations).includes(location as any)
+        suggestions: () => get(associatedLocations),
+        validate: location => get(associatedLocations).includes(location as any)
       }
     ]);
 
