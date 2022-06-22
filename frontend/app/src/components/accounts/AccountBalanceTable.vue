@@ -162,7 +162,7 @@ import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { setupGeneralBalances } from '@/composables/balances';
 import { setupThemeCheck } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
-import { balanceSum } from '@/filters';
+import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import { chainSection } from '@/store/balances/const';
 import {
@@ -207,7 +207,7 @@ export default defineComponent({
       toRefs(props);
 
     const { isTaskRunning } = useTasks();
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol, treatEth2AsEth } = setupGeneralSettings();
     const { hasDetails, accountAssets, accountLiabilities, loopringBalances } =
       setupGeneralBalances();
 
@@ -272,7 +272,7 @@ export default defineComponent({
         return {
           ...value,
           balance: {
-            usdValue: balanceSum(
+            usdValue: bigNumberSum(
               assetBalances.map(({ usdValue }) => usdValue)
             ).plus(chainBalance.usdValue),
             amount: chainBalance.amount.plus(loopringEth)
@@ -355,10 +355,10 @@ export default defineComponent({
       const balances = get(visibleBalances);
       const collapsedAmount = get(collapsedXpubBalances).amount;
       const collapsedUsd = get(collapsedXpubBalances).usdValue;
-      const amount = balanceSum(
+      const amount = bigNumberSum(
         balances.map(({ balance }) => balance.amount)
       ).plus(collapsedAmount);
-      const usdValue = balanceSum(
+      const usdValue = bigNumberSum(
         balances.map(({ balance }) => balance.usdValue)
       ).plus(collapsedUsd);
 
@@ -464,7 +464,11 @@ export default defineComponent({
       const headers: DataTableHeader[] = [
         { text: '', value: 'accountSelection', width: '34px', sortable: false },
         { text: accountHeader.toString(), value: 'label' },
-        { text: get(blockchain), value: 'balance.amount', align: 'end' },
+        {
+          text: get(isEth2) && get(treatEth2AsEth) ? 'ETH' : get(blockchain),
+          value: 'balance.amount',
+          align: 'end'
+        },
         {
           text: currencyHeader.toString(),
           value: 'balance.usdValue',

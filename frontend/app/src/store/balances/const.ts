@@ -10,3 +10,7 @@ export const chainSection: ChainSections = {
   DOT: Section.BLOCKCHAIN_DOT,
   AVAX: Section.BLOCKCHAIN_AVAX
 };
+
+export const samePriceAssets: Record<string, string[]> = {
+  ETH: ['ETH2']
+};

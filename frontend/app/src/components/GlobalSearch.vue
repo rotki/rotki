@@ -125,7 +125,7 @@ import { TradeLocationData } from '@/components/history/type';
 import {
   setupGeneralBalances,
   setupLocationInfo,
-  useExchanges
+  setupExchanges
 } from '@/composables/balances';
 import { setupThemeCheck, useRouter } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
@@ -169,7 +169,7 @@ export default defineComponent({
 
     const { currencySymbol } = setupGeneralSettings();
     const { assetSymbol } = useAssetInfoRetrieval();
-    const { connectedExchanges } = useExchanges();
+    const { connectedExchanges } = setupExchanges();
     const { aggregatedBalances, balancesByLocation } = setupGeneralBalances();
     const { getLocation } = setupLocationInfo();
     const { dark } = setupThemeCheck();

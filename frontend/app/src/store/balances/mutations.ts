@@ -52,7 +52,13 @@ export const mutations: MutationTree<BalanceState> = {
     state.totals = totals;
   },
   updateLiabilities(state: BalanceState, payload: Balances) {
-    state.liabilities = { ...state.liabilities, ...payload };
+    const liabilities = { ...state.liabilities, ...payload };
+
+    for (const asset in liabilities) {
+      if (liabilities[asset].amount.isZero()) delete liabilities[asset];
+    }
+
+    state.liabilities = liabilities;
   },
   usdToFiatExchangeRates(
     state: BalanceState,

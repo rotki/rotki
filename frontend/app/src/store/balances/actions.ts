@@ -153,14 +153,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     await dispatch('accounts');
   },
 
-  async fetchConnectedExchangeBalances({
-    dispatch,
-    state: { connectedExchanges: exchanges }
-  }): Promise<void> {
+  async fetchConnectedExchangeBalances(
+    { dispatch, state: { connectedExchanges: exchanges } },
+    refresh: boolean = false
+  ): Promise<void> {
     for (const exchange of exchanges) {
       await dispatch('fetchExchangeBalances', {
         location: exchange.location,
-        ignoreCache: false
+        ignoreCache: refresh
       } as ExchangeBalancePayload);
     }
   },

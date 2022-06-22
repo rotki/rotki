@@ -37,7 +37,7 @@ export function truncateAddress(
   );
 }
 
-export function balanceSum(value: BigNumber[]): BigNumber {
+export function bigNumberSum(value: BigNumber[]): BigNumber {
   return value.reduce(
     (previousValue, currentValue) => previousValue.plus(currentValue),
     Zero

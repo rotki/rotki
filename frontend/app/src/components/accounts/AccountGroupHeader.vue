@@ -113,7 +113,7 @@ import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { setupThemeCheck } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
-import { balanceSum, truncateAddress, truncationPoints } from '@/filters';
+import { bigNumberSum, truncateAddress, truncationPoints } from '@/filters';
 import { XpubAccountWithBalance } from '@/store/balances/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
 
@@ -160,7 +160,7 @@ export default defineComponent({
     });
 
     const sum = computed<BigNumber>(() => {
-      return balanceSum(get(items).map(({ balance: { amount } }) => amount));
+      return bigNumberSum(get(items).map(({ balance: { amount } }) => amount));
     });
 
     const usdSum = computed<BigNumber>(() => {

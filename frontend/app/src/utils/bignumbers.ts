@@ -14,3 +14,6 @@ export function bigNumberifyFromRef(
 }
 
 export const Zero = new BigNumber(0);
+export const NoPrice = new BigNumber(-1);
+
+export const sortDesc = (a: BigNumber, b: BigNumber) => b.minus(a).toNumber();

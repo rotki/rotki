@@ -278,7 +278,6 @@ import {
 import { useTasks } from '@/store/tasks';
 import { Collection } from '@/types/collection';
 import { TaskType } from '@/types/task-type';
-import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 import TransactionQueryStatus from '@/views/history/transactions/TransactionQueryStatus.vue';
 
@@ -601,15 +600,8 @@ export default defineComponent({
 
     const { dateInputFormat } = setupSettings();
     const assetInfoRetrievalStore = useAssetInfoRetrieval();
-    const { supportedAssets } = toRefs(assetInfoRetrievalStore);
-    const { getAssetSymbol, getAssetIdentifierForSymbol } =
-      assetInfoRetrievalStore;
-
-    const availableAssets = computed<string[]>(() => {
-      return get(supportedAssets)
-        .map(value => getAssetSymbol(value.identifier))
-        .filter(uniqueStrings);
-    });
+    const { supportedAssetsSymbol } = toRefs(assetInfoRetrievalStore);
+    const { getAssetIdentifierForSymbol } = assetInfoRetrievalStore;
 
     const matchers = computed<
       SearchMatcher<TransactionFilterKeys, TransactionFilterValueKeys>[]
@@ -656,8 +648,8 @@ export default defineComponent({
         key: TransactionFilterKeys.ASSET,
         keyValue: TransactionFilterValueKeys.ASSET,
         description: i18n.t('transactions.filter.asset').toString(),
-        suggestions: () => get(availableAssets),
-        validate: (asset: string) => get(availableAssets).includes(asset),
+        suggestions: () => get(supportedAssetsSymbol),
+        validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
       },
       {

@@ -68,6 +68,9 @@ export function compareSymbols(a: string, b: string, keyword: string) {
   const keywordA = a.toLocaleLowerCase().trim();
   const keywordB = b.toLocaleLowerCase().trim();
 
+  if (keywordA === search) return -1;
+  if (keywordB === search) return 1;
+
   let rankA = levenshtein(search, keywordA);
   let rankB = levenshtein(search, keywordB);
 

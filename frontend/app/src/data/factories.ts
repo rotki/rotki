@@ -21,7 +21,8 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
   currentPriceOracles: [],
   historicalPriceOracles: [],
   ssf0graphMultiplier: 0,
-  nonSyncingExchanges: []
+  nonSyncingExchanges: [],
+  treatEth2AsEth: false
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({

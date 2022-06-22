@@ -113,7 +113,7 @@ import { get, set } from '@vueuse/core';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { useExchanges } from '@/composables/balances';
+import { setupExchanges } from '@/composables/balances';
 import { useRoute, useRouter } from '@/composables/common';
 import { Routes } from '@/router/routes';
 import { useTasks } from '@/store/tasks';
@@ -139,7 +139,7 @@ export default defineComponent({
   setup(props) {
     const { exchange } = toRefs(props);
     const { isTaskRunning } = useTasks();
-    const { exchangeBalances, connectedExchanges } = useExchanges();
+    const { exchangeBalances, connectedExchanges } = setupExchanges();
 
     const selectedExchange = ref<string>('');
     const usedExchanges = computed<string[]>(() => {

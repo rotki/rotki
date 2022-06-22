@@ -243,7 +243,6 @@ import { Section } from '@/store/const';
 import { useHistory, useTrades } from '@/store/history';
 import { IgnoreActionType, TradeEntry } from '@/store/history/types';
 import { Collection } from '@/types/collection';
-import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 enum TradeFilterKeys {
@@ -376,7 +375,7 @@ export default defineComponent({
     const historyStore = useHistory();
     const tradeStore = useTrades();
     const assetInfoRetrievalStore = useAssetInfoRetrieval();
-    const { supportedAssets } = toRefs(assetInfoRetrievalStore);
+    const { supportedAssetsSymbol } = toRefs(assetInfoRetrievalStore);
     const { getAssetSymbol, getAssetIdentifierForSymbol } =
       assetInfoRetrievalStore;
 
@@ -489,16 +488,6 @@ export default defineComponent({
     const options: Ref<PaginationOptions | null> = ref(null);
     const filters: Ref<MatchedKeyword<TradeFilterValueKeys>> = ref({});
 
-    const availableAssets = computed<string[]>(() => {
-      return get(supportedAssets)
-        .map(value => getAssetSymbol(value.identifier))
-        .filter(uniqueStrings);
-    });
-
-    const availableLocations = computed<TradeLocation[]>(() => {
-      return get(associatedLocations);
-    });
-
     const matchers = computed<
       SearchMatcher<TradeFilterKeys, TradeFilterValueKeys>[]
     >(() => [
@@ -506,16 +495,16 @@ export default defineComponent({
         key: TradeFilterKeys.BASE,
         keyValue: TradeFilterValueKeys.BASE,
         description: i18n.t('closed_trades.filter.base_asset').toString(),
-        suggestions: () => get(availableAssets),
-        validate: (asset: string) => get(availableAssets).includes(asset),
+        suggestions: () => get(supportedAssetsSymbol),
+        validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
       },
       {
         key: TradeFilterKeys.QUOTE,
         keyValue: TradeFilterValueKeys.QUOTE,
         description: i18n.t('closed_trades.filter.quote_asset').toString(),
-        suggestions: () => get(availableAssets),
-        validate: (asset: string) => get(availableAssets).includes(asset),
+        suggestions: () => get(supportedAssetsSymbol),
+        validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
       },
       {
@@ -567,8 +556,8 @@ export default defineComponent({
         key: TradeFilterKeys.LOCATION,
         keyValue: TradeFilterValueKeys.LOCATION,
         description: i18n.t('closed_trades.filter.location').toString(),
-        suggestions: () => get(availableLocations),
-        validate: location => get(availableLocations).includes(location as any)
+        suggestions: () => get(associatedLocations),
+        validate: location => get(associatedLocations).includes(location as any)
       }
     ]);
 

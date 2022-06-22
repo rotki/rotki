@@ -1,16 +1,23 @@
-import { ref } from '@vue/composition-api';
+import { computed, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { getStatusUpdater } from '@/store/utils';
-import { KrakenStakingEvents, KrakenStakingPagination } from '@/types/staking';
+import {
+  KrakenStakingEvents,
+  KrakenStakingPagination,
+  ReceivedAmount
+} from '@/types/staking';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
+import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
 
 const defaultPagination = (): KrakenStakingPagination => ({
@@ -32,7 +39,39 @@ const defaultEventState = (): KrakenStakingEvents => ({
 
 export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   const pagination = ref(defaultPagination());
-  const events = ref<KrakenStakingEvents>(defaultEventState());
+  const rawEvents = ref<KrakenStakingEvents>(defaultEventState());
+
+  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+
+  const events = computed<KrakenStakingEvents>(() => {
+    const eventsValue = get(rawEvents) as KrakenStakingEvents;
+    const received = eventsValue.received;
+
+    const receivedAssets: Record<string, ReceivedAmount> = {};
+
+    received.forEach((item: ReceivedAmount) => {
+      const associatedAsset: string = get(
+        getAssociatedAssetIdentifier(item.asset)
+      );
+
+      const receivedAsset = receivedAssets[associatedAsset];
+
+      receivedAssets[associatedAsset] = !receivedAsset
+        ? {
+            ...item
+          }
+        : {
+            ...item,
+            ...balanceSum(receivedAsset, item)
+          };
+    });
+
+    return {
+      ...eventsValue,
+      assets: Object.keys(receivedAssets),
+      received: Object.values(receivedAssets)
+    };
+  });
 
   const { isTaskRunning, awaitTask } = useTasks();
   const { notify } = useNotifications();
@@ -60,7 +99,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     const taskType = TaskType.STAKING_KRAKEN;
     try {
       const firstLoad = isFirstLoad();
-      if (isTaskRunning(taskType).value || (loading() && refresh)) {
+      if (get(isTaskRunning(taskType)) || (loading() && refresh)) {
         return;
       }
 
@@ -68,15 +107,15 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
 
       if (refresh || firstLoad) {
         if (firstLoad) {
-          events.value = await api.fetchKrakenStakingEvents(pagination.value);
+          set(rawEvents, await api.fetchKrakenStakingEvents(get(pagination)));
         }
         setStatus(Status.REFRESHING);
         await refreshEvents();
       }
-      events.value = await api.fetchKrakenStakingEvents(pagination.value);
+      set(rawEvents, await api.fetchKrakenStakingEvents(get(pagination)));
 
       setStatus(
-        isTaskRunning(taskType).value ? Status.REFRESHING : Status.LOADED
+        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
       );
     } catch (e: any) {
       logger.error(e);
@@ -92,7 +131,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   };
 
   const updatePagination = async (data: KrakenStakingPagination) => {
-    pagination.value = data;
+    set(pagination, data);
     await fetchEvents();
   };
 

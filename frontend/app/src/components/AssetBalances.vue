@@ -62,7 +62,7 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupGeneralSettings } from '@/composables/session';
-import { balanceSum } from '@/filters';
+import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { getSortItems } from '@/utils/assets';
@@ -118,7 +118,7 @@ const AssetBalancesTable = defineComponent({
   setup(props) {
     const { balances } = toRefs(props);
     const total = computed(() => {
-      return balanceSum(balances.value.map(({ usdValue }) => usdValue));
+      return bigNumberSum(balances.value.map(({ usdValue }) => usdValue));
     });
 
     const { currencySymbol } = setupGeneralSettings();

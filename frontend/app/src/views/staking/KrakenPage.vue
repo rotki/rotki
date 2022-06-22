@@ -63,7 +63,7 @@ import { get } from '@vueuse/core';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
-import { useExchanges } from '@/composables/balances';
+import { setupExchanges } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
@@ -76,7 +76,7 @@ export default defineComponent({
     const { shouldShowLoadingScreen } = setupStatusChecking();
     const { load } = useKrakenStakingStore();
 
-    const { connectedExchanges } = useExchanges();
+    const { connectedExchanges } = setupExchanges();
     const isKrakenConnected = computed(() => {
       const exchanges = get(connectedExchanges);
       return !!exchanges.find(
