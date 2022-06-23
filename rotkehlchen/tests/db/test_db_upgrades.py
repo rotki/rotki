@@ -2637,7 +2637,8 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
     # test that previous xpubs as what are expected
     old_xpubs = cursor.execute('SELECT * FROM xpubs').fetchall()
     assert len(old_xpubs) == 2
-
+    blockchain_account_label_initial = cursor.execute('SELECT * FROM blockchain_accounts WHERE account="0x45E6CA515E840A4e9E02A3062F99216951825eB2"').fetchone()[2]  # noqa: E501
+    assert blockchain_account_label_initial == ''
     db_v32.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2664,6 +2665,8 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
     assert len(new_xpubs) == len(old_xpubs)
     for xpub in new_xpubs:
         assert xpub[3] == 'BTC'
+    blockchain_account_label_upgraded = cursor.execute('SELECT * FROM blockchain_accounts WHERE account="0x45E6CA515E840A4e9E02A3062F99216951825eB2"').fetchone()[2]  # noqa: E501
+    assert blockchain_account_label_upgraded is None
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

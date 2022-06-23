@@ -1075,6 +1075,16 @@ class BlockchainAccountDataSchema(Schema):
     label = fields.String(load_default=None)
     tags = fields.List(fields.String(), load_default=None)
 
+    @validates_schema
+    def validate_blockchain_account_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        label = data.get('label', None)
+        if label == '':
+            raise ValidationError('Blockchain account\'s label cannot be empty string. Use null instead.')  # noqa: E501
+
 
 class BaseXpubSchema(AsyncQueryArgumentSchema):
     xpub = XpubField(required=True)

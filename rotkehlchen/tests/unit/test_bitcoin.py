@@ -1,3 +1,4 @@
+from typing import Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -15,8 +16,8 @@ from rotkehlchen.chain.bitcoin.utils import (
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS, SupportedBlockchain
-from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import RemoteError, XPUBError
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ens import ENS_BRUNO_BTC_ADDR, ENS_BRUNO_BTC_BYTES
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
@@ -366,29 +367,26 @@ def test_bitcoin_balance_api_resolver():
         BTCAddress('36Z62MQfJHF11DWqMMzc3rqLiDFGiVF8CB'),
         BTCAddress('33k4CdyQJFwXQD9giSKyo36mTvE9Y6C9cP'),
     ]
-    expected_balance = {
-        '34SjMcbLquZ7HmFmQiAHqEHY4mBEbvGeVL': ZERO,
-        '33k4CdyQJFwXQD9giSKyo36mTvE9Y6C9cP': ZERO,
-        '3FZbgi29cpjq2GjdwV8eyHuJJnkLtktZc5': ZERO,
-        '36Z62MQfJHF11DWqMMzc3rqLiDFGiVF8CB': ZERO,
-        '3J7sT2fbDaF3XrjpWM5GsUyaDr7i7psi88': ZERO,
-    }
+
+    def check_balances(balances_to_check: Dict[BTCAddress, FVal]) -> None:
+        for addr in addresses:
+            assert addr in balances_to_check
 
     # Test balances are returned properly
     balances = get_bitcoin_addresses_balances(addresses)
-    assert balances == expected_balance
+    check_balances(balances)
 
     # One fails
     with patch('rotkehlchen.chain.bitcoin._query_blockchain_info', MagicMock(side_effect=KeyError('someProperty'))):  # noqa: E501
         balances = get_bitcoin_addresses_balances(addresses)
-        assert balances == expected_balance
+        check_balances(balances)
 
         # Two fail
         with patch('rotkehlchen.chain.bitcoin._query_blockstream_info', MagicMock(side_effect=RemoteError('Epic fail'))):  # noqa: E501
             balances = get_bitcoin_addresses_balances(addresses)
-            assert balances == expected_balance
+            check_balances(balances)
 
             # Three fail - FATALITY!!!
             with patch('rotkehlchen.chain.bitcoin._query_mempool_space', MagicMock(side_effect=RemoteError('Fatality'))):  # noqa: E501
                 with pytest.raises(RemoteError):
-                    balances = get_bitcoin_addresses_balances(addresses)
+                    get_bitcoin_addresses_balances(addresses)

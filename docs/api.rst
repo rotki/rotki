@@ -5106,7 +5106,7 @@ Getting blockchain account data
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX"``
 
-   Doing a GET on the blokchcains endpoint with a specific blockchain queries account data information for that blockchain.
+   Doing a GET on the blockchains endpoint with a specific blockchain queries account data information for that blockchain.
 
    **Example Request**:
 
@@ -8810,7 +8810,7 @@ Adding blockchain accounts
 
    :reqjson list[object] accounts: A list of account data to add for the given blockchain
    :reqjsonarr string address: The address of the account to add. Can either be a hexadecimal address or an ENS name.
-   :reqjsonarr string[optional] label: An optional label to describe the new account
+   :reqjsonarr string[optional] label: An optional label to describe the new account. Cannot be empty string.
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the new account
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
@@ -9220,7 +9220,7 @@ Editing blockchain account data
 
    :reqjson list[object] accounts: A list of account data to edit for the given blockchain
    :reqjsonarr string address: The address of the account to edit. Can either be a hexadecimal address or an ENS name.
-   :reqjsonarr string[optional] label: An optional label to edit for the account
+   :reqjsonarr string[optional] label: An optional label to edit for the account. Cannot be empty string.
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the account
 
    **Example Response**:
