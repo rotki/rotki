@@ -41,7 +41,12 @@ from rotkehlchen.db.settings import (
     DBSettings,
     ModifiableDBSettings,
 )
-from rotkehlchen.db.utils import BlockchainAccounts, DBAssetBalance, LocationData, SingleDBAssetBalance
+from rotkehlchen.db.utils import (
+    BlockchainAccounts,
+    DBAssetBalance,
+    LocationData,
+    SingleDBAssetBalance,
+)
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -1072,12 +1077,11 @@ def test_timed_balances_primary_key_works(user_data_dir):
 
 
 @pytest.mark.parametrize('db_settings', [{'treat_eth2_as_eth': True}])
-def test_timed_balances_treat_eth2_as_eth(user_data_dir, database):
+def test_timed_balances_treat_eth2_as_eth(database):
     """
-    Test that adding two timed_balances with the same primary key
-    i.e (time, currency, category) fails.
+    Test that the setting to treat eth2 as eth calculates correctly the
+    ETH2 + ETH values for graphs
     """
-    msg_aggregator = MessagesAggregator()
     balances = [
         DBAssetBalance(
             category=BalanceType.ASSET,
@@ -1187,16 +1191,9 @@ def test_timed_balances_treat_eth2_as_eth(user_data_dir, database):
             amount='0.5',
             usd_value='2000',
             category=BalanceType.ASSET,
-        ), SingleDBAssetBalance(
-            time=1590877829,
-            amount='0.5',
-            usd_value='2000',
-            category=BalanceType.LIABILITY,
         ),
     ]
-    print(balances)
-    print(expected_balances)
-    assert len(balances) == 7
+    assert len(balances) == 6
     assert balances == expected_balances
 
 

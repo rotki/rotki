@@ -449,6 +449,8 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
             quote_asset: Optional[Asset] = None,
             trade_type: Optional[List[TradeType]] = None,
             location: Optional[Location] = None,
+            multiple_base_assets: Optional[Tuple[Asset, ...]] = None,
+            multiple_quote_assets: Optional[Tuple[Asset, ...]] = None,
     ) -> 'TradesFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('time', True)]
@@ -470,6 +472,22 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
+        if multiple_base_assets is not None:
+            filters.append(
+                DBMultiStringFilter(
+                    and_op=True,
+                    column='base_asset',
+                    values=[asset.identifier for asset in multiple_base_assets],
+                ),
+            )
+        if multiple_quote_assets is not None:
+            filters.append(
+                DBMultiStringFilter(
+                    and_op=True,
+                    column='quote_asset',
+                    values=[asset.identifier for asset in multiple_quote_assets],
+                ),
+            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -494,6 +512,7 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             asset: Optional[Asset] = None,
+            multiple_assets: Optional[Tuple[Asset, ...]] = None,
             action: Optional[List[AssetMovementCategory]] = None,
             location: Optional[Location] = None,
     ) -> 'AssetMovementsFilterQuery':
@@ -515,6 +534,14 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
+        if multiple_assets is not None:
+            filters.append(
+                DBMultiStringFilter(
+                    and_op=True,
+                    column='asset',
+                    values=[asset.identifier for asset in multiple_assets],
+                ),
+            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -539,6 +566,7 @@ class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoc
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             asset: Optional[Asset] = None,
+            multiple_assets: Optional[Tuple[Asset, ...]] = None,
             action_type: Optional[List[LedgerActionType]] = None,
             location: Optional[Location] = None,
     ) -> 'LedgerActionsFilterQuery':
@@ -559,6 +587,14 @@ class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoc
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
+        if multiple_assets is not None:
+            filters.append(
+                DBMultiStringFilter(
+                    and_op=True,
+                    column='asset',
+                    values=[asset.identifier for asset in multiple_assets],
+                ),
+            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -699,6 +735,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             asset: Optional[Asset] = None,
+            multiple_assets: Optional[Tuple[Asset, ...]] = None,
             event_types: Optional[List[HistoryEventType]] = None,
             event_subtypes: Optional[List[HistoryEventSubType]] = None,
             exclude_subtypes: Optional[List[HistoryEventSubType]] = None,
@@ -775,6 +812,14 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             )
         if exclude_ignored_assets is True:
             filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
+        if multiple_assets is not None:
+            filters.append(
+                DBMultiStringFilter(
+                    and_op=True,
+                    column='asset',
+                    values=[asset.identifier for asset in multiple_assets],
+                ),
+            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,

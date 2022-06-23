@@ -727,13 +727,18 @@ class ManuallyTrackedBalancesResource(BaseMethodView):
 
 class TradesResource(BaseMethodView):
 
-    get_schema = TradesQuerySchema()
+    def make_get_schema(self) -> TradesQuerySchema:
+        settings = self.rest_api.rotkehlchen.data.db.get_settings()
+        return TradesQuerySchema(
+            treat_eth2_as_eth=settings.treat_eth2_as_eth,
+        )
+
     put_schema = TradeSchema()
     patch_schema = TradePatchSchema()
     delete_schema = TradeDeleteSchema()
 
     @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
+    @resource_parser.use_kwargs(make_get_schema, location='json_and_query')
     def get(
             self,
             async_query: bool,
@@ -816,10 +821,14 @@ class TradesResource(BaseMethodView):
 
 class AssetMovementsResource(BaseMethodView):
 
-    get_schema = AssetMovementsQuerySchema()
+    def make_get_schema(self) -> AssetMovementsQuerySchema:
+        settings = self.rest_api.rotkehlchen.data.db.get_settings()
+        return AssetMovementsQuerySchema(
+            treat_eth2_as_eth=settings.treat_eth2_as_eth,
+        )
 
     @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
+    @resource_parser.use_kwargs(make_get_schema, location='json_and_query')
     def get(
             self,
             filter_query: AssetMovementsFilterQuery,
@@ -883,13 +892,18 @@ class TagsResource(BaseMethodView):
 
 class LedgerActionsResource(BaseMethodView):
 
-    get_schema = LedgerActionsQuerySchema()
+    def make_get_schema(self) -> LedgerActionsQuerySchema:
+        settings = self.rest_api.rotkehlchen.data.db.get_settings()
+        return LedgerActionsQuerySchema(
+            treat_eth2_as_eth=settings.treat_eth2_as_eth,
+        )
+
     put_schema = LedgerActionSchema(identifier_required=False)
     patch_schema = LedgerActionSchema(identifier_required=True)
     delete_schema = IntegerIdentifierSchema()
 
     @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
+    @resource_parser.use_kwargs(make_get_schema, location='json_and_query')
     def get(
             self,
             filter_query: LedgerActionsFilterQuery,
@@ -2326,10 +2340,15 @@ class NFTSBalanceResource(BaseMethodView):
 
 
 class StakingResource(BaseMethodView):
-    get_schema = StakingQuerySchema
+
+    def make_get_schema(self) -> StakingQuerySchema:
+        settings = self.rest_api.rotkehlchen.data.db.get_settings()
+        return StakingQuerySchema(
+            treat_eth2_as_eth=settings.treat_eth2_as_eth,
+        )
 
     @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
+    @resource_parser.use_kwargs(make_get_schema, location='json_and_query')
     def post(
             self,
             async_query: bool,

@@ -34,6 +34,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_kusama_address,
     is_valid_polkadot_address,
 )
+from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -255,6 +256,13 @@ class TradesQuerySchema(
     trade_type = SerializableEnumField(enum_class=TradeType, load_default=None)
     location = LocationField(load_default=None)
 
+    def __init__(
+            self,
+            treat_eth2_as_eth: bool,
+    ) -> None:
+        super().__init__()
+        self.treat_eth2_as_eth = treat_eth2_as_eth
+
     @validates_schema
     def validate_trades_query_schema(  # pylint: disable=no-self-use
             self,
@@ -283,17 +291,37 @@ class TradesQuerySchema(
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'time'  # noqa: E501
-        filter_query = TradesFilterQuery.make(
-            order_by_rules=[(order_by_attribute, data['ascending'])],
-            limit=data['limit'],
-            offset=data['offset'],
-            from_ts=data['from_timestamp'],
-            to_ts=data['to_timestamp'],
-            base_asset=data['base_asset'],
-            quote_asset=data['quote_asset'],
-            trade_type=[data['trade_type']] if data['trade_type'] is not None else None,
-            location=data['location'],
-        )
+        base_asset, quote_asset = data['base_asset'], data['quote_asset']
+        base_assets, quote_assets = None, None
+
+        if self.treat_eth2_as_eth is True and base_asset == A_ETH:
+            base_assets = (A_ETH, A_ETH2)
+        elif self.treat_eth2_as_eth is True and quote_asset == A_ETH:
+            quote_assets = (A_ETH, A_ETH2)
+
+        query_arguments = {
+            'order_by_rules': [(order_by_attribute, data['ascending'])],
+            'limit': data['limit'],
+            'offset': data['offset'],
+            'from_ts': data['from_timestamp'],
+            'to_ts': data['to_timestamp'],
+            'base_asset': data['base_asset'],
+            'quote_asset': data['quote_asset'],
+            'trade_type': [data['trade_type']] if data['trade_type'] is not None else None,
+            'location': data['location'],
+            'multiple_base_assets': base_assets,
+            'multiple_quote_assets': quote_assets,
+        }
+
+        if base_assets is not None and quote_assets is not None:
+            query_arguments.pop('base_asset')
+            query_arguments.pop('quote_asset')
+        elif base_assets is not None:
+            query_arguments.pop('base_asset')
+        elif quote_assets is not None:
+            query_arguments.pop('quote_asset')
+        filter_query = TradesFilterQuery.make(**query_arguments)
+
         return {
             'async_query': data['async_query'],
             'only_cache': data['only_cache'],
@@ -315,6 +343,13 @@ class StakingQuerySchema(
         load_default=None,
     )
 
+    def __init__(
+            self,
+            treat_eth2_as_eth: bool,
+    ) -> None:
+        super().__init__()
+        self.treat_eth2_as_eth = treat_eth2_as_eth
+
     @post_load
     def make_staking_query(  # pylint: disable=no-self-use
             self,
@@ -324,6 +359,11 @@ class StakingQuerySchema(
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         if order_by_attribute == 'event_type':
             order_by_attribute = 'subtype'
+
+        asset, asset_list = data['asset'], None
+        if self.treat_eth2_as_eth is True and asset == A_ETH:
+            asset_list = (A_ETH, A_ETH2)
+            asset = None
 
         query_filter = HistoryEventFilterQuery.make(
             order_by_rules=[(order_by_attribute, data['ascending'])],
@@ -340,7 +380,8 @@ class StakingQuerySchema(
                 HistoryEventSubType.RECEIVE_WRAPPED,
                 HistoryEventSubType.RETURN_WRAPPED,
             ],
-            asset=data['asset'],
+            asset=asset,
+            multiple_assets=asset_list,
         )
 
         value_filter = HistoryEventFilterQuery.make(
@@ -356,7 +397,8 @@ class StakingQuerySchema(
                 HistoryEventSubType.REWARD,
             ],
             order_by_rules=None,
-            asset=data['asset'],
+            asset=asset,
+            multiple_assets=asset_list,
         )
 
         return {
@@ -424,6 +466,13 @@ class AssetMovementsQuerySchema(
     action = SerializableEnumField(enum_class=AssetMovementCategory, load_default=None)
     location = LocationField(load_default=None)
 
+    def __init__(
+            self,
+            treat_eth2_as_eth: bool,
+    ) -> None:
+        super().__init__()
+        self.treat_eth2_as_eth = treat_eth2_as_eth
+
     @validates_schema
     def validate_asset_movements_query_schema(  # pylint: disable=no-self-use
             self,
@@ -451,13 +500,19 @@ class AssetMovementsQuerySchema(
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'time'  # noqa: E501
+        asset, asset_list = data['asset'], None
+        if self.treat_eth2_as_eth is True and asset == A_ETH:
+            asset_list = (A_ETH, A_ETH2)
+            asset = None
+
         filter_query = AssetMovementsFilterQuery.make(
             order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
-            asset=data['asset'],
+            asset=asset,
+            multiple_assets=asset_list,
             action=[data['action']] if data['action'] is not None else None,
             location=data['location'],
         )
@@ -479,6 +534,13 @@ class LedgerActionsQuerySchema(
     to_timestamp = TimestampField(load_default=ts_now)
     type = SerializableEnumField(enum_class=LedgerActionType, load_default=None)
     location = LocationField(load_default=None)
+
+    def __init__(
+            self,
+            treat_eth2_as_eth: bool,
+    ) -> None:
+        super().__init__()
+        self.treat_eth2_as_eth = treat_eth2_as_eth
 
     @validates_schema
     def validate_asset_movements_query_schema(  # pylint: disable=no-self-use
@@ -507,13 +569,19 @@ class LedgerActionsQuerySchema(
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
+        asset, asset_list = data['asset'], None
+        if self.treat_eth2_as_eth is True and asset == A_ETH:
+            asset_list = (A_ETH, A_ETH2)
+            asset = None
+
         filter_query = LedgerActionsFilterQuery.make(
             order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
-            asset=data['asset'],
+            asset=asset,
+            multiple_assets=asset_list,
             action_type=[data['type']] if data['type'] is not None else None,
             location=data['location'],
         )
