@@ -72,6 +72,10 @@ def _create_new_tables(cursor: 'Cursor') -> None:
 """)
 
 
+def _refactor_blockchain_account_labels(cursor: 'Cursor') -> None:
+    cursor.execute('UPDATE blockchain_accounts SET label = NULL WHERE label = ""')
+
+
 def upgrade_v32_to_v33(db: 'DBHandler') -> None:
     """Upgrades the DB from v32 to v33
     - Change the schema of `blockchain` column in `xpub_mappings` table to be required.
@@ -80,4 +84,5 @@ def upgrade_v32_to_v33(db: 'DBHandler') -> None:
     cursor = db.conn.cursor()
     _refactor_xpubs_and_xpub_mappings(cursor)
     _create_new_tables(cursor)
+    _refactor_blockchain_account_labels(cursor)
     db.conn.commit()

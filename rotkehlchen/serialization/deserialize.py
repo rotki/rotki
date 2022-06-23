@@ -600,7 +600,10 @@ def deserialize_ethereum_transaction(
         ) from e
 
 
-def ensure_type(symbol: Any, expected_type: Type, location: str) -> Any:
+R = TypeVar('R')
+
+
+def ensure_type(symbol: Any, expected_type: Type[R], location: str) -> R:
     if isinstance(symbol, expected_type) is True:
         return symbol
     raise DeserializationError(
