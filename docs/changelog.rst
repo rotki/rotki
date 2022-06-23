@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Add zoom feature for line charts.
 * :feature:`3095` The application will now notify the user if there is a status change for the premium subscription.
 * :feature:`1028` Native support for Bitcoin Cash blockchain.
 * :bug:`-` Now no missing acquisitions should appear for fiat assets during accounting.

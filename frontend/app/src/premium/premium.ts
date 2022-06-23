@@ -168,6 +168,7 @@ declare global {
     Vue: any;
     Chart: typeof Chart;
     '@vue/composition-api': any;
+    'chartjs-plugin-zoom': any;
     zod: any;
     bn: any;
   }

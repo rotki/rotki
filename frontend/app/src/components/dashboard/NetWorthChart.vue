@@ -1,5 +1,8 @@
 <template>
   <div :class="$style.wrapper">
+    <div class="d-flex justify-end">
+      <chart-shortcut-hint />
+    </div>
     <div :class="$style.canvas">
       <canvas
         :id="canvasId"
@@ -60,6 +63,7 @@ import {
   TimeUnit
 } from 'chart.js';
 import dayjs from 'dayjs';
+import ChartShortcutHint from '@/components/ChartShortcutHint.vue';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
 import { setupThemeCheck } from '@/composables/common';
@@ -77,7 +81,7 @@ export interface ValueOverTime {
 
 export default defineComponent({
   name: 'NetWorthChart',
-  components: { GraphTooltipWrapper, ExportSnapshotDialog },
+  components: { ChartShortcutHint, GraphTooltipWrapper, ExportSnapshotDialog },
   props: {
     timeframe: {
       required: true,
