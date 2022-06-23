@@ -51,8 +51,8 @@ from rotkehlchen.chain.substrate.utils import (
 )
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.misc import ONE, ZERO
-from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.data_import.manager import DataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError

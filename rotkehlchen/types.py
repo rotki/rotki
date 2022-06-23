@@ -64,19 +64,6 @@ AVAILABLE_MODULES_MAP = {
 DEFAULT_OFF_MODULES = {'makerdao_dsr', 'yearn_vaults', 'adex'}
 
 
-IMPORTABLE_LOCATIONS = Literal[
-    'cointracking.info',
-    'cryptocom',
-    'blockfi-transactions',
-    'blockfi-trades',
-    'nexo',
-    'gitcoin',
-    'shapeshift-trades',
-    'uphold',
-    'bisq',
-    'binance',
-]
-
 UNISWAP_PROTOCOL = 'UNI-V2'
 YEARN_VAULTS_V2_PROTOCOL = 'yearn_vaults_v2'
 CURVE_POOL_PROTOCOL = 'curve_pool'

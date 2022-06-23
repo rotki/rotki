@@ -127,6 +127,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     Eth2DailyStatsFilterQuery,
@@ -140,7 +141,6 @@ from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.types import (
-    IMPORTABLE_LOCATIONS,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
@@ -1470,15 +1470,15 @@ class DataImportResource(BaseMethodView):
     def put(
             self,
             async_query: bool,
-            source: IMPORTABLE_LOCATIONS,
+            source: DataImportSource,
             file: Path,
-            timestamp_format: Optional[str],
+            **kwargs: Any,
     ) -> Response:
         return self.rest_api.import_data(
             source=source,
             filepath=file,
-            timestamp_format=timestamp_format,
             async_query=async_query,
+            **kwargs,
         )
 
     @require_loggedin_user()
@@ -1486,15 +1486,15 @@ class DataImportResource(BaseMethodView):
     def post(
             self,
             async_query: bool,
-            source: IMPORTABLE_LOCATIONS,
+            source: DataImportSource,
             file: FileStorage,
-            timestamp_format: Optional[str],
+            **kwargs: Any,
     ) -> Response:
         return self.rest_api.import_data(
             source=source,
             filepath=file,
-            timestamp_format=timestamp_format,
             async_query=async_query,
+            **kwargs,
         )
 
 

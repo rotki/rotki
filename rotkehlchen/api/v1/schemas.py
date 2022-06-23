@@ -47,6 +47,7 @@ from rotkehlchen.chain.substrate.utils import (
 )
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     Eth2DailyStatsFilterQuery,
@@ -1779,22 +1780,7 @@ class QueriedAddressesSchema(Schema):
 
 
 class DataImportSchema(AsyncQueryArgumentSchema):
-    source = fields.String(
-        required=True,
-        validate=webargs.validate.OneOf(
-            choices=(
-                'cointracking.info',
-                'cryptocom',
-                'blockfi-transactions',
-                'blockfi-trades',
-                'nexo',
-                'shapeshift-trades',
-                'uphold',
-                'bisq',
-                'binance',
-            ),
-        ),
-    )
+    source = SerializableEnumField(enum_class=DataImportSource, required=True)
     file = FileField(required=True, allowed_extensions=('.csv',))
     timestamp_format = fields.String(load_default=None)
 
