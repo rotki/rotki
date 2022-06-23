@@ -104,6 +104,7 @@ class AssetMovement(AccountingEventMixin):
     def serialize(self) -> Dict[str, Any]:
         return {
             'identifier': self.identifier,
+            'timestamp': self.timestamp,
             'location': self.location.serialize(),
             'category': self.category.serialize(),
             'address': self.address,
