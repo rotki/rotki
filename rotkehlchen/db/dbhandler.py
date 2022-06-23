@@ -227,7 +227,7 @@ def aggregate_eth_asset_balances(
     last_eth_and_eth2_assets: List[SingleDBAssetBalance],
     last_eth_and_eth2_liabilities: List[SingleDBAssetBalance],
     balances: List[SingleDBAssetBalance],
-):
+) -> None:
     if len(last_eth_and_eth2_assets) != 0:
         entry = SingleDBAssetBalance(
             time=last_eth_and_eth2_assets[0].time,
@@ -2841,11 +2841,11 @@ class DBHandler:
         cursor = self.conn.cursor()
         results = cursor.execute(querystr, bindings)
         results = results.fetchall()
-        balances = []
+        balances: List[SingleDBAssetBalance] = []
         # In the case of eth and ETH2 we have to agregate their value
         last_eth_timestamp = 0
-        last_eth_and_eth2_assets = []
-        last_eth_and_eth2_liabilities = []
+        last_eth_and_eth2_assets: List[SingleDBAssetBalance] = []
+        last_eth_and_eth2_liabilities: List[SingleDBAssetBalance] = []
 
         results_length = len(results)
         for idx, result in enumerate(results):
@@ -2872,7 +2872,7 @@ class DBHandler:
                     last_eth_and_eth2_assets.append(new_entry)
                 else:
                     last_eth_and_eth2_liabilities.append(new_entry)
-            else:    
+            else:
                 balances.append(new_entry)
 
             if settings.ssf_0graph_multiplier == 0 or idx == results_length - 1:

@@ -93,7 +93,8 @@
     "pnl_csv_have_summary": false,
     "ssf_0graph_multiplier": 0,
     "last_data_migration": 3,
-    "non_syncing_exchanges": []
+    "non_syncing_exchanges": [],
+    "treat_eth2_as_eth": false
   },
   "ignored_events_ids": {
     "trade": ["X124-JYI", "2325"],
