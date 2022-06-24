@@ -1059,8 +1059,8 @@ class RestAPI():
             background_color: Optional[HexColorCode],
             foreground_color: Optional[HexColorCode],
     ) -> Response:
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            try:
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
                 self.rotkehlchen.data.db.edit_tag(
                     write_cursor=cursor,
                     name=name,
@@ -1068,20 +1068,22 @@ class RestAPI():
                     background_color=background_color,
                     foreground_color=foreground_color,
                 )
-            except InputError as e:
-                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
-            except TagConstraintError as e:
-                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
+        except TagConstraintError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             return self._get_tags(cursor)
 
     def delete_tag(self, name: str) -> Response:
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            try:
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
                 self.rotkehlchen.data.db.delete_tag(cursor, name=name)
-            except TagConstraintError as e:
-                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        except TagConstraintError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             return self._get_tags(cursor)
 
     def get_users(self) -> Response:
@@ -1373,14 +1375,14 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def delete_custom_asset(self, identifier: str) -> Response:
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            # Before deleting, also make sure we have up to date global DB owned data
-            self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
-            try:
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
+                # Before deleting, also make sure we have up to date global DB owned data
+                self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
                 self.rotkehlchen.data.db.delete_asset_identifier(cursor, identifier)
                 GlobalDBHandler().delete_custom_asset(identifier)
-            except InputError as e:
-                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Also clear the in-memory cache of the asset resolver
         AssetResolver().assets_cache.pop(identifier, None)
@@ -1454,14 +1456,14 @@ class RestAPI():
         )
 
     def delete_custom_ethereum_token(self, address: ChecksumEthAddress) -> Response:
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            # Before deleting, also make sure we have up to date global DB owned data
-            self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
-            try:
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
+                # Before deleting, also make sure we have up to date global DB owned data
+                self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
                 self.rotkehlchen.data.db.delete_asset_identifier(cursor, ethaddress_to_identifier(address))  # noqa: E501
                 identifier = GlobalDBHandler().delete_ethereum_token(address=address)
-            except InputError as e:
-                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Also clear the in-memory cache of the asset resolver
         AssetResolver().assets_cache.pop(identifier, None)
@@ -1831,16 +1833,16 @@ class RestAPI():
         xpub_data: 'XpubData',
         blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            try:
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
                 XpubManager(self.rotkehlchen.chain_manager).edit_bitcoin_xpub(
                     write_cursor=cursor,
                     xpub_data=xpub_data,
                     blockchain=blockchain,
                 )
-            except InputError as e:
-                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
-            data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)
+                data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
 
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
@@ -1905,20 +1907,19 @@ class RestAPI():
             blockchain: SupportedBlockchain,
             account_data: List[BlockchainAccountData],
     ) -> Response:
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            try:
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
                 self.rotkehlchen.edit_blockchain_accounts(
                     cursor,
                     blockchain=blockchain,
                     account_data=account_data,
                 )
-            except TagConstraintError as e:
-                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
-            except InputError as e:
-                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
-
-            # success
-            data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)
+                # success
+                data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)
+        except TagConstraintError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
 
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
@@ -2098,16 +2099,17 @@ class RestAPI():
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def add_ignored_action_ids(self, action_type: ActionType, action_ids: List[str]) -> Response:
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            try:
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
                 self.rotkehlchen.data.db.add_to_ignored_action_ids(
                     write_cursor=cursor,
                     action_type=action_type,
                     identifiers=action_ids,
                 )
-            except InputError as e:
-                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
                 cursor=cursor,
                 action_type=action_type,
@@ -2120,15 +2122,17 @@ class RestAPI():
             action_type: ActionType,
             action_ids: List[str],
     ) -> Response:
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            try:
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
                 self.rotkehlchen.data.db.remove_from_ignored_action_ids(
                     write_cursor=cursor,
                     action_type=action_type,
                     identifiers=action_ids,
                 )
-            except InputError as e:
-                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
                 cursor=cursor,
                 action_type=action_type,
@@ -3119,7 +3123,7 @@ class RestAPI():
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if transactions is not None:
-                mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ETHEREUM_TRANSACTION)  # noqa: E501
+                mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.ETHEREUM_TRANSACTION)  # noqa: E501
                 ignored_ids = mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
                 entries_result = []
                 dbevents = DBHistoryEvents(self.rotkehlchen.data.db)

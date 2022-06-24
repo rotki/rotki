@@ -728,7 +728,8 @@ class ManuallyTrackedBalancesResource(BaseMethodView):
 class TradesResource(BaseMethodView):
 
     def make_get_schema(self) -> TradesQuerySchema:
-        settings = self.rest_api.rotkehlchen.data.db.get_settings()
+        with self.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            settings = self.rest_api.rotkehlchen.data.db.get_settings(cursor)
         return TradesQuerySchema(
             treat_eth2_as_eth=settings.treat_eth2_as_eth,
         )
@@ -822,7 +823,8 @@ class TradesResource(BaseMethodView):
 class AssetMovementsResource(BaseMethodView):
 
     def make_get_schema(self) -> AssetMovementsQuerySchema:
-        settings = self.rest_api.rotkehlchen.data.db.get_settings()
+        with self.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            settings = self.rest_api.rotkehlchen.data.db.get_settings(cursor)
         return AssetMovementsQuerySchema(
             treat_eth2_as_eth=settings.treat_eth2_as_eth,
         )
@@ -893,7 +895,8 @@ class TagsResource(BaseMethodView):
 class LedgerActionsResource(BaseMethodView):
 
     def make_get_schema(self) -> LedgerActionsQuerySchema:
-        settings = self.rest_api.rotkehlchen.data.db.get_settings()
+        with self.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            settings = self.rest_api.rotkehlchen.data.db.get_settings(cursor)
         return LedgerActionsQuerySchema(
             treat_eth2_as_eth=settings.treat_eth2_as_eth,
         )
@@ -2342,7 +2345,8 @@ class NFTSBalanceResource(BaseMethodView):
 class StakingResource(BaseMethodView):
 
     def make_get_schema(self) -> StakingQuerySchema:
-        settings = self.rest_api.rotkehlchen.data.db.get_settings()
+        with self.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            settings = self.rest_api.rotkehlchen.data.db.get_settings(cursor)
         return StakingQuerySchema(
             treat_eth2_as_eth=settings.treat_eth2_as_eth,
         )

@@ -260,11 +260,13 @@ def test_export_import_db(data_dir, username):
     )
     with data.db.user_write() as cursor:
         data.db.add_manually_tracked_balances(cursor, [starting_balance])
-        encoded_data, _ = data.compress_and_encrypt_db('123')
 
-        # The server would return them decoded
-        encoded_data = encoded_data.decode()  # pylint: disable=no-member
-        data.decompress_and_decrypt_db('123', encoded_data)
+    encoded_data, _ = data.compress_and_encrypt_db('123')
+    # The server would return them decoded
+    encoded_data = encoded_data.decode()  # pylint: disable=no-member
+    data.decompress_and_decrypt_db('123', encoded_data)
+
+    with data.db.user_write() as cursor:
         balances = data.db.get_manually_tracked_balances(cursor)
     assert balances == [starting_balance]
 
@@ -1083,12 +1085,14 @@ def test_timed_balances_primary_key_works(user_data_dir):
             usd_value='9100',
         ),
     ]
-    with db.user_write() as cursor:
-        with pytest.raises(InputError) as exc_info:
-            db.add_multiple_balances(cursor, balances)
-        assert exc_info.errisinstance(InputError)
-        assert 'Adding timed_balance failed' in str(exc_info.value)
 
+    with pytest.raises(InputError) as exc_info:
+        with db.user_write() as cursor:
+            db.add_multiple_balances(cursor, balances)
+    assert exc_info.errisinstance(InputError)
+    assert 'Adding timed_balance failed' in str(exc_info.value)
+
+    with db.user_write() as cursor:
         balances = db.query_timed_balances(cursor, asset=A_BTC)
         assert len(balances) == 0
         balances = [
@@ -1180,8 +1184,9 @@ def test_timed_balances_treat_eth2_as_eth(database):
         ),
     ]
 
-    database.add_multiple_balances(balances)
-    balances = database.query_timed_balances(asset=A_BTC, balance_type=BalanceType.ASSET)
+    with database.user_write() as cursor:
+        database.add_multiple_balances(cursor, balances)
+        balances = database.query_timed_balances(cursor, asset=A_BTC, balance_type=BalanceType.ASSET)  # noqa: E501
     assert len(balances) == 1
     expected_balances = [
         SingleDBAssetBalance(
@@ -1193,7 +1198,8 @@ def test_timed_balances_treat_eth2_as_eth(database):
     ]
     assert balances == expected_balances
 
-    balances = database.query_timed_balances(asset=A_ETH, balance_type=BalanceType.ASSET)
+    with database.conn.read_ctx() as cursor:
+        balances = database.query_timed_balances(cursor, asset=A_ETH, balance_type=BalanceType.ASSET)  # noqa: E501
     expected_balances = [
         SingleDBAssetBalance(
             category=BalanceType.ASSET,
@@ -1240,33 +1246,36 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
             usd_value='9100',
         ),
     ]
-    with db.user_write() as cursor:
-        with pytest.raises(InputError) as exc_info:
+
+    with pytest.raises(InputError) as exc_info:
+        with db.user_write() as cursor:
             db.add_multiple_balances(cursor, balances)
-        assert 'Adding timed_balance failed.' in str(exc_info.value)
-        assert exc_info.errisinstance(InputError)
+    assert 'Adding timed_balance failed.' in str(exc_info.value)
+    assert exc_info.errisinstance(InputError)
 
+    with db.conn.read_ctx() as cursor:
         balances = db.query_timed_balances(cursor=cursor, from_ts=0, to_ts=1590676728, asset=A_BTC)
-        assert len(balances) == 0
+    assert len(balances) == 0
 
-        locations = [
-            LocationData(
-                time=1590676728,
-                location='H',
-                usd_value='55',
-            ), LocationData(
-                time=1590676728,
-                location='H',
-                usd_value='56',
-            ),
-        ]
-        with pytest.raises(InputError) as exc_info:
+    locations = [
+        LocationData(
+            time=1590676728,
+            location='H',
+            usd_value='55',
+        ), LocationData(
+            time=1590676728,
+            location='H',
+            usd_value='56',
+        ),
+    ]
+    with pytest.raises(InputError) as exc_info:
+        with db.user_write() as cursor:
             db.add_multiple_location_data(cursor, locations)
-        assert 'Tried to add a timed_location_data for' in str(exc_info.value)
-        assert exc_info.errisinstance(InputError)
+    assert 'Tried to add a timed_location_data for' in str(exc_info.value)
+    assert exc_info.errisinstance(InputError)
 
-        locations = db.get_latest_location_value_distribution()
-        assert len(locations) == 0
+    locations = db.get_latest_location_value_distribution()
+    assert len(locations) == 0
 
 
 def test_set_get_rotkehlchen_premium_credentials(data_dir, username):
@@ -1382,18 +1391,19 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     Related: https://github.com/rotki/rotki/issues/2175
     """
     caplog.set_level(logging.INFO)
-    database.add_asset_movements([AssetMovement(
-        location=Location.BITTREX,
-        category=AssetMovementCategory.DEPOSIT,
-        timestamp=177778,
-        address='0xfoo',
-        transaction_id=99999999999999999999999999999999999999999,
-        asset=A_BTC,
-        amount=ONE,
-        fee_asset=A_BTC,
-        fee=Fee(FVal('0.0001')),
-        link='a link',
-    )])
+    with database.user_write() as cursor:
+        database.add_asset_movements(cursor, [AssetMovement(
+            location=Location.BITTREX,
+            category=AssetMovementCategory.DEPOSIT,
+            timestamp=177778,
+            address='0xfoo',
+            transaction_id=99999999999999999999999999999999999999999,
+            asset=A_BTC,
+            amount=ONE,
+            fee_asset=A_BTC,
+            fee=Fee(FVal('0.0001')),
+            link='a link',
+        )])
 
     errors = database.msg_aggregator.consume_errors()
     assert len(errors) == 1

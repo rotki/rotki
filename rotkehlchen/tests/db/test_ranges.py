@@ -50,7 +50,7 @@ def test_update_used_query_range(database):
             location1,
             queried_ranges=[(start_ts, end_ts)] + query_range,
         )
-        assert database.get_used_query_range(location1) == (12, 90)
+        assert database.get_used_query_range(cursor, location1) == (12, 90)
 
         start_ts = 250
         end_ts = 500
@@ -60,4 +60,4 @@ def test_update_used_query_range(database):
             location2,
             queried_ranges=[(start_ts, end_ts)] + query_range,
         )
-        assert database.get_used_query_range(location2) == (10, 500)
+        assert database.get_used_query_range(cursor, location2) == (10, 500)

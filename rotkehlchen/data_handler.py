@@ -39,7 +39,7 @@ class DataHandler():
             self.username = 'no_user'
             self.password = ''
             self.user_data_dir: Optional[Path] = None
-            with self.db.user_write() as cursor:
+            with self.db.conn.read_ctx() as cursor:
                 self.db.update_owned_assets_in_globaldb(cursor)
             self.db.logout()
             self.logged_in = False

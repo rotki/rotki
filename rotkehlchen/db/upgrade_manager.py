@@ -251,17 +251,6 @@ class DBUpgradeManager():
                     'Please only use the latest version of the software.',
                 )
 
-            cursor.execute(
-                'SELECT value FROM settings WHERE name=?;', ('version',),
-            )
-            if cursor.fetchone() is None:
-                # temporary due to https://github.com/rotki/rotki/issues/3744.
-                # Figure out if an upgrade needs to actually run.
-                cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="eth2_validators"')  # noqa: E501
-                if cursor.fetchone()[0] == 0:  # count always returns
-                    # it's wrong and at least v30
-                    self.db.set_setting(write_cursor=cursor, name='version', value=30)
-
         for upgrade in UPGRADES_LIST:
             self._perform_single_upgrade(upgrade)
 

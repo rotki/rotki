@@ -10,7 +10,6 @@ import requests
 from eth_utils import to_checksum_address
 from flaky import flaky
 
-from rotkehlchen.chain.substrate.types import KusamaAddress
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -45,7 +44,7 @@ from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC1_KSM_ADDR,
     SUBSTRATE_ACC2_KSM_ADDR,
 )
-from rotkehlchen.types import BlockchainAccountData, SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.utils.misc import from_wei
 
 logger = logging.getLogger(__name__)
@@ -523,7 +522,8 @@ def test_add_blockchain_accounts(
     assert result['per_account']['BCH'] is not None
 
     # Check that the BCH balance is present in DB
-    accounts = rotki.data.db.get_blockchain_accounts()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        accounts = rotki.data.db.get_blockchain_accounts(cursor)
     assert len(accounts.bch) == 2
 
     # Try adding same BCH address but in different formats
@@ -1914,17 +1914,6 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     async_query = random.choice([False, True])
 
-    # Create KSM accounts
-    accounts_data = [
-        BlockchainAccountData(address=KusamaAddress(SUBSTRATE_ACC1_KSM_ADDR)),
-        BlockchainAccountData(address=KusamaAddress(SUBSTRATE_ACC2_KSM_ADDR)),
-    ]
-    with rotki.data.db.user_write() as cursor:
-        rotki.data.db.add_blockchain_accounts(
-            cursor,
-            blockchain=SupportedBlockchain.KUSAMA,
-            account_data=accounts_data,
-        )
     setup = setup_balances(
         rotki=rotki,
         ethereum_accounts=None,
@@ -2066,17 +2055,6 @@ def test_remove_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     async_query = random.choice([False, True])
 
-    # Create KSM accounts
-    accounts_data = [
-        BlockchainAccountData(address=KusamaAddress(SUBSTRATE_ACC1_KSM_ADDR)),
-        BlockchainAccountData(address=KusamaAddress(ENS_BRUNO_KSM_ADDR)),
-    ]
-    with rotki.data.db.user_write() as cursor:
-        rotki.data.db.add_blockchain_accounts(
-            cursor,
-            blockchain=SupportedBlockchain.KUSAMA,
-            account_data=accounts_data,
-        )
     setup = setup_balances(
         rotki=rotki,
         ethereum_accounts=None,
@@ -2265,17 +2243,6 @@ def test_remove_avax_blockchain_account(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     async_query = random.choice([False, True])
 
-    # Create AVAX accounts
-    accounts_data = [
-        BlockchainAccountData(address=AVALANCHE_ACC1_AVAX_ADDR),
-        BlockchainAccountData(address=AVALANCHE_ACC2_AVAX_ADDR),
-    ]
-    with rotki.data.db.user_write() as cursor:
-        rotki.data.db.add_blockchain_accounts(
-            cursor,
-            blockchain=SupportedBlockchain.AVALANCHE,
-            account_data=accounts_data,
-        )
     setup = setup_balances(
         rotki=rotki,
         ethereum_accounts=None,

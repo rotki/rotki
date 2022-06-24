@@ -35,7 +35,7 @@ def update_average(value: float, values: List[Optional[float]]) -> float:
     return average
 
 
-TEMP_DEBUG = True
+TEMP_DEBUG = False
 
 
 class DBCursor:
@@ -47,11 +47,7 @@ class DBCursor:
     def __iter__(self) -> 'DBCursor':
         if TEMP_DEBUG:
             logger.debug(f'Getting iterator for cursor {self._cursor}')
-        # result = self._cursor.__iter__()
-        result = self
-        if TEMP_DEBUG:
-            logger.debug(f'Got iterator for cursor {self._cursor}')
-        return result
+        return self
 
     def __next__(self) -> Any:
         """
@@ -105,10 +101,10 @@ class DBCursor:
         https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.executescript
         """
         if TEMP_DEBUG:
-            logger.debug(f'EXECUTESCRIPT {script}')
+            logger.debug(f'EXECUTESCRIPT {script}')  # lgtm [py/clear-text-logging-sensitive-data]
         self._cursor.executescript(script)
         if TEMP_DEBUG:
-            logger.debug(f'FINISH EXECUTESCRIPT {script}')
+            logger.debug(f'FINISH EXECUTESCRIPT {script}')  # noqa: E501 lgtm [py/clear-text-logging-sensitive-data]
         return self
 
     def fetchone(self) -> Any:
@@ -170,12 +166,14 @@ class DBConnection:
         self._conn.set_progress_handler(progress_callback, SQL_VM_INSTRUCTIONS_CB)
 
     def enter_critical_section(self) -> None:
-        logger.debug('entering critical section')
+        if TEMP_DEBUG:
+            logger.debug('entering critical section')
         self._in_critical_section = True
         self._conn.set_progress_handler(None, 0)
 
     def exit_critical_section(self) -> None:
-        logger.debug('exiting critical section')
+        if TEMP_DEBUG:
+            logger.debug('exiting critical section')
         self._in_critical_section = False
         # https://github.com/python/typeshed/issues/8105
         self._conn.set_progress_handler(progress_callback, SQL_VM_INSTRUCTIONS_CB)  # type: ignore
@@ -239,7 +237,7 @@ class DBConnection:
         try:
             yield cursor
         finally:
-            cursor.close()
+            cursor.close()  # lgtm [py/should-use-with]
 
     @contextmanager
     def write_ctx(self) -> Generator['DBCursor', None, None]:
@@ -252,7 +250,13 @@ class DBConnection:
         else:
             self._conn.commit()
         finally:
-            cursor.close()
+            cursor.close()  # lgtm [py/should-use-with]
+
+    @property
+    def total_changes(self) -> int:
+        """total number of database rows that have been modified, inserted,
+        or deleted since the database connection was opened"""
+        return self._conn.total_changes
 
 # class GeventQueryContext:
 #     """

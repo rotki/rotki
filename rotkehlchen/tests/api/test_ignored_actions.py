@@ -135,7 +135,7 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
             "ignoredactionsresource",
         ), json={'action_type': 'ledger action', 'action_ids': ['1', '5', '2']},
     )
-    result = assert_error_response(
+    assert_error_response(
         response=response,
         status_code=HTTPStatus.CONFLICT,
         contained_in_msg='Tried to remove 1 ignored actions that do not exist',

@@ -62,7 +62,6 @@ def test_ledger_action_can_be_removed(database, function_scope_messages_aggregat
     db = DBLedgerActions(database, function_scope_messages_aggregator)
     with database.user_write() as cursor:
         query = 'SELECT COUNT(*) FROM ledger_actions WHERE identifier=?'
-        cursor = database.conn.cursor()
 
         # Add the entry that we want to delete
         action = LedgerAction(
@@ -82,23 +81,21 @@ def test_ledger_action_can_be_removed(database, function_scope_messages_aggregat
         # Delete ledger action
         assert db.remove_ledger_action(cursor, identifier) is None
 
+    with database.conn.read_ctx() as cursor:
         # Check that the change has been committed
         cursor.execute(query, (identifier,))
-        assert cursor.fetchone() == (1,)
-
+        assert cursor.fetchone() == (0,)
         assert len(db.get_ledger_actions(
             cursor,
             filter_query=LedgerActionsFilterQuery.make(),
             has_premium=True,
-        )) == len(LedgerActionType)
+        )) == 0
 
 
 def test_ledger_action_can_be_edited(database, function_scope_messages_aggregator):
     db = DBLedgerActions(database, function_scope_messages_aggregator)
 
     query = 'SELECT * FROM ledger_actions WHERE identifier=?'
-    cursor = database.conn.cursor()
-
     # Add the entry that we want to edit
     action = LedgerAction(
         identifier=0,  # whatever
@@ -131,16 +128,18 @@ def test_ledger_action_can_be_edited(database, function_scope_messages_aggregato
     assert db.edit_ledger_action(new_entry) is None
 
     # Check that changes have been committed
-    cursor.execute(query, (identifier,))
-    updated_entry = LedgerAction.deserialize_from_db(cursor.fetchone())
-    new_entry.identifier = identifier
-    assert updated_entry == new_entry
+    with database.conn.read_ctx() as cursor:
+        cursor.execute(query, (identifier,))
+        updated_entry = LedgerAction.deserialize_from_db(cursor.fetchone())
+        new_entry.identifier = identifier
+        assert updated_entry == new_entry
 
-    # now try to see if the optional assets can also be set to None
-    new_entry.rate = new_entry.rate_asset = new_entry.link = new_entry.notes = None
-    assert db.edit_ledger_action(new_entry) is None
-    cursor.execute(query, (identifier,))
-    updated_entry = LedgerAction.deserialize_from_db(cursor.fetchone())
+        # now try to see if the optional assets can also be set to None
+        new_entry.rate = new_entry.rate_asset = new_entry.link = new_entry.notes = None
+        assert db.edit_ledger_action(new_entry) is None
+        cursor.execute(query, (identifier,))
+        updated_entry = LedgerAction.deserialize_from_db(cursor.fetchone())
+
     assert updated_entry.rate is None
     assert updated_entry.rate_asset is None
     assert updated_entry.link is None

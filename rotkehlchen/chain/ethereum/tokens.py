@@ -175,16 +175,16 @@ class EthTokens():
                     if len(saved_list) == 0:
                         continue  # Do not query if we know the address has no tokens
 
-                balances = defaultdict(FVal)
-                self._get_tokens_balance_and_price(
-                    address=address,
-                    tokens=saved_list,  # type: ignore  # is not None here
-                    balances=balances,
-                    token_usd_price=token_usd_price,
-                    call_order=None,  # use defaults
-                )
+                    balances = defaultdict(FVal)
+                    self._get_tokens_balance_and_price(
+                        address=address,
+                        tokens=saved_list,
+                        balances=balances,
+                        token_usd_price=token_usd_price,
+                        call_order=None,  # use defaults
+                    )
 
-            result[address] = dict(balances)
+            result[address] = balances
 
         return result, token_usd_price
 

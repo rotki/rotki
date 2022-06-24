@@ -41,11 +41,11 @@ def test_tx_decode(evm_transaction_decoder, database):
         )
     decoder = evm_transaction_decoder
     with patch.object(decoder, 'decode_transaction', wraps=decoder.decode_transaction) as decode_mock:  # noqa: E501
-        with database.conn.read_ctx() as cursor:
+        with database.user_write() as cursor:
             for tx in transactions:
                 receipt = dbethtx.get_receipt(cursor, tx.tx_hash)
                 assert receipt is not None, 'all receipts should be queried in the test DB'
-                events = decoder.get_or_decode_transaction_events(tx, receipt, ignore_cache=False)
+                events = decoder.get_or_decode_transaction_events(cursor, tx, receipt, ignore_cache=False)  # noqa: E501
                 if tx.tx_hash == approve_tx_hash:
                     assert len(events) == 2
                     assert_events_equal(events[0], HistoryBaseEntry(
@@ -83,5 +83,5 @@ def test_tx_decode(evm_transaction_decoder, database):
             for tx in transactions:
                 receipt = dbethtx.get_receipt(cursor, tx.tx_hash)
                 assert receipt is not None, 'all receipts should be queried in the test DB'
-                events = decoder.get_or_decode_transaction_events(tx, receipt, ignore_cache=False)
+                events = decoder.get_or_decode_transaction_events(cursor, tx, receipt, ignore_cache=False)  # noqa: E501
         assert decode_mock.call_count == len(transactions)

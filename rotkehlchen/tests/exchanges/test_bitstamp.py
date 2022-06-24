@@ -980,7 +980,8 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
             link='2',
         ),
     ]
-    mock_bitstamp.db.add_asset_movements(movements)
+    with mock_bitstamp.db.user_write() as cursor:
+        mock_bitstamp.db.add_asset_movements(cursor, movements)
 
     end_ts = Timestamp(1606901401)
     expected_call = call(

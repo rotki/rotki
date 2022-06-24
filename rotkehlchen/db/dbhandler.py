@@ -172,8 +172,8 @@ TABLES_WITH_ASSETS = (
 
 SETTING_TO_DEFAULT_TYPE = {
     'version': (int, ROTKEHLCHEN_DB_VERSION),
-    'last_write_ts': (Timestamp, Timestamp(0)),
-    'last_data_upload_ts': (Timestamp, Timestamp(0)),
+    'last_write_ts': (int, Timestamp(0)),
+    'last_data_upload_ts': (int, Timestamp(0)),
     'premium_should_sync': (str_to_bool, DEFAULT_PREMIUM_SHOULD_SYNC),
     'main_currency': (Asset, A_USD),
 }

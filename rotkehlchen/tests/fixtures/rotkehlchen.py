@@ -143,7 +143,7 @@ def initialize_mock_rotkehlchen_instance(
         return
 
     # Mock the initial get settings to include the specified ethereum modules
-    def mock_get_settings() -> DBSettings:
+    def mock_get_settings(_cursor) -> DBSettings:
         settings = DBSettings(
             active_modules=ethereum_modules,
             eth_rpc_endpoint=eth_rpc_endpoint,
@@ -151,6 +151,22 @@ def initialize_mock_rotkehlchen_instance(
         )
         return settings
     settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
+
+    original_unlock = rotki.data.unlock
+
+    def augmented_unlock(user, password, create_new, initial_settings):
+        """This is an augmented_unlock for the tests where after the original data.unlock
+        happening in the start of rotkehlchen.unlock_user() we also add various fixture data
+        to the DB so they can be picked up by the rest of the unlock function logic"""
+        return_value = original_unlock(user, password, create_new, initial_settings)
+        add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets, data_migration_version)
+        maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
+        maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
+        add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)
+        add_tags_to_test_db(rotki.data.db, tags)
+        add_manually_tracked_balances_to_test_db(rotki.data.db, manually_tracked_balances)
+        return return_value
+    data_unlock_patch = patch.object(rotki.data, 'unlock', side_effect=augmented_unlock)
 
     # Do not connect to the usual nodes at start by default. Do not want to spam
     # them during our tests. It's configurable per test, with the default being nothing
@@ -174,6 +190,7 @@ def initialize_mock_rotkehlchen_instance(
 
     with ExitStack() as stack:
         stack.enter_context(settings_patch)
+        stack.enter_context(data_unlock_patch)
         stack.enter_context(eth_rpcconnect_patch)
         stack.enter_context(ksm_rpcconnect_patch)
         stack.enter_context(size_patch)
@@ -221,12 +238,7 @@ def initialize_mock_rotkehlchen_instance(
     # After unlocking when all objects are created we need to also include
     # customized fixtures that may have been set by the tests
     rotki.chain_manager.accounts = blockchain_accounts
-    add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets, data_migration_version)
-    maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
-    maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
-    add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)
-    add_tags_to_test_db(rotki.data.db, tags)
-    add_manually_tracked_balances_to_test_db(rotki.data.db, manually_tracked_balances)
+
     maybe_mock_historical_price_queries(
         historian=PriceHistorian(),
         should_mock_price_queries=should_mock_price_queries,

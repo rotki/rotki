@@ -85,6 +85,7 @@ def test_query_owned_assets(
 
 
 @pytest.mark.parametrize('perform_migrations_at_unlock', [True])
+@pytest.mark.parametrize('data_migration_version', [0])
 def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
     """Test that using the ignored assets endpoint to modify the ignored assets list works fine"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -162,6 +163,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
 
 @pytest.mark.parametrize('perform_migrations_at_unlock', [True])
 @pytest.mark.parametrize('method', ['put', 'delete'])
+@pytest.mark.parametrize('data_migration_version', [0])
 def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, method):
     """Test errors are handled properly at the ignored assets endpoint"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen

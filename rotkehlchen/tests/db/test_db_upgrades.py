@@ -337,9 +337,10 @@ def test_upgrade_db_1_to_2(data_dir, username):
         data = DataHandler(data_dir, msg_aggregator)
         with target_patch(target_version=2):
             data.unlock(username, '123', create_new=False)
-    accounts = data.db.get_blockchain_accounts(cursor)
-    assert accounts.eth[0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
+
     with data.db.conn.read_ctx() as cursor:
+        accounts = data.db.get_blockchain_accounts(cursor)
+        assert accounts.eth[0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
         version = data.db.get_setting(cursor, 'version')
     # Also make sure that we have updated to the target_version
     assert version == 2
@@ -1388,7 +1389,7 @@ def test_upgrade_db_22_to_23_without_frontend_settings(data_dir, user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     with db.conn.read_ctx() as cursor:
-        assert db.get_setting(cursor, 'vexrsion') == 23
+        assert db.get_setting(cursor, 'version') == 23
     with mock_dbhandler_update_owned_assets():
         db.logout()
 
@@ -1649,20 +1650,20 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
     with db.conn.read_ctx() as cursor:
         margins = db.get_margin_positions(cursor)
-    assert all(x.identifier == raw_upgraded[idx][0] for idx, x in enumerate(margins))
+        assert all(x.identifier == raw_upgraded[idx][0] for idx, x in enumerate(margins))
 
-    # check that the asset movements were upgraded
-    query = cursor.execute('SELECT id, location, category, address, transaction_id, time, asset, amount, fee_asset, fee, link from asset_movements ORDER BY time ASC;')  # noqa: E501
-    raw_upgraded = query.fetchall()
-    assert raw_upgraded == [
-        ('822511b6035c5d2a7a7ff82c21b61381016e76764e84f656aedcfbc3b7a2e2f4', 'L', 'B', '0xaddy', '0xtxid', 1, '_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e', '1', '_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96', '1', 'customlink'),  # noqa: E501
-        ('98c8378892955d3c95cc24277188ad33504d2e668441ba23a270b6c65f00be43', 'D', 'A', '0xaddress', '0xtxid', 1493226738, 'BTC', '2.00000000', 'BTC', '0', 'link3'),  # noqa: E501
-        ('9713d2c2f90edfc375bfea1d014599e9f3a20eded94625c0a2483c4ab2692ff9', 'D', 'A', '0xaddress', '0xtxid', 1498941726, 'BTC', '4.20000000', 'BTC', '0', 'link2'),  # noqa: E501
-        ('86f6cda4bcd36e2fd0e8938fd3b31ebe895af2df6d8b60479c401cd846a3ccf8', 'D', 'B', '0xaddress', '0xtxid', 1501161076, 'BTC', '3.91944853', 'BTC', '0.00100000', 'link5'),  # noqa: E501
-        ('9a3ab62aea2892e9000c868ce29a471e34f57d3bbae7691b920bcf58fbea10ce', 'D', 'A', '0xaddress', '0xtxid', 1577666912, 'MAID', '15515.00000000', 'MAID', '0', 'link1'),  # noqa: E501
-        ('79d6d91d1fd2acf02a9d244e33ff340c04a938faaf0d1ba10aba9d8ae55b11cc', 'D', 'B', '0xaddress', '0xtxid', 1607094370, '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', '4753.96740631', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', '160.00000000', 'link4'),  # noqa: E501
-    ]
-    assert len(raw_upgraded) == asset_movements_count - 2, 'coinbase/pro movements should have been deleted'  # noqa: E501
+        # check that the asset movements were upgraded
+        query = cursor.execute('SELECT id, location, category, address, transaction_id, time, asset, amount, fee_asset, fee, link from asset_movements ORDER BY time ASC;')  # noqa: E501
+        raw_upgraded = query.fetchall()
+        assert raw_upgraded == [
+            ('822511b6035c5d2a7a7ff82c21b61381016e76764e84f656aedcfbc3b7a2e2f4', 'L', 'B', '0xaddy', '0xtxid', 1, '_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e', '1', '_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96', '1', 'customlink'),  # noqa: E501
+            ('98c8378892955d3c95cc24277188ad33504d2e668441ba23a270b6c65f00be43', 'D', 'A', '0xaddress', '0xtxid', 1493226738, 'BTC', '2.00000000', 'BTC', '0', 'link3'),  # noqa: E501
+            ('9713d2c2f90edfc375bfea1d014599e9f3a20eded94625c0a2483c4ab2692ff9', 'D', 'A', '0xaddress', '0xtxid', 1498941726, 'BTC', '4.20000000', 'BTC', '0', 'link2'),  # noqa: E501
+            ('86f6cda4bcd36e2fd0e8938fd3b31ebe895af2df6d8b60479c401cd846a3ccf8', 'D', 'B', '0xaddress', '0xtxid', 1501161076, 'BTC', '3.91944853', 'BTC', '0.00100000', 'link5'),  # noqa: E501
+            ('9a3ab62aea2892e9000c868ce29a471e34f57d3bbae7691b920bcf58fbea10ce', 'D', 'A', '0xaddress', '0xtxid', 1577666912, 'MAID', '15515.00000000', 'MAID', '0', 'link1'),  # noqa: E501
+            ('79d6d91d1fd2acf02a9d244e33ff340c04a938faaf0d1ba10aba9d8ae55b11cc', 'D', 'B', '0xaddress', '0xtxid', 1607094370, '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', '4753.96740631', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', '160.00000000', 'link4'),  # noqa: E501
+        ]
+        assert len(raw_upgraded) == asset_movements_count - 2, 'coinbase/pro movements should have been deleted'  # noqa: E501
     # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
     with db.conn.read_ctx() as cursor:
         movements = db.get_asset_movements(
@@ -1670,8 +1671,10 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
             filter_query=AssetMovementsFilterQuery.make(),
             has_premium=True,
         )
+
     assert all(x.identifier == raw_upgraded[idx][0] for idx, x in enumerate(movements))
 
+    cursor = db.conn.cursor()
     # check that the timed balances had the currency properly changed
     query = cursor.execute('SELECT category, time, currency, amount, usd_value from timed_balances;')  # noqa: E501
     for idx, entry in enumerate(query):
@@ -2365,8 +2368,7 @@ def test_upgrade_db_29_to_30(user_data_dir):  # pylint: disable=unused-argument
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('db_with_set_version', [True, False])
-def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: disable=unused-argument  # noqa: E501
+def test_upgrade_db_30_to_31(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
     """Test upgrading the DB from version 30 to version 31.
 
     Also checks that this code upgrade works even if the DB is affected by
@@ -2406,16 +2408,14 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
     ]
 
     db_v30.logout()
-    if db_with_set_version:
-        db_name = 'v30_rotkehlchen.db'
-    else:
-        db_name = 'v30_rotkehlchen_without_setversion.db'
-    _use_prepared_db(user_data_dir, db_name)
+    _use_prepared_db(user_data_dir, 'v30_rotkehlchen.db')
     db = _init_db_with_target_version(
         target_version=31,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
+
+    cursor = db.conn.cursor()
     # Finally also make sure that we have updated to the target version
     assert db.get_setting(cursor, 'version') == 31
     cursor = db.conn.cursor()

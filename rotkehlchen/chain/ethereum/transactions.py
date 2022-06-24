@@ -373,14 +373,14 @@ class EthTransactions:
                                 queried_ranges=[(query_start_ts, timestamp)],
                             )
 
-                        self.msg_aggregator.add_message(
-                            message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
-                            data={
-                                'address': address,
-                                'period': [query_start_ts, timestamp],
-                                'status': str(TransactionStatusStep.QUERYING_ETHEREUM_TOKENS_TRANSACTIONS),  # noqa: E501
-                            },
-                        )
+                            self.msg_aggregator.add_message(
+                                message_type=WSMessageType.ETHEREUM_TRANSACTION_STATUS,
+                                data={
+                                    'address': address,
+                                    'period': [query_start_ts, timestamp],
+                                    'status': str(TransactionStatusStep.QUERYING_ETHEREUM_TOKENS_TRANSACTIONS),  # noqa: E501
+                                },
+                            )
             except RemoteError as e:
                 self.ethereum.msg_aggregator.add_error(
                     f'Got error "{str(e)}" while querying token transactions'

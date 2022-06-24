@@ -431,10 +431,12 @@ def test_bittrex_query_asset_movement_int_transaction_id(bittrex):
     assert movements[0].transaction_id == '9875231951530679373'
 
     # also make sure they are written in the db
-    db_movements = bittrex.db.get_asset_movements(
-        filter_query=AssetMovementsFilterQuery.make(),
-        has_premium=True,
-    )
+    with bittrex.db.conn.read_ctx() as cursor:
+        db_movements = bittrex.db.get_asset_movements(
+            cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
     assert len(db_movements) == 1
     assert db_movements[0] == movements[0]
 
