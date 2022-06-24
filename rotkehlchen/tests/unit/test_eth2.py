@@ -766,6 +766,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
 
             # Make sure that calling it again does not make an external call
             stats, filter_total_found, _, _ = eth2.get_validator_daily_stats(
+                cursor,
                 filter_query=filter_query,
                 only_cache=False,
                 msg_aggregator=function_scope_messages_aggregator,

@@ -78,7 +78,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
             rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
 
         if db_settings['premium_should_sync'] is False:
-            assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
+            assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts') == 0  # noqa: E501
             assert rotkehlchen_instance.premium_sync_manager.last_data_upload_ts == 0
             return
 
@@ -89,10 +89,11 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
         msg = 'The last data upload timestamp should also be in memory'
         assert last_ts >= now and last_ts - now < 50, msg
 
-        # and now logout and login again and make sure that the last_data_upload_ts is correct
-        rotkehlchen_instance.logout()
-        rotkehlchen_instance.data.unlock(username, db_password, create_new=False)
-        assert last_ts == rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
+    # and now logout and login again and make sure that the last_data_upload_ts is correct
+    rotkehlchen_instance.logout()
+    rotkehlchen_instance.data.unlock(username, db_password, create_new=False)
+    assert last_ts == rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         assert last_ts == rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')  # noqa: E501
 
 

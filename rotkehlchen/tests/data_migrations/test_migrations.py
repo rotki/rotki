@@ -114,7 +114,7 @@ def test_failed_migration(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
 
-    def botched_migration(rotki) -> None:
+    def botched_migration(cursor, rotki) -> None:
         raise ValueError('ngmi')
 
     botched_list = [MigrationRecord(version=1, function=botched_migration)]

@@ -4,7 +4,7 @@ import tempfile
 import zipfile
 from http import HTTPStatus
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import requests
 
@@ -28,6 +28,10 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
+
 BALANCES_IMPORT_HEADERS = ['timestamp', 'category', 'asset_identifier', 'amount', 'usd_value']
 BALANCES_IMPORT_INVALID_HEADERS = ['timestamp', 'category', 'asset', 'amount', 'value']
 LOCATION_DATA_IMPORT_HEADERS = ['timestamp', 'location', 'usd_value']
@@ -36,43 +40,48 @@ LOCATION_DATA_IMPORT_INVALID_HEADERS = ['timestamp', 'location', 'value']
 NFT_TOKEN_ID = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_11'
 
 
-def _populate_db_with_balances(db, ts: Timestamp):
-    db.add_multiple_balances([
-        DBAssetBalance(
-            category=BalanceType.ASSET,
-            time=ts,
-            asset=A_BTC,
-            amount='1.00',
-            usd_value='178.44',
-        ),
-        DBAssetBalance(
-            category=BalanceType.ASSET,
-            time=ts,
-            asset=A_AVAX,
-            amount='1.00',
-            usd_value='87',
-        ),
-    ])
+def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
+    db.add_multiple_balances(
+        write_cursor=write_cursor,
+        balances=[
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=ts,
+                asset=A_BTC,
+                amount='1.00',
+                usd_value='178.44',
+            ),
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=ts,
+                asset=A_AVAX,
+                amount='1.00',
+                usd_value='87',
+            ),
+        ])
 
 
-def _populate_db_with_location_data(db, ts: Timestamp):
-    db.add_multiple_location_data([
-        LocationData(
-            time=ts,
-            location='A',
-            usd_value='100.00',
-        ),
-        LocationData(
-            time=ts,
-            location='B',
-            usd_value='200.00',
-        ),
-        LocationData(
-            time=ts,
-            location='H',
-            usd_value='50.00',
-        ),
-    ])
+def _populate_db_with_location_data(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
+    db.add_multiple_location_data(
+        write_cursor=write_cursor,
+        location_data=[
+            LocationData(
+                time=ts,
+                location='A',
+                usd_value='100.00',
+            ),
+            LocationData(
+                time=ts,
+                location='B',
+                usd_value='200.00',
+            ),
+            LocationData(
+                time=ts,
+                location='H',
+                usd_value='50.00',
+            ),
+        ],
+    )
 
 
 def _write_balances_csv_row(
@@ -319,11 +328,10 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
     ts = ts_now()
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
-    _populate_db_with_balances(db, ts)
-    _populate_db_with_location_data(db, ts)
-
-    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
-        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+    with db.user_write() as cursor:
+        _populate_db_with_balances(cursor, db, ts)
+        _populate_db_with_location_data(cursor, db, ts)
+        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -335,7 +343,7 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
         )
         assert_csv_export_response(response, csv_dir, main_currency=A_EUR, is_download=False)
 
-        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_ETH))  # noqa: E501
+        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_ETH))
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -347,7 +355,7 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
         )
         assert_csv_export_response(response, csv_dir2, main_currency=A_ETH, is_download=False)
 
-        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_USD))  # noqa: E501
+        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_USD))
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -365,11 +373,11 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
 def test_download_snapshot(rotkehlchen_api_server):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
-    _populate_db_with_balances(db, ts)
-    _populate_db_with_location_data(db, ts)
+    with db.user_write() as cursor:
+        _populate_db_with_balances(cursor, db, ts)
+        _populate_db_with_location_data(cursor, db, ts)
+        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
 
-    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
-        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -390,10 +398,10 @@ def test_download_snapshot(rotkehlchen_api_server):
 def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
-    _populate_db_with_balances(db, ts)
-    _populate_db_with_location_data(db, ts)
-    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
-        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+    with db.user_write() as cursor:
+        _populate_db_with_balances(cursor, db, ts)
+        _populate_db_with_location_data(cursor, db, ts)
+        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
 
     # check that importing a valid snapshot passes using PUT
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
@@ -514,10 +522,11 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
 def test_delete_snapshot(rotkehlchen_api_server):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
-    _populate_db_with_balances(db, ts)
-    _populate_db_with_location_data(db, ts)
-    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
-        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(cursor, main_currency=A_EUR))  # noqa: E501
+    with db.user_write() as cursor:
+        _populate_db_with_balances(cursor, db, ts)
+        _populate_db_with_location_data(cursor, db, ts)
+        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
+
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -548,8 +557,9 @@ def test_delete_snapshot(rotkehlchen_api_server):
 def test_get_snapshot_json(rotkehlchen_api_server):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
-    _populate_db_with_balances(db, ts)
-    _populate_db_with_location_data(db, ts)
+    with db.user_write() as cursor:
+        _populate_db_with_balances(cursor, db, ts)
+        _populate_db_with_location_data(cursor, db, ts)
 
     response = requests.get(
         api_url_for(
@@ -580,8 +590,9 @@ def test_get_snapshot_json(rotkehlchen_api_server):
 def test_edit_snapshot(rotkehlchen_api_server):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
-    _populate_db_with_balances(db, ts)
-    _populate_db_with_location_data(db, ts)
+    with db.user_write() as cursor:
+        _populate_db_with_balances(cursor, db, ts)
+        _populate_db_with_location_data(cursor, db, ts)
 
     snapshot_payload = {
         'balances_snapshot': [

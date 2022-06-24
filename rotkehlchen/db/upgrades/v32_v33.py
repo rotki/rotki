@@ -71,7 +71,7 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
 """)
 
 
-def _refactor_blockchain_account_labels(cursor: 'Cursor') -> None:
+def _refactor_blockchain_account_labels(cursor: 'DBCursor') -> None:
     cursor.execute('UPDATE blockchain_accounts SET label = NULL WHERE label = ""')
 
 

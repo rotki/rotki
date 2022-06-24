@@ -311,7 +311,8 @@ def add_starting_balances(datahandler) -> List[DBAssetBalance]:
             usd_value='10700.5',
         ),
     ]
-    datahandler.db.add_multiple_location_data(location_data)
+    with datahandler.db.user_write() as cursor:
+        datahandler.db.add_multiple_location_data(cursor, location_data)
 
     return balances
 
@@ -346,29 +347,29 @@ def add_starting_nfts(datahandler):
         ),
     ]
     with datahandler.db.user_write() as cursor:
-        datahandler.db.add_asset_identifiers(['_nft_pickle'])
+        datahandler.db.add_asset_identifiers(cursor, ['_nft_pickle'])
         datahandler.db.add_multiple_balances(cursor, balances)
 
-    location_data = [
-        LocationData(
-            time=Timestamp(1488326400),
-            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
-            usd_value='3000',
-        ),
-        LocationData(
-            time=Timestamp(1488426400),
-            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
-            usd_value='4000',
-        ),
-        LocationData(
-            time=Timestamp(1488526400),
-            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
-            usd_value='5000',
-        ),
-        LocationData(
-            time=Timestamp(1488626400),
-            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
-            usd_value='5500',
-        ),
-    ]
-    datahandler.db.add_multiple_location_data(location_data)
+        location_data = [
+            LocationData(
+                time=Timestamp(1488326400),
+                location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+                usd_value='3000',
+            ),
+            LocationData(
+                time=Timestamp(1488426400),
+                location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+                usd_value='4000',
+            ),
+            LocationData(
+                time=Timestamp(1488526400),
+                location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+                usd_value='5000',
+            ),
+            LocationData(
+                time=Timestamp(1488626400),
+                location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+                usd_value='5500',
+            ),
+        ]
+        datahandler.db.add_multiple_location_data(cursor, location_data)

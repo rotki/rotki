@@ -347,25 +347,25 @@ class DBEthTx():
             type=result[3],
         )
 
-        cursor.execute('SELECT * from ethtx_receipt_logs WHERE tx_hash=?', (tx_hash,)).fetchall()  # noqa: E501
-        # we do a fetchall since in each loop iteration another query of the cursor happens
-        for result in cursor:
-            log_index = result[1]
-            tx_receipt_log = EthereumTxReceiptLog(
-                log_index=log_index,
-                data=result[2],
-                address=result[3],
-                removed=bool(result[4]),  # works since value is either 0 or 1
-            )
-            topic_results = cursor.execute(
-                'SELECT topic from ethtx_receipt_log_topics WHERE tx_hash=? AND log_index=? '
-                'ORDER BY topic_index ASC',
-                (tx_hash, log_index),
-            )
-            for topic_result in topic_results:
-                tx_receipt_log.topics.append(topic_result[0])
+        cursor.execute('SELECT * from ethtx_receipt_logs WHERE tx_hash=?', (tx_hash,))
+        with self.db.conn.read_ctx() as other_cursor:
+            for result in cursor:
+                log_index = result[1]
+                tx_receipt_log = EthereumTxReceiptLog(
+                    log_index=log_index,
+                    data=result[2],
+                    address=result[3],
+                    removed=bool(result[4]),  # works since value is either 0 or 1
+                )
+                other_cursor.execute(
+                    'SELECT topic from ethtx_receipt_log_topics WHERE tx_hash=? AND log_index=? '
+                    'ORDER BY topic_index ASC',
+                    (tx_hash, log_index),
+                )
+                for topic_result in other_cursor:
+                    tx_receipt_log.topics.append(topic_result[0])
 
-            tx_receipt.logs.append(tx_receipt_log)
+                tx_receipt.logs.append(tx_receipt_log)
 
         return tx_receipt
 

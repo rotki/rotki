@@ -1323,8 +1323,8 @@ class Balancer(EthereumModule):
         May raise RemoteError
         """
         with self.trades_lock:
-            if reset_db_data is True:
-                with self.database.user_write() as cursor:
+            with self.database.user_write() as cursor:
+                if reset_db_data is True:
                     self.database.delete_balancer_events_data(cursor)
 
                 address_to_pool_events_balances = self._get_address_to_pool_events_balances(

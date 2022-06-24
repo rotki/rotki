@@ -177,7 +177,8 @@ def test_querying_rate_limit_exhaustion(function_scope_kraken, database):
         trades = kraken.query_trade_history(start_ts=0, end_ts=1638529919, only_cache=False)
 
     assert len(trades) == 1
-    from_ts, to_ts = database.get_used_query_range('kraken_trades_mockkraken')
+    with database.conn.read_ctx() as cursor:
+        from_ts, to_ts = database.get_used_query_range(cursor, 'kraken_trades_mockkraken')
     assert from_ts == 0
     assert to_ts == 1638529919, 'should have saved only until the last trades timestamp'
 
@@ -555,16 +556,17 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
     def query_kraken_and_test(input_trades, expected_warnings_num, expected_errors_num):
         # delete kraken history entries so they get requeried
         cursor = kraken.history_events_db.db.conn.cursor()
-        location = Location.KRAKEN
-        cursor.execute(
-            'DELETE FROM history_events WHERE location=?',
-            (location.serialize_for_db(),),
-        )
-        cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{location}_history_events_%',),
-        )
-        kraken.history_events_db.db.update_last_write()
+        with kraken.history_events_db.db.user_write() as cursor:
+            location = Location.KRAKEN
+            cursor.execute(
+                'DELETE FROM history_events WHERE location=?',
+                (location.serialize_for_db(),),
+            )
+            cursor.execute(
+                'DELETE FROM used_query_ranges WHERE name LIKE ?',
+                (f'{location}_history_events_%',),
+            )
+
         with patch(target, new=input_trades):
             trades, _ = kraken.query_online_trade_history(
                 start_ts=0,

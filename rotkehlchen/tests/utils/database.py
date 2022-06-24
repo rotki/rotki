@@ -52,16 +52,12 @@ def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bo
 def add_blockchain_accounts_to_db(db: DBHandler, blockchain_accounts: BlockchainAccounts) -> None:
     try:
         with db.user_write() as cursor:
-            db.add_blockchain_accounts(
-                cursor,
-                SupportedBlockchain.ETHEREUM,
-                [BlockchainAccountData(address=x) for x in blockchain_accounts.eth],
-            )
-            db.add_blockchain_accounts(
-                cursor,
-                SupportedBlockchain.BITCOIN,
-                [BlockchainAccountData(address=x) for x in blockchain_accounts.btc],
-            )
+            for name, value in blockchain_accounts._asdict().items():
+                db.add_blockchain_accounts(
+                    cursor,
+                    SupportedBlockchain(name.upper()),
+                    [BlockchainAccountData(address=x) for x in value],
+                )
     except InputError as e:
         raise AssertionError(
             f'Got error at test setup blockchain account addition: {str(e)} '
@@ -124,7 +120,7 @@ def mock_dbhandler_update_owned_assets() -> _patch:
     """Just make sure update owned assets does nothing for older DB tests"""
     return patch(
         'rotkehlchen.db.dbhandler.DBHandler.update_owned_assets_in_globaldb',
-        lambda x: None,
+        lambda x, y: None,
     )
 
 
@@ -132,7 +128,7 @@ def mock_dbhandler_add_globaldb_assetids() -> _patch:
     """Just make sure add globalds assetids does nothing for older DB tests"""
     return patch(
         'rotkehlchen.db.dbhandler.DBHandler.add_globaldb_assetids',
-        lambda x: None,
+        lambda x, y: None,
     )
 
 
@@ -140,7 +136,7 @@ def mock_dbhandler_ensura_data_integrity() -> _patch:
     """Just make sure ensure_data_integrity oes nothing for older DB tests"""
     return patch(
         'rotkehlchen.db.dbhandler.DBHandler.ensure_data_integrity',
-        lambda x: None,
+        lambda x, y: None,
     )
 
 
