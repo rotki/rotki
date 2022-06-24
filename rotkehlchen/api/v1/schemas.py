@@ -1,5 +1,16 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+    overload,
+)
 
 import webargs
 from eth_utils import to_checksum_address
@@ -105,6 +116,7 @@ from .fields import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
@@ -291,36 +303,29 @@ class TradesQuerySchema(
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'time'  # noqa: E501
-        base_asset, quote_asset = data['base_asset'], data['quote_asset']
-        base_assets, quote_assets = None, None
+        base_assets: Optional[Tuple['Asset', ...]] = None
+        quote_assets: Optional[Tuple['Asset', ...]] = None
+        if data['base_asset'] is not None:
+            base_assets = (data['base_asset'],)
+        if data['quote_asset'] is not None:
+            quote_assets = (data['quote_asset'],)
 
-        if self.treat_eth2_as_eth is True and base_asset == A_ETH:
+        if self.treat_eth2_as_eth is True and data['base_asset'] == A_ETH:
             base_assets = (A_ETH, A_ETH2)
-        elif self.treat_eth2_as_eth is True and quote_asset == A_ETH:
+        elif self.treat_eth2_as_eth is True and data['quote_asset'] == A_ETH:
             quote_assets = (A_ETH, A_ETH2)
 
-        query_arguments = {
-            'order_by_rules': [(order_by_attribute, data['ascending'])],
-            'limit': data['limit'],
-            'offset': data['offset'],
-            'from_ts': data['from_timestamp'],
-            'to_ts': data['to_timestamp'],
-            'base_asset': data['base_asset'],
-            'quote_asset': data['quote_asset'],
-            'trade_type': [data['trade_type']] if data['trade_type'] is not None else None,
-            'location': data['location'],
-            'multiple_base_assets': base_assets,
-            'multiple_quote_assets': quote_assets,
-        }
-
-        if base_assets is not None and quote_assets is not None:
-            query_arguments.pop('base_asset')
-            query_arguments.pop('quote_asset')
-        elif base_assets is not None:
-            query_arguments.pop('base_asset')
-        elif quote_assets is not None:
-            query_arguments.pop('quote_asset')
-        filter_query = TradesFilterQuery.make(**query_arguments)
+        filter_query = TradesFilterQuery.make(
+            order_by_rules=[(order_by_attribute, data['ascending'])],
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            base_assets=base_assets,
+            quote_assets=quote_assets,
+            trade_type=[data['trade_type']] if data['trade_type'] is not None else None,
+            location=data['location'],
+        )
 
         return {
             'async_query': data['async_query'],
@@ -359,11 +364,11 @@ class StakingQuerySchema(
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         if order_by_attribute == 'event_type':
             order_by_attribute = 'subtype'
-
-        asset, asset_list = data['asset'], None
-        if self.treat_eth2_as_eth is True and asset == A_ETH:
+        asset_list: Optional[Tuple['Asset', ...]] = None
+        if data['asset'] is not None:
+            asset_list = (data['asset'],)
+        if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
             asset_list = (A_ETH, A_ETH2)
-            asset = None
 
         query_filter = HistoryEventFilterQuery.make(
             order_by_rules=[(order_by_attribute, data['ascending'])],
@@ -380,8 +385,7 @@ class StakingQuerySchema(
                 HistoryEventSubType.RECEIVE_WRAPPED,
                 HistoryEventSubType.RETURN_WRAPPED,
             ],
-            asset=asset,
-            multiple_assets=asset_list,
+            assets=asset_list,
         )
 
         value_filter = HistoryEventFilterQuery.make(
@@ -397,8 +401,7 @@ class StakingQuerySchema(
                 HistoryEventSubType.REWARD,
             ],
             order_by_rules=None,
-            asset=asset,
-            multiple_assets=asset_list,
+            assets=asset_list,
         )
 
         return {
@@ -500,10 +503,11 @@ class AssetMovementsQuerySchema(
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'time'  # noqa: E501
-        asset, asset_list = data['asset'], None
-        if self.treat_eth2_as_eth is True and asset == A_ETH:
+        asset_list: Optional[Tuple['Asset', ...]] = None
+        if data['asset'] is not None:
+            asset_list = (data['asset'],)
+        if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
             asset_list = (A_ETH, A_ETH2)
-            asset = None
 
         filter_query = AssetMovementsFilterQuery.make(
             order_by_rules=[(order_by_attribute, data['ascending'])],
@@ -511,8 +515,7 @@ class AssetMovementsQuerySchema(
             offset=data['offset'],
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
-            asset=asset,
-            multiple_assets=asset_list,
+            assets=asset_list,
             action=[data['action']] if data['action'] is not None else None,
             location=data['location'],
         )
@@ -569,10 +572,11 @@ class LedgerActionsQuerySchema(
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
-        asset, asset_list = data['asset'], None
-        if self.treat_eth2_as_eth is True and asset == A_ETH:
+        asset_list: Optional[Tuple['Asset', ...]] = None
+        if data['asset'] is not None:
+            asset_list = (data['asset'],)
+        if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
             asset_list = (A_ETH, A_ETH2)
-            asset = None
 
         filter_query = LedgerActionsFilterQuery.make(
             order_by_rules=[(order_by_attribute, data['ascending'])],
@@ -580,8 +584,7 @@ class LedgerActionsQuerySchema(
             offset=data['offset'],
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
-            asset=asset,
-            multiple_assets=asset_list,
+            assets=asset_list,
             action_type=[data['type']] if data['type'] is not None else None,
             location=data['location'],
         )

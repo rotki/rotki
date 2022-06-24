@@ -336,7 +336,7 @@ def test_query_trades_including_ammswaps(data_dir, username):
     # Get first 5 trades that are in uniswap and that buy USDC
     returned_trades = data.db.get_trades(
         filter_query=TradesFilterQuery.make(
-            limit=5, offset=0, location=Location.UNISWAP, base_asset=A_USDC,
+            limit=5, offset=0, location=Location.UNISWAP, base_assets=(A_USDC,),
         ), has_premium=True,
     )
     assert len(returned_trades) == 1
@@ -344,7 +344,7 @@ def test_query_trades_including_ammswaps(data_dir, username):
 
     # Get all trades with quote asset USDC
     returned_trades = data.db.get_trades(
-        filter_query=TradesFilterQuery.make(quote_asset=A_USDC),
+        filter_query=TradesFilterQuery.make(quote_assets=(A_USDC,)),
         has_premium=True,
     )
     assert len(returned_trades) == 3
