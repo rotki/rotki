@@ -78,7 +78,6 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import AssetMixin from '@/mixins/asset-mixin';
 import { HistoricalPriceFormPayload } from '@/services/assets/types';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
@@ -86,7 +85,6 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 export default defineComponent({
   name: 'PriceForm',
-  mixins: [AssetMixin],
   props: {
     value: {
       required: true,
@@ -118,7 +116,9 @@ export default defineComponent({
     const input = (price: Partial<HistoricalPriceFormPayload>) => {
       emit('input', { ...get(value), ...price });
     };
+
     watch(valid, value => emit('valid', value));
+
     watch(value, val => {
       set(price, val.price);
     });

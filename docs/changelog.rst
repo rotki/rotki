@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1420` Add functionality to add alias name for ETH addresses.
 * :feature:`-` Add zoom feature for line charts.
 * :bug:`4459` Transactions that happened in genesis block are now queried and stored properly.
 * :bug:`-` The electron application will now terminate properly if the backend fails to start.

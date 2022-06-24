@@ -609,7 +609,7 @@ export class RotkehlchenApi {
       : `/blockchains/${blockchain}`;
 
     const basePayload = {
-      label,
+      label: label || null,
       tags
     };
 
@@ -667,7 +667,7 @@ export class RotkehlchenApi {
       data = {
         xpub,
         derivationPath: derivationPath ? derivationPath : undefined,
-        label,
+        label: label || null,
         tags
       };
     } else {
@@ -675,7 +675,7 @@ export class RotkehlchenApi {
         accounts: [
           {
             address,
-            label,
+            label: label || null,
             tags
           }
         ]
@@ -706,7 +706,7 @@ export class RotkehlchenApi {
           accounts: [
             {
               address,
-              label,
+              label: label || null,
               tags
             }
           ]

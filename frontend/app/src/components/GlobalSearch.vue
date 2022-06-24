@@ -12,8 +12,8 @@
         class-name="secondary--text text--lighten-4"
         :tooltip="
           $t('global_search.menu_tooltip', {
-            modifier: modifier,
-            key: key
+            modifier,
+            key
           }).toString()
         "
         :on-menu="on"
@@ -114,7 +114,7 @@ import {
   computed,
   defineComponent,
   nextTick,
-  onMounted,
+  onBeforeMount,
   ref,
   watch
 } from '@vue/composition-api';
@@ -134,6 +134,7 @@ import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { Exchange } from '@/types/exchanges';
 
 type SearchItem = {
   value: number;
@@ -279,6 +280,7 @@ export default defineComponent({
         { ...Routes.PROFIT_LOSS_REPORTS },
         { ...Routes.ASSET_MANAGER },
         { ...Routes.PRICE_MANAGER },
+        { ...Routes.ETH_ADDRESS_BOOK_MANAGER },
         {
           ...Routes.API_KEYS_ROTKI_PREMIUM,
           texts: [Routes.API_KEYS.text, Routes.API_KEYS_ROTKI_PREMIUM.text]
@@ -312,7 +314,7 @@ export default defineComponent({
 
       const exchangeItems: SearchItemWithoutValue[] = get(
         connectedExchanges
-      ).map(exchange => {
+      ).map((exchange: Exchange) => {
         const identifier = exchange.location;
         const name = exchange.name;
 
@@ -485,7 +487,7 @@ export default defineComponent({
       }
     };
 
-    onMounted(async () => {
+    onBeforeMount(async () => {
       set(isMac, await interop.isMac());
 
       window.addEventListener('keydown', async event => {

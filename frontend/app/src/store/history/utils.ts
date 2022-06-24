@@ -1,6 +1,7 @@
 import { EntryMeta, EntryWithMeta } from '@/services/history/types';
 import { Collection } from '@/types/collection';
 import { uniqueStrings } from '@/utils/data';
+import { isValidEthAddress } from '@/utils/text';
 
 export function mapCollectionEntriesWithMeta<T>(
   collection: Collection<EntryWithMeta<T>>
@@ -29,7 +30,7 @@ export function filterAddressesFromWords(words: string[]): string[] {
   return words
     .filter((word, index) => {
       // Check if the word is ETH address
-      const isAddress = word.startsWith('0x') && word.length >= 42;
+      const isAddress = isValidEthAddress(word);
 
       // Check if the word is Tx Hash
       const isTransaction =

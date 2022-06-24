@@ -13,6 +13,7 @@ import {
   TransactionEventProtocol,
   TransactionEventType
 } from '@/types/transaction';
+import { isValidEthAddress } from '@/utils/text';
 
 export const getEventType = (event: {
   eventType?: string | null;
@@ -67,9 +68,7 @@ export const getEventCounterpartyData = (
     return null;
   }
 
-  const isAddress = counterparty.startsWith('0x') && counterparty.length >= 42;
-
-  if (!isAddress) {
+  if (!isValidEthAddress(counterparty)) {
     const data = transactionEventProtocolData.find((data: ActionDataEntry) => {
       if (data.matcher) {
         return data.matcher(counterparty);

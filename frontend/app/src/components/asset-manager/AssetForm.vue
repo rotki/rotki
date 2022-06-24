@@ -287,6 +287,7 @@ import { useAssetInfoRetrieval } from '@/store/assets';
 import { useNotifications } from '@/store/notifications';
 import { showError } from '@/store/utils';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { isValidEthAddress, sanitizeAddress } from '@/utils/text';
 
 function value<T>(t: T): T | undefined {
   return t ? t : undefined;
@@ -355,10 +356,6 @@ export default defineComponent({
       return get(assetType) === ETHEREUM_TOKEN;
     });
 
-    const sanitizeAddress = (address: string) => {
-      return address.replace(/\s/g, '');
-    };
-
     watch(address, async () => {
       const sanitizedAddress = sanitizeAddress(get(address));
       if (get(address) !== sanitizedAddress) {
@@ -366,11 +363,7 @@ export default defineComponent({
         return;
       }
 
-      if (
-        get(dontAutoFetch) ||
-        !get(address).startsWith('0x') ||
-        get(address).length < 42
-      ) {
+      if (get(dontAutoFetch) || !isValidEthAddress(get(address))) {
         set(dontAutoFetch, false);
         return;
       }

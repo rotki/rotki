@@ -86,7 +86,7 @@ const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   timestamp: 0
 });
 
-const managePrice = (showForm: Ref<Boolean>, refresh: Ref<Boolean>) => {
+const managePrice = (showForm: Ref<boolean>, refresh: Ref<boolean>) => {
   const { setMessage } = useMainStore();
   const managePrice = async (
     price: HistoricalPriceFormPayload,
@@ -141,7 +141,7 @@ export default defineComponent({
     const valid = ref(false);
     const editMode = ref(false);
 
-    const openForm = function (hPrice: HistoricalPrice | null = null) {
+    const openForm = (hPrice: HistoricalPrice | null = null) => {
       set(editMode, !!hPrice);
       if (hPrice) {
         set(priceForm, {

@@ -55,7 +55,6 @@ import {
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
-import { Store } from 'vuex';
 import RowActions from '@/components/helper/RowActions.vue';
 import i18n from '@/i18n';
 import {
@@ -64,8 +63,6 @@ import {
 } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
-import { RotkehlchenState } from '@/store/types';
-import { useStore } from '@/store/utils';
 import { Nullable } from '@/types';
 import { nonNullProperties } from '@/utils/data';
 
@@ -101,10 +98,7 @@ const priceRetrieval = () => {
   };
 };
 
-const priceDeletion = (
-  store: Store<RotkehlchenState>,
-  refresh: () => Promise<void>
-) => {
+const priceDeletion = (refresh: () => Promise<void>) => {
   const pending = ref<Nullable<HistoricalPrice>>(null);
   const showConfirmation = computed(() => !!get(pending));
 
@@ -187,11 +181,12 @@ export default defineComponent({
   },
   emits: ['edit', 'refreshed'],
   setup(props, { emit }) {
-    const store = useStore();
     const { fetchPrices, prices, loading } = priceRetrieval();
+
     watch(props.filter, async payload => {
       await fetchPrices(nonNullProperties(payload));
     });
+
     watch(
       () => props.refresh,
       async refresh => {
@@ -210,7 +205,7 @@ export default defineComponent({
 
     return {
       fetchPrices,
-      ...priceDeletion(store, refresh),
+      ...priceDeletion(refresh),
       headers,
       prices,
       loading

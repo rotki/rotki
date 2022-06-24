@@ -163,6 +163,11 @@ export const Routes = {
     icon: 'mdi-chart-line',
     text: i18n.t('navigation_menu.manage_prices').toString()
   },
+  ETH_ADDRESS_BOOK_MANAGER: {
+    route: '/eth-address-book-manager',
+    icon: 'mdi-book-open',
+    text: i18n.t('navigation_menu.manage_eth_address_book').toString()
+  },
   API_KEYS: {
     route: '/settings/api-keys',
     icon: 'mdi-key-chain-variant',
