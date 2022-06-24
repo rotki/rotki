@@ -7,6 +7,7 @@ Changelog
 * :bug:`-` Now no missing acquisitions should appear for fiat assets during accounting.
 * :feature:`4268` Add a premium setting to follow the system's theme.
 * :feature:`4443` Users will now be able to get the latest icon of the assets.
+* :feature:`3798` Users will be now able to combine ETH and ETH2 and display it as one in the interface.
 * :feature:`44` Add option to change cost basis method (FIFO and LIFO order).
 
 * :release:`1.24.1 <2022-06-03>`

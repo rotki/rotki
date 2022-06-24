@@ -3072,11 +3072,14 @@ class RestAPI():
             ignored_ids = mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
             entries_result = []
             dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
+            asset = None
+            if event_params['asset'] is not None:
+                asset = (event_params['asset'], )
             for entry in transactions:
                 events = dbevents.get_history_events(
                     filter_query=HistoryEventFilterQuery.make(
                         event_identifier=entry.tx_hash.hex(),
-                        asset=event_params['asset'],
+                        assets=asset,
                         protocols=event_params['protocols'],
                         exclude_ignored_assets=event_params['exclude_ignored_assets'],
                     ),

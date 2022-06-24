@@ -1106,7 +1106,7 @@ def test_timed_balances_treat_eth2_as_eth(database):
             time=1590676829,
             asset=A_ETH,
             amount='0.3',
-            usd_value='2000',
+            usd_value='2001',
         ), DBAssetBalance(
             category=BalanceType.LIABILITY,
             time=1590677829,
@@ -1174,7 +1174,7 @@ def test_timed_balances_treat_eth2_as_eth(database):
         ), SingleDBAssetBalance(
             time=1590676829,
             amount='0.3',
-            usd_value='2000',
+            usd_value='2001',
             category=BalanceType.LIABILITY,
         ), SingleDBAssetBalance(
             time=1590677829,
@@ -1191,9 +1191,14 @@ def test_timed_balances_treat_eth2_as_eth(database):
             amount='0.5',
             usd_value='2000',
             category=BalanceType.ASSET,
+        ), SingleDBAssetBalance(
+            time=1590877829,
+            amount='0.5',
+            usd_value='2000',
+            category=BalanceType.LIABILITY,
         ),
     ]
-    assert len(balances) == 6
+    assert len(balances) == len(expected_balances)
     assert balances == expected_balances
 
 
