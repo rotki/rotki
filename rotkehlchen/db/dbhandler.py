@@ -45,7 +45,7 @@ from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.yearn.structures import YearnVault, YearnVaultEvent
 from rotkehlchen.chain.ethereum.trades import AMMSwap
-from rotkehlchen.constants.assets import A_ETH2, A_USD
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
@@ -223,53 +223,23 @@ def db_tuple_to_str(
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
 
 
-def combine_asset_balances(
-        asset_a_balances: List[SingleDBAssetBalance],
-        asset_b_balances: List[SingleDBAssetBalance],
-) -> List[SingleDBAssetBalance]:
-    """
-    Combine assets balances from two different queries. It iterates over the query results
-    of both queries and returns them sorted by timestamp combining the ones that share
-    timestamp and category
-    """
-    if len(asset_b_balances) == 0:
-        return asset_a_balances
-    if len(asset_a_balances) == 0:
-        return asset_b_balances
+def combine_asset_balances(balances: List[SingleDBAssetBalance]) -> List[SingleDBAssetBalance]:
+    new_balances = []
+    skip_next = False
+    if len(balances) == 1:
+        return balances
 
-    final_balances = []
-    # Consume first the earliest entry
-    earlier, latest = asset_a_balances, asset_b_balances
-    if earlier[0].time > latest[0].time:
-        earlier, latest = latest, earlier
+    for balance, next_balance in zip(balances, balances[1:] + [balances[0]]):
+        if skip_next is True:
+            skip_next = False
+            continue
 
-    latest_reading_index = 0
-    for balance in earlier:
-        if (
-            latest_reading_index != len(latest) and
-            balance.time < latest[latest_reading_index].time
-        ):
-            final_balances.append(balance)
-        elif (
-            latest_reading_index != len(latest) and
-            latest[latest_reading_index].time < balance.time
-        ):
-            # Consume all the entries until we return to the condition earlier.time < latest.time
-            while (
-                latest_reading_index != len(latest) and
-                latest[latest_reading_index].time < balance.time
-            ):
-                final_balances.append(latest[latest_reading_index])
-                latest_reading_index += 1
-            final_balances.append(balance)
-        elif (
-            latest_reading_index != len(latest) and
-            balance.time == latest[latest_reading_index].time and
-            balance.category == latest[latest_reading_index].category
-        ):
-            new_amount = str(FVal(balance.amount) + FVal(latest[latest_reading_index].amount))
+        if balance.time != next_balance.time:
+            new_balances.append(balance)
+        else:
+            new_amount = str(FVal(balance.amount) + FVal(next_balance.amount))
             new_usd_value = str(
-                FVal(balance.usd_value) + FVal(latest[latest_reading_index].usd_value),
+                FVal(balance.usd_value) + FVal(next_balance.usd_value),
             )
             new_entry = SingleDBAssetBalance(
                 time=balance.time,
@@ -277,11 +247,9 @@ def combine_asset_balances(
                 usd_value=new_usd_value,
                 category=balance.category,
             )
-            final_balances.append(new_entry)
-            latest_reading_index += 1
-        else:
-            final_balances.append(balance)
-    return final_balances
+            new_balances.append(new_entry)
+            skip_next = True
+    return new_balances
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
@@ -2867,6 +2835,11 @@ class DBHandler:
         )
         bindings = [from_ts, to_ts, asset.identifier]
 
+        if settings.treat_eth2_as_eth and asset.identifier == 'ETH':
+            assert balance_type is not None, 'Asset balances and liabilities can\'t be queried at the same time when eth2 is equivalent to eth'  # noqa: E501
+            querystr = querystr.replace('currency=?', 'currency IN (?,?)')
+            bindings.append('ETH2')
+
         if balance_type is not None:
             querystr += ' AND category=?'
             bindings.append(balance_type.serialize_for_db())
@@ -2908,13 +2881,7 @@ class DBHandler:
                 )
 
         if settings.treat_eth2_as_eth and asset.identifier == 'ETH':
-            eth2_balances = self.query_timed_balances(
-                asset=A_ETH2,
-                from_ts=from_ts,
-                to_ts=to_ts,
-                balance_type=balance_type,
-            )
-            return combine_asset_balances(balances, eth2_balances)
+            return combine_asset_balances(balances)
 
         return balances
 
