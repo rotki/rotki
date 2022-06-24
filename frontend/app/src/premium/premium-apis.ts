@@ -36,9 +36,11 @@ import { useUniswap } from '@/store/defi/uniswap';
 import { useStore } from '@/store/utils';
 
 export const assetsApi = (): AssetsApi => {
-  const { getAssetInfo, getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
+  const { getAssetInfo, getAssetSymbol, getAssetIdentifierForSymbol } =
+    useAssetInfoRetrieval();
   return {
     assetInfo: getAssetInfo,
+    assetSymbol: getAssetSymbol,
     getIdentifierForSymbol: getAssetIdentifierForSymbol
   };
 };

@@ -1,4 +1,4 @@
-import Chart from 'chart.js';
+import * as Chart from 'chart.js';
 import Vue, { VueConstructor } from 'vue';
 import PremiumLoading from '@/components/premium/PremiumLoading.vue';
 import PremiumLoadingError from '@/components/premium/PremiumLoadingError.vue';
@@ -168,6 +168,7 @@ declare global {
     Vue: any;
     Chart: typeof Chart;
     '@vue/composition-api': any;
+    'chartjs-plugin-zoom': any;
     zod: any;
     bn: any;
   }

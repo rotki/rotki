@@ -67,6 +67,7 @@ export interface Interop {
   restartBackend(options: Partial<BackendOptions>): Promise<boolean>;
   setSelectedTheme(selectedTheme: number): Promise<boolean>;
   version(): Promise<SystemVersion>;
+  isMac(): Promise<boolean>;
   onAbout(callback: () => void): void;
   config(defaults: boolean): Promise<Partial<BackendOptions>>;
   updateTray(trayUpdate: TrayUpdate): Promise<void>;

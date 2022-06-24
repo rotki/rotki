@@ -58,7 +58,7 @@
         persistent-hint
         :success-messages="settingsMessages[GRAPH_ZERO_BASED].success"
         :error-messages="settingsMessages[GRAPH_ZERO_BASED].error"
-        @change="onEnableEnsChange($event)"
+        @change="onZeroBasedUpdate($event)"
       />
     </div>
 

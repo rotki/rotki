@@ -1,31 +1,31 @@
 <template>
   <div :class="$style.wrapper">
+    <div class="d-flex justify-end">
+      <chart-shortcut-hint />
+    </div>
     <div :class="$style.canvas">
-      <canvas :id="canvasId" @click="canvasClicked" />
-      <div
-        v-if="tooltipOption"
-        :id="tooltipOption.id"
-        :class="{
-          [$style.tooltip]: true,
-          [$style['tooltip-dark']]: dark,
-          [$style['tooltip-show']]: tooltipOption.visible
-        }"
-        :data-align-x="tooltipOption.xAlign"
-        :data-align-y="tooltipOption.yAlign"
-        :style="{
-          left: `${tooltipOption.left}px`,
-          top: `${tooltipOption.top}px`
-        }"
-      >
-        <div>
-          <div class="font-weight-bold text-center">
-            {{ tooltip.value }}
+      <canvas
+        :id="canvasId"
+        @click.stop="canvasClicked"
+        @dblclick.stop="resetZoom"
+      />
+      <graph-tooltip-wrapper :tooltip-option="tooltipDisplayOption">
+        <template #content>
+          <div>
+            <div class="font-weight-bold text-center">
+              <amount-display
+                force-currency
+                show-currency="symbol"
+                :value="tooltipContent.value"
+                :fiat-currency="currencySymbol"
+              />
+            </div>
+            <div class="rotki-grey--text text-center">
+              {{ tooltipContent.time }}
+            </div>
           </div>
-          <div class="rotki-grey--text text-center">
-            {{ tooltip.time }}
-          </div>
-        </div>
-      </div>
+        </template>
+      </graph-tooltip-wrapper>
     </div>
 
     <export-snapshot-dialog
@@ -37,8 +37,8 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common';
 import {
+  getTimeframeByRange,
   Timeframe,
   TimeFramePeriod,
   Timeframes
@@ -58,106 +58,30 @@ import { get, set } from '@vueuse/core';
 import {
   Chart,
   ChartConfiguration,
-  ChartDataSets,
-  ChartElementsOptions,
   ChartOptions,
-  ChartTooltipModel,
-  ChartTooltipOptions,
-  ChartXAxe,
-  ChartYAxe,
-  LinearScale,
-  TimeDisplayFormat,
-  TimeScale,
+  TooltipOptions,
   TimeUnit
 } from 'chart.js';
 import dayjs from 'dayjs';
+import ChartShortcutHint from '@/components/ChartShortcutHint.vue';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
+import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
 import { setupThemeCheck } from '@/composables/common';
+import { useGraph, useTooltip } from '@/composables/graphs';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
+import { interop } from '@/electron-interop';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
 export interface ValueOverTime {
-  readonly x: Date;
+  readonly x: number;
   readonly y: number;
 }
 
-const useTooltip = (id: string) => {
-  type TooltipOption = {
-    visible: boolean;
-    id: string;
-    left: number;
-    top: number;
-    xAlign: string;
-    yAlign: string;
-  };
-
-  const getDefaultTooltipOption = (id: string): TooltipOption => {
-    return {
-      visible: false,
-      left: 0,
-      top: 0,
-      xAlign: 'left',
-      yAlign: 'center',
-      id
-    };
-  };
-
-  type ChartTooltip = {
-    readonly time: string;
-    readonly value: string;
-  };
-
-  const defaultTooltip = (): ChartTooltip => ({
-    time: '',
-    value: ''
-  });
-
-  const tooltipOption = ref(getDefaultTooltipOption(id));
-  const tooltip = ref(defaultTooltip());
-
-  const calculateTooltipPosition = (
-    element: HTMLElement,
-    tooltipModel: Chart.ChartTooltipModel
-  ): Partial<TooltipOption> => {
-    let { x, y } = tooltipModel;
-    const { xAlign, yAlign } = tooltipModel;
-
-    const elemWidth = element.clientWidth;
-    const elemHeight = element.clientHeight;
-
-    if (tooltipModel.xAlign === 'center') {
-      x += (tooltipModel.width - elemWidth) / 2;
-    } else if (tooltipModel.xAlign === 'right') {
-      x += tooltipModel.width - elemWidth;
-    }
-
-    if (tooltipModel.yAlign === 'center') {
-      y += (tooltipModel.height - elemHeight) / 2;
-    } else if (tooltipModel.yAlign === 'bottom') {
-      y += tooltipModel.height - elemHeight;
-    }
-
-    return {
-      xAlign,
-      yAlign,
-      left: x,
-      top: y,
-      visible: true
-    };
-  };
-
-  return {
-    tooltipOption,
-    tooltip,
-    calculateTooltipPosition
-  };
-};
-
 export default defineComponent({
   name: 'NetWorthChart',
-  components: { ExportSnapshotDialog },
+  components: { ChartShortcutHint, GraphTooltipWrapper, ExportSnapshotDialog },
   props: {
     timeframe: {
       required: true,
@@ -169,29 +93,71 @@ export default defineComponent({
     chartData: { required: true, type: Object as PropType<NetValue> }
   },
   setup(props) {
-    const { timeframe, timeframes, chartData } = toRefs(props);
-    const { graphZeroBased, nftsInNetValue } = setupSettings();
-    const { currency } = setupGeneralSettings();
+    const { chartData } = toRefs(props);
+    const { graphZeroBased } = setupSettings();
+    const { currencySymbol } = setupGeneralSettings();
     const { dark } = setupThemeCheck();
 
     const selectedTimestamp = ref<number>(0);
     const selectedBalance = ref<number>(0);
     const showExportSnapshotDialog = ref<boolean>(false);
+    const isDblClick = ref<boolean>(false);
 
     const canvasId = 'net-worth-chart__chart';
     const tooltipId = 'net-worth-chart__tooltip';
 
-    const { tooltip, tooltipOption, calculateTooltipPosition } =
+    const { tooltipContent, tooltipDisplayOption, calculateTooltipPosition } =
       useTooltip(tooltipId);
-    const chart = ref<Chart | null>(null);
-    const times = ref<number[]>([]);
-    const data = ref<number[]>([]);
-    const filteredData = ref<ValueOverTime[]>([]);
+
+    const balanceData = ref<ValueOverTime[]>([]);
     const showVirtualCurrentData = ref<boolean>(true);
 
-    const activeTimeframe = computed<Timeframe>(() => {
-      return get(timeframes)[get(timeframe)];
+    let chart: Chart | null = null;
+
+    const getChart = (): Chart => {
+      assert(chart, 'chart was null');
+      return chart;
+    };
+
+    const updateChart = () => {
+      chart?.update('resize');
+      calculateXRange();
+    };
+
+    const displayedXMin = ref<number>(0);
+    const displayedXMax = ref<number>(0);
+
+    const calculateXRange = () => {
+      if (!chart) {
+        set(displayedXMin, 0);
+        set(displayedXMax, 0);
+        return;
+      }
+
+      const xAxis = chart.options!.scales!.x!;
+
+      set(displayedXMin, xAxis.min);
+      set(displayedXMax, xAxis.max);
+    };
+
+    const dataTimeRange = computed<{ min: number; max: number } | null>(() => {
+      const data = get(balanceData);
+      if (data.length === 0) return null;
+
+      const first = data[0];
+      const last = data[data.length - 1];
+
+      return {
+        min: first.x,
+        max: last.x
+      };
     });
+
+    const activeTimeframe = computed<Timeframe>(() => {
+      return getTimeframeByRange(get(displayedXMin), get(displayedXMax));
+    });
+
+    watch(activeTimeframe, () => chart?.update('resize'));
 
     const xAxisStepSize = computed<number>(
       () => get(activeTimeframe).xAxisStepSize
@@ -201,168 +167,161 @@ export default defineComponent({
       () => get(activeTimeframe).xAxisTimeUnit
     );
 
-    const clearData = () => {
-      set(data, []);
-      set(times, []);
-      set(filteredData, []);
-    };
+    const transformData = ({ times, data }: NetValue) => {
+      const newBalances: ValueOverTime[] = [];
 
-    const updateChart = () => {
-      set(times, [...get(chartData).times]);
-      set(data, [...get(chartData).data]);
-      transformData();
-    };
-
-    watch(chartData, () => {
-      clearData();
-      updateChart();
-    });
-
-    const transformData = () => {
-      const chartVal = get(chart);
-      assert(chartVal, 'chart was null');
-      const options = chartVal.options!;
-      const scales: LinearScale = options.scales!;
-      const chartXAx = scales.xAxes![0];
-      const time = chartXAx.time;
-      assert(time, 'time was null');
-      time.unit = get(xAxisTimeUnit);
-      time.stepSize = get(xAxisStepSize);
-
-      // set the data
-      const newData = [];
-      const timesVal = get(times);
-      const dataVal = get(data);
       let showVirtual = true;
+      times.forEach((epoch, i) => {
+        const value = data[i];
 
-      for (let i = 0; i < timesVal.length; i++) {
-        const epoch = timesVal[i];
-        const value = dataVal[i];
-
-        if (i < timesVal.length - 1 || value > 0) {
-          newData.push({
-            x: new Date(epoch * 1000),
+        if (i < times.length - 1 || value > 0) {
+          newBalances.push({
+            x: epoch * 1000,
             y: value
           });
         } else {
           showVirtual = false;
         }
-      }
-      set(filteredData, newData);
+      });
+
+      set(balanceData, newBalances);
       set(showVirtualCurrentData, showVirtual);
 
-      chartVal.data.datasets![0].data = get(filteredData);
-      chartVal.update();
+      const chartVal = getChart();
+      chartVal.data!.datasets![0].data = newBalances;
+      setZoomLevel();
+      updateChart();
     };
 
-    const canvasContext = (elementId: string): CanvasRenderingContext2D => {
-      const canvas = document.getElementById(elementId);
-      assert(
-        canvas && canvas instanceof HTMLCanvasElement,
-        'Canvas could not be found'
-      );
-      const context = canvas.getContext('2d');
-      assert(context, 'Context could not be found');
-      return context;
+    const setZoomLevel = () => {
+      const chartVal = getChart();
+
+      const range = get(dataTimeRange);
+      if (!range) return;
+
+      const { min, max } = range;
+      const xAxis = chartVal.options!.scales!.x!;
+      xAxis.min = min;
+      xAxis.max = max;
+
+      const zoom = chartVal.options!.plugins!.zoom!;
+      zoom.limits = {
+        x: {
+          min: 'original',
+          max: 'original',
+          minRange: 28 * 60 * 60 * 1000
+        }
+      };
     };
 
-    const { theme } = setupThemeCheck();
+    const clearData = () => {
+      set(balanceData, []);
+    };
 
-    const createDatasets = (
-      canvas: CanvasRenderingContext2D
-    ): ChartDataSets[] => {
-      const color = get(theme).currentTheme['graph'] as string;
-      const secondaryColor = get(theme).currentTheme['graphFade'] as string;
+    const prepareData = () => {
+      clearData();
+      transformData(get(chartData));
+    };
 
-      const areaGradient = canvas.createLinearGradient(0, 0, 0, 160);
-      areaGradient.addColorStop(0, color);
-      areaGradient.addColorStop(1, secondaryColor);
+    watch(chartData, () => {
+      prepareData();
+    });
 
-      const dataset: ChartDataSets = {
-        data: get(filteredData),
-        lineTension: 0,
-        backgroundColor: areaGradient,
-        borderColor: color,
+    const { getCanvasCtx, baseColor, gradient, fontColor, gridColor } =
+      useGraph(canvasId);
+
+    const createDatasets = () => {
+      const dataset = {
+        data: [],
+        tension: 0.1,
+        fill: true,
+        backgroundColor: () => get(gradient),
+        borderColor: () => get(baseColor),
         borderWidth: 2,
         pointHoverBorderWidth: 2,
         pointHoverBorderColor: 'white',
         pointBackgroundColor: 'white',
-        pointHoverBackgroundColor: color
+        pointHoverBackgroundColor: () => get(baseColor)
       };
 
       return [dataset];
     };
 
-    const createScales = (): LinearScale => {
-      const labelFormat: (period: TimeFramePeriod) => string = period => {
-        return get(timeframes)[period].xAxisLabelDisplayFormat;
-      };
-
-      const displayFormats: TimeDisplayFormat = {
-        month: labelFormat(TimeFramePeriod.ALL),
-        week: labelFormat(TimeFramePeriod.MONTH),
-        day: labelFormat(TimeFramePeriod.WEEK),
-        hour: labelFormat(TimeFramePeriod.WEEK)
-      };
-
-      const time: TimeScale = {
-        unit: get(xAxisTimeUnit),
-        stepSize: get(xAxisStepSize),
-        displayFormats: displayFormats
-      };
-
-      const xAxes: ChartXAxe = {
-        type: 'time',
-        gridLines: { display: false },
-        time: time
-      };
-
-      const yAxes: ChartYAxe = {
-        display: false,
-        ticks: {
-          beginAtZero: get(graphZeroBased)
-        }
-      };
-
+    const createScales = () => {
       return {
-        xAxes: [xAxes],
-        yAxes: [yAxes]
+        x: {
+          type: 'time',
+          grid: {
+            display: false
+          },
+          ticks: {
+            color: () => get(fontColor)
+          },
+          time: {
+            unit: () => get(xAxisTimeUnit),
+            stepSize: () => get(xAxisStepSize),
+            displayFormats: () => {
+              const format = get(activeTimeframe).xAxisLabelDisplayFormat;
+              return {
+                month: format,
+                week: format,
+                day: format
+              };
+            }
+          }
+        },
+        y: {
+          display: false,
+          grid: {
+            color: () => get(gridColor),
+            borderColor: () => get(gridColor)
+          },
+          suggestedMin: () => {
+            const data = get(balanceData);
+            if (data.length === 0) return 0;
+
+            let min = Math.min(...data.map(datum => datum.y));
+            if (get(graphZeroBased)) {
+              min = Math.min(0, min);
+            }
+            return min;
+          },
+          suggestedMax: () => {
+            const data = get(balanceData);
+            if (data.length === 0) return 0;
+
+            return Math.max(...data.map(datum => datum.y));
+          }
+        }
       };
     };
 
-    const tooltipOptions = (): ChartTooltipOptions => {
-      const custom: (
-        tooltipModel: ChartTooltipModel
-      ) => void = tooltipModel => {
+    const createTooltip = (): Partial<TooltipOptions> => {
+      const external = ({ tooltip: tooltipModel }: any) => {
         const element = document.getElementById(tooltipId);
         assert(element, 'No tooltip element found');
 
         if (tooltipModel.opacity === 0) {
-          tooltipOption.value = {
-            ...tooltipOption.value,
+          tooltipDisplayOption.value = {
+            ...get(tooltipDisplayOption),
             visible: false
           };
           return;
         }
 
         const item = tooltipModel.dataPoints[0];
-        const netWorth = bigNumberify(item.value!).toFormat(
-          2,
-          BigNumber.ROUND_DOWN
-        );
+        const { x, y } = item.parsed;
 
-        const time = dayjs(item.label).format(
-          get(activeTimeframe).tooltipTimeFormat
-        );
+        const time = dayjs(x).format(get(activeTimeframe).tooltipTimeFormat);
 
-        tooltip.value = {
-          value: `${netWorth} ${get(currency).unicodeSymbol}`,
+        tooltipContent.value = {
+          value: bigNumberify(y),
           time: `${time}`
         };
 
         nextTick(() => {
-          tooltipOption.value = {
-            ...tooltipOption.value,
+          tooltipDisplayOption.value = {
+            ...get(tooltipDisplayOption),
             ...calculateTooltipPosition(element, tooltipModel)
           };
         });
@@ -372,213 +331,128 @@ export default defineComponent({
         enabled: false,
         mode: 'index',
         intersect: false,
-        custom
+        external
       };
     };
 
-    const createChart = (): Chart => {
-      const canvas = canvasContext(canvasId);
-      const elements: ChartElementsOptions = {
-        point: {
-          radius: 0,
-          hoverRadius: 6,
-          pointStyle: 'circle'
-        }
-      };
-      const datasets = createDatasets(canvas);
+    const createChart = (modifierKey: 'ctrl' | 'meta'): Chart => {
+      const context = getCanvasCtx();
+      const datasets = createDatasets();
       const scales = createScales();
-      const tooltips = tooltipOptions();
+      const tooltip = createTooltip();
 
       const options: ChartOptions = {
         responsive: true,
         maintainAspectRatio: false,
         hover: { intersect: false },
-        legend: { display: false },
-        elements,
-        tooltips,
-        scales
+        elements: {
+          point: {
+            radius: 0,
+            hoverRadius: 6,
+            pointStyle: 'circle'
+          }
+        },
+        scales: scales as any,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip,
+          zoom: {
+            zoom: {
+              wheel: {
+                enabled: true,
+                modifierKey
+              },
+              mode: 'x',
+              onZoomComplete: () => {
+                calculateXRange();
+              }
+            }
+          }
+        }
       };
 
       const config: ChartConfiguration = {
         type: 'line',
-        data: {
-          datasets
-        },
+        data: { datasets },
         options
       };
 
-      return new Chart(canvas, config);
+      return new Chart(context, config);
     };
 
-    const setup = () => {
-      if (get(chart)) {
-        get(chart)!.destroy();
-      }
-      Chart.defaults.global.defaultFontFamily = 'Roboto';
+    const setup = async () => {
+      chart?.destroy();
       clearData();
-      set(chart, createChart());
-      updateChart();
+      const modifierKey = (await interop.isMac()) ? 'meta' : 'ctrl';
+      chart = createChart(modifierKey);
+      prepareData();
     };
-
-    watch([dark, nftsInNetValue], () => {
-      setup();
-    });
 
     onMounted(() => {
       setup();
     });
 
-    watch(timeframe, () => {
-      clearData();
-      set(times, [...get(chartData).times]);
-      set(data, [...get(chartData).data]);
-      transformData();
+    watch(dark, () => {
+      updateChart();
     });
 
     const canvasClicked = (event: PointerEvent) => {
-      const axisData = get(chart)?.getElementsAtXAxis(event);
+      set(isDblClick, false);
+      setTimeout(() => {
+        if (get(isDblClick)) return;
 
-      if (axisData && axisData.length > 0) {
-        // @ts-ignore
-        const index = axisData[0]._index;
+        const axisData = chart?.getElementsAtEventForMode(
+          event,
+          'index',
+          { intersect: false },
+          false
+        );
 
-        if (
-          get(times)[index] &&
-          get(data)[index] &&
-          !(
-            get(showVirtualCurrentData) &&
-            index === get(chartData).data.length - 1
-          )
-        ) {
-          set(selectedTimestamp, get(times)[index]);
-          set(selectedBalance, get(data)[index]);
+        if (axisData && axisData.length > 0) {
+          const index = axisData[0].index;
+          const balanceDataVal = get(balanceData);
+          const data = balanceDataVal[index];
 
-          set(showExportSnapshotDialog, true);
+          if (
+            data.x &&
+            data.y &&
+            !(
+              showVirtualCurrentData.value &&
+              index === balanceDataVal.length - 1
+            )
+          ) {
+            set(selectedTimestamp, data.x / 1000);
+            set(selectedBalance, data.y);
+
+            set(showExportSnapshotDialog, true);
+          }
         }
-      }
+      }, 200);
+    };
+
+    const resetZoom = () => {
+      set(isDblClick, true);
+      chart?.resetZoom();
     };
 
     return {
+      resetZoom,
+      currencySymbol,
       dark,
       canvasId,
       canvasClicked,
       showExportSnapshotDialog,
       selectedTimestamp,
       selectedBalance,
-      tooltip,
-      tooltipOption
+      tooltipDisplayOption,
+      tooltipContent
     };
   }
 });
 </script>
 <style module lang="scss">
-.tooltip {
-  position: absolute;
-  opacity: 0;
-  visibility: hidden;
-  background-color: white;
-  padding: 8px 12px;
-  font-family: 'Roboto', sans-serif;
-  font-size: 16px;
-  border-radius: 6px;
-  filter: drop-shadow(0 0 8px var(--v-rotki-grey-base));
-  pointer-events: none;
-  transition: 0.3s all;
-  white-space: nowrap;
-  line-height: 1.2rem;
-
-  &::before {
-    content: '';
-    width: 0;
-    height: 0;
-    position: absolute;
-    border-width: 6px;
-    border-style: solid;
-    border-color: transparent;
-  }
-
-  &[data-align-x='left'],
-  &[data-align-x='right'] {
-    &::before {
-      border-top-color: transparent;
-      border-bottom-color: transparent;
-    }
-  }
-
-  &[data-align-x='left'] {
-    &::before {
-      border-right-color: white;
-      right: 100%;
-    }
-
-    &:not([data-align-y='center']) {
-      &::before {
-        border-right-color: transparent;
-        right: calc(100% - 16px);
-      }
-    }
-  }
-
-  &[data-align-x='right'] {
-    &::before {
-      border-left-color: white;
-      left: 100%;
-    }
-
-    &:not([data-align-y='center']) {
-      &::before {
-        border-left-color: transparent;
-        left: calc(100% - 16px);
-      }
-    }
-  }
-
-  &[data-align-y='top'],
-  &[data-align-y='bottom'] {
-    &::before {
-      border-left-color: transparent;
-      border-right-color: transparent;
-    }
-  }
-
-  &[data-align-y='top'] {
-    &::before {
-      border-bottom-color: white;
-      bottom: 100%;
-    }
-  }
-
-  &[data-align-y='bottom'] {
-    &::before {
-      border-top-color: white;
-      top: 100%;
-    }
-  }
-
-  &[data-align-x='center'] {
-    &::before {
-      left: 50%;
-      transform: translateX(-50%);
-    }
-  }
-
-  &[data-align-y='center'] {
-    &::before {
-      top: 50%;
-      transform: translateY(-50%);
-    }
-  }
-
-  &-show {
-    opacity: 0.9;
-    visibility: visible;
-  }
-
-  &-dark {
-    color: black;
-  }
-}
-
 .wrapper {
   width: 100%;
   position: relative;

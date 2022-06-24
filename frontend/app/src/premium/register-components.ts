@@ -18,6 +18,7 @@ import {
   VTooltip
 } from 'vuetify/lib/components';
 import AssetLink from '@/components/assets/AssetLink.vue';
+import ChartShortcutHint from '@/components/ChartShortcutHint.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
@@ -32,6 +33,7 @@ import EventTypeDisplay from '@/components/display/EventTypeDisplay.vue';
 import BalancerPoolAsset from '@/components/display/icons/BalancerPoolAsset.vue';
 import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import Card from '@/components/helper/Card.vue';
@@ -127,5 +129,7 @@ export function registerComponents() {
   Vue.component('ExportSnapshotDialog', ExportSnapshotDialog);
   // Version 18 - 1.25
   Vue.component('MenuTooltipButton', MenuTooltipButton);
+  Vue.component('GraphTooltipWrapper', GraphTooltipWrapper);
+  Vue.component('ChartShortcutHint', ChartShortcutHint);
   vuetifyRegister();
 }

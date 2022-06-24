@@ -24,7 +24,8 @@ import {
   IPC_SERVER_URL,
   IPC_STORE_PASSWORD,
   IPC_TRAY_UPDATE,
-  IPC_VERSION
+  IPC_VERSION,
+  IPC_IS_MAC
 } from '@/electron-main/ipc-commands';
 
 function ipcAction<T>(message: string, arg?: any): Promise<T> {
@@ -81,6 +82,7 @@ contextBridge.exposeInMainWorld('interop', {
   installUpdate: () => ipcAction(IPC_INSTALL_UPDATE),
   setSelectedTheme: selectedTheme => ipcAction(IPC_THEME, selectedTheme),
   version: () => ipcAction(IPC_VERSION),
+  isMac: () => ipcAction(IPC_IS_MAC),
   onAbout: (callback: () => void) => {
     ipcRenderer.on(IPC_ABOUT, () => {
       callback();

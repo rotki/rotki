@@ -9,6 +9,7 @@
   >
     <template #activator="{ on }">
       <menu-tooltip-button
+        class-name="secondary--text text--lighten-4"
         :tooltip="
           $t('global_search.menu_tooltip', {
             modifier: modifier,

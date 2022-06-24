@@ -12,7 +12,8 @@ import {
 } from '@rotki/common/lib/settings';
 import * as CompositionAPI from '@vue/composition-api';
 import * as BigNumber from 'bignumber.js';
-import Chart from 'chart.js';
+import * as Chart from 'chart.js';
+import ChartJsPluginZoom from 'chartjs-plugin-zoom';
 import dayjs from 'dayjs';
 import Vue from 'vue';
 import * as zod from 'zod';
@@ -53,7 +54,7 @@ const date: DateUtilities = {
     return dayjs(date, format).unix();
   },
   epochStartSubtract(amount: number, unit: TimeUnit): number {
-    return dayjs().subtract(amount, unit).startOf(unit).unix();
+    return dayjs().subtract(amount, unit).unix();
   },
   toUserSelectedFormat(timestamp: number): string {
     return displayDateFormatter.format(
@@ -113,6 +114,8 @@ export const usePremiumApi = (): PremiumInterface => ({
 
 export const setupPremium = () => {
   window.Vue = Vue;
+  window.Chart = Chart;
+  window['chartjs-plugin-zoom'] = ChartJsPluginZoom;
   window.Chart = Chart;
   window['@vue/composition-api'] = CompositionAPI;
   window.zod = zod;
