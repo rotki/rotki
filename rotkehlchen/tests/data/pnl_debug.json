@@ -94,7 +94,8 @@
     "ssf_0graph_multiplier": 0,
     "last_data_migration": 3,
     "non_syncing_exchanges": [],
-    "treat_eth2_as_eth": false
+    "treat_eth2_as_eth": false,
+    "eth_staking_taxable_after_withdrawal_enabled": false
   },
   "ignored_events_ids": {
     "trade": ["X124-JYI", "2325"],
