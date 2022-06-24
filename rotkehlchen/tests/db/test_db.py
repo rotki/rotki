@@ -1147,7 +1147,7 @@ def test_timed_balances_treat_eth2_as_eth(database):
     ]
 
     database.add_multiple_balances(balances)
-    balances = database.query_timed_balances(asset=A_BTC)
+    balances = database.query_timed_balances(asset=A_BTC, balance_type=BalanceType.ASSET)
     assert len(balances) == 1
     expected_balances = [
         SingleDBAssetBalance(
@@ -1159,28 +1159,13 @@ def test_timed_balances_treat_eth2_as_eth(database):
     ]
     assert balances == expected_balances
 
-    balances = database.query_timed_balances(asset=A_ETH)
+    balances = database.query_timed_balances(asset=A_ETH, balance_type=BalanceType.ASSET)
     expected_balances = [
         SingleDBAssetBalance(
             category=BalanceType.ASSET,
             time=1590676728,
             amount='1.4',
             usd_value='9000',
-        ), SingleDBAssetBalance(
-            time=1590676729,
-            amount='0.3',
-            usd_value='2000',
-            category=BalanceType.LIABILITY,
-        ), SingleDBAssetBalance(
-            time=1590676829,
-            amount='0.3',
-            usd_value='2001',
-            category=BalanceType.LIABILITY,
-        ), SingleDBAssetBalance(
-            time=1590677829,
-            amount='1.3',
-            usd_value='3000',
-            category=BalanceType.LIABILITY,
         ), SingleDBAssetBalance(
             time=1590777829,
             amount='0.5',
@@ -1191,11 +1176,6 @@ def test_timed_balances_treat_eth2_as_eth(database):
             amount='0.5',
             usd_value='2000',
             category=BalanceType.ASSET,
-        ), SingleDBAssetBalance(
-            time=1590877829,
-            amount='0.5',
-            usd_value='2000',
-            category=BalanceType.LIABILITY,
         ),
     ]
     assert len(balances) == len(expected_balances)
