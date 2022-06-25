@@ -2856,8 +2856,8 @@ class DBHandler:
             balances.append(
                 SingleDBAssetBalance(
                     time=entry_time,
-                    amount=result[1],
-                    usd_value=result[2],
+                    amount=FVal(result[1]),
+                    usd_value=FVal(result[2]),
                     category=category,
                 ),
             )
@@ -2874,8 +2874,8 @@ class DBHandler:
                 balances.append(
                     SingleDBAssetBalance(
                         time=entry_time,
-                        amount='0',
-                        usd_value='0',
+                        amount=ZERO,
+                        usd_value=ZERO,
                         category=category,
                     ),
                 )
