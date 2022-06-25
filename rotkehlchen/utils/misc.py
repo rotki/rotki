@@ -7,6 +7,7 @@ import platform
 import re
 import sys
 import time
+from itertools import zip_longest
 from typing import (
     Any,
     Callable,
@@ -325,9 +326,25 @@ def rgetattr(obj: Any, attr: str, *args: Any) -> Any:
 
 
 def pairwise(iterable: Iterable[Any]) -> Iterator:
-    "s -> (s0, s1), (s2, s3), (s4, s5), ..."
+    """ Takes an iteratable and returns an iterator that iterates over two of its
+    elements in each iteration.
+
+    IMPORTANT: If an ODD number of elements is given then the last one is not iterated.
+    For a function that does so check pairwise_longest.
+    s -> (s0, s1), (s2, s3), (s4, s5), ..."""
     a = iter(iterable)
     return zip(a, a)
+
+
+def pairwise_longest(iterable: Iterable[Any]) -> Iterator:
+    """ Takes an iteratable and returns an iterator that iterates over two of its
+    elements in each iteration.
+
+    If an odd number of elements is passed then the last elements is None.
+
+    s -> (s0, s1), (s2, s3), (s4, s5), (s6, None)..."""
+    a = iter(iterable)
+    return zip_longest(a, a)
 
 
 def shift_num_right_by(num: int, digits: int) -> int:
