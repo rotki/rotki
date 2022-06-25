@@ -20,7 +20,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
-from rotkehlchen.utils.misc import rgetattr, timestamp_to_date
+from rotkehlchen.utils.misc import pairwise_longest, rgetattr, timestamp_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -200,3 +200,33 @@ def is_valid_db_blockchain_account(
         return is_valid_polkadot_address(account)
 
     raise AssertionError(f'Unknown blockchain: {blockchain}')
+
+
+def _append_or_combine(balances: List[SingleDBAssetBalance], entry: SingleDBAssetBalance) -> List[SingleDBAssetBalance]:  # noqa: E501
+    """Append entry to balances or combine with last if timestamp is the same"""
+    if len(balances) == 0 or balances[-1].time != entry.time:
+        balances.append(entry)
+    else:
+        balances[-1].amount += entry.amount
+        balances[-1].usd_value += entry.usd_value
+
+    return balances
+
+
+def combine_asset_balances(balances: List[SingleDBAssetBalance]) -> List[SingleDBAssetBalance]:
+    """Returns a list with all balances of the same timestamp combined"""
+    new_balances: List[SingleDBAssetBalance] = []
+    for balance, next_balance in pairwise_longest(balances):
+        if next_balance is None:
+            new_balances = _append_or_combine(new_balances, balance)
+            break
+
+        if balance.time != next_balance.time:
+            new_balances = _append_or_combine(new_balances, balance)
+            new_balances.append(next_balance)
+        else:
+            balance.amount += next_balance.amount
+            balance.usd_value += next_balance.usd_value
+            new_balances = _append_or_combine(new_balances, balance)
+
+    return new_balances

@@ -48,7 +48,7 @@ from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
-from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
@@ -76,6 +76,7 @@ from rotkehlchen.db.utils import (
     LocationData,
     SingleDBAssetBalance,
     Tag,
+    combine_asset_balances,
     deserialize_tags_from_db,
     form_query_to_filter_timestamps,
     insert_tag_mappings,
@@ -221,35 +222,6 @@ def db_tuple_to_str(
         )
 
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
-
-
-def combine_asset_balances(balances: List[SingleDBAssetBalance]) -> List[SingleDBAssetBalance]:
-    new_balances = []
-    skip_next = False
-    if len(balances) == 1:
-        return balances
-
-    for balance, next_balance in zip(balances, balances[1:] + [balances[0]]):
-        if skip_next is True:
-            skip_next = False
-            continue
-
-        if balance.time != next_balance.time:
-            new_balances.append(balance)
-        else:
-            new_amount = str(FVal(balance.amount) + FVal(next_balance.amount))
-            new_usd_value = str(
-                FVal(balance.usd_value) + FVal(next_balance.usd_value),
-            )
-            new_entry = SingleDBAssetBalance(
-                time=balance.time,
-                amount=new_amount,
-                usd_value=new_usd_value,
-                category=balance.category,
-            )
-            new_balances.append(new_entry)
-            skip_next = True
-    return new_balances
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
