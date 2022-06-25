@@ -1152,8 +1152,8 @@ def test_timed_balances_treat_eth2_as_eth(database):
     expected_balances = [
         SingleDBAssetBalance(
             time=1590877829,
-            amount='0.3',
-            usd_value='500',
+            amount=FVal('0.3'),
+            usd_value=FVal('500'),
             category=BalanceType.ASSET,
         ),
     ]
@@ -1164,17 +1164,17 @@ def test_timed_balances_treat_eth2_as_eth(database):
         SingleDBAssetBalance(
             category=BalanceType.ASSET,
             time=1590676728,
-            amount='1.4',
-            usd_value='9000',
+            amount=FVal('1.4'),
+            usd_value=FVal('9000'),
         ), SingleDBAssetBalance(
             time=1590777829,
-            amount='0.5',
-            usd_value='2000',
+            amount=FVal('0.5'),
+            usd_value=FVal('2000'),
             category=BalanceType.ASSET,
         ), SingleDBAssetBalance(
             time=1590877829,
-            amount='0.5',
-            usd_value='2000',
+            amount=FVal('0.5'),
+            usd_value=FVal('2000'),
             category=BalanceType.ASSET,
         ),
     ]

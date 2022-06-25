@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from sqlite3 import Cursor
 from typing import TYPE_CHECKING, Dict, List, Literal, NamedTuple, Optional, Tuple, Union
 
@@ -76,11 +77,12 @@ class DBAssetBalance(NamedTuple):
         }
 
 
-class SingleDBAssetBalance(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class SingleDBAssetBalance():
     category: BalanceType
     time: Timestamp
-    amount: str
-    usd_value: str
+    amount: FVal
+    usd_value: FVal
 
 
 class LocationData(NamedTuple):
