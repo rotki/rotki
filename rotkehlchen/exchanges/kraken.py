@@ -1085,7 +1085,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         else:
             log.warning(
-                f'Got even number of kraken adjustment historic entries. '
+                f'Got odd number of kraken adjustment historic entries. '
                 f'Skipping reading them. {adjustments}',
             )
 

@@ -19,6 +19,8 @@ from rotkehlchen.utils.misc import (
     combine_stat_dicts,
     convert_to_int,
     iso8601ts_to_timestamp,
+    pairwise,
+    pairwise_longest,
     timestamp_to_date,
 )
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
@@ -371,3 +373,13 @@ def test_retrieve_old_token_info(ethereum_manager):
     info = ethereum_manager.get_basic_contract_info('0x2C4Bd064b998838076fa341A83d007FC2FA50957')
     assert info['symbol'] == 'UNI-V1'
     assert info['name'] == 'Uniswap V1'
+
+
+def test_pairwise():
+    a = [1, 2, 3, 4, 5, 6]
+    assert [x + y for x, y in pairwise(a)] == [3, 7, 11]
+    assert [x + y for x, y in pairwise_longest(a)] == [3, 7, 11]
+
+    a = [1, 2, 3, 4, 5]
+    assert [x + y for x, y in pairwise(a)] == [3, 7]
+    assert list(pairwise_longest(a)) == [(1, 2), (3, 4), (5, None)]
