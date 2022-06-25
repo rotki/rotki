@@ -13,6 +13,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import ONE, YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_ETH2, A_USD
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
@@ -542,8 +543,8 @@ def test_query_timed_balances(data_dir, username):
     assert len(result) == 1
     assert result[0].time == 1465171200
     assert result[0].category == BalanceType.ASSET
-    assert result[0].amount == '500'
-    assert result[0].usd_value == '500'
+    assert result[0].amount == FVal('500')
+    assert result[0].usd_value == FVal('500')
 
     all_data = data.db.query_timed_balances(
         from_ts=1451606300,
@@ -551,27 +552,27 @@ def test_query_timed_balances(data_dir, username):
         asset=A_ETH,
     )
     assert len(all_data) == 2
-    result = [x for x in all_data if x.amount != '0']
+    result = [x for x in all_data if x.amount != ZERO]
     assert len(result) == 2
     assert result[0].time == 1451606401
     assert result[0].category == BalanceType.ASSET
-    assert result[0].amount == '2'
-    assert result[0].usd_value == '1.7068'
+    assert result[0].amount == FVal('2')
+    assert result[0].usd_value == FVal('1.7068')
     assert result[1].time == 1465171201
     assert result[1].category == BalanceType.ASSET
-    assert result[1].amount == '10'
-    assert result[1].usd_value == '123'
+    assert result[1].amount == FVal('10')
+    assert result[1].usd_value == FVal('123')
 
     all_data = data.db.query_timed_balances(A_ETH)
     assert len(all_data) == 4
-    result = [x for x in all_data if x.amount != '0']
+    result = [x for x in all_data if x.amount != ZERO]
     assert len(result) == 4
     result = data.db.query_timed_balances(A_ETH, balance_type=BalanceType.LIABILITY)
     assert len(result) == 1
     assert result[0].time == 1485907201
     assert result[0].category == BalanceType.LIABILITY
-    assert result[0].amount == '1'
-    assert result[0].usd_value == '9.98'
+    assert result[0].amount == FVal('1')
+    assert result[0].usd_value == FVal('9.98')
 
 
 def test_query_owned_assets(data_dir, username):

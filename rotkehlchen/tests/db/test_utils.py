@@ -1,6 +1,14 @@
+from typing import Tuple
+
 import pytest
 
-from rotkehlchen.db.utils import form_query_to_filter_timestamps
+from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.db.utils import (
+    SingleDBAssetBalance,
+    combine_asset_balances,
+    form_query_to_filter_timestamps,
+)
+from rotkehlchen.fval import FVal
 
 
 @pytest.mark.parametrize(
@@ -56,3 +64,92 @@ def test_form_query_to_filter_timestamps(
     )
     assert query_out == expected_query_out
     assert bindings == expected_bindings
+
+
+def _tuple_to_balance(data: Tuple) -> SingleDBAssetBalance:
+    """Just a convenience function to not write too much"""
+    return SingleDBAssetBalance(
+        time=data[0],
+        amount=FVal(data[1]),
+        usd_value=FVal(data[2]),
+        category=BalanceType.ASSET,
+    )
+
+
+def test_combine_asset_balances():
+    a = [
+        _tuple_to_balance((1, 1, 1)),
+        _tuple_to_balance((2, 1, 1)),
+        _tuple_to_balance((3, 1, 1)),
+        _tuple_to_balance((4, 1, 1)),
+    ]
+    assert combine_asset_balances(a) == [
+        _tuple_to_balance((1, 1, 1)),
+        _tuple_to_balance((2, 1, 1)),
+        _tuple_to_balance((3, 1, 1)),
+        _tuple_to_balance((4, 1, 1)),
+    ], 'no common time even failed'
+
+    a = [
+        _tuple_to_balance((1, 1, 1)),
+        _tuple_to_balance((2, 1, 1)),
+        _tuple_to_balance((3, 1, 1)),
+        _tuple_to_balance((4, 1, 1)),
+        _tuple_to_balance((5, 1, 1)),
+    ]
+    assert combine_asset_balances(a) == [
+        _tuple_to_balance((1, 1, 1)),
+        _tuple_to_balance((2, 1, 1)),
+        _tuple_to_balance((3, 1, 1)),
+        _tuple_to_balance((4, 1, 1)),
+        _tuple_to_balance((5, 1, 1)),
+    ], 'no common time odd failed'
+
+    a = [
+        _tuple_to_balance((1, 1, 2)),
+        _tuple_to_balance((1, 1, 1)),
+        _tuple_to_balance((2, 2, 1)),
+        _tuple_to_balance((2, 1, 2)),
+    ]
+    assert combine_asset_balances(a) == [
+        _tuple_to_balance((1, 2, 3)),
+        _tuple_to_balance((2, 3, 3)),
+    ], 'common time even failed'
+
+    a = [
+        _tuple_to_balance((1, 1, 2)),
+        _tuple_to_balance((1, 1, 1)),
+        _tuple_to_balance((2, 2, 1)),
+        _tuple_to_balance((2, 1, 2)),
+        _tuple_to_balance((3, 2, 2)),
+    ]
+    assert combine_asset_balances(a) == [
+        _tuple_to_balance((1, 2, 3)),
+        _tuple_to_balance((2, 3, 3)),
+        _tuple_to_balance((3, 2, 2)),
+    ], 'common time odd failed'
+
+    a = [
+        _tuple_to_balance((1, 1, 1)),
+        _tuple_to_balance((2, 1, 1)),
+        _tuple_to_balance((2, 2, 1)),
+        _tuple_to_balance((3, 1, 2)),
+    ]
+    assert combine_asset_balances(a) == [
+        _tuple_to_balance((1, 1, 1)),
+        _tuple_to_balance((2, 3, 2)),
+        _tuple_to_balance((3, 1, 2)),
+    ], 'common time appearing outside of pair with even failed'
+
+    a = [
+        _tuple_to_balance((1, 1, 1)),
+        _tuple_to_balance((1, 1, 1)),
+        _tuple_to_balance((2, 2, 1)),
+        _tuple_to_balance((3, 1, 2)),
+        _tuple_to_balance((3, 1, 2)),
+    ]
+    assert combine_asset_balances(a) == [
+        _tuple_to_balance((1, 2, 2)),
+        _tuple_to_balance((2, 2, 1)),
+        _tuple_to_balance((3, 2, 4)),
+    ], 'common time appearing outside of pair with odd failed'
