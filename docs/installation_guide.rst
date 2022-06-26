@@ -561,7 +561,7 @@ To make sure that rotki works you can try starting using the following::
 
     python -m rotkehlchen
 
-This should great you with the following message: `rotki REST API server is running at: 127.0.0.1:5042.
+This should greet you with the following message: ``rotki REST API server is running at: 127.0.0.1:5042``.
 
 Installing Electron and Running rotki
 -------------------------------------
