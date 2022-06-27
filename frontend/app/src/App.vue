@@ -290,13 +290,16 @@ export default defineComponent({
     };
 
     onBeforeMount(async () => {
-      onError((backendOutput: string, code: BackendCode) => {
+      onError((backendOutput: string | Error, code: BackendCode) => {
+        logger.error(backendOutput, code);
         if (code === BackendCode.TERMINATED) {
-          set(startupErrorMessage, backendOutput);
+          const message =
+            typeof backendOutput === 'string'
+              ? backendOutput
+              : backendOutput.message;
+          set(startupErrorMessage, message);
         } else if (code === BackendCode.MACOS_VERSION) {
           set(isMacOsVersionUnsupported, true);
-        } else {
-          logger.error(backendOutput, code);
         }
       });
       onAbout(() => set(showAbout, true));
