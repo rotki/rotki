@@ -72,6 +72,37 @@ export class ReportsApi {
     return handleResponse(response);
   }
 
+  async importReportData(filepath: string): Promise<PendingTask> {
+    const response = await this.axios.put<ActionResult<PendingTask>>(
+      '/history/debug',
+      axiosSnakeCaseTransformer({
+        filepath,
+        asyncQuery: true
+      }),
+      {
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return handleResponse(response);
+  }
+
+  async uploadReportData(filepath: File): Promise<PendingTask> {
+    const data = new FormData();
+    data.append('filepath', filepath);
+    const response = await this.axios.post<ActionResult<PendingTask>>(
+      '/history/debug?async_query=true',
+      data,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+
+    return handleResponse(response);
+  }
+
   async fetchActionableItems(): Promise<ReportActionableItem> {
     const response = await this.axios.get<ActionResult<ReportActionableItem>>(
       '/history/actionable_items',

@@ -33,8 +33,9 @@
               block
               :disabled="!valid"
               @click="generate()"
-              v-text="$t('generate.generate')"
-            />
+            >
+              {{ $t('generate.generate') }}
+            </v-btn>
           </v-col>
           <v-col cols="auto">
             <v-menu offset-y left>
@@ -46,7 +47,7 @@
                   class="px-8 ml-4"
                   v-on="on"
                 >
-                  Debug
+                  {{ $t('profit_loss_reports.debug.title') }}
                 </v-btn>
               </template>
               <v-list>
@@ -93,7 +94,7 @@ export default defineComponent({
   emits: ['generate'],
   setup(_, { emit }) {
     const range = ref({ start: '', end: '' });
-    const valid = ref(false);
+    const valid = ref<boolean>(false);
 
     const startTimestamp = computed<number>(() => {
       return convertToTimestamp(get(range).start);
@@ -117,7 +118,9 @@ export default defineComponent({
       });
     };
 
-    const importReportData = () => {};
+    const importReportData = () => {
+      emit('import-data');
+    };
 
     return {
       range,

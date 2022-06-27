@@ -4,6 +4,7 @@
       v-show="!isRunning && !reportError.message"
       @generate="generate($event)"
       @export-data="exportData($event)"
+      @import-data="importDataDialog = true"
     />
     <error-screen
       v-if="!isRunning && reportError.message"
@@ -29,16 +30,52 @@
       </template>
       {{ $t('profit_loss_report.loading_hint') }}
     </progress-screen>
+    <v-dialog v-model="importDataDialog" max-width="600">
+      <card>
+        <template #title>
+          {{ $t('profit_loss_reports.debug.import_data_dialog.title') }}
+        </template>
+        <div>
+          <div class="py-2">
+            <file-upload
+              ref="reportDebugDataUploader"
+              source="json"
+              file-filter=".json"
+              @selected="reportDebugData = $event"
+            />
+          </div>
+          <div class="mt-2 d-flex justify-end">
+            <v-btn class="mr-4" @click="importDataDialog = false">
+              {{ $t('profit_loss_reports.debug.import_data_dialog.cancel') }}
+            </v-btn>
+            <v-btn
+              color="primary"
+              :disabled="!reportDebugData"
+              :loading="importDataLoading"
+              @click="importData"
+            >
+              {{ $t('profit_loss_reports.debug.import_data_dialog.import') }}
+            </v-btn>
+          </div>
+        </div>
+      </card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script lang="ts">
 import { Message } from '@rotki/common/lib/messages';
-import { computed, defineComponent, onMounted } from '@vue/composition-api';
-import { get } from '@vueuse/core';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  ref
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import FileUpload from '@/components/import/FileUpload.vue';
 import Generate from '@/components/profitloss/Generate.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
 import { useRoute, useRouter } from '@/composables/common';
@@ -50,16 +87,19 @@ import { api } from '@/services/rotkehlchen-api';
 import { useReports } from '@/store/reports';
 import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
+import { showError, showMessage } from '@/store/utils';
 import {
   ProfitLossReportDebugPayload,
   ProfitLossReportPeriod
 } from '@/types/reports';
+import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { downloadFileByUrl } from '@/utils/download';
 
 export default defineComponent({
   name: 'ProfitLossReports',
   components: {
+    FileUpload,
     ErrorScreen,
     ReportsTable,
     ProgressScreen,
@@ -71,6 +111,10 @@ export default defineComponent({
     const { reportError } = storeToRefs(reportsStore);
     const { generateReport, clearError, exportReportData } = reportsStore;
     const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
+    const importDataDialog = ref<boolean>(false);
+    const reportDebugData = ref<File | null>(null);
+    const importDataLoading = ref<boolean>(false);
+    const reportDebugDataUploader = ref<any>(null);
 
     const router = useRouter();
     const route = useRoute();
@@ -126,7 +170,7 @@ export default defineComponent({
       let message: Message | null = null;
 
       try {
-        const isLocal = interop.isPackaged && api.defaultBackend;
+        const isLocal = interop.appSession;
         if (isLocal) {
           const filepath =
             (await interop.openDirectory(
@@ -140,10 +184,16 @@ export default defineComponent({
 
         if (isLocal) {
           message = {
-            title: i18n.t('profit_loss_reports.debug.message.title').toString(),
+            title: i18n
+              .t('profit_loss_reports.debug.export_message.title')
+              .toString(),
             description: result
-              ? i18n.t('profit_loss_reports.debug.message.success').toString()
-              : i18n.t('profit_loss_reports.debug.message.failure').toString(),
+              ? i18n
+                  .t('profit_loss_reports.debug.export_message.success')
+                  .toString()
+              : i18n
+                  .t('profit_loss_reports.debug.export_message.failure')
+                  .toString(),
             success: !!result
           };
         } else {
@@ -155,7 +205,9 @@ export default defineComponent({
         }
       } catch (e: any) {
         message = {
-          title: i18n.t('profit_loss_reports.debug.message.title').toString(),
+          title: i18n
+            .t('profit_loss_reports.debug.export_message.title')
+            .toString(),
           description: e.message,
           success: false
         };
@@ -166,7 +218,67 @@ export default defineComponent({
       }
     };
 
+    const importData = async () => {
+      if (!get(reportDebugData)) return;
+      set(importDataLoading, true);
+
+      let success = false;
+      let message = '';
+
+      const { awaitTask } = useTasks();
+      const taskType = TaskType.IMPORT_PNL_REPORT_DATA;
+
+      try {
+        const { taskId } = interop.appSession
+          ? await api.reports.importReportData(get(reportDebugData)!.path)
+          : await api.reports.uploadReportData(get(reportDebugData)!);
+
+        const { result } = await awaitTask<boolean, TaskMeta>(
+          taskId,
+          taskType,
+          {
+            title: i18n
+              .t('profit_loss_reports.debug.import_message.title')
+              .toString(),
+            numericKeys: []
+          }
+        );
+        success = result;
+      } catch (e: any) {
+        message = e.message;
+        success = false;
+      }
+
+      if (!success) {
+        showError(
+          i18n
+            .t('profit_loss_reports.debug.import_message.failure', {
+              message
+            })
+            .toString(),
+          i18n.t('profit_loss_reports.debug.import_message.title').toString()
+        );
+      } else {
+        showMessage(
+          i18n
+            .t('profit_loss_reports.debug.import_message.success', {
+              message
+            })
+            .toString(),
+          i18n.t('profit_loss_reports.debug.import_message.title').toString()
+        );
+      }
+
+      set(importDataLoading, false);
+      get(reportDebugDataUploader)?.removeFile();
+      set(reportDebugData, null);
+    };
+
     return {
+      importDataDialog,
+      importDataLoading,
+      importData,
+      reportDebugData,
       processingState: computed(() => reportsStore.processingState),
       progress: computed(() => reportsStore.progress),
       loaded: computed(() => reportsStore.loaded),

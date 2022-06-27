@@ -4618,7 +4618,7 @@ Import PnL report debug data
       Content-Type: application/json;charset=UTF-8
 
        {
-            "file": "/home/user/Documents/pnl_debug.json",
+            "filepath": "/home/user/Documents/pnl_debug.json",
             "async_query": true
         }
 

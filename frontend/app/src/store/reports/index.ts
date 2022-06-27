@@ -24,7 +24,6 @@ import {
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { AccountingSettings } from '@/types/user';
-import { downloadFileByUrl } from '@/utils/download';
 import { logger } from '@/utils/logging';
 
 const notify = (info: {
