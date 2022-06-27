@@ -72,7 +72,7 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import RotkehlchenLogsAdapter, configure_logging
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
@@ -119,7 +119,6 @@ class Rotkehlchen():
         # authenticate or premium server temporarily offline
         self.premium: Optional[Premium] = None
         self.user_is_logged_in: bool = False
-        configure_logging(args)
 
         self.sleep_secs = args.sleep_secs
         if args.data_dir is None:

@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
@@ -412,13 +413,15 @@ class APIServer():
             environ={'rotki_notifier': self.rotki_notifier},
             error_log=wsgi_logger,
         )
-        if __debug__:
-            msg = 'rotki is running in __debug__ mode'
+
+        if 'pytest' not in sys.modules:  # do not check
+            if __debug__:
+                msg = 'rotki is running in __debug__ mode'
+                print(msg)
+                log.info(msg)
+            msg = f'rotki REST API server is running at: {host}:{rest_port} with loglevel {logging.getLevelName(logging.root.level)}'  # noqa: E501
             print(msg)
             log.info(msg)
-        msg = f'rotki REST API server is running at: {host}:{rest_port}'
-        print(msg)
-        log.info(msg)
         self.wsgiserver.start()
 
     def stop(self, timeout: int = 5) -> None:

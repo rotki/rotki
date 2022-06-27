@@ -1,4 +1,5 @@
 import astroid
+
 from tools.pylint import LogNokwargsChecker
 from tools.pylint.log_checker import LOGNOKWARGS_SYMBOL
 
