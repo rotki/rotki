@@ -54,15 +54,19 @@
                   <v-list-item-title>
                     <div class="d-flex align-center">
                       <v-icon class="mr-2">mdi-export</v-icon>
-                      <span>Export data</span>
+                      <span>
+                        {{ $t('profit_loss_reports.debug.export_data') }}
+                      </span>
                     </div>
                   </v-list-item-title>
                 </v-list-item>
-                <v-list-item link>
+                <v-list-item link @click="importReportData">
                   <v-list-item-title>
                     <div class="d-flex align-center">
                       <v-icon class="mr-2">mdi-import</v-icon>
-                      <span>Import data</span>
+                      <span>
+                        {{ $t('profit_loss_reports.debug.import_data') }}
+                      </span>
                     </div>
                   </v-list-item-title>
                 </v-list-item>
@@ -113,11 +117,14 @@ export default defineComponent({
       });
     };
 
+    const importReportData = () => {};
+
     return {
       range,
       valid,
       generate,
-      exportReportData
+      exportReportData,
+      importReportData
     };
   }
 });

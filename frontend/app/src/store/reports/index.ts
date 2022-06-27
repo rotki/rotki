@@ -14,6 +14,7 @@ import { useTasks } from '@/store/tasks';
 import {
   ProfitLossEvents,
   ProfitLossEventTypeEnum,
+  ProfitLossReportDebugPayload,
   ProfitLossReportPeriod,
   ReportActionableItem,
   ReportError,
@@ -255,8 +256,8 @@ export const useReports = defineStore('reports', () => {
   };
 
   const exportReportData = async (
-    period: ProfitLossReportPeriod
-  ): Promise<void> => {
+    payload: ProfitLossReportDebugPayload
+  ): Promise<Object> => {
     set(reportProgress, {
       processingState: '',
       totalProgress: '0'
@@ -269,25 +270,25 @@ export const useReports = defineStore('reports', () => {
 
     const { awaitTask } = useTasks();
     try {
-      const { taskId } = await api.reports.exportReportData(period);
+      const { taskId } = await api.reports.exportReportData(payload);
       const { result } = await awaitTask<number, TaskMeta>(
         taskId,
         TaskType.TRADE_HISTORY,
         {
           title: i18n.t('actions.reports.generate.task.title').toString(),
-          numericKeys: []
+          numericKeys: [],
+          transform: false
         }
       );
 
-      downloadFileByUrl(
-        'data:text/json;charset=utf-8,' + JSON.stringify(result),
-        'report.json'
-      );
+      return result;
     } catch (e: any) {
       set(reportError, {
         error: e.message,
         message: i18n.t('actions.reports.generate.error.description').toString()
       });
+
+      return {};
     } finally {
       clearInterval(interval);
 

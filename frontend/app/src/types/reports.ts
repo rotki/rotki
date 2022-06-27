@@ -127,6 +127,12 @@ export interface ProfitLossReportPeriod {
   readonly end: number;
 }
 
+export interface ProfitLossReportDebugPayload {
+  fromTimestamp: number;
+  toTimestamp: number;
+  filepath?: string;
+}
+
 export const MissingAcquisition = z.object({
   asset: z.string(),
   foundAmount: NumericString,

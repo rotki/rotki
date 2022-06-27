@@ -1598,6 +1598,7 @@ class RestAPI():
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            filepath: Optional[Path],
     ) -> Dict[str, Any]:
         """This method exports all history events for a timestamp range.
         It also exports the user settings & ignored action identifiers for PnL debugging.
@@ -1618,12 +1619,17 @@ class RestAPI():
             'settings': settings.serialize(),
             'ignored_events_ids': {k.serialize(): v for k, v in ignored_ids.items()},
         }
+        if filepath is not None:
+            with open(f'{filepath}/pnl_debug.json', mode='w') as f:
+                json.dump(debug_info, f, indent=2)
+            return OK_RESULT
         return _wrap_in_ok_result(debug_info)
 
     def get_history_debug(
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            filepath: Optional[Path],
             async_query: bool,
     ) -> Response:
         if async_query is True:
@@ -1631,11 +1637,13 @@ class RestAPI():
                 command=self._get_history_debug,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
+                filepath=filepath,
             )
 
         response = self._get_history_debug(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+            filepath=filepath,
         )
         status_code = _get_status_code_from_async_response(response)
         result_dict = _wrap_in_result(result=response['result'], message=response['message'])

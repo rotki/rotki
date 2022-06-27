@@ -1074,6 +1074,7 @@ class StatisticsValueDistributionSchema(Schema):
 
 
 class HistoryProcessingSchema(AsyncQueryArgumentSchema):
+    filepath = DirectoryField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
 

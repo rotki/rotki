@@ -1145,11 +1145,13 @@ class HistoryProcessingDebugResource(BaseMethodView):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            filepath: Optional[Path],
             async_query: bool,
     ) -> Response:
         return self.rest_api.get_history_debug(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+            filepath=filepath,
             async_query=async_query,
         )
 

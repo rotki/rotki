@@ -1503,7 +1503,17 @@
     "error": {
       "close": "Close"
     },
-    "title": "Saved Historical Reports"
+    "title": "Saved Historical Reports",
+    "debug": {
+      "select_directory": "Select a directory",
+      "import_data": "Export data",
+      "export_data": "Import data",
+      "message": {
+        "title": "Export PnL report debug data",
+        "failure": "Export PnL report debug data failed",
+        "success": "PnL report debug data exported successfully"
+      }
+    }
   },
   "timeframe_settings": {
     "default_timeframe": "Dashboard graph default timeframe",

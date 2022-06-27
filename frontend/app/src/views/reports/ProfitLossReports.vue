@@ -33,6 +33,7 @@
 </template>
 
 <script lang="ts">
+import { Message } from '@rotki/common/lib/messages';
 import { computed, defineComponent, onMounted } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
@@ -42,11 +43,19 @@ import Generate from '@/components/profitloss/Generate.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
 import { useRoute, useRouter } from '@/composables/common';
 import { setupSession } from '@/composables/session';
+import { interop } from '@/electron-interop';
+import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
+import { api } from '@/services/rotkehlchen-api';
 import { useReports } from '@/store/reports';
+import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
-import { ProfitLossReportPeriod } from '@/types/reports';
+import {
+  ProfitLossReportDebugPayload,
+  ProfitLossReportPeriod
+} from '@/types/reports';
 import { TaskType } from '@/types/task-type';
+import { downloadFileByUrl } from '@/utils/download';
 
 export default defineComponent({
   name: 'ProfitLossReports',
@@ -106,8 +115,55 @@ export default defineComponent({
       }
     };
 
-    const exportData = async (period: ProfitLossReportPeriod) => {
-      await exportReportData(period);
+    const { setMessage } = useMainStore();
+
+    const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
+      let payload: ProfitLossReportDebugPayload = {
+        fromTimestamp: start,
+        toTimestamp: end
+      };
+
+      let message: Message | null = null;
+
+      try {
+        const isLocal = interop.isPackaged && api.defaultBackend;
+        if (isLocal) {
+          const filepath =
+            (await interop.openDirectory(
+              i18n.t('profit_loss_reports.debug.select_directory').toString()
+            )) || '';
+          if (!filepath) return;
+          payload['filepath'] = filepath;
+        }
+
+        const result = await exportReportData(payload);
+
+        if (isLocal) {
+          message = {
+            title: i18n.t('profit_loss_reports.debug.message.title').toString(),
+            description: result
+              ? i18n.t('profit_loss_reports.debug.message.success').toString()
+              : i18n.t('profit_loss_reports.debug.message.failure').toString(),
+            success: !!result
+          };
+        } else {
+          const file = new Blob([JSON.stringify(result, null, 2)], {
+            type: 'text/json'
+          });
+          const link = window.URL.createObjectURL(file);
+          downloadFileByUrl(link, 'pnl_debug.json');
+        }
+      } catch (e: any) {
+        message = {
+          title: i18n.t('profit_loss_reports.debug.message.title').toString(),
+          description: e.message,
+          success: false
+        };
+      }
+
+      if (message) {
+        setMessage(message);
+      }
     };
 
     return {

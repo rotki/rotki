@@ -13,6 +13,7 @@ import { PendingTask } from '@/services/types-api';
 import { handleResponse, validStatus } from '@/services/utils';
 import {
   ProfitLossOverview,
+  ProfitLossReportDebugPayload,
   ProfitLossReportEvents,
   ProfitLossReportOverview,
   ProfitLossReportPeriod,
@@ -54,16 +55,14 @@ export class ReportsApi {
     return handleResponse(response);
   }
 
-  async exportReportData({
-    end,
-    start
-  }: ProfitLossReportPeriod): Promise<PendingTask> {
+  async exportReportData(
+    payload: ProfitLossReportDebugPayload
+  ): Promise<PendingTask> {
     const response = await this.axios.post<ActionResult<PendingTask>>(
       '/history/debug',
       axiosSnakeCaseTransformer({
         asyncQuery: true,
-        fromTimestamp: start,
-        toTimestamp: end
+        ...payload
       }),
       {
         validateStatus: validStatus,

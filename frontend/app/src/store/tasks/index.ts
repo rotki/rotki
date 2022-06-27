@@ -185,7 +185,11 @@ export const useTasks = defineStore('tasks', () => {
     lock(task.id);
 
     try {
-      const result = await api.queryTaskResult(task.id, task.meta.numericKeys);
+      const result = await api.queryTaskResult(
+        task.id,
+        task.meta.numericKeys,
+        task.meta.transform
+      );
       assert(result !== null);
       handleResult(result, task);
     } catch (e: any) {
