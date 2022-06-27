@@ -382,8 +382,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.defi_balances_last_query_ts = Timestamp(0)
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
 
-        self.eth2_details: List['ValidatorDetails'] = []
-
         self.defi_lock = Semaphore()
         self.btc_lock = Semaphore()
         self.bch_lock = Semaphore()

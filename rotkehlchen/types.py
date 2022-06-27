@@ -206,10 +206,6 @@ T_TradeID = str
 TradeID = NewType('TradeID', T_TradeID)
 
 
-T_EventType = str
-EventType = NewType('EventType', T_EventType)
-
-
 class EthereumTransaction(NamedTuple):
     """Represent an Ethereum transaction"""
     tx_hash: EVMTxHash
