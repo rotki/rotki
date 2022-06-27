@@ -167,10 +167,10 @@ export default class PyHandler {
 
     if (os.platform() === 'darwin') {
       const release = os.release().split('.');
-      if (release.length > 0 && parseInt(release[0]) < 18) {
+      if (release.length > 0 && parseInt(release[0]) < 17) {
         this.setFailureNotification(
           window,
-          'rotki requires at least macOS Mojave',
+          'rotki requires at least macOS High Sierra',
           BackendCode.MACOS_VERSION
         );
         return;
