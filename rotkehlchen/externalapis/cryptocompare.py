@@ -3,7 +3,7 @@ import os
 from collections import deque
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Deque, Dict, List, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Deque, Dict, List, Literal, Optional
 
 import gevent
 import requests
@@ -158,11 +158,6 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 CRYPTOCOMPARE_HOURQUERYLIMIT = 2000
-
-
-class HistoHourAssetData(NamedTuple):
-    timestamp: Timestamp
-    usd_price: Price
 
 
 def _multiply_str_nums(a: str, b: str) -> str:
