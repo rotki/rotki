@@ -24,10 +24,13 @@ def test_backend():
         try:
             while True:
                 output = proc.stdout.readline().decode('utf-8')
+                if 'rotki is running in __debug__ mode' in output:
+                    continue
+
                 if 'rotki REST API server is running at' in output:
                     break
 
-            url = f'http://{output.split()[-1]}/api/1/info'
+            url = f'http://{output.split()[-4]}/api/1/info'
             response = requests.get(url)
             assert response.status_code == HTTPStatus.OK
             assert 'data_directory' in response.json()['result']

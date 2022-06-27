@@ -1,12 +1,10 @@
 import base64
-from collections import namedtuple
 from contextlib import ExitStack
 from unittest.mock import patch
 
 import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
-from rotkehlchen.args import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION, DataMigrationManager
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
@@ -15,6 +13,7 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import create_api_server
+from rotkehlchen.tests.utils.args import default_args
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     add_blockchain_accounts_to_db,
@@ -76,25 +75,7 @@ def fixture_data_migration_version() -> int:
 
 @pytest.fixture(name='cli_args')
 def fixture_cli_args(data_dir, ethrpc_endpoint):
-    args = namedtuple('args', [
-        'sleep_secs',
-        'data_dir',
-        'ethrpc_endpoint',
-        'logfile',
-        'logtarget',
-        'loglevel',
-        'logfromothermodules',
-        'max_size_in_mb_all_logs',
-        'max_logfiles_num',
-    ])
-    args.loglevel = 'debug'
-    args.logfromothermodules = False
-    args.sleep_secs = 60
-    args.data_dir = data_dir
-    args.ethrpc_endpoint = ethrpc_endpoint
-    args.max_size_in_mb_all_logs = DEFAULT_MAX_LOG_SIZE_IN_MB
-    args.max_logfiles_num = DEFAULT_MAX_LOG_BACKUP_FILES
-    return args
+    return default_args(data_dir, ethrpc_endpoint)
 
 
 @pytest.fixture(name='perform_migrations_at_unlock')
