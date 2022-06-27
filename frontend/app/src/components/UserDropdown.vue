@@ -64,13 +64,15 @@
 
 <script lang="ts">
 import { defineComponent, ref } from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+import { get, set, useLocalStorage } from '@vueuse/core';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
 import { useRoute, useRouter } from '@/composables/common';
 import { setupSession } from '@/composables/session';
 import { interop } from '@/electron-interop';
+
+const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 
 export default defineComponent({
   name: 'UserDropdown',
@@ -84,8 +86,10 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
 
+    const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
+
     const logoutHandler = async () => {
-      if (interop.isPackaged) {
+      if (interop.isPackaged && get(savedRememberPassword)) {
         await interop.clearPassword();
       }
 
