@@ -3,6 +3,7 @@
     <generate
       v-show="!isRunning && !reportError.message"
       @generate="generate($event)"
+      @export-data="exportData($event)"
     />
     <error-screen
       v-if="!isRunning && reportError.message"
@@ -59,7 +60,7 @@ export default defineComponent({
     const { isTaskRunning } = useTasks();
     const reportsStore = useReports();
     const { reportError } = storeToRefs(reportsStore);
-    const { generateReport, clearError } = reportsStore;
+    const { generateReport, clearError, exportReportData } = reportsStore;
     const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
 
     const router = useRouter();
@@ -105,6 +106,10 @@ export default defineComponent({
       }
     };
 
+    const exportData = async (period: ProfitLossReportPeriod) => {
+      await exportReportData(period);
+    };
+
     return {
       processingState: computed(() => reportsStore.processingState),
       progress: computed(() => reportsStore.progress),
@@ -112,7 +117,8 @@ export default defineComponent({
       isRunning,
       reportError,
       clearError,
-      generate
+      generate,
+      exportData
     };
   }
 });

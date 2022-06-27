@@ -23,21 +23,61 @@
       </template>
       <range-selector v-model="range" />
       <template #buttons>
-        <v-btn
-          color="primary"
-          block
-          depressed
-          :disabled="!valid"
-          @click="generate()"
-          v-text="$t('generate.generate')"
-        />
+        <v-row no-gutters>
+          <v-col>
+            <v-btn
+              color="primary"
+              class="px-8"
+              large
+              depressed
+              block
+              :disabled="!valid"
+              @click="generate()"
+              v-text="$t('generate.generate')"
+            />
+          </v-col>
+          <v-col cols="auto">
+            <v-menu offset-y left>
+              <template #activator="{ on }">
+                <v-btn
+                  color="warning"
+                  depressed
+                  large
+                  class="px-8 ml-4"
+                  v-on="on"
+                >
+                  Debug
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item link @click="exportReportData">
+                  <v-list-item-title>
+                    <div class="d-flex align-center">
+                      <v-icon class="mr-2">mdi-export</v-icon>
+                      <span>Export data</span>
+                    </div>
+                  </v-list-item-title>
+                </v-list-item>
+                <v-list-item link>
+                  <v-list-item-title>
+                    <div class="d-flex align-center">
+                      <v-icon class="mr-2">mdi-import</v-icon>
+                      <span>Import data</span>
+                    </div>
+                  </v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </v-col>
+        </v-row>
       </template>
     </card>
   </v-form>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+import { computed, defineComponent, ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import { convertToTimestamp } from '@/utils/date';
 
@@ -51,18 +91,33 @@ export default defineComponent({
     const range = ref({ start: '', end: '' });
     const valid = ref(false);
 
+    const startTimestamp = computed<number>(() => {
+      return convertToTimestamp(get(range).start);
+    });
+
+    const endTimestamp = computed<number>(() => {
+      return convertToTimestamp(get(range).end);
+    });
+
     const generate = () => {
-      const start = convertToTimestamp(range.value.start);
-      const end = convertToTimestamp(range.value.end);
       emit('generate', {
-        start,
-        end
+        start: get(startTimestamp),
+        end: get(endTimestamp)
       });
     };
+
+    const exportReportData = () => {
+      emit('export-data', {
+        start: get(startTimestamp),
+        end: get(endTimestamp)
+      });
+    };
+
     return {
       range,
       valid,
-      generate
+      generate,
+      exportReportData
     };
   }
 });

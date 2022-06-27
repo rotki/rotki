@@ -23,6 +23,7 @@ import {
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { AccountingSettings } from '@/types/user';
+import { downloadFileByUrl } from '@/utils/download';
 import { logger } from '@/utils/logging';
 
 const notify = (info: {
@@ -253,6 +254,50 @@ export const useReports = defineStore('reports', () => {
     }
   };
 
+  const exportReportData = async (
+    period: ProfitLossReportPeriod
+  ): Promise<void> => {
+    set(reportProgress, {
+      processingState: '',
+      totalProgress: '0'
+    });
+    set(reportError, emptyError());
+
+    const interval = setInterval(async () => {
+      set(reportProgress, await api.history.getProgress());
+    }, 2000);
+
+    const { awaitTask } = useTasks();
+    try {
+      const { taskId } = await api.reports.exportReportData(period);
+      const { result } = await awaitTask<number, TaskMeta>(
+        taskId,
+        TaskType.TRADE_HISTORY,
+        {
+          title: i18n.t('actions.reports.generate.task.title').toString(),
+          numericKeys: []
+        }
+      );
+
+      downloadFileByUrl(
+        'data:text/json;charset=utf-8,' + JSON.stringify(result),
+        'report.json'
+      );
+    } catch (e: any) {
+      set(reportError, {
+        error: e.message,
+        message: i18n.t('actions.reports.generate.error.description').toString()
+      });
+    } finally {
+      clearInterval(interval);
+
+      set(reportProgress, {
+        processingState: '',
+        totalProgress: '0'
+      });
+    }
+  };
+
   const progress = computed(() => get(reportProgress).totalProgress);
   const processingState = computed(() => get(reportProgress).processingState);
 
@@ -287,6 +332,7 @@ export const useReports = defineStore('reports', () => {
     processingState,
     reportError,
     actionableItems,
+    exportReportData,
     createCsv,
     generateReport,
     deleteReport,

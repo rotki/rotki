@@ -54,6 +54,25 @@ export class ReportsApi {
     return handleResponse(response);
   }
 
+  async exportReportData({
+    end,
+    start
+  }: ProfitLossReportPeriod): Promise<PendingTask> {
+    const response = await this.axios.post<ActionResult<PendingTask>>(
+      '/history/debug',
+      axiosSnakeCaseTransformer({
+        asyncQuery: true,
+        fromTimestamp: start,
+        toTimestamp: end
+      }),
+      {
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return handleResponse(response);
+  }
+
   async fetchActionableItems(): Promise<ReportActionableItem> {
     const response = await this.axios.get<ActionResult<ReportActionableItem>>(
       '/history/actionable_items',
