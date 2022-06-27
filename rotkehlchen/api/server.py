@@ -412,6 +412,10 @@ class APIServer():
             environ={'rotki_notifier': self.rotki_notifier},
             error_log=wsgi_logger,
         )
+        if __debug__:
+            msg = 'rotki is running in __debug__ mode'
+            print(msg)
+            log.info(msg)
         msg = f'rotki REST API server is running at: {host}:{rest_port}'
         print(msg)
         log.info(msg)

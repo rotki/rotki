@@ -35,3 +35,4 @@ typing-extensions==4.2.0  # used for typing.ParamSpec and typing.Concatenate (in
 
 #constraints
 setuptools==49.6.0  # constraint required by pyinstaller==4.8
+pycparser<=2.17  # ugly -- to avoid https://github.com/eliben/pycparser/pull/198

@@ -150,7 +150,7 @@ if ($Env:CI) {
     echo "::group::PyInstaller"
 }
 
-pyinstaller --noconfirm --clean --exclude-module debugimporter --distpath rotkehlchen_py_dist rotkehlchen.spec
+$env:PYTHONOPTIMIZE=2;pyinstaller --noconfirm --clean --exclude-module debugimporter --distpath rotkehlchen_py_dist rotkehlchen.spec; Remove-Item Env:\PYTHONOPTIMIZE
 ExitOnFailure("PyInstaller execution was not sucessful")
 
 $BACKEND_BINARY = @(Get-ChildItem -Path $PWD\rotkehlchen_py_dist -Filter *.exe -Recurse -File -Name)[0]

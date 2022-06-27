@@ -94,7 +94,7 @@ if [[ -n "${CI-}" ]]; then
 fi
 # Use pyinstaller to package the python app
 rm -rf build "${BACKEND_DIST_DIR}"
-pyinstaller --noconfirm --clean --exclude-module debugimporter --distpath "${BACKEND_DIST_DIR}" rotkehlchen.spec
+PYTHONOPTIMIZE=2 pyinstaller --noconfirm --clean --exclude-module debugimporter --distpath "${BACKEND_DIST_DIR}" rotkehlchen.spec
 
 if [[ -n "${CI-}" ]]; then
     echo "::endgroup::"
