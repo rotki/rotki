@@ -156,6 +156,16 @@ class Environment:
         return self.arch in ['x86_64', 'AMD64']
 
     def backend_suffix(self) -> str:
+        """
+        Provides the os specific backend binary suffix.
+
+        In Linux and macOS the executables/binaries have no extension but in windows
+        they have the .exe extension. Since the suffix is used to match filenames
+        for windows the suffix also contains the extension to remove the need to
+        check again for windows and attach the extension in the method consumers.
+
+        :returns: The backends os specific filename suffix.
+        """
         if self.is_mac():
             return 'macos'
         if self.is_linux():
@@ -252,6 +262,9 @@ class WindowsPackaging:
 
     @log_group('miniupnpc windows')
     def setup_miniupnpc(self) -> None:
+        """
+        Downloads miniupnpc and extracts the dll in the virtual environment.
+        """
         miniupnc = 'miniupnpc_64bit_py39-2.2.24.zip'
         python_dir = Path(
             subprocess.check_output(
@@ -320,6 +333,15 @@ class MacPackaging:
 
     @staticmethod
     def macos_link_archs(source: Path, destination: Path) -> None:
+        """
+        Uses lipo to create a dual architecture library for macOS by merging a x86_64
+        and an arm64 library.
+        The order can be any but keep in mind that destination will become the dual
+        architecture one.
+
+        :param source: One of the two libraries that will be merged with lipo.
+        :param destination: The library that will become the dual architecture one.
+        """
         logger.info(f'creating fat binary {source} <-> {destination}')
         ret_code = subprocess.call(
             f'lipo -create -output {destination} {source} {destination}',
@@ -338,6 +360,12 @@ class MacPackaging:
 
     @staticmethod
     def modify_wheel_metadata(wheel_metadata: Path) -> None:
+        """
+        Modifies the tag in the wheel metadata file from x86_64 to universal2 so
+        that the repackaged wheel has the proper tag.
+
+        :param wheel_metadata: Path to the wheel metadata file
+        """
         with open(wheel_metadata, 'r') as file:
             data = file.readlines()
             for (index, line) in enumerate(data):
@@ -349,6 +377,10 @@ class MacPackaging:
             file.writelines(data)
 
     def __download_patched_pip(self) -> Path:
+        """
+        Downloads the patched pip version needed to create a universal2 virtual environment.
+        :return:
+        """
         pip_wheel = 'pip-22.1.2-py3-none-any.whl'
         response = requests.get(f'https://github.com/rotki/rotki-build/raw/main/{pip_wheel}')
         if response.status_code == 200:
@@ -363,6 +395,13 @@ class MacPackaging:
         raise Exception(f'{pip_wheel} download failed')
 
     def __get_versions(self, packages: list[str]) -> dict[str, str]:
+        """
+        Gets the versions of specified packages from requirements.txt
+
+        :param packages: A list of package names for which we need versions from
+        the requirements.txt
+        :returns: A Dict where the key is the package and the value is the package version
+        """
         requirements = self.__storage.working_directory / 'requirements.txt'
         package_versions: dict[str, str] = {}
         with open(requirements) as fp:
@@ -388,6 +427,15 @@ class MacPackaging:
 
     @log_group('coincurve universal2 wheel')
     def __coincurve_universal_repackage(self) -> None:
+        """
+        Creates universal2 wheels for coincurve and cffi.
+
+        coincurve and cffi only provide architecture specific wheels (x86_64, arm64)
+        for macOS. To create a universal2 wheel we download the architecture
+        specific wheels, unpack them, then merge any native extension (*.so) using lipo.
+        Next we modify the tag so that re-packed wheel is properly tagged as universal
+        and we finally pack the wheel again.
+        """
         storage = self.__storage
         logger.info('Preparing to merge coincurve wheels')
         package_name = 'coincurve'
@@ -427,6 +475,19 @@ class MacPackaging:
 
     @log_group('miniupnpc universal2 wheel')
     def __build_miniupnpc_universal(self) -> None:
+        """
+        Builds a universal2 wheel for miniupnpc.
+
+        Miniupnpc builds the native library libminiupnpc.a and then statically links
+        the native extension against that.
+
+        Unfortunately it is not possible to pass dual architecture flags to the compiler
+        and build a universal wheel in one step. Instead, we download the package source
+        and build the static library once for each architecture.
+
+        Then we use lipo to merge the two static libraries to one dual arch library
+        which is then used when we create the universal2 wheel.
+        """
         logger.info('Preparing to create universal2 wheels for miniupnpc')
 
         self.__storage.prepare_temp()
@@ -518,10 +579,22 @@ class MacPackaging:
             shutil.rmtree(miniupnpc_directory)
 
     def prepare_wheels(self) -> None:
+        """
+        Prepares the wheels with native extensions that require
+        special treatment.
+        """
         self.__build_miniupnpc_universal()
         self.__coincurve_universal_repackage()
 
     def install_wheels(self, install: Callable[[str], None]) -> None:
+        """
+        Installs the wheels that are patched or modified.
+
+        Note that the order of installation is important for cffi/coincurve.
+        If cffi is not installed first then a version will be pulled from PyPI instead.
+
+        :param install: The install callable that is passed externally
+        """
         if self.__environment.target_arch == 'universal2':
             patched_pip = self.__download_patched_pip()
             install(f'{patched_pip} --force-reinstall')
@@ -532,6 +605,10 @@ class MacPackaging:
 
     @log_group('certificates')
     def import_signing_certificates(self) -> bool:
+        """
+        Imports the signing certificates from the environment variables
+        and prepares the keychain for signing
+        """
         certificate = os.environ.get('CERTIFICATE_OSX_APPLICATION')
         csc_password = os.environ.get('CSC_KEY_PASSWORD')
 
@@ -587,6 +664,10 @@ class MacPackaging:
 
     @log_group('backend sign')
     def sign(self) -> None:
+        """
+        Signs all the contents of the directory created by PyInstaller
+        with the provided signing key/identity.
+        """
         if not self.import_signing_certificates():
             return
 
@@ -616,6 +697,10 @@ class MacPackaging:
 
     @log_group('zip')
     def zip(self) -> None:
+        """
+        Creates a zip from the directory that contains the backend, checksums it
+        and moves them to the dist/ directory.
+        """
         backend_directory = self.__storage.backend_directory
         os.chdir(backend_directory)
         zip_filename = f'{BACKEND_PREFIX}-{self.__environment.rotki_version}-macos.zip'
@@ -666,12 +751,26 @@ class BackendBuilder:
     @staticmethod
     @log_group('pip install')
     def pip_install(what: str) -> None:
+        """
+        Calls pip install using subprocess.
+
+        :param what: anything that goes after pip install
+        """
         ret_code = subprocess.call(f'pip install {what}', shell=True)
         if ret_code != 0:
             logger.error(f'could not run "pip install {what}"')
             exit(1)
 
     def __build_pyinstaller_bootloader(self, tag_version: str) -> None:
+        """
+        Clones PyInstaller from source, checks out a specific version
+        and builds the bootloader.
+
+        This is required for architectures other than x86_64 that do not
+        have prebuilt bootloaders.
+
+        :param tag_version: The version of PyInstaller to check out
+        """
         build_directory = self.__storage.build_directory
         build_directory.mkdir(exist_ok=True)
         os.chdir(build_directory)
@@ -716,11 +815,20 @@ class BackendBuilder:
             shell=True,
         )
 
+        # Due to https://github.com/rotki/pysqlcipher3/issues/1 verification might
+        # fail in macOS machines where OpenSSL is not properly setup in the path.
+        # In this case we can set the SKIP_SQLCIPHER_VERIFICATION to unblock the script
+        # since the error does not affect runtime.
         if ret_code != 0 and os.environ.get('SKIP_SQLCIPHER_VERIFICATION') is None:
             logger.error('could not verify sqlcipher v4')
             exit(1)
 
     def __move_to_dist(self) -> None:
+        """
+        Generates a checksum for the backend and moves it along with a copy of the backend
+        to the dist/ directory. The backend file is copied instead of moved because the original
+        will be needed for electron-builder.
+        """
         backend_directory = self.__storage.backend_directory
         os.chdir(backend_directory)
         filename = f'{BACKEND_PREFIX}-{self.__env.rotki_version}-{self.__env.backend_suffix()}'
@@ -731,6 +839,12 @@ class BackendBuilder:
 
     @log_group('backend_build')
     def build(self) -> None:
+        """
+        Packages the backend using PyInstaller
+        """
+        # When packaging on macOS one of the dependencies will try to access
+        # GITHUB_REF during pip install and will throw an error. For this reason
+        # The variable is temporarily removed and then restored.
         github_ref = os.environ.get('GITHUB_REF')
         os.environ.pop('GITHUB_REF', None)
 
@@ -745,6 +859,8 @@ class BackendBuilder:
             win.setup_miniupnpc()
 
         os.chdir(self.__storage.working_directory)
+        # This flag only works with the patched version of pip.
+        # https://github.com/kelsos/pip/tree/patched
         os.environ.setdefault('PIP_FORCE_MACOS_UNIVERSAL2', '1')
         self.pip_install('-e .')
         os.environ.pop('PIP_FORCE_MACOS_UNIVERSAL2', None)
@@ -756,6 +872,7 @@ class BackendBuilder:
         self.__sanity_check()
         self.__package()
 
+        # When building for macOS zip() is responsible for moving the packaged backend to dist/
         if mac is not None:
             mac.sign()
             mac.zip()
@@ -764,6 +881,16 @@ class BackendBuilder:
 
     @log_group('package')
     def __package(self) -> None:
+        """
+        Packages the rotki backend using PyInstaller with Python optimizations.
+
+        In Linux, Windows the method will create an one-file bundled executable.
+
+        In macOS it will create an one-folder bundle containing an executable.
+        The reason we use the one-folder approach for macOS is due to signing.
+        All the bundled files have to be individually signed with a valid key
+        otherwise the backend will not start and will give cryptic errors instead.
+        """
         self.__storage.prepare_backend()
         backend_directory = self.__storage.backend_directory
         package_env = os.environ.copy()
@@ -786,6 +913,15 @@ class BackendBuilder:
 
     @log_group('Pyinstaller')
     def __install_pyinstaller(self) -> None:
+        """
+        Installs PyInstaller.
+
+        On x86_64 systems except the macOS CI runner it will install
+        from pip since it already contains pre-built bootloaders for the systems.
+
+        For other systems it will checkout from source and build the bootloader
+        for the system in question.
+        """
         if self.__env.is_x86_64() and not self.__env.is_mac_runner():
             self.pip_install(f'pyinstaller=={pyinstaller_version}')
         else:
