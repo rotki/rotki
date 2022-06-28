@@ -81,6 +81,7 @@ export default class PyHandler {
     this.defaultLogDirectory = app.getPath('logs');
     this._serverUrl = '';
     this.logToFile('\nStarting rotki\n');
+    this.listenForMessages();
   }
 
   private _port?: number;
@@ -274,7 +275,6 @@ export default class PyHandler {
     if (process.platform === 'win32') {
       return this.terminateWindowsProcesses(restart);
     }
-
     if (client) {
       return this.terminateBackend(client);
     }
@@ -287,6 +287,16 @@ export default class PyHandler {
 
   private terminateBackend = (client: ChildProcess) =>
     new Promise<void>((resolve, reject) => {
+      if (!client.pid) {
+        this.logToFile(
+          'subprocess was already terminated (no process id pid found)'
+        );
+        this.childProcess = undefined;
+        this._port = undefined;
+        resolve();
+        return;
+      }
+
       client.on('exit', () => {
         this.logToFile(
           `The Python sub-process was terminated successfully (${client.killed})`

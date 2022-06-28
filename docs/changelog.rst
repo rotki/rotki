@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`-` Add zoom feature for line charts.
 * :bug:`4459` Transactions that happened in genesis block are now queried and stored properly.
+* :bug:`-` The electron application will now terminate properly if the backend fails to start.
 * :feature:`3095` The application will now notify the user if there is a status change for the premium subscription.
 * :feature:`1028` Native support for Bitcoin Cash blockchain.
 * :bug:`-` Now no missing acquisitions should appear for fiat assets during accounting.
