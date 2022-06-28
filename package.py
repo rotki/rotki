@@ -478,7 +478,7 @@ class MacPackaging:
         """
         Builds a universal2 wheel for miniupnpc.
 
-        Miniupnpc build the native library libminiupnpc.a and then statically links
+        Miniupnpc builds the native library libminiupnpc.a and then statically links
         the native extension against that.
 
         Unfortunately it is not possible to pass dual architecture flags to the compiler
@@ -767,7 +767,7 @@ class BackendBuilder:
         and builds the bootloader.
 
         This is required for architectures other than x86_64 that do not
-        have prebuild bootloaders.
+        have prebuilt bootloaders.
 
         :param tag_version: The version of PyInstaller to check out
         """
@@ -825,7 +825,7 @@ class BackendBuilder:
 
     def __move_to_dist(self) -> None:
         """
-        Generates a checksum for the backend and moves it along with a copy fo the backend
+        Generates a checksum for the backend and moves it along with a copy of the backend
         to the dist/ directory. The backend file is copied instead of moved because the original
         will be needed for electron-builder.
         """
@@ -884,12 +884,12 @@ class BackendBuilder:
         """
         Packages the rotki backend using PyInstaller with Python optimizations.
 
-        In Linux, Windows the method will create a one-file bundled executable.
+        In Linux, Windows the method will create an one-file bundled executable.
 
-        In macOS it will create a one-folder bundle containing an executable.
+        In macOS it will create an one-folder bundle containing an executable.
         The reason we use the one-folder approach for macOS is due to signing.
         All the bundled files have to be individually signed with a valid key
-        otherwise the backend will not start giving cryptic errors.
+        otherwise the backend will not start and will give cryptic errors instead.
         """
         self.__storage.prepare_backend()
         backend_directory = self.__storage.backend_directory
@@ -917,7 +917,7 @@ class BackendBuilder:
         Installs PyInstaller.
 
         On x86_64 systems except the macOS CI runner it will install
-        from pip since it already contains pre-build bootloaders for the systems.
+        from pip since it already contains pre-built bootloaders for the systems.
 
         For other systems it will checkout from source and build the bootloader
         for the system in question.
