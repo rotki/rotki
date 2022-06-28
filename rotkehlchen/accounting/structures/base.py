@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -276,6 +277,11 @@ class HistoryBaseEntry(AccountingEventMixin):
                 self.event_type != HistoryEventType.STAKING or
                 self.event_subtype != HistoryEventSubType.REWARD
             ):
+                return 1
+
+            # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: 501
+            # setting is set to `True` until ETH2 is merged.
+            if self.asset == A_ETH2  and accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True:  # noqa: 501
                 return 1
 
             # otherwise it's kraken staking

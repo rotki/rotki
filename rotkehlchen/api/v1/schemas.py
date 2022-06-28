@@ -877,6 +877,7 @@ class ModifiableSettingsSchema(Schema):
         validate=lambda data: len(data) == len(set(data)),
     )
     cost_basis_method = SerializableEnumField(enum_class=CostBasisMethod, load_default=None)
+    eth_staking_taxable_after_withdrawal_enabled = fields.Boolean(load_default=None)
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -926,6 +927,7 @@ class ModifiableSettingsSchema(Schema):
             non_syncing_exchanges=data['non_syncing_exchanges'],
             cost_basis_method=data['cost_basis_method'],
             treat_eth2_as_eth=data['treat_eth2_as_eth'],
+            eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],  # noqa: 501
         )
 
 

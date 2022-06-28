@@ -51,6 +51,7 @@ DEFAULT_SSF_0GRAPH_MULTIPLIER = 0
 DEFAULT_LAST_DATA_MIGRATION = 0
 DEFAULT_COST_BASIS_METHOD = CostBasisMethod.FIFO
 DEFAULT_TREAT_ETH2_AS_ETH = False
+DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED = False
 
 
 JSON_KEYS = (
@@ -71,6 +72,7 @@ BOOLEAN_KEYS = (
     'pnl_csv_with_formulas',
     'pnl_csv_have_summary',
     'treat_eth2_as_eth',
+    'eth_staking_taxable_after_withdrawal_enabled',
 )
 INTEGER_KEYS = (
     'version',
@@ -124,6 +126,7 @@ class DBSettings(NamedTuple):
     non_syncing_exchanges: List[ExchangeLocationID] = []
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
+    eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: 501
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = self._asdict()   # pylint: disable=no-member
@@ -167,6 +170,7 @@ class ModifiableDBSettings(NamedTuple):
     non_syncing_exchanges: Optional[List[ExchangeLocationID]] = None
     cost_basis_method: Optional[CostBasisMethod] = None
     treat_eth2_as_eth: Optional[bool] = None
+    eth_staking_taxable_after_withdrawal_enabled: Optional[bool] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}

@@ -8,6 +8,7 @@ import gevent
 import pytest
 import requests
 
+from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
@@ -25,6 +26,7 @@ from rotkehlchen.constants.assets import (
     A_XRP,
 )
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
@@ -55,6 +57,7 @@ from rotkehlchen.tests.utils.constants import (
 from rotkehlchen.tests.utils.exchanges import try_get_first_exchange
 from rotkehlchen.tests.utils.history import TEST_END_TS, prices
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TradeType
 from rotkehlchen.utils.misc import ts_now
 
@@ -888,3 +891,29 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         },
     )
     assert_proper_response_with_result(response)
+
+    _, without_eth2_staking_report_result, _ = query_api_create_and_get_report(
+        server=rotkehlchen_api_server_with_exchanges,
+        start_ts=0,
+        end_ts=1640493377,
+        prepare_mocks=False,
+    )
+    without_eth2_staking_overview = without_eth2_staking_report_result['entries'][0]['overview']
+    assert FVal('39102.819423433620').is_close(
+        FVal(without_eth2_staking_overview.get(str(AccountingEventType.STAKING))['taxable']),
+    )
+    with rotki.data.db.user_write() as cursor:
+        rotki.data.db.set_settings(
+            cursor,
+            ModifiableDBSettings(eth_staking_taxable_after_withdrawal_enabled=True),
+        )
+    _, with_eth2_staking_report_result, _ = query_api_create_and_get_report(
+        server=rotkehlchen_api_server_with_exchanges,
+        start_ts=0,
+        end_ts=1640493377,
+        prepare_mocks=False,
+    )
+    with_eth2_staking_overview = with_eth2_staking_report_result['entries'][0]['overview']
+    assert FVal('0.000069900000').is_close(
+        FVal(with_eth2_staking_overview.get(str(AccountingEventType.STAKING))['taxable']),
+    )
