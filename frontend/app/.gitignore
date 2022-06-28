@@ -1,7 +1,7 @@
 .DS_Store
 node_modules
 /dist
-/electron-build
+/build
 /coverage
 /reports
 

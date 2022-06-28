@@ -390,6 +390,14 @@ you can alternatively start ``npm run dev:web`` this will start everything excep
 server was finished starting up you should be able to access the url from your browser. Keep in mind that this
 works only for localhost access and a proxy might be needed to access it from a different machine.
 
+Packaging
+-------------
+To package the application for your platform you need to run the packaging script. To do so you need to make sur
+that ``packaging`` and ``requests are installed in your virtual environment ::
+
+    pip3 install packaging requests
+    ./package.py --build full
+
 OSX
 =====
 
@@ -473,6 +481,14 @@ Almost there, we can now install all the Node.js dependencies of the frontend ap
 You can now start rotki, still from the ``frontend`` directory::
 
     $ npm run dev
+
+Packaging
+-------------
+To package the application for your platform you need to run the packaging script. To do so you need to make sur
+that ``packaging`` and ``requests are installed in your virtual environment ::
+
+    pip3 install packaging requests
+    ./package.py --build full
 
 Windows
 ==========
@@ -588,7 +604,11 @@ After the app is built, if everything went well you should see the below text in
 
 If you get any errors about missing dependencies, try to install them via npm and run again; consult the troubleshooting section for other errors.
 
-3. Alternatively, you can also choose to build the application. In order to do so, navigate to your rotki development directory and execute the ``package.ps1`` file.
+3. Alternatively, you can also choose to build the application. In order to do so, navigate to your rotki development directory and execute the ``package.py`` file.::
+
+    pip3 install packaging requests
+    python .\package.py --build full
+
 
 Troubleshooting
 ---------------

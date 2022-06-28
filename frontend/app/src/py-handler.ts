@@ -63,13 +63,12 @@ function getBackendArguments(options: Partial<BackendOptions>): string[] {
   return args;
 }
 
-const PY_DIST_FOLDER = 'rotkehlchen_py_dist';
+const BACKEND_DIRECTORY = 'backend';
 
 export default class PyHandler {
   readonly defaultLogDirectory: string;
   private rpcFailureNotifier?: any;
   private childProcess?: ChildProcess;
-  private _websocketPort?: number;
   private executable?: string;
   private _corsURL?: string;
   private backendOutput: string = '';
@@ -115,9 +114,9 @@ export default class PyHandler {
   private static packagedBackendPath() {
     const resources = process.resourcesPath ? process.resourcesPath : __dirname;
     if (os.platform() === 'darwin') {
-      return path.join(resources, PY_DIST_FOLDER, 'rotkehlchen');
+      return path.join(resources, BACKEND_DIRECTORY, 'rotki-core');
     }
-    return path.join(resources, PY_DIST_FOLDER);
+    return path.join(resources, BACKEND_DIRECTORY);
   }
 
   logToFile(msg: string | Error) {
@@ -168,10 +167,10 @@ export default class PyHandler {
 
     if (os.platform() === 'darwin') {
       const release = os.release().split('.');
-      if (release.length > 0 && parseInt(release[0]) < 18) {
+      if (release.length > 0 && parseInt(release[0]) < 17) {
         this.setFailureNotification(
           window,
-          'rotki requires at least macOS Mojave',
+          'rotki requires at least macOS High Sierra',
           BackendCode.MACOS_VERSION
         );
         return;
@@ -372,7 +371,7 @@ export default class PyHandler {
       return;
     }
 
-    const binaries = files.filter(file => file.startsWith('rotkehlchen-'));
+    const binaries = files.filter(file => file.startsWith('rotki-core-'));
 
     if (binaries.length > 1) {
       const names = files.join(', ');
@@ -384,7 +383,7 @@ export default class PyHandler {
       return;
     }
 
-    const exe = files.find(file => file.startsWith('rotkehlchen-'));
+    const exe = files.find(file => file.startsWith('rotki-core-'));
     if (!exe) {
       this.logAndQuit(`ERROR: Executable was not found`);
       return;

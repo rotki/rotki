@@ -19,6 +19,7 @@ Currently only tested on macOS
 
 # Set to false to produce an exploded single-dir
 ONEFILE = int(os.environ.get('ONEFILE', True))
+MACOS_BUILD_ARCH = os.environ.get('MACOS_BUILD_ARCH', None)
 
 
 def Entrypoint(dist, group, name, scripts=None, pathex=None, hiddenimports=None, hookspath=None,
@@ -69,7 +70,7 @@ def Entrypoint(dist, group, name, scripts=None, pathex=None, hiddenimports=None,
 # We don't need Tk and friends
 sys.modules['FixTk'] = None
 
-executable_name = 'rotkehlchen-{}-{}'.format(
+executable_name = 'rotki-core-{}-{}'.format(
     get_system_spec()['rotkehlchen'],
     'macos' if platform.system() == 'Darwin' else platform.system().lower())
 
@@ -138,7 +139,9 @@ else:
         strip=False,
         upx=False,
         console=True,
+        target_arch=MACOS_BUILD_ARCH
     )
+
     coll = COLLECT(
         exe,
         a.binaries,
@@ -146,5 +149,5 @@ else:
         a.datas,
         strip=False,
         upx=False,
-        name='rotkehlchen',
+        name='rotki-core',
     )

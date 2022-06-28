@@ -1,4 +1,4 @@
-name: Rotki Packaging
+name: Rotki Release
 on:
   push:
     tags:
@@ -11,7 +11,7 @@ concurrency:
 env:
   PYTHON_VERSION: 3.9.13
   NODE_VERSION: 16
-  PYTHON_MACOS: 10.9
+  PYTHON_MACOS: 11
   PIP_VERSION: 22.1.2
 
 jobs:
@@ -37,12 +37,12 @@ jobs:
           echo "::set-output name=version::$version"
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: rotki/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
-          release_name: Rotki ${{ env.RELEASE_VERSION }} -
+          name: Rotki ${{ env.RELEASE_VERSION }} -
           body: |
             # Description
 
@@ -56,14 +56,18 @@ jobs:
               - [AppImage](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage)
               - [Tar with executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz)
               - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ steps.change_log.outputs.version }}-linux)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-linux)
             - **OSX**
-              - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg)
-              - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-backend-${{ steps.change_log.outputs.version }}-macos.zip)
+              - arm64
+                - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.dmg)
+                - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.zip)
+              - x86_64
+                - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg)
+                - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos.zip)
             - **Windows**
               - [Windows executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ steps.change_log.outputs.version }}-windows.exe)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.exe)
             
             Optionally, you can also [verify the integrity](https://rotki.readthedocs.io/en/latest/installation_guide.html#verifying-integrity) of the aforementioned binaries using the following checksums:
             
@@ -71,14 +75,18 @@ jobs:
               - [AppImage checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage.sha512)
               - [Tar with executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz.sha512)
               - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb.sha512)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ steps.change_log.outputs.version }}-linux.sha512)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-linux.sha512)
             - **OSX**
-              - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg.sha512)
-              - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip.sha512)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-backend-${{ steps.change_log.outputs.version }}-macos.zip.sha512)
+              - arm64
+                - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.dmg.sha512)
+                - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.zip.sha512)
+              - x86_64
+                - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg.sha512)
+                - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip.sha512)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-backend-${{ steps.change_log.outputs.version }}-macos.zip.sha512)
             - **Windows**
               - [Windows executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe.sha512)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ steps.change_log.outputs.version }}-windows.exe.sha512)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.exe.sha512)
 
             # Release Highlights
             ----
@@ -104,6 +112,8 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Get Release Version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Set up python
         uses: actions/setup-python@v4
         with:
@@ -123,72 +133,87 @@ jobs:
       - name: Package
         id: packaging
         run: |
+          echo "::group::packaging dependencies"
           npm install -g npm@8
-          ./package.sh
-      - name: Upload AppImage sha512 checksum file
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
+          pip3 install packaging requests wheel
+          echo "::endgroup::"
+          ./package.py --build full
+      - name: Upload to release
+        uses: rotki/action-gh-release@v1
         with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.binary_checksum }}
-          asset_name: ${{ steps.packaging.outputs.binary_checksum_name }}
-          asset_content_type: text/plain
-      - name: Upload tar sha512 checksum file
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.archive_checksum }}
-          asset_name: ${{ steps.packaging.outputs.archive_checksum_name }}
-          asset_content_type: text/plain
-      - name: Upload deb sha512 checksum file
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.deb_checksum }}
-          asset_name: ${{ steps.packaging.outputs.deb_checksum_name }}
-          asset_content_type: text/plain
-      - name: Upload backend binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.backend_binary }}
-          asset_name: ${{ steps.packaging.outputs.backend_binary_name }}
-          asset_content_type: application/octet-stream
-      - name: Upload backend binary checksum
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.backend_binary_checksum }}
-          asset_name: ${{ steps.packaging.outputs.backend_binary_checksum_name }}
-          asset_content_type: text/plain
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: Rotki ${{ env.RELEASE_VERSION }} -
+          draft: true
+          files: |
+            dist/*.sha512
+            dist/rotki-core-*-linux
 
   macos:
     name: 'Build macOS binary'
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MACOS_BUILD_ARCH: 'universal2'
+      ARCHFLAGS: '-arch arm64 -arch x86_64'
+      _PYTHON_HOST_PLATFORM: macosx-10.9-universal2
+      MACOSX_DEPLOYMENT_TARGET: 10.9
+      CMAKE_OSX_ARCHITECTURES: 'x86_64;arm64'
     environment: macos_sign
-    runs-on: macos-10.15
+    runs-on: macos-11
     needs: create_draft
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Get Release Version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Checkout libffi
+        uses: actions/checkout@v3
+        with:
+          repository: libffi/libffi
+          path: libffi
+          ref: v3.4.2
+      - name: Install libffi build tools
+        run: brew install autoconf automake libtool pkg-config
+      - name: Build universal libbfi (required by coincurve)
+        run: |
+          brew uninstall --ignore-dependencies libffi
+          echo "::group::Autogen"
+          ./autogen.sh
+          echo "::endgroup::"
+          echo "::group::arm64"
+          ./configure --host=aarch64-apple-darwin CC='gcc -arch arm64' CXX='g++ -arch arm64'
+          make
+          mkdir ../ffi
+          cp -R aarch64-apple-darwin ../ffi/
+          echo "::endgroup::"
+          echo "::group::x86_64"
+          make clean
+          ./configure --host=x86_64-apple-darwin CC='gcc -arch x86_64' CXX='g++ -arch x86_64'
+          make
+          echo "::endgroup::"
+          echo "::group::install"
+          lipo -create -output x86_64-apple-darwin/.libs/libffi.8.dylib x86_64-apple-darwin/.libs/libffi.8.dylib ../ffi/aarch64-apple-darwin/.libs/libffi.8.dylib
+          lipo -create -output x86_64-apple-darwin/.libs/libffi.a x86_64-apple-darwin/.libs/libffi.a ../ffi/aarch64-apple-darwin/.libs/libffi.a
+          lipo -create -output x86_64-apple-darwin/.libs/libffi_convenience.a x86_64-apple-darwin/.libs/libffi_convenience.a ../ffi/aarch64-apple-darwin/.libs/libffi_convenience.a
+          lipo -archs x86_64-apple-darwin/.libs/libffi.8.dylib
+          make install
+          echo "::endgroup::"
+        working-directory: libffi
       - name: Cache python pkg
         uses: actions/cache@v3
         with:
           path: ~/python*.pkg
           key: ${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-${{ env.PYTHON_MACOS }}
+      - name: Cache python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Set up python
         run: packaging/setup-macos-python.sh ${{ env.PYTHON_VERSION }} ${{ env.PYTHON_MACOS }}
       - name: Setup node
@@ -202,57 +227,34 @@ jobs:
         with:
           path: ~/Library/Caches/Cypress
           key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/package-lock.json') }}
+      - name: Update npm
+        run: npm install -g npm@8
       - name: Package
         id: packaging
         run: |
+          echo "::group::packaging dependencies"
           pip3 install --upgrade pip==${{ env.PIP_VERSION }}
           pip3 install virtualenv
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
-          npm install -g npm@8
-          ./package.sh
+          pip3 install packaging requests wheel
+          echo "::endgroup::"
+          ./package.py --build full
         env:
           CERTIFICATE_OSX_APPLICATION: ${{ secrets.CERTIFICATE_OSX_APPLICATION }}
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
           IDENTITY: ${{ secrets.IDENTITY }}
           APPLEID: ${{ secrets.APPLEID }}
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
-      - name: Upload dmg sha512 checksum file
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload to release
+        uses: rotki/action-gh-release@v1
         with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.binary_checksum }}
-          asset_name: ${{ steps.packaging.outputs.binary_checksum_name }}
-          asset_content_type: text/plain
-      - name: Upload zip sha512 checksum file
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.archive_checksum }}
-          asset_name: ${{ steps.packaging.outputs.archive_checksum_name }}
-          asset_content_type: text/plain
-      - name: Upload backend binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.backend_binary }}
-          asset_name: ${{ steps.packaging.outputs.backend_binary_name }}
-          asset_content_type: application/zip
-      - name: Upload backend binary checksum
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.backend_binary_checksum }}
-          asset_name: ${{ steps.packaging.outputs.backend_binary_checksum_name }}
-          asset_content_type: text/plain
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: Rotki ${{ env.RELEASE_VERSION }} -
+          draft: true
+          files: |
+            dist/*.sha512
+            dist/rotki-core-*-macos.zip    
 
   windows:
     name: 'Build windows binary'
@@ -267,6 +269,8 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Get Release Version
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Set up python
         uses: actions/setup-python@v4
         with:
@@ -291,37 +295,22 @@ jobs:
       - name: Build rotki
         id: packaging
         run: |
-          npm install -g npm@8
+          echo ::group::"packaging dependencies"
+          npm install -g npm@8.12.2 # pinned version because of bug in 8.13.[0,1] check npm/cli#5066
           pip3 install --upgrade pip==${{ env.PIP_VERSION }}
-          .\package.ps1
+          pip3 install packaging requests wheel
+          echo ::endgroup::
+          python .\package.py --build full
         shell: powershell
-      - name: Upload exe sha512 checksum file
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload to release
+        uses: rotki/action-gh-release@v1
         with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.binary_checksum }}
-          asset_name: ${{ steps.packaging.outputs.binary_checksum_name }}
-          asset_content_type: text/plain
-      - name: Upload backend binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.backend_binary }}
-          asset_name: ${{ steps.packaging.outputs.backend_binary_name }}
-          asset_content_type: application/octet-stream
-      - name: Upload backend binary checksum
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.packaging.outputs.backend_binary_checksum }}
-          asset_name: ${{ steps.packaging.outputs.backend_binary_checksum_name }}
-          asset_content_type: text/plain
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: Rotki ${{ env.RELEASE_VERSION }} -
+          draft: true
+          files: |
+            dist/*.sha512
+            dist/rotki-core-*-windows.exe
 
   docker:
     name: Build docker image (${{ matrix.arch.name }})

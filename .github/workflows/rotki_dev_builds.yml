@@ -1,4 +1,4 @@
-name: Rotki Nightly Builds
+name: Rotki Development Builds
 
 on:
   schedule:
@@ -14,8 +14,8 @@ concurrency:
 env:
   PYTHON_VERSION: 3.9.13
   NODE_VERSION: 16
-  PYTHON_MACOS: 10.9
   PIP_VERSION: 22.1.2
+  PYTHON_MACOS: 11
 
 jobs:
   build-linux:
@@ -48,17 +48,20 @@ jobs:
       - name: Package
         id: packaging
         run: |
+          echo "::group::packaging dependencies"
           npm install -g npm@8
           pip3 install --upgrade pip==${{ env.PIP_VERSION }}
-          ./package.sh
+          pip3 install packaging requests wheel
+          echo "::endgroup::"
+          ./package.py --build full
       - name: Upload files
         uses: actions/upload-artifact@v3
         with:
-          name: nightly-linux
+          name: linux-app
           path: |
-            ${{ steps.packaging.outputs.binary }}
-            ${{ steps.packaging.outputs.binary_checksum }}
-      - name: Notify On Failure
+            dist/*.AppImage
+            dist/*.AppImage.sha512
+      - name: Notify on failure
         if: ${{ failure() }}
         run: |
           curl --request POST \
@@ -68,24 +71,68 @@ jobs:
           	"content": ":construction_site: **Github Actions:** ${{ github.job }} failed :x: \r\n\r\n  <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
           }'
 
-
   build-macos:
     name: 'Build macOS binary'
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MACOS_BUILD_ARCH: 'universal2'
+      ARCHFLAGS: '-arch arm64 -arch x86_64'
+      _PYTHON_HOST_PLATFORM: macosx-10.9-universal2
+      MACOSX_DEPLOYMENT_TARGET: 10.9
+      CMAKE_OSX_ARCHITECTURES: 'x86_64;arm64'
     environment: macos_sign
-    runs-on: macos-10.15
+    runs-on: macos-11
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Checkout libffi
+        uses: actions/checkout@v3
+        with:
+          repository: libffi/libffi
+          path: libffi
+          ref: v3.4.2
+      - name: Install libffi build tools
+        run: brew install autoconf automake libtool pkg-config
+      - name: Build universal libbfi (required by coincurve)
+        run: |
+          brew uninstall --ignore-dependencies libffi
+          echo "::group::Autogen"
+          ./autogen.sh
+          echo "::endgroup::"
+          echo "::group::arm64"
+          ./configure --host=aarch64-apple-darwin CC='gcc -arch arm64' CXX='g++ -arch arm64'
+          make
+          mkdir ../ffi
+          cp -R aarch64-apple-darwin ../ffi/
+          echo "::endgroup::"
+          echo "::group::x86_64"
+          make clean
+          ./configure --host=x86_64-apple-darwin CC='gcc -arch x86_64' CXX='g++ -arch x86_64'
+          make
+          echo "::endgroup::"
+          echo "::group::install"
+          lipo -create -output x86_64-apple-darwin/.libs/libffi.8.dylib x86_64-apple-darwin/.libs/libffi.8.dylib ../ffi/aarch64-apple-darwin/.libs/libffi.8.dylib
+          lipo -create -output x86_64-apple-darwin/.libs/libffi.a x86_64-apple-darwin/.libs/libffi.a ../ffi/aarch64-apple-darwin/.libs/libffi.a
+          lipo -create -output x86_64-apple-darwin/.libs/libffi_convenience.a x86_64-apple-darwin/.libs/libffi_convenience.a ../ffi/aarch64-apple-darwin/.libs/libffi_convenience.a
+          lipo -archs x86_64-apple-darwin/.libs/libffi.8.dylib
+          make install
+          echo "::endgroup::"
+        working-directory: libffi
       - name: Cache python pkg
         uses: actions/cache@v3
         with:
           path: ~/python*.pkg
           key: ${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-${{ env.PYTHON_MACOS }}
+      - name: Cache python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Set up python
         run: packaging/setup-macos-python.sh ${{ env.PYTHON_VERSION }} ${{ env.PYTHON_MACOS }}
       - name: Setup node
@@ -99,29 +146,40 @@ jobs:
         with:
           path: ~/Library/Caches/Cypress
           key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/package-lock.json') }}
+      - name: Update npm
+        run: npm install -g npm@8
       - name: Package
         id: packaging
         run: |
+          echo "::group::packaging dependencies"
           pip3 install --upgrade pip==${{ env.PIP_VERSION }}
           pip3 install virtualenv
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
-          npm install -g npm@8
-          ./package.sh
+          pip3 install packaging requests wheel
+          echo "::endgroup::"
+          ./package.py --build full
         env:
           CERTIFICATE_OSX_APPLICATION: ${{ secrets.CERTIFICATE_OSX_APPLICATION }}
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
           IDENTITY: ${{ secrets.IDENTITY }}
           APPLEID: ${{ secrets.APPLEID }}
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
-      - name: Upload files
+      - name: Upload files (arm64)
         uses: actions/upload-artifact@v3
         with:
-          name: nightly-macos
+          name: macos-app-arm64
           path: |
-            ${{ steps.packaging.outputs.binary }}
-            ${{ steps.packaging.outputs.binary_checksum }}
-      - name: Notify On Failure
+            dist/rotki-darwin_arm64*.dmg
+            dist/rotki-darwin_arm64*.dmg.sha512
+      - name: Upload files (x86_64)
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-app-x64
+          path: |
+            dist/rotki-darwin_x64*.dmg
+            dist/rotki-darwin_x64*.dmg.sha512
+      - name: Notify on failure
         if: ${{ failure() }}
         run: |
           curl --request POST \
@@ -130,6 +188,7 @@ jobs:
             --data '{
           	"content": ":construction_site: **Github Actions:** ${{ github.job }} failed :x: \r\n\r\n  <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
           }'
+      
 
   build-windows:
     name: Build windows binary
@@ -159,26 +218,24 @@ jobs:
         with:
           path: ~\AppData\Local\Cypress
           key: ${{ runner.os }}-node--packaging-${{ hashFiles('frontend/package-lock.json') }}
-      - name: Persist Build Dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~\${{ env.BUILD_DEPENDENCIES }}\
-          key: ${{ runner.os }}-build-dependencies
       - name: Build rotki
         id: packaging
         run: |
-          npm install -g npm@8
+          echo ::group::"packaging dependencies"
+          npm install -g npm@8.12.2 # pinned version because of bug in 8.13.[0,1] check npm/cli#5066
           pip3 install --upgrade pip==${{ env.PIP_VERSION }}
-          .\package.ps1
+          pip3 install packaging requests wheel
+          echo ::endgroup::
+          python .\package.py --build full
         shell: powershell
       - name: Upload files
         uses: actions/upload-artifact@v3
         with:
-          name: nightly-windows
+          name: windows-app
           path: |
-            ${{ steps.packaging.outputs.binary }}
-            ${{ steps.packaging.outputs.binary_checksum }}
-      - name: Notify On Failure
+            dist\rotki-win32*.exe
+            dist\rotki-win32*.exe.sha512
+      - name: Notify on failure
         if: ${{ failure() }}
         run: |
           $uri="${{ secrets.WEBHOOK }}"
@@ -187,17 +244,33 @@ jobs:
           } | ConvertTo-Json
           Invoke-RestMethod -Method Post -Uri $uri -ContentType "application/json" -Body $body
 
+  docker-matrix:
+    name: Prepare docker platform matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: 'Check if scheduled'
+        id: set-matrix
+        run: |
+          X86_64="{\"name\":\"x86_64\",\"platform\":\"linux/amd64\"}"
+          ARM64="{\"name\":\"arm64\",\"platform\":\"linux/arm64\"}"
+          if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then
+            MATRIX="[$X86_64,$ARM64]"
+          else
+            MATRIX="[$X86_64]"
+          fi
+          echo "::set-output name=matrix::$MATRIX"
+
   build-docker:
     name: Build docker image (${{ matrix.arch.name }})
     runs-on: ubuntu-18.04
+    needs: docker-matrix
     environment: docker
     strategy:
+      fail-fast: false
       matrix:
-        arch:
-          - name: x86_64
-            platform: linux/amd64
-          - name: arm64
-            platform: linux/arm64
+        arch: ${{ fromJSON(needs.docker-matrix.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -226,9 +299,9 @@ jobs:
         id: build_information
         run: |
           PLATFORMS='${{ matrix.arch.platform }}'
-          if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then            
+          if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then
             TAG=nightly
-          else            
+          else
             TAG=dev
           fi
           echo "::set-output name=tag::$TAG"
@@ -249,7 +322,7 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
-      - name: Notify On Failure
+      - name: Notify on failure
         if: ${{ failure() }}
         run: |
           curl --request POST \

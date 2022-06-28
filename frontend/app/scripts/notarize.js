@@ -12,14 +12,22 @@ exports.default = async function notarizing(context) {
     return;
   }
 
-  console.info('Preparing to notarize the application');
-
   const appName = context.packager.appInfo.productFilename;
+  const appPath = `${appOutDir}/${appName}.app`;
+
+  console.info(`\nPreparing to notarize the application: ${appPath}\n`);
 
   return await notarize({
     appBundleId: 'com.rotki.app',
-    appPath: `${appOutDir}/${appName}.app`,
+    appPath: appPath,
     appleId: process.env.APPLEID,
     appleIdPassword: process.env.APPLEIDPASS
-  });
+  })
+    .then(() => {
+      console.info(`\nNotarization of ${appPath} was complete\n`);
+    })
+    .catch(reason => {
+      console.error(reason);
+      return reason;
+    });
 };
