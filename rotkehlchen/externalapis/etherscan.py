@@ -17,12 +17,14 @@ from typing import (
 import gevent
 import requests
 
+from rotkehlchen.chain.ethereum.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.constants.timing import (
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_READ_TIMEOUT,
     DEFAULT_TIMEOUT_TUPLE,
 )
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -285,11 +287,32 @@ class Etherscan(ExternalServiceWithApiKey):
             for entry in result:
                 gevent.sleep(0)
                 try:
-                    tx = deserialize_ethereum_transaction(  # type: ignore
-                        data=entry,
-                        internal=is_internal,
-                        ethereum=None,
-                    )
+                    # Handle genesis block transactions
+                    if entry['hash'].startswith('GENESIS') is False:
+                        tx = deserialize_ethereum_transaction(  # type: ignore
+                            data=entry,
+                            internal=is_internal,
+                            ethereum=None,
+                        )
+                    else:
+                        # Handling genesis transactions
+                        dbtx = DBEthTx(self.db)  # type: ignore
+                        tx = dbtx.get_or_create_genesis_transaction(account=account)
+                        trace_id = dbtx.get_max_genesis_trace_id()
+                        entry['from'] = ZERO_ADDRESS
+                        entry['hash'] = GENESIS_HASH
+                        entry['traceId'] = trace_id
+                        internal_tx = deserialize_ethereum_transaction(
+                            data=entry,
+                            internal=True,
+                            ethereum=None,
+                        )
+                        with self.db.user_write() as cursor:  # type: ignore  # db always here
+                            dbtx.add_ethereum_internal_transactions(
+                                write_cursor=cursor,
+                                transactions=[internal_tx],
+                                relevant_address=account,
+                            )
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
                     continue

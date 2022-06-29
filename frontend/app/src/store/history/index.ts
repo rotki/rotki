@@ -75,19 +75,39 @@ const defaultHistoricPayloadState = (
 export const useHistory = defineStore('history', () => {
   // associated locations
   const associatedLocations = ref<TradeLocation[]>([]);
+  const { notify } = useNotifications();
 
   const fetchAssociatedLocations = async () => {
-    set(associatedLocations, await api.history.associatedLocations());
+    const notifyError = (error?: any) => {
+      logger.error(error);
+      const message = error?.message ?? error ?? '';
+      notify({
+        title: i18n
+          .t('actions.history.fetch_associated_locations.error.title')
+          .toString(),
+        message: i18n
+          .t('actions.history.fetch_associated_locations.error.message', {
+            message
+          })
+          .toString(),
+        display: true
+      });
+    };
+
+    try {
+      set(associatedLocations, await api.history.associatedLocations());
+    } catch (e: any) {
+      notifyError(e);
+    }
   };
 
   // Ignored
   const ignored = ref<IgnoredActions>({});
 
   const fetchIgnored = async () => {
-    const notify = (error?: any) => {
+    const notifyError = (error?: any) => {
       logger.error(error);
       const message = error?.message ?? error ?? '';
-      const { notify } = useNotifications();
       notify({
         title: i18n.t('actions.history.fetch_ignored.error.title').toString(),
         message: i18n
@@ -99,7 +119,7 @@ export const useHistory = defineStore('history', () => {
     try {
       set(ignored, await api.history.fetchIgnored());
     } catch (e: any) {
-      notify(e);
+      notifyError(e);
     }
   };
 

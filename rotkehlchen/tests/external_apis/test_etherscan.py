@@ -2,15 +2,23 @@ import os
 from unittest.mock import patch
 
 import pytest
+from eth_utils import to_checksum_address
 
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_BEGIN, GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
+    BlockchainAccountData,
+    EthereumInternalTransaction,
     EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
+    SupportedBlockchain,
+    Timestamp,
     deserialize_evm_tx_hash,
 )
 
@@ -90,3 +98,70 @@ def test_deserialize_transaction_from_etherscan():
         input_data=bytes.fromhex(data['input'][2:]),
         nonce=0,
     )
+
+
+def test_etherscan_get_transactions_genesis_block(eth_transactions):
+    """Test that the genesis transactions are correctly returned"""
+    account = to_checksum_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A')
+    db = eth_transactions.database
+    with db.user_write() as cursor:
+        db.add_blockchain_accounts(
+            write_cursor=cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            account_data=[
+                BlockchainAccountData(address=account),
+            ],
+        )
+    eth_transactions.single_address_query_transactions(
+        address=account,
+        start_ts=ETHEREUM_BEGIN,
+        end_ts=Timestamp(1451606400),
+    )
+    dbtx = DBEthTx(database=db)
+    with db.conn.read_ctx() as cursor:
+        regular_tx_in_db = dbtx.get_ethereum_transactions(
+            cursor=cursor,
+            filter_=ETHTransactionsFilterQuery.make(),
+            has_premium=True,
+        )
+        internal_tx_in_db = dbtx.get_ethereum_internal_transactions(parent_tx_hash=GENESIS_HASH)
+
+    assert regular_tx_in_db == [
+        EthereumTransaction(
+            tx_hash=GENESIS_HASH,
+            timestamp=ETHEREUM_BEGIN,
+            block_number=0,
+            from_address=ZERO_ADDRESS,
+            to_address=None,
+            value=0,
+            gas=0,
+            gas_price=0,
+            gas_used=0,
+            input_data=b'',
+            nonce=0,
+        ), EthereumTransaction(
+            tx_hash=deserialize_evm_tx_hash('0x352b93ac19dfbfd65d4d8385cded959d7a156c3f352a71a5a49560b088e1c8df'),  # noqa: E501
+            timestamp=Timestamp(1443534531),
+            block_number=307793,
+            from_address='0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A',
+            to_address='0x2910543Af39abA0Cd09dBb2D50200b3E800A63D2',
+            value=327400000000000000000,
+            gas=50000,
+            gas_price=1171602790622,
+            gas_used=21612,
+            input_data=b'EN06ENDWG',
+            nonce=0,
+        ),
+    ]
+
+    assert internal_tx_in_db == [
+        EthereumInternalTransaction(
+            parent_tx_hash=GENESIS_HASH,
+            trace_id=0,
+            timestamp=ETHEREUM_BEGIN,
+            block_number=0,
+            from_address=ZERO_ADDRESS,
+            to_address='0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A',
+            value='327600000000000000000',
+        ),
+    ]

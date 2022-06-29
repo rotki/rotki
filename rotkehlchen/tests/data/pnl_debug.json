@@ -99,6 +99,6 @@
   },
   "ignored_events_ids": {
     "trade": ["X124-JYI", "2325"],
-    "ethereum transaction": ["0xfoo", "0xboo"]
+    "ethereum_transaction": ["0xfoo", "0xboo"]
   }
 }

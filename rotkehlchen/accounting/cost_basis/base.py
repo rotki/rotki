@@ -314,9 +314,7 @@ class CostBasisCalculator(CustomizableDateMixin):
         """Searches all acquisition events for asset and reduces them by amount.
 
         Returns True if enough acquisition events to reduce the asset by amount were
-        found and False otherwise.
-
-        In the case of insufficient acquisition amounts a critical error is logged.
+        found and False otherwise. Adds missing acquisition only if asset is not fiat.
 
         This function does the same as calculate_spend_cost_basis as far as consuming
         acquisitions is concerned but does not calculate bought cost.
@@ -337,14 +335,15 @@ class CostBasisCalculator(CustomizableDateMixin):
             asset_events.acquisitions_manager.consume_result(acquisition_event.remaining_amount)
 
         if remaining_amount != ZERO:
-            self.missing_acquisitions.append(
-                MissingAcquisition(
-                    asset=asset,
-                    time=timestamp,
-                    found_amount=amount - remaining_amount,
-                    missing_amount=remaining_amount,
-                ),
-            )
+            if not asset.is_fiat():
+                self.missing_acquisitions.append(
+                    MissingAcquisition(
+                        asset=asset,
+                        time=timestamp,
+                        found_amount=amount - remaining_amount,
+                        missing_amount=remaining_amount,
+                    ),
+                )
             return False
 
         return True

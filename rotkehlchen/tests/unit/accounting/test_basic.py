@@ -6,7 +6,7 @@ from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.types import MissingPrice
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_BTC, A_COMP, A_ETH, A_EUR
+from rotkehlchen.constants.assets import A_BTC, A_COMP, A_ETH, A_EUR, A_USD
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import (
@@ -304,3 +304,33 @@ def test_acquisition_price_not_found(accountant, google_service):
         AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('261.39')),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_no_fiat_missing_acquisitions(accountant):
+    history = [
+        Trade(
+            timestamp=1459024920,
+            location=Location.UPHOLD,
+            base_asset=A_EUR,
+            quote_asset=A_USD,
+            trade_type=TradeType.BUY,
+            amount=ONE,
+            rate=FVal('0.8982'),
+            link=None,
+        ),
+        Trade(
+            timestamp=1446979735,
+            location=Location.POLONIEX,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=ONE,
+            rate=FVal(355.9),
+            link=None,
+        ),
+    ]
+    accounting_history_process(accountant, 1446979735, 1635314397, history)
+    no_message_errors(accountant.msg_aggregator)
+    missing_acquisitions = accountant.pots[0].cost_basis.missing_acquisitions
+    assert missing_acquisitions == []

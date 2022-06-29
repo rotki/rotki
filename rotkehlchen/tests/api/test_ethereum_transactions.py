@@ -241,10 +241,10 @@ def test_query_transactions(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "ignoredactionsresource",
-        ), json={'action_type': 'ethereum transaction', 'action_ids': ignored_ids},
+        ), json={'action_type': 'ethereum_transaction', 'action_ids': ignored_ids},
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'ethereum transaction': ignored_ids}
+    assert result == {'ethereum_transaction': ignored_ids}
 
     # Check that transactions per address and in a specific time range can be
     # queried and that this is from the DB and not etherscan

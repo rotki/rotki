@@ -69,7 +69,7 @@ def test_name():
 
 
 def test_coverage_of_kraken_balances(kraken):
-    got_assets = set(kraken.api_query('Assets').keys())
+    got_assets = set(kraken.online_api_query('Assets').keys())
     expected_assets = (set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED))
     # Ignore the staking assets from the got assets
     got_assets.remove('XTZ.S')

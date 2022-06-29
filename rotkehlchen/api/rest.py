@@ -200,12 +200,15 @@ def api_response(
     else:
         data = json.dumps(result)
 
-    logged_response = data
-    if log_result is False:
-        logged_response = '<redacted>'
-    log.debug("Request successful", response=logged_response, status_code=status_code)
     response = make_response(
-        (data, status_code, {"mimetype": "application/json", "Content-Type": "application/json"}),
+        (
+            data,
+            status_code,
+            {
+                "mimetype": "application/json",
+                "Content-Type": "application/json",
+                "rotki-log-result": log_result,  # popped by after request callback
+            }),
     )
     return response
 
@@ -2095,7 +2098,8 @@ class RestAPI():
     def get_ignored_action_ids(self, action_type: Optional[ActionType]) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, action_type)
-        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
+        result_dict = _wrap_in_ok_result({k.serialize(): v for k, v in mapping.items()})
+
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def add_ignored_action_ids(self, action_type: ActionType, action_ids: List[str]) -> Response:
@@ -2114,7 +2118,8 @@ class RestAPI():
                 cursor=cursor,
                 action_type=action_type,
             )
-        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
+        result_dict = _wrap_in_ok_result({k.serialize(): v for k, v in mapping.items()})
+
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def remove_ignored_action_ids(
@@ -2137,7 +2142,8 @@ class RestAPI():
                 cursor=cursor,
                 action_type=action_type,
             )
-        result_dict = _wrap_in_ok_result({str(k): v for k, v in mapping.items()})
+        result_dict = _wrap_in_ok_result({k.serialize(): v for k, v in mapping.items()})
+
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def get_queried_addresses_per_module(self) -> Response:
