@@ -346,6 +346,7 @@ server.use(
     target: backend,
     onProxyRes,
     onProxyReq,
+    ws: true,
   })
 );
 server.use(middlewares);
