@@ -18,6 +18,7 @@
     :filter="customFilter"
     :search-input.sync="search"
     :item-text="assetText"
+    :hide-details="hideDetails"
     auto-select-first
     :menu-props="{ closeOnContentClick: true }"
     :outlined="outlined"
@@ -29,6 +30,7 @@
       <asset-details
         class="asset-select__details ml-2"
         :asset="item.identifier"
+        :enable-association="enableAssociation"
       />
     </template>
     <template #item="{ item }">
@@ -54,11 +56,9 @@ import { SupportedAsset } from '@rotki/common/lib/data';
 import {
   computed,
   defineComponent,
-  onMounted,
   PropType,
   ref,
-  toRefs,
-  watch
+  toRefs
 } from '@vue/composition-api';
 import { get, set, useTimeoutFn } from '@vueuse/core';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -71,6 +71,11 @@ export default defineComponent({
   components: { AssetDetails, AssetIcon },
   props: {
     items: {
+      required: false,
+      type: Array as PropType<string[]>,
+      default: () => []
+    },
+    excludes: {
       required: false,
       type: Array as PropType<string[]>,
       default: () => []
@@ -90,21 +95,24 @@ export default defineComponent({
     clearable: { required: false, type: Boolean, default: false },
     persistentHint: { required: false, type: Boolean, default: false },
     required: { required: false, type: Boolean, default: false },
-    showIgnored: { required: false, type: Boolean, default: false }
+    showIgnored: { required: false, type: Boolean, default: false },
+    hideDetails: { required: false, type: Boolean, default: false },
+    enableAssociation: { required: false, type: Boolean, default: true }
   },
   emits: ['input'],
   setup(props, { emit }) {
-    const { items, showIgnored } = toRefs(props);
+    const { items, showIgnored, enableAssociation, excludes } = toRefs(props);
     const assetInfoRetrievalStore = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
-    const { supportedAssets } = toRefs(assetInfoRetrievalStore);
+    const { supportedAssets, allSupportedAssets } = toRefs(
+      assetInfoRetrievalStore
+    );
 
     const input = (_value: string) => emit('input', _value);
 
     const autoCompleteInput = ref(null);
 
     const search = ref<string>('');
-    const visibleAssets = ref<SupportedAsset[]>([]);
 
     const keyword = computed<string>(() => {
       if (!get(search)) {
@@ -112,32 +120,6 @@ export default defineComponent({
       }
 
       return get(search).toLocaleLowerCase().trim();
-    });
-
-    const getAvailableAssets = () => {
-      const unIgnoredAssets = get(supportedAssets).filter(
-        asset => get(showIgnored) || !get(isAssetIgnored(asset.identifier))
-      );
-
-      const itemsVal = get(items);
-      if (itemsVal && itemsVal.length > 0) {
-        return unIgnoredAssets.filter(asset =>
-          itemsVal!.includes(asset.identifier)
-        );
-      }
-      return unIgnoredAssets;
-    };
-
-    const setDefaultVisibleAssets = () => {
-      set(visibleAssets, getAvailableAssets());
-    };
-
-    onMounted(() => {
-      setDefaultVisibleAssets();
-    });
-
-    watch(items, () => {
-      setDefaultVisibleAssets();
     });
 
     const customFilter = (item: SupportedAsset, queryText: string): boolean => {
@@ -150,15 +132,34 @@ export default defineComponent({
       return name.indexOf(keyword) >= 0 || symbol.indexOf(keyword) >= 0;
     };
 
-    watch(search, search => {
-      const assets = getAvailableAssets();
+    const visibleAssets = computed<SupportedAsset[]>(() => {
+      let assets = (
+        get(enableAssociation) ? get(supportedAssets) : get(allSupportedAssets)
+      ).filter((asset: SupportedAsset) => {
+        const unIgnored =
+          get(showIgnored) || !get(isAssetIgnored(asset.identifier));
 
-      set(
-        visibleAssets,
-        assets
-          .filter(value1 => customFilter(value1, search))
-          .sort((a, b) => compareAssets(a, b, 'name', get(keyword), false))
-      );
+        const itemsVal = get(items);
+        const included =
+          itemsVal && itemsVal.length > 0
+            ? itemsVal.includes(asset.identifier)
+            : true;
+
+        const excludesVal = get(excludes);
+        const excluded =
+          excludesVal && excludesVal.length > 0
+            ? excludesVal.includes(asset.identifier)
+            : false;
+
+        return unIgnored && included && !excluded;
+      });
+
+      const searchVal = get(search);
+      if (!searchVal) return assets;
+
+      return assets
+        .filter(item => customFilter(item, searchVal))
+        .sort((a, b) => compareAssets(a, b, 'name', get(keyword), false));
     });
 
     const assetText = (asset: SupportedAsset): string => {
@@ -188,7 +189,8 @@ export default defineComponent({
 ::v-deep {
   .v-select {
     &__slot {
-      height: 60px;
+      height: 56px;
+      margin-top: -2px;
 
       .v-label {
         top: 20px;
@@ -199,6 +201,10 @@ export default defineComponent({
           padding-top: 20px;
         }
       }
+    }
+
+    &__selections {
+      margin-top: 4px;
     }
   }
 }
@@ -215,13 +221,13 @@ export default defineComponent({
         &__icon {
           &--append {
             i {
-              bottom: 8px;
+              bottom: 10px;
             }
           }
 
           &--clear {
             button {
-              bottom: 8px;
+              bottom: 10px;
             }
           }
         }

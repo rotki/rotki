@@ -3624,23 +3624,98 @@
       "balance": "Balance: ",
       "export_database_snapshot": "Export database snapshot",
       "subtitle": "Click the button below to download snapshot for",
-      "delete_snapshot": "Delete snapshot",
-      "delete_dialog": {
-        "title": "Delete snapshot",
-        "message": "Are you sure you want to delete this snapshot?"
+      "delete": {
+        "title": "Delete",
+        "dialog": {
+          "title": "Delete snapshot",
+          "message": "Are you sure you want to delete this snapshot?"
+        },
+        "message": {
+          "title": "Delete snapshot",
+          "success": "Snapshot successfully deleted",
+          "failure": "Delete snapshot failed"
+        }
       },
-      "delete_message": {
-        "title": "Delete snapshot",
-        "success": "Snapshot successfully deleted",
-        "failure": "Delete snapshot failed"
+      "download": {
+        "title": "Download",
+        "message": {
+          "title": "Snapshot CSV Export",
+          "failure": "Snapshot CSV export failed",
+          "success": "Snapshot exported to CSV successfully"
+        }
       },
-      "download_snapshot": "Download snapshot",
-      "select_directory": "Select a directory",
-      "message": {
-        "title": "Snapshot CSV Export",
-        "failure": "Snapshot CSV export failed",
-        "success": "Snapshot exported to CSV successfully"
-      }
+      "edit": {
+        "title": "Edit",
+        "dialog": {
+          "title": "Edit snapshot data",
+          "actions": {
+            "back": "Back",
+            "next": "Next",
+            "save": "Save",
+            "finish": "Finish",
+            "edit_item": "Edit item",
+            "delete_item": "Delete item",
+            "add_new_entry": "Add New Entry"
+          },
+          "balances": {
+            "title": "Balances Snapshot",
+            "add_title": "Add balance snapshot data",
+            "edit_title": "Update balance snapshot data",
+            "delete_title": "Delete balance snapshot item",
+            "delete_confirmation": "Are you sure you want to delete this balance snapshot item?",
+            "token": "Token",
+            "nft": "NFT",
+            "nft_hint": "Accepted format: \"_nft_{ETH address}_{collection number}\"",
+            "headers": {
+              "category": "Category",
+              "asset": "Asset",
+              "amount": "Amount",
+              "value": "{currency} Value"
+            },
+            "rules": {
+              "category": "The category field cannot be empty",
+              "asset": "The asset field cannot be empty",
+              "asset_non_duplicate": "The entry with this asset already exists, please use another asset.",
+              "amount": "The amount field cannot be empty",
+              "value": "The value field cannot be empty"
+            }
+          },
+          "location_data": {
+            "title": "Location Data Snapshot",
+            "add_title": "Add location data snapshot data",
+            "edit_title": "Update location data snapshot data",
+            "delete_title": "Delete location data snapshot item",
+            "delete_confirmation": "Are you sure you want to delete this location data snapshot item?",
+            "headers": {
+              "location": "Location",
+              "value": "{currency} Value"
+            },
+            "rules": {
+              "location": "The location field cannot be empty",
+              "value": "The value field cannot be empty"
+            }
+          },
+          "total": {
+            "title": "Total",
+            "warning": "This is total value that includes NFTs value. If you turn off setting \"Include NFTs in graphs and total amounts\", it will show value {amount} on the chart",
+            "use_calculated_asset": "Use Calculated Asset Value: ",
+            "use_calculated_location": "Use Calculated Location Value: ",
+            "use_calculated_total": "Use Calculated Total Value: ",
+            "rules": {
+              "total": "The value field cannot be empty"
+            }
+          },
+          "fetch": {
+            "loading": "Fetching snapshot data"
+          },
+          "message": {
+            "title": "Update snapshot data",
+            "success": "Data was successfully updated",
+            "error": "Failed to update snapshot data: {message}"
+          }
+        }
+      },
+      "select_directory": "Select a directory"
     }
   },
   "dashboard_asset_table": {

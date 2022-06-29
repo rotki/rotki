@@ -55,6 +55,8 @@ import {
   AllBalancePayload,
   BlockchainAccountPayload,
   ExchangePayload,
+  Snapshot,
+  SnapshotPayload,
   XpubPayload
 } from '@/store/balances/types';
 import { IgnoreActionType } from '@/store/history/types';
@@ -952,7 +954,7 @@ export class RotkehlchenApi {
     locationDataSnapshotFile: string
   ): Promise<boolean> {
     const response = await this.axios.put<ActionResult<boolean>>(
-      '/snapshot/import',
+      '/snapshots',
       axiosSnakeCaseTransformer({
         balancesSnapshotFile,
         locationDataSnapshotFile
@@ -973,7 +975,7 @@ export class RotkehlchenApi {
     data.append('balances_snapshot_file', balancesSnapshotFile);
     data.append('location_data_snapshot_file', locationDataSnapshotFile);
     const response = await this.axios.post<ActionResult<boolean>>(
-      '/snapshot/import',
+      '/snapshots',
       data,
       {
         headers: {
@@ -1237,36 +1239,64 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async exportSnapshotCSV(payload: {
-    path: string;
-    timestamp: number;
-  }): Promise<boolean> {
+  async getSnapshotData(timestamp: number): Promise<Snapshot> {
+    const response = await this.axios.get<ActionResult<Snapshot>>(
+      `/snapshots/${timestamp}`,
+      {
+        validateStatus: validWithoutSessionStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    return Snapshot.parse(handleResponse(response));
+  }
+
+  async updateSnapshotData(
+    timestamp: number,
+    payload: SnapshotPayload
+  ): Promise<boolean> {
     return this.axios
-      .post<ActionResult<boolean>>(
-        '/snapshot/export',
+      .patch<ActionResult<boolean>>(
+        `/snapshots/${timestamp}`,
         axiosSnakeCaseTransformer(payload),
         {
-          validateStatus: validWithoutSessionStatus,
+          validateStatus: validStatus,
           transformResponse: basicAxiosTransformer
         }
       )
       .then(handleResponse);
   }
 
-  async downloadSnapshot(payload: { timestamp: number }): Promise<any> {
-    return this.axios.post<any>(
-      '/snapshot/download',
-      axiosSnakeCaseTransformer(payload),
-      {
+  async exportSnapshotCSV({
+    path,
+    timestamp
+  }: {
+    path: string;
+    timestamp: number;
+  }): Promise<boolean> {
+    return this.axios
+      .get<ActionResult<boolean>>(`/snapshots/${timestamp}`, {
+        params: axiosSnakeCaseTransformer({
+          path,
+          action: 'export'
+        }),
         validateStatus: validWithoutSessionStatus,
-        responseType: 'arraybuffer'
-      }
-    );
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async downloadSnapshot(timestamp: number): Promise<any> {
+    return this.axios.get<any>(`/snapshots/${timestamp}`, {
+      params: axiosSnakeCaseTransformer({ action: 'download' }),
+      validateStatus: validWithoutSessionStatus,
+      responseType: 'arraybuffer'
+    });
   }
 
   async deleteSnapshot(payload: { timestamp: number }): Promise<boolean> {
     return this.axios
-      .delete<ActionResult<boolean>>('/snapshot/delete', {
+      .delete<ActionResult<boolean>>('/snapshots', {
         data: axiosSnakeCaseTransformer(payload),
         validateStatus: validWithoutSessionStatus,
         transformResponse: basicAxiosTransformer

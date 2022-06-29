@@ -204,7 +204,7 @@
 
         <v-divider class="mb-6 mt-2" />
 
-        <v-row>
+        <v-row class="mb-2">
           <v-col cols="12" md="6">
             <amount-input
               ref="feeInput"
@@ -710,10 +710,6 @@ export default ExternalTradeForm;
         padding: 0 !important;
       }
     }
-  }
-
-  &__fee {
-    height: 60px;
   }
 }
 

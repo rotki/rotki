@@ -44,10 +44,11 @@ const AssetDetailsBase = defineComponent({
     opensDetails: { required: false, type: Boolean, default: false },
     changeable: { required: false, type: Boolean, default: false },
     hideName: { required: false, type: Boolean, default: false },
-    dense: { required: false, type: Boolean, default: false }
+    dense: { required: false, type: Boolean, default: false },
+    enableAssociation: { required: false, type: Boolean, default: true }
   },
   setup(props) {
-    const { asset, opensDetails } = toRefs(props);
+    const { asset, opensDetails, enableAssociation } = toRefs(props);
     const { assetSymbol, assetName } = useAssetInfoRetrieval();
 
     const identifier = computed(() => {
@@ -57,8 +58,12 @@ const AssetDetailsBase = defineComponent({
       }
       return supportedAsset.identifier;
     });
-    const symbol = computed(() => get(assetSymbol(get(identifier))));
-    const name = computed(() => get(assetName(get(identifier))));
+    const symbol = computed(() =>
+      get(assetSymbol(get(identifier), get(enableAssociation)))
+    );
+    const name = computed(() =>
+      get(assetName(get(identifier), get(enableAssociation)))
+    );
     const router = useRouter();
     const navigate = () => {
       if (!get(opensDetails)) {

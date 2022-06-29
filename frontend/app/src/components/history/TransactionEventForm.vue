@@ -221,7 +221,7 @@ import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
 import { TaskType } from '@/types/task-type';
 import { HistoryEventSubType, HistoryEventType } from '@/types/transaction';
-import { bigNumberifyFromRef, Zero } from '@/utils/bignumbers';
+import { bigNumberifyFromRef, One, Zero } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { getEventTypeData } from '@/utils/history';
 
@@ -367,7 +367,7 @@ const TransactionEventForm = defineComponent({
     };
 
     const fiatExchangeRate = computed<BigNumber>(() => {
-      return exchangeRate(get(currencySymbol)) ?? new BigNumber(1);
+      return exchangeRate(get(currencySymbol)) ?? One;
     });
 
     const setEditMode = () => {
@@ -555,24 +555,3 @@ export type TransactionEventFormInstance = InstanceType<
 
 export default TransactionEventForm;
 </script>
-
-<style scoped lang="scss">
-.transaction-event-form {
-  &__amount-wrapper {
-    ::v-deep {
-      .v-input {
-        input {
-          height: 60px;
-          max-height: 60px !important;
-        }
-      }
-
-      .v-select {
-        &__selections {
-          padding: 0 !important;
-        }
-      }
-    }
-  }
-}
-</style>

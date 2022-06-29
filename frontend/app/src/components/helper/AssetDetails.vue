@@ -5,6 +5,7 @@
       :asset="currentAsset"
       :opens-details="opensDetails"
       :dense="dense"
+      :enable-association="enableAssociation"
     />
   </div>
 </template>
@@ -28,15 +29,17 @@ export default defineComponent({
     },
     opensDetails: { required: false, type: Boolean, default: false },
     hideName: { required: false, type: Boolean, default: false },
-    dense: { required: false, type: Boolean, default: false }
+    dense: { required: false, type: Boolean, default: false },
+    enableAssociation: { required: false, type: Boolean, default: true }
   },
   setup(props) {
-    const { asset } = toRefs(props);
+    const { asset, enableAssociation } = toRefs(props);
 
     const { assetInfo } = useAssetInfoRetrieval();
 
     const currentAsset = computed(() => {
-      const details = get(assetInfo(get(asset)));
+      const details = get(assetInfo(get(asset), get(enableAssociation)));
+
       return {
         symbol: details ? details.symbol : get(asset),
         name: details ? details.name : get(asset),

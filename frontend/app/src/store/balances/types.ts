@@ -1,4 +1,4 @@
-import { Balance, BigNumber, HasBalance } from '@rotki/common';
+import { Balance, BigNumber, HasBalance, NumericString } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
@@ -274,3 +274,47 @@ export const EthNamesPayload = EthNamesEntry.merge(
 export type EthNamesPayload = z.infer<typeof EthNamesPayload>;
 
 export type EthAddressBookLocation = z.infer<typeof EthAddressBookLocation>;
+
+export const BalanceSnapshot = z.object({
+  timestamp: z.number(),
+  category: z.string(),
+  assetIdentifier: z.string(),
+  amount: NumericString,
+  usdValue: NumericString
+});
+
+export type BalanceSnapshot = z.infer<typeof BalanceSnapshot>;
+
+export type BalanceSnapshotPayload = {
+  timestamp: number;
+  category: string;
+  assetIdentifier: string;
+  amount: string;
+  usdValue: string;
+};
+
+export const LocationDataSnapshot = z.object({
+  timestamp: z.number(),
+  location: z.string(),
+  usdValue: NumericString
+});
+
+export type LocationDataSnapshot = z.infer<typeof LocationDataSnapshot>;
+
+export type LocationDataSnapshotPayload = {
+  timestamp: number;
+  location: string;
+  usdValue: string;
+};
+
+export const Snapshot = z.object({
+  balancesSnapshot: z.array(BalanceSnapshot),
+  locationDataSnapshot: z.array(LocationDataSnapshot)
+});
+
+export type Snapshot = z.infer<typeof Snapshot>;
+
+export type SnapshotPayload = {
+  balancesSnapshot: BalanceSnapshotPayload[];
+  locationDataSnapshot: LocationDataSnapshotPayload[];
+};

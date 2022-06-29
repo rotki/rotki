@@ -337,25 +337,3 @@ export type LedgerActionFormInstance = InstanceType<typeof LedgerActionForm>;
 
 export default LedgerActionForm;
 </script>
-
-<style scoped lang="scss">
-.ledger-action-form {
-  &__amount-wrapper,
-  &__rate-wrapper {
-    ::v-deep {
-      .v-input {
-        input {
-          height: 60px;
-          max-height: 60px !important;
-        }
-      }
-
-      .v-select {
-        &__selections {
-          padding: 0 !important;
-        }
-      }
-    }
-  }
-}
-</style>

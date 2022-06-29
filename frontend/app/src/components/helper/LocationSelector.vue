@@ -34,23 +34,47 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { tradeLocations } from '@/components/history/consts';
 import LocationIcon from '@/components/history/LocationIcon.vue';
+import { TradeLocationData } from '@/components/history/type';
 
 export default defineComponent({
   name: 'LocationSelector',
   components: { LocationIcon },
   props: {
     value: { required: false, type: String, default: '' },
-    pending: { required: false, type: Boolean, default: false }
+    pending: { required: false, type: Boolean, default: false },
+    excludes: {
+      required: false,
+      type: Array as PropType<string[]>,
+      default: () => []
+    }
   },
   emits: ['change'],
-  setup(_, { emit }) {
+  setup(props, { emit }) {
+    const { excludes } = toRefs(props);
+
     const change = (_value: string) => emit('change', _value);
 
+    const locations = computed<TradeLocationData[]>(() => {
+      const excludesVal = get(excludes);
+      if (excludesVal && excludesVal.length > 0) {
+        return tradeLocations.filter(
+          item => !excludesVal.includes(item.identifier)
+        );
+      }
+      return tradeLocations;
+    });
+
     return {
-      locations: tradeLocations,
+      locations,
       change
     };
   }

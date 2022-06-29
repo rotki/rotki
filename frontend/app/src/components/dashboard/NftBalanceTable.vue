@@ -32,28 +32,7 @@
       :loading="loading"
     >
       <template #item.name="{ item }">
-        <div class="d-flex align-center">
-          <div class="my-2 nft-balance-table__item__preview">
-            <video
-              v-if="item.isVideo"
-              width="100%"
-              height="100%"
-              aspect-ratio="1"
-              :src="item.imageUrl"
-            />
-            <v-img
-              v-if="!item.isVideo"
-              :src="item.imageUrl"
-              width="100%"
-              height="100%"
-              contain
-              aspect-ratio="1"
-            />
-          </div>
-          <span class="ml-4">
-            {{ item.name ? item.name : item.id }}
-          </span>
-        </div>
+        <nft-details :identifier="item.id" />
       </template>
       <template #item.priceInAsset="{ item }">
         <amount-display
@@ -101,6 +80,7 @@ import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
@@ -117,7 +97,6 @@ import {
 } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { Zero } from '@/utils/bignumbers';
-import { isVideo } from '@/utils/nft';
 
 const tableHeaders = (
   currency: Ref<string>,
@@ -187,6 +166,7 @@ const tableHeaders = (
 export default defineComponent({
   name: 'NftBalanceTable',
   components: {
+    NftDetails,
     RowAppend,
     VisibleColumnsSelector,
     MenuTooltipButton
@@ -240,8 +220,7 @@ export default defineComponent({
       return get(balances).map(balance => {
         return {
           ...balance,
-          imageUrl: balance.imageUrl || '/assets/images/placeholder.svg',
-          isVideo: isVideo(balance.imageUrl)
+          imageUrl: balance.imageUrl || '/assets/images/placeholder.svg'
         };
       });
     });
@@ -260,14 +239,3 @@ export default defineComponent({
   }
 });
 </script>
-<style scoped lang="scss">
-.nft-balance-table {
-  &__item {
-    &__preview {
-      width: 50px;
-      height: 50px;
-      max-width: 50px;
-    }
-  }
-}
-</style>

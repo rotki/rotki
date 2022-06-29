@@ -86,8 +86,8 @@ export class ElectronInterop {
   async version(): Promise<SystemVersion | WebVersion> {
     if (!window.interop) {
       return {
-        platform: navigator.platform,
-        userAgent: navigator.userAgent
+        platform: navigator?.platform,
+        userAgent: navigator?.userAgent
       };
     }
     return window.interop?.version();

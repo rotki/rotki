@@ -120,7 +120,7 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
-import { totalNetWorthUsd } from '@/composables/statistics';
+import { setupGeneralStatistics } from '@/composables/statistics';
 import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
@@ -132,6 +132,7 @@ import {
 } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { getSortItems } from '@/utils/assets';
+import { One } from '@/utils/bignumbers';
 
 const tableHeaders = (
   totalNetWorthUsd: Ref<BigNumber>,
@@ -235,13 +236,11 @@ const DashboardAssetTable = defineComponent({
 
     const exchangeRate = setupExchangeRateGetter();
     const totalInUsd = computed(() => {
-      return aggregateTotal(get(balances), CURRENCY_USD, new BigNumber(1));
+      return aggregateTotal(get(balances), CURRENCY_USD, One);
     });
     const total = computed(() => {
       const mainCurrency = get(currencySymbol);
-      return get(totalInUsd).multipliedBy(
-        exchangeRate(mainCurrency) ?? new BigNumber(1)
-      );
+      return get(totalInUsd).multipliedBy(exchangeRate(mainCurrency) ?? One);
     });
 
     const { getAssetSymbol, getAssetName } = useAssetInfoRetrieval();
@@ -267,6 +266,7 @@ const DashboardAssetTable = defineComponent({
       return percentage.toFixed(2);
     };
 
+    const { totalNetWorthUsd } = setupGeneralStatistics();
     const percentageOfTotalNetValue = (value: BigNumber) => {
       const netWorth = get(totalNetWorthUsd);
       const total = netWorth.lt(0) ? get(totalInUsd) : netWorth;

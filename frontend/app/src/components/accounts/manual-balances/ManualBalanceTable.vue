@@ -100,7 +100,6 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common';
 import {
   computed,
   defineComponent,
@@ -127,6 +126,7 @@ import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { ManualBalance } from '@/services/balances/types';
 import { assert } from '@/utils/assertions';
+import { One } from '@/utils/bignumbers';
 
 const setupHeaders: (
   i18n: IVueI18n,
@@ -226,7 +226,7 @@ const ManualBalanceTable = defineComponent({
       return aggregateTotal(
         get(visibleBalances),
         get(currencySymbol),
-        exchangeRate(get(currencySymbol)) ?? new BigNumber(1)
+        exchangeRate(get(currencySymbol)) ?? One
       );
     });
 

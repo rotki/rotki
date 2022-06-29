@@ -1,5 +1,6 @@
 import { BigNumber } from '@rotki/common';
-import { computed, Ref, unref } from '@vue/composition-api';
+import { computed, Ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 
 export function bigNumberify(value: string | number) {
   return new BigNumber(value);
@@ -9,11 +10,14 @@ export function bigNumberifyFromRef(
   value: Ref<string | number>
 ): Ref<BigNumber> {
   return computed(() => {
-    return new BigNumber(unref(value));
+    const val = get(value);
+    if (val === '') return Zero;
+    return new BigNumber(val);
   });
 }
 
 export const Zero = new BigNumber(0);
+export const One = new BigNumber(1);
 export const NoPrice = new BigNumber(-1);
 
 export const sortDesc = (a: BigNumber, b: BigNumber) => b.minus(a).toNumber();

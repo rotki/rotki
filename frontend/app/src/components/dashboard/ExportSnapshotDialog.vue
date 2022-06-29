@@ -7,7 +7,7 @@
       <template #subtitle>
         {{ $t('dashboard.snapshot.subtitle') }}
       </template>
-      <div class="mb-n4">
+      <div class="mb-n2">
         <div>
           <div>
             {{ $t('dashboard.snapshot.time') }}
@@ -30,24 +30,34 @@
         </div>
       </div>
       <template #buttons>
-        <v-spacer />
+        <v-btn color="primary" @click="editMode = true">
+          <v-icon class="mr-2">mdi-pencil-outline</v-icon>
+          {{ $t('dashboard.snapshot.edit.title') }}
+        </v-btn>
         <v-btn color="error" @click="deleteSnapshotConfirmationDialog = true">
           <v-icon class="mr-2">mdi-delete-outline</v-icon>
-          {{ $t('dashboard.snapshot.delete_snapshot') }}
+          {{ $t('dashboard.snapshot.delete.title') }}
         </v-btn>
+        <v-spacer />
         <v-btn color="primary" @click="exportSnapshot">
           <v-icon class="mr-2">mdi-download</v-icon>
-          {{ $t('dashboard.snapshot.download_snapshot') }}
+          {{ $t('dashboard.snapshot.download.title') }}
         </v-btn>
       </template>
     </card>
     <confirm-dialog
       v-if="deleteSnapshotConfirmationDialog"
       display
-      :title="$tc('dashboard.snapshot.delete_dialog.title')"
-      :message="$tc('dashboard.snapshot.delete_dialog.message')"
+      :title="$tc('dashboard.snapshot.delete.dialog.title')"
+      :message="$tc('dashboard.snapshot.delete.dialog.message')"
       @cancel="deleteSnapshotConfirmationDialog = false"
       @confirm="deleteSnapshot"
+    />
+    <edit-snapshot-dialog
+      v-if="editMode"
+      :timestamp="timestamp"
+      @close="editMode = false"
+      @finish="finish"
     />
   </v-dialog>
 </template>
@@ -57,17 +67,19 @@ import { Message } from '@rotki/common/lib/messages';
 import { computed, defineComponent, ref, toRefs } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
+import EditSnapshotDialog from '@/components/dashboard/EditSnapshotDialog.vue';
 import { setupGeneralSettings } from '@/composables/session';
+import { setupGeneralStatistics } from '@/composables/statistics';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/store';
-import { useStore } from '@/store/utils';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { downloadFileByUrl } from '@/utils/download';
 
 export default defineComponent({
   name: 'ExportSnapshotDialog',
+  components: { EditSnapshotDialog },
   props: {
     value: { required: false, type: Boolean, default: false },
     timestamp: { required: false, type: Number, default: 0 },
@@ -77,6 +89,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const { timestamp, balance } = toRefs(props);
     const { currency } = setupGeneralSettings();
+    const editMode = ref<boolean>(false);
 
     const deleteSnapshotConfirmationDialog = ref<boolean>(false);
 
@@ -93,9 +106,7 @@ export default defineComponent({
     });
 
     const downloadSnapshot = async () => {
-      const resp = await api.downloadSnapshot({
-        timestamp: get(timestamp)
-      });
+      const resp = await api.downloadSnapshot(get(timestamp));
 
       const blob = new Blob([resp.data], { type: 'application/zip' });
       const url = window.URL.createObjectURL(blob);
@@ -129,10 +140,14 @@ export default defineComponent({
           });
 
           message = {
-            title: i18n.t('dashboard.snapshot.message.title').toString(),
+            title: i18n
+              .t('dashboard.snapshot.download.message.title')
+              .toString(),
             description: success
-              ? i18n.t('dashboard.snapshot.message.success').toString()
-              : i18n.t('dashboard.snapshot.message.failure').toString(),
+              ? i18n.t('dashboard.snapshot.download.message.success').toString()
+              : i18n
+                  .t('dashboard.snapshot.download.message.failure')
+                  .toString(),
             success
           };
 
@@ -142,7 +157,7 @@ export default defineComponent({
         }
       } catch (e: any) {
         message = {
-          title: i18n.t('dashboard.snapshot.message.title').toString(),
+          title: i18n.t('dashboard.snapshot.download.message.title').toString(),
           description: e.message,
           success: false
         };
@@ -161,6 +176,8 @@ export default defineComponent({
       }
     };
 
+    const { fetchNetValue } = setupGeneralStatistics();
+
     const deleteSnapshot = async () => {
       let message: Message | null;
 
@@ -170,20 +187,18 @@ export default defineComponent({
         });
 
         message = {
-          title: i18n.t('dashboard.snapshot.delete_message.title').toString(),
+          title: i18n.t('dashboard.snapshot.delete.message.title').toString(),
           description: success
-            ? i18n.t('dashboard.snapshot.delete_message.success').toString()
-            : i18n.t('dashboard.snapshot.delete_message.failure').toString(),
+            ? i18n.t('dashboard.snapshot.delete.message.success').toString()
+            : i18n.t('dashboard.snapshot.delete.message.failure').toString(),
           success
         };
 
         updateVisibility(false);
-
-        const store = useStore();
-        store.dispatch('statistics/fetchNetValue');
+        fetchNetValue();
       } catch (e: any) {
         message = {
-          title: i18n.t('dashboard.snapshot.message.title').toString(),
+          title: i18n.t('dashboard.snapshot.download.message.title').toString(),
           description: e.message,
           success: false
         };
@@ -194,13 +209,20 @@ export default defineComponent({
       setMessage(message);
     };
 
+    const finish = () => {
+      updateVisibility(false);
+      set(editMode, false);
+    };
+
     return {
+      editMode,
       currency,
       formattedSelectedBalance,
+      deleteSnapshotConfirmationDialog,
       updateVisibility,
       exportSnapshot,
-      deleteSnapshotConfirmationDialog,
-      deleteSnapshot
+      deleteSnapshot,
+      finish
     };
   }
 });
