@@ -53,7 +53,8 @@ const GeneralSettings = z.object({
   historicalPriceOracles: z.array(PriceOracle),
   ssf0graphMultiplier: z.number().default(0),
   nonSyncingExchanges: z.array(Exchange),
-  treatEth2AsEth: z.boolean()
+  treatEth2AsEth: z.boolean(),
+  ethStakingTaxableAfterWithdrawalEnabled: z.boolean()
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
@@ -141,7 +142,9 @@ const getGeneralSettings = (settings: UserSettings): GeneralSettings => ({
   historicalPriceOracles: settings.historicalPriceOracles,
   ssf0graphMultiplier: settings.ssf0graphMultiplier,
   nonSyncingExchanges: settings.nonSyncingExchanges,
-  treatEth2AsEth: settings.treatEth2AsEth
+  treatEth2AsEth: settings.treatEth2AsEth,
+  ethStakingTaxableAfterWithdrawalEnabled:
+    settings.ethStakingTaxableAfterWithdrawalEnabled
 });
 
 const getOtherSettings = (settings: UserSettings): OtherSettings => ({

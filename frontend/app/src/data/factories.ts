@@ -22,7 +22,8 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
   historicalPriceOracles: [],
   ssf0graphMultiplier: 0,
   nonSyncingExchanges: [],
-  treatEth2AsEth: false
+  treatEth2AsEth: false,
+  ethStakingTaxableAfterWithdrawalEnabled: false
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({
