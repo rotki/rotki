@@ -73,6 +73,7 @@ from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
+from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
@@ -188,21 +189,6 @@ def _protect_password_sqlcipher(password: str) -> str:
     source: https://stackoverflow.com/a/603579/110395
 """
     return password.replace(r'"', r'""')
-
-
-def detect_sqlcipher_version() -> int:
-    """Returns the major part of the version of the system's sqlcipher package"""
-    conn = DBConnection(path=':memory:', use_sqlcipher=True)
-    query = conn.execute('PRAGMA cipher_version;')
-    version = query.fetchall()[0][0]
-
-    match = re.search(r'(\d+).(\d+).(\d+)', version)
-    if not match:
-        raise ValueError(f'Could not process the version returned by sqlcipher: {version}')
-
-    sqlcipher_version = int(match.group(1))
-    conn.close()
-    return sqlcipher_version
 
 
 def db_tuple_to_str(
