@@ -104,23 +104,27 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
     """Test that the genesis transactions are correctly returned"""
     account = to_checksum_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A')
     db = eth_transactions.database
-    db.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.ETHEREUM,
-        account_data=[
-            BlockchainAccountData(address=account),
-        ],
-    )
+    with db.user_write() as cursor:
+        db.add_blockchain_accounts(
+            write_cursor=cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            account_data=[
+                BlockchainAccountData(address=account),
+            ],
+        )
     eth_transactions.single_address_query_transactions(
         address=account,
         start_ts=ETHEREUM_BEGIN,
         end_ts=Timestamp(1451606400),
     )
     dbtx = DBEthTx(database=db)
-    regular_tx_in_db = dbtx.get_ethereum_transactions(
-        filter_=ETHTransactionsFilterQuery.make(),
-        has_premium=True,
-    )
-    internal_tx_in_db = dbtx.get_ethereum_internal_transactions(parent_tx_hash=GENESIS_HASH)
+    with db.conn.read_ctx() as cursor:
+        regular_tx_in_db = dbtx.get_ethereum_transactions(
+            cursor=cursor,
+            filter_=ETHTransactionsFilterQuery.make(),
+            has_premium=True,
+        )
+        internal_tx_in_db = dbtx.get_ethereum_internal_transactions(parent_tx_hash=GENESIS_HASH)
 
     assert regular_tx_in_db == [
         EthereumTransaction(

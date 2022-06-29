@@ -87,7 +87,7 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
 
     assert LQTY_STAKING in result
     stake_data = result[LQTY_STAKING]
-    assert 'amount' in stake_data and float(stake_data['amount']) > 0
+    assert 'amount' in stake_data and stake_data['amount'].isnumeric()
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR, LQTY_PROXY]])

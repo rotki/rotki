@@ -307,10 +307,12 @@ class Etherscan(ExternalServiceWithApiKey):
                             internal=True,
                             ethereum=None,
                         )
-                        dbtx.add_ethereum_internal_transactions(
-                            transactions=[internal_tx],
-                            relevant_address=account,
-                        )
+                        with self.db.user_write() as cursor:  # type: ignore  # db always here
+                            dbtx.add_ethereum_internal_transactions(
+                                write_cursor=cursor,
+                                transactions=[internal_tx],
+                                relevant_address=account,
+                            )
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
                     continue

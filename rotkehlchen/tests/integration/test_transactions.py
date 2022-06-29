@@ -1,4 +1,5 @@
 import pytest
+from flaky import flaky
 
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.tests.utils.ethereum import (
@@ -7,6 +8,7 @@ from rotkehlchen.tests.utils.ethereum import (
 )
 
 
+@flaky(max_runs=3, min_passes=1)  # failed in a flaky way sometimes in the CI due to etherscan
 @pytest.mark.parametrize(*ETHERSCAN_AND_INFURA_PARAMS)
 @pytest.mark.parametrize('transaction_already_queried', [True, False])
 def test_get_transaction_receipt(

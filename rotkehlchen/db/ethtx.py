@@ -439,10 +439,12 @@ class DBEthTx():
             self,
             account: ChecksumEthAddress,
     ) -> EthereumTransaction:
-        tx_in_db = self.get_ethereum_transactions(
-            filter_=ETHTransactionsFilterQuery.make(tx_hash=GENESIS_HASH, addresses=[account]),
-            has_premium=True,
-        )
+        with self.db.conn.read_ctx() as cursor:
+            tx_in_db = self.get_ethereum_transactions(
+                cursor=cursor,
+                filter_=ETHTransactionsFilterQuery.make(tx_hash=GENESIS_HASH, addresses=[account]),
+                has_premium=True,
+            )
         if len(tx_in_db) == 1:
             tx = tx_in_db[0]
         else:
@@ -459,8 +461,10 @@ class DBEthTx():
                 input_data=b'',
                 nonce=0,
             )
-            self.add_ethereum_transactions(
-                ethereum_transactions=[tx],
-                relevant_address=account,
-            )
+            with self.db.user_write() as cursor:
+                self.add_ethereum_transactions(
+                    write_cursor=cursor,
+                    ethereum_transactions=[tx],
+                    relevant_address=account,
+                )
         return tx
