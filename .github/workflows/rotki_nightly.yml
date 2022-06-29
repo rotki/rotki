@@ -3,6 +3,9 @@ name: Rotki Nightly Tests
 on:
   schedule:
     - cron: "0 0 * * *"
+  push:
+    branches:
+      - tests
 
 env:
   PYTHON_VERSION: 3.9.13
@@ -16,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-18.04, macos-10.5 ]
+        os: [ ubuntu-18.04, macos-11 ]
     runs-on: ${{ matrix.os }}
     name: 'Backend tests on ${{ matrix.os }}'
     steps:
@@ -43,7 +46,7 @@ jobs:
       - name: Run tests
         run: |
           COVERAGE_ARGS='--cov=./'
-          if [ ${{ matrix.os }} == 'macos-10.15' ];
+          if [ ${{ runner.os }} == 'macOS' ];
           then
             COVERAGE_ARGS=''
           fi
@@ -53,6 +56,7 @@ jobs:
 
   test-integration:
     name: 'Frontend e2e tests'
+    needs: [ 'test-backend' ]
     env:
       CI: true
     runs-on: ubuntu-18.04
