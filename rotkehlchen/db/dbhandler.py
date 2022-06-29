@@ -3152,7 +3152,6 @@ class DBHandler:
         log.debug(f'db integrity: start {table_name}')
         write_cursor.execute(f'SELECT * from {table_name};')
         for result in write_cursor:
-            log.debug(f'db integrity: iterating {table_name}')
             try:
                 obj = klass.deserialize_from_db(result)
             except (DeserializationError, UnknownAsset):
