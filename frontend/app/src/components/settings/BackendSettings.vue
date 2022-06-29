@@ -255,6 +255,8 @@ export default class BackendSettings extends Mixins(BackendMixin) {
       return 'mdi-alert-circle';
     } else if (level === LogLevel.CRITICAL) {
       return 'mdi-alert-decagram';
+    } else if (level === LogLevel.TRACE) {
+      return 'mdi-magnify-scan';
     }
     throw new Error(`Invalid option: ${level}`);
   }
