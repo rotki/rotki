@@ -2,7 +2,7 @@
   <v-row>
     <v-col cols="12">
       <loan-header class="mt-8 mb-6" :owner="loan.owner">
-        {{ $t('aave_lending.header', { asset: getSymbol(loan.asset) }) }}
+        {{ $t('aave_lending.header', { asset: symbol }) }}
       </loan-header>
       <v-row no-gutters>
         <v-col cols="12" md="6" class="pe-md-4">
@@ -31,15 +31,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import AaveCollateral from '@/components/defi/loan/loans/aave/AaveCollateral.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import { isSectionLoading } from '@/composables/common';
 import { getPremium } from '@/composables/session';
-import AssetMixin from '@/mixins/asset-mixin';
 import { AaveBorrowingDetails } from '@/premium/premium';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import { AaveLoan } from '@/store/defi/types';
 
@@ -52,19 +58,25 @@ export default defineComponent({
     LoanHeader,
     AaveBorrowingDetails
   },
-  mixins: [AssetMixin],
   props: {
     loan: {
       required: true,
       type: Object as PropType<AaveLoan>
     }
   },
-  setup() {
+  setup(props) {
+    const { loan } = toRefs(props);
     const premium = getPremium();
     const aaveHistoryLoading = isSectionLoading(Section.DEFI_AAVE_HISTORY);
+    const { getAssetSymbol } = useAssetInfoRetrieval();
+    const symbol = computed(() => {
+      const asset = get(loan).asset;
+      return asset ? getAssetSymbol(asset) : '';
+    });
     return {
       premium,
-      aaveHistoryLoading
+      aaveHistoryLoading,
+      symbol
     };
   }
 });

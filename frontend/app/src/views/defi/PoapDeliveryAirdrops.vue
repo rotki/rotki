@@ -22,11 +22,9 @@
         <v-btn
           icon
           color="primary"
-          :target="$interop.isPackaged ? undefined : '_blank'"
-          :href="$interop.isPackaged ? undefined : item.link"
-          @click="
-            $interop.isPackaged ? $interop.navigate(item.link) : undefined
-          "
+          :target="isPackaged ? undefined : '_blank'"
+          :href="isPackaged ? undefined : item.link"
+          @click="isPackaged ? navigate(item.link) : undefined"
         >
           <v-icon>mdi-link</v-icon>
         </v-btn>
@@ -40,6 +38,7 @@ import { defineComponent, PropType } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
+import { useInterop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { PoapDeliveryDetails } from '@/store/defi/types';
 import { default as images } from './poap.json';
@@ -92,8 +91,12 @@ export default defineComponent({
       return image ?? '';
     };
 
+    const { navigate, isPackaged } = useInterop();
+
     return {
       headers,
+      isPackaged,
+      navigate,
       getImage
     };
   }

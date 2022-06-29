@@ -2,7 +2,7 @@
   <v-row>
     <v-col cols="12">
       <loan-header class="mt-8 mb-6" :owner="loan.owner">
-        {{ $t('compound_lending.header', { asset: getSymbol(loan.asset) }) }}
+        {{ $t('compound_lending.header', { asset: symbol }) }}
       </loan-header>
       <v-row no-gutters>
         <v-col cols="12" md="6" class="pe-md-4">
@@ -43,9 +43,9 @@ import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import CompoundCollateral from '@/components/defi/loan/loans/compound/CompoundCollateral.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import { getPremium } from '@/composables/session';
-import AssetMixin from '@/mixins/asset-mixin';
 import { CompoundBorrowingDetails } from '@/premium/premium';
 import { CompoundLoan } from '@/services/defi/types/compound';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { uniqueStrings } from '@/utils/data';
 
 export default defineComponent({
@@ -57,7 +57,6 @@ export default defineComponent({
     LoanHeader,
     CompoundBorrowingDetails
   },
-  mixins: [AssetMixin],
   props: {
     loan: {
       required: true,
@@ -81,9 +80,16 @@ export default defineComponent({
       return assets;
     });
 
+    const { getAssetSymbol } = useAssetInfoRetrieval();
+    const symbol = computed(() => {
+      const asset = get(loan).asset;
+      return asset ? getAssetSymbol(asset) : '';
+    });
+
     return {
       premium,
-      assets
+      assets,
+      symbol
     };
   }
 });

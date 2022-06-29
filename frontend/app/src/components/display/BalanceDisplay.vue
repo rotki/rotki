@@ -10,7 +10,7 @@
     <div class="d-flex flex-column align-end">
       <amount-display
         :loading-="!!!value"
-        :asset="getSymbol(asset)"
+        :asset="symbol"
         :asset-padding="assetPadding"
         :value="value.amount"
         class="d-block font-weight-medium"
@@ -33,14 +33,19 @@
 
 <script lang="ts">
 import { Balance } from '@rotki/common';
-import { defineComponent, PropType } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import AssetLink from '@/components/assets/AssetLink.vue';
-import AssetMixin from '@/mixins/asset-mixin';
+import { useAssetInfoRetrieval } from '@/store/assets';
 
 export default defineComponent({
   name: 'BalanceDisplay',
   components: { AssetLink },
-  mixins: [AssetMixin],
   props: {
     asset: { required: true, type: String },
     value: {
@@ -58,6 +63,17 @@ export default defineComponent({
     assetPadding: { required: false, type: Number, default: 0 },
     ticker: { required: false, type: Boolean, default: true },
     priceLoading: { required: false, type: Boolean, default: false }
+  },
+  setup(props) {
+    const { asset } = toRefs(props);
+    const { getAssetSymbol } = useAssetInfoRetrieval();
+    const symbol = computed(() => {
+      const identifier = get(asset);
+      return identifier ? getAssetSymbol(identifier) : '';
+    });
+    return {
+      symbol
+    };
   }
 });
 </script>
