@@ -3,7 +3,7 @@
     <v-card-title>
       {{ $t('login.title') }}
     </v-card-title>
-    <v-card-text>
+    <v-card-text class="pb-2">
       <v-form ref="form" v-model="valid">
         <v-text-field
           ref="usernameRef"
@@ -42,13 +42,12 @@
               :disabled="customBackendDisplay || rememberPassword"
               color="primary"
               hide-details
-              class="mt-0 mb-2 remember"
+              class="mt-2 remember"
               :label="$t('login.remember_username')"
             />
-            <v-row no-gutters>
+            <v-row v-if="$interop.isPackaged" class="pt-2" no-gutters>
               <v-col cols="auto">
                 <v-checkbox
-                  v-if="$interop.isPackaged"
                   v-model="rememberPassword"
                   :disabled="customBackendDisplay"
                   color="primary"

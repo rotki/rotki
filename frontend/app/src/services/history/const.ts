@@ -5,9 +5,9 @@ export const movementNumericKeys = ['fee', 'amount'];
 
 export const IgnoredActions = z
   .object({
-    'ledger action': z.array(z.string()).optional(),
-    'asset movement': z.array(z.string()).optional(),
-    'ethereum transaction': z.array(z.string()).optional(),
+    ledger_action: z.array(z.string()).optional(),
+    asset_movement: z.array(z.string()).optional(),
+    ethereum_transaction: z.array(z.string()).optional(),
     trade: z.array(z.string()).optional()
   })
   .transform(arg => {
@@ -17,9 +17,9 @@ export const IgnoredActions = z
       ethereumTransactions?: string[];
       trades?: string[];
     } = {
-      ledgerActions: arg['ledger action'],
-      assetMovements: arg['asset movement'],
-      ethereumTransactions: arg['ethereum transaction'],
+      ledgerActions: arg['ledger_action'],
+      assetMovements: arg['asset_movement'],
+      ethereumTransactions: arg['ethereum_transaction'],
       trades: arg.trade
     };
     return ignoredActions;

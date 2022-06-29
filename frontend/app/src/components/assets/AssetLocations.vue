@@ -17,7 +17,10 @@
       :loading="detailsLoading"
     >
       <template #item.location="{ item }">
-        <location-display :identifier="item.location" />
+        <location-display
+          :identifier="item.location"
+          :is-account="!!item.address"
+        />
       </template>
       <template #item.label="{ item }">
         <div class="py-4">

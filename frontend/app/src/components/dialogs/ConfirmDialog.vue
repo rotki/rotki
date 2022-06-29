@@ -47,6 +47,7 @@
             depressed
             :disabled="disabled"
             data-cy="button-confirm"
+            :loading="loading"
             @click="confirm()"
           >
             {{ primaryAction }}
@@ -81,7 +82,8 @@ const ConfirmDialog = defineComponent({
       default: 'info'
     },
     disabled: { type: Boolean, required: false, default: false },
-    singleAction: { required: false, type: Boolean, default: false }
+    singleAction: { required: false, type: Boolean, default: false },
+    loading: { required: false, type: Boolean, default: false }
   },
   emits: ['confirm', 'cancel'],
   setup(props, { emit }) {

@@ -2,17 +2,21 @@
 Changelog
 =========
 
+
 * :feature:`1420` Add functionality to add alias name for ETH addresses.
 * :feature:`-` Add zoom feature for line charts.
-* :bug:`4459` Transactions that happened in genesis block are now queried and stored properly.
-* :bug:`-` The electron application will now terminate properly if the backend fails to start.
 * :feature:`3095` The application will now notify the user if there is a status change for the premium subscription.
 * :feature:`1028` Native support for Bitcoin Cash blockchain.
-* :bug:`-` Now no missing acquisitions should appear for fiat assets during accounting.
 * :feature:`4268` Add a premium setting to follow the system's theme.
 * :feature:`4443` Users will now be able to get the latest icon of the assets.
 * :feature:`3798` Users will be now able to combine ETH and ETH2 and display it as one in the interface.
 * :feature:`44` Add option to change cost basis method (FIFO and LIFO order).
+* :bug:`-` Now no missing acquisitions should appear for fiat assets during accounting.
+* :bug:`4459` Transactions that happened in genesis block are now queried and stored properly.
+* :bug:`-` The electron application will now terminate properly if the backend fails to start.
+* :bug:`-` Fix empty asset location distribution for ETH2.
+* :bug:`-` In a rare edge case the database with past profit and loss reports won't block the version upgrade process.
+* :bug:`4417` Activating privacy mode will now also scramble the value, to prevent other users from estimating the value (e.g. By estimating the length of digit of the value, or using advanced software to unblur the text).
 
 * :release:`1.24.1 <2022-06-03>`
 * :bug:`4383` Removing an address while running a PnL report should now work.

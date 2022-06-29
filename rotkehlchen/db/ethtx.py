@@ -2,9 +2,12 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.constants import (
+    ETHEREUM_BEGIN,
+    GENESIS_HASH,
     RANGE_PREFIX_ETHINTERNALTX,
     RANGE_PREFIX_ETHTOKENTX,
     RANGE_PREFIX_ETHTX,
+    ZERO_ADDRESS,
 )
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED
@@ -421,3 +424,43 @@ class DBEthTx():
             ends.append(tx_range[1])
 
         return max(starts), min(ends)
+
+    def get_max_genesis_trace_id(self) -> int:
+        """Get the max trace id of genesis internal transactions from the database.
+        If no internal transactions were found, returns 0 (zero)."""
+        cursor = self.db.conn.cursor()
+        trace_id, = cursor.execute(
+            'SELECT MAX(trace_id) from ethereum_internal_transactions WHERE parent_tx_hash=?',
+            (GENESIS_HASH,),
+        ).fetchone()
+        return trace_id if trace_id is not None else 0
+
+    def get_or_create_genesis_transaction(
+            self,
+            account: ChecksumEthAddress,
+    ) -> EthereumTransaction:
+        tx_in_db = self.get_ethereum_transactions(
+            filter_=ETHTransactionsFilterQuery.make(tx_hash=GENESIS_HASH, addresses=[account]),
+            has_premium=True,
+        )
+        if len(tx_in_db) == 1:
+            tx = tx_in_db[0]
+        else:
+            tx = EthereumTransaction(
+                timestamp=ETHEREUM_BEGIN,
+                block_number=0,
+                tx_hash=GENESIS_HASH,
+                from_address=ZERO_ADDRESS,
+                to_address=None,
+                value=0,
+                gas=0,
+                gas_price=0,
+                gas_used=0,
+                input_data=b'',
+                nonce=0,
+            )
+            self.add_ethereum_transactions(
+                ethereum_transactions=[tx],
+                relevant_address=account,
+            )
+        return tx

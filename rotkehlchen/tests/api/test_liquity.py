@@ -14,7 +14,7 @@ from rotkehlchen.tests.utils.api import (
 )
 
 LQTY_ADDR = string_to_ethereum_address('0x063c26fF1592688B73d8e2A18BA4C23654e2792E')
-LQTY_STAKING = string_to_ethereum_address('0x018565899A88f75E6edfEA0639183adF8c205641')
+LQTY_STAKING = string_to_ethereum_address('0x73C91af57C657DfD05a31DAcA7Bff1aEb5754629')
 LQTY_PROXY = string_to_ethereum_address('0x9476832d4687c14b2c1a04E2ee4693162a7340B6')
 ADDR_WITHOUT_TROVE = string_to_ethereum_address('0xA0446D8804611944F1B527eCD37d7dcbE442caba')
 
