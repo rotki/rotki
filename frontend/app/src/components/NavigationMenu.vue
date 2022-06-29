@@ -205,6 +205,11 @@ export default defineComponent({
         ...Routes.PRICE_MANAGER
       },
       {
+        type: 'item',
+        class: 'eth-address-book-manager',
+        ...Routes.ETH_ADDRESS_BOOK_MANAGER
+      },
+      {
         type: 'divider'
       },
       {

@@ -6,7 +6,7 @@ import { setupSettings } from '@/composables/settings';
 import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { useEnsNamesStore } from '@/store/balances';
+import { useEthNamesStore } from '@/store/balances';
 import { filterAddressesFromWords } from '@/store/history/utils';
 import { useNotifications } from '@/store/notifications';
 import { useMainStore } from '@/store/store';
@@ -173,7 +173,7 @@ export const useReports = defineStore('reports', () => {
 
       const addresses = filterAddressesFromWords(words);
 
-      const { fetchEnsNames } = useEnsNamesStore();
+      const { fetchEnsNames } = useEthNamesStore();
       fetchEnsNames(addresses, false);
     } catch (e: any) {
       notify({

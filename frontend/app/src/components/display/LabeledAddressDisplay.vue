@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex flex-row labeled-address-display align-center">
-    <v-tooltip top open-delay="400" :disabled="!truncated && !ensName">
+    <v-tooltip top open-delay="400" :disabled="!truncated && !ethName">
       <template #activator="{ on }">
         <span
           data-cy="labeled-address-display"
@@ -12,16 +12,18 @@
             <v-avatar size="24" class="mr-2">
               <v-img :src="makeBlockie(address)" />
             </v-avatar>
-            <span v-if="!!label" class="text-truncate">
-              {{
-                $t('labeled_address_display.label', {
-                  label: label
-                })
-              }}
-            </span>
-            <span v-if="!!label && displayAddress && !smAndDown" class="px-1">
-              {{ $t('labeled_address_display.divider') }}
-            </span>
+            <template v-if="!!label && !ethName">
+              <span class="text-truncate">
+                {{
+                  $t('labeled_address_display.label', {
+                    label: label
+                  })
+                }}
+              </span>
+              <span v-if="displayAddress && !smAndDown" class="px-1">
+                {{ $t('labeled_address_display.divider') }}
+              </span>
+            </template>
             <span
               v-if="!smAndDown || !label"
               :class="{ 'blur-content': !shouldShowAmount }"
@@ -33,7 +35,7 @@
       </template>
       <div>
         <span v-if="!!label"> {{ account.label }}</span>
-        <span v-if="smAndDown && ensName"> ({{ ensName }})</span>
+        <span v-if="smAndDown && ethName"> ({{ ethName }})</span>
       </div>
       <div>{{ address }}</div>
     </v-tooltip>
@@ -56,7 +58,7 @@ import makeBlockie from 'ethereum-blockies-base64';
 import { setupThemeCheck } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
 import { truncateAddress, truncationPoints } from '@/filters';
-import { useEnsNamesStore } from '@/store/balances';
+import { useEthNamesStore } from '@/store/balances';
 import { randomHex } from '@/utils/data';
 
 export default defineComponent({
@@ -69,9 +71,9 @@ export default defineComponent({
     const { currentBreakpoint } = setupThemeCheck();
     const { scrambleData, shouldShowAmount } = setupDisplayData();
 
-    const { ensNameSelector } = useEnsNamesStore();
-    const ensName = computed<string | null>(() =>
-      get(ensNameSelector(get(account).address))
+    const { ethNameSelector } = useEthNamesStore();
+    const ethName = computed<string | null>(() =>
+      get(ethNameSelector(get(account).address))
     );
 
     const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
@@ -100,7 +102,7 @@ export default defineComponent({
     });
 
     const displayAddress = computed<string>(() => {
-      if (get(ensName)) return get(ensName) as string;
+      if (get(ethName)) return get(ethName) as string;
       if (get(truncatedAddress).length >= get(address).length) {
         return get(address);
       }
@@ -137,7 +139,7 @@ export default defineComponent({
     });
 
     return {
-      ensName,
+      ethName,
       xsOnly,
       smAndDown,
       truncated,

@@ -11138,10 +11138,10 @@ Get mappings from addressbook
         Content-Type: application/zip
 
         {
-            "result": {
-                "0x9531c059098e3d194ff87febb587ab07b30b1306": "My dear friend Tom",
-                "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD": "Neighbour Frank",
-            },
+            "result": [
+                { "address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "name": "My dear friend Tom" },
+                { "address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD", "name": "Neighbour Frank" }
+            ],
             "message": ""
         }
 

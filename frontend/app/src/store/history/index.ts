@@ -28,7 +28,7 @@ import {
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
 import { mapCollectionResponse } from '@/services/utils';
-import { useEnsNamesStore } from '@/store/balances';
+import { useEthNamesStore } from '@/store/balances';
 import { Section, Status } from '@/store/const';
 import {
   AssetMovementEntry,
@@ -424,7 +424,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
         parameters ?? get(assetMovementsPayload)
       );
 
-      const { fetchEnsNames } = useEnsNamesStore();
+      const { fetchEnsNames } = useEthNamesStore();
       if (onlyCache) {
         const result = await api.history.assetMovements(payload);
         const mapped = mapCollectionEntriesWithMeta<AssetMovement>(
@@ -610,7 +610,7 @@ export const useTransactions = defineStore('history/transactions', () => {
         parameters ?? get(transactionsPayload)
       );
 
-      const { fetchEnsNames } = useEnsNamesStore();
+      const { fetchEnsNames } = useEthNamesStore();
       if (onlyCache) {
         const result = await api.history.ethTransactions(payload);
 

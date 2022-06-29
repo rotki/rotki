@@ -16,7 +16,7 @@ import {
   CURRENCY_LOCATION,
   DECIMAL_SEPARATOR,
   DEFI_SETUP_DONE,
-  ENABLE_ENS,
+  ENABLE_ETH_NAMES,
   EXPLORERS,
   FrontendSettings,
   GRAPH_ZERO_BASED,
@@ -71,7 +71,7 @@ describe('settings:utils', () => {
       [DARK_THEME]: DARK_COLORS,
       [GRAPH_ZERO_BASED]: false,
       [NFTS_IN_NET_VALUE]: true,
-      [ENABLE_ENS]: true
+      [ENABLE_ETH_NAMES]: true
     });
   });
 });

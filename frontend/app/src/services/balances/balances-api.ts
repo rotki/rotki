@@ -28,7 +28,11 @@ import {
   validWithSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
-import { EnsNames } from '@/store/balances/types';
+import {
+  EthAddressBookLocation,
+  EthNames,
+  EthNamesEntries
+} from '@/store/balances/types';
 import { Eth2Validator } from '@/types/balances';
 import { SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
@@ -147,7 +151,7 @@ export class BalancesApi {
   ): Promise<T> {
     return this.axios
       .post<ActionResult<T>>(
-        '/ens/reverse',
+        '/names/ens/reverse',
         axiosSnakeCaseTransformer({
           ethereumAddresses,
           asyncQuery,
@@ -161,14 +165,87 @@ export class BalancesApi {
       .then(handleResponse);
   }
 
-  async getEnsNamesTask(ethereumAddresses: string[]): Promise<PendingTask> {
-    return this.internalEnsNames<PendingTask>(ethereumAddresses, true);
+  async getEnsNamesTask(ethAddresses: string[]): Promise<PendingTask> {
+    return this.internalEnsNames<PendingTask>(ethAddresses, true);
   }
 
-  async getEnsNames(ethereumAddresses: string[]): Promise<EnsNames> {
-    const response = await this.internalEnsNames<EnsNames>(ethereumAddresses);
+  async getEnsNames(ethAddresses: string[]): Promise<EthNames> {
+    const response = await this.internalEnsNames<EthNames>(ethAddresses);
 
-    return EnsNames.parse(response);
+    return EthNames.parse(response);
+  }
+
+  async getEthAddressBook(
+    location: EthAddressBookLocation,
+    addresses?: string[]
+  ): Promise<EthNamesEntries> {
+    const response = await this.axios.post<ActionResult<EthNames>>(
+      `/names/addressbook/${location}`,
+      addresses ? { addresses } : null,
+      {
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    return EthNamesEntries.parse(handleResponse(response));
+  }
+
+  async addEthAddressBook(
+    location: EthAddressBookLocation,
+    entries: EthNamesEntries
+  ): Promise<boolean> {
+    return await this.axios
+      .put<ActionResult<boolean>>(
+        `/names/addressbook/${location}`,
+        { entries },
+        {
+          validateStatus: validWithSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async updateEthAddressBook(
+    location: EthAddressBookLocation,
+    entries: EthNamesEntries
+  ): Promise<boolean> {
+    return this.axios
+      .patch<ActionResult<boolean>>(
+        `/names/addressbook/${location}`,
+        { entries },
+        {
+          validateStatus: validWithSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async deleteEthAddressBook(
+    location: EthAddressBookLocation,
+    addresses: string[]
+  ): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>(`/names/addressbook/${location}`, {
+        data: axiosSnakeCaseTransformer({ addresses }),
+        validateStatus: validWithSessionAndExternalService
+      })
+      .then(handleResponse);
+  }
+
+  async getEthNames(addresses: string[]): Promise<EthNames> {
+    return this.axios
+      .post<ActionResult<EthNames>>(
+        '/names',
+        { addresses },
+        {
+          validateStatus: validWithSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
   }
 
   async prices(

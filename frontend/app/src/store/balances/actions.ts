@@ -23,7 +23,7 @@ import {
 } from '@/services/types-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
-import { useEnsNamesStore } from '@/store/balances/index';
+import { useEthNamesStore } from '@/store/balances/index';
 import { BalanceMutations } from '@/store/balances/mutation-types';
 import {
   AccountAssetBalances,
@@ -384,16 +384,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const chain = payload.chain;
     const forceUpdate = payload.ignoreCache;
 
-    if (forceUpdate && (ethBalances || eth2Balances)) {
-      const addresses = [];
-      if (ethBalances) {
-        addresses.push(...Object.keys(ethBalances));
-      }
-      if (eth2Balances) {
-        addresses.push(...Object.keys(eth2Balances));
-      }
+    if (forceUpdate && ethBalances) {
+      const addresses = [...Object.keys(ethBalances)];
 
-      const { fetchEnsNames } = useEnsNamesStore();
+      const { fetchEnsNames } = useEthNamesStore();
       fetchEnsNames(addresses, forceUpdate);
     }
 
@@ -776,7 +770,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     } else {
       const accountData = await api.editAccount(payload);
 
+      const { fetchEthNames } = useEthNamesStore();
       if (blockchain === Blockchain.ETH) {
+        fetchEthNames();
         commit('ethAccounts', accountData);
       } else if (blockchain === Blockchain.KSM) {
         commit('ksmAccounts', accountData);
@@ -818,7 +814,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           commit('ethAccounts', accounts);
 
           const addresses = accounts.map(account => account.address);
-          const { fetchEnsNames } = useEnsNamesStore();
+          const { fetchEnsNames } = useEthNamesStore();
           fetchEnsNames(addresses, true);
         } else if (blockchain === Blockchain.KSM) {
           commit('ksmAccounts', accounts);

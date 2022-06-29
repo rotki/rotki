@@ -1531,14 +1531,14 @@
       "zero_based_hint": "By default the lowest value is the minimum in the selected period",
       "include_nfts": "Include NFTs in the graphs and total networth",
       "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs",
-      "enable_ens": "Show Ethereum Name Service (ENS) for ETH addresses."
+      "enable_eth_names": "Show alias name for ETH addresses."
     },
     "subtitle": {
       "graph_basis": "Graph basis",
       "query": "Periodic status query",
       "refresh": "Automatic balance refresh",
       "include_nfts": "Include NFTs in graphs and total amounts",
-      "ens_names": "Use ENS names"
+      "eth_names": "Use ETH alias names"
     },
     "title": "Frontend-only Settings",
     "validation": {
@@ -1563,10 +1563,10 @@
         "success_disabled": "Automatic refresh was successfully deactivated",
         "invalid_period": "Period must be between {start} and {end} min"
       },
-      "enable_ens": {
-        "error": "Failed to change ENS visibility",
-        "success": "ENS is enabled",
-        "success_disabled": "ENS is disabled"
+      "enable_eth_names": {
+        "error": "Failed to change ETH names visibility",
+        "success": "ETH names is enabled",
+        "success_disabled": "ETH names is disabled"
       }
     }
   },
@@ -2087,7 +2087,7 @@
     "history": {
       "fetch_ignored": {
         "error": {
-          "message": "Failed to retrieve the ignored actions\": {message}",
+          "message": "Failed to retrieve the ignored actions: {message}",
           "title": "Querying ignored actions"
         }
       }
@@ -2764,6 +2764,7 @@
     "profit_loss_report": "Profit and Loss Report",
     "manage_assets": "Manage Assets",
     "manage_prices": "Manage Prices",
+    "manage_eth_address_book": "Manage ETH Address Book",
     "api_keys": "API Keys",
     "api_keys_sub": {
       "premium": "rotki Premium",
@@ -3788,7 +3789,13 @@
   },
   "ens_names": {
     "task": {
-      "title": "Querying ENS Names"
+      "title": "Querying ENS names"
+    }
+  },
+  "eth_names": {
+    "error": {
+      "title": "Querying ETH names",
+      "message": "Failed to retrieve the ETH names: {message}"
     }
   },
   "pinned": {
@@ -3806,6 +3813,83 @@
         "zoom_in": "Zoom In",
         "zoom_out": "Zoom Out",
         "reset_zoom": "Reset Zoom"
+      }
+    }
+  },
+  "eth_address_book": {
+    "title": "Eth Address Book Management",
+    "table": {
+      "title": "Address Book",
+      "subtitle": "Add, edit, remove name for ETH addresses. Changes in the names will be reflected across all your accounts.",
+      "filter": "Filter",
+      "headers": {
+        "address": "Address",
+        "name": "Name"
+      }
+    },
+    "hint": {
+      "global": "Global",
+      "global_description": "address book is saved in global db (shared across all accounts in this device)",
+      "private": "Private",
+      "private_description": "address book is saved only for this account.",
+      "priority": {
+        "title": "The priority of the returned names adheres to the following order:",
+        "list": {
+          "private_address_book": "Private address book",
+          "blockchain_account_labels": "Blockchain account labels",
+          "global_address_book": "Global address book",
+          "ethereum_tokens": "Ethereum tokens",
+          "hardcoded_mappings": "Hardcoded mappings",
+          "ens_names": "ENS names"
+        }
+      }
+    },
+    "dialog": {
+      "add_title": "Add address book",
+      "edit_title": "Edit address book"
+    },
+    "form": {
+      "no_suggestions_available": "No Suggestions Available",
+      "labels": {
+        "location": "Location",
+        "address": "ETH Address",
+        "name": "Name"
+      },
+      "validation": {
+        "address": "The ETH address field cannot be empty",
+        "name": "The name field cannot be empty"
+      }
+    },
+    "actions": {
+      "fetch": {
+        "error": {
+          "title": "Querying ETH address book",
+          "message": "Failed to retrieve the ETH address book: {message}"
+        }
+      },
+      "add": {
+        "error": {
+          "title": "ETH address book addition failed",
+          "description": "Adding ETH address book was not successful: {message}"
+        }
+      },
+      "edit": {
+        "error": {
+          "title": "ETH address book edit failed",
+          "description": "Editing ETH address book was not successful: {message}"
+        },
+        "tooltip": "Edit the address book"
+      },
+      "delete": {
+        "error": {
+          "title": "ETH address book deletion failed",
+          "description": "Deleting ETH address book was not successful: {message}"
+        },
+        "dialog": {
+          "message": "Are you sure you want to delete this ETH address book entry?",
+          "title": "Delete the ETH address book"
+        },
+        "tooltip": "Delete the address book"
       }
     }
   }

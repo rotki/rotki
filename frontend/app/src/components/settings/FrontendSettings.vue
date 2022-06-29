@@ -21,15 +21,20 @@
     />
 
     <div class="mt-8">
-      <div class="text-h6">
-        {{ $t('frontend_settings.subtitle.ens_names') }}
+      <div class="d-flex align-center">
+        <div class="text-h6">
+          {{ $t('frontend_settings.subtitle.eth_names') }}
+        </div>
+        <div class="pl-2">
+          <eth-names-hint />
+        </div>
       </div>
       <v-switch
-        v-model="enableEns"
-        class="general-settings__fields__enable_ens mb-4 mt-2"
-        :label="$t('frontend_settings.label.enable_ens')"
-        :success-messages="settingsMessages[ENABLE_ENS].success"
-        :error-messages="settingsMessages[ENABLE_ENS].error"
+        v-model="enableEthNames"
+        class="general-settings__fields__enable_eth_names mb-4 mt-2"
+        :label="$t('frontend_settings.label.enable_eth_names')"
+        :success-messages="settingsMessages[ENABLE_ETH_NAMES].success"
+        :error-messages="settingsMessages[ENABLE_ETH_NAMES].error"
         @change="onEnableEnsChange($event)"
       />
     </div>
@@ -164,7 +169,7 @@ import SettingsMixin from '@/mixins/settings-mixin';
 import { ThemeManager } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import {
-  ENABLE_ENS,
+  ENABLE_ETH_NAMES,
   FrontendSettingsPayload,
   GRAPH_ZERO_BASED,
   NFTS_IN_NET_VALUE,
@@ -186,7 +191,7 @@ const SETTINGS = [
   REFRESH_PERIOD,
   GRAPH_ZERO_BASED,
   NFTS_IN_NET_VALUE,
-  ENABLE_ENS
+  ENABLE_ETH_NAMES
 ] as const;
 
 const MAX_REFRESH_PERIOD = Constraints.MAX_MINUTES_DELAY;
@@ -218,7 +223,7 @@ export default class FrontendSettings extends Mixins<
   zeroBased: boolean = false;
   includeNfts: boolean = true;
   animationsEnabled: boolean = true;
-  enableEns: boolean = true;
+  enableEthNames: boolean = true;
   fetchNetValue!: () => Promise<void>;
 
   readonly SCRAMBLE_DATA = SETTING_SCRAMBLE_DATA;
@@ -228,7 +233,7 @@ export default class FrontendSettings extends Mixins<
   readonly REFRESH_PERIOD = REFRESH_PERIOD;
   readonly GRAPH_ZERO_BASED = GRAPH_ZERO_BASED;
   readonly NFTS_IN_NET_VALUE = NFTS_IN_NET_VALUE;
-  readonly ENABLE_ENS = ENABLE_ENS;
+  readonly ENABLE_ETH_NAMES = ENABLE_ETH_NAMES;
 
   async onZeroBasedUpdate(enabled: boolean) {
     const payload: FrontendSettingsPayload = {
@@ -245,19 +250,23 @@ export default class FrontendSettings extends Mixins<
 
   async onEnableEnsChange(enabled: boolean) {
     const payload: FrontendSettingsPayload = {
-      [ENABLE_ENS]: enabled
+      [ENABLE_ETH_NAMES]: enabled
     };
 
     const messages: BaseMessage = {
       success: enabled
-        ? this.$t('frontend_settings.validation.enable_ens.success').toString()
+        ? this.$t(
+            'frontend_settings.validation.enable_eth_names.success'
+          ).toString()
         : this.$t(
-            'frontend_settings.validation.enable_ens.success_disabled'
+            'frontend_settings.validation.enable_eth_names.success_disabled'
           ).toString(),
-      error: this.$t('frontend_settings.validation.enable_ens.error').toString()
+      error: this.$t(
+        'frontend_settings.validation.enable_eth_names.error'
+      ).toString()
     };
 
-    await this.modifyFrontendSetting(payload, ENABLE_ENS, messages);
+    await this.modifyFrontendSetting(payload, ENABLE_ETH_NAMES, messages);
   }
 
   async onTimeframeChange(timeframe: TimeFrameSetting) {
@@ -469,7 +478,7 @@ export default class FrontendSettings extends Mixins<
     this.refreshEnabled = period > 0;
     this.refreshPeriod = this.refreshEnabled ? period.toString() : '';
     this.includeNfts = state.settings![NFTS_IN_NET_VALUE];
-    this.enableEns = state.settings![ENABLE_ENS];
+    this.enableEthNames = state.settings![ENABLE_ETH_NAMES];
   }
 }
 </script>

@@ -18,7 +18,7 @@ import {
   DATE_INPUT_FORMAT,
   DECIMAL_SEPARATOR,
   DEFI_SETUP_DONE,
-  ENABLE_ENS,
+  ENABLE_ETH_NAMES,
   EXPLORERS,
   GRAPH_ZERO_BASED,
   ITEMS_PER_PAGE,
@@ -91,7 +91,7 @@ describe('settings:mutations', () => {
       },
       [DATE_INPUT_FORMAT]: DateFormat.DateMonthYearHourMinuteSecond,
       [VERSION_UPDATE_CHECK_FREQUENCY]: 24,
-      [ENABLE_ENS]: true
+      [ENABLE_ETH_NAMES]: true
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
@@ -147,6 +147,6 @@ describe('settings:mutations', () => {
       DateFormat.DateMonthYearHourMinuteSecond
     );
     expect(settings[VERSION_UPDATE_CHECK_FREQUENCY]).toBe(24);
-    expect(settings[ENABLE_ENS]).toBe(true);
+    expect(settings[ENABLE_ETH_NAMES]).toBe(true);
   });
 });

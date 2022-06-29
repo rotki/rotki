@@ -31,7 +31,7 @@ export const toCapitalCase = (string: string): string => {
  * @param {number} [amount]
  * @returns {string}
  */
-export function pluralize(word: string, amount?: number): string {
+export const pluralize = (word: string, amount?: number): string => {
   if (amount !== undefined && amount === 1) {
     return word;
   }
@@ -113,9 +113,9 @@ export function pluralize(word: string, amount?: number): string {
     }
   }
   return word;
-}
+};
 
-export function pluralizeLastWord(sentence: string): string {
+export const pluralizeLastWord = (sentence: string): string => {
   const words = sentence.split(' ');
 
   const lastIndex = words.length - 1;
@@ -123,4 +123,14 @@ export function pluralizeLastWord(sentence: string): string {
   words[lastIndex] = pluralize(words[lastIndex]);
 
   return words.join(' ');
-}
+};
+
+export const sanitizeAddress = (address?: string): string => {
+  if (!address) return '';
+  return address.replace(/[^A-Z0-9]+/gi, '');
+};
+
+export const isValidEthAddress = (address?: string): boolean => {
+  if (!address) return false;
+  return address.startsWith('0x') && address.length >= 42;
+};

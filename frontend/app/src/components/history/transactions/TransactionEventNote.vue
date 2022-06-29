@@ -31,6 +31,7 @@ import { get } from '@vueuse/core';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { bigNumberify } from '@/utils/bignumbers';
+import { isValidEthAddress } from '@/utils/text';
 
 export default defineComponent({
   name: 'TransactionEventNote',
@@ -87,7 +88,7 @@ export default defineComponent({
         }
 
         // Check if the word is ETH address
-        const isAddress = word.startsWith('0x') && word.length >= 42;
+        const isAddress = isValidEthAddress(word);
 
         // Check if the word is Tx Hash
         const isTransaction =

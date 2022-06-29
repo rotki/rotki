@@ -216,6 +216,10 @@ export default new Router({
       props: true
     },
     {
+      path: Routes.ETH_ADDRESS_BOOK_MANAGER.route,
+      component: () => import('../views/EthAddressBookManager.vue')
+    },
+    {
       path: Routes.API_KEYS.route,
       component: () => import('../views/settings/ApiKeys.vue'),
       children: [
