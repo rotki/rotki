@@ -69,6 +69,7 @@ from rotkehlchen.api.v1.schemas import (
     HistoryBaseEntrySchema,
     HistoryExportingSchema,
     HistoryProcessingDebugImportSchema,
+    HistoryProcessingExportSchema,
     HistoryProcessingSchema,
     IdentifiersListSchema,
     IgnoredActionsGetSchema,
@@ -1136,7 +1137,7 @@ class HistoryProcessingResource(BaseMethodView):
 
 
 class HistoryProcessingDebugResource(BaseMethodView):
-    post_schema = HistoryProcessingSchema()
+    post_schema = HistoryProcessingExportSchema()
     upload_schema = HistoryProcessingDebugImportSchema()
 
     @require_loggedin_user()
@@ -1145,13 +1146,13 @@ class HistoryProcessingDebugResource(BaseMethodView):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            filepath: Optional[Path],
+            directory_path: Optional[Path],
             async_query: bool,
     ) -> Response:
         return self.rest_api.get_history_debug(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
-            filepath=filepath,
+            directory_path=directory_path,
             async_query=async_query,
         )
 

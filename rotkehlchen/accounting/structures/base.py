@@ -1,19 +1,26 @@
 import json
 import logging
 from dataclasses import dataclass
-from enum import auto
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
+from rotkehlchen.accounting.structures.types import (
+    ActionType,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import (
+    deserialize_fval,
+    deserialize_optional,
+    deserialize_timestamp,
+)
 from rotkehlchen.types import Location, Timestamp, TimestampMS
-from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec, ts_sec_to_ms
 
 from .balance import Balance
 
@@ -23,74 +30,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-class ActionType(DBEnumMixIn):
-    TRADE = 1
-    ASSET_MOVEMENT = 2
-    ETHEREUM_TRANSACTION = 3
-    LEDGER_ACTION = 4
-
-    def serialize(self) -> str:
-        return self.name.lower()
-
-    @classmethod
-    def deserialize(cls, value: str) -> 'ActionType':
-        try:
-            return getattr(cls, value.upper())
-        except AttributeError as e:
-            raise DeserializationError(f'Failed to deserialize {cls.__name__} value {value}') from e  # noqa: E501
-
-
-class HistoryEventType(SerializableEnumMixin):
-    TRADE = 0
-    STAKING = auto()
-    DEPOSIT = auto()
-    WITHDRAWAL = auto()
-    TRANSFER = auto()
-    SPEND = auto()
-    RECEIVE = auto()
-    # forced adjustments of a system, like a CEX. For example having DAO in Kraken
-    # and Kraken delisting them and exchanging them for ETH for you
-    ADJUSTMENT = auto()
-    UNKNOWN = auto()
-    # An informational event. For kraken entries it means an unknown event
-    INFORMATIONAL = auto()
-    MIGRATE = auto()
-    RENEW = auto()
-
-
-class HistoryEventSubType(SerializableEnumMixin):
-    REWARD = 0
-    DEPOSIT_ASSET = auto()  # deposit asset in a contract, for staking etc.
-    REMOVE_ASSET = auto()  # remove asset from a contract. from staking etc.
-    FEE = auto()
-    SPEND = auto()
-    RECEIVE = auto()
-    APPROVE = auto()
-    DEPLOY = auto()
-    AIRDROP = auto()
-    BRIDGE = auto()
-    GOVERNANCE_PROPOSE = auto()
-    NONE = auto()  # Have a value for None to not get into NULL/None comparison hell
-    GENERATE_DEBT = auto()
-    PAYBACK_DEBT = auto()
-    # receive a wrapped asset of something in any protocol. eg cDAI from DAI
-    RECEIVE_WRAPPED = auto()
-    # return a wrapped asset of something in any protocol. eg. CDAI to DAI
-    RETURN_WRAPPED = auto()
-    DONATE = auto()
-    # subtype for ENS and other NFTs
-    NFT = auto()
-    # for DXDAO Mesa, Gnosis cowswap etc.
-    PLACE_ORDER = auto()
-
-    def serialize_or_none(self) -> Optional[str]:
-        """Serializes the subtype but for the subtype None it returns None"""
-        if self == HistoryEventSubType.NONE:
-            return None
-
-        return self.serialize()
 
 
 HISTORY_EVENT_DB_TUPLE_READ = Tuple[
@@ -236,6 +175,40 @@ class HistoryBaseEntry(AccountingEventMixin):
             'notes': self.notes,
             'counterparty': self.counterparty,
         }
+
+    @classmethod
+    def deserialize(cls, data: Dict[str, Any]) -> 'HistoryBaseEntry':
+        """Deserializes a dict history base entry to HistoryBaseEntry object.
+        May raise:
+            - DeserializationError
+            - KeyError
+            - UnknownAsset
+        """
+        return cls(
+            event_identifier=data['event_identifier'],
+            sequence_index=data['sequence_index'],
+            timestamp=ts_sec_to_ms(deserialize_timestamp(data['timestamp'])),
+            location=Location.deserialize(data['location']),
+            event_type=HistoryEventType.deserialize(data['event_type']),
+            event_subtype=HistoryEventSubType.deserialize(data['event_subtype']) if data['event_subtype'] is not None else HistoryEventSubType.NONE,  # noqa: 501
+            location_label=deserialize_optional(data['location_label'], str),
+            notes=deserialize_optional(data['notes'], str),
+            identifier=deserialize_optional(data['identifier'], int),
+            counterparty=deserialize_optional(data['counterparty'], str),
+            asset=Asset(data['asset']),
+            balance=Balance(
+                amount=deserialize_fval(
+                    value=data['balance']['amount'],
+                    name='balance amount',
+                    location='history base entry',
+                ),
+                usd_value=deserialize_fval(
+                    value=data['balance']['usd_value'],
+                    name='balance usd value',
+                    location='history base entry',
+                ),
+            ),
+        )
 
     def __str__(self) -> str:
         return (

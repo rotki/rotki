@@ -78,3 +78,13 @@ class AccountingEventMixin(metaclass=ABCMeta):
     @abstractmethod
     def serialize(self) -> Dict[str, Any]:
         ...
+
+    def serialize_for_debug_import(self) -> Dict[str, Any]:
+        data = self.serialize()
+        data['accounting_event_type'] = self.get_accounting_event_type().serialize()   # noqa: 501 # lgtm [py/procedure-return-value-used]
+        return data
+
+    @classmethod
+    @abstractmethod
+    def deserialize(cls, data: Dict[str, Any]) -> 'AccountingEventMixin':
+        ...

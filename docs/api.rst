@@ -4474,6 +4474,7 @@ Export PnL report debug data
 
    :reqjson int from_timestamp: The timestamp after which to return action history. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return action history. If not given all balances until now are returned.
+   :reqjson path directory_path: Optional. The directory the PnL debug data should be written to.
    :reqjson bool async_query: Optional boolean denoting whether this is an asynchronous query or not. Defaults to false.
 
    **Example Response**:
@@ -4498,6 +4499,8 @@ Export PnL report debug data
                     "usd_value": "24455.415502078435"
                 },
                 "event_type": "receive",
+                "accounting_event_type": "history base entry",
+
                 "event_subtype": null,
                 "location_label": "0x19e4057A38a730be37c4DA690b103267AAE1d75d",
                 "notes": "Receive 3.55448345 ETH 0xaBEA9132b05A70803a4E85094fD0e1800777fBEF -> 0x19e4057A38a730be37c4DA690b103267AAE1d75d",
@@ -4509,6 +4512,7 @@ Export PnL report debug data
                 "sequence_index": 0,
                 "timestamp": 1651259834,
                 "location": "blockchain",
+                "accounting_event_type": "history base entry",
                 "asset": "ETH",
                 "balance": {
                     "amount": "0.009",
@@ -4583,6 +4587,10 @@ Export PnL report debug data
             "ignored_events_ids": {
                 "trade": ["X124-JYI", "2325"],
                 "ethereum transaction": ["0xfoo", "0xboo"]
+            }
+            "pnl_settings": {
+                "from_timestamp": 0,
+                "to_timestamp": 1656608820
             }
             },
           "message": ""

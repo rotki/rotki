@@ -130,7 +130,7 @@ export interface ProfitLossReportPeriod {
 export interface ProfitLossReportDebugPayload {
   fromTimestamp: number;
   toTimestamp: number;
-  filepath?: string;
+  directoryPath?: string;
 }
 
 export const MissingAcquisition = z.object({

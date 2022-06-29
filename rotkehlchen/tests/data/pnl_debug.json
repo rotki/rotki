@@ -13,6 +13,7 @@
       },
       "event_type": "receive",
       "event_subtype": null,
+      "accounting_event_type": "history base entry",
       "location_label": "0x19e4057A38a730be37c4DB690b103267AAE1d75d",
       "notes": "Receive 3.55448345 ETH 0xaBEA9132b05A70803a4E85094fD0e1800777fBEF -> 0x19e4057A38a730be37c4D690b103267AAE1d75d",
       "counterparty": "0xaBEA9132b05A70803a4E85094fD0e1800777fBEF"
@@ -29,16 +30,325 @@
         "usd_value": "33.85395142596176076"
       },
       "event_type": "spend",
+      "accounting_event_type": "history base entry",
       "event_subtype": "fee",
       "location_label": "0x19e4057A38a730be37c4DB690b103267AAE1d75d",
       "notes": "Burned 0.001367993179812 ETH in gas from 0x19e4057A38a730be37c4DB690b103267AAE1d75d",
       "counterparty": "gas"
+    },
+    {
+      "validator_index": 207580,
+      "timestamp": 1630281600,
+      "pnl": {
+        "amount": "0.00496",
+        "usd_value": "16.52580240"
+      },
+      "start_balance": {
+        "amount": "32.1",
+        "usd_value": "103633.566"
+      },
+      "end_balance": {
+        "amount": "32.1",
+        "usd_value": "110268.957"
+      },
+      "missed_attestations": 2,
+      "orphaned_attestations": 0,
+      "proposed_blocks": 0,
+      "missed_blocks": 0,
+      "accounting_event_type": "staking",
+      "orphaned_blocks": 0,
+      "included_attester_slashings": 0,
+      "proposer_attester_slashings": 0,
+      "deposits_number": 0,
+      "deposited_balance": {
+        "amount": "0",
+        "usd_value": "0.00"
+      }
+    },
+    {
+      "validator_index": 207580,
+      "timestamp": 1630368000,
+      "pnl": {
+        "amount": "0.00505",
+        "usd_value": "18.34248375"
+      },
+      "accounting_event_type": "staking",
+      "start_balance": {
+        "amount": "32.1",
+        "usd_value": "110268.957"
+      },
+      "end_balance": {
+        "amount": "32.11",
+        "usd_value": "122954.9698"
+      },
+      "missed_attestations": 0,
+      "orphaned_attestations": 0,
+      "proposed_blocks": 0,
+      "missed_blocks": 0,
+      "orphaned_blocks": 0,
+      "included_attester_slashings": 0,
+      "proposer_attester_slashings": 0,
+      "deposits_number": 0,
+      "deposited_balance": {
+        "amount": "0",
+        "usd_value": "0.00"
+      }
+    },
+    {
+      "validator_index": 207580,
+      "timestamp": 1630454400,
+      "pnl": {
+        "amount": "0.00499",
+        "usd_value": "19.0041156"
+      },
+      "accounting_event_type": "staking",
+      "start_balance": {
+        "amount": "32.11",
+        "usd_value": "122954.9698"
+      },
+      "end_balance": {
+        "amount": "32.11",
+        "usd_value": "121623.047"
+      },
+      "missed_attestations": 2,
+      "orphaned_attestations": 0,
+      "proposed_blocks": 0,
+      "missed_blocks": 0,
+      "orphaned_blocks": 0,
+      "included_attester_slashings": 0,
+      "proposer_attester_slashings": 0,
+      "deposits_number": 0,
+      "deposited_balance": {
+        "amount": "0",
+        "usd_value": "0.00"
+      }
+    },
+    {
+      "validator_index": 207580,
+      "timestamp": 1630540800,
+      "pnl": {
+        "amount": "0.00498",
+        "usd_value": "19.24145010"
+      },
+      "start_balance": {
+        "amount": "32.11",
+        "usd_value": "121623.047"
+      },
+      "end_balance": {
+        "amount": "32.12",
+        "usd_value": "126546.0548"
+      },
+      "missed_attestations": 1,
+      "accounting_event_type": "staking",
+      "orphaned_attestations": 0,
+      "proposed_blocks": 0,
+      "missed_blocks": 0,
+      "orphaned_blocks": 0,
+      "included_attester_slashings": 0,
+      "proposer_attester_slashings": 0,
+      "deposits_number": 0,
+      "deposited_balance": {
+        "amount": "0",
+        "usd_value": "0.0"
+      }
+    },
+    {
+      "validator_index": 207580,
+      "timestamp": 1630627200,
+      "pnl": {
+        "amount": "0.00504",
+        "usd_value": "19.7235360"
+      },
+      "start_balance": {
+        "amount": "32.12",
+        "usd_value": "126546.0548"
+      },
+      "end_balance": {
+        "amount": "32.12",
+        "usd_value": "124850.7612"
+      },
+      "missed_attestations": 0,
+      "orphaned_attestations": 0,
+      "proposed_blocks": 0,
+      "accounting_event_type": "staking",
+      "missed_blocks": 0,
+      "orphaned_blocks": 0,
+      "included_attester_slashings": 0,
+      "proposer_attester_slashings": 0,
+      "deposits_number": 0,
+      "deposited_balance": {
+        "amount": "0",
+        "usd_value": "0.00"
+      }
+    },
+    {
+      "validator_index": 207580,
+      "timestamp": 1630713600,
+      "pnl": {
+        "amount": "0.00501",
+        "usd_value": "19.6375467"
+      },
+      "start_balance": {
+        "amount": "32.12",
+        "usd_value": "124850.7612"
+      },
+      "end_balance": {
+        "amount": "32.13",
+        "usd_value": "126988.3629"
+      },
+      "missed_attestations": 1,
+      "orphaned_attestations": 0,
+      "proposed_blocks": 0,
+      "missed_blocks": 0,
+      "orphaned_blocks": 0,
+      "included_attester_slashings": 0,
+      "proposer_attester_slashings": 0,
+      "accounting_event_type": "staking",
+      "deposits_number": 0,
+      "deposited_balance": {
+        "amount": "0",
+        "usd_value": "0.00"
+      }
+    },
+    {
+      "validator_index": 207580,
+      "timestamp": 1630800000,
+      "pnl": {
+        "amount": "0.00492",
+        "usd_value": "19.38659580"
+      },
+      "start_balance": {
+        "amount": "32.13",
+        "usd_value": "126988.3629"
+      },
+      "end_balance": {
+        "amount": "32.13",
+        "usd_value": "126219.492"
+      },
+      "missed_attestations": 0,
+      "accounting_event_type": "staking",
+      "orphaned_attestations": 0,
+      "proposed_blocks": 0,
+      "missed_blocks": 0,
+      "orphaned_blocks": 0,
+      "included_attester_slashings": 0,
+      "proposer_attester_slashings": 0,
+      "deposits_number": 0,
+      "deposited_balance": {
+        "amount": "0",
+        "usd_value": "0.00"
+      }
+    },
+    {
+      "timestamp": 1643182009,
+      "location": "external",
+      "base_asset": "MHC",
+      "quote_asset": "MHC",
+      "trade_type": "buy",
+      "amount": "1",
+      "rate": "1",
+      "accounting_event_type": "trade",
+      "fee": null,
+      "fee_currency": null,
+      "link": null,
+      "notes": null
+    },
+    {
+      "timestamp": 1643182027,
+      "location": "external",
+      "base_asset": "BALHALF",
+      "quote_asset": "ALGOHALF",
+      "trade_type": "buy",
+      "amount": "123",
+      "accounting_event_type": "trade",
+      "rate": "1",
+      "fee": null,
+      "fee_currency": null,
+      "link": null,
+      "notes": null
+    },
+    {
+      "identifier": 1,
+      "timestamp": 1643381540,
+      "action_type": "income",
+      "location": "bitcoinde",
+      "amount": "0",
+      "accounting_event_type": "ledger action",
+      "asset": "_ceth_0x68A118Ef45063051Eac49c7e647CE5Ace48a68a5",
+      "rate": "123",
+      "rate_asset": null,
+      "link": null,
+      "notes": null
+    },
+    {
+      "location": "binance",
+      "category": "deposit",
+      "address": null,
+      "transaction_id": null,
+      "timestamp": 1643381545,
+      "asset": "_ceth_0x68A118Ef45063051Eac49c7e647CE5Ace48a68a5",
+      "amount": "444.44",
+      "fee": "0",
+      "accounting_event_type": "asset movement",
+      "fee_asset": "USD",
+      "link": "Imported from binance CSV file."
+    },
+    {
+      "location": "poloniex",
+      "open_time": 1643381545,
+      "close_time": 1643381900,
+      "currency": "USD",
+      "fee": "0",
+      "earned": "100.00",
+      "amount_lent": "1000.88",
+      "accounting_event_type": "loan"
+    },
+    {
+      "location": "bitmex",
+      "open_time": 1643381910,
+      "close_time": 1643381940,
+      "profit_loss": "1.00",
+      "pl_currency": "EUR",
+      "fee": "0.50",
+      "accounting_event_type": "margin position",
+      "fee_currency": "EUR",
+      "link": "",
+      "notes": ""
+    },
+    {
+      "validator_index": 207580,
+      "timestamp": 1628726400,
+      "pnl": {
+        "amount": "0.00332",
+        "usd_value": "10.57677300"
+      },
+      "start_balance": {
+        "amount": "0",
+        "usd_value": "0.00"
+      },
+      "end_balance": {
+        "amount": "0",
+        "usd_value": "0.00"
+      },
+      "missed_attestations": 0,
+      "orphaned_attestations": 0,
+      "proposed_blocks": 0,
+      "missed_blocks": 0,
+      "accounting_event_type": "staking",
+      "orphaned_blocks": 0,
+      "included_attester_slashings": 0,
+      "proposer_attester_slashings": 0,
+      "deposits_number": 1,
+      "deposited_balance": {
+        "amount": "32.0000",
+        "usd_value": "97513.280000"
+      }
     }
   ],
   "settings": {
     "have_premium": false,
     "version": 33,
-    "last_write_ts": 1654528773,
+    "last_write_ts": 1656344880,
     "premium_should_sync": false,
     "include_crypto2crypto": true,
     "last_data_upload_ts": 0,
@@ -54,21 +364,23 @@
     "last_balance_save": 0,
     "submit_usage_analytics": true,
     "active_modules": [
-      "uniswap",
-      "eth2",
-      "aave",
-      "loopring",
-      "balancer",
-      "yearn_vaults_v2",
-      "makerdao_vaults",
-      "compound",
       "liquity",
-      "pickle_finance",
+      "loopring",
+      "uniswap",
       "nfts",
-      "sushiswap"
+      "aave",
+      "pickle_finance",
+      "balancer",
+      "makerdao_vaults",
+      "sushiswap",
+      "compound",
+      "yearn_vaults_v2",
+      "makerdao_dsr",
+      "yearn_vaults",
+      "adex",
+      "eth2"
     ],
-    "cost_basis_method": "fifo",
-    "frontend_settings": "{\"defi_setup_done\":false,\"timeframe_setting\":\"REMEMBER\",\"visible_timeframes\":[\"All\",\"1Y\",\"3M\",\"1M\",\"2W\",\"1W\"],\"last_known_timeframe\":\"2W\",\"query_period\":5,\"profit_loss_report_period\":{\"year\":\"2022\",\"quarter\":\"ALL\"},\"thousand_separator\":\",\",\"decimal_separator\":\".\",\"currency_location\":\"after\",\"refresh_period\":-1,\"explorers\":{},\"items_per_page\":10,\"amount_rounding_mode\":0,\"value_rounding_mode\":1,\"dark_mode_enabled\":false,\"light_theme\":{\"primary\":\"#7e4a3b\",\"accent\":\"#e45325\",\"graph\":\"#96DFD2\"},\"dark_theme\":{\"primary\":\"#ff5722\",\"accent\":\"#ff8a50\",\"graph\":\"#E96930\"},\"graph_zero_based\":false,\"nfts_in_net_value\":true,\"dashboard_tables_visible_columns\":{\"ASSETS\":[\"percentage_of_total_net_value\"],\"LIABILITIES\":[\"percentage_of_total_net_value\"],\"NFT\":[\"percentage_of_total_net_value\"]},\"date_input_format\":\"%d/%m/%Y %H:%M:%S\",\"version_update_check_frequency\":24,\"enable_ens\":true}",
+    "frontend_settings": "{\"defi_setup_done\":true,\"timeframe_setting\":\"REMEMBER\",\"visible_timeframes\":[\"All\",\"2Y\",\"1Y\",\"6M\",\"3M\",\"1M\",\"2W\",\"1W\"],\"last_known_timeframe\":\"1W\",\"query_period\":5,\"profit_loss_report_period\":{\"year\":\"2022\",\"quarter\":\"ALL\"},\"thousand_separator\":\",\",\"decimal_separator\":\".\",\"currency_location\":\"after\",\"refresh_period\":-1,\"explorers\":{},\"items_per_page\":10,\"amount_rounding_mode\":0,\"value_rounding_mode\":1,\"selected_theme\":2,\"light_theme\":{\"primary\":\"#7e4a3b\",\"accent\":\"#e45325\",\"graph\":\"#96DFD2\"},\"dark_theme\":{\"primary\":\"#ff5722\",\"accent\":\"#ff8a50\",\"graph\":\"#E96930\"},\"graph_zero_based\":true,\"nfts_in_net_value\":false,\"dashboard_tables_visible_columns\":{\"ASSETS\":[\"percentage_of_total_current_group\"],\"LIABILITIES\":[\"percentage_of_total_net_value\"],\"NFT\":[\"percentage_of_total_net_value\"]},\"date_input_format\":\"%d/%m/%Y %H:%M:%S\",\"version_update_check_frequency\":24,\"enable_ens\":true}",
     "account_for_assets_movements": true,
     "btc_derivation_gap_limit": 20,
     "calculate_past_cost_basis": true,
@@ -94,11 +406,23 @@
     "ssf_0graph_multiplier": 0,
     "last_data_migration": 3,
     "non_syncing_exchanges": [],
-    "treat_eth2_as_eth": false,
+    "cost_basis_method": "lifo",
+    "treat_eth2_as_eth": true,
     "eth_staking_taxable_after_withdrawal_enabled": false
   },
   "ignored_events_ids": {
-    "trade": ["X124-JYI", "2325"],
-    "ethereum_transaction": ["0xfoo", "0xboo"]
+    "ledger_action": ["2"],
+    "asset_movement": [
+      "a86d6d7d2f94db9f3ba96d29afbc26fa0c550e689638cde74123867b04a61916",
+      "4c7a5f933609815f0b0b4f6c5b777cbe565864d45005fba32f109f6ce9ed8e4c"
+    ],
+    "trade": [
+      "fe2ce38ff37d2c1701cb57f3b084cf8845f3ea1104e7589bac747cbcd0829608",
+      "3fbe108f96668a9a008eba040e17327618e512dc3700cb6c173d1604f51e90aa"
+    ]
+  },
+  "pnl_settings": {
+    "from_timestamp": 1443381940,
+    "to_timestamp": 1643381940
   }
 }

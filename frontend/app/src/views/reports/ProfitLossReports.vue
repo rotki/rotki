@@ -172,12 +172,12 @@ export default defineComponent({
       try {
         const isLocal = interop.appSession;
         if (isLocal) {
-          const filepath =
+          const directoryPath =
             (await interop.openDirectory(
               i18n.t('profit_loss_reports.debug.select_directory').toString()
             )) || '';
-          if (!filepath) return;
-          payload['filepath'] = filepath;
+          if (!directoryPath) return;
+          payload['directoryPath'] = directoryPath;
         }
 
         const result = await exportReportData(payload);
