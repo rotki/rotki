@@ -15,8 +15,9 @@ from rotkehlchen.constants import ONE, YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.db.dbhandler import DBHandler, detect_sqlcipher_version
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
+from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,

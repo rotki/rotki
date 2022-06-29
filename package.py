@@ -811,7 +811,7 @@ class BackendBuilder:
     def __sanity_check(self) -> None:
         os.chdir(self.__storage.working_directory)
         ret_code = subprocess.call(
-            'python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)"',  # noqa: E501
+            'python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)"',  # noqa: E501
             shell=True,
         )
 
