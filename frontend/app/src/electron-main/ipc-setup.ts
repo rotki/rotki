@@ -18,12 +18,12 @@ import {
   IPC_CLEAR_PASSWORD,
   IPC_CLOSE_APP,
   IPC_CONFIG,
-  IPC_THEME,
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_GET_DEBUG,
   IPC_GET_PASSWORD,
   IPC_INSTALL_UPDATE,
+  IPC_IS_MAC,
   IPC_LOG_TO_FILE,
   IPC_METAMASK_IMPORT,
   IPC_OPEN_DIRECTORY,
@@ -33,9 +33,9 @@ import {
   IPC_RESTART_BACKEND,
   IPC_SERVER_URL,
   IPC_STORE_PASSWORD,
+  IPC_THEME,
   IPC_TRAY_UPDATE,
-  IPC_VERSION,
-  IPC_IS_MAC
+  IPC_VERSION
 } from '@/electron-main/ipc-commands';
 import { debugSettings, getUserMenu, MenuActions } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
@@ -117,19 +117,15 @@ function setupVersionInfo() {
   });
 
   ipcMain.on(IPC_IS_MAC, event => {
-    const isMac =
-      (version as SystemVersion)?.os === 'darwin' ||
-      navigator.platform?.startsWith?.('Mac');
-
+    const isMac = (version as SystemVersion)?.os === 'darwin';
     event.sender.send(IPC_IS_MAC, isMac);
   });
 }
 
 function setupSelectedTheme() {
   ipcMain.on(IPC_THEME, async (event, selectedTheme: number) => {
-    const source = ['dark', 'system', 'light'][selectedTheme];
     // @ts-ignore
-    nativeTheme.themeSource = source;
+    nativeTheme.themeSource = ['dark', 'system', 'light'][selectedTheme];
 
     event.sender.send(IPC_THEME, nativeTheme.shouldUseDarkColors);
   });
