@@ -71,6 +71,23 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
 """)
 
 
+def _create_nodes(cursor: 'DBCursor') -> None:
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS open_nodes(
+        name TEXT NOT NULL PRIMARY KEY,
+        address TEXT NOT NULL,
+        owned BOOLEAN NOT NULL DEFAULT FALSE
+    );
+""")
+    cursor.execute('INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("etherscan", "", FALSE)')  # noqa: E501
+    cursor.execute('INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("mycrypto", "https://api.mycryptoapi.com/eth", FALSE);')  # noqa: E501
+    cursor.execute('INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("blockscout", "https://mainnet-nethermind.blockscout.com/", FALSE);')  # noqa: E501
+    cursor.execute('INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("avado pool", "https://mainnet.eth.cloud.ava.do/", FALSE);')  # noqa: E501
+    cursor.execute('INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("1inch", "https://web3.1inch.exchange", FALSE);')  # noqa: E501
+    cursor.execute('INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("myetherwallet", "https://nodes.mewapi.io/rpc/eth", FALSE);')  # noqa: E501
+    cursor.execute('INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("cloudflare", "https://cloudflare-eth.com/", FALSE);')  # noqa: E501
+
+
 def _refactor_blockchain_account_labels(cursor: 'DBCursor') -> None:
     cursor.execute('UPDATE blockchain_accounts SET label = NULL WHERE label = ""')
 
@@ -84,4 +101,5 @@ def upgrade_v32_to_v33(db: 'DBHandler') -> None:
     _refactor_xpubs_and_xpub_mappings(cursor)
     _create_new_tables(cursor)
     _refactor_blockchain_account_labels(cursor)
+    _create_nodes(cursor)
     db.conn.commit()

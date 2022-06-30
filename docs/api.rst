@@ -597,6 +597,7 @@ Getting or modifying settings
               "ssf_0graph_multiplier": 2,
               "non_sync_exchanges": [{"location": "binance", "name": "binance1"}],
               "cost_basis_method": "fifo",
+              "nodes_to_connect": [{"node": "etherscan", "weight": 30}, {"node": "mycrypto", "weight": 30}, {"node": "blockscout", "weight": 40}]
           },
           "message": ""
       }
@@ -624,7 +625,15 @@ Getting or modifying settings
    :resjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
    :resjson list taxable_ledger_actions: A list of strings denoting the ledger action types that will be taken into account in the profit/loss calculation during accounting. All others will only be taken into account in the cost basis and will not be taxed.
    :resjson int ssf_0graph_multiplier: A multiplier to the snapshot saving frequency for 0 amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
+<<<<<<< HEAD
+<<<<<<< HEAD
    :resjson string cost_basis_method: Defines which method to use during the cost basis calculation. Currently supported: fifo, lifo.
+=======
+   :resjson list nodes_to_connect: A list of nodes to use for querying the ethereum chain and also their weight when selected randomly. Weights are required to have a sum of 100. Valid nodes are `etherscan`, `mycrypto`, `blockscout`, `avado pool`, `oneinch`, `myetherwallet`, `cloudflare eth`.  
+>>>>>>> 74c50aa37 (Allow to customize nodes to connect)
+=======
+   :resjson list ethereum_nodes_to_connect: A list of nodes to use for querying the ethereum chain and also their weight when selected randomly. Weights are required to have a sum of 100. Valid nodes are `etherscan`, `mycrypto`, `blockscout`, `avado pool`, `oneinch`, `myetherwallet`, `cloudflare eth`.  
+>>>>>>> c63847098 (Add ethereum prefix to nodes chain settings)
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user

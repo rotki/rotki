@@ -6,11 +6,13 @@ from typing import Any, Dict, List, Tuple
 import gevent
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_ethereum_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
@@ -41,29 +43,26 @@ INFURA_TEST = random.choice([
 ])
 ALCHEMY_TEST = 'https://eth-mainnet.alchemyapi.io/v2/ga1GtB7R26UgzjextaVpbaWZ49nSi2zt'
 
-ETHERSCAN_AND_INFURA_PARAMS: Tuple[str, List[Tuple]] = ('ethrpc_endpoint,ethereum_manager_connect_at_start, call_order', [  # noqa: E501
-    ('', (), (NodeName.ETHERSCAN,)),
+ETHERSCAN_AND_INFURA_PARAMS: Tuple[str, List[Tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
+    ((), (ETHERSCAN_NODE,)),
     (
-        INFURA_TEST,
-        (NodeName.OWN,),
-        (NodeName.OWN,),
+        (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE),),  # noqa: E501
+        (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE),),  # noqa: E501
     ),
 ])
 
 
-ETHERSCAN_AND_INFURA_AND_ALCHEMY: Tuple[str, List[Tuple]] = ('ethrpc_endpoint,ethereum_manager_connect_at_start, call_order', [  # noqa: E501
+ETHERSCAN_AND_INFURA_AND_ALCHEMY: Tuple[str, List[Tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
     # Query etherscan only
-    ('', (), (NodeName.ETHERSCAN,)),
+    ((), (ETHERSCAN_NODE,)),
     # For "our own" node querying use infura
     (
-        INFURA_TEST,
-        (NodeName.OWN,),
-        (NodeName.OWN,),
+        (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE),),  # noqa: E501
+        (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE),),  # noqa: E501
     ),
     (
-        ALCHEMY_TEST,
-        (NodeName.OWN,),
-        (NodeName.OWN,),
+        (WeightedNode(node_info=NodeName(name='own', endpoint=ALCHEMY_TEST, owned=True), weight=ONE),),  # noqa: E501
+        (WeightedNode(node_info=NodeName(name='own', endpoint=ALCHEMY_TEST, owned=True), weight=ONE),),  # noqa: E501
     ),
 ])
 
@@ -73,9 +72,9 @@ ETHEREUM_TEST_PARAMETERS: Tuple[str, List[Tuple]]
 if 'GITHUB_WORKFLOW' in os.environ:
     # For Github actions don't use infura. It seems that connecting to it
     # from Github actions hangs and times out
-    ETHEREUM_TEST_PARAMETERS = ('ethrpc_endpoint,ethereum_manager_connect_at_start, call_order', [
+    ETHEREUM_TEST_PARAMETERS = ('ethereum_manager_connect_at_start, call_order', [
         # Query etherscan only
-        ('', (), (NodeName.ETHERSCAN,)),
+        ((), (ETHERSCAN_NODE,)),
     ])
 else:
     # For Travis and local tests also use Infura, works fine
@@ -87,9 +86,9 @@ ETHEREUM_FULL_TEST_PARAMETERS: Tuple[str, List[Tuple]]
 if 'GITHUB_WORKFLOW' in os.environ:
     # For Github actions don't use infura. It seems that connecting to it
     # from Github actions hangs and times out
-    ETHEREUM_FULL_TEST_PARAMETERS = ('ethrpc_endpoint,ethereum_manager_connect_at_start, call_order', [  # noqa: E501
+    ETHEREUM_FULL_TEST_PARAMETERS = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
         # Query etherscan only
-        ('', (), (NodeName.ETHERSCAN,)),
+        ((), (ETHERSCAN_NODE,)),
     ])
 else:
     # For Travis and local tests also use Infura, works fine
@@ -106,8 +105,8 @@ def wait_until_all_nodes_connected(
     try:
         with gevent.Timeout(timeout):
             while not all(connected):
-                for idx, node_name in enumerate(ethereum_manager_connect_at_start):
-                    if node_name in ethereum.web3_mapping:
+                for idx, weighted_node in enumerate(ethereum_manager_connect_at_start):
+                    if weighted_node.node_info in ethereum.web3_mapping:
                         connected[idx] = True
 
                 gevent.sleep(0.1)
@@ -115,7 +114,7 @@ def wait_until_all_nodes_connected(
         names = [
             str(x) for idx, x in enumerate(ethereum_manager_connect_at_start) if not connected[idx]
         ]
-        log.info(
+        log.warning(
             f'Did not connect to nodes: {",".join(names)} due to '
             f'timeout of {NODE_CONNECTION_TIMEOUT}',
         )

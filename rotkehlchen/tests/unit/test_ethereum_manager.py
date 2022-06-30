@@ -2,14 +2,9 @@ import os
 
 import pytest
 
-from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
-from rotkehlchen.chain.ethereum.manager import (
-    ETHEREUM_NODES_TO_CONNECT_AT_START,
-    OPEN_NODES,
-    OPEN_NODES_WEIGHT_MAP,
-    NodeName,
-)
+from rotkehlchen.chain.ethereum.constants import WEIGHTED_ETHEREUM_NODES, ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
+from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 from rotkehlchen.constants.ethereum import ATOKEN_ABI, ERC20TOKEN_ABI, YEARN_YCRV_VAULT
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
@@ -156,11 +151,10 @@ def test_get_transaction_by_hash(ethereum_manager, call_order, ethereum_manager_
     assert result == expected_tx
 
 
-@pytest.mark.parametrize('ethrpc_endpoint,ethereum_manager_connect_at_start,call_order', [
+@pytest.mark.parametrize('ethereum_manager_connect_at_start,call_order', [
     (
-        '',
-        [x for x in OPEN_NODES if x != NodeName.ETHERSCAN],
-        [x for x in OPEN_NODES if x != NodeName.ETHERSCAN],
+        [x for x in WEIGHTED_ETHEREUM_NODES if x.node_info.name != ETHERSCAN_NODE_NAME],
+        [x for x in WEIGHTED_ETHEREUM_NODES if x.node_info.name != ETHERSCAN_NODE_NAME],
     ),
 ])
 def test_use_open_nodes(ethereum_manager, call_order, ethereum_manager_connect_at_start):
@@ -175,10 +169,10 @@ def test_use_open_nodes(ethereum_manager, call_order, ethereum_manager_connect_a
         ethereum=ethereum_manager,
     )
     result = ethereum_manager.get_transaction_receipt(
-        '0x1470187132df3b6755ed30774a772ec8bbc1cd27f10a8a6b7f6095dd95560f20',
+        '0x76dbd4fd8769af995b3597733ff6bf5daca619cb55a9d7347d8e3ab949ac5984',
         call_order=call_order,
     )
-    block_hash = '0x23daab1980fd238778750bf9ac732fa1bb45e3439fa208ac47f5995efb5924e3'
+    block_hash = '0xfd7d2542ce9804f3fc4df304bc6ec259db3934d8e75b4f9228c5395e3083cc47'
     assert result['blockHash'] == block_hash
 
 
@@ -306,18 +300,13 @@ def test_nodes_weight_map():
     """Test the weight map has no duplicates and adds to 100%"""
     nodes_set = set()
     total = ZERO
-    for node, value in OPEN_NODES_WEIGHT_MAP.items():
+    for weighted_node in WEIGHTED_ETHEREUM_NODES:
+        node, weight = weighted_node.node_info, weighted_node.weight
         assert node not in nodes_set, f'node {str(node)} appears more than once'
         nodes_set.add(node)
-        total += FVal(value)
+        total += FVal(weight)
 
     assert total == ONE
-
-
-def test_nodes_sets():
-    """Test that all nodes sets contain the nodes they should"""
-    assert set(OPEN_NODES) - set({NodeName.ETHERSCAN}) == set(ETHEREUM_NODES_TO_CONNECT_AT_START) - set({NodeName.OWN})  # noqa: E501
-    assert set(OPEN_NODES_WEIGHT_MAP.keys()) - set({NodeName.ETHERSCAN}) == set(ETHEREUM_NODES_TO_CONNECT_AT_START) - set({NodeName.OWN})  # noqa: E501
 
 
 @pytest.mark.skipif(

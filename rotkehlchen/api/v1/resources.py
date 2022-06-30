@@ -55,6 +55,7 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
+    EthereumNodeListUpdateSchema,
     EthereumTransactionDecodingSchema,
     EthereumTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
@@ -127,6 +128,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.ethereum.types import NodeName
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -476,6 +478,20 @@ class EthereumAirdropsResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_ethereum_airdrops(async_query)
+
+
+class EthereumNodesResource(BaseMethodView):
+
+    put_schema = EthereumNodeListUpdateSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_ethereum_nodes()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json')
+    def put(self, nodes: List[NodeName]) -> Response:
+        return self.rest_api.update_ethereum_nodes(nodes)
 
 
 class ExternalServicesResource(BaseMethodView):

@@ -3,6 +3,8 @@ from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.constants import WEIGHTED_ETHEREUM_NODES
+from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.utils import str_to_bool
@@ -59,6 +61,7 @@ JSON_KEYS = (
     'historical_price_oracles',
     'taxable_ledger_actions',
     'non_syncing_exchanges',
+    'ethereum_nodes_to_connect',
 )
 BOOLEAN_KEYS = (
     'have_premium',
@@ -123,6 +126,7 @@ class DBSettings(NamedTuple):
     pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
     ssf_0graph_multiplier: int = DEFAULT_SSF_0GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
+    ethereum_nodes_to_connect: List[WeightedNode] = list(WEIGHTED_ETHEREUM_NODES)
     non_syncing_exchanges: List[ExchangeLocationID] = []
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
@@ -167,6 +171,7 @@ class ModifiableDBSettings(NamedTuple):
     pnl_csv_with_formulas: Optional[bool] = None
     pnl_csv_have_summary: Optional[bool] = None
     ssf_0graph_multiplier: Optional[int] = None
+    ethereum_nodes_to_connect: Optional[List[WeightedNode]] = None
     non_syncing_exchanges: Optional[List[ExchangeLocationID]] = None
     cost_basis_method: Optional[CostBasisMethod] = None
     treat_eth2_as_eth: Optional[bool] = None
@@ -247,6 +252,9 @@ def db_settings_from_dict(
             specified_args[key] = [ExchangeLocationID.deserialize(x) for x in values]
         elif key == 'cost_basis_method':
             specified_args[key] = CostBasisMethod.deserialize(value)
+        elif key == 'ethereum_nodes_to_connect':
+            values = json.loads(value)
+            specified_args[key] = [WeightedNode.deserialize(x) for x in values]
         else:
             msg_aggregator.add_warning(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '

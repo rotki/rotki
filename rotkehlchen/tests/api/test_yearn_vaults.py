@@ -18,6 +18,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultEvent,
     YearnVaultHistory,
 )
+from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.constants.assets import (
     A_ALINK_V1,
     A_CRVP_DAIUSDCTTUSD,
@@ -480,11 +481,15 @@ def check_vault_history(name, expected_history, result_history):
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize(  # Force infura to make sure one of our history tests work with web3
-    'ethrpc_endpoint,ethereum_manager_connect_at_start',
-    [(
-        INFURA_TEST,
-        (NodeName.OWN,),
-    )],
+    'ethereum_manager_connect_at_start',
+    [
+        (
+            WeightedNode(
+                node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True),
+                weight=ONE,
+            ),
+        ),
+    ],
 )
 def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the yearn vaults history endpoint works. Uses real data.

@@ -34,6 +34,7 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME, NodeName, WeightedNode
 from rotkehlchen.chain.substrate.types import (
     KusamaAddress,
     PolkadotAddress,
@@ -801,6 +802,26 @@ class ExchangeLocationIDSchema(Schema):
         return ExchangeLocationID(name=data['name'], location=data['location'])
 
 
+class WeightedNodeSchema(Schema):
+    node_name = fields.String(required=True)
+    weight = FloatingPercentageField(required=True)
+
+    @post_load()
+    def make_weighted_node(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> WeightedNode:
+        return WeightedNode(
+            node_info=NodeName(
+                name=data['node_name'],
+                endpoint='',
+                owned=False,
+            ),
+            weight=data['weight'],
+        )
+
+
 class ModifiableSettingsSchema(Schema):
     """This is the Schema for the settings that can be modified via the API"""
     premium_should_sync = fields.Bool(load_default=None)
@@ -879,6 +900,10 @@ class ModifiableSettingsSchema(Schema):
     )
     cost_basis_method = SerializableEnumField(enum_class=CostBasisMethod, load_default=None)
     eth_staking_taxable_after_withdrawal_enabled = fields.Boolean(load_default=None)
+    ethereum_nodes_to_connect = fields.List(
+        fields.Nested(WeightedNodeSchema),
+        load_default=None,
+    )
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -893,6 +918,12 @@ class ModifiableSettingsSchema(Schema):
                         message=f'{module} is not a valid module',
                         field_name='active_modules',
                     )
+        if data['ethereum_nodes_to_connect'] is not None:
+            if (wsum := sum(node.weight for node in data['ethereum_nodes_to_connect'])) != ONE:
+                raise ValidationError(
+                    message=f'Sum of weights is not one. Got {wsum}',
+                    field_name='ethereum_nodes_to_connect',
+                )
 
     @post_load
     def transform_data(  # pylint: disable=no-self-use
@@ -929,6 +960,7 @@ class ModifiableSettingsSchema(Schema):
             cost_basis_method=data['cost_basis_method'],
             treat_eth2_as_eth=data['treat_eth2_as_eth'],
             eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],  # noqa: 501
+            ethereum_nodes_to_connect=data['ethereum_nodes_to_connect'],
         )
 
 
@@ -2254,3 +2286,39 @@ class SnapshotEditingSchema(Schema):
                 f'timestamp provided {data["timestamp"]} is not the same as the '
                 f'one for the entries provided.',
             )
+
+
+class EthereumNodeSchema(Schema):
+    name = fields.String(required=True)
+    endpoint = fields.String(required=True)
+    owned = fields.Boolean(load_default=False)
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if len(data['name']) == 0 or len(data['endpoint']) == 0:
+            raise ValidationError('name and endpoint need to be filled')
+        if data['name'] == ETHERSCAN_NODE_NAME:
+            raise ValidationError(f'name can\'t be {ETHERSCAN_NODE_NAME}')
+
+    @post_load
+    def make_node_name_data(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> NodeName:
+        return NodeName(
+            name=data['name'],
+            endpoint=data['endpoint'],
+            owned=data['owned'],
+        )
+
+
+class EthereumNodeListUpdateSchema(Schema):
+    nodes = fields.List(
+        fields.Nested(EthereumNodeSchema),
+        required=True,
+    )

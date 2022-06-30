@@ -17,7 +17,9 @@ from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.contracts import EthereumContract
-    from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.types import WeightedNode
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -112,7 +114,7 @@ def multicall(
         calls: List[Tuple[ChecksumEthAddress, str]],
         # only here to comply with multicall_2
         require_success: bool = True,  # pylint: disable=unused-argument
-        call_order: Optional[Sequence['NodeName']] = None,
+        call_order: Optional[Sequence['WeightedNode']] = None,
         block_identifier: BlockIdentifier = 'latest',
         calls_chunk_size: int = MULTICALL_CHUNKS,
 ) -> Any:
@@ -135,7 +137,7 @@ def multicall_2(
         ethereum: 'EthereumManager',
         calls: List[Tuple[ChecksumEthAddress, str]],
         require_success: bool,
-        call_order: Optional[Sequence['NodeName']] = None,
+        call_order: Optional[Sequence['WeightedNode']] = None,
         block_identifier: BlockIdentifier = 'latest',
         # only here to comply with multicall
         calls_chunk_size: int = MULTICALL_CHUNKS,  # pylint: disable=unused-argument
@@ -158,7 +160,7 @@ def multicall_specific(
         contract: 'EthereumContract',
         method_name: str,
         arguments: List[Any],
-        call_order: Optional[Sequence['NodeName']] = None,
+        call_order: Optional[Sequence['WeightedNode']] = None,
 ) -> Any:
     calls = [(
         contract.address,

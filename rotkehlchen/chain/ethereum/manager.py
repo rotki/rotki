@@ -1,7 +1,19 @@
 import json
 import logging
 import random
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    overload,
+)
 from urllib.parse import urlparse
 
 import requests
@@ -36,6 +48,7 @@ from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.types import EnsContractParams, string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import multicall, multicall_2
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN, UNIV1_LP_ABI
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
@@ -65,8 +78,12 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 from rotkehlchen.utils.network import request_get_dict
 
-from .types import NodeName
+from .constants import ETHERSCAN_NODE
+from .types import ETHERSCAN_NODE_NAME, NodeName, WeightedNode
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -93,6 +110,10 @@ def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
 
 
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
+WEIGHTED_OWN_ETHERSCAN_NODES = (
+    # TODO: Add own node here
+    ETHERSCAN_NODE,
+)
 
 
 def _query_web3_get_logs(
@@ -198,72 +219,25 @@ def _decode_ens_contract(params: EnsContractParams, result_encoded: Any) -> Chec
     return string_to_ethereum_address(result)
 
 
-# TODO: Ideally all these should become configurable
-# Taking LINKPOOL out since it's just really too slow and seems to not
-# respond to the batched calls almost at all. Combined with web3.py retries
-# this makes the tokens balance queries super slow.
-OPEN_NODES = (
-    NodeName.MYCRYPTO,
-    NodeName.BLOCKSCOUT,
-    NodeName.AVADO_POOL,
-    NodeName.ONEINCH,
-    NodeName.MYETHERWALLET,
-    # NodeName.LINKPOOL,
-    NodeName.CLOUDFLARE_ETH,
-    NodeName.ETHERSCAN,
-)
-ETHEREUM_NODES_TO_CONNECT_AT_START = (
-    NodeName.OWN,
-    NodeName.MYCRYPTO,
-    NodeName.BLOCKSCOUT,
-    NodeName.ONEINCH,
-    NodeName.AVADO_POOL,
-    NodeName.ONEINCH,
-    NodeName.MYETHERWALLET,
-    # NodeName.LINKPOOL,
-    NodeName.CLOUDFLARE_ETH,
-)
-OPEN_NODES_WEIGHT_MAP = {  # Probability with which to select each node
-    NodeName.ETHERSCAN: 0.3,
-    NodeName.MYCRYPTO: 0.15,
-    NodeName.BLOCKSCOUT: 0.1,
-    NodeName.AVADO_POOL: 0.05,
-    NodeName.ONEINCH: 0.15,
-    NodeName.MYETHERWALLET: 0.15,
-    # NodeName.LINKPOOL: 0.05,
-    NodeName.CLOUDFLARE_ETH: 0.1,
-}
-
-
 class EthereumManager():
     def __init__(
             self,
-            ethrpc_endpoint: str,
             etherscan: Etherscan,
             msg_aggregator: MessagesAggregator,
             greenlet_manager: GreenletManager,
-            connect_at_start: Sequence[NodeName],
+            connect_at_start: Sequence[WeightedNode],
+            database: 'DBHandler',
             eth_rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
-        log.debug(f'Initializing Ethereum Manager with own rpc endpoint: {ethrpc_endpoint}')
+        log.debug('Initializing Ethereum Manager')
         self.greenlet_manager = greenlet_manager
         self.web3_mapping: Dict[NodeName, Web3] = {}
-        self.own_rpc_endpoint = ethrpc_endpoint
         self.etherscan = etherscan
         self.msg_aggregator = msg_aggregator
         self.eth_rpc_timeout = eth_rpc_timeout
         self.archive_connection = False
         self.queried_archive_connection = False
-        for node in connect_at_start:
-            self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name=f'Attempt connection to {str(node)} ethereum node',
-                exception_is_error=True,
-                method=self.attempt_connect,
-                name=node,
-                ethrpc_endpoint=node.endpoint(self.own_rpc_endpoint),
-                mainnet_check=True,
-            )
+        self.connect_to_multiple_nodes(connect_at_start)
         self.blocks_subgraph = Graph(
             'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks',
         )
@@ -277,16 +251,13 @@ class EthereumManager():
                 'decimals': 18,
             },
         }
+        self.database = database
+        self.own_rpc_endpoints: set[NodeName] = set()
 
     def connected_to_any_web3(self) -> bool:
-        return (
-            NodeName.OWN in self.web3_mapping or
-            NodeName.MYCRYPTO in self.web3_mapping or
-            NodeName.BLOCKSCOUT in self.web3_mapping or
-            NodeName.AVADO_POOL in self.web3_mapping
-        )
+        return len(self.web3_mapping) != 0
 
-    def default_call_order(self, skip_etherscan: bool = False) -> List[NodeName]:
+    def default_call_order(self, skip_etherscan: bool = False) -> List[WeightedNode]:
         """Default call order for ethereum nodes
 
         Own node always has preference. Then all other node types are randomly queried
@@ -304,29 +275,38 @@ class EthereumManager():
         ===> Runs: 66, 82, 72, 58, 72 seconds
         ---> Average: 70 seconds
         """
-        result = []
-        if NodeName.OWN in self.web3_mapping:
-            result.append(NodeName.OWN)
-
-        selection = list(OPEN_NODES)
+        with self.database.conn.read_ctx() as cursor:
+            open_nodes = self.database.get_settings(cursor).ethereum_nodes_to_connect
+        selection = list(open_nodes)
         if skip_etherscan:
-            selection.remove(NodeName.ETHERSCAN)
+            selection = [wnode for wnode in open_nodes if wnode.node_info.name != ETHERSCAN_NODE_NAME]  # noqa: E501
 
         ordered_list = []
         while len(selection) != 0:
             weights = []
             for entry in selection:
-                weights.append(OPEN_NODES_WEIGHT_MAP[entry])
+                weights.append(float(entry.weight))
             node = random.choices(selection, weights, k=1)
             ordered_list.append(node[0])
             selection.remove(node[0])
 
-        return result + ordered_list
+        owned_nodes = [node for node in self.web3_mapping if node.owned]
+        if len(owned_nodes) != 0:
+            # Assigning one is just a default since we always use it
+            # The weight is only important for the other nodes since they
+            # are selected using this parameter
+            ordered_list = [WeightedNode(node_info=node, weight=ONE) for node in owned_nodes] + ordered_list  # noqa: E501
+        return ordered_list
+
+    def get_own_node_web3(self) -> Optional[Web3]:
+        for node, web3_instance in self.web3_mapping.items():
+            if node.owned:
+                return web3_instance
+        return None
 
     def attempt_connect(
             self,
-            name: NodeName,
-            ethrpc_endpoint: str,
+            node: NodeName,
             mainnet_check: bool = True,
     ) -> Tuple[bool, str]:
         """Attempt to connect to a particular node type
@@ -335,27 +315,23 @@ class EthereumManager():
         the connection is re-attempted to the new one
         """
         message = ''
-        node_connected = self.web3_mapping.get(name, None) is not None
-        own_node_already_connected = (
-            name == NodeName.OWN and
-            self.own_rpc_endpoint == ethrpc_endpoint and
-            node_connected
-        )
-        if own_node_already_connected or (node_connected and name != NodeName.OWN):
-            return True, 'Already connected to an ethereum node'
+        node_connected = self.web3_mapping.get(node, None) is not None
+        if node_connected:
+            return True, f'Already connected to {node} ethereum node'
 
         try:
-            parsed_eth_rpc_endpoint = urlparse(ethrpc_endpoint)
+            ethrpc_endpoint = node.endpoint
+            parsed_eth_rpc_endpoint = urlparse(node.endpoint)
             if not parsed_eth_rpc_endpoint.scheme:
-                ethrpc_endpoint = f"http://{ethrpc_endpoint}"
+                ethrpc_endpoint = f"http://{node.endpoint}"
             provider = HTTPProvider(
-                endpoint_uri=ethrpc_endpoint,
+                endpoint_uri=node.endpoint,
                 request_kwargs={'timeout': self.eth_rpc_timeout},
             )
             ens = ENS(provider)
             web3 = Web3(provider, ens=ens)
         except requests.exceptions.RequestException:
-            message = f'Failed to connect to ethereum node {name} at endpoint {ethrpc_endpoint}'
+            message = f'Failed to connect to ethereum node {node} at endpoint {ethrpc_endpoint}'
             log.warning(message)
             return False, message
 
@@ -375,7 +351,7 @@ class EthereumManager():
 
                     if network_id != 1:
                         message = (
-                            f'Connected to ethereum node {name} at endpoint {ethrpc_endpoint} but '
+                            f'Connected to ethereum node {node} at endpoint {ethrpc_endpoint} but '
                             f'it is not on the ethereum mainnet. The chain id '
                             f'the node is in is {network_id}.'
                         )
@@ -393,55 +369,56 @@ class EthereumManager():
                         synchronized, msg = _is_synchronized(current_block, latest_block)
             except ValueError as e:
                 message = (
-                    f'Failed to connect to ethereum node {name} at endpoint '
+                    f'Failed to connect to ethereum node {node} at endpoint '
                     f'{ethrpc_endpoint} due to {str(e)}'
                 )
                 return False, message
 
             if not synchronized:
                 self.msg_aggregator.add_warning(
-                    f'We could not verify that ethereum node {name} is '
+                    f'We could not verify that ethereum node {node} is '
                     'synchronized with the ethereum mainnet. Balances and other queries '
                     'may be incorrect.',
                 )
 
-            log.info(f'Connected ethereum node {name} at {ethrpc_endpoint}')
-            self.web3_mapping[name] = web3
+            log.info(f'Connected ethereum node {node} at {ethrpc_endpoint}')
+            self.web3_mapping[node] = web3
+            self.own_rpc_endpoints.add(node)
             return True, ''
 
         # else
-        message = f'Failed to connect to ethereum node {name} at endpoint {ethrpc_endpoint}'
+        message = f'Failed to connect to ethereum node {node} at endpoint {ethrpc_endpoint}'
         log.warning(message)
         return False, message
 
-    def set_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
-        """ Attempts to set the RPC endpoint for the user's own ethereum node
+    def connect_to_multiple_nodes(self, nodes: Sequence[WeightedNode]) -> None:
+        self.own_rpc_endpoints = set()
+        self.web3_mapping = {}
+        for weighted_node in nodes:
+            if weighted_node.node_info.name == ETHERSCAN_NODE_NAME:
+                continue
 
-           Returns a tuple (result, message)
-               - result: Boolean for success or failure of changing the rpc endpoint
-               - message: A message containing information on what happened. Can
-                          be populated both in case of success or failure"""
-        if endpoint == '':
-            self.web3_mapping.pop(NodeName.OWN, None)
-            self.own_rpc_endpoint = ''
-            return True, ''
+            task_name = f'Attempt connection to {str(weighted_node.node_info.name)} ethereum node'
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=task_name,
+                exception_is_error=True,
+                method=self.attempt_connect,
+                node=weighted_node.node_info,
+                mainnet_check=True,
+            )
 
-        # else
-        result, message = self.attempt_connect(name=NodeName.OWN, ethrpc_endpoint=endpoint)
-        if result:
-            log.info('Setting own node ETH RPC endpoint', endpoint=endpoint)
-            self.own_rpc_endpoint = endpoint
-        return result, message
-
-    def query(self, method: Callable, call_order: Sequence[NodeName], **kwargs: Any) -> Any:
+    def query(self, method: Callable, call_order: Sequence[WeightedNode], **kwargs: Any) -> Any:
         """Queries ethereum related data by performing the provided method to all given nodes
 
         The first node in the call order that gets a succcesful response returns.
         If none get a result then a remote error is raised
         """
-        for node in call_order:
+        for weighted_node in call_order:
+            node = weighted_node.node_info
             web3 = self.web3_mapping.get(node, None)
-            if web3 is None and node != NodeName.ETHERSCAN:
+            if web3 is None and node.name != ETHERSCAN_NODE_NAME:
+                log.warning(f'Skipping node {node} because is not connected')
                 continue
 
             try:
@@ -474,7 +451,7 @@ class EthereumManager():
         # else
         return self.etherscan.get_latest_block_number()
 
-    def get_latest_block_number(self, call_order: Optional[Sequence[NodeName]] = None) -> int:
+    def get_latest_block_number(self, call_order: Optional[Sequence[WeightedNode]] = None) -> int:
         return self.query(
             method=self._get_latest_block_number,
             call_order=call_order if call_order is not None else self.default_call_order(),
@@ -488,7 +465,7 @@ class EthereumManager():
         """Attempts to get a historical eth balance from the local own node only.
         If there is no node or the node can't query historical balance (not archive) then
         returns None"""
-        web3 = self.web3_mapping.get(NodeName.OWN)
+        web3 = self.get_own_node_web3()
         if web3 is None:
             return None
 
@@ -563,7 +540,7 @@ class EthereumManager():
     def get_multieth_balance(
             self,
             accounts: List[ChecksumEthAddress],
-            call_order: Optional[Sequence[NodeName]] = None,
+            call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> Dict[ChecksumEthAddress, FVal]:
         """Returns a dict with keys being accounts and balances in ETH
 
@@ -590,7 +567,7 @@ class EthereumManager():
     def get_block_by_number(
             self,
             num: int,
-            call_order: Optional[Sequence[NodeName]] = None,
+            call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> Dict[str, Any]:
         return self.query(
             method=self._get_block_by_number,
@@ -617,7 +594,7 @@ class EthereumManager():
     def get_code(
             self,
             account: ChecksumEthAddress,
-            call_order: Optional[Sequence[NodeName]] = None,
+            call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> str:
         return self.query(
             method=self._get_code,
@@ -693,7 +670,7 @@ class EthereumManager():
             self,
             name: str,
             blockchain: Literal[SupportedBlockchain.ETHEREUM] = SupportedBlockchain.ETHEREUM,
-            call_order: Optional[Sequence[NodeName]] = None,
+            call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> Optional[ChecksumEthAddress]:
         ...
 
@@ -707,7 +684,7 @@ class EthereumManager():
                 SupportedBlockchain.KUSAMA,
                 SupportedBlockchain.POLKADOT,
             ],
-            call_order: Optional[Sequence[NodeName]] = None,
+            call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> Optional[HexStr]:
         ...
 
@@ -715,7 +692,7 @@ class EthereumManager():
             self,
             name: str,
             blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
-            call_order: Optional[Sequence[NodeName]] = None,
+            call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> Optional[Union[ChecksumEthAddress, HexStr]]:
         return self.query(
             method=self._ens_lookup,
@@ -898,7 +875,7 @@ class EthereumManager():
     def get_transaction_receipt(
             self,
             tx_hash: EVMTxHash,
-            call_order: Optional[Sequence[NodeName]] = None,
+            call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> Dict[str, Any]:
         return self.query(
             method=self._get_transaction_receipt,
@@ -928,7 +905,7 @@ class EthereumManager():
     def get_transaction_by_hash(
             self,
             tx_hash: EVMTxHash,
-            call_order: Optional[Sequence[NodeName]] = None,
+            call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> EthereumTransaction:
         return self.query(
             method=self._get_transaction_by_hash,
@@ -942,7 +919,7 @@ class EthereumManager():
             abi: List,
             method_name: str,
             arguments: Optional[List[Any]] = None,
-            call_order: Optional[Sequence[NodeName]] = None,
+            call_order: Optional[Sequence[WeightedNode]] = None,
             block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
         return self.query(
@@ -997,10 +974,10 @@ class EthereumManager():
             argument_filters: Dict[str, Any],
             from_block: int,
             to_block: Union[int, Literal['latest']] = 'latest',
-            call_order: Optional[Sequence[NodeName]] = None,
+            call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> List[Dict[str, Any]]:
         if call_order is None:  # Default call order for logs
-            call_order = (NodeName.OWN, NodeName.ETHERSCAN)
+            call_order = WEIGHTED_OWN_ETHERSCAN_NODES
         return self.query(
             method=self._get_logs,
             call_order=call_order,

@@ -2,6 +2,8 @@ from typing import Any, Dict
 from unittest.mock import patch
 
 import requests
+from rotkehlchen.chain.ethereum.constants import WEIGHTED_ETHEREUM_NODES
+from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -122,3 +124,26 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
         'data_directory': str(rotki.data_dir),
         'log_level': 'DEBUG',
     }
+
+
+def test_manage_ethereum_nodes(rotkehlchen_api_server):
+    """Test that list of nodes can be correctly updated and queried"""
+    expected_message = ''
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, "ethereumnodesresource"),
+        json={'nodes': [
+            {
+                'name': node.node_info.name,
+                'endpoint': node.node_info.endpoint,
+                'owned': node.node_info.owned,
+            }
+            for node in WEIGHTED_ETHEREUM_NODES if node.node_info.name != ETHERSCAN_NODE_NAME
+        ]},
+    )
+    assert_proper_response(response)
+    response = requests.get(api_url_for(rotkehlchen_api_server, "ethereumnodesresource"))
+    assert_proper_response(response)
+    response_json = response.json()
+    assert len(response_json['result']) == len(WEIGHTED_ETHEREUM_NODES) - 1
+    assert response_json['result'] == [node.node_info.serialize() for node in WEIGHTED_ETHEREUM_NODES if node.node_info.name != ETHERSCAN_NODE_NAME]  # noqa: E501
+    assert response_json['message'] == expected_message

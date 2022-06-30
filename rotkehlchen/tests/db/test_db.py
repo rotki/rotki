@@ -11,6 +11,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.ethereum.constants import WEIGHTED_ETHEREUM_NODES
 from rotkehlchen.constants import ONE, YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.misc import ZERO
@@ -383,6 +384,7 @@ def test_writing_fetching_data(data_dir, username):
         'cost_basis_method': CostBasisMethod.FIFO,
         'treat_eth2_as_eth': DEFAULT_TREAT_ETH2_AS_ETH,
         'eth_staking_taxable_after_withdrawal_enabled': DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED,  # noqa: 501
+        'ethereum_nodes_to_connect': list(WEIGHTED_ETHEREUM_NODES),
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

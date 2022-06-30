@@ -6,15 +6,13 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.chain.ethereum.constants import WEIGHTED_ETHEREUM_NODES
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.ethereum.manager import (
-    ETHEREUM_NODES_TO_CONNECT_AT_START,
-    EthereumManager,
-    NodeName,
-)
+from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName, WeightedNode
 from rotkehlchen.chain.ethereum.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.ethereum.utils import multicall_specific
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.greenlets import GreenletManager
@@ -26,8 +24,8 @@ from rotkehlchen.utils.misc import get_chunks, ts_now
 root_path = Path(__file__).resolve().parent.parent.parent
 
 
-def init_ethereum(rpc_endpoint: str, use_other_nodes: bool) -> EthereumManager:
-    nodes_to_connect = ETHEREUM_NODES_TO_CONNECT_AT_START if use_other_nodes else (NodeName.OWN,)
+def init_ethereum(rpc_endpoint: str, use_other_nodes: bool, database: DBHandler) -> EthereumManager:
+    nodes_to_connect = WEIGHTED_ETHEREUM_NODES if use_other_nodes else (WeightedNode(node=NodeName.OWN,weight=ONE))
     msg_aggregator = MessagesAggregator()
     etherscan = Etherscan(database=None, msg_aggregator=msg_aggregator)
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)
@@ -39,6 +37,7 @@ def init_ethereum(rpc_endpoint: str, use_other_nodes: bool) -> EthereumManager:
         msg_aggregator=msg_aggregator,
         greenlet_manager=greenlet_manager,
         connect_at_start=nodes_to_connect,
+        database=database,
     )
     wait_until_all_nodes_connected(
         ethereum_manager_connect_at_start=nodes_to_connect,
@@ -200,9 +199,12 @@ if __name__ == "__main__":
             write_result_to_file(result, 'uniswap_lp_tokens_graph.json')
 
     if args.source in ('ethereum', 'both'):
+        msg_aggregator = MessagesAggregator()
+        database = DBHandler('fill', 'me', msg_aggregator, None)
         ethereum = init_ethereum(
             rpc_endpoint=args.eth_rpc_endpoint,
             use_other_nodes=args.use_other_nodes,
+            database=database,
         )
         saved_data = read_file_if_exists('uniswap_lp_tokens_ethereum.json')
         if saved_data and args.force_query is False:
@@ -213,7 +215,6 @@ if __name__ == "__main__":
             write_result_to_file(result, 'uniswap_lp_tokens_ethereum.json')
 
         if args.no_query_balances is False:
-            database = DBHandler('fill', 'me', ethereum.msg_aggregator, None)
             start = ts_now()
             known_assets: Set[EthereumToken] = set()
             unknown_assets: Set[EthereumToken] = set()

@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.ethereum.constants import CLOUDFLARE_NODE_NAME, MYCRYPTO_NODE_NAME
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -106,10 +107,36 @@ def test_set_settings(rotkehlchen_api_server):
             value = [ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize()]
         elif setting == 'cost_basis_method':
             value = CostBasisMethod.LIFO.serialize()
+        elif setting == 'ethereum_nodes_to_connect':
+            value = [
+                {
+                    'node_name': CLOUDFLARE_NODE_NAME.name,
+                    'weight': 40,
+                },
+                {
+                    'node_name': MYCRYPTO_NODE_NAME.name,
+                    'weight': 60,
+                },
+            ]
         else:
             raise AssertionError(f'Unexpected settting {setting} encountered')
 
         new_settings[setting] = value
+
+    expected_nodes_settings = [
+        {
+            'node': 'cloudflare',
+            'endpoint': 'https://cloudflare-eth.com/',
+            'weight': 40,
+            'owned': False,
+        },
+        {
+            'node': 'mycrypto',
+            'endpoint': 'https://api.mycryptoapi.com/eth',
+            'weight': 60,
+            'owned': False,
+        },
+    ]
 
     # modify the settings
     block_query = patch(
@@ -134,7 +161,10 @@ def test_set_settings(rotkehlchen_api_server):
     assert result['version'] == ROTKEHLCHEN_DB_VERSION
     for setting, value in new_settings.items():
         msg = f'Error for {setting} setting. Expected: {value}. Got: {result[setting]}'
-        assert result[setting] == value, msg
+        if setting == 'ethereum_nodes_to_connect':
+            assert result[setting] == expected_nodes_settings
+        else:
+            assert result[setting] == value, msg
 
     # now check that the same settings are returned in a settings query
     response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
@@ -143,14 +173,13 @@ def test_set_settings(rotkehlchen_api_server):
     result = json_data['result']
     assert json_data['message'] == ''
     for setting, value in new_settings.items():
-        assert result[setting] == value
+        if setting == 'ethereum_nodes_to_connect':
+            assert result[setting] == expected_nodes_settings
+        else:
+            assert result[setting] == value
 
 
 @pytest.mark.parametrize('rpc_setting, error_msg', [
-    (
-        'eth_rpc_endpoint',
-        'Failed to connect to ethereum node own node at endpoint',
-    ),
     (
         'ksm_rpc_endpoint',
         'Kusama failed to connect to own node at endpoint',
@@ -186,7 +215,7 @@ def test_set_rpc_endpoint_fail_not_set_others(
     assert result[rpc_setting] != rpc_endpoint
 
 
-@pytest.mark.parametrize('rpc_setting', ['eth_rpc_endpoint', 'ksm_rpc_endpoint'])
+@pytest.mark.parametrize('rpc_setting', ['ksm_rpc_endpoint'])
 def test_unset_rpc_endpoint(rotkehlchen_api_server, rpc_setting):
     """Test the rpc endpoint can be unset"""
     response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
@@ -270,7 +299,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg=f'Failed to connect to ethereum node own node at endpoint {endpoint}',
+        contained_in_msg=f'Failed to connect to ethereum node own at endpoint {endpoint}',
         status_code=HTTPStatus.CONFLICT,
     )
 

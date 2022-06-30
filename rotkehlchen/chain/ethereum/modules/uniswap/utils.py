@@ -11,10 +11,11 @@ from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import _decode_result
-from rotkehlchen.chain.ethereum.types import NodeName
+from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.ethereum.utils import multicall, multicall_2
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import UNISWAP_V2_LP_ABI, ZERION_ABI
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -55,9 +56,10 @@ def uniswap_lp_token_balances(
         abi=ZERION_ABI,
         deployed_block=1586199170,
     )
-    if NodeName.OWN in ethereum.web3_mapping:
+    if ethereum.get_own_node_web3() is not None:
         chunks = list(get_chunks(lp_addresses, n=4000))
-        call_order = [NodeName.OWN]
+        node_info = min(ethereum.own_rpc_endpoints)
+        call_order = [WeightedNode(node_info=node_info, weight=ONE)]
     else:
         chunks = list(get_chunks(lp_addresses, n=700))
         call_order = ethereum.default_call_order(skip_etherscan=True)

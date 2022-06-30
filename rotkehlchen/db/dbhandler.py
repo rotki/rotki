@@ -58,6 +58,7 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
 from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.trades import AMMSwap
+from rotkehlchen.chain.ethereum.types import NodeName
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
@@ -3265,3 +3266,25 @@ class DBHandler:
         period = settings.balance_save_frequency * 60 * 60
         now = ts_now()
         return now - last_save > period
+
+    def get_ethereum_nodes(self) -> Dict[str, NodeName]:
+        """Get information about all the ethereum nodes in the database. If the
+        only_with_weight param is set to True then only the nodes with weight != 0 are
+        returned.
+        """
+        with self.conn.read_ctx() as cursor:
+            cursor.execute('SELECT name, address, owned FROM open_nodes;')
+            return {
+                entry[0]: NodeName.deserialize_from_db(
+                    node_name=entry[0],
+                    endpoint=entry[1],
+                    owned=bool(entry[2]),
+                ) for entry in cursor
+            }
+
+    def update_ethereum_node_list(self, nodes: List[NodeName]) -> None:
+        with self.conn.write_ctx() as cursor:
+            cursor.executemany(
+                'INSERT OR REPLACE INTO open_nodes(name, address, owned) VALUES (?, ?, ?)',
+                [node.serialize_for_db() for node in nodes],
+            )

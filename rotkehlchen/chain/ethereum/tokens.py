@@ -1,11 +1,11 @@
 import logging
-import random
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
+from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.constants.misc import ZERO
@@ -76,19 +76,15 @@ class EthTokens():
     ) -> Dict[EthereumToken, FVal]:
         balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
         if self.ethereum.connected_to_any_web3():
-            call_order = []
-            if NodeName.OWN in self.ethereum.web3_mapping:
-                call_order = [NodeName.OWN]
+            # For all the chunks we use the same order of the nodes
+            call_order = self.ethereum.default_call_order()
             for chunk in other_chunks:
                 self._get_tokens_balance_and_price(
                     address=address,
                     tokens=chunk,
                     balances=balances,
                     token_usd_price=token_usd_price,
-                    call_order=call_order + random.sample(
-                        (NodeName.MYCRYPTO, NodeName.BLOCKSCOUT, NodeName.AVADO_POOL),
-                        3,
-                    ),
+                    call_order=call_order,
                 )
         else:
             for chunk in etherscan_chunks:
@@ -97,7 +93,7 @@ class EthTokens():
                     tokens=chunk,
                     balances=balances,
                     token_usd_price=token_usd_price,
-                    call_order=(NodeName.ETHERSCAN,),
+                    call_order=(ETHERSCAN_NODE,),
                 )
 
         # now that detection happened we also have to save it in the DB for the address
@@ -194,7 +190,7 @@ class EthTokens():
             tokens: List[EthereumToken],
             balances: Dict[EthereumToken, FVal],
             token_usd_price: Dict[EthereumToken, Price],
-            call_order: Optional[Sequence[NodeName]],
+            call_order: Optional[Sequence[WeightedNode]],
     ) -> None:
         ret = self._get_multitoken_account_balance(
             tokens=tokens,
@@ -223,7 +219,7 @@ class EthTokens():
             self,
             tokens: List[EthereumToken],
             account: ChecksumEthAddress,
-            call_order: Optional[Sequence[NodeName]],
+            call_order: Optional[Sequence[WeightedNode]],
     ) -> Dict[str, FVal]:
         """Queries balances of multiple tokens for an account
 
