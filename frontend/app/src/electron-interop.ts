@@ -94,7 +94,7 @@ export class ElectronInterop {
   }
 
   async isMac(): Promise<boolean> {
-    return window.interop?.isMac() ?? false;
+    return window.interop?.isMac() || navigator.platform?.startsWith?.('Mac');
   }
 
   onAbout(cb: () => void) {
