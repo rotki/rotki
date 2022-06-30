@@ -41,6 +41,12 @@ def test_simple_ens_mapping(database, freezer):
     _simple_ens_setup(database, freezer)
 
 
+def test_empty_addresses(database):
+    dbens = DBEns(db_handler=database)
+    res = dbens.get_reverse_ens(addresses=[])
+    assert res == {}
+
+
 @pytest.mark.freeze_time
 def test_update_ens_mapping(database, freezer):
     dbens, addy1, addy2 = _simple_ens_setup(database, freezer)

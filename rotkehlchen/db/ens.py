@@ -47,7 +47,7 @@ class DBEns:
         """
         cursor = self.db.conn.cursor()
         data = cursor.execute(
-            f'SELECT ens_name, address, last_update FROM ens_mappings WHERE address IN (? {", ?"*(len(addresses) - 1)})',  # noqa: E501
+            f'SELECT ens_name, address, last_update FROM ens_mappings WHERE address IN ({",".join("?"*len(addresses))})',  # noqa: E501
             addresses,
         )
         result = {}
