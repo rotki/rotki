@@ -199,7 +199,12 @@ export default class BackendSettings extends Mixins(BackendMixin) {
   dismiss() {}
 
   get valid() {
-    return Object.keys(this.newUserOptions).length > 0;
+    const newOptions = this.newUserOptions;
+    const oldOptions = this.options;
+    const newLogLevel = newOptions.loglevel ?? this.defaultLogLevel;
+    const oldLogLevel = oldOptions.loglevel ?? this.defaultLogLevel;
+    let updatedKeys = Object.keys(newOptions).filter(s => s !== 'loglevel');
+    return updatedKeys.length > 0 || newLogLevel !== oldLogLevel;
   }
 
   get newUserOptions(): Partial<BackendOptions> {
