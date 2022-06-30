@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :feature:`4495` Users will now be able to toggle ETH staking taxation.
 * :feature:`1420` Add functionality to add alias name for ETH addresses.
 * :feature:`-` Add zoom feature for line charts.
 * :feature:`3095` The application will now notify the user if there is a status change for the premium subscription.

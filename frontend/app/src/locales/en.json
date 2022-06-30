@@ -1615,6 +1615,7 @@
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
       "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
+      "eth_staking_taxable_after_withdrawal_enabled": "Should omit ETH/ETH2 staking events from accounting until withdrawal enabled",
       "version_update_check": "Set the version update check period while in app",
       "version_update_check_enabled": "Enabled"
     },
@@ -1686,6 +1687,9 @@
       },
       "treat_eth2_as_eth": {
         "error": "Error change setting for treat ETH2 as ETH"
+      },
+      "eth_staking_taxable_after_withdrawal_enabled": {
+        "error": "Error setting ETH staking taxable after withdrawal enabled"
       },
       "decimal_separator": {
         "error": "Error setting decimal separator",
