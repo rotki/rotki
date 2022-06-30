@@ -38,12 +38,11 @@ from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.accounting.structures.base import (
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry, StakingEvent
+from rotkehlchen.accounting.structures.types import (
     ActionType,
-    HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    StakingEvent,
 )
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken

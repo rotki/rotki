@@ -4,11 +4,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, 
 from unittest.mock import _patch, patch
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_USDC, A_USDT

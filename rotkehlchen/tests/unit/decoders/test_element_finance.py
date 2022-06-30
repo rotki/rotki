@@ -1,11 +1,8 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_ELEMENT_FINANCE
 from rotkehlchen.constants.assets import A_ELFI, A_ETH

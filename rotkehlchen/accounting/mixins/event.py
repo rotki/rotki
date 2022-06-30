@@ -8,7 +8,7 @@ from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
-    from rotkehlchen.accounting.structures.base import ActionType
+    from rotkehlchen.accounting.structures.types import ActionType
 
 
 class AccountingEventType(SerializableEnumMixin):

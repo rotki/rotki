@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, NamedTuple
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import ActionType
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO

@@ -3,9 +3,9 @@ import pytest
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import (
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import (
     ActionType,
-    HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
 )

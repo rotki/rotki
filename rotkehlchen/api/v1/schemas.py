@@ -19,9 +19,9 @@ from marshmallow.exceptions import ValidationError
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.accounting.structures.base import (
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import (
     ActionType,
-    HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
 )

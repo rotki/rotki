@@ -7,11 +7,8 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tupl
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str

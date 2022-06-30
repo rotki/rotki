@@ -6,11 +6,8 @@ from typing import List, Optional, Tuple
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants import ONE
