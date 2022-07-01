@@ -4,19 +4,14 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, 
 from unittest.mock import _patch, patch
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.filtering import HistoryEventFilterQuery
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -1252,26 +1247,19 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
     with open(filepath) as f:
         pnl_debug_json = json.load(f)
 
-    events_from_file = pnl_debug_json['events']
     settings_from_file = pnl_debug_json['settings']
     settings_from_file.pop('last_write_ts')
     ignored_actions_ids_from_file = pnl_debug_json['ignored_events_ids']
 
     with database.conn.read_ctx() as cursor:
-        settings_from_db = database.get_settings(cursor).serialize()
+        settings_from_db = database.get_settings(cursor=cursor).serialize()
         settings_from_db.pop('last_write_ts')
-        ignored_actions_ids_from_db = database.get_ignored_action_ids(cursor, None)
+        ignored_actions_ids_from_db = database.get_ignored_action_ids(
+            cursor=cursor,
+            action_type=None,
+        )
         serialized_ignored_actions_from_db = {
             k.serialize(): v for k, v in ignored_actions_ids_from_db.items()
         }
-        dbevents = DBHistoryEvents(database)
-        events_from_db = dbevents.get_history_events(
-            cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(),
-            has_premium=False,
-        )
-    serialized_events_from_db = [entry.serialize() for entry in events_from_db]
-
     assert settings_from_file == settings_from_db
     assert serialized_ignored_actions_from_db == ignored_actions_ids_from_file
-    assert events_from_file == serialized_events_from_db

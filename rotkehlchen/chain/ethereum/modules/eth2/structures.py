@@ -1,13 +1,15 @@
+import decimal
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, NamedTuple, Optional, Tuple
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import ActionType
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import (
     ChecksumEthAddress,
     Eth2PubKey,
@@ -196,6 +198,57 @@ class ValidatorDailyStats(AccountingEventMixin):
             'deposited_balance': self.deposited_balance.serialize(),
         }
 
+    @classmethod
+    def deserialize(cls, data: Dict[str, Any]) -> 'ValidatorDailyStats':
+        """Deserializes a validator daily stats dict to ValidatorDailyStats object.
+        May raise:
+            - DeserializationError
+            - KeyError
+            - ValueError
+        """
+        try:
+            start_usd_price = FVal(data['start_balance']['usd_value']) / FVal(data['start_balance']['amount'])  # noqa: 501
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
+            start_usd_price = ZERO
+        try:
+            end_usd_price = FVal(data['end_balance']['usd_value']) / FVal(data['end_balance']['amount'])  # noqa: 501
+        except (decimal.DivisionByZero, decimal.InvalidOperation):
+            end_usd_price = ZERO
+        return cls(
+            validator_index=int(data['validator_index']),
+            timestamp=deserialize_timestamp(data['timestamp']),
+            start_usd_price=start_usd_price,
+            end_usd_price=end_usd_price,
+            pnl=deserialize_fval(
+                value=data['pnl']['amount'],
+                name='pnl',
+                location='eth2 structure',
+            ),
+            start_amount=deserialize_fval(
+                value=data['start_balance']['amount'],
+                name='start_amount',
+                location='eth2 structure',
+            ),
+            end_amount=deserialize_fval(
+                value=data['end_balance']['amount'],
+                name='end_amount',
+                location='eth2 structure',
+            ),
+            missed_attestations=int(data['missed_attestations']),
+            orphaned_attestations=int(data['orphaned_attestations']),
+            proposed_blocks=int(data['proposed_blocks']),
+            missed_blocks=int(data['missed_blocks']),
+            orphaned_blocks=int(data['orphaned_blocks']),
+            included_attester_slashings=int(data['included_attester_slashings']),
+            proposer_attester_slashings=int(data['proposer_attester_slashings']),
+            deposits_number=int(data['deposits_number']),
+            amount_deposited=deserialize_fval(
+                value=data['deposited_balance']['amount'],
+                name='amount_deposited',
+                location='eth2 structure',
+            ),
+            ownership_percentage=ZERO,
+        )
     # -- Methods of AccountingEventMixin
 
     def get_timestamp(self) -> Timestamp:

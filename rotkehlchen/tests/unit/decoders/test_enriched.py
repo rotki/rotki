@@ -1,11 +1,8 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import (
-    HistoryBaseEntry,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS, CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder

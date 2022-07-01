@@ -125,9 +125,8 @@ export const useAssets = defineStore('assets', () => {
   };
 
   const importCustomAssets = async (file: File): Promise<ActionStatus> => {
-    const isLocal = interop.isPackaged && api.defaultBackend;
     try {
-      await api.assets.importCustom(file, !isLocal);
+      await api.assets.importCustom(file, !interop.appSession);
       return {
         success: true
       };
@@ -141,9 +140,8 @@ export const useAssets = defineStore('assets', () => {
 
   const exportCustomAssets = async (): Promise<ActionStatus> => {
     try {
-      const isLocal = interop.isPackaged && api.defaultBackend;
       let file: string | undefined = undefined;
-      if (isLocal) {
+      if (interop.appSession) {
         const directory = await interop.openDirectory(
           i18n.t('profit_loss_report.select_directory').toString()
         );

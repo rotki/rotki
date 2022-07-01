@@ -10,7 +10,7 @@ import {
   TimedAssetBalances,
   TimedBalances
 } from '@rotki/common/lib/statistics';
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { SupportedCurrency } from '@/data/currencies';
 import { AssetApi } from '@/services/assets/asset-api';
 import {
@@ -393,18 +393,27 @@ export class RotkehlchenApi {
 
   queryTaskResult<T>(
     id: number,
-    numericKeys?: string[] | null
+    numericKeys?: string[] | null,
+    transform: boolean = true
   ): Promise<ActionResult<T>> {
     const requiresSetup = numericKeys || numericKeys === null;
     const transformer = requiresSetup
       ? setupTransformer(numericKeys)
       : this.axios.defaults.transformResponse;
 
+    const config: Partial<AxiosRequestConfig> = {
+      validateStatus: validTaskStatus
+    };
+
+    if (transform) {
+      config.transformResponse = transformer;
+    }
+
     return this.axios
-      .get<ActionResult<TaskResultResponse<ActionResult<T>>>>(`/tasks/${id}`, {
-        validateStatus: validTaskStatus,
-        transformResponse: transformer
-      })
+      .get<ActionResult<TaskResultResponse<ActionResult<T>>>>(
+        `/tasks/${id}`,
+        config
+      )
       .then(response => {
         if (response.status === 404) {
           throw new TaskNotFoundError(`Task with id ${id} not found`);

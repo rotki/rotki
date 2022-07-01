@@ -1,10 +1,7 @@
 from typing import TYPE_CHECKING, Dict
 
-from rotkehlchen.accounting.structures.base import (
-    HistoryEventSubType,
-    HistoryEventType,
-    get_tx_event_type_identifier,
-)
+from rotkehlchen.accounting.structures.base import get_tx_event_type_identifier
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.accounting.interfaces import ModuleAccountantInterface
 from rotkehlchen.chain.ethereum.accounting.structures import TxEventSettings
 

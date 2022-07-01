@@ -110,6 +110,7 @@ const SOURCES = [
   'icon',
   'zip',
   'csv',
+  'json',
   'nexo',
   'blockfi-transactions',
   'blockfi-trades',
@@ -177,7 +178,7 @@ export default defineComponent({
       if (!target || !target.files) {
         return;
       }
-      if (!['icon', 'zip', 'csv'].includes(get(source))) {
+      if (!['icon', 'zip', 'csv', 'json'].includes(get(source))) {
         check(target.files);
       } else {
         selected(target.files[0]);

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.base import ActionType
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.misc import ZERO
@@ -16,6 +16,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
+    deserialize_fval,
     deserialize_optional,
     deserialize_timestamp,
 )
@@ -115,6 +116,27 @@ class AssetMovement(AccountingEventMixin):
             'fee': str(self.fee),
             'link': self.link,
         }
+
+    @classmethod
+    def deserialize(cls, data: Dict[str, Any]) -> 'AssetMovement':
+        """Deserializes an asset movement dict to an AssetMovement object.
+        May raise:
+            - DeserializationError
+            - KeyError
+            - UnknownAsset
+        """
+        return AssetMovement(
+            location=Location.deserialize(data['location']),
+            category=AssetMovementCategory.deserialize(data['category']),
+            timestamp=deserialize_timestamp(data['timestamp']),
+            address=deserialize_optional(data['address'], str),
+            transaction_id=deserialize_optional(data['transaction_id'], str),
+            asset=Asset(data['asset']),
+            amount=deserialize_fval(data['amount'], name='amount', location='data structure'),
+            fee_asset=Asset(data['fee_asset']),
+            fee=deserialize_fee(data['fee']),
+            link=str(data['link']),
+        )
 
     @classmethod
     def deserialize_from_db(cls, entry: AssetMovementDBTuple) -> 'AssetMovement':
@@ -265,6 +287,15 @@ class Trade(AccountingEventMixin):
             'link': self.link,
             'notes': self.notes,
         }
+
+    @classmethod
+    def deserialize(cls, data: Dict[str, Any]) -> 'Trade':
+        """Deserializes a trade dict to a Trade object.
+        May raise:
+            - UnknownAsset
+            - DeserializationError
+        """
+        return deserialize_trade(data)
 
     def __str__(self) -> str:
         return (
@@ -466,6 +497,26 @@ class MarginPosition(AccountingEventMixin):
         }
 
     @classmethod
+    def deserialize(cls, data: Dict[str, Any]) -> 'MarginPosition':
+        """Deserialize a dict margin position to a MarginPosition object.
+        May raise:
+            - DeserializationError
+            - KeyError
+            - UnknownAsset
+        """
+        return cls(
+            location=Location.deserialize(data['location']),
+            open_time=deserialize_timestamp(data['open_time']),
+            close_time=deserialize_timestamp(data['close_time']),
+            profit_loss=deserialize_asset_amount(data['profit_loss']),
+            pl_currency=Asset(data['pl_currency']),
+            fee=deserialize_fee(data['fee']),
+            fee_currency=Asset(data['fee_currency']),
+            link=str(data['link']),
+            notes=str(data['notes']),
+        )
+
+    @classmethod
     def deserialize_from_db(cls, entry: MarginPositionDBTuple) -> 'MarginPosition':
         """May raise:
             - DeserializationError
@@ -569,6 +620,24 @@ class Loan(AccountingEventMixin):
             'amount_lent': str(self.amount_lent),
         }
 
+    @classmethod
+    def deserialize(cls, data: Dict[str, Any]) -> 'Loan':
+        """Deserialize a dict loan to a Loan object.
+        May raise:
+            - DeserializationError
+            - KeyError
+            - UnknownAsset
+        """
+        return cls(
+            location=Location.deserialize(data['location']),
+            open_time=deserialize_timestamp(data['open_time']),
+            close_time=deserialize_timestamp(data['close_time']),
+            currency=Asset(data['currency']),
+            fee=deserialize_fee(data['fee']),
+            earned=deserialize_asset_amount(data['earned']),
+            amount_lent=deserialize_asset_amount(data['amount_lent']),
+        )
+
     @staticmethod
     def get_accounting_event_type() -> AccountingEventType:
         return AccountingEventType.LOAN
@@ -632,8 +701,8 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
         trade_type=trade_type,
         amount=amount,
         rate=rate,
-        fee=deserialize_fee(data['fee']),
-        fee_currency=Asset(data['fee_currency']),
+        fee=deserialize_optional(data['fee'], deserialize_fee),
+        fee_currency=Asset(data['fee_currency']) if data['fee_currency'] is not None else None,
         link=trade_link,
         notes=trade_notes,
     )

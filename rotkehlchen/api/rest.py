@@ -38,12 +38,11 @@ from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.accounting.structures.base import (
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry, StakingEvent
+from rotkehlchen.accounting.structures.types import (
     ActionType,
-    HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
-    StakingEvent,
 )
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -1598,6 +1597,7 @@ class RestAPI():
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            directory_path: Optional[Path],
     ) -> Dict[str, Any]:
         """This method exports all history events for a timestamp range.
         It also exports the user settings & ignored action identifiers for PnL debugging.
@@ -1614,16 +1614,25 @@ class RestAPI():
             settings = self.rotkehlchen.get_settings(cursor)
             ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, None)
         debug_info = {
-            'events': [entry.serialize() for entry in events],
+            'events': [entry.serialize_for_debug_import() for entry in events],
             'settings': settings.serialize(),
             'ignored_events_ids': {k.serialize(): v for k, v in ignored_ids.items()},
+            'pnl_setting': {
+                'from_timestamp': int(from_timestamp),
+                'to_timestamp': int(to_timestamp),
+            },
         }
+        if directory_path is not None:
+            with open(f'{directory_path}/pnl_debug.json', mode='w') as f:
+                json.dump(debug_info, f, indent=2)
+            return OK_RESULT
         return _wrap_in_ok_result(debug_info)
 
     def get_history_debug(
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            directory_path: Optional[Path],
             async_query: bool,
     ) -> Response:
         if async_query is True:
@@ -1631,11 +1640,13 @@ class RestAPI():
                 command=self._get_history_debug,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
+                directory_path=directory_path,
             )
 
         response = self._get_history_debug(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+            directory_path=directory_path,
         )
         status_code = _get_status_code_from_async_response(response)
         result_dict = _wrap_in_result(result=response['result'], message=response['message'])
@@ -1646,29 +1657,22 @@ class RestAPI():
             """Imports the PnL debug data for processing and report generation"""
             json_importer = DebugHistoryImporter(self.rotkehlchen.data.db)
             if isinstance(filepath, Path):
-                success, data = json_importer.import_history_debug(filepath=filepath)
+                success, msg, data = json_importer.import_history_debug(filepath=filepath)
             else:
                 tmpfilepath = self.import_tmp_files[filepath]
-                success, data = json_importer.import_history_debug(filepath=tmpfilepath)
+                success, msg, data = json_importer.import_history_debug(filepath=tmpfilepath)
                 tmpfilepath.unlink(missing_ok=True)
                 del self.import_tmp_files[filepath]
 
             if success is False:
                 return wrap_in_fail_result(
-                    message=data['msg'],
+                    message=msg,
                     status_code=HTTPStatus.CONFLICT,
                 )
-            dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
-            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                events = dbevents.get_history_events(
-                    cursor=cursor,
-                    filter_query=HistoryEventFilterQuery.make(),
-                    has_premium=True,
-                )
             self.rotkehlchen.accountant.process_history(
-                start_ts=data['data']['start_ts'],
-                end_ts=data['data']['end_ts'],
-                events=list(events),
+                start_ts=Timestamp(data['pnl_settings']['from_timestamp']),
+                end_ts=Timestamp(data['pnl_settings']['to_timestamp']),
+                events=data['events'],
             )
             return OK_RESULT
 

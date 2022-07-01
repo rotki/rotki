@@ -14,6 +14,7 @@ import { useTasks } from '@/store/tasks';
 import {
   ProfitLossEvents,
   ProfitLossEventTypeEnum,
+  ProfitLossReportDebugPayload,
   ProfitLossReportPeriod,
   ReportActionableItem,
   ReportError,
@@ -253,6 +254,50 @@ export const useReports = defineStore('reports', () => {
     }
   };
 
+  const exportReportData = async (
+    payload: ProfitLossReportDebugPayload
+  ): Promise<Object> => {
+    set(reportProgress, {
+      processingState: '',
+      totalProgress: '0'
+    });
+    set(reportError, emptyError());
+
+    const interval = setInterval(async () => {
+      set(reportProgress, await api.history.getProgress());
+    }, 2000);
+
+    const { awaitTask } = useTasks();
+    try {
+      const { taskId } = await api.reports.exportReportData(payload);
+      const { result } = await awaitTask<number, TaskMeta>(
+        taskId,
+        TaskType.TRADE_HISTORY,
+        {
+          title: i18n.t('actions.reports.generate.task.title').toString(),
+          numericKeys: [],
+          transform: false
+        }
+      );
+
+      return result;
+    } catch (e: any) {
+      set(reportError, {
+        error: e.message,
+        message: i18n.t('actions.reports.generate.error.description').toString()
+      });
+
+      return {};
+    } finally {
+      clearInterval(interval);
+
+      set(reportProgress, {
+        processingState: '',
+        totalProgress: '0'
+      });
+    }
+  };
+
   const progress = computed(() => get(reportProgress).totalProgress);
   const processingState = computed(() => get(reportProgress).processingState);
 
@@ -287,6 +332,7 @@ export const useReports = defineStore('reports', () => {
     processingState,
     reportError,
     actionableItems,
+    exportReportData,
     createCsv,
     generateReport,
     deleteReport,

@@ -13,6 +13,7 @@ import { PendingTask } from '@/services/types-api';
 import { handleResponse, validStatus } from '@/services/utils';
 import {
   ProfitLossOverview,
+  ProfitLossReportDebugPayload,
   ProfitLossReportEvents,
   ProfitLossReportOverview,
   ProfitLossReportPeriod,
@@ -51,6 +52,54 @@ export class ReportsApi {
         transformResponse: basicAxiosTransformer
       }
     );
+    return handleResponse(response);
+  }
+
+  async exportReportData(
+    payload: ProfitLossReportDebugPayload
+  ): Promise<PendingTask> {
+    const response = await this.axios.post<ActionResult<PendingTask>>(
+      '/history/debug',
+      axiosSnakeCaseTransformer({
+        asyncQuery: true,
+        ...payload
+      }),
+      {
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return handleResponse(response);
+  }
+
+  async importReportData(filepath: string): Promise<PendingTask> {
+    const response = await this.axios.put<ActionResult<PendingTask>>(
+      '/history/debug',
+      axiosSnakeCaseTransformer({
+        filepath,
+        asyncQuery: true
+      }),
+      {
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return handleResponse(response);
+  }
+
+  async uploadReportData(filepath: File): Promise<PendingTask> {
+    const data = new FormData();
+    data.append('filepath', filepath);
+    const response = await this.axios.post<ActionResult<PendingTask>>(
+      '/history/debug?async_query=true',
+      data,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+
     return handleResponse(response);
   }
 

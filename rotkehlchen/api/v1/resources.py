@@ -14,7 +14,8 @@ from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures.base import ActionType, HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
@@ -69,6 +70,7 @@ from rotkehlchen.api.v1.schemas import (
     HistoryBaseEntrySchema,
     HistoryExportingSchema,
     HistoryProcessingDebugImportSchema,
+    HistoryProcessingExportSchema,
     HistoryProcessingSchema,
     IdentifiersListSchema,
     IgnoredActionsGetSchema,
@@ -1136,7 +1138,7 @@ class HistoryProcessingResource(BaseMethodView):
 
 
 class HistoryProcessingDebugResource(BaseMethodView):
-    post_schema = HistoryProcessingSchema()
+    post_schema = HistoryProcessingExportSchema()
     upload_schema = HistoryProcessingDebugImportSchema()
 
     @require_loggedin_user()
@@ -1145,11 +1147,13 @@ class HistoryProcessingDebugResource(BaseMethodView):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            directory_path: Optional[Path],
             async_query: bool,
     ) -> Response:
         return self.rest_api.get_history_debug(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+            directory_path=directory_path,
             async_query=async_query,
         )
 

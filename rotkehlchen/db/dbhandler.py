@@ -26,7 +26,7 @@ from typing import (
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.accounting.structures.base import ActionType
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey

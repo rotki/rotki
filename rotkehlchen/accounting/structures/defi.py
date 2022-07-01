@@ -113,3 +113,8 @@ class DefiEvent(AccountingEventMixin):
     def serialize(self) -> Dict[str, Any]:
         """DefiEvent should be eventually deleted. Will not be called from accounting"""
         raise AssertionError('Should never be called')
+
+    @classmethod
+    def deserialize(cls, data: Dict[str, Any]) -> 'DefiEvent':
+        """DefiEvent should be eventually deleted. Will not be called from accounting"""
+        raise AssertionError('Should never be called')

@@ -111,6 +111,27 @@ class LedgerAction(AccountingEventMixin):
             'notes': self.notes,
         }
 
+    @classmethod
+    def deserialize(cls, data: Dict[str, Any]) -> 'LedgerAction':
+        """Deserializes a ledger action dict to a LedgerAction object.
+        May raise:
+            - DeserializationError
+            - KeyError
+            - UnknownAsset
+        """
+        return cls(
+            identifier=int(data['identifier']),
+            timestamp=deserialize_timestamp(data['timestamp']),
+            action_type=LedgerActionType.deserialize(data['action_type']),
+            location=Location.deserialize(data['location']),
+            asset=Asset(data['asset']),
+            amount=deserialize_asset_amount(data['amount']),
+            rate=deserialize_optional(data['rate'], deserialize_price),
+            link=deserialize_optional(data['link'], str),
+            notes=deserialize_optional(data['notes'], str),
+            rate_asset=Asset(data['rate_asset']) if data.get('rate_asset') is not None else None,
+        )
+
     def serialize_for_db(self) -> LedgerActionDBTuple:
         """Serializes an action for writing in the DB.
         Identifier and extra_data are ignored"""

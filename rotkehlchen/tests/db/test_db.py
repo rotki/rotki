@@ -8,7 +8,7 @@ import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.accounting.structures.base import ActionType
+from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import ONE, YEAR_IN_SECONDS
