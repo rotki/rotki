@@ -625,15 +625,8 @@ Getting or modifying settings
    :resjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
    :resjson list taxable_ledger_actions: A list of strings denoting the ledger action types that will be taken into account in the profit/loss calculation during accounting. All others will only be taken into account in the cost basis and will not be taxed.
    :resjson int ssf_0graph_multiplier: A multiplier to the snapshot saving frequency for 0 amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
-<<<<<<< HEAD
-<<<<<<< HEAD
    :resjson string cost_basis_method: Defines which method to use during the cost basis calculation. Currently supported: fifo, lifo.
-=======
-   :resjson list nodes_to_connect: A list of nodes to use for querying the ethereum chain and also their weight when selected randomly. Weights are required to have a sum of 100. Valid nodes are `etherscan`, `mycrypto`, `blockscout`, `avado pool`, `oneinch`, `myetherwallet`, `cloudflare eth`.  
->>>>>>> 74c50aa37 (Allow to customize nodes to connect)
-=======
-   :resjson list ethereum_nodes_to_connect: A list of nodes to use for querying the ethereum chain and also their weight when selected randomly. Weights are required to have a sum of 100. Valid nodes are `etherscan`, `mycrypto`, `blockscout`, `avado pool`, `oneinch`, `myetherwallet`, `cloudflare eth`.  
->>>>>>> c63847098 (Add ethereum prefix to nodes chain settings)
+   :resjson list ethereum_nodes_to_connect: A list of nodes to use for querying the ethereum chain and also their weight when selected randomly. Weights are required to have a sum of 100.  
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user
@@ -675,6 +668,7 @@ Getting or modifying settings
    :reqjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
    :reqjson list taxable_ledger_actions: A list of strings denoting the ledger action types that will be taken into account in the profit/loss calculation during accounting. All others will only be taken into account in the cost basis and will not be taxed.
    :resjson int ssf_0graph_multiplier: A multiplier to the snapshot saving frequency for 0 amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
+   :resjson list ethereum_nodes_to_connect: A list of objects having ``name`` and ``weight`` (between 0 and 100) as attributes. ``name`` needs to be a valid name in the list of ethereum nodes and the sum of ``weight`` has to be 100.
 
    **Example Response**:
 
@@ -717,6 +711,84 @@ Getting or modifying settings
    :statuscode 400: Provided JSON is in some way malformed, of invalid value for a setting.
    :statuscode 409: No user is logged in or tried to set eth rpc endpoint that could not be reached.
    :statuscode 500: Internal rotki error
+
+Adding information for ethereum nodes
+=====================================
+
+.. http:get:: /api/(version)/blochchains/ETH/nodes
+
+   By querying this endpoint the information for all the nodes in the database will be returned
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blochchains/ETH/nodes HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   The following is an example response of querying ethereum nodes information.
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": [
+            {
+                "name": "etherscan",
+                "endpoint": "",
+                "owned": false
+            },
+            {
+                "name": "mycrypto",
+                "endpoint": "https://api.mycryptoapi.com/eth",
+                "owned": false
+            },
+            {
+                "name": "blockscout",
+                "endpoint": "https://mainnet-nethermind.blockscout.com/",
+                "owned": false
+            },
+            {
+                "name": "avado pool",
+                "endpoint": "https://mainnet.eth.cloud.ava.do/",
+                "owned": false
+            }
+        ],
+        "message": ""
+      }
+
+   :resjson list result: A list with information about the ethereum nodes.
+
+   :statuscode 200: Querying was successful
+
+.. http:put:: /api/(version)/blochchains/ETH/nodes
+
+   By doing a PUT on this endpoint you will be able to add or edit an already existing node entry with information.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blochchains/ETH/nodes HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+          "nodes": [{
+              "name": "my_node",
+              "endpoint": "http://localhost:8385",
+              "owned": true
+          }]
+      }
+
+   :resjson list nodes: A list of ethereum nodes to add or update in the database. ``name`` has to be unique.
+
+   :statuscode 200: Insert or update was successful.
+   :statuscode 400: Entries couldn't be updated.
 
 Query the result of an ongoing backend task
 ===========================================

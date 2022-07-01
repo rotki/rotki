@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from typing import Any, Dict
 from unittest.mock import patch
 
@@ -7,6 +8,7 @@ from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_proper_response,
     assert_proper_response_with_result,
 )
@@ -144,6 +146,23 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, "ethereumnodesresource"))
     assert_proper_response(response)
     response_json = response.json()
-    assert len(response_json['result']) == len(WEIGHTED_ETHEREUM_NODES) - 1
-    assert response_json['result'] == [node.node_info.serialize() for node in WEIGHTED_ETHEREUM_NODES if node.node_info.name != ETHERSCAN_NODE_NAME]  # noqa: E501
+    assert len(response_json['result']) == len(WEIGHTED_ETHEREUM_NODES)
+    assert response_json['result'] == [node.node_info.serialize() for node in WEIGHTED_ETHEREUM_NODES]  # noqa: E501
     assert response_json['message'] == expected_message
+
+    # Try to add etherscan as node
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, "ethereumnodesresource"),
+        json={'nodes': [
+            {
+                'name': 'etherscan',
+                'endpoint': 'ewarwae',
+                'owned': False,
+            },
+        ]},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='name can\'t be etherscan',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

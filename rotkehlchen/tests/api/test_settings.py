@@ -291,29 +291,6 @@ def test_set_settings_errors(rotkehlchen_api_server):
     # set timeout to 1 second to timeout faster
     rotki.chain_manager.ethereum.eth_rpc_timeout = 1
 
-    # Eth rpc endpoint to which we can't connect
-    endpoint = 'http://lol.com:5555'
-    data = {
-        'settings': {'eth_rpc_endpoint': endpoint},
-    }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg=f'Failed to connect to ethereum node own at endpoint {endpoint}',
-        status_code=HTTPStatus.CONFLICT,
-    )
-
-    # Invalid type for eth_rpc_endpoint
-    data = {
-        'settings': {'eth_rpc_endpoint': 5555},
-    }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Not a valid string',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
     # Invalid type for premium_should_sync
     data = {
         'settings': {'premium_should_sync': 444},

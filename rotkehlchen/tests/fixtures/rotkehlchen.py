@@ -124,11 +124,14 @@ def initialize_mock_rotkehlchen_instance(
         return
 
     # Mock the initial get settings to include the specified ethereum modules
+    # Do not connect to the usual nodes at start by default. Do not want to spam
+    # them during our tests. It's configurable per test, with the default being nothing
     def mock_get_settings(_cursor) -> DBSettings:
         settings = DBSettings(
             active_modules=ethereum_modules,
             eth_rpc_endpoint=eth_rpc_endpoint,
             ksm_rpc_endpoint=ksm_rpc_endpoint,
+            ethereum_nodes_to_connect=ethereum_manager_connect_at_start,
         )
         return settings
     settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
@@ -149,9 +152,7 @@ def initialize_mock_rotkehlchen_instance(
         return return_value
     data_unlock_patch = patch.object(rotki.data, 'unlock', side_effect=augmented_unlock)
 
-    # Do not connect to the usual nodes at start by default. Do not want to spam
-    # them during our tests. It's configurable per test, with the default being nothing
-    nodes = {node.name: node for node in ethereum_manager_connect_at_start}
+    nodes = {node.node_info.name: node for node in ethereum_manager_connect_at_start}
     eth_rpcconnect_patch = patch(
         'rotkehlchen.db.dbhandler.DBHandler.get_ethereum_nodes',
         return_value=nodes,

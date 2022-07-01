@@ -2738,7 +2738,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     assert missing_tables == removed_tables
     assert tables_after_creation - tables_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'address_book'}
+    assert new_tables == {'address_book', 'open_nodes'}
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

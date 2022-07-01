@@ -1254,6 +1254,7 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
     with database.conn.read_ctx() as cursor:
         settings_from_db = database.get_settings(cursor=cursor).serialize()
         settings_from_db.pop('last_write_ts')
+        settings_from_db.pop('ethereum_nodes_to_connect')
         ignored_actions_ids_from_db = database.get_ignored_action_ids(
             cursor=cursor,
             action_type=None,

@@ -137,6 +137,7 @@ TABLES_AT_INIT = [
     'history_events_mappings',
     'ens_mappings',
     'address_book',
+    'open_nodes',
 ]
 
 
