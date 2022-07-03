@@ -11,31 +11,47 @@ import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
 import { wait } from '@/utils/backoff';
 
-async function streamToString(givenStream: stream.Readable): Promise<string> {
+const streamToString = (
+  ioStream: stream.Readable,
+  log: (msg: string) => void
+): (() => void) => {
   const bufferChunks: Buffer[] = [];
   const stringChunks: string[] = [];
-  return new Promise((resolve, reject) => {
-    givenStream.on('data', chunk => {
-      if (typeof chunk === 'string') {
-        stringChunks.push(chunk);
-      } else {
-        bufferChunks.push(chunk);
-      }
-    });
-    givenStream.on('error', reject);
-    givenStream.on('end', () => {
-      if (bufferChunks.length > 0) {
-        try {
-          stringChunks.push(Buffer.concat(bufferChunks).toString('utf8'));
-        } catch (e: any) {
-          stringChunks.push(e.message);
-        }
-      }
 
-      resolve(stringChunks.join('\n'));
-    });
-  });
-}
+  const onData = (chunk: any) => {
+    if (typeof chunk === 'string') {
+      stringChunks.push(chunk);
+    } else {
+      bufferChunks.push(chunk);
+    }
+  };
+
+  const onEnd = () => {
+    if (bufferChunks.length > 0) {
+      try {
+        stringChunks.push(Buffer.concat(bufferChunks).toString('utf8'));
+      } catch (e: any) {
+        stringChunks.push(e.message);
+      }
+    }
+
+    log(`[rotki-core] ${stringChunks.join('\n')}`);
+  };
+
+  const onError = (err: Error) => {
+    console.error(err);
+  };
+
+  ioStream.on('data', onData);
+  ioStream.on('error', onError);
+  ioStream.on('end', onEnd);
+
+  return () => {
+    ioStream.off('data', onData);
+    ioStream.off('end', onEnd);
+    ioStream.off('error', onError);
+  };
+};
 
 function getBackendArguments(options: Partial<BackendOptions>): string[] {
   const args: string[] = [];
@@ -75,12 +91,20 @@ export default class PyHandler {
   private onChildError?: (err: Error) => void;
   private onChildExit?: (code: number, signal: any) => void;
   private logDirectory?: string;
+  private stdioListeners = {
+    outOff: () => {},
+    errOff: () => {}
+  };
 
   constructor(private app: App) {
     app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
     this.defaultLogDirectory = app.getPath('logs');
     this._serverUrl = '';
-    this.logToFile('\nStarting rotki\n');
+    const startupMessage = `
+    ------------------
+    | Starting rotki |
+    ------------------`;
+    this.logToFile(startupMessage);
     this.listenForMessages();
   }
 
@@ -121,15 +145,20 @@ export default class PyHandler {
   }
 
   logToFile(msg: string | Error) {
-    if (!msg) {
-      return;
+    try {
+      if (!msg) {
+        return;
+      }
+      const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
+
+      console.log(message);
+      if (!fs.existsSync(this.logDir)) {
+        fs.mkdirSync(this.logDir);
+      }
+      fs.appendFileSync(this.electronLogFile, `${message}\n`);
+    } catch (e) {
+      // Not much we can do if an error happens here.
     }
-    const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
-    console.log(message);
-    if (!fs.existsSync(this.logDir)) {
-      fs.mkdirSync(this.logDir);
-    }
-    fs.appendFileSync(this.electronLogFile, `${message}\n`);
   }
 
   setCorsURL(url: string) {
@@ -211,13 +240,13 @@ export default class PyHandler {
       return;
     }
     if (childProcess.stdout) {
-      streamToString(childProcess.stdout).then(value =>
-        this.logBackendOutput(value)
+      this.stdioListeners.outOff = streamToString(childProcess.stdout, msg =>
+        this.logBackendOutput(msg)
       );
     }
     if (childProcess.stderr) {
-      streamToString(childProcess.stderr).then(value =>
-        this.logBackendOutput(value)
+      this.stdioListeners.errOff = streamToString(childProcess.stderr, msg =>
+        this.logBackendOutput(msg)
       );
     }
 
@@ -271,6 +300,8 @@ export default class PyHandler {
       if (this.onChildError) {
         client.off('error', this.onChildError);
       }
+      this.stdioListeners.outOff();
+      this.stdioListeners.errOff();
     }
     if (process.platform === 'win32') {
       return this.terminateWindowsProcesses(restart);

@@ -73,14 +73,19 @@ if (!lock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    if (!win) {
-      return;
-    }
+    try {
+      if (!win) {
+        return;
+      }
 
-    if (win.isMinimized()) {
-      win.restore();
+      if (win.isMinimized()) {
+        win.restore();
+      }
+      win.focus();
+    } catch (e) {
+      console.error('Could not restore the window', e);
+      app.quit();
     }
-    win.focus();
   });
 
   // Quit when all windows are closed.
@@ -171,19 +176,28 @@ async function createWindow() {
   mainWindowState.manage(win);
 
   win.on('close', e => {
-    if (process.platform === 'darwin' && !forceQuit) {
-      e.preventDefault();
-      win?.hide();
-    } else {
+    try {
+      if (process.platform === 'darwin' && !forceQuit) {
+        e.preventDefault();
+        win?.hide();
+      } else {
+        closeApp();
+      }
+    } catch (e) {
+      console.error(e);
       closeApp();
     }
   });
 
   win.on('closed', async () => {
-    if (process.platform !== 'darwin') {
-      win = null;
-    } else {
-      win?.hide();
+    try {
+      if (process.platform === 'darwin' && !forceQuit) {
+        win?.hide();
+      } else {
+        win = null;
+      }
+    } catch (e) {
+      console.error(e);
     }
   });
   return win;
