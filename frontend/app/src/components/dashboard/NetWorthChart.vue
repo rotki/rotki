@@ -6,7 +6,8 @@
     <div :class="$style.canvas">
       <canvas
         :id="canvasId"
-        @click.stop="canvasClicked"
+        @mousedown="canvasMouseDown"
+        @mouseup="canvasMouseUp"
         @dblclick.stop="resetZoom"
       />
       <graph-tooltip-wrapper :tooltip-option="tooltipDisplayOption">
@@ -276,21 +277,8 @@ export default defineComponent({
             color: () => get(gridColor),
             borderColor: () => get(gridColor)
           },
-          suggestedMin: () => {
-            const data = get(balanceData);
-            if (data.length === 0) return 0;
-
-            let min = Math.min(...data.map(datum => datum.y));
-            if (get(graphZeroBased)) {
-              min = Math.min(0, min);
-            }
-            return min;
-          },
-          suggestedMax: () => {
-            const data = get(balanceData);
-            if (data.length === 0) return 0;
-
-            return Math.max(...data.map(datum => datum.y));
+          ticks: {
+            beginAtZero: () => get(graphZeroBased)
           }
         }
       };
@@ -344,6 +332,10 @@ export default defineComponent({
       const options: ChartOptions = {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
         hover: { intersect: false },
         elements: {
           point: {
@@ -360,6 +352,9 @@ export default defineComponent({
           tooltip,
           zoom: {
             zoom: {
+              drag: {
+                enabled: true
+              },
               wheel: {
                 enabled: true,
                 modifierKey
@@ -397,6 +392,23 @@ export default defineComponent({
     watch(dark, () => {
       updateChart();
     });
+
+    const mouseDownCoor = ref<{ x: number; y: number }>({ x: 0, y: 0 });
+
+    const canvasMouseDown = (event: PointerEvent) => {
+      set(mouseDownCoor, {
+        x: event.x,
+        y: event.y
+      });
+    };
+
+    const canvasMouseUp = (event: PointerEvent) => {
+      const { x, y } = get(mouseDownCoor);
+
+      if (event.x === x && event.y === y) {
+        canvasClicked(event);
+      }
+    };
 
     const canvasClicked = (event: PointerEvent) => {
       set(isDblClick, false);
@@ -443,6 +455,8 @@ export default defineComponent({
       dark,
       canvasId,
       canvasClicked,
+      canvasMouseDown,
+      canvasMouseUp,
       showExportSnapshotDialog,
       selectedTimestamp,
       selectedBalance,
