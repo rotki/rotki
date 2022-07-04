@@ -6,8 +6,12 @@
           <v-icon>mdi-close</v-icon>
         </v-btn>
 
-        <v-toolbar-title>
-          {{ $t('dashboard.snapshot.edit.dialog.title') }}
+        <v-toolbar-title class="pl-2">
+          <i18n path="dashboard.snapshot.edit.dialog.title">
+            <template #date>
+              <date-display :timestamp="timestamp" />
+            </template>
+          </i18n>
         </v-toolbar-title>
       </v-toolbar>
       <div v-if="snapshotData">
@@ -26,7 +30,7 @@
           <v-stepper-items>
             <v-stepper-content :step="1" class="pa-0">
               <edit-balances-snapshot-table
-                v-model="snapshotData.balancesSnapshot"
+                v-model="snapshotData"
                 :timestamp="timestamp"
                 @update:step="step = $event"
                 @input="save"
@@ -79,6 +83,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { Snapshot, SnapshotPayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { showMessage } from '@/store/utils';
+import { sortDesc } from '@/utils/bignumbers';
 
 export default defineComponent({
   name: 'EditSnapshotDialog',
@@ -104,7 +109,13 @@ export default defineComponent({
     const fetchSnapshotData = async () => {
       const result = await api.getSnapshotData(get(timestamp));
 
-      set(snapshotData, result);
+      const { balancesSnapshot, locationDataSnapshot } = result;
+      balancesSnapshot.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+      locationDataSnapshot.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+      set(snapshotData, {
+        balancesSnapshot,
+        locationDataSnapshot
+      });
     };
 
     onMounted(() => {

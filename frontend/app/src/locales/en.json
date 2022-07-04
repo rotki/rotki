@@ -3647,7 +3647,7 @@
       "edit": {
         "title": "Edit",
         "dialog": {
-          "title": "Edit snapshot data",
+          "title": "Edit snapshot data at {date}",
           "actions": {
             "back": "Back",
             "next": "Next",
@@ -3670,7 +3670,17 @@
               "category": "Category",
               "asset": "Asset",
               "amount": "Amount",
-              "value": "{currency} Value"
+              "value": "{currency} Value",
+              "location": "Location"
+            },
+            "optional": "Optional",
+            "preview": {
+              "title": "This location value will be updated",
+              "from": "From",
+              "to": "To"
+            },
+            "hints": {
+              "location": "This is optional. If specified, the location balance data will be adjusted automatically. If not, you have to update location balance data manually."
             },
             "rules": {
               "category": "The category field cannot be empty",
@@ -3697,10 +3707,11 @@
           },
           "total": {
             "title": "Total",
+            "hint": "You have different amount between assets total and locations total. You can choose which amount to use.",
             "warning": "This is total value that includes NFTs value. If you turn off setting \"Include NFTs in graphs and total amounts\", it will show value {amount} on the chart",
-            "use_calculated_asset": "Use Calculated Asset Value: ",
-            "use_calculated_location": "Use Calculated Location Value: ",
-            "use_calculated_total": "Use Calculated Total Value: ",
+            "use_calculated_asset": "Use total from {length} asset(s) value: ",
+            "use_calculated_location": "Use total from {length} location(s) value: ",
+            "use_calculated_total": "Use calculated total value: ",
             "rules": {
               "total": "The value field cannot be empty"
             }

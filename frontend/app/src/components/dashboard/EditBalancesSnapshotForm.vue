@@ -1,6 +1,6 @@
 <template>
   <v-form :value="value" class="pt-4" @input="input">
-    <div class="mb-2">
+    <div>
       <balance-type-input
         :value="form.category"
         outlined
@@ -9,12 +9,12 @@
         @input="updateForm({ category: $event })"
       />
     </div>
-    <div class="mb-n2">
-      <div class="text--secondary text-caption mb-2">
+    <div class="mb-4">
+      <div class="text--secondary text-caption">
         {{ $t('dashboard.snapshot.edit.dialog.balances.headers.asset') }}
       </div>
       <div>
-        <v-radio-group v-model="assetType" row>
+        <v-radio-group v-model="assetType" row class="mt-2">
           <v-radio
             :label="$t('dashboard.snapshot.edit.dialog.balances.token')"
             value="token"
@@ -69,9 +69,19 @@
         @input="updateForm({ usdValue: $event })"
       />
     </div>
+
+    <div>
+      <edit-balances-snapshot-location-selector
+        :value="form.location"
+        :locations="locations"
+        :preview-location-balance="previewLocationBalance"
+        @input="updateForm({ location: $event })"
+      />
+    </div>
   </v-form>
 </template>
 <script lang="ts">
+import { BigNumber } from '@rotki/common';
 import {
   defineComponent,
   onBeforeMount,
@@ -81,6 +91,7 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import { setupGeneralSettings } from '@/composables/session';
 import i18n from '@/i18n';
@@ -89,18 +100,34 @@ import { isNft } from '@/utils/nft';
 
 export default defineComponent({
   name: 'EditBalancesSnapshotForm',
-  components: { BalanceTypeInput },
+  components: {
+    EditBalancesSnapshotLocationSelector,
+    BalanceTypeInput
+  },
   props: {
     value: {
       required: false,
       type: Boolean,
       default: false
     },
-    form: { required: true, type: Object as PropType<BalanceSnapshotPayload> },
+    form: {
+      required: true,
+      type: Object as PropType<BalanceSnapshotPayload & { location: string }>
+    },
+    locations: {
+      required: false,
+      type: Array as PropType<string[]>,
+      default: () => []
+    },
     excludedAssets: {
       required: false,
       type: Array as PropType<string[]>,
       default: () => []
+    },
+    previewLocationBalance: {
+      required: false,
+      type: Object as PropType<Record<string, BigNumber>>,
+      default: () => null
     }
   },
   emits: ['update:form', 'input'],

@@ -133,19 +133,20 @@ export default defineComponent({
     };
 
     const visibleAssets = computed<SupportedAsset[]>(() => {
+      const itemsVal = get(items);
+      const excludesVal = get(excludes);
+
       let assets = (
         get(enableAssociation) ? get(supportedAssets) : get(allSupportedAssets)
       ).filter((asset: SupportedAsset) => {
         const unIgnored =
           get(showIgnored) || !get(isAssetIgnored(asset.identifier));
 
-        const itemsVal = get(items);
         const included =
           itemsVal && itemsVal.length > 0
             ? itemsVal.includes(asset.identifier)
             : true;
 
-        const excludesVal = get(excludes);
         const excluded =
           excludesVal && excludesVal.length > 0
             ? excludesVal.includes(asset.identifier)

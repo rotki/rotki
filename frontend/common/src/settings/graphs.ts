@@ -140,13 +140,14 @@ export const customTimeframe: Timeframe = {
   timestampRange: -1
 };
 
+const definedTimeframes = timeframes(() => 0);
+const sortedByRange = Object.values(definedTimeframes).sort((a, b) =>
+    a.timestampRange - b.timestampRange
+);
+
 export const getTimeframeByRange = (startDate: number, endDate: number): Timeframe => {
   const range = endDate - startDate;
   const current = Math.abs(endDate - Date.now()) < dayTimestamp;
-  const definedTimeframes = timeframes(() => 0);
-  const sortedByRange = Object.values(definedTimeframes).sort((a, b) =>
-    a.timestampRange - b.timestampRange
-  );
 
   let usedTimeframe: Timeframe = sortedByRange[0];
   let skip = false;

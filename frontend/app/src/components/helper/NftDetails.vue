@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="d-flex align-center">
+    <div class="d-flex align-center" :class="$style.wrapper">
       <div class="my-2" :class="$style.preview">
         <template v-if="imageUrl">
           <video
@@ -20,9 +20,9 @@
           />
         </template>
       </div>
-      <span class="ml-4">
+      <div class="ml-4" :class="$style.name">
         {{ name }}
-      </span>
+      </div>
     </div>
   </div>
 </template>
@@ -65,10 +65,22 @@ export default defineComponent({
 </script>
 
 <style module lang="scss">
+.wrapper {
+  overflow: hidden;
+}
+
 .preview {
   background: #f5f5f5;
   width: 50px;
   height: 50px;
   max-width: 50px;
+  min-width: 50px;
+}
+
+.name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex: 1;
 }
 </style>

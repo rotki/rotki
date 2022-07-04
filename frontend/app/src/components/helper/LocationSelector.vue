@@ -51,6 +51,11 @@ export default defineComponent({
   props: {
     value: { required: false, type: String, default: '' },
     pending: { required: false, type: Boolean, default: false },
+    items: {
+      required: false,
+      type: Array as PropType<string[]>,
+      default: () => []
+    },
     excludes: {
       required: false,
       type: Array as PropType<string[]>,
@@ -59,18 +64,27 @@ export default defineComponent({
   },
   emits: ['change'],
   setup(props, { emit }) {
-    const { excludes } = toRefs(props);
+    const { items, excludes } = toRefs(props);
 
     const change = (_value: string) => emit('change', _value);
 
     const locations = computed<TradeLocationData[]>(() => {
+      const itemsVal = get(items);
       const excludesVal = get(excludes);
-      if (excludesVal && excludesVal.length > 0) {
-        return tradeLocations.filter(
-          item => !excludesVal.includes(item.identifier)
-        );
-      }
-      return tradeLocations;
+
+      return tradeLocations.filter(item => {
+        const included =
+          itemsVal && itemsVal.length > 0
+            ? itemsVal.includes(item.identifier)
+            : true;
+
+        const excluded =
+          excludesVal && excludesVal.length > 0
+            ? excludesVal.includes(item.identifier)
+            : false;
+
+        return included && !excluded;
+      });
     });
 
     return {

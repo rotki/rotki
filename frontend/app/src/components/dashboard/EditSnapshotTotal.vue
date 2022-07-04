@@ -27,6 +27,7 @@
               block
               color="primary"
               class="mb-4"
+              :class="$style.button"
               large
               @click="setTotal(number)"
             >
@@ -34,9 +35,17 @@
                 <span>
                   {{ suggestionsLabel[key] }}
                 </span>
-                <amount-display :value="number" fiat-currency="USD" />
+                <amount-display
+                  :class="$style['button__amount']"
+                  :value="number"
+                  fiat-currency="USD"
+                />
               </div>
             </v-btn>
+
+            <div v-if="key === 'location'" class="text--secondary text-caption">
+              {{ $t('dashboard.snapshot.edit.dialog.total.hint') }}
+            </div>
           </div>
         </div>
       </div>
@@ -73,18 +82,6 @@ import i18n from '@/i18n';
 import { BalanceSnapshot, LocationDataSnapshot } from '@/store/balances/types';
 import { bigNumberify, One, Zero } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
-
-const suggestionsLabel = {
-  total: i18n
-    .t('dashboard.snapshot.edit.dialog.total.use_calculated_total')
-    .toString(),
-  asset: i18n
-    .t('dashboard.snapshot.edit.dialog.total.use_calculated_asset')
-    .toString(),
-  location: i18n
-    .t('dashboard.snapshot.edit.dialog.total.use_calculated_location')
-    .toString()
-};
 
 export default defineComponent({
   name: 'EditSnapshotTotal',
@@ -216,6 +213,22 @@ export default defineComponent({
       input(newValue);
     };
 
+    const suggestionsLabel = computed(() => ({
+      total: i18n
+        .t('dashboard.snapshot.edit.dialog.total.use_calculated_total')
+        .toString(),
+      asset: i18n
+        .t('dashboard.snapshot.edit.dialog.total.use_calculated_asset', {
+          length: get(balancesSnapshot).length
+        })
+        .toString(),
+      location: i18n
+        .t('dashboard.snapshot.edit.dialog.total.use_calculated_location', {
+          length: get(value).length
+        })
+        .toString()
+    }));
+
     return {
       valid,
       assetTotal,
@@ -244,5 +257,15 @@ export default defineComponent({
 <style module lang="scss">
 .wrapper {
   width: 350px;
+}
+
+.button {
+  padding: 0.75rem 0 !important;
+  height: auto !important;
+
+  &__amount {
+    font-size: 1.25rem;
+    margin-top: 0.25rem;
+  }
 }
 </style>

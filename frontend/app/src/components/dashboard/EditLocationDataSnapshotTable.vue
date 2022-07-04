@@ -25,14 +25,22 @@
         />
       </template>
     </data-table>
-    <v-sheet elevation="10" class="d-flex justify-end pa-4">
-      <v-btn color="primary" @click="add">
-        <v-icon class="mr-2">mdi-plus-circle</v-icon>
+    <v-sheet elevation="10" class="d-flex align-center px-4 py-2">
+      <div>
+        <div class="text-caption">
+          {{ $t('dashboard.snapshot.edit.dialog.total.title') }}:
+        </div>
+        <div class="font-weight-bold text-h6 mt-n1">
+          <amount-display :value="total" fiat-currency="USD" />
+        </div>
+      </div>
+      <v-spacer />
+      <v-btn text color="primary" class="mr-4" @click="add">
+        <v-icon class="mr-2">mdi-plus</v-icon>
         <span>
           {{ $t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
         </span>
       </v-btn>
-      <v-spacer />
       <v-btn class="mr-4" @click="updateStep(1)">
         <v-icon>mdi-chevron-left</v-icon>
         {{ $t('dashboard.snapshot.edit.dialog.actions.back') }}
@@ -97,7 +105,7 @@ import {
   LocationDataSnapshot,
   LocationDataSnapshotPayload
 } from '@/store/balances/types';
-import { bigNumberify, One } from '@/utils/bignumbers';
+import { bigNumberify, One, sortDesc, Zero } from '@/utils/bignumbers';
 import { toSentenceCase } from '@/utils/text';
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
@@ -121,13 +129,15 @@ const tableHeaders = (currency: Ref<string>) =>
           })
           .toString(),
         value: 'usdValue',
-        align: 'end'
+        align: 'end',
+        sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b)
       },
       {
         text: '',
         value: 'action',
         cellClass: 'py-2',
-        width: 100
+        width: 100,
+        sortable: false
       }
     ];
   });
@@ -282,6 +292,13 @@ export default defineComponent({
       clearDeleteDialog();
     };
 
+    const total = computed<BigNumber>(() => {
+      const totalEntry = get(value).find(item => item.location === 'total');
+
+      if (!totalEntry) return Zero;
+      return totalEntry.usdValue;
+    });
+
     return {
       data,
       showForm,
@@ -292,6 +309,7 @@ export default defineComponent({
       valid,
       loading,
       excludedLocations,
+      total,
       add,
       save,
       clearEditDialog,

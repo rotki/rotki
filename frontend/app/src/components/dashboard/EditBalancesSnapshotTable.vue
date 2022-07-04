@@ -24,7 +24,10 @@
           :enable-association="false"
         />
         <div v-else>
-          <nft-details :identifier="item.assetIdentifier" />
+          <nft-details
+            :identifier="item.assetIdentifier"
+            :class="$style.asset"
+          />
         </div>
       </template>
 
@@ -47,24 +50,31 @@
         />
       </template>
     </data-table>
-    <v-sheet elevation="10" class="d-flex justify-end pa-4">
-      <v-btn color="primary" @click="add">
-        <v-icon class="mr-2">mdi-plus-circle</v-icon>
+    <v-sheet elevation="10" class="d-flex align-center px-4 py-2">
+      <div>
+        <div class="text-caption">
+          {{ $t('dashboard.snapshot.edit.dialog.total.title') }}:
+        </div>
+        <div class="font-weight-bold text-h6 mt-n1">
+          <amount-display :value="total" fiat-currency="USD" />
+        </div>
+      </div>
+      <v-spacer />
+      <v-btn text color="primary" class="mr-4" @click="add">
+        <v-icon class="mr-2">mdi-plus</v-icon>
         <span>
           {{ $t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
         </span>
       </v-btn>
-      <v-spacer />
       <v-btn color="primary" @click="updateStep(2)">
         {{ $t('dashboard.snapshot.edit.dialog.actions.next') }}
-        <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
     </v-sheet>
 
     <big-dialog
       :display="showForm"
       :title="
-        editedIndex !== null
+        indexToEdit !== null
           ? $t('dashboard.snapshot.edit.dialog.balances.edit_title')
           : $t('dashboard.snapshot.edit.dialog.balances.add_title')
       "
@@ -77,6 +87,8 @@
         v-model="valid"
         :form="form"
         :excluded-assets="excludedAssets"
+        :preview-location-balance="previewLocationBalance"
+        :locations="indexToEdit !== null ? existingLocations : []"
         @update:form="updateForm"
       />
     </big-dialog>
@@ -87,9 +99,18 @@
       :message="
         $t('dashboard.snapshot.edit.dialog.balances.delete_confirmation')
       "
+      max-width="700"
       @cancel="clearDeleteDialog"
       @confirm="confirmDelete"
-    />
+    >
+      <div class="mt-4">
+        <edit-balances-snapshot-location-selector
+          v-model="locationToDelete"
+          :locations="existingLocations"
+          :preview-location-balance="previewDeleteLocationBalance"
+        />
+      </div>
+    </confirm-dialog>
   </div>
 </template>
 <script lang="ts">
@@ -105,18 +126,21 @@ import {
 import { get, set } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import EditBalancesSnapshotForm from '@/components/dashboard/EditBalancesSnapshotForm.vue';
+import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
+import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import {
   BalanceSnapshot,
-  BalanceSnapshotPayload
+  BalanceSnapshotPayload,
+  Snapshot
 } from '@/store/balances/types';
-import { bigNumberify, One } from '@/utils/bignumbers';
+import { bigNumberify, One, sortDesc, Zero } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
 
@@ -144,7 +168,8 @@ const tableHeaders = (currency: Ref<string>) =>
           .t('dashboard.snapshot.edit.dialog.balances.headers.amount')
           .toString(),
         value: 'amount',
-        align: 'end'
+        align: 'end',
+        sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b)
       },
       {
         text: i18n
@@ -153,24 +178,32 @@ const tableHeaders = (currency: Ref<string>) =>
           })
           .toString(),
         value: 'usdValue',
-        align: 'end'
+        align: 'end',
+        sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b)
       },
       {
         text: '',
         value: 'action',
         cellClass: 'py-2',
-        width: 100
+        width: 100,
+        sortable: false
       }
     ];
   });
 
 export default defineComponent({
   name: 'EditBalancesSnapshotTable',
-  components: { NftDetails, EditBalancesSnapshotForm, BigDialog, RowActions },
+  components: {
+    EditBalancesSnapshotLocationSelector,
+    NftDetails,
+    EditBalancesSnapshotForm,
+    BigDialog,
+    RowActions
+  },
   props: {
     value: {
       required: true,
-      type: Array as PropType<BalanceSnapshot[]>
+      type: Object as PropType<Snapshot>
     },
     timestamp: {
       required: true,
@@ -183,9 +216,12 @@ export default defineComponent({
     const { currencySymbol } = setupGeneralSettings();
     const showForm = ref<boolean>(false);
     const showDeleteConfirmation = ref<boolean>(false);
-    const editedIndex = ref<number | null>(null);
-    const deletedIndex = ref<number | null>(null);
-    const form = ref<BalanceSnapshotPayload | null>(null);
+    const indexToEdit = ref<number | null>(null);
+    const indexToDelete = ref<number | null>(null);
+    const locationToDelete = ref<string>('');
+    const form = ref<(BalanceSnapshotPayload & { location: string }) | null>(
+      null
+    );
     const valid = ref<boolean>(false);
     const loading = ref<boolean>(false);
     const excludedAssets = ref<string[]>([]);
@@ -196,10 +232,22 @@ export default defineComponent({
     });
 
     const data = computed<IndexedBalanceSnapshot[]>(() => {
-      return get(value).map((item, index) => ({ ...item, index }));
+      return get(value).balancesSnapshot.map((item, index) => ({
+        ...item,
+        index
+      }));
     });
 
-    const input = (value: BalanceSnapshot[]) => {
+    const total = computed<BigNumber>(() => {
+      const totalEntry = get(value).locationDataSnapshot.find(
+        item => item.location === 'total'
+      );
+
+      if (!totalEntry) return Zero;
+      return totalEntry.usdValue;
+    });
+
+    const input = (value: Snapshot) => {
       emit('input', value);
     };
 
@@ -208,7 +256,7 @@ export default defineComponent({
     };
 
     const editClick = (item: IndexedBalanceSnapshot) => {
-      set(editedIndex, item.index);
+      set(indexToEdit, item.index);
 
       const convertedFiatValue =
         get(currencySymbol) === CURRENCY_USD
@@ -218,45 +266,169 @@ export default defineComponent({
       set(form, {
         ...item,
         amount: item.amount.toFixed(),
-        usdValue: convertedFiatValue
+        usdValue: convertedFiatValue,
+        location: ''
       });
 
       set(
         excludedAssets,
         get(value)
-          .map(item => item.assetIdentifier)
+          .balancesSnapshot.map(item => item.assetIdentifier)
           .filter(identifier => identifier !== item.assetIdentifier)
       );
 
       set(showForm, true);
     };
 
+    const existingLocations = computed<string[]>(() => {
+      return get(value)
+        .locationDataSnapshot.filter(item => item.location !== 'total')
+        .map(item => item.location);
+    });
+
     const deleteClick = (item: IndexedBalanceSnapshot) => {
-      set(deletedIndex, item.index);
+      set(indexToDelete, item.index);
       set(showDeleteConfirmation, true);
+      set(locationToDelete, '');
     };
 
     const add = () => {
-      set(editedIndex, null);
+      set(indexToEdit, null);
       set(form, {
         timestamp: get(timestamp),
         category: 'asset',
         assetIdentifier: '',
         amount: '',
-        usdValue: ''
+        usdValue: '',
+        location: ''
       });
       set(
         excludedAssets,
-        get(value).map(item => item.assetIdentifier)
+        get(value).balancesSnapshot.map(item => item.assetIdentifier)
       );
       set(showForm, true);
+    };
+
+    const previewLocationBalance = computed<Record<string, BigNumber> | null>(
+      () => {
+        const formVal = get(form);
+
+        if (
+          !formVal ||
+          !formVal.amount ||
+          !formVal.usdValue ||
+          !formVal.location
+        ) {
+          return null;
+        }
+
+        const index = get(indexToEdit);
+        const val = get(value);
+
+        const locationData = val.locationDataSnapshot.find(
+          item => item.location === formVal.location
+        );
+
+        if (!locationData) return null;
+
+        const convertedUsdValue =
+          get(currencySymbol) === CURRENCY_USD
+            ? bigNumberify(formVal.usdValue)
+            : bigNumberify(formVal.usdValue).dividedBy(get(fiatExchangeRate));
+
+        const isCurrentLiability = formVal.category === 'liability';
+        const currentFactor = bigNumberify(isCurrentLiability ? -1 : 1);
+        let usdValueDiff = convertedUsdValue.multipliedBy(currentFactor);
+
+        const balancesSnapshot = val.balancesSnapshot;
+
+        if (index !== null) {
+          const isPrevLiability =
+            balancesSnapshot[index].category === 'liability';
+          const prevFactor = bigNumberify(isPrevLiability ? -1 : 1);
+          usdValueDiff = usdValueDiff.minus(
+            balancesSnapshot[index].usdValue.multipliedBy(prevFactor)
+          );
+        }
+
+        return {
+          before: locationData.usdValue,
+          after: locationData.usdValue.plus(usdValueDiff)
+        };
+      }
+    );
+
+    const previewDeleteLocationBalance = computed<Record<
+      string,
+      BigNumber
+    > | null>(() => {
+      const index = get(indexToDelete);
+      const location = get(locationToDelete);
+
+      if (index === null || !location) {
+        return null;
+      }
+
+      const val = get(value);
+      const locationData = val.locationDataSnapshot.find(
+        item => item.location === location
+      );
+      const balanceData = val.balancesSnapshot[index];
+
+      if (!locationData || !balanceData) return null;
+
+      const isCurrentLiability = balanceData.category === 'liability';
+      const currentFactor = bigNumberify(isCurrentLiability ? 1 : -1);
+      const usdValueDiff = balanceData.usdValue.multipliedBy(currentFactor);
+
+      return {
+        before: locationData.usdValue,
+        after: locationData.usdValue.plus(usdValueDiff)
+      };
+    });
+
+    const updateData = (
+      balancesSnapshot: BalanceSnapshot[],
+      location: string = '',
+      calculatedBalance: Record<string, BigNumber> | null = null
+    ) => {
+      const val = get(value);
+      const locationDataSnapshot = [...val.locationDataSnapshot];
+
+      if (location) {
+        const locationDataIndex = locationDataSnapshot.findIndex(
+          item => item.location === location
+        );
+        if (locationDataIndex > -1) {
+          locationDataSnapshot[locationDataIndex].usdValue =
+            calculatedBalance!.after;
+        }
+      }
+
+      const assetsValue = balancesSnapshot.map((item: BalanceSnapshot) => {
+        if (item.category === 'asset') return item.usdValue;
+        return item.usdValue.negated();
+      });
+
+      const total = bigNumberSum(assetsValue);
+
+      const totalDataIndex = locationDataSnapshot.findIndex(
+        item => item.location === 'total'
+      );
+
+      locationDataSnapshot[totalDataIndex].usdValue = total;
+
+      input({
+        balancesSnapshot,
+        locationDataSnapshot
+      });
     };
 
     const save = () => {
       const formVal = get(form);
 
       if (!formVal) return;
-      const index = get(editedIndex);
+      const index = get(indexToEdit);
       const val = get(value);
       const timestampVal = get(timestamp);
 
@@ -265,7 +437,7 @@ export default defineComponent({
           ? bigNumberify(formVal.usdValue)
           : bigNumberify(formVal.usdValue).dividedBy(get(fiatExchangeRate));
 
-      let newValue = [...val];
+      let balancesSnapshot = [...val.balancesSnapshot];
       const payload = {
         timestamp: timestampVal,
         category: formVal.category,
@@ -275,41 +447,49 @@ export default defineComponent({
       };
 
       if (index !== null) {
-        newValue[index] = payload;
+        balancesSnapshot[index] = payload;
       } else {
-        newValue.unshift(payload);
+        balancesSnapshot.unshift(payload);
       }
 
-      input(newValue);
+      updateData(
+        balancesSnapshot,
+        formVal.location,
+        get(previewLocationBalance)
+      );
       clearEditDialog();
     };
 
     const clearEditDialog = () => {
-      set(editedIndex, null);
+      set(indexToEdit, null);
       set(showForm, false);
       set(form, null);
       set(excludedAssets, []);
     };
 
-    const updateForm = (newForm: BalanceSnapshotPayload) => {
+    const updateForm = (
+      newForm: BalanceSnapshotPayload & { location: string }
+    ) => {
       set(form, newForm);
     };
 
     const clearDeleteDialog = () => {
-      set(deletedIndex, null);
+      set(indexToDelete, null);
       set(showDeleteConfirmation, false);
+      set(locationToDelete, '');
     };
 
     const confirmDelete = () => {
-      const index = get(deletedIndex);
+      const index = get(indexToDelete);
       const val = get(value);
+      const location = get(locationToDelete);
 
-      if (index === null) return;
+      if (index === null || !location) return;
 
-      let newValue = [...val];
-      newValue.splice(index, 1);
+      let balancesSnapshot = [...val.balancesSnapshot];
+      balancesSnapshot.splice(index, 1);
 
-      input(newValue);
+      updateData(balancesSnapshot, location, get(previewDeleteLocationBalance));
       clearDeleteDialog();
     };
 
@@ -317,12 +497,17 @@ export default defineComponent({
       data,
       showForm,
       showDeleteConfirmation,
-      editedIndex,
+      indexToEdit,
       form,
       tableHeaders: tableHeaders(currencySymbol),
       valid,
       loading,
       excludedAssets,
+      total,
+      existingLocations,
+      locationToDelete,
+      previewLocationBalance,
+      previewDeleteLocationBalance,
       isNft,
       add,
       save,

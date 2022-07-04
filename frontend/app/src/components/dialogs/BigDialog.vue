@@ -96,7 +96,7 @@ export default defineComponent({
   }
 
   &__content {
-    max-height: calc(100% - 120px);
+    max-height: calc(100% - 133px);
     overflow-y: auto;
   }
 }
