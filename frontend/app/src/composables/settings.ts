@@ -58,6 +58,10 @@ export const setupSettings = () => {
     () => store.state.settings!.graphZeroBased
   );
 
+  const showGraphRangeSelector = computed<boolean>(
+    () => store.state.settings!.showGraphRangeSelector
+  );
+
   const nftsInNetValue = computed<boolean>(
     () => store.state.settings!.nftsInNetValue
   );
@@ -84,6 +88,7 @@ export const setupSettings = () => {
     valueRoundingMode,
     explorers,
     graphZeroBased,
+    showGraphRangeSelector,
     nftsInNetValue,
     updateSetting
   };

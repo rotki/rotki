@@ -34,6 +34,7 @@ import {
   Quarter,
   QUERY_PERIOD,
   REFRESH_PERIOD,
+  SHOW_GRAPH_RANGE_SELECTOR,
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
   VALUE_ROUNDING_MODE,
@@ -78,6 +79,7 @@ describe('settings:actions', () => {
             [LIGHT_THEME]: LIGHT_COLORS,
             [DARK_THEME]: DARK_COLORS,
             [GRAPH_ZERO_BASED]: false,
+            [SHOW_GRAPH_RANGE_SELECTOR]: true,
             [NFTS_IN_NET_VALUE]: true,
             [DASHBOARD_TABLES_VISIBLE_COLUMNS]: {
               [DashboardTableType.ASSETS]:

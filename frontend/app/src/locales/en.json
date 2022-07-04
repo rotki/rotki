@@ -1550,12 +1550,14 @@
       "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
       "zero_based": "Use zero as the lowest y-axis value for the graphs",
       "zero_based_hint": "By default the lowest value is the minimum in the selected period",
+      "show_graph_range_selector": "Show graph range selector for line chart",
       "include_nfts": "Include NFTs in the graphs and total networth",
       "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs",
       "enable_eth_names": "Show alias name for ETH addresses."
     },
     "subtitle": {
       "graph_basis": "Graph basis",
+      "show_graph_range_selector": "Show graph range selector",
       "query": "Periodic status query",
       "refresh": "Automatic balance refresh",
       "include_nfts": "Include NFTs in graphs and total amounts",
@@ -3831,21 +3833,6 @@
   },
   "pinned": {
     "tooltip": "Pinned Section"
-  },
-  "chart": {
-    "hint": {
-      "title": "Zoom Chart",
-      "key": {
-        "wheel_down": "Wheel Down",
-        "wheel_up": "Wheel Up",
-        "double_click": "Double Click"
-      },
-      "labels": {
-        "zoom_in": "Zoom In",
-        "zoom_out": "Zoom Out",
-        "reset_zoom": "Reset Zoom"
-      }
-    }
   },
   "eth_address_book": {
     "title": "Eth Address Book Management",

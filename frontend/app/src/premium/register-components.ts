@@ -18,7 +18,6 @@ import {
   VTooltip
 } from 'vuetify/lib/components';
 import AssetLink from '@/components/assets/AssetLink.vue';
-import ChartShortcutHint from '@/components/ChartShortcutHint.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
@@ -130,6 +129,5 @@ export function registerComponents() {
   // Version 18 - 1.25
   Vue.component('MenuTooltipButton', MenuTooltipButton);
   Vue.component('GraphTooltipWrapper', GraphTooltipWrapper);
-  Vue.component('ChartShortcutHint', ChartShortcutHint);
   vuetifyRegister();
 }

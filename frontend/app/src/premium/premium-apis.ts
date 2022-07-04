@@ -105,6 +105,13 @@ export const userSettings = (): UserSettingsApi => {
       }
       return false;
     }),
+    showGraphRangeSelector: computed(() => {
+      const state = store.state;
+      if (state.settings && state.settings.showGraphRangeSelector) {
+        return state.settings.showGraphRangeSelector;
+      }
+      return false;
+    }),
     privacyMode: computed<number>(() => store.getters['session/privacyMode'])
   };
 };

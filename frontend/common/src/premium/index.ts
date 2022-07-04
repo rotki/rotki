@@ -119,6 +119,7 @@ export type UserSettingsApi = {
   dateInputFormat: Ref<string>
   privacyMode: Ref<number>
   graphZeroBased: Ref<boolean>
+  showGraphRangeSelector: Ref<boolean>
 };
 
 export interface SettingsApi {

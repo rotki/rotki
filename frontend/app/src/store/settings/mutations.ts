@@ -38,7 +38,8 @@ import {
   DATE_INPUT_FORMAT,
   VISIBLE_TIMEFRAMES,
   VERSION_UPDATE_CHECK_FREQUENCY,
-  ENABLE_ETH_NAMES
+  ENABLE_ETH_NAMES,
+  SHOW_GRAPH_RANGE_SELECTOR
 } from '@/types/frontend-settings';
 
 type Mutations<S = SettingsState> = {
@@ -60,6 +61,7 @@ type Mutations<S = SettingsState> = {
   [LIGHT_THEME](state: S, theme: ThemeColors): void;
   [DARK_THEME](state: S, theme: ThemeColors): void;
   [GRAPH_ZERO_BASED](state: S, enabled: Boolean): void;
+  [SHOW_GRAPH_RANGE_SELECTOR](state: S, enabled: Boolean): void;
   [NFTS_IN_NET_VALUE](state: S, enabled: Boolean): void;
   [DASHBOARD_TABLES_VISIBLE_COLUMNS](
     state: Writeable<SettingsState>,
@@ -147,6 +149,12 @@ export const mutations: Mutations = {
   },
   [GRAPH_ZERO_BASED](state: Writeable<SettingsState>, enabled: boolean) {
     state[GRAPH_ZERO_BASED] = enabled;
+  },
+  [SHOW_GRAPH_RANGE_SELECTOR](
+    state: Writeable<SettingsState>,
+    enabled: boolean
+  ) {
+    state[SHOW_GRAPH_RANGE_SELECTOR] = enabled;
   },
   [NFTS_IN_NET_VALUE](state: Writeable<SettingsState>, enabled: boolean) {
     state[NFTS_IN_NET_VALUE] = enabled;

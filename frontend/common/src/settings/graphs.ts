@@ -64,8 +64,8 @@ function unitDefaults(timeUnit: TimeUnit): TimeframeDefaults {
   if (timeUnit === TimeUnit.MONTH) {
     return {
       xAxisTimeUnit: timeUnit,
-      xAxisLabelDisplayFormat: 'MMMM YYYY',
-      tooltipTimeFormat: 'MMMM D, YYYY'
+      xAxisLabelDisplayFormat: 'MMM YYYY',
+      tooltipTimeFormat: 'MMM D, YYYY'
     };
   }
   throw new Error(`Invalid time unit selected: ${timeUnit}`);

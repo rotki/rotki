@@ -28,6 +28,7 @@ import {
   Quarter,
   QUERY_PERIOD,
   REFRESH_PERIOD,
+  SHOW_GRAPH_RANGE_SELECTOR,
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
   VALUE_ROUNDING_MODE,
@@ -79,6 +80,7 @@ describe('settings:mutations', () => {
         graph: '#555555'
       },
       [GRAPH_ZERO_BASED]: true,
+      [SHOW_GRAPH_RANGE_SELECTOR]: true,
       [NFTS_IN_NET_VALUE]: true,
       [DASHBOARD_TABLES_VISIBLE_COLUMNS]: {
         [DashboardTableType.ASSETS]: [
@@ -135,6 +137,7 @@ describe('settings:mutations', () => {
       graph: '#555555'
     });
     expect(settings[GRAPH_ZERO_BASED]).toBe(true);
+    expect(settings[SHOW_GRAPH_RANGE_SELECTOR]).toBe(true);
     expect(settings[NFTS_IN_NET_VALUE]).toBe(true);
     expect(settings[DASHBOARD_TABLES_VISIBLE_COLUMNS]).toStrictEqual({
       [DashboardTableType.ASSETS]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
