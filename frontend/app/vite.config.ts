@@ -14,6 +14,11 @@ const PACKAGE_ROOT = __dirname;
 const envPath = process.env.VITE_PUBLIC_PATH;
 const publicPath = envPath ? envPath : '/';
 const isDevelopment = process.env.NODE_ENV === 'development';
+const isTest = !!process.env.VITE_TEST;
+
+if (isTest) {
+  console.log('Running in test mode. Enabling Coverage');
+}
 
 if (envPath) {
   console.log(`A custom publicPath has been specified, using ${envPath}`);
@@ -53,11 +58,15 @@ export default defineConfig({
       include: [/\.vue$/, /\.vue\?vue/],
       resolvers: [VuetifyResolver()]
     }),
-    istanbul({
-      include: 'src/*',
-      exclude: ['node_modules', 'tests/', '**/*.d.ts'],
-      extension: ['.ts', '.vue']
-    }),
+    ...(isTest
+      ? [
+          istanbul({
+            include: 'src/*',
+            exclude: ['node_modules', 'tests/', '**/*.d.ts'],
+            extension: ['.ts', '.vue']
+          })
+        ]
+      : []),
     VitePWA({
       base: '',
       registerType: 'prompt',
