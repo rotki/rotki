@@ -9,7 +9,6 @@ from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 
-ROWS_PER_CONTEXT_SWITCH = 500
 
 ITEMS_PER_DB_WRITE = 400
 
