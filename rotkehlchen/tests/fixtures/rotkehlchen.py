@@ -131,7 +131,6 @@ def initialize_mock_rotkehlchen_instance(
             active_modules=ethereum_modules,
             eth_rpc_endpoint=eth_rpc_endpoint,
             ksm_rpc_endpoint=ksm_rpc_endpoint,
-            ethereum_nodes_to_connect=ethereum_manager_connect_at_start,
         )
         return settings
     settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
@@ -152,10 +151,9 @@ def initialize_mock_rotkehlchen_instance(
         return return_value
     data_unlock_patch = patch.object(rotki.data, 'unlock', side_effect=augmented_unlock)
 
-    nodes = {node.node_info.name: node for node in ethereum_manager_connect_at_start}
     eth_rpcconnect_patch = patch(
-        'rotkehlchen.db.dbhandler.DBHandler.get_ethereum_nodes',
-        return_value=nodes,
+        'rotkehlchen.db.dbhandler.DBHandler.get_web3_nodes',
+        return_value=ethereum_manager_connect_at_start,
     )
 
     ksm_rpcconnect_patch = patch(

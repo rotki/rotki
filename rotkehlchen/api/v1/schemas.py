@@ -900,10 +900,6 @@ class ModifiableSettingsSchema(Schema):
     )
     cost_basis_method = SerializableEnumField(enum_class=CostBasisMethod, load_default=None)
     eth_staking_taxable_after_withdrawal_enabled = fields.Boolean(load_default=None)
-    ethereum_nodes_to_connect = fields.List(
-        fields.Nested(WeightedNodeSchema),
-        load_default=None,
-    )
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -918,12 +914,6 @@ class ModifiableSettingsSchema(Schema):
                         message=f'{module} is not a valid module',
                         field_name='active_modules',
                     )
-        if data['ethereum_nodes_to_connect'] is not None:
-            if (wsum := sum(node.weight for node in data['ethereum_nodes_to_connect'])) != ONE:
-                raise ValidationError(
-                    message=f'Sum of weights is not one. Got {wsum}',
-                    field_name='ethereum_nodes_to_connect',
-                )
 
     @post_load
     def transform_data(  # pylint: disable=no-self-use
@@ -960,7 +950,6 @@ class ModifiableSettingsSchema(Schema):
             cost_basis_method=data['cost_basis_method'],
             treat_eth2_as_eth=data['treat_eth2_as_eth'],
             eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],  # noqa: 501
-            ethereum_nodes_to_connect=data['ethereum_nodes_to_connect'],
         )
 
 
@@ -2289,31 +2278,38 @@ class SnapshotEditingSchema(Schema):
 
 
 class EthereumNodeSchema(Schema):
-    name = fields.String(required=True)
-    endpoint = fields.String(required=True)
+    name = fields.String(
+        required=True,
+        validate=webargs.validate.ContainsNoneOf(
+            iterable=['', ETHERSCAN_NODE_NAME],
+            error=f'Name can\'t be empty or {ETHERSCAN_NODE_NAME}'
+        ),
+    )
+    endpoint = fields.String(
+        required=True,
+        validate=webargs.validate.Length(
+            min=1,
+            error='endpoint can\'t be empty'
+        ),
+    )
     owned = fields.Boolean(load_default=False)
-
-    @validates_schema
-    def validate_schema(  # pylint: disable=no-self-use
-            self,
-            data: Dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        if len(data['name']) == 0 or len(data['endpoint']) == 0:
-            raise ValidationError('name and endpoint need to be filled')
-        if data['name'] == ETHERSCAN_NODE_NAME:
-            raise ValidationError(f'name can\'t be {ETHERSCAN_NODE_NAME}')
+    weight = FloatingPercentageField(required=True)
+    active = fields.Boolean(load_default=False)
 
     @post_load
     def make_node_name_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
-    ) -> NodeName:
-        return NodeName(
-            name=data['name'],
-            endpoint=data['endpoint'],
-            owned=data['owned'],
+    ) -> WeightedNode:
+        return WeightedNode(
+            node_info=NodeName(
+                name=data['name'],
+                endpoint=data['endpoint'],
+                owned=data['owned'],
+            ),
+            weight=data['weight'],
+            active=data['active'],
         )
 
 
@@ -2322,3 +2318,7 @@ class EthereumNodeListUpdateSchema(Schema):
         fields.Nested(EthereumNodeSchema),
         required=True,
     )
+
+
+class EthereumNodeListDeleteSchema(Schema):
+    node_name = fields.String()

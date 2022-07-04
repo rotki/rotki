@@ -253,8 +253,8 @@ class Rotkehlchen():
                 database=self.data.db,
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
-            ethereum_nodes = settings.ethereum_nodes_to_connect
 
+        ethereum_nodes = self.data.db.get_web3_nodes(only_active=True)
         # Initialize blockchain querying modules
         ethereum_manager = EthereumManager(
             etherscan=self.etherscan,
@@ -849,26 +849,6 @@ class Rotkehlchen():
 
         if settings.current_price_oracles is not None:
             Inquirer().set_oracles_order(settings.current_price_oracles)
-
-        if settings.ethereum_nodes_to_connect is not None:
-            # the frontend only provides the weight and the name of the node to connect
-            # and we need to qery the database
-            nodes = settings.ethereum_nodes_to_connect
-            db_nodes = self.data.db.get_ethereum_nodes()
-            nodes_with_info = []
-            for node in nodes:
-                node_name = node.node_info.name
-                if node_name in db_nodes:
-                    new_node = WeightedNode(
-                        node_info=db_nodes[node_name],
-                        weight=node.weight,
-                    )
-                    nodes_with_info.append(new_node)
-                else:
-                    msg = f'Tried to set node {node_name} but information is not in the db'
-                    return False, msg
-            settings = settings._replace(ethereum_nodes_to_connect=nodes_with_info)
-            self.chain_manager.ethereum.connect_to_multiple_nodes(nodes_with_info)
 
         if settings.historical_price_oracles is not None:
             PriceHistorian().set_oracles_order(settings.historical_price_oracles)

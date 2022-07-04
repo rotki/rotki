@@ -7,7 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.constants import (
+from rotkehlchen.tests.utils.constants import (
     AVADO_POOL_NODE_NAME,
     BLOCKSOUT_NODE_NAME,
     MYCRYPTO_NODE_NAME,

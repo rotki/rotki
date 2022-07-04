@@ -275,8 +275,7 @@ class EthereumManager():
         ===> Runs: 66, 82, 72, 58, 72 seconds
         ---> Average: 70 seconds
         """
-        with self.database.conn.read_ctx() as cursor:
-            open_nodes = self.database.get_settings(cursor).ethereum_nodes_to_connect
+        open_nodes = self.database.get_web3_nodes(only_active=True)
         selection = list(open_nodes)
         if skip_etherscan:
             selection = [wnode for wnode in open_nodes if wnode.node_info.name != ETHERSCAN_NODE_NAME]  # noqa: E501
@@ -302,6 +301,12 @@ class EthereumManager():
         for node, web3_instance in self.web3_mapping.items():
             if node.owned:
                 return web3_instance
+        return None
+
+    def get_own_node_info(self) -> Optional[NodeName]:
+        for node in self.web3_mapping:
+            if node.owned:
+                return node
         return None
 
     def attempt_connect(

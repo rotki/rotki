@@ -1,5 +1,6 @@
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import NodeName
 from rotkehlchen.constants.assets import A_EUR
 
 A_RDN = EthereumToken('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')
@@ -64,3 +65,19 @@ MOCK_INPUT_DATA = b'123'
 MOCK_INPUT_DATA_HEX = '0x313233'
 
 DEFAULT_TESTS_MAIN_CURRENCY = A_EUR
+
+MYCRYPTO_NODE_NAME = NodeName(
+    name='mycrypto',
+    endpoint='https://api.mycryptoapi.com/eth',
+    owned=False,
+)
+BLOCKSOUT_NODE_NAME = NodeName(
+    name='blockscout',
+    endpoint='https://mainnet-nethermind.blockscout.com/',
+    owned=False,
+)
+AVADO_POOL_NODE_NAME = NodeName(
+    name='avado pool',
+    endpoint='https://mainnet.eth.cloud.ava.do/',
+    owned=False,
+)

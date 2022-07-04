@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, NamedTuple, Tuple, Type, Union
 
 from eth_typing import HexAddress, HexStr
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 
 from rotkehlchen.types import ChecksumEthAddress
@@ -27,22 +28,6 @@ class NodeName(NamedTuple):
     endpoint: str
     owned: bool
 
-    @classmethod
-    def deserialize_from_db(
-        cls: Type['NodeName'],
-        node_name: str,
-        endpoint: str,
-        owned: bool,
-    ) -> 'NodeName':
-        return cls(
-            name=node_name,
-            endpoint=endpoint,
-            owned=owned,
-        )
-
-    def serialize_for_db(self) -> Tuple[str, str, bool]:
-        return (self.name, self.endpoint, self.owned)
-
     def serialize(self) -> Dict[str, Any]:
         return {
             'name': self.name,
@@ -62,6 +47,7 @@ class EnsContractParams(NamedTuple):
 
 class WeightedNode(NamedTuple):
     node_info: NodeName
+    active: bool
     weight: FVal
 
     def serialize(self) -> Dict[str, Union[str, Union[str, int]]]:
@@ -70,7 +56,21 @@ class WeightedNode(NamedTuple):
             'endpoint': self.node_info.endpoint,
             'weight': (self.weight * 100).to_int(exact=False),
             'owned': self.node_info.owned,
+            'active': self.active,
         }
+
+    def serialize_for_db(self):
+        if self.weight == ZERO:
+            weight_sring = '0.0'
+        else:
+            weight_sring = str(self.weight)
+        return (
+            self.node_info.name,
+            self.node_info.endpoint,
+            self.node_info.owned,
+            self.active,
+            weight_sring,
+        )
 
     @classmethod
     def deserialize(
@@ -84,4 +84,5 @@ class WeightedNode(NamedTuple):
                 owned=bool(data['owned']),
             ),
             weight=FVal(data['weight']) / 100,
+            active=bool(data['active']),
         )

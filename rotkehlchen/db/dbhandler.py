@@ -58,7 +58,7 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
 from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.trades import AMMSwap
-from rotkehlchen.chain.ethereum.types import NodeName
+from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
@@ -3267,24 +3267,44 @@ class DBHandler:
         now = ts_now()
         return now - last_save > period
 
-    def get_ethereum_nodes(self) -> Dict[str, NodeName]:
-        """Get information about all the ethereum nodes in the database. If the
-        only_with_weight param is set to True then only the nodes with weight != 0 are
-        returned.
+    def get_web3_nodes(self, only_active=False) -> List[WeightedNode]:
+        """
+        Get all the 
         """
         with self.conn.read_ctx() as cursor:
-            cursor.execute('SELECT name, address, owned FROM open_nodes;')
-            return {
-                entry[0]: NodeName.deserialize_from_db(
-                    node_name=entry[0],
-                    endpoint=entry[1],
-                    owned=bool(entry[2]),
-                ) for entry in cursor
-            }
+            if only_active:
+                cursor.execute('SELECT name, address, owned, weight, active FROM web3_nodes WHERE active=TRUE AND WEIGHT != "0.0";')  # noqa: E501
+            else:
+                cursor.execute('SELECT name, address, owned, weight, active FROM web3_nodes;')
+            return [
+                WeightedNode(
+                    node_info=NodeName(
+                        node_name=entry[0],
+                        endpoint=entry[1],
+                        owned=entry[2],
+                    ),
+                    weight=FVal(entry[4]),
+                    active=entry[5],
+                )
+                for entry in cursor
+            ]
 
-    def update_ethereum_node_list(self, nodes: List[NodeName]) -> None:
-        with self.conn.write_ctx() as cursor:
-            cursor.executemany(
-                'INSERT OR REPLACE INTO open_nodes(name, address, owned) VALUES (?, ?, ?)',
-                [node.serialize_for_db() for node in nodes],
-            )
+    def add_web3_node(self, node: WeightedNode) -> None:
+        with self.user_write() as cursor:
+            try:
+                cursor.execute(
+                    'INSERT INTO web3_nodes(name, address, owned, active, weight) VALUES (?, ?, ?, ?, ?)',
+                    node.serialize_for_db()
+                )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                raise InputError(f'Node with name {node.node_info.name} already exists in db') from e  # noqa: E501 
+
+    def delete_web3_node(self, node_name: str) -> None:
+        """Delete a web3 node based on name.
+        May raise:
+        - InputError if no entry with such name is in the database.
+        """
+        with self.user_write() as cursor:
+            cursor.execute('DELETE FROM web3_nodes WHERE name=?', node_name)
+            if cursor.rowcount == 0:
+                raise InputError(f'node with name {node_name} was not found in the database')

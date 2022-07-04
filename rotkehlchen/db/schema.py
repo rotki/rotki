@@ -816,19 +816,14 @@ CREATE TABLE IF NOT EXISTS address_book (
 );
 """
 
-DB_CREATE_OPEN_NODES = """
-CREATE TABLE IF NOT EXISTS open_nodes(
+DB_CREATE_WEB3_NODES = """
+CREATE TABLE IF NOT EXISTS web3_nodes(
     name TEXT NOT NULL PRIMARY KEY,
     address TEXT NOT NULL,
     owned BOOLEAN NOT NULL DEFAULT FALSE
+    active BOOLEAN NOT NULL DEFAULT FALSE,
+    weight INTEGER NOT NULL
 );
-INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("etherscan", "", FALSE);
-INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("mycrypto", "https://api.mycryptoapi.com/eth", FALSE);
-INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("blockscout", "https://mainnet-nethermind.blockscout.com/", FALSE);
-INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("avado pool", "https://mainnet.eth.cloud.ava.do/", FALSE);
-INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("1inch", "https://web3.1inch.exchange", FALSE);
-INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("myetherwallet", "https://nodes.mewapi.io/rpc/eth", FALSE);
-INSERT OR IGNORE INTO open_nodes(name, address, owned) VALUES ("cloudflare", "https://cloudflare-eth.com/", FALSE);
 """  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""
@@ -883,7 +878,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_COMBINED_TRADES_VIEW}
 {DB_CREATE_ENS_MAPPINGS}
 {DB_CREATE_ADDRESS_BOOK}
-{DB_CREATE_OPEN_NODES}
+{DB_CREATE_WEB3_NODES}
 COMMIT;
 PRAGMA foreign_keys=on;
 """
