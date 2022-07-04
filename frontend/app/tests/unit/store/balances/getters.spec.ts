@@ -65,10 +65,7 @@ describe('balances:getters', () => {
           amount: bigNumberify(100),
           usdValue: bigNumberify(100)
         }
-      ]
-    };
-
-    const state: BalanceState = stub<BalanceState>({
+      ],
       manualBalances: [
         {
           id: 1,
@@ -81,7 +78,10 @@ describe('balances:getters', () => {
           balanceType: BalanceType.LIABILITY
         }
       ],
-      manualLiabilities: [],
+      manualLiabilities: []
+    };
+
+    const state: BalanceState = stub<BalanceState>({
       prices: {
         DAI: bigNumberify(1),
         EUR: bigNumberify(1),
@@ -149,25 +149,28 @@ describe('balances:getters', () => {
   test('manualLabels', () => {
     expect(
       // @ts-ignore
-      getters.manualLabels({
-        manualBalances: [
-          {
-            asset: 'XMR',
-            label: 'My monero wallet',
-            amount: '50.315',
-            tags: ['public'],
-            location: 'blockchain'
-          },
-          {
-            asset: 'EUR',
-            label: 'My Bank Account',
-            amount: '150',
-            tags: [],
-            location: 'banks'
-          }
-        ],
-        manualLiabilities: []
-      })
+      getters.manualLabels(
+        {},
+        {
+          manualBalances: [
+            {
+              asset: 'XMR',
+              label: 'My monero wallet',
+              amount: '50.315',
+              tags: ['public'],
+              location: 'blockchain'
+            },
+            {
+              asset: 'EUR',
+              label: 'My Bank Account',
+              amount: '150',
+              tags: [],
+              location: 'banks'
+            }
+          ],
+          manualLiabilities: []
+        }
+      )
     ).toMatchObject(['My monero wallet', 'My Bank Account']);
   });
 

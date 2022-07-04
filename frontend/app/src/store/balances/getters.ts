@@ -13,7 +13,10 @@ import { forEach } from 'lodash';
 import isEmpty from 'lodash/isEmpty';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { bigNumberSum } from '@/filters';
-import { BlockchainAssetBalances } from '@/services/balances/types';
+import {
+  BlockchainAssetBalances,
+  ManualBalanceWithValue
+} from '@/services/balances/types';
 import { GeneralAccountData } from '@/services/types-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { samePriceAssets } from '@/store/balances/const';
@@ -56,6 +59,8 @@ export interface BalanceGetters {
   exchangeRate: ExchangeRateGetter;
   exchanges: ExchangeInfo[];
   exchangeBalances: (exchange: string) => AssetBalance[];
+  manualBalances: ManualBalanceWithValue[];
+  manualLiabilities: ManualBalanceWithValue[];
   aggregatedBalances: AssetBalanceWithPrice[];
   aggregatedAssets: string[];
   liabilities: AssetBalanceWithPrice[];
@@ -407,15 +412,21 @@ export const getters: Getters<
           usdPrice: prices[asset] ?? NoPrice
         }));
     },
-
+  manualBalances: ({
+    manualBalances
+  }: BalanceState): ManualBalanceWithValue[] => {
+    const { isAssetIgnored } = useIgnoredAssetsStore();
+    return manualBalances.filter(item => !get(isAssetIgnored(item.asset)));
+  },
+  manualLiabilities: ({
+    manualLiabilities
+  }: BalanceState): ManualBalanceWithValue[] => {
+    const { isAssetIgnored } = useIgnoredAssetsStore();
+    return manualLiabilities.filter(item => !get(isAssetIgnored(item.asset)));
+  },
   aggregatedBalances: (
-    {
-      connectedExchanges,
-      manualBalances,
-      loopringBalances,
-      prices
-    }: BalanceState,
-    { exchangeBalances, totals }
+    { connectedExchanges, loopringBalances, prices }: BalanceState,
+    { exchangeBalances, totals, manualBalances }
   ): AssetBalanceWithPrice[] => {
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -471,7 +482,7 @@ export const getters: Getters<
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
 
-  liabilities: ({ liabilities, manualLiabilities, prices }) => {
+  liabilities: ({ liabilities, prices }, { manualLiabilities }) => {
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
     const liabilitiesMerged: Record<string, Balance> = {};
@@ -511,15 +522,14 @@ export const getters: Getters<
 
   // simplify the manual balances object so that we can easily reduce it
   manualBalanceByLocation: (
-    state: BalanceState,
-    { exchangeRate },
+    _,
+    { exchangeRate, manualBalances },
     { session }
   ): LocationBalance[] => {
     const mainCurrency = session?.generalSettings.mainCurrency.tickerSymbol;
 
     assert(mainCurrency, 'main currency was not properly set');
 
-    const manualBalances = state.manualBalances;
     const currentExchangeRate = exchangeRate(mainCurrency);
     if (currentExchangeRate === undefined) {
       return [];
@@ -745,7 +755,7 @@ export const getters: Getters<
     return assetsCount + liabilitiesCount + loopringsCount > 1;
   },
 
-  manualLabels: ({ manualBalances, manualLiabilities }: BalanceState) => {
+  manualLabels: (_, { manualBalances, manualLiabilities }) => {
     const balances = manualLiabilities.concat(manualBalances);
     return balances.map(value => value.label);
   },
@@ -840,10 +850,9 @@ export const getters: Getters<
         ksm,
         dot,
         avax,
-        manualBalances,
         loopringBalances
       },
-      _,
+      { manualBalances },
       { session }
     ) =>
     asset => {
@@ -1132,13 +1141,8 @@ export const getters: Getters<
   },
   locationBreakdown:
     (
-      {
-        connectedExchanges,
-        manualBalances,
-        loopringBalances,
-        prices
-      }: BalanceState,
-      { exchangeBalances, totals }
+      { connectedExchanges, loopringBalances, prices }: BalanceState,
+      { exchangeBalances, totals, manualBalances }
     ) =>
     identifier => {
       const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();

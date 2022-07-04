@@ -248,10 +248,13 @@ export const setupManualBalances = () => {
     await store.dispatch('balances/deleteManualBalance', id);
   };
 
-  const manualBalances = computed(() => store.state.balances!.manualBalances);
-  const manualLiabilities = computed(
-    () => store.state.balances!.manualLiabilities
-  );
+  const manualBalances = computed(() => {
+    return store.getters['balances/manualBalances'];
+  });
+
+  const manualLiabilities = computed(() => {
+    return store.getters['balances/manualLiabilities'];
+  });
 
   const editBalance: (
     balance: ManualBalance
