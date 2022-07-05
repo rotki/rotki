@@ -202,50 +202,57 @@ class DBSnapshot:
 
     def import_snapshot(
             self,
+            write_cursor: 'DBCursor',
             processed_balances_list: List[DBAssetBalance],
             processed_location_data_list: List[LocationData],
-    ) -> Tuple[bool, str]:
-        """Import the validated snapshot data to the database."""
-        with self.db.user_write() as cursor:
-            self.add_nft_asset_ids(cursor, [entry.asset.identifier for entry in processed_balances_list])  # noqa: E501
-            try:
-                self.db.add_multiple_balances(cursor, processed_balances_list)
-                self.db.add_multiple_location_data(cursor, processed_location_data_list)
-            except InputError as err:
-                return False, str(err)
-
-        return True, ''
+    ) -> None:
+        """Import the validated snapshot data to the database.
+        May raise:
+        - InputError if any timed location data is already present in the database, or any timed
+          balance is already present in the database or contains an unknown asset.
+        """
+        self.add_nft_asset_ids(
+            write_cursor=write_cursor,
+            entries=[entry.asset.identifier for entry in processed_balances_list],
+        )
+        self.db.add_multiple_balances(write_cursor, processed_balances_list)
+        self.db.add_multiple_location_data(write_cursor, processed_location_data_list)
 
     def update(
             self,
+            write_cursor: 'DBCursor',
             timestamp: Timestamp,
             balances_snapshot: List[DBAssetBalance],
             location_data_snapshot: List[LocationData],
-    ) -> Tuple[bool, str]:
-        """Updates a DB Balance snapshot at a given timestamp."""
+    ) -> None:
+        """Updates a DB Balance snapshot at a given timestamp.
+        May raise:
+        - InputError
+        """
         # delete the existing snapshot of that timestamp
-        is_success, message = self.delete(timestamp)
-        if is_success is False:
-            return is_success, message
+        self.delete(
+            write_cursor=write_cursor,
+            timestamp=timestamp,
+        )
 
         # update the snapshot with the provided data.
-        is_success, msg = self.import_snapshot(
+        self.import_snapshot(
+            write_cursor=write_cursor,
             processed_balances_list=balances_snapshot,
             processed_location_data_list=location_data_snapshot,
         )
-        return is_success, msg
 
-    def delete(self, timestamp: Timestamp) -> Tuple[bool, str]:
-        """Deletes a snapshot of the database at a given timestamp"""
-        with self.db.user_write() as cursor:
-            cursor.execute('DELETE FROM timed_balances WHERE time=?', (timestamp,))
-            if cursor.rowcount == 0:
-                return False, 'No snapshot found for the specified timestamp'
-            cursor.execute('DELETE FROM timed_location_data WHERE time=?', (timestamp,))
-            if cursor.rowcount == 0:
-                return False, 'No snapshot found for the specified timestamp'
-
-        return True, ''
+    def delete(self, write_cursor: 'DBCursor', timestamp: Timestamp) -> None:
+        """Deletes a snapshot of the database at a given timestamp
+        May raise:
+        - InputError
+        """
+        write_cursor.execute('DELETE FROM timed_balances WHERE time=?', (timestamp,))
+        if write_cursor.rowcount == 0:
+            raise InputError('No snapshot found for the specified timestamp')
+        write_cursor.execute('DELETE FROM timed_location_data WHERE time=?', (timestamp,))
+        if write_cursor.rowcount == 0:
+            raise InputError('No snapshot found for the specified timestamp')
 
     def add_nft_asset_ids(self, write_cursor: 'DBCursor', entries: List[str]) -> None:
         """Add NFT identifiers to the DB to prevent unknown asset error."""

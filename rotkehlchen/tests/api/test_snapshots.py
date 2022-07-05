@@ -638,3 +638,52 @@ def test_edit_snapshot(rotkehlchen_api_server):
     assert len(result['balances_snapshot']) == 2
     assert len(result['location_data_snapshot']) == 2
     assert result == snapshot_payload
+
+    # test that editing a snapshot rollbacks previous snapshot if failure.
+    invalid_snapshot_payload = {
+        'balances_snapshot': [
+            {
+                'timestamp': ts,
+                'category': 'asset',
+                'asset_identifier': 'MEME',
+                'amount': '1000.00',
+                'usd_value': '100.00',
+            },
+            {
+                'timestamp': ts,
+                'category': 'asset',
+                'asset_identifier': 'MEME',
+                'amount': '1000.00',
+                'usd_value': '100.00',
+            },
+        ],
+        'location_data_snapshot': [
+            {'timestamp': ts, 'location': 'external', 'usd_value': '200.00'},
+            {'timestamp': ts, 'location': 'total', 'usd_value': '200.00'},
+        ],
+    }
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+        ),
+        json=invalid_snapshot_payload,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Adding timed_balance failed',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    # check that the previous snapshot remains unchanged
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['balances_snapshot']) == 2
+    assert len(result['location_data_snapshot']) == 2
+    assert result == snapshot_payload
