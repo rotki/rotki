@@ -1,5 +1,5 @@
 import { BigNumber } from '@rotki/common';
-import { computed, Ref, unref } from '@vue/composition-api';
+import { computed, Ref, unref } from 'vue';
 
 export function bigNumberify(value: string | number) {
   return new BigNumber(value);

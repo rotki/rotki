@@ -33,13 +33,8 @@
 
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { setupDisplayData } from '@/composables/session';
 import { truncateAddress } from '@/filters';

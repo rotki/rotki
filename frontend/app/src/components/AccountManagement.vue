@@ -109,15 +109,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set, useLocalStorage } from '@vueuse/core';
+import { computed, defineComponent, onMounted, ref, toRefs, watch } from 'vue';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';

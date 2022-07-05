@@ -23,13 +23,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import ManageWatchers from '@/components/defi/loan/loans/makerdao/ManageWatchers.vue';
 import StatCard from '@/components/display/StatCard.vue';

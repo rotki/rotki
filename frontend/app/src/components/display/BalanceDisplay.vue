@@ -33,13 +33,8 @@
 
 <script lang="ts">
 import { Balance } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import { useAssetInfoRetrieval } from '@/store/assets';
 

@@ -114,6 +114,7 @@
 import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { ActionResult } from '@rotki/common/lib/data';
+import { get, set } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -122,8 +123,7 @@ import {
   Ref,
   ref,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+} from 'vue';
 import { Dispatch } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';

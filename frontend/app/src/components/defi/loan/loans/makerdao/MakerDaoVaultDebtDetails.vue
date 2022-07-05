@@ -22,8 +22,8 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, toRefs } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';

@@ -28,7 +28,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DateFormat } from '@/types/date-format';
 export default defineComponent({

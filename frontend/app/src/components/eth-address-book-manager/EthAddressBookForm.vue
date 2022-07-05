@@ -43,15 +43,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  ref,
-  toRefs,
-  watch,
-  defineComponent,
-  PropType
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, ref, toRefs, watch, defineComponent, PropType } from 'vue';
 import i18n from '@/i18n';
 import { useEthNamesStore } from '@/store/balances';
 import {

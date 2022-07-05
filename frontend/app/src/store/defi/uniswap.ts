@@ -1,7 +1,7 @@
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
-import { computed, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, Ref, ref } from 'vue';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';

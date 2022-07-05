@@ -16,7 +16,7 @@
   </span>
 </template>
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
+import { computed, defineComponent } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useStore } from '@/store/utils';
 

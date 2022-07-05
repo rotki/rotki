@@ -37,7 +37,7 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import RoundingSelector from '@/components/settings/explorers/RoundingSelector.vue';
 import { setupSettings } from '@/composables/settings';
 import {

@@ -20,7 +20,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import { mapState } from 'vuex';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import NodeStatus from '@/components/status/NodeStatus.vue';

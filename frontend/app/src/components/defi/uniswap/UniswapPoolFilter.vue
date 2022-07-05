@@ -65,8 +65,8 @@
 
 <script lang="ts">
 import { XswapPool } from '@rotki/common/lib/defi/xswap';
-import { defineComponent, PropType, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { defineComponent, PropType, toRefs } from 'vue';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { useUniswap } from '@/store/defi/uniswap';
 

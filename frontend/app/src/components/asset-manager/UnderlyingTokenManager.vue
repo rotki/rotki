@@ -67,8 +67,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref, toRefs } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { defineComponent, PropType, ref, toRefs } from 'vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import i18n from '@/i18n';
 import { UnderlyingToken } from '@/services/assets/types';

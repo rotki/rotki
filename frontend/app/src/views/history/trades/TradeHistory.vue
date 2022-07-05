@@ -14,13 +14,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onBeforeMount,
-  onUnmounted
-} from '@vue/composition-api';
 import { get, useIntervalFn } from '@vueuse/core';
+import { computed, defineComponent, onBeforeMount, onUnmounted } from 'vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import OpenTrades from '@/components/history/OpenTrades.vue';

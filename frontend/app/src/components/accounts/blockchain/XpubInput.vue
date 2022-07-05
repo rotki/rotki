@@ -66,15 +66,8 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  onMounted,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { defineComponent, onMounted, PropType, ref, toRefs, watch } from 'vue';
 import {
   getKeyType,
   getPrefix,

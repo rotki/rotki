@@ -1,8 +1,7 @@
 ﻿import { Message } from '@rotki/common/lib/messages';
-import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import Vue from 'vue';
+import Vue, { computed, ref } from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
 import { balances } from '@/store/balances';

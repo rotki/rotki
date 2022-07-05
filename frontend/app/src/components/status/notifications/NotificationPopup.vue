@@ -46,8 +46,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, nextTick, ref, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { defineComponent, nextTick, ref, watch } from 'vue';
 import Notification from '@/components/status/notifications/Notification.vue';
 import { setupNotifications } from '@/composables/notifications';
 import { emptyNotification } from '@/store/notifications';

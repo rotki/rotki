@@ -44,16 +44,6 @@ import {
   Timeframes
 } from '@rotki/common/lib/settings/graphs';
 import { NetValue } from '@rotki/common/lib/statistics';
-import {
-  computed,
-  defineComponent,
-  nextTick,
-  onMounted,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import {
   Chart,
@@ -63,6 +53,16 @@ import {
   TimeUnit
 } from 'chart.js';
 import dayjs from 'dayjs';
+import {
+  computed,
+  defineComponent,
+  nextTick,
+  onMounted,
+  PropType,
+  ref,
+  toRefs,
+  watch
+} from 'vue';
 import ChartShortcutHint from '@/components/ChartShortcutHint.vue';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';

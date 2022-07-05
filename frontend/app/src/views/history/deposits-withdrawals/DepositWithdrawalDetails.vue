@@ -10,7 +10,7 @@
   </table-expand-container>
 </template>
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from 'vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import MovementLinks from '@/components/history/MovementLinks.vue';
 import { AssetMovementEntry } from '@/store/history/types';

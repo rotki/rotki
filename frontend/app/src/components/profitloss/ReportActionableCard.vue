@@ -250,14 +250,8 @@
   </div>
 </template>
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcquisitions.vue';
 import ReportMissingPrices, {
   EditableMissingPrice

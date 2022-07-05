@@ -6,7 +6,7 @@
 </template>
 <script lang="ts">
 import { AssetBalanceWithPrice } from '@rotki/common';
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { computed, defineComponent, toRefs } from 'vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import { useTasks } from '@/store/tasks';
 import { useStore } from '@/store/utils';

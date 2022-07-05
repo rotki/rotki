@@ -5,5 +5,8 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue"
-  ]
+  ],
+  "vueCompilerOptions": {
+    "target": 2.7
+  }
 }

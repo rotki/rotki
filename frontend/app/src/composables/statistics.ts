@@ -1,5 +1,5 @@
-import { computed } from '@vue/composition-api';
 import { BigNumber } from 'bignumber.js';
+import { computed } from 'vue';
 import { useStore } from '@/store/utils';
 
 export const totalNetWorthUsd = computed(() => {

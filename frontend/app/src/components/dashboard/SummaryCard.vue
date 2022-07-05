@@ -53,7 +53,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 
 export default defineComponent({

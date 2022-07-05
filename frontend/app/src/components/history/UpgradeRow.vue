@@ -60,7 +60,7 @@
   </tr>
 </template>
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 
 export default defineComponent({

@@ -94,14 +94,8 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set, useCounter } from '@vueuse/core';
+import { defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import i18n from '@/i18n';
 
 const SOURCES = [

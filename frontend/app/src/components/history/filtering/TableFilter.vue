@@ -35,6 +35,7 @@
 </template>
 
 <script lang="ts">
+import { get, set } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -44,8 +45,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+} from 'vue';
 import NoFilterAvailable from '@/components/history/filtering/NoFilterAvailable.vue';
 import {
   MatchedKeyword,

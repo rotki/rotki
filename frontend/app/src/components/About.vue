@@ -105,14 +105,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set, useClipboard } from '@vueuse/core';
+import { computed, defineComponent, onMounted, ref, toRefs } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import { interop } from '@/electron-interop';

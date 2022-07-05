@@ -53,7 +53,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from 'vue';
 import { DIALOG_TYPES, themes, TYPE_INFO } from '@/components/dialogs/consts';
 
 export default defineComponent({

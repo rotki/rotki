@@ -1,7 +1,7 @@
 import { Message } from '@rotki/common/lib/messages';
-import { computed, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, Ref, ref } from 'vue';
 import { setupSettings } from '@/composables/settings';
 import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';

@@ -81,8 +81,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, ref } from 'vue';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import { convertToTimestamp } from '@/utils/date';
 

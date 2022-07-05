@@ -22,7 +22,7 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { defineComponent, PropType, ref, watch } from '@vue/composition-api';
+import { defineComponent, PropType, ref, watch } from 'vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';
 import { setupBlockchainAccounts } from '@/composables/balances';

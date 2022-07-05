@@ -14,7 +14,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 
 export default defineComponent({

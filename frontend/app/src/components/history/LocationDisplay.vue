@@ -19,13 +19,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import ListItem from '@/components/helper/ListItem.vue';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';

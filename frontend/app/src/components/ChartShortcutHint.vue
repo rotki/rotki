@@ -41,13 +41,8 @@
   </div>
 </template>
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onBeforeMount,
-  ref
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, onBeforeMount, ref } from 'vue';
 import { interop } from '@/electron-interop';
 
 export default defineComponent({

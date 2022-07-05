@@ -236,6 +236,7 @@
   </div>
 </template>
 <script lang="ts">
+import { get, set, useLocalStorage } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -246,8 +247,7 @@ import {
   Ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set, useLocalStorage } from '@vueuse/core';
+} from 'vue';
 import {
   deleteBackendUrl,
   getBackendUrl,

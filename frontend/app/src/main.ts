@@ -1,8 +1,7 @@
 /* istanbul ignore file */
 
-import VueCompositionAPI, { provide } from '@vue/composition-api';
 import { createPinia, PiniaVuePlugin } from 'pinia';
-import Vue from 'vue';
+import Vue, { provide } from 'vue';
 import App from '@/App.vue';
 import '@/filters';
 import '@/main.scss';
@@ -24,7 +23,6 @@ Vue.config.productionTip = false;
 
 Vue.use(Api);
 Vue.use(Interop);
-Vue.use(VueCompositionAPI);
 Vue.use(PiniaVuePlugin);
 
 setupPremium();

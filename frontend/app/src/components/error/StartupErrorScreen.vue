@@ -16,8 +16,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, toRefs } from '@vue/composition-api';
 import { useClipboard } from '@vueuse/core';
+import { defineComponent, toRefs } from 'vue';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 
 import { interop } from '@/electron-interop';

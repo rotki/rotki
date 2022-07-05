@@ -28,7 +28,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import GroupedImport from '@/components/import/GroupedImport.vue';
 import PremiumMixin from '@/mixins/premium-mixin';

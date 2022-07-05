@@ -33,7 +33,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRefs, watch } from '@vue/composition-api';
+import { defineComponent, ref, toRefs, watch } from 'vue';
 import { IVueI18n } from 'vue-i18n';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import i18n from '@/i18n';

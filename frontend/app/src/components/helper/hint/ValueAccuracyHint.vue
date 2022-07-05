@@ -10,8 +10,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent } from 'vue';
 import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
 

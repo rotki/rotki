@@ -47,14 +47,9 @@
 
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { setupThemeCheck } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
 import { truncateAddress, truncationPoints } from '@/filters';

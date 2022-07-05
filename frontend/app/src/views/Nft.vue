@@ -6,7 +6,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import NftGallery from '@/components/nft/NftGallery.vue';
 import { setupModuleEnabled } from '@/composables/session';

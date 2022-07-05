@@ -122,14 +122,14 @@
 </template>
 
 <script lang="ts">
+import { get, set, useLocalStorage } from '@vueuse/core';
 import {
   computed,
   defineComponent,
   onBeforeMount,
   PropType,
   toRefs
-} from '@vue/composition-api';
-import { get, set, useLocalStorage } from '@vueuse/core';
+} from 'vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { setupThemeCheck, useRouter } from '@/composables/common';

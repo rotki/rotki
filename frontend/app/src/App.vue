@@ -137,6 +137,9 @@
 </template>
 
 <script lang="ts">
+import { get, set } from '@vueuse/core';
+import { Chart, registerables } from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
 import {
   computed,
   defineComponent,
@@ -144,10 +147,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
-import { Chart, registerables } from 'chart.js';
-import zoomPlugin from 'chartjs-plugin-zoom';
+} from 'vue';
 import About from '@/components/About.vue';
 import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropdown from '@/components/CurrencyDropdown.vue';

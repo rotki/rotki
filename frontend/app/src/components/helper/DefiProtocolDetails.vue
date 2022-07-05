@@ -11,7 +11,7 @@
   </span>
 </template>
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from 'vue';
 
 type Item = { icon: string; name: string };
 

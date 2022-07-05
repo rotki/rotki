@@ -1,4 +1,4 @@
-import { Ref } from "@vue/composition-api";
+import { Ref } from "vue";
 import { SupportedAsset } from "../data";
 import { ProfitLossModel } from "../defi";
 import { BalancerBalanceWithOwner, BalancerEvent, BalancerProfitLoss, Pool } from "../defi/balancer";

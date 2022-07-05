@@ -15,7 +15,7 @@
   </v-navigation-drawer>
 </template>
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import { setupSession } from '@/composables/session';
 

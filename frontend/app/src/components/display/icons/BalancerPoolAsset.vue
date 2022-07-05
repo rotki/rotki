@@ -18,7 +18,7 @@
 
 <script lang="ts">
 import { BalancerUnderlyingToken } from '@rotki/common/lib/defi/balancer';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from 'vue';
 
 export default defineComponent({
   name: 'BalancerPoolAsset',

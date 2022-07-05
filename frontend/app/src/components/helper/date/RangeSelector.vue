@@ -35,8 +35,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
 import dayjs from 'dayjs';
+import { computed, defineComponent } from 'vue';
 import ReportPeriodSelector, {
   PeriodChangedEvent,
   SelectionChangedEvent

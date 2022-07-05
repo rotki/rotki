@@ -48,14 +48,9 @@
 
 <script lang="ts">
 import { NotificationData, Severity } from '@rotki/common/lib/messages';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import dayjs from 'dayjs';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { setupThemeCheck } from '@/composables/common';
 
 const Notification = defineComponent({

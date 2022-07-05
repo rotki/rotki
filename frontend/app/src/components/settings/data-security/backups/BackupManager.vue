@@ -59,14 +59,8 @@
 
 <script lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  Ref,
-  ref
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, onMounted, Ref, ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';

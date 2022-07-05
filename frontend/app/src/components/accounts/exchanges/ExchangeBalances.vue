@@ -100,6 +100,7 @@
 
 <script lang="ts">
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import { get, set } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -108,8 +109,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+} from 'vue';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';

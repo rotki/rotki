@@ -104,15 +104,8 @@
 
 <script lang="ts">
 import { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  Ref,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, Ref, ref, toRefs } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';

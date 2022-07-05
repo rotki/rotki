@@ -7,7 +7,7 @@
 </template>
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from 'vue';
 import ListItem from '@/components/helper/ListItem.vue';
 
 export default defineComponent({

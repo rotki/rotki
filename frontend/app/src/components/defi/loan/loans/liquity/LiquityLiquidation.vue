@@ -13,7 +13,7 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
 

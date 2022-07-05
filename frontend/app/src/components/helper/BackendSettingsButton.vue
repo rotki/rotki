@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+import { defineComponent, ref } from 'vue';
 import BackendSettings from '@/components/settings/BackendSettings.vue';
 
 export default defineComponent({

@@ -41,8 +41,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { defineComponent, PropType, toRefs } from 'vue';
 import { setupThemeCheck } from '@/composables/common';
 
 export default defineComponent({

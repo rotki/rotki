@@ -19,7 +19,7 @@
 </template>
 <script lang="ts">
 import { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from 'vue';
 import { setupThemeCheck } from '@/composables/common';
 export default defineComponent({
   name: 'GraphTooltipWrapper',

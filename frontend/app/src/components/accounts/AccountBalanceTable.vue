@@ -138,16 +138,10 @@
 <script lang="ts">
 import { Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';

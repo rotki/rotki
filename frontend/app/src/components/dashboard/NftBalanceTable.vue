@@ -96,8 +96,8 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { computed, defineComponent, Ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';

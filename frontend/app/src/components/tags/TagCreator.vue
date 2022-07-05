@@ -116,14 +116,8 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  PropType,
-  Ref,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { defineComponent, PropType, Ref, ref, toRefs } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { TagEvent } from '@/components/tags/types';
 import i18n from '@/i18n';

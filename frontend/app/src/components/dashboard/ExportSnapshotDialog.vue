@@ -54,9 +54,9 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { Message } from '@rotki/common/lib/messages';
-import { computed, defineComponent, ref, toRefs } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
+import { computed, defineComponent, ref, toRefs } from 'vue';
 import { setupGeneralSettings } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';

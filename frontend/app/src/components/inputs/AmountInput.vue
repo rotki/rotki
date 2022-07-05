@@ -19,15 +19,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { debouncedWatch, get, set } from '@vueuse/core';
 import Cleave from 'cleave.js';
+import { computed, defineComponent, onMounted, ref, toRefs } from 'vue';
 import { useStore } from '@/store/utils';
 
 /**

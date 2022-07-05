@@ -63,7 +63,7 @@
 
 <script lang="ts">
 import { XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { defineComponent, PropType, ref } from '@vue/composition-api';
+import { defineComponent, PropType, ref } from 'vue';
 
 export default defineComponent({
   name: 'UniswapPoolDetails',

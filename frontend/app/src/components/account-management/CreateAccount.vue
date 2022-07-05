@@ -248,8 +248,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, toRefs, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { defineComponent, ref, Ref, toRefs, watch } from 'vue';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';

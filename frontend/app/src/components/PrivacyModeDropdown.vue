@@ -47,8 +47,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent } from 'vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { setupSession } from '@/composables/session';
 import i18n from '@/i18n';

@@ -19,7 +19,7 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import { useInterop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/store';

@@ -41,6 +41,6 @@
     "zod": "3.12.0"
   },
   "peerDependencies": {
-    "@vue/composition-api": "1.4.6"
+    "vue": "2.7.2"
   }
 }

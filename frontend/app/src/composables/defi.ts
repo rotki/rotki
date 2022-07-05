@@ -1,4 +1,4 @@
-import { computed } from '@vue/composition-api';
+import { computed } from 'vue';
 import { DefiProtocolSummary } from '@/store/defi/types';
 import { useStore } from '@/store/utils';
 

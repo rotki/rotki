@@ -14,7 +14,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 
 import { interop } from '@/electron-interop';

@@ -25,13 +25,8 @@
   </div>
 </template>
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { EthTransactionEventEntry } from '@/store/history/types';
 import { TransactionEventType } from '@/types/transaction';

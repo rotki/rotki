@@ -8,7 +8,7 @@
 
 <script lang="ts">
 import { AssetBalance } from '@rotki/common';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
 

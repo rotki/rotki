@@ -1,5 +1,5 @@
-import { computed, Ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, Ref } from 'vue';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { EntryMeta } from '@/services/history/types';

@@ -5,8 +5,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, toRefs } from 'vue';
 import { setupDisplayData, setupGeneralSettings } from '@/composables/session';
 import { displayDateFormatter } from '@/data/date_formatter';
 

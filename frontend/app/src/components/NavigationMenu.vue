@@ -72,7 +72,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 import { Routes } from '@/router/routes';
 

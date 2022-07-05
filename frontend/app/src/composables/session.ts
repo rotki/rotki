@@ -1,6 +1,6 @@
 import { Nullable } from '@rotki/common';
-import { computed } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed } from 'vue';
 import { SupportedCurrency } from '@/data/currencies';
 import { SyncAction } from '@/services/types-api';
 import { Pinned, SessionState } from '@/store/session/types';

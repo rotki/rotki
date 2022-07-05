@@ -56,14 +56,14 @@
 </template>
 
 <script lang="ts">
+import { get } from '@vueuse/core';
 import {
   computed,
   defineComponent,
   PropType,
-  toRefs
-} from '@vue/composition-api';
-import { get } from '@vueuse/core';
-import { VueConstructor } from 'vue';
+  toRefs,
+  VueConstructor
+} from 'vue';
 import { setupThemeCheck } from '@/composables/common';
 import { useAssetInfoRetrieval } from '@/store/assets';
 

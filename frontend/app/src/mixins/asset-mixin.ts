@@ -1,6 +1,6 @@
-import { Ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { mapActions } from 'pinia';
+import { Ref } from 'vue';
 import { Component, Vue } from 'vue-property-decorator';
 import { useAssetInfoRetrieval } from '@/store/assets';
 

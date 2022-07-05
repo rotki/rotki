@@ -176,14 +176,8 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  Ref,
-  ref
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, onMounted, Ref, ref } from 'vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm, {
   AccountFormType

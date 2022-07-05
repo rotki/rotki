@@ -46,14 +46,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  ref,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, onMounted, ref, watch } from 'vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { RotkehlchenState } from '@/store/types';
 import { useStore } from '@/store/utils';

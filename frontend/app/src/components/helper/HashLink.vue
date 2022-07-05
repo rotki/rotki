@@ -69,14 +69,9 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get, useClipboard } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import {
   Chains,
   ExplorerUrls,

@@ -28,7 +28,7 @@
   </import-source>
 </template>
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ImportSource from '@/components/import/ImportSource.vue';
 

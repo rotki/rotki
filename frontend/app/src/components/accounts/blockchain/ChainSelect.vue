@@ -21,8 +21,8 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { computed, defineComponent, PropType } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType } from 'vue';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import { setupModuleEnabled } from '@/composables/session';
 import { Module } from '@/types/modules';

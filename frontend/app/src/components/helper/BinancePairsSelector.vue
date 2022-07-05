@@ -52,14 +52,8 @@
 
 <script lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import {
-  defineComponent,
-  onMounted,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { defineComponent, onMounted, ref, toRefs, watch } from 'vue';
 import { setupThemeCheck } from '@/composables/common';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';

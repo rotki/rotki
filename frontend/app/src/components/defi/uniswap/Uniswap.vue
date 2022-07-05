@@ -125,13 +125,8 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  ref
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, onMounted, ref } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';

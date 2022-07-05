@@ -13,13 +13,8 @@
 </template>
 <script lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { setupDisplayData } from '@/composables/session';
 import i18n from '@/i18n';
 

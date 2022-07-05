@@ -1,8 +1,8 @@
 import { BigNumber } from '@rotki/common';
 import { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
-import { computed, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { TooltipModel } from 'chart.js';
+import { computed, ref } from 'vue';
 import { setupThemeCheck } from '@/composables/common';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';

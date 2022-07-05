@@ -1,7 +1,7 @@
-import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, ref } from 'vue';
 import { Module } from 'vuex';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';

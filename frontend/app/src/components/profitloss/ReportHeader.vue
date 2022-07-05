@@ -25,7 +25,7 @@
   </v-row>
 </template>
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from 'vue';
 import { ProfitLossReportPeriod } from '@/types/reports';
 
 export default defineComponent({

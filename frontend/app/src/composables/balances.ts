@@ -1,8 +1,8 @@
 import { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { computed, Ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, Ref } from 'vue';
 import { tradeLocations } from '@/components/history/consts';
 import { ManualBalance } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';

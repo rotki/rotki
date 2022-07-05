@@ -25,13 +25,8 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { exchangeName } from '@/components/history/consts';
 import { SupportedExchange } from '@/types/exchanges';
 

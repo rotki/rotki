@@ -34,7 +34,7 @@
 </template>
 <script lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { computed, defineComponent, PropType } from 'vue';
 import { toSentenceCase } from '@/utils/text';
 
 export default defineComponent({

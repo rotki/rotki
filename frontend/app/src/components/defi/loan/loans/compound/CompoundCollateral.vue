@@ -31,7 +31,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, toRefs } from '@vue/composition-api';
+import { defineComponent, PropType, toRefs } from 'vue';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import { totalCollateral } from '@/components/defi/loan/loans/total-collateral';
 import StatCard from '@/components/display/StatCard.vue';

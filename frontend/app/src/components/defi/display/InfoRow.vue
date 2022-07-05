@@ -16,7 +16,7 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Zero } from '@/utils/bignumbers';
 

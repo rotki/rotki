@@ -166,8 +166,9 @@ export const LiquityStakeEvents = () => {
 declare global {
   interface Window {
     Vue: any;
+    VueUse: any;
     Chart: typeof Chart;
-    '@vue/composition-api': any;
+    vue: any;
     'chartjs-plugin-zoom': any;
     zod: any;
     bn: any;

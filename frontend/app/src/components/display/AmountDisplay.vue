@@ -77,14 +77,8 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set, useClipboard, useTimeoutFn } from '@vueuse/core';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupDisplayData, setupGeneralSettings } from '@/composables/session';

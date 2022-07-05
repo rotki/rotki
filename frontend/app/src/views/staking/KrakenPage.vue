@@ -53,13 +53,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  watch
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, onMounted, watch } from 'vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';

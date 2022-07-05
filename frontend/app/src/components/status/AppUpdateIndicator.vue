@@ -10,14 +10,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, useIntervalFn } from '@vueuse/core';
+import { computed, defineComponent, onMounted, toRefs, watch } from 'vue';
 import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/store';
 import { useStore } from '@/store/utils';

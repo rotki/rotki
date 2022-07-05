@@ -181,6 +181,8 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
+import { get, set, useLocalStorage } from '@vueuse/core';
+import dayjs from 'dayjs';
 import {
   computed,
   defineComponent,
@@ -189,9 +191,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set, useLocalStorage } from '@vueuse/core';
-import dayjs from 'dayjs';
+} from 'vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import {

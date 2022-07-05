@@ -229,8 +229,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { defineComponent, onMounted, ref } from 'vue';
 import CostBasisMethodSettings from '@/components/settings/accounting/CostBasisMethodSettings.vue';
 import LedgerActionSettings from '@/components/settings/accounting/LedgerActionSettings.vue';
 import IgnoreAssetSetting from '@/components/settings/controls/IgnoreAssetSetting.vue';

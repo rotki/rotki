@@ -23,7 +23,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import RestoreAssetsDatabaseMixin from '@/mixins/restore-assets-database-mixin';
 
 export default defineComponent({

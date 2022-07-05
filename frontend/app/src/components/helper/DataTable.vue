@@ -42,8 +42,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref, toRefs } from '@vue/composition-api';
 import { get, useElementBounding } from '@vueuse/core';
+import { defineComponent, PropType, ref, toRefs } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import { setupSettings } from '@/composables/settings';
 import { footerProps } from '@/config/datatable.common';

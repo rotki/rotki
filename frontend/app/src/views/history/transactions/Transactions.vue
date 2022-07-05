@@ -11,13 +11,8 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  onBeforeMount,
-  onUnmounted,
-  watch
-} from '@vue/composition-api';
 import { get, useIntervalFn } from '@vueuse/core';
+import { defineComponent, onBeforeMount, onUnmounted, watch } from 'vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { isSectionLoading, setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';

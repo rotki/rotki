@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import AssetManagement from '@/components/asset-manager/AssetManagement.vue';
 
 export default defineComponent({

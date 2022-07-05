@@ -16,7 +16,7 @@
   <div v-else class="back-button__placeholder" />
 </template>
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import { useRouter } from '@/composables/common';
 
 export default defineComponent({
