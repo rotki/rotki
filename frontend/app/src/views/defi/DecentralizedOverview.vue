@@ -38,41 +38,44 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { defineComponent, onMounted } from '@vue/composition-api';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import Overview from '@/components/defi/Overview.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import StatusMixin from '@/mixins/status-mixin';
+import { setupStatusChecking } from '@/composables/common';
+import { useDefi } from '@/composables/defi';
 import { Section } from '@/store/const';
-import { DefiProtocolSummary } from '@/store/defi/types';
 
-@Component({
+export default defineComponent({
+  name: 'DecentralizedOverview',
   components: {
     NoDataScreen,
     ProgressScreen,
     Overview,
     RefreshHeader
   },
-  computed: {
-    ...mapGetters('defi', ['defiOverview'])
-  },
-  methods: {
-    ...mapActions('defi', ['fetchAllDefi'])
-  }
-})
-export default class DecentralizedOverview extends Mixins(StatusMixin) {
-  fetchAllDefi!: (refresh: boolean) => Promise<void>;
-  defiOverview!: DefiProtocolSummary[];
-  section = Section.DEFI_OVERVIEW;
+  setup() {
+    const { defiOverview, fetchAll } = useDefi();
+    const section = Section.DEFI_OVERVIEW;
 
-  async refresh() {
-    await this.fetchAllDefi(true);
-  }
+    const refresh = async () => {
+      await fetchAll(true);
+    };
 
-  async created() {
-    await this.fetchAllDefi(false);
+    onMounted(async () => {
+      await fetchAll(false);
+    });
+
+    const { shouldShowLoadingScreen, isSectionRefreshing } =
+      setupStatusChecking();
+
+    return {
+      defiOverview,
+      loading: shouldShowLoadingScreen(section),
+      refreshing: isSectionRefreshing(section),
+      refresh
+    };
   }
-}
+});
 </script>
