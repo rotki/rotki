@@ -15,7 +15,7 @@ import requests
 
 from packaging import version
 
-pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '5.1')
+pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '5.2')
 BACKEND_PREFIX = 'rotki-core'
 SUPPORTED_ARCHS = [
     'AMD64',  # Windows
