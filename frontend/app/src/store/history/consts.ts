@@ -395,7 +395,7 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
   {
     identifier: TransactionEventProtocol.CONVEX,
     label: 'Convex',
-    image: '/images/defi/convex.jpeg'
+    image: '/assets/images/defi/convex.jpeg'
   },
   {
     identifier: TransactionEventProtocol['1INCH'],
