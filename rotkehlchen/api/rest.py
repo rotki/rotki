@@ -4198,13 +4198,16 @@ class RestAPI():
             db_handler=self.rotkehlchen.data.db,
             msg_aggregator=self.rotkehlchen.msg_aggregator,
         )
-        is_success, message = dbsnapshot.update(
-            timestamp=timestamp,
-            balances_snapshot=balances_snapshot,
-            location_data_snapshot=location_data_snapshot,
-        )
-        if is_success is False:
-            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
+                dbsnapshot.update(
+                    write_cursor=cursor,
+                    timestamp=timestamp,
+                    balances_snapshot=balances_snapshot,
+                    location_data_snapshot=location_data_snapshot,
+                )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def export_user_db_snapshot(self, timestamp: Timestamp, path: Path) -> Response:
@@ -4245,10 +4248,14 @@ class RestAPI():
             db_handler=self.rotkehlchen.data.db,
             msg_aggregator=self.rotkehlchen.msg_aggregator,
         )
-        is_success, message = dbsnapshot.delete(timestamp=timestamp)
-        if is_success is False:
-            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
-
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
+                dbsnapshot.delete(
+                    write_cursor=cursor,
+                    timestamp=timestamp,
+                )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_ens_mappings(
@@ -4324,13 +4331,15 @@ class RestAPI():
                 result=wrap_in_fail_result(error_or_empty),
                 status_code=HTTPStatus.CONFLICT,
             )
-        is_success, message = dbsnapshot.import_snapshot(
-            processed_balances_list=processed_balances,
-            processed_location_data_list=processed_location_data,
-        )
-        if is_success is False:
-            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
-
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
+                dbsnapshot.import_snapshot(
+                    write_cursor=cursor,
+                    processed_balances_list=processed_balances,
+                    processed_location_data_list=processed_location_data,
+                )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _pull_spam_assets(self) -> Dict[str, Any]:
