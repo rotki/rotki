@@ -42,7 +42,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_ethereum_address,
 )
-from rotkehlchen.types import AssetAmount, ChecksumEthAddress, Location, Timestamp
+from rotkehlchen.types import (
+    AssetAmount,
+    ChecksumEthAddress,
+    Location,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
@@ -337,7 +343,6 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                         start_ts=min_end_ts,
                         end_ts=to_timestamp,
                     )
-
             # Insert all unique swaps to the DB
             all_swaps = set()
             for address in filter(lambda x: x in address_amm_trades, addresses):
@@ -369,7 +374,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         except RemoteError as e:
             log.error(
                 f'Error querying uniswap v3 trades using graph for address {address} '
-                f'between {start_ts} and {end_ts}. {str(e)}',
+                f'between {start_ts} and {end_ts} due to: {str(e)}',
             )
         return trades
 
@@ -443,10 +448,11 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                         token1_deserialized = deserialize_ethereum_address(swap_token1['id'])
                         from_address_deserialized = deserialize_ethereum_address(swap['sender'])
                         to_address_deserialized = deserialize_ethereum_address(swap['recipient'])
+                        tx_hash_deserialized = deserialize_evm_tx_hash(swap['id'].split('#')[0])
                     except DeserializationError:
                         msg = (
-                            f'Failed to deserialize addresses in trade from uniswap graph with '
-                            f'token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '
+                            f'Failed to deserialize addresses/tx hash in trade from uniswap graph '
+                            f'with token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '
                             f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
                         )
                         log.error(msg)
@@ -486,7 +492,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                         continue
 
                     swaps.append(AMMSwap(
-                        tx_hash=swap['id'].split('#')[0],
+                        tx_hash=tx_hash_deserialized,
                         log_index=int(swap['logIndex']),
                         address=address,
                         from_address=from_address_deserialized,

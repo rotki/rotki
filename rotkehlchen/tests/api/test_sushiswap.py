@@ -27,7 +27,14 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import (
+    AssetAmount,
+    Location,
+    Price,
+    Timestamp,
+    TradeType,
+    deserialize_evm_tx_hash,
+)
 
 SWAP_ADDRESS = string_to_ethereum_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121')
 
@@ -134,7 +141,9 @@ def get_expected_trades():
         rate=Price(FVal('0.0008323741932057006980885326353')),
         trade_index=0,
         swaps=[AMMSwap(
-            tx_hash='0x962d904d75c751fbff316f7a2ed280bd93241d5088d747a4f26fe7437813512f',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x962d904d75c751fbff316f7a2ed280bd93241d5088d747a4f26fe7437813512f',
+            ),
             log_index=141,
             address=address,
             from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
@@ -156,7 +165,9 @@ def get_expected_trades():
         rate=Price(FVal('1124.241252314216598775470692')),
         trade_index=0,
         swaps=[AMMSwap(
-            tx_hash='0x90f68af0ebbbb8d4938a4fbd07a70862e806124abd907d1225f25a10afda0180',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x90f68af0ebbbb8d4938a4fbd07a70862e806124abd907d1225f25a10afda0180',
+            ),
             log_index=26,
             address=address,
             from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
@@ -170,7 +181,9 @@ def get_expected_trades():
             amount0_out=AssetAmount(ZERO),
             amount1_out=AssetAmount(FVal('3.410623314913014194')),
         ), AMMSwap(
-            tx_hash='0x90f68af0ebbbb8d4938a4fbd07a70862e806124abd907d1225f25a10afda0180',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x90f68af0ebbbb8d4938a4fbd07a70862e806124abd907d1225f25a10afda0180',
+            ),
             log_index=29,
             address=address,
             from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
@@ -184,7 +197,9 @@ def get_expected_trades():
             amount0_out=AssetAmount(ZERO),
             amount1_out=AssetAmount(FVal('2474.601464')),
         ), AMMSwap(
-            tx_hash='0x90f68af0ebbbb8d4938a4fbd07a70862e806124abd907d1225f25a10afda0180',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x90f68af0ebbbb8d4938a4fbd07a70862e806124abd907d1225f25a10afda0180',
+            ),
             log_index=32,
             address=address,
             from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
@@ -206,7 +221,9 @@ def get_expected_trades():
         rate=Price(FVal('1012.539124420295894184748806')),
         trade_index=0,
         swaps=[AMMSwap(
-            tx_hash='0xa54bf4c68d435e3c8f432fd7e62b7f8aca497a831a3d3fca305a954484ddd7b2',
+            tx_hash=deserialize_evm_tx_hash(
+                '0xa54bf4c68d435e3c8f432fd7e62b7f8aca497a831a3d3fca305a954484ddd7b2',
+            ),
             log_index=205,
             address=address,
             from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
@@ -220,7 +237,9 @@ def get_expected_trades():
             amount0_out=AssetAmount(ZERO),
             amount1_out=AssetAmount(FVal('2.6455727132446468')),
         ), AMMSwap(
-            tx_hash='0xa54bf4c68d435e3c8f432fd7e62b7f8aca497a831a3d3fca305a954484ddd7b2',
+            tx_hash=deserialize_evm_tx_hash(
+                '0xa54bf4c68d435e3c8f432fd7e62b7f8aca497a831a3d3fca305a954484ddd7b2',
+            ),
             log_index=208,
             address=address,
             from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
@@ -234,7 +253,9 @@ def get_expected_trades():
             amount0_out=AssetAmount(ZERO),
             amount1_out=AssetAmount(FVal('1936.810111')),
         ), AMMSwap(
-            tx_hash='0xa54bf4c68d435e3c8f432fd7e62b7f8aca497a831a3d3fca305a954484ddd7b2',
+            tx_hash=deserialize_evm_tx_hash(
+                '0xa54bf4c68d435e3c8f432fd7e62b7f8aca497a831a3d3fca305a954484ddd7b2',
+            ),
             log_index=211,
             address=address,
             from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
@@ -256,7 +277,9 @@ def get_expected_trades():
         rate=Price(FVal('0.001050849038104071952592013309')),
         trade_index=0,
         swaps=[AMMSwap(
-            tx_hash='0xb3cea8179e8bc349661f265937187403ae4914c108d118889d026bac1fbec4e9',
+            tx_hash=deserialize_evm_tx_hash(
+                '0xb3cea8179e8bc349661f265937187403ae4914c108d118889d026bac1fbec4e9',
+            ),
             log_index=9,
             address=address,
             from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
@@ -278,7 +301,9 @@ def get_expected_trades():
         rate=Price(FVal('511.20342')),
         trade_index=0,
         swaps=[AMMSwap(
-            tx_hash='0x0ccec8fd15c8d3ab923ee4a2406778f22769e74da20b19a35e614bfead6bab8d',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x0ccec8fd15c8d3ab923ee4a2406778f22769e74da20b19a35e614bfead6bab8d',
+            ),
             log_index=242,
             address=address,
             from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
@@ -292,7 +317,9 @@ def get_expected_trades():
             amount0_out=AssetAmount(ZERO),
             amount1_out=AssetAmount(FVal('0.690577933591789501')),
         ), AMMSwap(
-            tx_hash='0x0ccec8fd15c8d3ab923ee4a2406778f22769e74da20b19a35e614bfead6bab8d',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x0ccec8fd15c8d3ab923ee4a2406778f22769e74da20b19a35e614bfead6bab8d',
+            ),
             log_index=245,
             address=address,
             from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
@@ -306,7 +333,9 @@ def get_expected_trades():
             amount0_out=AssetAmount(ZERO),
             amount1_out=AssetAmount(FVal('506.399839')),
         ), AMMSwap(
-            tx_hash='0x0ccec8fd15c8d3ab923ee4a2406778f22769e74da20b19a35e614bfead6bab8d',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x0ccec8fd15c8d3ab923ee4a2406778f22769e74da20b19a35e614bfead6bab8d',
+            ),
             log_index=248,
             address=address,
             from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
@@ -387,7 +416,9 @@ EXPECTED_EVENTS_BALANCES_1 = [
         token1=EthereumToken('0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
         events=[
             SushiswapPoolEvent(
-                tx_hash='0xb226ddb8cbb286a7a998a35263ad258110eed5f923488f03a8d890572cd4608e',
+                tx_hash=deserialize_evm_tx_hash(
+                    '0xb226ddb8cbb286a7a998a35263ad258110eed5f923488f03a8d890572cd4608e',
+                ),
                 log_index=137,
                 address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1627401170),

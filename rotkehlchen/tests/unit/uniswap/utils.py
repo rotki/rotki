@@ -14,7 +14,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USDT, A_WETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED
-from rotkehlchen.types import AssetAmount, Price, Timestamp
+from rotkehlchen.types import AssetAmount, Price, Timestamp, deserialize_evm_tx_hash
 
 # Logic: Get balances
 
@@ -276,7 +276,9 @@ UPDATED_LIQUIDITY_POOL_2_ONLY_USDT = (
 
 LP_1_EVENTS = [
     LiquidityPoolEvent(
-        tx_hash='0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
+        tx_hash=deserialize_evm_tx_hash(
+            '0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
+        ),
         log_index=263,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1604273256),
@@ -290,7 +292,9 @@ LP_1_EVENTS = [
         lp_amount=AssetAmount(FVal('1.220680531244355402')),
     ),
     LiquidityPoolEvent(
-        tx_hash='0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa',
+        ),
         log_index=66,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1604283808),
@@ -306,7 +310,9 @@ LP_1_EVENTS = [
 ]
 LP_2_EVENTS = [
     LiquidityPoolEvent(
-        tx_hash='0x1e7fd116b316af49f6c52b3ca44f3c5d24c2a6f80a5b5e674b5f94155bd2cec4',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x1e7fd116b316af49f6c52b3ca44f3c5d24c2a6f80a5b5e674b5f94155bd2cec4',
+        ),
         log_index=99,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1598270334),
@@ -320,7 +326,9 @@ LP_2_EVENTS = [
         lp_amount=AssetAmount(FVal('2.074549918528068811')),
     ),
     LiquidityPoolEvent(
-        tx_hash='0x140bdba831f9494cf0ead6d57009e1eae45ed629a78ee74ccbf49018afae0ffa',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x140bdba831f9494cf0ead6d57009e1eae45ed629a78ee74ccbf49018afae0ffa',
+        ),
         log_index=208,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1599000975),
@@ -360,7 +368,9 @@ LP_2_EVENTS_BALANCE = (
 )
 LP_3_EVENTS = [
     LiquidityPoolEvent(
-        tx_hash='0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
+        tx_hash=deserialize_evm_tx_hash(
+            '0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
+        ),
         log_index=263,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1604273256),
@@ -374,7 +384,9 @@ LP_3_EVENTS = [
         lp_amount=AssetAmount(FVal('1.220680531244355402')),
     ),
     LiquidityPoolEvent(
-        tx_hash='0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa',
+        ),
         log_index=66,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1604283808),

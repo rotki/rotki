@@ -10,6 +10,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
+from rotkehlchen.types import deserialize_evm_tx_hash
 
 from .types import AdexEventDBTuple, AdexEventType, Bond, ChannelWithdraw, Unbond, UnbondRequest
 
@@ -66,7 +67,7 @@ def deserialize_adex_event_from_db(
             f'Failed to deserialize event type. Unknown event: {db_event_type}.',
         )
 
-    tx_hash = event_tuple[0]
+    tx_hash = deserialize_evm_tx_hash(event_tuple[0])
     address = deserialize_ethereum_address(event_tuple[1])
     identity_address = deserialize_ethereum_address(event_tuple[2])
     timestamp = deserialize_timestamp(event_tuple[3])

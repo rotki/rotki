@@ -16,7 +16,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.types import ChecksumEthAddress, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, EVMTxHash, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
@@ -192,7 +192,7 @@ USER_EVENTS_QUERY_V2 = """
 class ATokenBalanceHistory(NamedTuple):
     reserve_address: ChecksumEthAddress
     balance: FVal
-    tx_hash: str
+    tx_hash: EVMTxHash
     timestamp: Timestamp
     version: int
 
@@ -258,7 +258,7 @@ def _parse_common_event_data(
         entry: Dict[str, Any],
         from_ts: Timestamp,
         to_ts: Timestamp,
-) -> Optional[Tuple[Timestamp, str, int]]:
+) -> Optional[Tuple[Timestamp, EVMTxHash, int]]:
     """Parses and returns the common data of each event.
 
     Returns a tuple of timestamp, tx_hash and log index for success.
@@ -270,22 +270,28 @@ def _parse_common_event_data(
         return None
 
     event_id_parts = entry['id'].split(':')
-    if len(event_id_parts) == 5:
-        # aave v2 has 5 elements in the ids as can be checked in their code
-        # https://github.com/aave/protocol-subgraphs/commit/40e09d0e0d3196e5624ca113fc346a1d65c4f4fb#diff-835762719eeb8a927a81e727fcd8ecdb8f5b2ea4d56f39478a17ade85588acf2R4-R14  # noqa: E501
-        tx_hash = event_id_parts[2]
-        index = int(event_id_parts[3])
-    elif len(event_id_parts) == 2:
-        # aave v1 uses only tx_hash and index in their ids
-        tx_hash = event_id_parts[0]
-        index = int(event_id_parts[1])
-    else:
+    try:
+        if len(event_id_parts) == 5:
+            # aave v2 has 5 elements in the ids as can be checked in their code
+            # https://github.com/aave/protocol-subgraphs/commit/40e09d0e0d3196e5624ca113fc346a1d65c4f4fb#diff-835762719eeb8a927a81e727fcd8ecdb8f5b2ea4d56f39478a17ade85588acf2R4-R14  # noqa: E501
+            tx_hash = deserialize_evm_tx_hash(event_id_parts[2])
+            index = int(event_id_parts[3])
+        elif len(event_id_parts) == 2:
+            # aave v1 uses only tx_hash and index in their ids
+            tx_hash = deserialize_evm_tx_hash(event_id_parts[0])
+            index = int(event_id_parts[1])
+        else:
+            log.error(
+                f'Could not parse the id entry for an aave liquidation as '
+                f'returned by graph: {entry["id"]}.  Skipping entry ...',
+            )
+            return None
+    except DeserializationError:
         log.error(
-            f'Could not parse the id entry for an aave liquidation as '
+            f'Could not deserialize the transaction hash for an aave liquidation as '
             f'returned by graph: {entry["id"]}.  Skipping entry ...',
         )
         return None
-
     return timestamp, tx_hash, index
 
 
@@ -318,8 +324,16 @@ def _parse_atoken_balance_history(
             )
             continue
 
+        try:
+            raw_tx_hash = '0x' + pairs[4]
+            tx_hash = deserialize_evm_tx_hash(raw_tx_hash)
+        except DeserializationError:
+            log.error(
+                f'Error deserializing transaction hash {raw_tx_hash}',
+            )
+            continue
+
         version = _get_version_from_reserveid(pairs, 3)
-        tx_hash = '0x' + pairs[4]
         asset = ethaddress_to_asset(reserve_address)
         if asset is None:
             log.error(
@@ -539,7 +553,7 @@ class AaveGraphInquirer(AaveInquirer):
                         usd_price = query_usd_price_zero_if_error(
                             asset=asset,
                             time=timestamp,
-                            location=f'aave interest event {entry.tx_hash} from graph query',
+                            location=f'aave interest event {entry.tx_hash.hex()} from graph query',
                             msg_aggregator=self.msg_aggregator,
                         )
                         earned_balance = Balance(amount=diff, usd_value=diff * usd_price)
@@ -831,7 +845,7 @@ class AaveGraphInquirer(AaveInquirer):
                 timestamp=timestamp,
                 reserve_key='reserve',
                 amount_key='amount',
-                location=f'aave deposit {tx_hash} from graph query',
+                location=f'aave deposit {tx_hash.hex()} from graph query',
             )
             if result is None:
                 continue  # problem parsing, error already logged
@@ -883,7 +897,7 @@ class AaveGraphInquirer(AaveInquirer):
                 timestamp=timestamp,
                 reserve_key='reserve',
                 amount_key='amount',
-                location=f'aave withdrawal {tx_hash} from graph query',
+                location=f'aave withdrawal {tx_hash.hex()} from graph query',
             )
             if result is None:
                 continue  # problem parsing, error already logged
@@ -935,7 +949,7 @@ class AaveGraphInquirer(AaveInquirer):
                 timestamp=timestamp,
                 reserve_key='reserve',
                 amount_key='amount',
-                location=f'aave borrow {tx_hash} from graph query',
+                location=f'aave borrow {tx_hash.hex()} from graph query',
             )
             if result is None:
                 continue  # problem parsing, error already logged
@@ -991,7 +1005,7 @@ class AaveGraphInquirer(AaveInquirer):
             usd_price = query_usd_price_zero_if_error(
                 asset=asset,
                 time=timestamp,
-                location=f'aave repay event {tx_hash} from graph query',
+                location=f'aave repay event {tx_hash.hex()} from graph query',
                 msg_aggregator=self.msg_aggregator,
             )
             events.append(AaveRepayEvent(
@@ -1024,7 +1038,7 @@ class AaveGraphInquirer(AaveInquirer):
                 timestamp=timestamp,
                 reserve_key='collateralReserve',
                 amount_key='collateralAmount',
-                location=f'aave liquidation {tx_hash} from graph query',
+                location=f'aave liquidation {tx_hash.hex()} from graph query',
             )
             if result is None:
                 continue  # problem parsing, error already logged
@@ -1035,7 +1049,7 @@ class AaveGraphInquirer(AaveInquirer):
                 timestamp=timestamp,
                 reserve_key='principalReserve',
                 amount_key='principalAmount',
-                location=f'aave liquidation {tx_hash} from graph query',
+                location=f'aave liquidation {tx_hash.hex()} from graph query',
             )
             if result is None:
                 continue  # problem parsing, error already logged

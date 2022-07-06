@@ -59,6 +59,7 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
     TradeType,
+    deserialize_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -404,10 +405,11 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     token0_deserialized = deserialize_ethereum_address(token0_['id'])
                     token1_deserialized = deserialize_ethereum_address(token1_['id'])
                     pool_deserialized = deserialize_ethereum_address(event['pair']['id'])
+                    tx_hash_deserialized = deserialize_evm_tx_hash(event['transaction']['id'])
                 except DeserializationError as e:
                     msg = (
-                        f'Failed to deserialize address involved in liquidity pool event for'
-                        f' {self.location}. Token 0: {token0_["id"]}, token 1: {token0_["id"]},'
+                        f'Failed to deserialize address/txn hash involved in liquidity pool event '
+                        f'for {self.location}. Token 0: {token0_["id"]}, token 1: {token0_["id"]},'
                         f' pair: {event["pair"]["id"]}.'
                     )
                     log.error(msg)
@@ -428,7 +430,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     decimals=int(token1_['decimals']),
                 )
                 lp_event = LiquidityPoolEvent(
-                    tx_hash=event['transaction']['id'],
+                    tx_hash=tx_hash_deserialized,
                     log_index=int(event['logIndex']),
                     address=address,
                     timestamp=Timestamp(int(event['timestamp'])),
@@ -534,6 +536,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                             token1_deserialized = deserialize_ethereum_address(swap_token1['id'])
                             from_address_deserialized = deserialize_ethereum_address(swap['sender'])  # noqa
                             to_address_deserialized = deserialize_ethereum_address(swap['to'])
+                            tx_hash_deserialized = deserialize_evm_tx_hash(swap['id'].split('-')[0])  # noqa: 501
                         except DeserializationError:
                             msg = (
                                 f'Failed to deserialize addresses in trade from {self.location} graph'  # noqa
@@ -571,7 +574,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                             continue
 
                         swaps.append(AMMSwap(
-                            tx_hash=swap['id'].split('-')[0],
+                            tx_hash=tx_hash_deserialized,
                             log_index=int(swap['logIndex']),
                             address=address,
                             from_address=from_address_deserialized,

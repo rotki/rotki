@@ -13,7 +13,14 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_timestamp
-from rotkehlchen.types import AssetAmount, ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.types import (
+    AssetAmount,
+    ChecksumEthAddress,
+    EVMTxHash,
+    Price,
+    Timestamp,
+    make_evm_tx_hash,
+)
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 # TODO: improve the prefixes annotation and amend their usage in balancer.py
@@ -84,7 +91,7 @@ class BalancerBPTEventType(SerializableEnumMixin):
 
 
 class BalancerInvestEvent(NamedTuple):
-    tx_hash: str
+    tx_hash: EVMTxHash
     log_index: int
     address: ChecksumEthAddress
     timestamp: Timestamp
@@ -94,7 +101,7 @@ class BalancerInvestEvent(NamedTuple):
     amount: AssetAmount  # added or removed token amount
 
     def __hash__(self) -> int:
-        return hash(self.tx_hash + str(self.log_index))
+        return hash(self.tx_hash.hex() + str(self.log_index))
 
     def __eq__(self, other: Any) -> bool:
         if other is None:
@@ -115,7 +122,7 @@ class BalancerBPTEventPoolToken(NamedTuple):
 
 
 class BalancerBPTEvent(NamedTuple):
-    tx_hash: str
+    tx_hash: EVMTxHash
     log_index: int
     address: ChecksumEthAddress
     event_type: BalancerBPTEventType
@@ -123,7 +130,7 @@ class BalancerBPTEvent(NamedTuple):
     amount: AssetAmount  # minted or burned BPT amount
 
     def __hash__(self) -> int:
-        return hash(self.tx_hash + str(self.log_index))
+        return hash(self.tx_hash.hex() + str(self.log_index))
 
     def __eq__(self, other: Any) -> bool:
         if other is None:
@@ -148,7 +155,7 @@ PoolAddrToTokenAddrToIndex = Dict[EthereumToken, Dict[ChecksumAddress, int]]
 
 BalancerEventDBTuple = (
     Tuple[
-        str,  # tx_hash
+        bytes,  # tx_hash
         int,  # log_index
         str,  # address
         int,  # timestamp
@@ -169,7 +176,7 @@ BalancerEventDBTuple = (
 
 
 class BalancerEvent(NamedTuple):
-    tx_hash: str
+    tx_hash: EVMTxHash
     log_index: int
     address: ChecksumEthAddress
     timestamp: Timestamp
@@ -225,7 +232,7 @@ class BalancerEvent(NamedTuple):
             if item is not None
         ]
         return cls(
-            tx_hash=event_tuple[0],
+            tx_hash=make_evm_tx_hash(event_tuple[0]),
             log_index=event_tuple[1],
             address=string_to_ethereum_address(event_tuple[2]),
             timestamp=deserialize_timestamp(event_tuple[3]),
@@ -250,9 +257,8 @@ class BalancerEvent(NamedTuple):
                 amounts[token_identifier] = str(amount)
         else:
             amounts = [str(amount) for amount in self.amounts]
-
         return {
-            'tx_hash': self.tx_hash,
+            'tx_hash': self.tx_hash.hex(),
             'log_index': self.log_index,
             'timestamp': self.timestamp,
             'event_type': str(self.event_type),

@@ -9,9 +9,10 @@ from rotkehlchen.chain.ethereum.graph import Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import get_usd_price_zero_if_error
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import ChecksumEthAddress, EthAddress, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, EthAddress, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 
 from .structures import YearnVaultEvent
@@ -104,7 +105,8 @@ class YearnVaultsV2Graph:
             # The id returned is a composition of hash + '-' + log_index
             try:
                 _, tx_hash, log_index, _ = entry['id'].split('-')
-            except ValueError as e:
+                tx_hash = deserialize_evm_tx_hash(tx_hash)
+            except (ValueError, DeserializationError) as e:
                 log.debug(
                     f'Failed to extract transaction hash and log index from {event_type} event '
                     f'in yearn vaults v2 graph query. Got {entry["id"]}. {str(e)}.',
@@ -139,7 +141,7 @@ class YearnVaultsV2Graph:
                     f'in yearn vaults v2 graph query. {str(e)}.',
                 )
                 self.msg_aggregator.add_warning(
-                    f'Ignoring {event_type} {tx_hash} in yearn vault V2 Failed to decode'
+                    f'Ignoring {event_type} {tx_hash.hex()} in yearn vault V2 Failed to decode'  # noqa: 501 pylint: disable=no-member
                     f' remote information. ',
                 )
                 continue
@@ -148,13 +150,13 @@ class YearnVaultsV2Graph:
                 from_asset_usd_price = get_usd_price_zero_if_error(
                     asset=from_asset,
                     time=Timestamp(int(entry['timestamp']) // 1000),
-                    location=f'yearn vault v2 deposit {tx_hash}',
+                    location=f'yearn vault v2 deposit {tx_hash.hex()}',  # noqa: 501 pylint: disable=no-member
                     msg_aggregator=self.msg_aggregator,
                 )
                 to_asset_usd_price = get_usd_price_zero_if_error(
                     asset=to_asset,
                     time=Timestamp(int(entry['timestamp']) // 1000),
-                    location=f'yearn v2 vault deposit {tx_hash}',
+                    location=f'yearn v2 vault deposit {tx_hash.hex()}',  # noqa: 501 pylint: disable=no-member
                     msg_aggregator=self.msg_aggregator,
                 )
                 if event_type == 'deposit':
@@ -204,8 +206,8 @@ class YearnVaultsV2Graph:
                     error=msg,
                 )
                 self.msg_aggregator.add_warning(
-                    f'Ignoring {event_type} {tx_hash} in yearn vault V2 from {from_asset} to '
-                    f'{to_asset} because the remote information is not correct.',
+                    f'Ignoring {event_type} {tx_hash.hex()} in yearn vault V2 from '  # noqa: 501 pylint: disable=no-member
+                    f'{from_asset} to {to_asset} because the remote information is not correct.',
                 )
                 continue
         return result

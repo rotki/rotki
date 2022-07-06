@@ -284,7 +284,7 @@ class Balancer(EthereumModule):
                 break
 
             if query_offset == GRAPH_QUERY_SKIP_LIMIT:
-                query_id = f'{bpt_event.tx_hash}-{bpt_event.log_index}'
+                query_id = f'{bpt_event.tx_hash.hex()}-{bpt_event.log_index}'
                 query_offset = 0
             else:
                 query_offset += GRAPH_QUERY_LIMIT
@@ -437,7 +437,7 @@ class Balancer(EthereumModule):
                 raise RemoteError('Failed to deserialize balancer events') from e
 
             # first do a run to gather all transaction hashes. We need it to get all pool data
-            mint_or_burn_transactions = {deserialize_transaction_id(x['id'])[0] for x in raw_events}  # noqa: E501
+            mint_or_burn_transactions = {deserialize_transaction_id(x['id'])[0].hex() for x in raw_events}  # noqa: 501 pylint: disable=no-member
             address_to_mint_events = self._get_address_to_bpt_events_graph(
                 addresses=addresses,
                 transactions=list(mint_or_burn_transactions),
@@ -1333,7 +1333,6 @@ class Balancer(EthereumModule):
                     from_timestamp=from_timestamp,
                     to_timestamp=to_timestamp,
                 )
-
         return address_to_pool_events_balances
 
     def get_trades(

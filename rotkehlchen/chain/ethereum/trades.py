@@ -12,11 +12,13 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     AssetAmount,
     ChecksumEthAddress,
+    EVMTxHash,
     Fee,
     Location,
     Price,
     Timestamp,
     TradeType,
+    make_evm_tx_hash,
 )
 
 # Quick lookup for AMMTrade locations
@@ -24,7 +26,7 @@ AMMTradeLocations = {Location.BALANCER, Location.UNISWAP, Location.SUSHISWAP}
 AMMTRADE_LOCATION_NAMES = Literal['balancer', 'uniswap', 'sushiswap']
 AMMSwapDBTuple = (
     Tuple[
-        str,  # tx_hash
+        bytes,  # tx_hash
         int,  # log_index
         str,  # address
         str,  # from_address
@@ -46,7 +48,7 @@ class AMMSwap(NamedTuple):
 
     For now only catering to uniswap. We will see for more when we integrate them
     """
-    tx_hash: str
+    tx_hash: EVMTxHash
     log_index: int
     address: ChecksumEthAddress
     from_address: ChecksumEthAddress
@@ -61,7 +63,7 @@ class AMMSwap(NamedTuple):
     amount1_out: AssetAmount
 
     def __hash__(self) -> int:
-        return hash(self.tx_hash + str(self.log_index))
+        return hash(self.tx_hash.hex() + str(self.log_index))
 
     def __eq__(self, other: Any) -> bool:
         if other is None:
@@ -102,7 +104,7 @@ class AMMSwap(NamedTuple):
         token1 = deserialize_ethereum_token_from_db(identifier=trade_tuple[8])
 
         return cls(
-            tx_hash=trade_tuple[0],
+            tx_hash=make_evm_tx_hash(trade_tuple[0]),
             log_index=trade_tuple[1],
             address=address,
             from_address=from_address,
@@ -120,7 +122,7 @@ class AMMSwap(NamedTuple):
     def serialize(self) -> Dict[str, Any]:
         """Serialize the swap into the format seen in the frontend"""
         return {
-            'tx_hash': self.tx_hash,
+            'tx_hash': self.tx_hash.hex(),
             'log_index': self.log_index,
             'from_address': self.from_address,
             'to_address': self.to_address,
@@ -165,7 +167,7 @@ class AMMTrade(NamedTuple):
     trade_index: int
 
     @property
-    def tx_hash(self) -> str:
+    def tx_hash(self) -> EVMTxHash:
         return self.swaps[0].tx_hash
 
     @property
@@ -188,7 +190,7 @@ class AMMTrade(NamedTuple):
         identifier mechanism is not unique for multiple swaps in same transaction
         from different locations. So also adding log index in there to make up for it.
         """
-        return f'{self.tx_hash}-{self.trade_index}-{self.swaps[0].log_index}'
+        return f'{self.tx_hash.hex()}-{self.trade_index}-{self.swaps[0].log_index}'
 
     @property
     def trade_id(self) -> str:
@@ -222,6 +224,6 @@ class AMMTrade(NamedTuple):
             'address': self.address,
             'base_asset': self.base_asset.identifier,
             'quote_asset': self.quote_asset.identifier,
-            'tx_hash': self.tx_hash,
+            'tx_hash': self.tx_hash.hex(),
             'swaps': [x.serialize() for x in self.swaps],
         }

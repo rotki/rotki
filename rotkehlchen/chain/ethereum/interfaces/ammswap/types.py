@@ -17,7 +17,14 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_token_from_db,
     deserialize_timestamp,
 )
-from rotkehlchen.types import AssetAmount, ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.types import (
+    AssetAmount,
+    ChecksumEthAddress,
+    EVMTxHash,
+    Price,
+    Timestamp,
+    make_evm_tx_hash,
+)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -123,7 +130,7 @@ class EventType(Enum):
 
 LiquidityPoolEventDBTuple = (
     Tuple[
-        str,  # tx_hash
+        bytes,  # tx_hash
         int,  # log_index
         str,  # address
         int,  # timestamp
@@ -140,7 +147,7 @@ LiquidityPoolEventDBTuple = (
 
 
 class LiquidityPoolEvent(NamedTuple):
-    tx_hash: str
+    tx_hash: EVMTxHash
     log_index: int
     address: ChecksumEthAddress
     timestamp: Timestamp
@@ -178,9 +185,10 @@ class LiquidityPoolEvent(NamedTuple):
         event_type = EventType.deserialize_from_db(event_tuple[4])
         token0 = deserialize_ethereum_token_from_db(identifier=event_tuple[6])
         token1 = deserialize_ethereum_token_from_db(identifier=event_tuple[7])
+        tx_hash = make_evm_tx_hash(event_tuple[0])
 
         return cls(
-            tx_hash=event_tuple[0],
+            tx_hash=tx_hash,
             log_index=event_tuple[1],
             address=string_to_ethereum_address(event_tuple[2]),
             timestamp=deserialize_timestamp(event_tuple[3]),
@@ -213,7 +221,7 @@ class LiquidityPoolEvent(NamedTuple):
 
     def serialize(self) -> Dict[str, Any]:
         return {
-            'tx_hash': self.tx_hash,
+            'tx_hash': self.tx_hash.hex(),
             'log_index': self.log_index,
             'timestamp': self.timestamp,
             'event_type': str(self.event_type),

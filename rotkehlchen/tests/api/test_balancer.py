@@ -37,7 +37,14 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_API3, A_BAND, A_MFT, A_SYN
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import (
+    AssetAmount,
+    Location,
+    Price,
+    Timestamp,
+    TradeType,
+    deserialize_evm_tx_hash,
+)
 
 # Top holder of WBTC-WETH pool (0x1eff8af5d577060ba4ac8a29a13525bb0ee2a3d5)
 BALANCER_TEST_ADDR1 = string_to_ethereum_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')
@@ -157,7 +164,9 @@ def get_balancer_test_addr2_expected_trades():
             trade_index=1,
             swaps=[
                 AMMSwap(
-                    tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
+                    tx_hash=deserialize_evm_tx_hash(
+                        '0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',
+                    ),
                     log_index=24,
                     address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
                     from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
@@ -182,7 +191,9 @@ def get_balancer_test_addr2_expected_trades():
             trade_index=0,
             swaps=[
                 AMMSwap(
-                    tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
+                    tx_hash=deserialize_evm_tx_hash(
+                        '0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',
+                    ),
                     log_index=18,
                     address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
                     from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
@@ -207,7 +218,9 @@ def get_balancer_test_addr2_expected_trades():
             trade_index=0,
             swaps=[
                 AMMSwap(
-                    tx_hash='0x5e235216cb03e4eb234014f5ccf3efbfddd40c4576424e2a8204f1d12b96ed35',  # noqa: E501
+                    tx_hash=deserialize_evm_tx_hash(
+                        '0x5e235216cb03e4eb234014f5ccf3efbfddd40c4576424e2a8204f1d12b96ed35',
+                    ),
                     log_index=143,
                     address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
                     from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
@@ -232,7 +245,9 @@ def get_balancer_test_addr2_expected_trades():
             trade_index=0,
             swaps=[
                 AMMSwap(
-                    tx_hash='0xf54be824b4619777f1db0e3da91b0cd52f6dba730c95a75644e2b085e6ab9824',  # noqa: E501
+                    tx_hash=deserialize_evm_tx_hash(
+                        '0xf54be824b4619777f1db0e3da91b0cd52f6dba730c95a75644e2b085e6ab9824',
+                    ),
                     log_index=300,
                     address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
                     from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
@@ -257,7 +272,9 @@ def get_balancer_test_addr2_expected_trades():
             trade_index=0,
             swaps=[
                 AMMSwap(
-                    tx_hash='0xfed4e15051e3ce4dc0d2816f719701e5920e40bf41614b5feaa3c5a6a0186c03',  # noqa: E501
+                    tx_hash=deserialize_evm_tx_hash(
+                        '0xfed4e15051e3ce4dc0d2816f719701e5920e40bf41614b5feaa3c5a6a0186c03',
+                    ),
                     log_index=22,
                     address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
                     from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
@@ -282,7 +299,9 @@ def get_balancer_test_addr2_expected_trades():
             trade_index=0,
             swaps=[
                 AMMSwap(
-                    tx_hash='0xf0147c4b81098676c08ae20ae5bf8f8b60d0ad79eec484f3f93ac6ab49a3c51c',  # noqa: E501
+                    tx_hash=deserialize_evm_tx_hash(
+                        '0xf0147c4b81098676c08ae20ae5bf8f8b60d0ad79eec484f3f93ac6ab49a3c51c',
+                    ),
                     log_index=97,
                     address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
                     from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
@@ -307,7 +326,9 @@ def get_balancer_test_addr2_expected_trades():
             trade_index=1,
             swaps=[
                 AMMSwap(
-                    tx_hash='0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',  # noqa: E501
+                    tx_hash=deserialize_evm_tx_hash(
+                        '0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',
+                    ),
                     log_index=37,
                     address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
                     from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
@@ -332,7 +353,9 @@ def get_balancer_test_addr2_expected_trades():
             trade_index=0,
             swaps=[
                 AMMSwap(
-                    tx_hash='0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',  # noqa: E501
+                    tx_hash=deserialize_evm_tx_hash(
+                        '0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',
+                    ),
                     log_index=31,
                     address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
                     from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
@@ -463,7 +486,9 @@ def test_get_trade_with_1_token_pool(
         trade_index=0,
         swaps=[
             AMMSwap(
-                tx_hash='0x4f9e0d8aa660a5d3db276a1ade038f7027f29838dd22d5276571d2e4ea7131ae',  # noqa: E501
+                tx_hash=deserialize_evm_tx_hash(
+                    '0x4f9e0d8aa660a5d3db276a1ade038f7027f29838dd22d5276571d2e4ea7131ae',
+                ),
                 log_index=84,
                 address=string_to_ethereum_address(BALANCER_TEST_ADDR4),  # noqa: E501
                 from_address=string_to_ethereum_address('0xFD3dFB524B2dA40c8a6D703c62BE36b5D8540626'),  # noqa: E501
@@ -492,7 +517,9 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1 = (
         usd_profit_loss=FVal('-0.76584117161052920880190053'),
         events=[
             BalancerEvent(
-                tx_hash='0xb9dff9df4e3838c75d354d62c4596d94e5eb8904e07cee07a3b7ffa611c05544',
+                tx_hash=deserialize_evm_tx_hash(
+                    '0xb9dff9df4e3838c75d354d62c4596d94e5eb8904e07cee07a3b7ffa611c05544',
+                ),
                 log_index=331,
                 address=BALANCER_TEST_ADDR3,
                 timestamp=Timestamp(1597144247),
@@ -508,7 +535,9 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1 = (
                 ],
             ),
             BalancerEvent(
-                tx_hash='0xfa1dfeb83480e51a15137a93cb0eba9ac92c1b6b0ee0bd8551a422c1ed83695b',
+                tx_hash=deserialize_evm_tx_hash(
+                    '0xfa1dfeb83480e51a15137a93cb0eba9ac92c1b6b0ee0bd8551a422c1ed83695b',
+                ),
                 log_index=92,
                 address=BALANCER_TEST_ADDR3,
                 timestamp=Timestamp(1597243001),
@@ -542,7 +571,9 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL2 = (
         usd_profit_loss=FVal('-872.734395890491474835748575'),
         events=[
             BalancerEvent(
-                tx_hash='0x256c042bf7d67a8b9e9566b8797335135015ab6e8d9196b1c39f5da7b8479006',
+                tx_hash=deserialize_evm_tx_hash(
+                    '0x256c042bf7d67a8b9e9566b8797335135015ab6e8d9196b1c39f5da7b8479006',
+                ),
                 log_index=171,
                 address=BALANCER_TEST_ADDR3,
                 timestamp=Timestamp(1598376244),
@@ -563,7 +594,9 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL2 = (
                 ],
             ),
             BalancerEvent(
-                tx_hash='0x6f9e6d5fd0562121ca4f695ffde661f5c184af421f68585be72ad59cfb8f881d',
+                tx_hash=deserialize_evm_tx_hash(
+                    '0x6f9e6d5fd0562121ca4f695ffde661f5c184af421f68585be72ad59cfb8f881d',
+                ),
                 log_index=167,
                 address=BALANCER_TEST_ADDR3,
                 timestamp=Timestamp(1598377474),
