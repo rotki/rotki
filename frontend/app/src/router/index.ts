@@ -150,12 +150,17 @@ export default new Router({
               children: [
                 {
                   path: '',
-                  redirect: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP.route
+                  redirect: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2.route
                 },
                 {
-                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP.route,
+                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2.route,
                   component: () =>
-                    import('../components/defi/uniswap/Uniswap.vue')
+                    import('../components/defi/uniswap/UniswapV2.vue')
+                },
+                {
+                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3.route,
+                  component: () =>
+                    import('../components/defi/uniswap/UniswapV3.vue')
                 },
                 {
                   path: Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER.route,

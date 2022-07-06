@@ -234,12 +234,21 @@ export default defineComponent({
           ]
         },
         {
-          ...Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP,
+          ...Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2,
           texts: [
             Routes.DEFI.text,
             Routes.DEFI_DEPOSITS.text,
             Routes.DEFI_DEPOSITS_LIQUIDITY.text,
-            Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP.text
+            Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2.text
+          ]
+        },
+        {
+          ...Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3,
+          texts: [
+            Routes.DEFI.text,
+            Routes.DEFI_DEPOSITS.text,
+            Routes.DEFI_DEPOSITS_LIQUIDITY.text,
+            Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3.text
           ]
         },
         {

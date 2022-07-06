@@ -49,6 +49,7 @@ import {
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
+import { useUniswap } from '@/store/defi/uniswap';
 import { useHistory } from '@/store/history';
 import { useNotifications } from '@/store/notifications';
 import { useMainStore } from '@/store/store';
@@ -360,6 +361,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
     await dispatch('fetchBlockchainBalances');
     await dispatch(BalanceActions.FETCH_NF_BALANCES);
+
+    const { fetchV3Balances } = useUniswap();
+    await fetchV3Balances();
   },
 
   async updateBalances(
@@ -502,9 +506,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const balances = BlockchainBalances.parse(result);
 
       useDefiStore().reset();
+      useMainStore().resetDefiStatus();
+
+      const { fetchV3Balances } = useUniswap();
+      fetchV3Balances();
+
       dispatch(BalanceActions.FETCH_NF_BALANCES);
       await dispatch('updateBalances', { chain: blockchain, balances });
-      useMainStore().resetDefiStatus();
       await dispatch('refreshPrices', { ignoreCache: false });
     } catch (e: any) {
       logger.error(e);
@@ -640,14 +648,18 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     try {
       await Promise.allSettled(requests);
+      useDefiStore().reset();
+      useMainStore().resetDefiStatus();
+
       if (blockchain === Blockchain.ETH) {
         await dispatch('fetchBlockchainBalances', {
           blockchain: Blockchain.ETH2
         });
+
+        const { fetchV3Balances } = useUniswap();
+        fetchV3Balances();
       }
-      useDefiStore().reset();
       dispatch(BalanceActions.FETCH_NF_BALANCES);
-      useMainStore().resetDefiStatus();
       await dispatch('refreshPrices', { ignoreCache: false });
     } catch (e: any) {
       logger.error(e);
@@ -708,25 +720,29 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         balances: balances
       });
 
-      if (blockchain === Blockchain.ETH && payload.modules) {
-        await dispatch(
-          'session/enableModule',
-          {
-            enable: payload.modules,
-            addresses: [address]
-          },
-          { root: true }
-        );
-      }
+      useDefiStore().reset();
+      useMainStore().resetDefiStatus();
 
       if (blockchain === Blockchain.ETH) {
+        if (payload.modules) {
+          await dispatch(
+            'session/enableModule',
+            {
+              enable: payload.modules,
+              addresses: [address]
+            },
+            { root: true }
+          );
+
+          const { fetchV3Balances } = useUniswap();
+          fetchV3Balances();
+        }
+
+        dispatch(BalanceActions.FETCH_NF_BALANCES);
         await dispatch('fetchBlockchainBalances', {
           blockchain: Blockchain.ETH2
         });
       }
-      useDefiStore().reset();
-      dispatch(BalanceActions.FETCH_NF_BALANCES);
-      useMainStore().resetDefiStatus();
       await dispatch('refreshPrices', { ignoreCache: false });
     } catch (e: any) {
       logger.error(e);

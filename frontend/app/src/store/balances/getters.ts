@@ -25,7 +25,7 @@ import {
   BlockchainAccountWithBalance,
   BlockchainTotal,
   ExchangeRateGetter,
-  L2Totals,
+  SubBlockchainTotal,
   LocationBalance,
   NonFungibleBalance
 } from '@/store/balances/types';
@@ -120,16 +120,20 @@ export const getters: Getters<
   }: BalanceState): BlockchainAccountWithBalance[] => {
     const accounts = balances(ethAccounts, eth, Blockchain.ETH);
 
-    // check if account is loopring account
     return accounts.map(ethAccount => {
       const address = ethAccount.address;
-      const balances = loopringBalances[address];
-      const tags = ethAccount.tags || [];
-      if (balances) {
+      const tags = ethAccount.tags ? [...ethAccount.tags] : [];
+
+      // check if account have loopring balances
+      const loopringAssetBalances = loopringBalances[address];
+      if (loopringAssetBalances) {
         tags.push(ReadOnlyTag.LOOPRING);
       }
 
-      return { ...ethAccount, tags: tags.filter(uniqueStrings) };
+      return {
+        ...ethAccount,
+        tags: tags.filter(uniqueStrings)
+      };
     });
   },
   eth2Balances: ({
@@ -594,7 +598,8 @@ export const getters: Getters<
 
     if (ethAccounts.length > 0) {
       const ethStatus = getStatus(Section.BLOCKCHAIN_ETH);
-      const l2Totals: L2Totals[] = [];
+      const childrenTotals: SubBlockchainTotal[] = [];
+
       if (Object.keys(loopring).length > 0) {
         const balances: { [asset: string]: HasBalance } = {};
         for (const address in loopring) {
@@ -614,7 +619,7 @@ export const getters: Getters<
           }
         }
         const loopringStatus = getStatus(Section.L2_LOOPRING_BALANCES);
-        l2Totals.push({
+        childrenTotals.push({
           protocol: L2_LOOPRING,
           usdValue: sum(Object.values(balances)),
           loading:
@@ -624,7 +629,9 @@ export const getters: Getters<
 
       totals.push({
         chain: Blockchain.ETH,
-        l2: l2Totals.sort((a, b) => sortDesc(a.usdValue, b.usdValue)),
+        children: childrenTotals.sort((a, b) =>
+          sortDesc(a.usdValue, b.usdValue)
+        ),
         usdValue: sum(ethAccounts),
         loading: ethStatus === Status.NONE || ethStatus === Status.LOADING
       });
@@ -634,7 +641,7 @@ export const getters: Getters<
       const btcStatus = getStatus(Section.BLOCKCHAIN_BTC);
       totals.push({
         chain: Blockchain.BTC,
-        l2: [],
+        children: [],
         usdValue: sum(btcAccounts),
         loading: btcStatus === Status.NONE || btcStatus === Status.LOADING
       });
@@ -644,7 +651,7 @@ export const getters: Getters<
       const bchStatus = getStatus(Section.BLOCKCHAIN_BCH);
       totals.push({
         chain: Blockchain.BCH,
-        l2: [],
+        children: [],
         usdValue: sum(bchAccounts),
         loading: bchStatus === Status.NONE || bchStatus === Status.LOADING
       });
@@ -654,7 +661,7 @@ export const getters: Getters<
       const ksmStatus = getStatus(Section.BLOCKCHAIN_KSM);
       totals.push({
         chain: Blockchain.KSM,
-        l2: [],
+        children: [],
         usdValue: sum(kusamaBalances),
         loading: ksmStatus === Status.NONE || ksmStatus === Status.LOADING
       });
@@ -664,7 +671,7 @@ export const getters: Getters<
       const avaxStatus = getStatus(Section.BLOCKCHAIN_AVAX);
       totals.push({
         chain: Blockchain.AVAX,
-        l2: [],
+        children: [],
         usdValue: sum(avaxAccounts),
         loading: avaxStatus === Status.NONE || avaxStatus === Status.LOADING
       });
@@ -674,7 +681,7 @@ export const getters: Getters<
       const dotStatus = getStatus(Section.BLOCKCHAIN_DOT);
       totals.push({
         chain: Blockchain.DOT,
-        l2: [],
+        children: [],
         usdValue: sum(polkadotBalances),
         loading: dotStatus === Status.NONE || dotStatus === Status.LOADING
       });
@@ -684,7 +691,7 @@ export const getters: Getters<
       const eth2Status = getStatus(Section.BLOCKCHAIN_ETH2);
       totals.push({
         chain: Blockchain.ETH2,
-        l2: [],
+        children: [],
         usdValue: sum(eth2Balances),
         loading: eth2Status === Status.NONE || eth2Status === Status.LOADING
       });
@@ -1079,17 +1086,43 @@ export const getters: Getters<
       return breakdown;
     },
   loopringBalances: state => address => {
-    const balances: AssetBalance[] = [];
+    const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+    const { isAssetIgnored } = useIgnoredAssetsStore();
+    const ownedAssets: Record<string, Balance> = {};
+
+    const addToOwned = (value: AssetBalance) => {
+      const associatedAsset: string = get(
+        getAssociatedAssetIdentifier(value.asset)
+      );
+
+      const ownedAsset = ownedAssets[associatedAsset];
+
+      ownedAssets[associatedAsset] = !ownedAsset
+        ? {
+            ...value
+          }
+        : {
+            ...balanceSum(ownedAsset, value)
+          };
+    };
+
     const loopringBalance = state.loopringBalances[address];
     if (loopringBalance) {
       for (const asset in loopringBalance) {
-        balances.push({
-          ...loopringBalance[asset],
-          asset
+        addToOwned({
+          asset,
+          ...loopringBalance[asset]
         });
       }
     }
-    return balances;
+    return Object.keys(ownedAssets)
+      .filter(asset => !get(isAssetIgnored(asset)))
+      .map(asset => ({
+        asset,
+        amount: ownedAssets[asset].amount,
+        usdValue: ownedAssets[asset].usdValue
+      }))
+      .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
   blockchainAssets: ({ loopringBalances, prices }, { totals }) => {
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
@@ -1210,10 +1243,16 @@ export const getters: Getters<
     },
     { session }
   ) => {
-    const byLocation: BalanceByLocation = {};
+    const byLocations: Record<string, BigNumber> = {};
+
+    const addToOwned = (location: string, value: BigNumber) => {
+      const byLocation = byLocations[location];
+
+      byLocations[location] = !byLocation ? value : value.plus(byLocation);
+    };
 
     for (const { location, usdValue } of manual) {
-      byLocation[location] = usdValue;
+      addToOwned(location, usdValue);
     }
 
     const mainCurrency = session?.generalSettings.mainCurrency.tickerSymbol;
@@ -1224,28 +1263,16 @@ export const getters: Getters<
       ? blockchainTotal.multipliedBy(currentExchangeRate)
       : blockchainTotal;
 
-    const blockchain = byLocation[TRADE_LOCATION_BLOCKCHAIN];
-    if (blockchain) {
-      byLocation[TRADE_LOCATION_BLOCKCHAIN] = blockchain.plus(
-        blockchainTotalConverted
-      );
-    } else {
-      byLocation[TRADE_LOCATION_BLOCKCHAIN] = blockchainTotalConverted;
-    }
+    addToOwned(TRADE_LOCATION_BLOCKCHAIN, blockchainTotalConverted);
 
     for (const { location, total } of exchanges) {
-      const locationElement = byLocation[location];
       const exchangeBalanceConverted = currentExchangeRate
         ? total.multipliedBy(currentExchangeRate)
         : total;
-      if (locationElement) {
-        byLocation[location] = locationElement.plus(exchangeBalanceConverted);
-      } else {
-        byLocation[location] = exchangeBalanceConverted;
-      }
+      addToOwned(location, exchangeBalanceConverted);
     }
 
-    return byLocation;
+    return byLocations;
   },
   exchangeNonce:
     ({ connectedExchanges: exchanges }) =>

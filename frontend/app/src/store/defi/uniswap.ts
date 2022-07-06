@@ -1,15 +1,15 @@
+import { AssetBalance, Balance } from '@rotki/common';
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { computed, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { Section, Status } from '@/store/const';
 import {
   dexTradeNumericKeys,
-  uniswapEventsNumericKeys,
-  uniswapNumericKeys
+  uniswapEventsNumericKeys
 } from '@/store/defi/const';
 import { DexTrades } from '@/store/defi/types';
 import {
@@ -30,19 +30,27 @@ import {
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { sortDesc } from '@/utils/bignumbers';
+import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 
 export const useUniswap = defineStore('defi/uniswap', () => {
-  const balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
+  const v2Balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
+  const v3Balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
   const trades = ref<DexTrades>({}) as Ref<DexTrades>;
   const events = ref<XswapEvents>({}) as Ref<XswapEvents>;
 
   const store = useStore();
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
 
-  const uniswapBalances = (addresses: string[]) =>
+  const uniswapV2Balances = (addresses: string[]) =>
     computed(() => {
-      return getBalances(get(balances), addresses);
+      return getBalances(get(v2Balances), addresses);
+    });
+
+  const uniswapV3Balances = (addresses: string[]) =>
+    computed(() => {
+      return getBalances(get(v3Balances), addresses);
     });
 
   const uniswapPoolProfit = (addresses: string[]) =>
@@ -55,28 +63,89 @@ export const useUniswap = defineStore('defi/uniswap', () => {
       return getEventDetails(get(events), addresses);
     });
 
-  const addresses = computed(() => {
-    const uniswapBalances = get(balances);
+  const uniswapV2Addresses = computed(() => {
+    const uniswapBalances = get(v2Balances);
     const uniswapEvents = get(events);
     return Object.keys(uniswapBalances)
       .concat(Object.keys(uniswapEvents))
       .filter(uniqueStrings);
   });
 
-  const poolAssets = computed(() => {
-    const uniswapBalances = get(balances);
+  const uniswapV3Addresses = computed(() => {
+    const uniswapBalances = get(v3Balances);
+    const uniswapEvents = get(events);
+    return Object.keys(uniswapBalances)
+      .concat(Object.keys(uniswapEvents))
+      .filter(uniqueStrings);
+  });
+
+  const uniswapV2PoolAssets = computed(() => {
+    const uniswapBalances = get(v2Balances);
     const uniswapEvents = get(events);
     return getPools(uniswapBalances, uniswapEvents);
   });
 
-  const fetchBalances = async (refresh: boolean = false) => {
+  const uniswapV3PoolAssets = computed(() => {
+    const uniswapBalances = get(v3Balances);
+    const uniswapEvents = get(events);
+    return getPools(uniswapBalances, uniswapEvents);
+  });
+
+  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+  const { isAssetIgnored } = useIgnoredAssetsStore();
+
+  const uniswapV3AggregatedBalances = (address: string | string[] = []) =>
+    computed<AssetBalance[]>(() => {
+      const ownedAssets: Record<string, Balance> = {};
+
+      const addToOwned = (value: AssetBalance) => {
+        const associatedAsset: string = get(
+          getAssociatedAssetIdentifier(value.asset)
+        );
+
+        const ownedAsset = ownedAssets[associatedAsset];
+
+        ownedAssets[associatedAsset] = !ownedAsset
+          ? {
+              ...value
+            }
+          : {
+              ...balanceSum(ownedAsset, value)
+            };
+      };
+
+      const balances = get(
+        uniswapV3Balances(Array.isArray(address) ? address : [address])
+      );
+
+      balances.forEach(balance => {
+        const assets = balance.assets;
+        assets.forEach(asset => {
+          addToOwned({
+            ...asset.userBalance,
+            asset: asset.asset
+          });
+        });
+      });
+
+      return Object.keys(ownedAssets)
+        .filter(asset => !get(isAssetIgnored(asset)))
+        .map(asset => ({
+          asset,
+          amount: ownedAssets[asset].amount,
+          usdValue: ownedAssets[asset].usdValue
+        }))
+        .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+    });
+
+  const fetchV2Balances = async (refresh: boolean = false) => {
     const session = store.state.session!;
     const { activeModules } = session.generalSettings;
     if (!activeModules.includes(Module.UNISWAP)) {
       return;
     }
 
-    const section = Section.DEFI_UNISWAP_BALANCES;
+    const section = Section.DEFI_UNISWAP_V2_BALANCES;
     const currentStatus = getStatus(section);
 
     if (
@@ -90,18 +159,65 @@ export const useUniswap = defineStore('defi/uniswap', () => {
     setStatus(newStatus, section);
     const { awaitTask } = useTasks();
     try {
-      const taskType = TaskType.DEFI_UNISWAP_BALANCES;
+      const taskType = TaskType.DEFI_UNISWAP_V2_BALANCES;
       const { taskId } = await api.defi.fetchUniswapV2Balances();
       const { result } = await awaitTask<XswapBalances, TaskMeta>(
         taskId,
         taskType,
         {
-          title: i18n.tc('actions.defi.uniswap.task.title'),
-          numericKeys: uniswapNumericKeys
+          title: i18n.tc('actions.defi.uniswap.task.title')
         }
       );
 
-      set(balances, result);
+      set(v2Balances, result);
+    } catch (e: any) {
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.defi.uniswap.error.title'),
+        message: i18n.tc('actions.defi.uniswap.error.description', undefined, {
+          error: e.message
+        }),
+        display: true
+      });
+    }
+    setStatus(Status.LOADED, section);
+
+    await fetchSupportedAssets(true);
+  };
+
+  const fetchV3Balances = async (refresh: boolean = false) => {
+    const session = store.state.session!;
+    const { activeModules } = session.generalSettings;
+    if (!activeModules.includes(Module.UNISWAP)) {
+      return;
+    }
+
+    const section = Section.DEFI_UNISWAP_V3_BALANCES;
+    const currentStatus = getStatus(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section);
+    const { awaitTask } = useTasks();
+    try {
+      const taskType = TaskType.DEFI_UNISWAP_V3_BALANCES;
+      const { taskId } = await api.defi.fetchUniswapV3Balances();
+      const { result } = await awaitTask<XswapBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.uniswap.task.title'),
+          numericKeys: []
+        }
+      );
+
+      set(v3Balances, XswapBalances.parse(result));
     } catch (e: any) {
       const { notify } = useNotifications();
       notify({
@@ -223,26 +339,34 @@ export const useUniswap = defineStore('defi/uniswap', () => {
   };
 
   const reset = () => {
-    const { resetStatus } = getStatusUpdater(Section.DEFI_UNISWAP_BALANCES);
-    set(balances, {});
+    const { resetStatus } = getStatusUpdater(Section.DEFI_UNISWAP_V3_BALANCES);
+    set(v2Balances, {});
+    set(v3Balances, {});
     set(trades, {});
     set(events, {});
 
-    resetStatus(Section.DEFI_UNISWAP_BALANCES);
+    resetStatus(Section.DEFI_UNISWAP_V2_BALANCES);
+    resetStatus(Section.DEFI_UNISWAP_V3_BALANCES);
     resetStatus(Section.DEFI_UNISWAP_TRADES);
     resetStatus(Section.DEFI_UNISWAP_EVENTS);
   };
 
   return {
-    balances,
+    v2Balances,
+    v3Balances,
     trades,
     events,
-    addresses,
-    poolAssets,
+    uniswapV2Addresses,
+    uniswapV3Addresses,
+    uniswapV2PoolAssets,
+    uniswapV3PoolAssets,
+    uniswapV2Balances,
+    uniswapV3Balances,
+    uniswapV3AggregatedBalances,
     uniswapEvents,
-    uniswapBalances,
     uniswapPoolProfit,
-    fetchBalances,
+    fetchV2Balances,
+    fetchV3Balances,
     fetchTrades,
     fetchEvents,
     reset

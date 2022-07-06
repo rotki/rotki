@@ -39,6 +39,8 @@
       <v-col>
         <uniswap-pool-filter
           v-model="selectedPools"
+          :pool-assets="poolAssets"
+          uniswap="2"
           flat
           dense
           outlined
@@ -53,9 +55,10 @@
     >
       <template #item="{ item }">
         <card>
-          <template #title>
+          <template v-if="item.assets.length > 0" #title>
             {{
               $t('uniswap.pool_header', {
+                version: '2',
                 asset1: getSymbol(item.assets[0].asset),
                 asset2: getSymbol(item.assets[1].asset)
               })
@@ -72,43 +75,55 @@
               :assets="item.assets.map(({ asset }) => asset)"
             />
           </template>
-          <v-row align="center">
-            <v-col cols="auto">
-              <span class="font-weight-medium text-body-1">
-                {{ $t('uniswap.balance') }}
-              </span>
-            </v-col>
-            <v-col class="d-flex flex-column">
-              <balance-display
-                class="text-h5 mt-1 text"
-                :value="item.userBalance"
-                no-icon
-                asset=""
-              />
-            </v-col>
-          </v-row>
 
-          <v-row
-            v-for="asset in item.assets"
-            :key="`${asset.asset}-${item.address}-balances`"
-            class="uniswap__tokens"
-            align="center"
-            justify="end"
-          >
-            <v-col cols="auto">
-              <asset-icon :identifier="asset.asset" size="32px" />
-            </v-col>
-            <v-col class="d-flex" cols="auto">
-              <div>
+          <div class="pt-4">
+            <v-row>
+              <v-col cols="auto">
+                <div class="pt-4 font-weight-medium text-body-1">
+                  {{ $t('uniswap.balance') }}
+                </div>
+              </v-col>
+              <v-col class="d-flex flex-column">
                 <balance-display
+                  class="text-h5 mt-1 text"
+                  :value="item.userBalance"
                   no-icon
-                  :asset="asset.asset"
-                  :value="asset.userBalance"
+                  asset=""
                 />
-              </div>
-              <hash-link link-only :text="getTokenAddress(asset.asset)" />
-            </v-col>
-          </v-row>
+              </v-col>
+            </v-row>
+
+            <v-row>
+              <v-col cols="auto">
+                <div class="pt-4 font-weight-medium text-body-1">
+                  {{ $t('uniswap.assets') }}
+                </div>
+              </v-col>
+              <v-col>
+                <v-row
+                  v-for="asset in item.assets"
+                  :key="`${asset.asset}-${item.address}-balances`"
+                  class="uniswap__tokens"
+                  align="center"
+                  justify="end"
+                >
+                  <v-col cols="auto">
+                    <asset-icon :identifier="asset.asset" size="32px" />
+                  </v-col>
+                  <v-col class="d-flex" cols="auto">
+                    <div class="mr-4">
+                      <balance-display
+                        no-icon
+                        :asset="asset.asset"
+                        :value="asset.userBalance"
+                      />
+                    </div>
+                    <hash-link link-only :text="getTokenAddress(asset.asset)" />
+                  </v-col>
+                </v-row>
+              </v-col>
+            </v-row>
+          </div>
         </card>
       </template>
     </paginated-cards>
@@ -167,9 +182,10 @@ export default defineComponent({
     const selectedPools = ref<string[]>([]);
     const {
       fetchEvents,
-      fetchBalances,
-      addresses,
-      uniswapBalances,
+      fetchV2Balances: fetchBalances,
+      uniswapV2Addresses: addresses,
+      uniswapV2Balances: uniswapBalances,
+      uniswapV2PoolAssets: poolAssets,
       uniswapEvents,
       uniswapPoolProfit
     } = useUniswap();
@@ -179,9 +195,9 @@ export default defineComponent({
     const { isSectionRefreshing, shouldShowLoadingScreen } =
       setupStatusChecking();
 
-    const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_BALANCES);
+    const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_V2_BALANCES);
     const primaryRefreshing = isSectionRefreshing(
-      Section.DEFI_UNISWAP_BALANCES
+      Section.DEFI_UNISWAP_V2_BALANCES
     );
     const secondaryRefreshing = isSectionRefreshing(
       Section.DEFI_UNISWAP_EVENTS
@@ -236,6 +252,7 @@ export default defineComponent({
       balances,
       events,
       poolProfit,
+      poolAssets,
       loading,
       primaryRefreshing,
       secondaryRefreshing,

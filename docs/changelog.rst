@@ -1,6 +1,7 @@
 =========
 Changelog
 =========
+* :feature:`3249` Add Uniswap V3 LP Positions Functionality.
 
 * :feature:`4600` User will now be notified if a leftover backend process is running when starting rotki.
 

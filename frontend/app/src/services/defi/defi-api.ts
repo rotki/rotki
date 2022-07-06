@@ -93,6 +93,11 @@ export class DefiApi {
     return fetchExternalAsync(this.api, url);
   }
 
+  async fetchUniswapV3Balances(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/uniswap/v3/balances';
+    return fetchExternalAsync(this.api, url);
+  }
+
   async fetchUniswapEvents(): Promise<PendingTask> {
     const url = 'blockchains/ETH/modules/uniswap/history/events';
     return fetchExternalAsync(this.api, url);

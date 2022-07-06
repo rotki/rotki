@@ -7,4 +7,5 @@ export type TradeLocationData = {
   readonly imageIcon: boolean;
   readonly component?: any;
   readonly exchange: boolean;
+  readonly detailPath?: string;
 };

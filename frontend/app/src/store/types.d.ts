@@ -43,4 +43,5 @@ export type ActionDataEntry<T = string> = {
   readonly image?: string | undefined;
   readonly color?: string | undefined;
   readonly matcher?: (identifier: string) => boolean | undefined;
+  readonly detailPath?: string | undefined;
 };

@@ -4,6 +4,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { computed, Ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { tradeLocations } from '@/components/history/consts';
+import { Routes } from '@/router/routes';
 import { ManualBalance } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
@@ -243,7 +244,8 @@ export const setupLocationInfo = () => {
         identifier: identifier,
         exchange: false,
         imageIcon: true,
-        icon: `${api.serverUrl}/api/1/assets/${identifier}/icon`
+        icon: `${api.serverUrl}/api/1/assets/${identifier}/icon`,
+        detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}#blockchain-balances-${identifier}`
       };
     }
 

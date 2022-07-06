@@ -98,6 +98,13 @@
             :liabilities="liabilities(item.address)"
             :loopring-balances="getLoopringBalances(item.address)"
           />
+          <account-asset-balances
+            v-if="
+              isEth && get(uniswapV3AggregatedBalances(item.address)).length > 0
+            "
+            :title="$t('account_balance_table.uniswap_v3_lp')"
+            :assets="get(uniswapV3AggregatedBalances(item.address))"
+          />
         </table-expand-container>
       </template>
       <template #item.expand="{ item }">
@@ -152,6 +159,7 @@ import {
   XpubPayload
 } from '@/store/balances/types';
 import { Section } from '@/store/const';
+import { useUniswap } from '@/store/defi/uniswap';
 import { useTasks } from '@/store/tasks';
 import { getStatusUpdater } from '@/store/utils';
 import { Properties } from '@/types';
@@ -214,6 +222,8 @@ export default defineComponent({
     const { currencySymbol, treatEth2AsEth } = setupGeneralSettings();
     const { hasDetails, accountAssets, accountLiabilities, loopringBalances } =
       setupGeneralBalances();
+
+    const { uniswapV3AggregatedBalances } = useUniswap();
 
     const editClick = (account: BlockchainAccountWithBalance) => {
       emit('edit-click', account);
@@ -563,9 +573,10 @@ export default defineComponent({
       nonExpandedBalances,
       allSelected,
       total,
-      assets,
-      liabilities,
-      getLoopringBalances,
+      uniswapV3AggregatedBalances,
+      accountAssets,
+      accountLiabilities,
+      loopringBalances,
       hasDetails,
       setSelected,
       groupBy,

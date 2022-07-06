@@ -1483,7 +1483,11 @@
       },
       "export_database_snapshot": "Export database snapshot",
       "select_directory": "Select a directory",
-      "subtitle": "Click the button below to download snapshot for"
+      "subtitle": "Click the button below to download snapshot for",
+      "time": "Time: "
+    },
+    "uniswap_v3": {
+      "title": "Uniswap V3"
     }
   },
   "dashboard_asset_table": {
@@ -2457,9 +2461,6 @@
     },
     "title": "Earned Per Asset"
   },
-  "l2": {
-    "loopring": "Loopring"
-  },
   "labeled_address_display": {
     "divider": "|",
     "label": "{label}"
@@ -2830,7 +2831,8 @@
         "liquidity_sub": {
           "balancer": "Balancer",
           "sushiswap": "Sushiswap",
-          "uniswap": "Uniswap"
+          "uniswap_v2": "Uniswap v2",
+          "uniswap_v3": "Uniswap v3"
         },
         "protocols": "Protocols"
       },
@@ -3720,11 +3722,14 @@
     }
   },
   "uniswap": {
+    "assets": "Assets",
     "balance": "Balance",
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "loading_non_premium": "Loading the liquidity pool balances might take a while... Consider upgrading to {0} for faster load times.",
-    "pool_header": "UNIv2 {asset1}/{asset2}",
+    "nft_id": "NFT ID",
+    "pool_header": "UNI_v{version} {asset1}/{asset2}",
     "premium": "premium",
+    "price_range": "Price Range",
     "title": "Uniswap Pools"
   },
   "uniswap_pool_details": {

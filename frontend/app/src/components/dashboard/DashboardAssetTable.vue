@@ -1,6 +1,11 @@
 <template>
   <card outlined-body>
-    <template #title>{{ title }}</template>
+    <template #title>
+      {{ title }}
+      <v-btn v-if="to" :to="to" icon class="ml-2">
+        <v-icon>mdi-chevron-right</v-icon>
+      </v-btn>
+    </template>
     <template #details>
       <v-text-field
         v-model="search"
@@ -13,6 +18,7 @@
         hide-details
       />
       <v-menu
+        v-if="tableType"
         id="dashboard-asset-table__column-filter"
         transition="slide-y-transition"
         max-width="250px"
@@ -140,10 +146,13 @@ const tableHeaders = (
   currencySymbol: Ref<string>,
   title: Ref<string>,
   dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>,
-  tableType: Ref<DashboardTableType>
+  tableType: Ref<DashboardTableType | null>
 ) =>
   computed<DataTableHeader[]>(() => {
-    const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
+    const type = get(tableType);
+    const visibleColumns = type
+      ? get(dashboardTablesVisibleColumns)[type]
+      : null;
 
     const headers: DataTableHeader[] = [
       {
@@ -179,39 +188,45 @@ const tableHeaders = (
       }
     ];
 
-    if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
-      headers.push({
-        text: get(totalNetWorthUsd).gt(0)
-          ? i18n
-              .t('dashboard_asset_table.headers.percentage_of_total_net_value')
-              .toString()
-          : i18n.t('dashboard_asset_table.headers.percentage_total').toString(),
-        value: 'percentageOfTotalNetValue',
-        align: 'end',
-        cellClass: 'asset-percentage',
-        class: 'text-no-wrap',
-        sortable: false
-      });
-    }
+    if (type) {
+      if (visibleColumns!.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
+        headers.push({
+          text: get(totalNetWorthUsd).gt(0)
+            ? i18n
+                .t(
+                  'dashboard_asset_table.headers.percentage_of_total_net_value'
+                )
+                .toString()
+            : i18n
+                .t('dashboard_asset_table.headers.percentage_total')
+                .toString(),
+          value: 'percentageOfTotalNetValue',
+          align: 'end',
+          cellClass: 'asset-percentage',
+          class: 'text-no-wrap',
+          sortable: false
+        });
+      }
 
-    if (
-      visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)
-    ) {
-      headers.push({
-        text: i18n
-          .t(
-            'dashboard_asset_table.headers.percentage_of_total_current_group',
-            {
-              group: get(title)
-            }
-          )
-          .toString(),
-        value: 'percentageOfTotalCurrentGroup',
-        align: 'end',
-        cellClass: 'asset-percentage',
-        class: 'text-no-wrap',
-        sortable: false
-      });
+      if (
+        visibleColumns!.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)
+      ) {
+        headers.push({
+          text: i18n
+            .t(
+              'dashboard_asset_table.headers.percentage_of_total_current_group',
+              {
+                group: get(title)
+              }
+            )
+            .toString(),
+          value: 'percentageOfTotalCurrentGroup',
+          align: 'end',
+          cellClass: 'asset-percentage',
+          class: 'text-no-wrap',
+          sortable: false
+        });
+      }
     }
 
     return headers;
@@ -227,7 +242,16 @@ const DashboardAssetTable = defineComponent({
       required: true,
       type: Array as PropType<AssetBalanceWithPrice[]>
     },
-    tableType: { required: true, type: String as PropType<DashboardTableType> }
+    tableType: {
+      required: false,
+      type: String as PropType<DashboardTableType>,
+      default: null
+    },
+    to: {
+      required: false,
+      type: String,
+      default: ''
+    }
   },
   setup(props) {
     const { balances, title, tableType } = toRefs(props);

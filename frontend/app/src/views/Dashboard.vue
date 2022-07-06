@@ -155,6 +155,7 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { setupExchanges, setupGeneralBalances } from '@/composables/balances';
+import { useUniswap } from '@/store/defi/uniswap';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
@@ -200,9 +201,20 @@ export default defineComponent({
 
     const { exchanges, fetchExchangeBalances } = setupExchanges();
 
-    const isBlockchainLoading = isTaskRunning(
+    const isQueryingBlockchain = isTaskRunning(
       TaskType.QUERY_BLOCKCHAIN_BALANCES
     );
+    const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
+    const isUniswapV3BalancesLoading = isTaskRunning(
+      TaskType.DEFI_UNISWAP_V3_BALANCES
+    );
+    const isBlockchainLoading = computed<boolean>(() => {
+      return (
+        get(isQueryingBlockchain) ||
+        get(isLoopringLoading) ||
+        get(isUniswapV3BalancesLoading)
+      );
+    });
 
     const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
 
@@ -214,7 +226,8 @@ export default defineComponent({
       return (
         get(isBlockchainLoading) ||
         get(isExchangeLoading) ||
-        get(isAllBalancesLoading)
+        get(isAllBalancesLoading) ||
+        get(isUniswapV3BalancesLoading)
       );
     });
 
@@ -224,6 +237,8 @@ export default defineComponent({
           ignoreCache: true
         });
         fetchLoopringBalances(true);
+        const { fetchV3Balances } = useUniswap();
+        fetchV3Balances();
       } else if (balanceSource === 'exchange') {
         for (const exchange of get(exchanges)) {
           fetchExchangeBalances({

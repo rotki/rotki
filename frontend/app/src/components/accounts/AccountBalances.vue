@@ -129,8 +129,18 @@ export default defineComponent({
     const isEth2 = computed<boolean>(() => {
       return get(blockchain) === Blockchain.ETH2;
     });
+    const isQueryingBlockchain = isTaskRunning(
+      TaskType.QUERY_BLOCKCHAIN_BALANCES
+    );
 
-    const isLoading = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+    const isLoading = computed<boolean>(() => {
+      if (!get(isEth2)) {
+        return get(isQueryingBlockchain);
+      }
+      const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
+
+      return get(isQueryingBlockchain) || get(isLoopringLoading);
+    });
 
     const operationRunning = computed<boolean>(() => {
       return (
@@ -164,15 +174,14 @@ export default defineComponent({
 
     const deleteAccount = async () => {
       if (get(selectedAddresses).length > 0) {
-        const blockchainValue = get(blockchain);
         set(confirmDelete, false);
 
-        if (blockchainValue === Blockchain.ETH2) {
+        if (get(isEth2)) {
           await deleteEth2Validators(get(selectedAddresses));
         } else {
           await removeAccount({
             accounts: get(selectedAddresses),
-            blockchain: blockchainValue
+            blockchain: get(blockchain)
           });
         }
 
