@@ -8,13 +8,13 @@ function stringify(value: { [key: string]: any }): string {
     .join(', ');
 }
 
-export const mockT = (key: any, args?: any) =>
+const mockT = (key: any, args?: any) =>
   args ? `${key}::${stringify(args)}` : key;
 
-function I18n(vue: typeof Vue): void {
-  vue.prototype.$t = mockT;
-  vue.prototype.$tc = (key: string, choice?: number, args?: object) =>
-    args ? `${key}::${choice}::${stringify(args)}` : key;
-}
+const mockTc = (key: string, choice?: number, args?: object) =>
+  args ? `${key}::${choice}::${stringify(args)}` : key;
 
-Vue.use(I18n);
+export const I18n = (vue: typeof Vue) => {
+  vue.prototype.$t = mockT;
+  vue.prototype.$tc = mockTc;
+};

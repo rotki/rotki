@@ -1,13 +1,10 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
-import Vue from 'vue';
-import Vuetify from 'vuetify';
 import { BackupApi } from '@/services/backup/backup-api';
 import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
 import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
 import { stub } from '../../../common/utils';
-import '../../i18n';
+import { mountOptions } from '../../utils/mount';
 
 vi.spyOn(api, 'backups', 'get').mockReturnValue(
   stub<BackupApi>({
@@ -15,22 +12,13 @@ vi.spyOn(api, 'backups', 'get').mockReturnValue(
   })
 );
 
-Vue.use(Vuetify);
-
 describe('UserSecuritySettings.vue', () => {
   let wrapper: Wrapper<any>;
 
   function createWrapper() {
-    const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
+    const options = mountOptions();
     return mount(UserSecuritySettings, {
-      store,
-      pinia,
-      provide: {
-        'vuex-store': store
-      },
-      vuetify,
+      ...options,
       stubs: [
         'v-tooltip',
         'card-title',

@@ -1,30 +1,18 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
-import Vue from 'vue';
-import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Section, Status } from '@/store/const';
 import store, { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
-import '../../i18n';
-
-Vue.use(Vuetify);
+import { mountOptions } from '../../utils/mount';
 
 describe('AccountBalances.vue', () => {
   let wrapper: Wrapper<any>;
 
   beforeEach(() => {
-    const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
+    const options = mountOptions();
     wrapper = mount(AccountBalances, {
-      store,
-      vuetify,
-      pinia,
-      provide: {
-        'vuex-store': store
-      },
+      ...options,
       propsData: {
         blockchain: 'ETH',
         balances: [],

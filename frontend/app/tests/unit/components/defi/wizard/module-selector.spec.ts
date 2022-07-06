@@ -1,29 +1,20 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
-import Vue from 'vue';
-import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
 import { Module } from '@/types/modules';
 import { GeneralSettings } from '@/types/user';
-import '../../../i18n';
+import { mountOptions } from '../../../utils/mount';
 
 vi.mock('@/services/rotkehlchen-api');
-
-Vue.use(Vuetify);
 
 describe('ModuleSelector.vue', () => {
   let wrapper: Wrapper<ModuleSelector>;
 
   function createWrapper() {
-    const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
+    const options = mountOptions();
     return mount(ModuleSelector, {
-      store,
-      pinia,
-      vuetify,
+      ...options,
       stubs: ['v-tooltip', 'card']
     });
   }

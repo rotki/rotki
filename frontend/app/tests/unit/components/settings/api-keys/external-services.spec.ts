@@ -1,21 +1,15 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { createPinia, Pinia, setActivePinia } from 'pinia';
-import Vue from 'vue';
-import Vuetify from 'vuetify';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
 import store, { useMainStore } from '@/store/store';
-import '../../../i18n';
 import { ExternalServiceKeys } from '@/types/user';
-
-Vue.use(Vuetify);
+import { mountOptions } from '../../../utils/mount';
 
 describe('ExternalServices.vue', () => {
   let wrapper: Wrapper<ExternalServices>;
   let queryExternalServices: any;
   let setExternalServices: any;
   let deleteExternalServices: any;
-  let pinia: Pinia;
 
   const mockResponse: ExternalServiceKeys = {
     etherscan: {
@@ -27,11 +21,9 @@ describe('ExternalServices.vue', () => {
   };
 
   function createWrapper(): Wrapper<ExternalServices> {
-    const vuetify = new Vuetify();
+    const options = mountOptions();
     return mount(ExternalServices, {
-      store,
-      pinia,
-      vuetify,
+      ...options,
       stubs: ['v-dialog', 'card-title', 'card'],
       propsData: {
         value: ''
@@ -47,8 +39,6 @@ describe('ExternalServices.vue', () => {
   }
 
   beforeEach(() => {
-    pinia = createPinia();
-    setActivePinia(pinia);
     queryExternalServices = vi.fn();
     setExternalServices = vi.fn();
     deleteExternalServices = vi.fn();

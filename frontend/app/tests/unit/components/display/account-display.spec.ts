@@ -1,14 +1,9 @@
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
-import Vue from 'vue';
-import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import store from '@/store/store';
-import '../../i18n';
-
-Vue.use(Vuetify);
+import { mountOptions } from '../../utils/mount';
 
 describe('AccountDisplay.vue', () => {
   let wrapper: Wrapper<any>;
@@ -21,26 +16,9 @@ describe('AccountDisplay.vue', () => {
   };
 
   function createWrapper() {
-    const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
+    const options = mountOptions();
     return mount(AccountDisplay, {
-      store,
-      pinia,
-      provide: {
-        'vuex-store': store
-      },
-      vuetify,
-      stubs: {
-        VTooltip: {
-          template:
-            '<span><slot name="activator"/><slot v-if="!disabled"/></span>',
-          props: {
-            disabled: { type: Boolean }
-          }
-        },
-        AssetIcon: true
-      },
+      ...options,
       propsData: {
         account
       }

@@ -1,38 +1,25 @@
-import { mount, ThisTypedMountOptions, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
-import Vue from 'vue';
-import Vuetify from 'vuetify';
-import Vuex from 'vuex';
+import { mount, Wrapper } from '@vue/test-utils';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
-import store from '@/store/store';
-
-Vue.use(Vuetify);
-Vue.use(Vuex);
+import { mountOptions } from '../../utils/mount';
 
 describe('TabNavigation.vue', () => {
   let wrapper: Wrapper<any>;
   let nav: any;
   const data = [{ name: 'tab', routeTo: '/route/to/tab', hidden: true }];
 
-  function createWrapper(options: ThisTypedMountOptions<any> = {}) {
-    const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
+  function createWrapper() {
+    const options = mountOptions();
     return mount(TabNavigation, {
-      pinia,
-      store,
-      vuetify,
-      ...options
-    });
-  }
-
-  beforeAll(() => {
-    wrapper = createWrapper({
+      ...options,
       propsData: {
         tabContents: data
       },
       mocks: { $route: { path: '/dashboard/info/' } }
     });
+  }
+
+  beforeAll(() => {
+    wrapper = createWrapper();
     nav = wrapper.vm as any;
   });
 

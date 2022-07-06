@@ -1,20 +1,17 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
-import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
-import Vuetify from 'vuetify';
 import { VDialog } from 'vuetify/lib/components';
 import AccountManagement from '@/components/AccountManagement.vue';
 import { interop, useInterop } from '@/electron-interop';
 import { Api } from '@/plugins/api';
 import { Interop } from '@/plugins/interop';
 import store, { useMainStore } from '@/store/store';
-import '../i18n';
+import { mountOptions } from '../utils/mount';
 
 vi.mock('@/electron-interop');
 vi.mock('@/services/rotkehlchen-api');
 
-Vue.use(Vuetify);
 Vue.use(Api);
 Vue.use(Interop);
 
@@ -28,22 +25,13 @@ describe('AccountManagement.vue', () => {
 
   beforeEach(() => {
     document.body.setAttribute('data-app', 'true');
-    const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
-
     (useInterop as any).mockImplementation(() => interop);
     interop.premiumUserLoggedIn = vi.fn();
 
+    const options = mountOptions();
     useMainStore().setConnected(true);
-
     wrapper = mount(AccountManagement, {
-      store,
-      pinia,
-      provide: {
-        'vuex-store': store
-      },
-      vuetify,
+      ...options,
       propsData: {
         logged: true
       }

@@ -1,17 +1,12 @@
 import { BigNumber } from '@rotki/common';
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
-import Vue from 'vue';
-import Vuetify from 'vuetify';
 import { VTooltip } from 'vuetify/lib/components';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { currencies } from '@/data/currencies';
 import store from '@/store/store';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import '@/filters';
-import '../../i18n';
-
-Vue.use(Vuetify);
+import { mountOptions } from '../../utils/mount';
 
 // This is workaround used because stubs is somehow not working,
 // Eager prop will render the <slot /> immediately
@@ -23,16 +18,9 @@ function createWrapper(
   amount: BigNumber,
   fiatCurrency: string | null
 ) {
-  const vuetify = new Vuetify();
-  const pinia = createPinia();
-  setActivePinia(pinia);
+  const options = mountOptions();
   return mount(AmountDisplay, {
-    store,
-    pinia,
-    provide: {
-      'vuex-store': store
-    },
-    vuetify,
+    ...options,
     propsData: {
       value,
       fiatCurrency,

@@ -1,8 +1,6 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
-import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
-import Vuetify from 'vuetify';
 import Card from '@/components/helper/Card.vue';
 import PremiumSettings from '@/components/settings/PremiumSettings.vue';
 import { interop } from '@/electron-interop';
@@ -10,12 +8,11 @@ import { Api } from '@/plugins/api';
 import { Interop } from '@/plugins/interop';
 import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
-import '../../i18n';
+import { mountOptions } from '../../utils/mount';
 
 vi.mock('@/electron-interop');
 vi.mock('@/services/rotkehlchen-api');
 
-Vue.use(Vuetify);
 Vue.use(Api);
 Vue.use(Interop);
 
@@ -23,13 +20,9 @@ describe('PremiumSettings.vue', () => {
   let wrapper: Wrapper<PremiumSettings>;
 
   function createWrapper() {
-    const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
+    const options = mountOptions();
     return mount(PremiumSettings, {
-      pinia,
-      store,
-      vuetify,
+      ...options,
       components: {
         Card
       },
