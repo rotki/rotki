@@ -38,13 +38,23 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_update_owned_assets,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress, make_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 
 creation_patch = patch(
     'rotkehlchen.db.dbhandler.DB_SCRIPT_CREATE_TABLES',
     new=OLD_DB_SCRIPT_CREATE_TABLES,
 )
+
+
+def assert_tx_hash_is_bytes(old: list, new: list, tx_hash_index: int) -> None:
+    for _old, _new in zip(old, new):
+        assert isinstance(_new[tx_hash_index], bytes)
+        assert isinstance(_old[tx_hash_index], str)
+        _old = list(_old)
+        _new = list(_new)
+        _new[tx_hash_index] = make_evm_tx_hash(_new[tx_hash_index]).hex()  # noqa: 501 pylint: disable=no-member
+        assert _old == _new
 
 
 @contextmanager
@@ -2668,6 +2678,15 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
     assert len(old_xpubs) == 2
     blockchain_account_label_initial = cursor.execute('SELECT * FROM blockchain_accounts WHERE account="0x45E6CA515E840A4e9E02A3062F99216951825eB2"').fetchone()[2]  # noqa: E501
     assert blockchain_account_label_initial == ''
+
+    # get tables with tx_hash as string.
+    old_aave_events = cursor.execute('SELECT * FROM aave_events').fetchall()
+    old_adex_events = cursor.execute('SELECT * FROM adex_events').fetchall()
+    old_balancer_events = cursor.execute('SELECT * FROM balancer_events').fetchall()
+    old_yearn_vaults_events = cursor.execute('SELECT * FROM yearn_vaults_events').fetchall()
+    old_amm_events = cursor.execute('SELECT * FROM amm_events').fetchall()
+    old_amm_swaps = cursor.execute('SELECT * FROM amm_swaps').fetchall()
+    old_combined_trades_views = cursor.execute('SELECT * FROM combined_trades_view;').fetchall()
     db_v32.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2696,6 +2715,23 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
         assert xpub[3] == 'BTC'
     blockchain_account_label_upgraded = cursor.execute('SELECT * FROM blockchain_accounts WHERE account="0x45E6CA515E840A4e9E02A3062F99216951825eB2"').fetchone()[2]  # noqa: E501
     assert blockchain_account_label_upgraded is None
+
+    # check that forcing bytes for tx hashes did not break anything.
+    new_aave_events = cursor.execute('SELECT * FROM aave_events').fetchall()
+    new_adex_events = cursor.execute('SELECT * FROM adex_events').fetchall()
+    new_balancer_events = cursor.execute('SELECT * FROM balancer_events').fetchall()
+    new_yearn_vaults_events = cursor.execute('SELECT * FROM yearn_vaults_events').fetchall()
+    new_amm_events = cursor.execute('SELECT * FROM amm_events').fetchall()
+    new_amm_swaps = cursor.execute('SELECT * FROM amm_swaps').fetchall()
+    new_combined_trades_views = cursor.execute('SELECT * FROM combined_trades_view;').fetchall()
+    assert_tx_hash_is_bytes(old=old_aave_events, new=new_aave_events, tx_hash_index=4)
+    assert_tx_hash_is_bytes(old=old_adex_events, new=new_adex_events, tx_hash_index=0)
+    assert_tx_hash_is_bytes(old=old_balancer_events, new=new_balancer_events, tx_hash_index=0)
+    assert_tx_hash_is_bytes(old=old_yearn_vaults_events, new=new_yearn_vaults_events, tx_hash_index=12)  # noqa; 501
+    assert_tx_hash_is_bytes(old=old_amm_events, new=new_amm_events, tx_hash_index=0)
+    assert_tx_hash_is_bytes(old=old_amm_swaps, new=new_amm_swaps, tx_hash_index=0)
+    # not all combined_trades_views have tx hash.
+    assert_tx_hash_is_bytes(old=old_combined_trades_views[:1], new=new_combined_trades_views[:1], tx_hash_index=10)  # noqa: 501
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
