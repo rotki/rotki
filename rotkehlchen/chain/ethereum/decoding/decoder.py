@@ -436,6 +436,7 @@ class EVMTransactionDecoder():
         if amount == ZERO:
             return events
 
+        preposition = 'to' if verb == 'Send' else 'from'
         events.append(HistoryBaseEntry(
             event_identifier=tx_hash_hex,
             sequence_index=self.base.get_next_sequence_counter(),
@@ -444,7 +445,7 @@ class EVMTransactionDecoder():
             location_label=location_label,
             asset=A_ETH,
             balance=Balance(amount=amount),
-            notes=f'{verb} {amount} ETH {tx.from_address} -> {tx.to_address}',
+            notes=f'{verb} {amount} ETH {tx.from_address} {preposition} {tx.to_address}',
             event_type=event_type,
             event_subtype=HistoryEventSubType.NONE,
             counterparty=counterparty,
