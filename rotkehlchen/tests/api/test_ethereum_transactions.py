@@ -43,7 +43,13 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import EthereumTransaction, EVMTxHash, Timestamp, make_evm_tx_hash
+from rotkehlchen.types import (
+    EthereumTransaction,
+    EVMTxHash,
+    Timestamp,
+    deserialize_evm_tx_hash,
+    make_evm_tx_hash,
+)
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 EXPECTED_AFB7_TXS = [{
@@ -308,7 +314,7 @@ def test_query_transactions(rotkehlchen_api_server):
             events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
-                    event_identifier=tx_hash_hex,
+                    event_identifier=deserialize_evm_tx_hash(tx_hash_hex),
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
@@ -334,7 +340,7 @@ def test_query_transactions(rotkehlchen_api_server):
             events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
-                    event_identifier=tx_hash_hex,
+                    event_identifier=deserialize_evm_tx_hash(tx_hash_hex),
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )

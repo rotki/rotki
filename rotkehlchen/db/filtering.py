@@ -132,6 +132,17 @@ class DBETHTransactionHashFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBHistoryEventIdentifierFilter(DBFilter):
+    event_identifier: Optional[EVMTxHash] = None
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        if self.event_identifier is None:
+            return [], []
+
+        return ['event_identifier=?'], [self.event_identifier]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBReportDataReportIDFilter(DBFilter):
     report_id: Optional[Union[str, int]] = None
 
@@ -746,7 +757,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             location_label: Optional[str] = None,
             ignored_ids: Optional[List[str]] = None,
             null_columns: Optional[List[str]] = None,
-            event_identifier: Optional[str] = None,
+            event_identifier: Optional[EVMTxHash] = None,
             protocols: Optional[List[str]] = None,
             exclude_ignored_assets: bool = False,
     ) -> 'HistoryEventFilterQuery':
@@ -816,7 +827,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             )
         if event_identifier is not None:
             filters.append(
-                DBStringFilter(and_op=True, column='event_identifier', value=event_identifier),
+                DBHistoryEventIdentifierFilter(and_op=True, event_identifier=event_identifier),
             )
         if protocols is not None:
             filters.append(

@@ -399,7 +399,7 @@ class DBEthTx():
         # are cleared thanks to cascading (except for history_events which was cleared above)
         write_cursor.executemany(
             'DELETE FROM ethereum_transactions WHERE tx_hash=? AND ? NOT IN (SELECT event_identifier FROM history_events)',  # noqa: E501
-            [(x, x.hex()) for x in tx_hashes],
+            [(x, x) for x in tx_hashes],
         )
         # Delete all remaining evm_tx_mappings so decoding can happen again for customized events
         write_cursor.executemany(

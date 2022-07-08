@@ -416,7 +416,7 @@ class StakingQuerySchema(
 
 class HistoryBaseEntrySchema(Schema):
     identifier = fields.Integer(load_default=None, required=False)
-    event_identifier = fields.String(required=True)
+    event_identifier = EVMTransactionHashField(required=True)
     sequence_index = fields.Integer(required=True)
     # Timestamp coming in from the API is in seconds, in contrast to what we save in the struct
     timestamp = TimestampField(ts_multiplier=1000, required=True)

@@ -29,7 +29,7 @@ def test_gitcoin_old_donation(database, ethereum_manager, function_scope_message
     )
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1569924574000,
             location=Location.BLOCKCHAIN,
@@ -41,7 +41,7 @@ def test_gitcoin_old_donation(database, ethereum_manager, function_scope_message
             notes=f'Burned 0.000055118 ETH in gas from {ADDY}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=164,
             timestamp=1569924574000,
             location=Location.BLOCKCHAIN,
@@ -53,7 +53,7 @@ def test_gitcoin_old_donation(database, ethereum_manager, function_scope_message
             notes='Donate 0.95 SAI to 0xEbDb626C95a25f4e304336b1adcAd0521a1Bdca1 via gitcoin',  # noqa: E501
             counterparty=CPT_GITCOIN,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=165,
             timestamp=1569924574000,
             location=Location.BLOCKCHAIN,

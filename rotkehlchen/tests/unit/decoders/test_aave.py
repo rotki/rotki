@@ -31,7 +31,7 @@ def test_aave_deposit_v1(database, ethereum_manager, function_scope_messages_agg
     amount = '2507.675873220870275072'
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1595376667000,
             location=Location.BLOCKCHAIN,
@@ -43,7 +43,7 @@ def test_aave_deposit_v1(database, ethereum_manager, function_scope_messages_agg
             notes=f'Burned 0.00825148723006 ETH in gas from {ADDY}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=93,
             timestamp=1595376667000,
             location=Location.BLOCKCHAIN,
@@ -55,7 +55,7 @@ def test_aave_deposit_v1(database, ethereum_manager, function_scope_messages_agg
             notes='Gain 17.91499070977557364 aDAI from aave-v1 as interest',
             counterparty=CPT_AAVE_V1,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=94,
             timestamp=1595376667000,
             location=Location.BLOCKCHAIN,
@@ -67,7 +67,7 @@ def test_aave_deposit_v1(database, ethereum_manager, function_scope_messages_agg
             notes=f'Deposit {amount} DAI to aave-v1 from {ADDY}',
             counterparty=CPT_AAVE_V1,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=96,
             timestamp=1595376667000,
             location=Location.BLOCKCHAIN,
@@ -100,7 +100,7 @@ def test_aave_withdraw_v1(database, ethereum_manager, function_scope_messages_ag
     interest = '88.663672238882760399'
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1598217272000,
             location=Location.BLOCKCHAIN,
@@ -112,7 +112,7 @@ def test_aave_withdraw_v1(database, ethereum_manager, function_scope_messages_ag
             notes=f'Burned 0.028562839354 ETH in gas from {ADDY}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=98,
             timestamp=1598217272000,
             location=Location.BLOCKCHAIN,
@@ -124,7 +124,7 @@ def test_aave_withdraw_v1(database, ethereum_manager, function_scope_messages_ag
             notes=f'Gain {interest} aDAI from aave-v1 as interest',
             counterparty=CPT_AAVE_V1,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=99,
             timestamp=1598217272000,
             location=Location.BLOCKCHAIN,
@@ -136,7 +136,7 @@ def test_aave_withdraw_v1(database, ethereum_manager, function_scope_messages_ag
             notes=f'Return {amount} aDAI to aave-v1',
             counterparty=CPT_AAVE_V1,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=102,
             timestamp=1598217272000,
             location=Location.BLOCKCHAIN,
@@ -169,7 +169,7 @@ def test_aave_eth_withdraw_v1(database, ethereum_manager, function_scope_message
     interest = '0.000240847792940067'
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1605789951000,
             location=Location.BLOCKCHAIN,
@@ -181,7 +181,7 @@ def test_aave_eth_withdraw_v1(database, ethereum_manager, function_scope_message
             notes=f'Burned 0.021740928 ETH in gas from {ADDY2}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=1,
             timestamp=1605789951000,
             location=Location.BLOCKCHAIN,
@@ -193,7 +193,7 @@ def test_aave_eth_withdraw_v1(database, ethereum_manager, function_scope_message
             notes=f'Return {amount} aETH to aave-v1',
             counterparty=CPT_AAVE_V1,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=2,
             timestamp=1605789951000,
             location=Location.BLOCKCHAIN,
@@ -205,7 +205,7 @@ def test_aave_eth_withdraw_v1(database, ethereum_manager, function_scope_message
             notes=f'Withdraw {amount} ETH from aave-v1',
             counterparty=CPT_AAVE_V1,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=135,
             timestamp=1605789951000,
             location=Location.BLOCKCHAIN,

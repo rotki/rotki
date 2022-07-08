@@ -114,7 +114,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         try:
             aave_event[4] = deserialize_evm_tx_hash(aave_event[4])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes or maybe ignore?
+            # Not a valid hex string, so manually encode to bytes
             aave_event[4] = deserialize_evm_tx_hash(aave_event[4].encode())
         cursor.execute(
             'INSERT INTO aave_events_copy VALUES'
@@ -152,7 +152,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         try:
             adex_event[0] = deserialize_evm_tx_hash(adex_event[0])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes or maybe ignore?
+            # Not a valid hex string, so manually encode to bytes
             adex_event[0] = deserialize_evm_tx_hash(adex_event[0].encode())
         cursor.execute(
             'INSERT INTO adex_events_copy VALUES'
@@ -191,7 +191,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         try:
             balancer_event[0] = deserialize_evm_tx_hash(balancer_event[0])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes or maybe ignore?
+            # Not a valid hex string, so manually encode to bytes
             balancer_event[0] = deserialize_evm_tx_hash(balancer_event[0].encode())
         cursor.execute(
             'INSERT INTO balancer_events_copy VALUES'
@@ -230,7 +230,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         try:
             yearn_vault_event[12] = deserialize_evm_tx_hash(yearn_vault_event[12])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes or maybe ignore?
+            # Not a valid hex string, so manually encode to bytes
             yearn_vault_event[12] = deserialize_evm_tx_hash(yearn_vault_event[12].encode())
         cursor.execute(
             'INSERT INTO yearn_vaults_events_copy VALUES'
@@ -266,7 +266,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         try:
             amm_event[0] = deserialize_evm_tx_hash(amm_event[0])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes or maybe ignore?
+            # Not a valid hex string, so manually encode to bytes
             amm_event[0] = deserialize_evm_tx_hash(amm_event[0].encode())
         cursor.execute(
             'INSERT INTO amm_events_copy VALUES'
@@ -304,7 +304,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         try:
             amm_swap[0] = deserialize_evm_tx_hash(amm_swap[0])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes or maybe ignore?
+            # Not a valid hex string, so manually encode to bytes
             amm_swap[0] = deserialize_evm_tx_hash(amm_swap[0].encode())
         cursor.execute(
             'INSERT INTO amm_swaps_copy VALUES'
@@ -413,6 +413,49 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     """)  # noqa: 501
 
 
+def _change_event_identifier_to_bytes(cursor: 'DBCursor') -> None:
+    history_events_mappings = cursor.execute('SELECT * FROM history_events_mappings').fetchall()
+    cursor.execute("""
+    CREATE TABLE history_events_copy (
+        identifier INTEGER NOT NULL PRIMARY KEY,
+        event_identifier BLOB NOT NULL,
+        sequence_index INTEGER NOT NULL,
+        timestamp INTEGER NOT NULL,
+        location TEXT NOT NULL,
+        location_label TEXT,
+        asset TEXT NOT NULL,
+        amount TEXT NOT NULL,
+        usd_value TEXT NOT NULL,
+        notes TEXT,
+        type TEXT NOT NULL,
+        subtype TEXT,
+        counterparty TEXT,
+        extra_data TEXT,
+        UNIQUE(event_identifier, sequence_index)
+    );
+    """)
+    history_events = cursor.execute('SELECT * FROM history_events')
+    for history_event in history_events:
+        history_event = list(history_event)
+        try:
+            history_event[1] = deserialize_evm_tx_hash(history_event[1])
+        except DeserializationError:
+            # Not a valid hex string, so manually encode to bytes
+            history_event[1] = deserialize_evm_tx_hash(history_event[1].encode())
+        cursor.execute(
+            'INSERT INTO history_events_copy VALUES'
+            '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+            tuple(history_event),
+        )
+    cursor.execute('DROP TABLE history_events;')
+    cursor.execute('ALTER TABLE history_events_copy RENAME TO history_events;')
+
+    cursor.executemany(
+        'INSERT INTO history_events_mappings(parent_identifier, value) VALUES(?, ?);',
+        history_events_mappings,
+    )
+
+
 def _refactor_blockchain_account_labels(cursor: 'DBCursor') -> None:
     cursor.execute('UPDATE blockchain_accounts SET label = NULL WHERE label = ""')
 
@@ -422,6 +465,7 @@ def upgrade_v32_to_v33(db: 'DBHandler') -> None:
     - Change the schema of `blockchain` column in `xpub_mappings` table to be required.
     - Add blockchain column to `xpubs` table.
     - Change tx_hash for tables to BLOB type.
+    - Change HistoryBaseEntry's event_identifier column to BLOB type.
     """
     cursor = db.conn.cursor()
     _refactor_xpubs_and_xpub_mappings(cursor)
@@ -429,4 +473,5 @@ def upgrade_v32_to_v33(db: 'DBHandler') -> None:
     _refactor_blockchain_account_labels(cursor)
     _create_nodes(cursor)
     _force_bytes_for_tx_hashes(cursor)
+    _change_event_identifier_to_bytes(cursor)
     db.conn.commit()

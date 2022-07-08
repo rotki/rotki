@@ -30,7 +30,7 @@ def test_compound_ether_deposit(database, ethereum_manager, function_scope_messa
     )
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1598639099000,
             location=Location.BLOCKCHAIN,
@@ -42,7 +42,7 @@ def test_compound_ether_deposit(database, ethereum_manager, function_scope_messa
             notes=f'Burned 0.014122318 ETH in gas from {ADDY}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=1,
             timestamp=1598639099000,
             location=Location.BLOCKCHAIN,
@@ -54,7 +54,7 @@ def test_compound_ether_deposit(database, ethereum_manager, function_scope_messa
             notes='Deposit 0.5 ETH to compound',
             counterparty=CPT_COMPOUND,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=33,
             timestamp=1598639099000,
             location=Location.BLOCKCHAIN,
@@ -84,7 +84,7 @@ def test_compound_ether_withdraw(database, ethereum_manager, function_scope_mess
     )
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1598813490000,
             location=Location.BLOCKCHAIN,
@@ -96,7 +96,7 @@ def test_compound_ether_withdraw(database, ethereum_manager, function_scope_mess
             notes=f'Burned 0.02858544 ETH in gas from {ADDY}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=1,
             timestamp=1598813490000,
             location=Location.BLOCKCHAIN,
@@ -108,7 +108,7 @@ def test_compound_ether_withdraw(database, ethereum_manager, function_scope_mess
             notes='Return 24.97649991 cETH to compound',
             counterparty=CPT_COMPOUND,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=2,
             timestamp=1598813490000,
             location=Location.BLOCKCHAIN,
@@ -145,7 +145,7 @@ def test_compound_deposit_with_comp_claim(
     interest = FVal('0.076123031460129653')
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1607572696000,
             location=Location.BLOCKCHAIN,
@@ -157,7 +157,7 @@ def test_compound_deposit_with_comp_claim(
             notes=f'Burned 0.00945248 ETH in gas from {ADDY2}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=241,
             timestamp=1607572696000,
             location=Location.BLOCKCHAIN,
@@ -169,7 +169,7 @@ def test_compound_deposit_with_comp_claim(
             notes=f'Collect {interest} COMP from compound',
             counterparty=CPT_COMPOUND,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=243,
             timestamp=1607572696000,
             location=Location.BLOCKCHAIN,
@@ -181,7 +181,7 @@ def test_compound_deposit_with_comp_claim(
             notes=f'Deposit {amount} DAI to compound',
             counterparty=CPT_COMPOUND,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=250,
             timestamp=1607572696000,
             location=Location.BLOCKCHAIN,

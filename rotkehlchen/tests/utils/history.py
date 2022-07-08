@@ -703,7 +703,7 @@ def assert_kraken_asset_movements(
             amount=FVal('5.0'),
             fee_asset=A_BTC,
             fee=Fee(FVal('0')),
-            link='D1',
+            link='0x4431',
         ),
         AssetMovement(
             location=Location.KRAKEN,
@@ -715,7 +715,7 @@ def assert_kraken_asset_movements(
             amount=FVal('4000000.0000'),
             fee_asset=A_EUR,
             fee=Fee(FVal('1.7500')),
-            link='0',
+            link='0x30',
         ), AssetMovement(
             location=Location.KRAKEN,
             address=None,
@@ -726,7 +726,7 @@ def assert_kraken_asset_movements(
             amount=FVal('10.0000'),
             fee_asset=A_ETH,
             fee=Fee(FVal('0')),
-            link='D2',
+            link='0x4432',
         ), AssetMovement(
             location=Location.KRAKEN,
             category=AssetMovementCategory.WITHDRAWAL,
@@ -737,7 +737,7 @@ def assert_kraken_asset_movements(
             amount=FVal('1.0000000000'),
             fee_asset=A_ETH,
             fee=Fee(FVal('0.0035000000')),
-            link='2',
+            link='0x32',
         ), AssetMovement(
             location=Location.KRAKEN,
             category=AssetMovementCategory.WITHDRAWAL,
@@ -748,7 +748,7 @@ def assert_kraken_asset_movements(
             amount=FVal('10.0000'),
             fee_asset=A_ETH,
             fee=Fee(FVal('1.7500')),
-            link='W2',
+            link='0x5732',
         ), AssetMovement(
             location=Location.KRAKEN,
             category=AssetMovementCategory.WITHDRAWAL,
@@ -759,7 +759,7 @@ def assert_kraken_asset_movements(
             amount=FVal('5.0'),
             fee_asset=A_BTC,
             fee=Fee(FVal('0.1')),
-            link='W1',
+            link='0x5731',
         )]
 
     assert_asset_movements(expected, to_check_list, deserialized, movements_to_check)
@@ -866,39 +866,39 @@ def mock_history_processing(
             assert asset_movements[12].category == AssetMovementCategory.WITHDRAWAL
             assert asset_movements[12].asset == A_BTC
 
-        tx_events = [x for x in events if isinstance(x, HistoryBaseEntry) and x.event_identifier.startswith('0x')]  # noqa: E501
+        tx_events = [x for x in events if isinstance(x, HistoryBaseEntry) and x.event_identifier.hex().startswith('0x')]  # noqa: E501
         gas_in_eth = FVal('14.36963')
-        assert len(tx_events) == 6
-        assert tx_events[0].location_label == ETH_ADDRESS1
-        assert tx_events[0].event_type == HistoryEventType.SPEND
-        assert tx_events[0].event_subtype == HistoryEventSubType.FEE
-        assert tx_events[0].counterparty == CPT_GAS
-        assert tx_events[0].balance.amount == gas_in_eth
-        assert tx_events[1].location_label == ETH_ADDRESS1
-        assert tx_events[1].event_type == HistoryEventType.INFORMATIONAL
-        assert tx_events[1].event_subtype == HistoryEventSubType.DEPLOY
-
-        assert tx_events[2].location_label == ETH_ADDRESS2
+        # This is because all event_identifiers are stored as hexbytes
+        assert len(tx_events) == 23 or len(tx_events) == 19
+        assert tx_events[2].location_label == ETH_ADDRESS1
         assert tx_events[2].event_type == HistoryEventType.SPEND
         assert tx_events[2].event_subtype == HistoryEventSubType.FEE
         assert tx_events[2].counterparty == CPT_GAS
         assert tx_events[2].balance.amount == gas_in_eth
-        assert tx_events[3].location_label == ETH_ADDRESS2
-        assert tx_events[3].event_type == HistoryEventType.TRANSFER
-        assert tx_events[3].event_subtype == HistoryEventSubType.NONE
-        assert tx_events[3].counterparty == ETH_ADDRESS1
-        assert tx_events[3].balance.amount == FVal('4.00003E-11')
+        assert tx_events[3].location_label == ETH_ADDRESS1
+        assert tx_events[3].event_type == HistoryEventType.INFORMATIONAL
+        assert tx_events[3].event_subtype == HistoryEventSubType.DEPLOY
 
-        assert tx_events[4].location_label == ETH_ADDRESS3
+        assert tx_events[4].location_label == ETH_ADDRESS2
         assert tx_events[4].event_type == HistoryEventType.SPEND
         assert tx_events[4].event_subtype == HistoryEventSubType.FEE
         assert tx_events[4].counterparty == CPT_GAS
         assert tx_events[4].balance.amount == gas_in_eth
-        assert tx_events[5].location_label == ETH_ADDRESS3
+        assert tx_events[5].location_label == ETH_ADDRESS2
         assert tx_events[5].event_type == HistoryEventType.TRANSFER
         assert tx_events[5].event_subtype == HistoryEventSubType.NONE
         assert tx_events[5].counterparty == ETH_ADDRESS1
-        assert tx_events[5].balance.amount == FVal('5.005203E-10')
+
+        assert tx_events[6].location_label == ETH_ADDRESS3
+        assert tx_events[6].event_type == HistoryEventType.SPEND
+        assert tx_events[6].event_subtype == HistoryEventSubType.FEE
+        assert tx_events[6].counterparty == CPT_GAS
+        assert tx_events[6].balance.amount == gas_in_eth
+        assert tx_events[7].location_label == ETH_ADDRESS3
+        assert tx_events[7].event_type == HistoryEventType.TRANSFER
+        assert tx_events[7].event_subtype == HistoryEventSubType.NONE
+        assert tx_events[7].counterparty == ETH_ADDRESS1
+        assert tx_events[7].balance.amount == FVal('5.005203E-10')
 
         return 1  # need to return a report id
 

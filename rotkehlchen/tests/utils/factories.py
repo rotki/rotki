@@ -95,7 +95,7 @@ def make_ethereum_event(
     if tx_hash is None:
         tx_hash = make_random_bytes(42)
     return HistoryBaseEntry(
-        event_identifier=make_evm_tx_hash(tx_hash).hex(),  # pylint: disable=no-member
+        event_identifier=make_evm_tx_hash(tx_hash),
         sequence_index=index,
         identifier=index,
         timestamp=TimestampMS(0),

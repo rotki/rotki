@@ -2687,6 +2687,9 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
     old_amm_events = cursor.execute('SELECT * FROM amm_events').fetchall()
     old_amm_swaps = cursor.execute('SELECT * FROM amm_swaps').fetchall()
     old_combined_trades_views = cursor.execute('SELECT * FROM combined_trades_view;').fetchall()
+    # get history events
+    old_history_events = cursor.execute('SELECT * FROM history_events').fetchall()  # noqa: 501
+    assert len(old_history_events) == 1
     db_v32.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2724,6 +2727,8 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
     new_amm_events = cursor.execute('SELECT * FROM amm_events').fetchall()
     new_amm_swaps = cursor.execute('SELECT * FROM amm_swaps').fetchall()
     new_combined_trades_views = cursor.execute('SELECT * FROM combined_trades_view;').fetchall()
+    new_history_events = cursor.execute('SELECT * FROM history_events').fetchall()  # noqa: 501
+    assert len(new_history_events) == 1
     assert_tx_hash_is_bytes(old=old_aave_events, new=new_aave_events, tx_hash_index=4)
     assert_tx_hash_is_bytes(old=old_adex_events, new=new_adex_events, tx_hash_index=0)
     assert_tx_hash_is_bytes(old=old_balancer_events, new=new_balancer_events, tx_hash_index=0)
@@ -2732,6 +2737,7 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
     assert_tx_hash_is_bytes(old=old_amm_swaps, new=new_amm_swaps, tx_hash_index=0)
     # not all combined_trades_views have tx hash.
     assert_tx_hash_is_bytes(old=old_combined_trades_views[:1], new=new_combined_trades_views[:1], tx_hash_index=10)  # noqa: 501
+    assert_tx_hash_is_bytes(old=old_history_events, new=new_history_events, tx_hash_index=1)
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

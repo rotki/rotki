@@ -80,7 +80,9 @@ def test_1inch_claim(database, ethereum_manager, eth_transactions):
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(
-            event_identifier='0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
+            event_identifier=deserialize_evm_tx_hash(
+                '0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
+            ),
             sequence_index=0,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -95,7 +97,9 @@ def test_1inch_claim(database, ethereum_manager, eth_transactions):
             notes='Burned 0.00393701451 ETH in gas from 0xc931De6d845846E332a52D045072E3feF540Bd5d',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier='0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
+            event_identifier=deserialize_evm_tx_hash(
+                '0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
+            ),
             sequence_index=298,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -187,7 +191,9 @@ def test_gnosis_chain_bridge(database, ethereum_manager, eth_transactions):
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(
-            event_identifier='0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02',
+            event_identifier=deserialize_evm_tx_hash(
+                '0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02',
+            ),
             sequence_index=0,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -202,7 +208,9 @@ def test_gnosis_chain_bridge(database, ethereum_manager, eth_transactions):
             notes='Burned 0.00393701451 ETH in gas from 0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier='0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02',
+            event_identifier=deserialize_evm_tx_hash(
+                '0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02',
+            ),
             sequence_index=474,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -280,7 +288,9 @@ def test_gitcoin_claim(database, ethereum_manager, eth_transactions):
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(
-            event_identifier='0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa',
+            event_identifier=deserialize_evm_tx_hash(
+                '0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa',
+            ),
             sequence_index=0,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -295,7 +305,9 @@ def test_gitcoin_claim(database, ethereum_manager, eth_transactions):
             notes='Burned 0.00393701451 ETH in gas from 0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier='0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa',
+            event_identifier=deserialize_evm_tx_hash(
+                '0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa',
+            ),
             sequence_index=474,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,

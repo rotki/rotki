@@ -3128,7 +3128,7 @@ class RestAPI():
                     events = dbevents.get_history_events(
                         cursor=cursor,
                         filter_query=HistoryEventFilterQuery.make(
-                            event_identifier=entry.tx_hash.hex(),
+                            event_identifier=entry.tx_hash,
                             assets=asset,
                             protocols=event_params['protocols'],
                             exclude_ignored_assets=event_params['exclude_ignored_assets'],

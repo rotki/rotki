@@ -28,7 +28,7 @@ def test_claim_aidrop(database, ethereum_manager, function_scope_messages_aggreg
     )
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1652910214000,
             location=Location.BLOCKCHAIN,
@@ -40,7 +40,7 @@ def test_claim_aidrop(database, ethereum_manager, function_scope_messages_aggreg
             notes=f'Burned 0.0061843862 ETH in gas from {ADDY}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=549,
             timestamp=1652910214000,
             location=Location.BLOCKCHAIN,

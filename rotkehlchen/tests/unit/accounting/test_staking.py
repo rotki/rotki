@@ -12,7 +12,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location
+from rotkehlchen.types import Location, make_evm_tx_hash
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -22,7 +22,7 @@ def test_kraken_staking_events(accountant, google_service):
     """
     history = [
         HistoryBaseEntry(
-            event_identifier='XXX',
+            event_identifier=make_evm_tx_hash('XXX'.encode()),
             sequence_index=0,
             timestamp=1640493374000,
             location=Location.KRAKEN,
@@ -36,7 +36,7 @@ def test_kraken_staking_events(accountant, google_service):
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
         ), HistoryBaseEntry(
-            event_identifier='YYY',
+            event_identifier=make_evm_tx_hash('YYY'.encode()),
             sequence_index=0,
             timestamp=1636638550000,
             location=Location.KRAKEN,

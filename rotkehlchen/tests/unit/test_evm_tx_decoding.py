@@ -50,7 +50,7 @@ def test_tx_decode(evm_transaction_decoder, database):
                     assert len(events) == 2
                     assert_events_equal(events[0], HistoryBaseEntry(
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
-                        event_identifier=approve_tx_hash.hex(),  # pylint: disable=no-member
+                        event_identifier=approve_tx_hash,
                         sequence_index=0,
                         timestamp=1569924574000,
                         location=Location.BLOCKCHAIN,
@@ -65,7 +65,7 @@ def test_tx_decode(evm_transaction_decoder, database):
                     ))
                     assert_events_equal(events[1], HistoryBaseEntry(
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
-                        event_identifier=approve_tx_hash.hex(),  # pylint: disable=no-member
+                        event_identifier=approve_tx_hash,
                         sequence_index=163,
                         timestamp=1569924574000,
                         location=Location.BLOCKCHAIN,
