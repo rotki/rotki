@@ -605,13 +605,9 @@ def test_query_transactions_over_limit(
                     queried_ranges=[(start_ts, end_ts)],
                 )
 
-    # TODO: Restore the commented out checks when filtering is back
-    # free_expected_entries_total = [FREE_ETH_TX_LIMIT - 35, 35]
-    free_expected_entries_total = [FREE_ETH_TX_LIMIT, FREE_ETH_TX_LIMIT]
-    # free_expected_entries_found = [FREE_ETH_TX_LIMIT - 10, 60]
-    free_expected_entries_found = [all_transactions_num, all_transactions_num]
-    # premium_expected_entries = [FREE_ETH_TX_LIMIT - 10, 60]
-    premium_expected_entries = [all_transactions_num, all_transactions_num]
+    free_expected_entries_total = [FREE_ETH_TX_LIMIT - 35, 35]
+    free_expected_entries_found = [FREE_ETH_TX_LIMIT - 10, 60]
+    premium_expected_entries = [FREE_ETH_TX_LIMIT - 10, 60]
 
     # Check that we get all transactions correctly even if we query two times
     for _ in range(2):
@@ -700,26 +696,26 @@ def test_query_transactions_from_to_address(
                     queried_ranges=[(start_ts, end_ts)],
                 )
 
-    # TODO: Restore commented out check once filtering is back
-    # expected_entries = {ethereum_accounts[0]: 3, ethereum_accounts[1]: 1}
-    # # Check that we get all transactions correctly even if we query two times
-    # for _ in range(2):
-    #     for address in ethereum_accounts:
-    #         response = requests.get(
-    #             api_url_for(
-    #                 rotkehlchen_api_server,
-    #                 'ethereumtransactionsresource',
-    #             ), json={
-    #                 'from_timestamp': start_ts,
-    #                 'to_timestamp': end_ts,
-    #                 'address': address,
-    #             },
-    #         )
-    #         result = assert_proper_response_with_result(response)
-    #         assert len(result['entries']) == expected_entries[address]
-    #         assert result['entries_limit'] == FREE_ETH_TX_LIMIT
-    #         assert result['entries_found'] == expected_entries[address]
-    #         assert result['entries_total'] == 3
+    expected_entries = {ethereum_accounts[0]: 3, ethereum_accounts[1]: 1}
+    # Check that we get all transactions correctly even if we query two times
+    for _ in range(2):
+        for address in ethereum_accounts:
+            response = requests.get(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'ethereumtransactionsresource',
+                ), json={
+                    'from_timestamp': start_ts,
+                    'to_timestamp': end_ts,
+                    'address': address,
+                },
+            )
+            print('RESPONSE: ', response.json())
+            result = assert_proper_response_with_result(response)
+            assert len(result['entries']) == expected_entries[address]
+            assert result['entries_limit'] == FREE_ETH_TX_LIMIT
+            assert result['entries_found'] == expected_entries[address]
+            assert result['entries_total'] == 3
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -1129,7 +1125,6 @@ def test_query_transactions_check_decoded_events(
         assert dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True) == []
 
 
-@pytest.mark.skip('Temporarily skip until filtering is restored')
 def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     """Tests filtering by transaction's events' properties
     Test cases:
@@ -1234,7 +1229,6 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts):
     assert result['entries'] == expected
 
 
-@pytest.mark.skip('Temporarily skip until filtering is restored')
 def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     """This test tests that transactions with ignored assets are excluded when needed"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
