@@ -66,6 +66,7 @@ def setup_balances(
         btc_accounts: Optional[List[BTCAddress]],
         eth_balances: Optional[List[str]] = None,
         token_balances: Optional[Dict[EthereumToken, List[str]]] = None,
+        populate_detected_tokens: bool = True,
         liabilities: Optional[Dict[EthereumToken, List[str]]] = None,
         btc_balances: Optional[List[str]] = None,
         manually_tracked_balances: Optional[List[ManuallyTrackedBalance]] = None,
@@ -123,11 +124,14 @@ def setup_balances(
             btc_balances = []
 
     eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]] = {}
-    for idx, acc in enumerate(ethereum_accounts):
-        eth_map[acc] = {}
-        eth_map[acc]['ETH'] = eth_balances[idx]
-        for token in token_balances:
-            eth_map[acc][token] = token_balances[token][idx]
+    with rotki.data.db.user_write() as write_cursor:
+        for idx, acc in enumerate(ethereum_accounts):
+            eth_map[acc] = {}
+            eth_map[acc]['ETH'] = eth_balances[idx]
+            for token in token_balances:
+                eth_map[acc][token] = token_balances[token][idx]
+            if populate_detected_tokens is True:
+                rotki.data.db.save_tokens_for_address(write_cursor, acc, list(token_balances.keys()))  # noqa: E501
 
     defi_balances_patch = None
     if liabilities is not None:

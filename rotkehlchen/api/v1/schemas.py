@@ -2143,12 +2143,19 @@ class ReverseEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
     ethereum_addresses = fields.List(EthereumAddressField(), required=True)
 
 
+class OptionalAddressesListSchema(Schema):
+    addresses = fields.List(EthereumAddressField(required=True), load_default=None)
+
+
 class BaseAddressbookSchema(Schema):
     book_type = SerializableEnumField(enum_class=AddressbookType, required=True)
 
 
-class AddressbookAddressesSchema(BaseAddressbookSchema):
-    addresses = fields.List(EthereumAddressField(required=True), load_default=None)
+class AddressbookAddressesSchema(
+    BaseAddressbookSchema,
+    OptionalAddressesListSchema,
+):
+    ...
 
 
 class AddressbookEntrySchema(Schema):
@@ -2318,3 +2325,11 @@ class EthereumNodeListDeleteSchema(Schema):
                 message='Can\'t delete the etherscan node',
                 field_name='identifier',
             )
+
+
+class DetectTokensSchema(
+    AsyncQueryArgumentSchema,
+    OnlyCacheQuerySchema,
+    OptionalAddressesListSchema,
+):
+    ...

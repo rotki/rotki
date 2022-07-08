@@ -642,8 +642,8 @@ def test_query_yearn_vault_v2_balances(rotkehlchen_api_server, ethereum_accounts
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
         token_balances={
-            '0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9': ['70000000'],
-            '0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67': ['2550000000000000000000'],
+            EthereumToken('0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9'): ['70000000'],
+            EthereumToken('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'): ['2550000000000000000000'],  # noqa: E501
         },
     )
 
@@ -686,8 +686,8 @@ def test_query_yearn_vault_v2_history(rotkehlchen_api_server, ethereum_accounts)
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
         token_balances={
-            '0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9': ['70000000'],
-            '0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67': ['2550000000000000000000'],
+            EthereumToken('0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9'): ['70000000'],
+            EthereumToken('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'): ['2550000000000000000000'],  # noqa: E501
         },
         original_queries=['blocknobytime'],
     )

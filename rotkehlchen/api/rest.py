@@ -60,6 +60,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.names import search_for_addresses_names
+from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
 from rotkehlchen.constants.assets import A_ETH
@@ -644,8 +645,8 @@ class RestAPI():
         try:
             balances = self.rotkehlchen.chain_manager.query_balances(
                 blockchain=blockchain,
-                force_token_detection=ignore_cache,
                 ignore_cache=ignore_cache,
+                beaconchain_fetch_eth1=ignore_cache,
             )
         except EthSyncError as e:
             msg = str(e)
@@ -4416,3 +4417,54 @@ class RestAPI():
             addresses=addresses,
         )
         return api_response(_wrap_in_ok_result(mappings))
+
+    def _detect_ethereum_tokens(
+            self,
+            only_cache: bool,
+            addresses: List[ChecksumEthAddress],
+    ) -> Dict[str, Any]:
+        ethtokens = EthTokens(
+            database=self.rotkehlchen.data.db,
+            ethereum=self.rotkehlchen.chain_manager.ethereum,
+        )
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
+                account_tokens_info = ethtokens.detect_tokens(
+                    write_cursor=cursor,
+                    only_cache=only_cache,
+                    accounts=addresses,
+                )
+        except (RemoteError, BadFunctionCallOutput) as e:
+            return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.CONFLICT)
+
+        result = {}
+        for account, (tokens, last_update_ts) in account_tokens_info.items():
+            result[account] = {
+                'tokens': [token.identifier for token in tokens] if tokens is not None else None,
+                'last_update_timestamp': last_update_ts,
+            }
+        return {
+            'result': result,
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
+
+    def detect_ethereum_tokens(
+            self,
+            async_query: bool,
+            only_cache: bool,
+            addresses: Optional[List[ChecksumEthAddress]],
+    ) -> Response:
+        if addresses is None:
+            addresses = self.rotkehlchen.chain_manager.accounts.eth
+        if async_query is True:
+            return self._query_async(
+                command=self._detect_ethereum_tokens,
+                only_cache=only_cache,
+                addresses=addresses,
+            )
+
+        response = self._detect_ethereum_tokens(only_cache=only_cache, addresses=addresses)
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=status_code)

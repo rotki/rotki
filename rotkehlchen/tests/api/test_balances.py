@@ -1,6 +1,7 @@
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
+from typing import Any, Dict
 from unittest.mock import patch
 
 import gevent
@@ -11,7 +12,7 @@ from flaky import flaky
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -44,6 +45,7 @@ from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC2_KSM_ADDR,
 )
 from rotkehlchen.types import Location, SupportedBlockchain, Timestamp
+from rotkehlchen.utils.misc import ts_now
 
 
 def assert_all_balances(
@@ -794,3 +796,44 @@ def test_query_avax_balances(rotkehlchen_api_server):
     total_avax = result['totals']['assets']['AVAX']
     assert FVal(total_avax['amount']) >= ZERO
     assert FVal(total_avax['usd_value']) >= ZERO
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_ethereum_tokens_detection(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+):
+    account = ethereum_accounts[0]
+
+    def query_detect_tokens() -> Dict[str, Any]:
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'detecttokensresource',
+            ), json={
+                'async_query': False,
+                'only_cache': True,
+                'addresses': ethereum_accounts,
+            },
+        )
+        return assert_proper_response_with_result(response)
+
+    empty_tokens_result = {
+        account: {
+            'tokens': None,
+            'last_update_timestamp': None,
+        },
+    }
+    assert query_detect_tokens() == empty_tokens_result
+
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.user_write() as write_cursor:
+        db.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=account,
+            tokens=[A_RDN, A_DAI],
+        )
+    cur_time = ts_now()
+    result = query_detect_tokens()
+    assert result[account]['tokens'] == [A_RDN.identifier, A_DAI.identifier]
+    assert result[account]['last_update_timestamp'] >= cur_time
