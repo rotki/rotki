@@ -7,6 +7,12 @@ from tempfile import TemporaryDirectory
 import pytest
 import requests
 
+from rotkehlchen.db.filtering import (
+    AssetMovementsFilterQuery,
+    LedgerActionsFilterQuery,
+    TradesFilterQuery,
+)
+from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -49,10 +55,10 @@ def test_data_import_cointracking(rotkehlchen_api_server, file_upload):
                 'dataimportresource',
             ),
             files=files,
-            data={'source': 'cointracking.info'},
+            data={'source': 'cointracking'},
         )
     else:
-        json_data = {'source': 'cointracking.info', 'file': str(filepath)}
+        json_data = {'source': 'cointracking', 'file': str(filepath)}
         response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,
@@ -113,7 +119,7 @@ def test_data_import_blockfi_transactions(rotkehlchen_api_server):
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'blockfi-transactions.csv'
 
-    json_data = {'source': 'blockfi-transactions', 'file': str(filepath)}
+    json_data = {'source': 'blockfi_transactions', 'file': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -133,7 +139,7 @@ def test_data_import_blockfi_trades(rotkehlchen_api_server):
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'blockfi-trades.csv'
 
-    json_data = {'source': 'blockfi-trades', 'file': str(filepath)}
+    json_data = {'source': 'blockfi_trades', 'file': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -173,7 +179,7 @@ def test_data_import_shapeshift_trades(rotkehlchen_api_server):
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'shapeshift-trade-history.csv'
 
-    json_data = {'source': 'shapeshift-trades', 'file': str(filepath)}
+    json_data = {'source': 'shapeshift_trades', 'file': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -193,7 +199,7 @@ def test_data_import_uphold_transactions(rotkehlchen_api_server):
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'uphold-transaction-history.csv'
 
-    json_data = {'source': 'uphold', 'file': str(filepath)}
+    json_data = {'source': 'uphold_transactions', 'file': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -208,12 +214,12 @@ def test_data_import_uphold_transactions(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_data_import_bisq_transactions(rotkehlchen_api_server):
-    """Test that the data import endpoint works successfully for uphold trades"""
+    """Test that the data import endpoint works successfully for bisq trades"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'bisq_trades.csv'
 
-    json_data = {'source': 'bisq', 'file': str(filepath)}
+    json_data = {'source': 'bisq_trades', 'file': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -246,10 +252,10 @@ def test_data_import_wrong_extension(rotkehlchen_api_server, file_upload):
                     'dataimportresource',
                 ),
                 files=files,
-                data={'source': 'cointracking.info'},
+                data={'source': 'cointracking'},
             )
         else:
-            json_data = {'source': 'cointracking.info', 'file': str(bad_filepath)}
+            json_data = {'source': 'cointracking', 'file': str(bad_filepath)}
             response = requests.put(
                 api_url_for(
                     rotkehlchen_api_server,
@@ -268,10 +274,26 @@ def test_data_import_wrong_extension(rotkehlchen_api_server, file_upload):
 def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     """Test that errors in the data import endpoint are handled correctly"""
     dir_path = Path(__file__).resolve().parent.parent
+    corrupt_nexo_filepath = dir_path / 'data' / 'corrupt_nexo.csv'
+    json_data = {'source': 'cointracking', 'file': str(corrupt_nexo_filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    db_ledger = DBLedgerActions(database=database, msg_aggregator=database.msg_aggregator)
+    with database.conn.read_ctx() as cursor:
+        _, trades_count = database.get_trades_and_limit_info(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+    _, asset_movements_count = database.get_asset_movements_and_limit_info(filter_query=AssetMovementsFilterQuery.make(), has_premium=True)  # noqa: E501
+    _, ledger_actions_count = db_ledger.get_ledger_actions_and_limit_info(filter_query=LedgerActionsFilterQuery.make(), has_premium=True)  # noqa: E501
+    assert trades_count == asset_movements_count == ledger_actions_count == 0
+
     filepath = dir_path / 'data' / 'cointracking_trades_list.csv'
 
     # Test that if filepath is missing, an error is returned
-    json_data = {'source': 'cointracking.info'}
+    json_data = {'source': 'cointracking'}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -308,7 +330,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='source": ["Not a valid string."',
+        contained_in_msg='"source": ["Failed to deserialize DataImportSource value',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -322,12 +344,12 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='source": ["Must be one of: cointracking.info',
+        contained_in_msg='"source": ["Failed to deserialize DataImportSource value',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
     # Test that if filepath is invalid type an error is returned
-    json_data = {'source': 'cointracking.info', 'file': 22}
+    json_data = {'source': 'cointracking', 'file': 22}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -341,7 +363,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
 
     # Test that if filepath is not a valid path an error is returned
-    json_data = {'source': 'cointracking.info', 'file': '/not/a/valid/path'}
+    json_data = {'source': 'cointracking', 'file': '/not/a/valid/path'}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -356,7 +378,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
 
     # Test that if filepath is a directory an error is returned
     test_dir = str(tmpdir_factory.mktemp('test_dir'))
-    json_data = {'source': 'cointracking.info', 'file': test_dir}
+    json_data = {'source': 'cointracking', 'file': test_dir}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -392,11 +414,11 @@ def test_data_import_custom_format(rotkehlchen_api_server, file_upload):
                 'dataimportresource',
             ),
             files=files,
-            data={'source': 'cointracking.info', 'timestamp_format': '%d/%m/%Y %H:%M'},
+            data={'source': 'cointracking', 'timestamp_format': '%d/%m/%Y %H:%M'},
         )
     else:
         json_data = {
-            'source': 'cointracking.info',
+            'source': 'cointracking',
             'file': str(filepath),
             'timestamp_format': '%d/%m/%Y %H:%M',
         }

@@ -71,6 +71,7 @@ from rotkehlchen.constants.limits import (
 )
 from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
 from rotkehlchen.db.ens import DBEns
@@ -128,7 +129,6 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
-    IMPORTABLE_LOCATIONS,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
@@ -2191,78 +2191,24 @@ class RestAPI():
     def ping() -> Response:
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
-    def _do_import_data(
-        self,
-        source: str,
-        filepath: Path,
-        timestamp_format: Optional[str],
-    ) -> Tuple[bool, str]:
-        success, msg = False, ''
-        if source == 'cointracking.info':
-            success, msg = self.rotkehlchen.data_importer.import_cointracking_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-        elif source == 'cryptocom':
-            success, msg = self.rotkehlchen.data_importer.import_cryptocom_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-        elif source == 'blockfi-transactions':
-            success, msg = self.rotkehlchen.data_importer.import_blockfi_transactions_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-        elif source == 'blockfi-trades':
-            success, msg = self.rotkehlchen.data_importer.import_blockfi_trades_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-        elif source == 'nexo':
-            success, msg = self.rotkehlchen.data_importer.import_nexo_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-        elif source == 'shapeshift-trades':
-            success, msg = self.rotkehlchen.data_importer.import_shapeshift_trades_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-        elif source == 'uphold':
-            success, msg = self.rotkehlchen.data_importer.import_uphold_transactions_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-        elif source == 'bisq':
-            success, msg = self.rotkehlchen.data_importer.import_bisq_trades_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-        elif source == 'binance':
-            success, msg = self.rotkehlchen.data_importer.import_binance_csv(
-                filepath=filepath,
-                timestamp_format=timestamp_format,
-            )
-        return success, msg
-
     def _import_data(
             self,
-            source: IMPORTABLE_LOCATIONS,
+            source: DataImportSource,
             filepath: Union[FileStorage, Path],
-            timestamp_format: Optional[str],
+            **kwargs: Any,
     ) -> Dict[str, Any]:
         if isinstance(filepath, Path):
-            success, msg = self._do_import_data(
+            success, msg = self.rotkehlchen.data_importer.import_csv(
                 source=source,
                 filepath=filepath,
-                timestamp_format=timestamp_format,
+                **kwargs,
             )
         else:
             tmpfilepath = self.import_tmp_files[filepath]
-            success, msg = self._do_import_data(
+            success, msg = self.rotkehlchen.data_importer.import_csv(
                 source=source,
                 filepath=tmpfilepath,
-                timestamp_format=timestamp_format,
+                **kwargs,
             )
             tmpfilepath.unlink(missing_ok=True)
             del self.import_tmp_files[filepath]
@@ -2277,10 +2223,10 @@ class RestAPI():
 
     def import_data(
             self,
-            source: IMPORTABLE_LOCATIONS,
+            source: DataImportSource,
             filepath: Union[FileStorage, Path],
-            timestamp_format: Optional[str],
             async_query: bool,
+            **kwargs: Any,
     ) -> Response:
         if not isinstance(filepath, Path):
             _, tmpfilepath = tempfile.mkstemp()
@@ -2292,10 +2238,10 @@ class RestAPI():
                 command=self._import_data,
                 source=source,
                 filepath=filepath,
-                timestamp_format=timestamp_format,
+                **kwargs,
             )
 
-        response = self._import_data(source=source, filepath=filepath, timestamp_format=timestamp_format)  # noqa: E501
+        response = self._import_data(source=source, filepath=filepath, **kwargs)
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(result_dict, status_code=status_code)

@@ -215,7 +215,7 @@ def test_query_history_external_exchanges(rotkehlchen_api_server):
     # import blockfi trades
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'blockfi-trades.csv'
-    json_data = {'source': 'blockfi-trades', 'file': str(filepath)}
+    json_data = {'source': 'blockfi_trades', 'file': str(filepath)}
     requests.put(
         api_url_for(
             rotkehlchen_api_server,
