@@ -44,7 +44,8 @@ def test_simple_ens_mapping(database, freezer):
 
 def test_empty_addresses(database):
     dbens = DBEns(db_handler=database)
-    res = dbens.get_reverse_ens(addresses=[])
+    with database.conn.read_ctx() as cursor:
+        res = dbens.get_reverse_ens(cursor, addresses=[])
     assert res == {}
 
 
