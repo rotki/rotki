@@ -975,7 +975,7 @@ def test_query_transactions_check_decoded_events(
         'event_type': 'spend',
         'location': 'blockchain',
         'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
+        'notes': 'Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
         'sequence_index': 1,
         'timestamp': 1642802807,
     }, 'customized': False}]
@@ -1018,7 +1018,7 @@ def test_query_transactions_check_decoded_events(
         'event_type': 'receive',
         'location': 'blockchain',
         'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Receive 0.125 ETH 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf -> 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+        'notes': 'Receive 0.125 ETH 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf from 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
         'sequence_index': 0,
         'timestamp': 1642802651,
     }, 'customized': False}]
