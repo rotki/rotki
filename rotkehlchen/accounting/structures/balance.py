@@ -23,14 +23,6 @@ class Balance:
     amount: FVal = ZERO
     usd_value: FVal = ZERO
 
-    @property
-    def usd_rate(self) -> FVal:
-        """How many $ 1 unit of balance is worth"""
-        if self.amount == ZERO:
-            return ZERO
-
-        return self.usd_value / self.amount
-
     def serialize(self) -> Dict[str, str]:
         return {'amount': str(self.amount), 'usd_value': str(self.usd_value)}
 
