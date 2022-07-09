@@ -461,13 +461,24 @@ class EVMTransactionDecoder():
         if tx_log.topics[0] != ERC20_APPROVE or token is None:
             return None
 
-        owner_address = hex_or_bytes_to_address(tx_log.topics[1])
-        spender_address = hex_or_bytes_to_address(tx_log.topics[2])
+        if len(tx_log.topics) == 3:
+            owner_address = hex_or_bytes_to_address(tx_log.topics[1])
+            spender_address = hex_or_bytes_to_address(tx_log.topics[2])
+            amount_raw = hex_or_bytes_to_int(tx_log.data)
+        elif len(tx_log.topics) == 1 and len(tx_log.data) == 96:  # malformed erc20 approve (finance.vote)  # noqa: E501
+            owner_address = hex_or_bytes_to_address(tx_log.data[:32])
+            spender_address = hex_or_bytes_to_address(tx_log.data[32:64])
+            amount_raw = hex_or_bytes_to_int(tx_log.data[64:])
+        else:
+            log.debug(
+                f'Got an ERC20 approve event with unknown structure '
+                f'in transaction {transaction.tx_hash.hex()}',
+            )
+            return None
 
         if not any(self.base.is_tracked(x) for x in (owner_address, spender_address)):
             return None
 
-        amount_raw = hex_or_bytes_to_int(tx_log.data)
         amount = token_normalized_value(token_amount=amount_raw, token=token)
         prefix = f'Revoke {token.symbol} approval' if amount == ZERO else f'Approve {amount} {token.symbol}'  # noqa: E501
         notes = f'{prefix} of {owner_address} for spending by {spender_address}'
