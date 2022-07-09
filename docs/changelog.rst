@@ -2,9 +2,14 @@
 Changelog
 =========
 
+* :bug:`-` Now no missing acquisitions should appear for fiat assets during accounting.
+* :bug:`4459` Transactions that happened in genesis block are now queried and stored properly.
+* :bug:`-` The electron application will now terminate properly if the backend fails to start.
+* :bug:`-` Now querying ens names for an empty list of addresses won't be causing an error.
 * :bug:`-` Fix empty asset location distribution for ETH2.
 * :bug:`-` In a rare edge case the database with past profit and loss reports won't block the version upgrade process.
 * :bug:`4417` Activating privacy mode will now also scramble the value, to prevent other users from estimating the value (e.g. By estimating the length of digit of the value, or using advanced software to unblur the text).
+* :bug:`-` ERC20 approves for tokens that do not have the event arguments indexed such as finance.vote will now not break rotki.
 
 * :release:`1.24.1 <2022-06-03>`
 * :bug:`4383` Removing an address while running a PnL report should now work.
