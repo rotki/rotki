@@ -22,7 +22,7 @@ from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import CONSTANT_ASSETS
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -55,7 +55,7 @@ def _get_setting_value(cursor: DBCursor, name: str, default_value: int) -> int:
 
 
 def initialize_globaldb(dbpath: Path) -> DBConnection:
-    connection = DBConnection(path=dbpath, use_sqlcipher=False)
+    connection = DBConnection(path=dbpath, connection_type=DBConnectionType.GLOBAL)
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     cursor = connection.cursor()
     db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)

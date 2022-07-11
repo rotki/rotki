@@ -68,7 +68,7 @@ from rotkehlchen.db.constants import (
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
-from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
@@ -399,10 +399,12 @@ class DBHandler:
         """
         if conn_attribute == 'conn':
             fullpath = self.user_data_dir / MAIN_DB_NAME
+            connection_type = DBConnectionType.USER
         else:
             fullpath = self.user_data_dir / TRANSIENT_DB_NAME
+            connection_type = DBConnectionType.TRANSIENT
         try:
-            conn = DBConnection(path=str(fullpath), use_sqlcipher=True)
+            conn = DBConnection(path=str(fullpath), connection_type=connection_type)
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             raise SystemPermissionError(
                 f'Could not open database file: {fullpath}. Permission errors?',
@@ -498,7 +500,7 @@ class DBHandler:
                 f.write(unencrypted_db_data)
 
             # Now attach to the unencrypted DB and copy it to our DB and encrypt it
-            self.conn = DBConnection(path=tempdbpath, use_sqlcipher=True)
+            self.conn = DBConnection(path=tempdbpath, connection_type=DBConnectionType.USER)
             password_for_sqlcipher = _protect_password_sqlcipher(password)
             script = f'ATTACH DATABASE "{rdbpath}" AS encrypted KEY "{password_for_sqlcipher}";'
             if self.sqlcipher_version == 3:
@@ -523,6 +525,7 @@ class DBHandler:
         also update the last write timestamp
         """
         cursor = self.conn.cursor()
+        self.conn.enter_critical_section()
         try:
             yield cursor
         except Exception:
@@ -538,6 +541,7 @@ class DBHandler:
             self.conn.commit()
         finally:
             cursor.close()
+            self.conn.exit_critical_section()
 
     @contextmanager
     def transient_write(self) -> Iterator[DBCursor]:
@@ -545,6 +549,7 @@ class DBHandler:
         also commit
         """
         cursor = self.conn_transient.cursor()
+        self.conn_transient.enter_critical_section()
         try:
             yield cursor
         except Exception:
@@ -554,6 +559,7 @@ class DBHandler:
             self.conn_transient.commit()
         finally:
             cursor.close()
+            self.conn_transient.exit_critical_section()
 
     # pylint: disable=no-self-use
     def get_settings(self, cursor: 'DBCursor', have_premium: bool = False) -> DBSettings:
