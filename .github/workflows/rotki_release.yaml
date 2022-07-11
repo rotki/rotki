@@ -349,9 +349,8 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ matrix.arch.platform }}
           push: true
-          tags: |
-            rotki/rotki:latest
-            rotki/rotki:${{ steps.rotki_version.outputs.version }}
+          tags: |            
+            ${{ github.repository }}:${{ steps.rotki_version.outputs.version }}
           build-args: |
             REVISION=${{ github.sha }}
             ROTKI_VERSION=${{ steps.rotki_version.outputs.version }}
