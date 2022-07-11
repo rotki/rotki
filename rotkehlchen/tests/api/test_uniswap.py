@@ -7,11 +7,6 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.tests.utils.constants import (
-    AVADO_POOL_NODE_NAME,
-    BLOCKSOUT_NODE_NAME,
-    MYCRYPTO_NODE_NAME,
-)
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType
 from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.modules.uniswap import (
@@ -34,7 +29,13 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED, A_YAM_V1
+from rotkehlchen.tests.utils.constants import (
+    A_DOLLAR_BASED,
+    A_YAM_V1,
+    AVADO_POOL_NODE_NAME,
+    BLOCKSOUT_NODE_NAME,
+    MYCRYPTO_NODE_NAME,
+)
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType

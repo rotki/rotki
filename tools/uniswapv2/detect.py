@@ -23,6 +23,9 @@ from rotkehlchen.utils.misc import get_chunks, ts_now
 
 root_path = Path(__file__).resolve().parent.parent.parent
 
+DB_USERNAME_VAR = 'DB_USERNAME'
+DB_PASSWORD_VAR = 'DB_PASSWORD'
+
 
 def init_ethereum(rpc_endpoint: str, use_other_nodes: bool, database: DBHandler) -> EthereumManager:
     nodes_to_connect = WEIGHTED_ETHEREUM_NODES if use_other_nodes else (WeightedNode(node=NodeName.OWN,weight=ONE))
@@ -200,7 +203,10 @@ if __name__ == "__main__":
 
     if args.source in ('ethereum', 'both'):
         msg_aggregator = MessagesAggregator()
-        database = DBHandler('fill', 'me', msg_aggregator, None)
+        assert DB_USERNAME_VAR in os.environ, f'Missing {DB_USERNAME_VAR} in the env vars'
+        assert DB_PASSWORD_VAR in os.environ, f'Missing {DB_PASSWORD_VAR} in the env vars'
+        db_username, db_password = os.environ.get(DB_USERNAME_VAR), os.environ.get(DB_PASSWORD_VAR)
+        database = DBHandler(db_username, db_password, msg_aggregator, None)
         ethereum = init_ethereum(
             rpc_endpoint=args.eth_rpc_endpoint,
             use_other_nodes=args.use_other_nodes,

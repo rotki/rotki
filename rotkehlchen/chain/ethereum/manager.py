@@ -110,10 +110,6 @@ def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
 
 
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
-WEIGHTED_OWN_ETHERSCAN_NODES = (
-    # TODO: Add own node here
-    ETHERSCAN_NODE,
-)
 
 
 def _query_web3_get_logs(
@@ -229,7 +225,7 @@ class EthereumManager():
             database: 'DBHandler',
             eth_rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
-        log.debug('Initializing Ethereum Manager')
+        log.debug(f'Initializing Ethereum Manager. Nodes to connect {connect_at_start}')
         self.greenlet_manager = greenlet_manager
         self.web3_mapping: Dict[NodeName, Web3] = {}
         self.etherscan = etherscan
@@ -252,7 +248,6 @@ class EthereumManager():
             },
         }
         self.database = database
-        self.own_rpc_endpoints: set[NodeName] = set()
 
     def connected_to_any_web3(self) -> bool:
         return len(self.web3_mapping) != 0
@@ -291,10 +286,10 @@ class EthereumManager():
 
         owned_nodes = [node for node in self.web3_mapping if node.owned]
         if len(owned_nodes) != 0:
-            # Assigning one is just a default since we always use it
+            # Assigning one is just a default since we always use it.
             # The weight is only important for the other nodes since they
             # are selected using this parameter
-            ordered_list = [WeightedNode(node_info=node, weight=ONE) for node in owned_nodes] + ordered_list  # noqa: E501
+            ordered_list = [WeightedNode(node_info=node, weight=ONE, active=True) for node in owned_nodes] + ordered_list  # noqa: E501
         return ordered_list
 
     def get_own_node_web3(self) -> Optional[Web3]:
@@ -328,7 +323,7 @@ class EthereumManager():
             ethrpc_endpoint = node.endpoint
             parsed_eth_rpc_endpoint = urlparse(node.endpoint)
             if not parsed_eth_rpc_endpoint.scheme:
-                ethrpc_endpoint = f"http://{node.endpoint}"
+                ethrpc_endpoint = f'http://{node.endpoint}'
             provider = HTTPProvider(
                 endpoint_uri=node.endpoint,
                 request_kwargs={'timeout': self.eth_rpc_timeout},
@@ -388,7 +383,6 @@ class EthereumManager():
 
             log.info(f'Connected ethereum node {node} at {ethrpc_endpoint}')
             self.web3_mapping[node] = web3
-            self.own_rpc_endpoints.add(node)
             return True, ''
 
         # else
@@ -397,7 +391,6 @@ class EthereumManager():
         return False, message
 
     def connect_to_multiple_nodes(self, nodes: Sequence[WeightedNode]) -> None:
-        self.own_rpc_endpoints = set()
         self.web3_mapping = {}
         for weighted_node in nodes:
             if weighted_node.node_info.name == ETHERSCAN_NODE_NAME:
@@ -423,7 +416,6 @@ class EthereumManager():
             node = weighted_node.node_info
             web3 = self.web3_mapping.get(node, None)
             if web3 is None and node.name != ETHERSCAN_NODE_NAME:
-                log.warning(f'Skipping node {node} because is not connected')
                 continue
 
             try:
@@ -982,7 +974,15 @@ class EthereumManager():
             call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> List[Dict[str, Any]]:
         if call_order is None:  # Default call order for logs
-            call_order = WEIGHTED_OWN_ETHERSCAN_NODES
+            call_order = [ETHERSCAN_NODE]
+            if (node_info := self.get_own_node_info()) is not None:
+                call_order.append(
+                    WeightedNode(
+                        node_info=node_info,
+                        active=True,
+                        weight=ONE,
+                    ),
+                )
         return self.query(
             method=self._get_logs,
             call_order=call_order,

@@ -59,17 +59,17 @@ class WeightedNode(NamedTuple):
             'active': self.active,
         }
 
-    def serialize_for_db(self):
+    def serialize_for_db(self) -> Tuple[str, str, bool, bool, str]:
         if self.weight == ZERO:
-            weight_sring = '0.0'
+            weight_string = '0.0'
         else:
-            weight_sring = str(self.weight)
+            weight_string = str(self.weight)
         return (
             self.node_info.name,
             self.node_info.endpoint,
             self.node_info.owned,
             self.active,
-            weight_sring,
+            weight_string,
         )
 
     @classmethod

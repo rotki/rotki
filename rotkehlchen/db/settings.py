@@ -3,8 +3,6 @@ from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.constants import WEIGHTED_ETHEREUM_NODES
-from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.utils import str_to_bool

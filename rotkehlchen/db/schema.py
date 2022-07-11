@@ -820,10 +820,17 @@ DB_CREATE_WEB3_NODES = """
 CREATE TABLE IF NOT EXISTS web3_nodes(
     name TEXT NOT NULL PRIMARY KEY,
     address TEXT NOT NULL,
-    owned BOOLEAN NOT NULL DEFAULT FALSE
+    owned BOOLEAN NOT NULL DEFAULT FALSE,
     active BOOLEAN NOT NULL DEFAULT FALSE,
     weight INTEGER NOT NULL
 );
+INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("etherscan", "", FALSE, TRUE, 0.3);
+INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("mycrypto", "https://api.mycryptoapi.com/eth", FALSE, TRUE, 0.15);
+INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("blockscout", "https://mainnet-nethermind.blockscout.com/", FALSE, TRUE, 0.1);
+INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("avado pool", "https://mainnet.eth.cloud.ava.do/", FALSE, TRUE, 0.05);
+INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("1inch", "https://web3.1inch.exchange", FALSE, TRUE, 0.15);
+INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("myetherwallet", "https://nodes.mewapi.io/rpc/eth", FALSE, TRUE, 0.15);
+INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("cloudflare", "https://cloudflare-eth.com/", FALSE, TRUE, 0.1);
 """  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""

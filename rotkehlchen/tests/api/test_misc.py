@@ -3,7 +3,6 @@ from typing import Any, Dict
 from unittest.mock import patch
 
 import requests
-from rotkehlchen.chain.ethereum.constants import WEIGHTED_ETHEREUM_NODES
 from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 
 from rotkehlchen.tests.utils.api import (
@@ -130,39 +129,83 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
 
 def test_manage_ethereum_nodes(rotkehlchen_api_server):
     """Test that list of nodes can be correctly updated and queried"""
-    expected_message = ''
+    response = requests.get(api_url_for(rotkehlchen_api_server, "ethereumnodesresource"))
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 7
+    for node in result:
+        if node['node'] != ETHERSCAN_NODE_NAME:
+            assert node['endpoint'] != ''
+        if node['active']:
+            assert node['weight'] != 0
+
+    # try to delete a node
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, "ethereumnodesresource"),
+        json={'node_name': '1inch'},
+    )
+    assert_proper_response(response)
+    # check that is not anymore in the returned list
+    response = requests.get(api_url_for(rotkehlchen_api_server, "ethereumnodesresource"))
+    result = assert_proper_response_with_result(response)
+    assert not any([node['node'] == '1inch' for node in result])
+
+    # now try to add it again
     response = requests.put(
         api_url_for(rotkehlchen_api_server, "ethereumnodesresource"),
-        json={'nodes': [
-            {
-                'name': node.node_info.name,
-                'endpoint': node.node_info.endpoint,
-                'owned': node.node_info.owned,
-            }
-            for node in WEIGHTED_ETHEREUM_NODES if node.node_info.name != ETHERSCAN_NODE_NAME
-        ]},
+        json={
+            'name': '1inch',
+            'endpoint': 'https://web3.1inch.exchange',
+            'owned': False,
+            'weight': 15,
+            'active': True,
+        },
     )
     assert_proper_response(response)
     response = requests.get(api_url_for(rotkehlchen_api_server, "ethereumnodesresource"))
-    assert_proper_response(response)
-    response_json = response.json()
-    assert len(response_json['result']) == len(WEIGHTED_ETHEREUM_NODES)
-    assert response_json['result'] == [node.node_info.serialize() for node in WEIGHTED_ETHEREUM_NODES]  # noqa: E501
-    assert response_json['message'] == expected_message
+    result = assert_proper_response_with_result(response)
+    for node in result:
+        if node['node'] == '1inch':
+            assert node['weight'] == 15
+            assert node['active'] is True
+            assert node['endpoint'] == 'https://web3.1inch.exchange'
+            assert node['owned'] is False
+            break
 
     # Try to add etherscan as node
     response = requests.put(
         api_url_for(rotkehlchen_api_server, "ethereumnodesresource"),
-        json={'nodes': [
-            {
-                'name': 'etherscan',
-                'endpoint': 'ewarwae',
-                'owned': False,
-            },
-        ]},
+        json={
+            'name': 'etherscan',
+            'endpoint': 'ewarwae',
+            'owned': False,
+            'weight': 0.3,
+            'active': True,
+        },
     )
     assert_error_response(
         response=response,
-        contained_in_msg='name can\'t be etherscan',
+        contained_in_msg='Name can\'t be empty or etherscan',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+    # try to edit a node
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, "ethereumnodesresource"),
+        json={
+            'name': '1inch',
+            'endpoint': 'ewarwae',
+            'owned': True,
+            'weight': 40,
+            'active': False,
+        },
+    )
+    assert_proper_response(response)
+    response = requests.get(api_url_for(rotkehlchen_api_server, "ethereumnodesresource"))
+    result = assert_proper_response_with_result(response)
+    for node in result:
+        if node['node'] == '1inch':
+            assert node['weight'] == 40
+            assert node['active'] is False
+            assert node['endpoint'] == 'ewarwae'
+            assert node['owned'] is True
+            break

@@ -1,6 +1,5 @@
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
-from rotkehlchen.chain.ethereum.types import NodeName
+from rotkehlchen.chain.ethereum.types import NodeName, string_to_ethereum_address
 from rotkehlchen.constants.assets import A_EUR
 
 A_RDN = EthereumToken('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')

@@ -3267,9 +3267,10 @@ class DBHandler:
         now = ts_now()
         return now - last_save > period
 
-    def get_web3_nodes(self, only_active=False) -> List[WeightedNode]:
+    def get_web3_nodes(self, only_active: bool = False) -> List[WeightedNode]:
         """
-        Get all the 
+        Get all the nodes in the database. If only_active is set to true only the nodes that
+        have the column active set to True will be returned.
         """
         with self.conn.read_ctx() as cursor:
             if only_active:
@@ -3279,12 +3280,12 @@ class DBHandler:
             return [
                 WeightedNode(
                     node_info=NodeName(
-                        node_name=entry[0],
+                        name=entry[0],
                         endpoint=entry[1],
-                        owned=entry[2],
+                        owned=bool(entry[2]),
                     ),
-                    weight=FVal(entry[4]),
-                    active=entry[5],
+                    weight=FVal(entry[3]),
+                    active=bool(entry[4]),
                 )
                 for entry in cursor
             ]
@@ -3293,11 +3294,32 @@ class DBHandler:
         with self.user_write() as cursor:
             try:
                 cursor.execute(
-                    'INSERT INTO web3_nodes(name, address, owned, active, weight) VALUES (?, ?, ?, ?, ?)',
-                    node.serialize_for_db()
+                    'INSERT INTO web3_nodes(name, address, owned, active, weight) VALUES (?, ?, ?, ?, ?)',   # noqa: E501
+                    node.serialize_for_db(),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                raise InputError(f'Node with name {node.node_info.name} already exists in db') from e  # noqa: E501 
+                raise InputError(f'Node with name {node.node_info.name} already exists in db') from e  # noqa: E501
+
+    def update_web3_node(self, node: WeightedNode) -> None:
+        with self.conn.read_ctx() as cursor:
+            cursor.execute('SELECT COUNT(*) FROM web3_nodes WHERE name=?', (node.node_info.name,))
+            if cursor.fetchone() != (1,):
+                raise InputError(f'Node with name {node.node_info.name} doesn\'t exists')
+        with self.user_write() as cursor:
+            if node.weight == ZERO:
+                weight = '0.0'
+            else:
+                weight = str(node.weight)
+            cursor.execute(
+                'UPDATE web3_nodes SET address=?, owned=?, active=?, weight=? WHERE name=?',
+                (
+                    node.node_info.endpoint,
+                    node.node_info.owned,
+                    node.active,
+                    weight,
+                    node.node_info.name,
+                ),
+            )
 
     def delete_web3_node(self, node_name: str) -> None:
         """Delete a web3 node based on name.
@@ -3305,6 +3327,6 @@ class DBHandler:
         - InputError if no entry with such name is in the database.
         """
         with self.user_write() as cursor:
-            cursor.execute('DELETE FROM web3_nodes WHERE name=?', node_name)
+            cursor.execute('DELETE FROM web3_nodes WHERE name=?', (node_name,))
             if cursor.rowcount == 0:
                 raise InputError(f'node with name {node_name} was not found in the database')

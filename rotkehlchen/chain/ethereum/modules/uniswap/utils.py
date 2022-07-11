@@ -58,7 +58,7 @@ def uniswap_lp_token_balances(
     )
     if (own_node_info := ethereum.get_own_node_info()) is not None:
         chunks = list(get_chunks(lp_addresses, n=4000))
-        call_order = [WeightedNode(node_info=own_node_info, weight=ONE)]
+        call_order = [WeightedNode(node_info=own_node_info, weight=ONE, active=True)]
     else:
         chunks = list(get_chunks(lp_addresses, n=700))
         call_order = ethereum.default_call_order(skip_etherscan=True)

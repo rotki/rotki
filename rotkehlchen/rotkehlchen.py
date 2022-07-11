@@ -38,7 +38,6 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.chain.ethereum.types import WeightedNode
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateChain

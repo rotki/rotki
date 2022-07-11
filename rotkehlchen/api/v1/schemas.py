@@ -34,7 +34,7 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME, NodeName, WeightedNode
+from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.substrate.types import (
     KusamaAddress,
     PolkadotAddress,
@@ -800,26 +800,6 @@ class ExchangeLocationIDSchema(Schema):
             **_kwargs: Any,
     ) -> ExchangeLocationID:
         return ExchangeLocationID(name=data['name'], location=data['location'])
-
-
-class WeightedNodeSchema(Schema):
-    node_name = fields.String(required=True)
-    weight = FloatingPercentageField(required=True)
-
-    @post_load()
-    def make_weighted_node(  # pylint: disable=no-self-use
-            self,
-            data: Dict[str, Any],
-            **_kwargs: Any,
-    ) -> WeightedNode:
-        return WeightedNode(
-            node_info=NodeName(
-                name=data['node_name'],
-                endpoint='',
-                owned=False,
-            ),
-            weight=data['weight'],
-        )
 
 
 class ModifiableSettingsSchema(Schema):
@@ -2280,45 +2260,38 @@ class SnapshotEditingSchema(Schema):
 class EthereumNodeSchema(Schema):
     name = fields.String(
         required=True,
-        validate=webargs.validate.ContainsNoneOf(
+        validate=webargs.validate.NoneOf(
             iterable=['', ETHERSCAN_NODE_NAME],
-            error=f'Name can\'t be empty or {ETHERSCAN_NODE_NAME}'
+            error=f'Name can\'t be empty or {ETHERSCAN_NODE_NAME}',
         ),
     )
     endpoint = fields.String(
         required=True,
         validate=webargs.validate.Length(
             min=1,
-            error='endpoint can\'t be empty'
+            error='endpoint can\'t be empty',
         ),
     )
     owned = fields.Boolean(load_default=False)
     weight = FloatingPercentageField(required=True)
     active = fields.Boolean(load_default=False)
 
-    @post_load
-    def make_node_name_data(  # pylint: disable=no-self-use
-            self,
-            data: Dict[str, Any],
-            **_kwargs: Any,
-    ) -> WeightedNode:
-        return WeightedNode(
-            node_info=NodeName(
-                name=data['name'],
-                endpoint=data['endpoint'],
-                owned=data['owned'],
-            ),
-            weight=data['weight'],
-            active=data['active'],
-        )
 
-
-class EthereumNodeListUpdateSchema(Schema):
-    nodes = fields.List(
-        fields.Nested(EthereumNodeSchema),
+class EthereumNodeEditSchema(EthereumNodeSchema):
+    name = fields.String(
         required=True,
+        validate=webargs.validate.NoneOf(
+            iterable=[''],
+            error='Name can\'t be empty',
+        ),
     )
 
 
 class EthereumNodeListDeleteSchema(Schema):
-    node_name = fields.String()
+    node_name = fields.String(
+        required=True,
+        validate=webargs.validate.NoneOf(
+            iterable=['', ETHERSCAN_NODE_NAME],
+            error=f'Name can\'t be empty or {ETHERSCAN_NODE_NAME}',
+        ),
+    )

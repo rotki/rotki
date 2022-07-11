@@ -597,7 +597,6 @@ Getting or modifying settings
               "ssf_0graph_multiplier": 2,
               "non_sync_exchanges": [{"location": "binance", "name": "binance1"}],
               "cost_basis_method": "fifo",
-              "nodes_to_connect": [{"node": "etherscan", "weight": 30}, {"node": "mycrypto", "weight": 30}, {"node": "blockscout", "weight": 40}]
           },
           "message": ""
       }
@@ -626,7 +625,6 @@ Getting or modifying settings
    :resjson list taxable_ledger_actions: A list of strings denoting the ledger action types that will be taken into account in the profit/loss calculation during accounting. All others will only be taken into account in the cost basis and will not be taxed.
    :resjson int ssf_0graph_multiplier: A multiplier to the snapshot saving frequency for 0 amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
    :resjson string cost_basis_method: Defines which method to use during the cost basis calculation. Currently supported: fifo, lifo.
-   :resjson list ethereum_nodes_to_connect: A list of nodes to use for querying the ethereum chain and also their weight when selected randomly. Weights are required to have a sum of 100.  
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user
@@ -668,7 +666,6 @@ Getting or modifying settings
    :reqjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
    :reqjson list taxable_ledger_actions: A list of strings denoting the ledger action types that will be taken into account in the profit/loss calculation during accounting. All others will only be taken into account in the cost basis and will not be taxed.
    :resjson int ssf_0graph_multiplier: A multiplier to the snapshot saving frequency for 0 amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
-   :resjson list ethereum_nodes_to_connect: A list of objects having ``name`` and ``weight`` (between 0 and 100) as attributes. ``name`` needs to be a valid name in the list of ethereum nodes and the sum of ``weight`` has to be 100.
 
    **Example Response**:
 
@@ -738,36 +735,51 @@ Adding information for ethereum nodes
       {
         "result": [
             {
-                "name": "etherscan",
+                "node": "etherscan",
                 "endpoint": "",
-                "owned": false
+                "owned": false,
+                "weight": 40,
+                "active": true
             },
             {
-                "name": "mycrypto",
+                "node": "mycrypto",
                 "endpoint": "https://api.mycryptoapi.com/eth",
-                "owned": false
+                "owned": false,
+                "weight": 20,
+                "active": true
             },
             {
-                "name": "blockscout",
+                "node": "blockscout",
                 "endpoint": "https://mainnet-nethermind.blockscout.com/",
-                "owned": false
+                "owned": false,
+                "weight": 20,
+                "active": true
             },
             {
-                "name": "avado pool",
+                "node": "avado pool",
                 "endpoint": "https://mainnet.eth.cloud.ava.do/",
-                "owned": false
+                "owned": false,
+                "weight": 20,
+                "active": true
             }
         ],
         "message": ""
       }
 
    :resjson list result: A list with information about the ethereum nodes.
+   :resjson string node: Name and primary key of the node.
+   :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
+   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string owned: True if the user owns the node or false if is a public node.
+   :resjson string active: True if the node should be used or false if it shouldn't.
 
    :statuscode 200: Querying was successful
+   :statuscode 409: No user is logged.
+   :statuscode 500: Internal rotki error
 
 .. http:put:: /api/(version)/blochchains/ETH/nodes
 
-   By doing a PUT on this endpoint you will be able to add or edit an already existing node entry with information.
+   By doing a PUT on this endpoint you will be able to add a new node to the list of nodes.
 
    **Example Request**:
 
@@ -778,17 +790,75 @@ Adding information for ethereum nodes
       Content-Type: application/json
 
       {
-          "nodes": [{
-              "name": "my_node",
-              "endpoint": "http://localhost:8385",
-              "owned": true
-          }]
+        "name": "my_node",
+        "endpoint": "http://localhost:8385",
+        "owned": true,
+        "weight": 40,
+        "active": true
       }
 
-   :resjson list nodes: A list of ethereum nodes to add or update in the database. ``name`` has to be unique.
+   :resjson string name: Name and primary key of the node. This field has to be unique. This field cannot be empty or use the key ``etherscan``.
+   :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
+   :resjson string owned: True if the user owns the node or false if is a public node.
+   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string active: True if the node should be used or false if it shouldn't.
 
-   :statuscode 200: Insert or update was successful.
-   :statuscode 400: Entries couldn't be updated.
+   :statuscode 200: Insertion was successful.
+   :statuscode 409: No user is logged or entrie couldn't be created.
+   :statuscode 500: Internal rotki error
+
+.. http:post:: /api/(version)/blochchains/ETH/nodes
+
+   By doing a POST on this endpoint you will be able to edit an already existing node entry with the information provided.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blochchains/ETH/nodes HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+        "name": "my_node",
+        "endpoint": "http://localhost:8386",
+        "owned": true,
+        "weight": 80,
+        "active": false
+      }
+
+   :resjson string name: Name and primary key of the node. This field cannot be modified.
+   :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
+   :resjson string owned: True if the user owns the node or false if is a public node.
+   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string active: True if the node should be used or false if it shouldn't.
+
+   :statuscode 200: Update was successful.
+   :statuscode 409: No user is logged or entrie couldn't be updated.
+   :statuscode 500: Internal rotki error
+
+.. http:delete:: /api/(version)/blochchains/ETH/nodes
+
+   By doing a DELETE on this endpoint you will be able to delete an already existing node.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blochchains/ETH/nodes HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+        "node_name": "1inch"
+      }
+
+   :resjson string node_name: Name and primary key of the node. Cannot delete the ``etherscan`` entry.
+
+   :statuscode 200: Deletion was successful.
+   :statuscode 409: No user is logged or failed to delete because the node name is not in the database.
+   :statuscode 500: Internal rotki error
+
 
 Query the result of an ongoing backend task
 ===========================================

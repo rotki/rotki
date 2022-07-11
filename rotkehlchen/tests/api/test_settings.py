@@ -111,7 +111,6 @@ def test_set_settings(rotkehlchen_api_server):
 
         new_settings[setting] = value
 
-
     # modify the settings
     block_query = patch(
         'rotkehlchen.chain.ethereum.manager.EthereumManager.query_eth_highest_block',
