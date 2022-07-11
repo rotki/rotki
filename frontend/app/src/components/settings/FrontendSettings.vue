@@ -67,7 +67,22 @@
       />
     </div>
 
-    <div class="mt-12">
+    <div class="mt-8">
+      <div class="text-h6">
+        {{ $t('frontend_settings.subtitle.show_graph_range_selector') }}
+      </div>
+
+      <v-switch
+        v-model="showGraphRangeSelector"
+        class="general-settings__fields__zero-base mb-4 mt-2"
+        :label="$t('frontend_settings.label.show_graph_range_selector')"
+        :success-messages="settingsMessages[SHOW_GRAPH_RANGE_SELECTOR].success"
+        :error-messages="settingsMessages[SHOW_GRAPH_RANGE_SELECTOR].error"
+        @change="onGraphRangeSelectorVisibilityUpdate($event)"
+      />
+    </div>
+
+    <div class="mt-4">
       <div class="text-h6">
         {{ $t('frontend_settings.subtitle.include_nfts') }}
       </div>
@@ -175,6 +190,7 @@ import {
   NFTS_IN_NET_VALUE,
   QUERY_PERIOD,
   REFRESH_PERIOD,
+  SHOW_GRAPH_RANGE_SELECTOR,
   TIMEFRAME_SETTING,
   VISIBLE_TIMEFRAMES
 } from '@/types/frontend-settings';
@@ -190,6 +206,7 @@ const SETTINGS = [
   QUERY_PERIOD,
   REFRESH_PERIOD,
   GRAPH_ZERO_BASED,
+  SHOW_GRAPH_RANGE_SELECTOR,
   NFTS_IN_NET_VALUE,
   ENABLE_ETH_NAMES
 ] as const;
@@ -221,6 +238,7 @@ export default class FrontendSettings extends Mixins<
   refreshPeriod: string = '';
   refreshEnabled: boolean = false;
   zeroBased: boolean = false;
+  showGraphRangeSelector: boolean = true;
   includeNfts: boolean = true;
   animationsEnabled: boolean = true;
   enableEthNames: boolean = true;
@@ -232,6 +250,7 @@ export default class FrontendSettings extends Mixins<
   readonly QUERY_PERIOD = QUERY_PERIOD;
   readonly REFRESH_PERIOD = REFRESH_PERIOD;
   readonly GRAPH_ZERO_BASED = GRAPH_ZERO_BASED;
+  readonly SHOW_GRAPH_RANGE_SELECTOR = SHOW_GRAPH_RANGE_SELECTOR;
   readonly NFTS_IN_NET_VALUE = NFTS_IN_NET_VALUE;
   readonly ENABLE_ETH_NAMES = ENABLE_ETH_NAMES;
 
@@ -246,6 +265,23 @@ export default class FrontendSettings extends Mixins<
     };
 
     await this.modifyFrontendSetting(payload, GRAPH_ZERO_BASED, messages);
+  }
+
+  async onGraphRangeSelectorVisibilityUpdate(enabled: boolean) {
+    const payload: FrontendSettingsPayload = {
+      [SHOW_GRAPH_RANGE_SELECTOR]: enabled
+    };
+
+    const messages: BaseMessage = {
+      success: '',
+      error: ''
+    };
+
+    await this.modifyFrontendSetting(
+      payload,
+      SHOW_GRAPH_RANGE_SELECTOR,
+      messages
+    );
   }
 
   async onEnableEnsChange(enabled: boolean) {
@@ -475,6 +511,7 @@ export default class FrontendSettings extends Mixins<
     this.queryPeriod = state.settings![QUERY_PERIOD].toString();
     const period = state.settings![REFRESH_PERIOD];
     this.zeroBased = state.settings![GRAPH_ZERO_BASED];
+    this.showGraphRangeSelector = state.settings![SHOW_GRAPH_RANGE_SELECTOR];
     this.refreshEnabled = period > 0;
     this.refreshPeriod = this.refreshEnabled ? period.toString() : '';
     this.includeNfts = state.settings![NFTS_IN_NET_VALUE];

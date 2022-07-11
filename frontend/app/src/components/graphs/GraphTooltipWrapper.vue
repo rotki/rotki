@@ -43,7 +43,7 @@ export default defineComponent({
   opacity: 0;
   visibility: hidden;
   background-color: white;
-  padding: 8px 12px;
+  padding: 0.25rem 0.75rem;
   font-family: 'Roboto', sans-serif;
   font-size: 16px;
   border-radius: 6px;

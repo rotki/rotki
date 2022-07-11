@@ -37,6 +37,7 @@ export const ITEMS_PER_PAGE = 'itemsPerPage' as const;
 export const AMOUNT_ROUNDING_MODE = 'amountRoundingMode' as const;
 export const VALUE_ROUNDING_MODE = 'valueRoundingMode' as const;
 export const GRAPH_ZERO_BASED = 'graphZeroBased' as const;
+export const SHOW_GRAPH_RANGE_SELECTOR = 'showGraphRangeSelector' as const;
 export const NFTS_IN_NET_VALUE = 'nftsInNetValue' as const;
 export const DASHBOARD_TABLES_VISIBLE_COLUMNS =
   'dashboardTablesVisibleColumns' as const;
@@ -175,6 +176,7 @@ export const FrontendSettings = z.object({
   [LIGHT_THEME]: ThemeColors.default(LIGHT_COLORS),
   [DARK_THEME]: ThemeColors.default(DARK_COLORS),
   [GRAPH_ZERO_BASED]: z.boolean().default(false),
+  [SHOW_GRAPH_RANGE_SELECTOR]: z.boolean().default(true),
   [NFTS_IN_NET_VALUE]: z.boolean().default(true),
   [DASHBOARD_TABLES_VISIBLE_COLUMNS]: DashboardTablesVisibleColumns.default({}),
   [DATE_INPUT_FORMAT]: DateFormatEnum.default(
