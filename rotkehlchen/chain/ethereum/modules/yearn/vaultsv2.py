@@ -109,39 +109,41 @@ class YearnVaultsV2(EthereumModule):
             pps_cache: Dict[str, int],  # price per share
     ) -> Dict[ChecksumEthAddress, YearnVaultBalance]:
         result = {}
-        for asset, balance in defi_balances.items():
-            if isinstance(asset, EthereumToken) and asset.protocol == YEARN_VAULTS_V2_PROTOCOL:
-                underlying = GlobalDBHandler().fetch_underlying_tokens(asset.ethereum_address)
-                if underlying is None:
-                    log.error(f'Found yearn asset {asset} without underlying asset')
-                    continue
-                underlying_token = EthereumToken(underlying[0].address)
-                vault_address = asset.ethereum_address
-
-                roi = roi_cache.get(vault_address, None)
-                pps = pps_cache.get(vault_address, None)
-                if roi is None:
-                    roi, pps = self._calculate_vault_roi(asset)
-                    if roi == ZERO:
-                        self.msg_aggregator.add_warning(
-                            f'Ignoring vault {asset} because information failed to '
-                            f'be correctly queried.',
-                        )
+        globaldb = GlobalDBHandler()
+        with globaldb.conn.read_ctx() as cursor:
+            for asset, balance in defi_balances.items():
+                if isinstance(asset, EthereumToken) and asset.protocol == YEARN_VAULTS_V2_PROTOCOL:
+                    underlying = globaldb.fetch_underlying_tokens(cursor, asset.ethereum_address)
+                    if underlying is None:
+                        log.error(f'Found yearn asset {asset} without underlying asset')
                         continue
-                    roi_cache[vault_address] = roi
-                    pps_cache[vault_address] = pps
+                    underlying_token = EthereumToken(underlying[0].address)
+                    vault_address = asset.ethereum_address
 
-                underlying_balance = Balance(
-                    amount=balance.amount * FVal(pps * 10**-asset.decimals),
-                    usd_value=balance.usd_value,
-                )
-                result[asset.ethereum_address] = YearnVaultBalance(
-                    underlying_token=underlying_token,
-                    vault_token=asset,
-                    underlying_value=underlying_balance,
-                    vault_value=balance,
-                    roi=roi,
-                )
+                    roi = roi_cache.get(vault_address, None)
+                    pps = pps_cache.get(vault_address, None)
+                    if roi is None:
+                        roi, pps = self._calculate_vault_roi(asset)
+                        if roi == ZERO:
+                            self.msg_aggregator.add_warning(
+                                f'Ignoring vault {asset} because information failed to '
+                                f'be correctly queried.',
+                            )
+                            continue
+                        roi_cache[vault_address] = roi
+                        pps_cache[vault_address] = pps
+
+                    underlying_balance = Balance(
+                        amount=balance.amount * FVal(pps * 10**-asset.decimals),
+                        usd_value=balance.usd_value,
+                    )
+                    result[asset.ethereum_address] = YearnVaultBalance(
+                        underlying_token=underlying_token,
+                        vault_token=asset,
+                        underlying_value=underlying_balance,
+                        vault_value=balance,
+                        roi=roi,
+                    )
 
         return result
 

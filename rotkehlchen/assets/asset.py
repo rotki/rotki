@@ -947,7 +947,8 @@ class HasEthereumToken(Asset):
         object.__setattr__(self, 'decimals', data.decimals)
         object.__setattr__(self, 'protocol', data.protocol)
 
-        underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(data.ethereum_address)
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(cursor, data.ethereum_address)  # noqa: E501
         object.__setattr__(self, 'underlying_tokens', underlying_tokens)
 
     def serialize_all_info(self) -> Dict[str, Any]:

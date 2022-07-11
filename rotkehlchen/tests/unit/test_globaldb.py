@@ -108,7 +108,8 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         data=token_to_delete,
     )
     asset_to_delete = Asset(token_to_delete_id)
-    assert globaldb.delete_ethereum_token(address_to_delete) == token_to_delete_id
+    with globaldb.conn.write_ctx() as cursor:
+        assert globaldb.delete_ethereum_token(cursor, address_to_delete) == token_to_delete_id
 
     # now try to add a new token with swapped_for pointing to a non existing token in the DB
     with pytest.raises(InputError):

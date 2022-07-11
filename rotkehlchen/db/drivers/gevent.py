@@ -6,7 +6,6 @@ import sqlite3
 from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
-from random import randint
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Type, Union
 
@@ -279,6 +278,7 @@ class DBConnection:
     @contextmanager
     def write_ctx(self) -> Generator['DBCursor', None, None]:
         cursor = self.cursor()
+        self.enter_critical_section()
         try:
             yield cursor
         except Exception:
@@ -288,6 +288,7 @@ class DBConnection:
             self._conn.commit()
         finally:
             cursor.close()  # lgtm [py/should-use-with]
+            self.exit_critical_section()
 
     @property
     def total_changes(self) -> int:

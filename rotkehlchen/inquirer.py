@@ -635,7 +635,9 @@ class Inquirer():
         """
         assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
 
-        maybe_underlying_token = GlobalDBHandler().fetch_underlying_tokens(token.ethereum_address)
+        globaldb = GlobalDBHandler()
+        with globaldb.conn.read_ctx() as cursor:
+            maybe_underlying_token = globaldb.fetch_underlying_tokens(cursor, token.ethereum_address)  # noqa: E501
         if maybe_underlying_token is None or len(maybe_underlying_token) != 1:
             log.error(f'Yearn vault token {token} without an underlying asset')
             return None
