@@ -265,7 +265,7 @@ class DBConnection:
 
     def close(self) -> None:
         self._conn.close()
-        del CONNECTION_MAP[self.connection_type]
+        CONNECTION_MAP.pop(self.connection_type, None)
 
     @contextmanager
     def read_ctx(self) -> Generator['DBCursor', None, None]:

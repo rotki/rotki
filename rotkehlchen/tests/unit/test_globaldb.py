@@ -58,8 +58,9 @@ bidr_asset_data = AssetData(
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
 def test_get_ethereum_token_identifier(globaldb):
-    assert globaldb.get_ethereum_token_identifier('0xnotexistingaddress') is None
-    token_0_id = globaldb.get_ethereum_token_identifier(INITIAL_TOKENS[0].ethereum_address)
+    with globaldb.conn.read_ctx() as cursor:
+        assert globaldb.get_ethereum_token_identifier(cursor, '0xnotexistingaddress') is None
+        token_0_id = globaldb.get_ethereum_token_identifier(cursor, INITIAL_TOKENS[0].ethereum_address)  # noqa: E501
     assert token_0_id == ethaddress_to_identifier(INITIAL_TOKENS[0].ethereum_address)
 
 
