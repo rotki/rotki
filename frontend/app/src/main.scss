@@ -46,6 +46,14 @@ aside {
 }
 
 /* stylelint-disable */
+.v-dialog {
+  > .v-card {
+    > .v-card__actions {
+      padding: 16px 24px !important;
+    }
+  }
+}
+
 .v-card:not(.v-card--flat):not(.v-sheet--outlined):not(.elevation-0) {
   /* stylelint-enable */
   box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1) !important;

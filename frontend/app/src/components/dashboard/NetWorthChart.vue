@@ -445,6 +445,7 @@ export default defineComponent({
       const tooltip = createTooltip();
 
       const options: ChartOptions = {
+        animation: (() => !get(activeRangeButton)) as any,
         maintainAspectRatio: false,
         interaction: {
           mode: 'index',
@@ -498,6 +499,7 @@ export default defineComponent({
       const scales = createScales(true);
 
       const options: ChartOptions = {
+        animation: false,
         responsive: true,
         maintainAspectRatio: false,
         scales: scales as any,
@@ -600,7 +602,7 @@ export default defineComponent({
 
       xAxis.min = min;
       xAxis.max = max;
-      updateChart();
+      calculateXRange();
     };
 
     type ActiveRangeButton = 'start' | 'end' | 'both';
@@ -630,7 +632,7 @@ export default defineComponent({
       event: MouseEvent
     ) => {
       set(activeRangeButton, selectedButton);
-      set(rangeLastX, event.screenX);
+      set(rangeLastX, Math.round(event.screenX));
     };
 
     const rangeButtonMouseMove = (event: MouseEvent) => {
@@ -640,7 +642,7 @@ export default defineComponent({
       if (!activeRangeButtonVal || !rangeElem) return;
 
       const { x: elemX, width } = rangeElem.getBoundingClientRect();
-      const x = event.screenX - elemX;
+      const x = Math.round(event.screenX) - elemX;
       const scale = x / width;
 
       const { min, max, range } = get(dataTimeRange);
@@ -708,7 +710,7 @@ export default defineComponent({
         xAxis.max = limitedMax;
       }
 
-      updateChart();
+      calculateXRange();
     };
 
     const mouseup = () => {

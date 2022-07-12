@@ -9,7 +9,7 @@ import i18n from '@/i18n';
 import { AssetUpdatePayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { SupportedAssets } from '@/services/types-api';
-import { AssetPriceInfo } from '@/store/balances/types';
+import { AssetPriceInfo, NonFungibleBalance } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
@@ -25,6 +25,7 @@ import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
+import { getNftBalance, isNft } from '@/utils/nft';
 
 export const useAssets = defineStore('assets', () => {
   const { awaitTask } = useTasks();
@@ -213,6 +214,18 @@ export const useAssetInfoRetrieval = defineStore(
       return assets;
     });
 
+    const allSupportedAssets = computed<SupportedAsset[]>(() => {
+      const assets: SupportedAsset[] = [];
+      const supportedAssetsMapVal = get(supportedAssetsMap);
+      Object.keys(supportedAssetsMapVal).forEach(identifier => {
+        assets.push({
+          identifier,
+          ...supportedAssetsMapVal[identifier]
+        });
+      });
+      return assets;
+    });
+
     const fetchSupportedAssets = async (refresh: boolean = false) => {
       set(supportedAssetsMap, {});
       if (get(supportedAssets).length > 0 && !refresh) {
@@ -237,29 +250,30 @@ export const useAssetInfoRetrieval = defineStore(
       }
     };
 
-    const assetInfo = (identifier: string) => {
+    const assetInfo = (
+      identifier: string,
+      enableAssociation: boolean = true
+    ) => {
       return computed<SupportedAsset | undefined>(() => {
         if (!identifier) return undefined;
 
-        if (identifier.startsWith('_nft_')) {
-          const nonFungibleBalances = store.state.balances!.nonFungibleBalances;
+        if (isNft(identifier)) {
+          const nftBalance: NonFungibleBalance | null =
+            getNftBalance(identifier);
 
-          for (const address in nonFungibleBalances) {
-            const nfb = nonFungibleBalances[address];
-            for (const balance of nfb) {
-              if (balance.id === identifier) {
-                return {
-                  identifier: balance.id,
-                  symbol: balance.name,
-                  name: balance.name,
-                  assetType: 'ethereum_token'
-                } as SupportedAsset;
-              }
-            }
+          if (nftBalance) {
+            return {
+              identifier: nftBalance.id,
+              symbol: nftBalance.name,
+              name: nftBalance.name,
+              assetType: 'ethereum_token'
+            } as SupportedAsset;
           }
         }
 
-        const asset = get(getAssociatedAsset(identifier));
+        const asset = enableAssociation
+          ? get(getAssociatedAsset(identifier))
+          : get(supportedAssetsMap)[identifier];
 
         if (!asset) {
           return undefined;
@@ -272,11 +286,14 @@ export const useAssetInfoRetrieval = defineStore(
       });
     };
 
-    const assetSymbol = (identifier: string) => {
+    const assetSymbol = (
+      identifier: string,
+      enableAssociation: boolean = true
+    ) => {
       return computed<string>(() => {
         if (!identifier) return '';
 
-        const symbol = get(assetInfo(identifier))?.symbol;
+        const symbol = get(assetInfo(identifier, enableAssociation))?.symbol;
 
         if (symbol) return symbol;
 
@@ -299,11 +316,14 @@ export const useAssetInfoRetrieval = defineStore(
       });
     };
 
-    const assetName = (identifier: string) => {
+    const assetName = (
+      identifier: string,
+      enableAssociation: boolean = true
+    ) => {
       return computed<string>(() => {
         if (!identifier) return '';
 
-        const name = get(assetInfo(identifier))?.name;
+        const name = get(assetInfo(identifier, enableAssociation))?.name;
         if (name) return name;
 
         if (identifier.startsWith('_ceth_')) {
@@ -315,10 +335,15 @@ export const useAssetInfoRetrieval = defineStore(
       });
     };
 
-    const tokenAddress = (identifier: string) => {
+    const tokenAddress = (
+      identifier: string,
+      enableAssociation: boolean = true
+    ) => {
       return computed<string>(() => {
         if (!identifier) return '';
-        return get(assetInfo(identifier))?.ethereumAddress ?? '';
+        return (
+          get(assetInfo(identifier, enableAssociation))?.ethereumAddress ?? ''
+        );
       });
     };
 
@@ -345,6 +370,7 @@ export const useAssetInfoRetrieval = defineStore(
     });
 
     return {
+      allSupportedAssets,
       supportedAssets,
       supportedAssetsMap,
       supportedAssetsSymbol,

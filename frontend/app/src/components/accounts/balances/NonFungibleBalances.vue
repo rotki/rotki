@@ -20,28 +20,7 @@
       sort-by="usdPrice"
     >
       <template #item.name="{ item }">
-        <div class="d-flex align-center">
-          <div class="my-2 non-fungible-balances__item__preview">
-            <video
-              v-if="item.isVideo"
-              width="100%"
-              height="100%"
-              aspect-ratio="1"
-              :src="item.imageUrl"
-            />
-            <v-img
-              v-if="!item.isVideo"
-              :src="item.imageUrl"
-              width="100%"
-              height="100%"
-              contain
-              aspect-ratio="1"
-            />
-          </div>
-          <span class="ml-4">
-            {{ item.name ? item.name : item.id }}
-          </span>
-        </div>
+        <nft-details :identifier="item.id" />
       </template>
       <template #item.usdPrice="{ item }">
         <amount-display
@@ -118,6 +97,7 @@ import { get, set } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
@@ -230,6 +210,7 @@ const setupConfirm = (refresh: () => Promise<void>) => {
 export default defineComponent({
   name: 'NonFungibleBalances',
   components: {
+    NftDetails,
     RowAppend,
     ActiveModules,
     RefreshButton,

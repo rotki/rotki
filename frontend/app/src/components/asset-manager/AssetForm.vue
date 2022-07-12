@@ -653,15 +653,5 @@ export default defineComponent({
       top: -1rem;
     }
   }
-
-  &__protocol {
-    ::v-deep {
-      .v-text-field {
-        &__slot {
-          height: 60px;
-        }
-      }
-    }
-  }
 }
 </style>

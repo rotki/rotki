@@ -1,5 +1,5 @@
 <template>
-  <span :class="$style.actions">
+  <div :class="$style.actions">
     <v-tooltip top>
       <template #activator="{ on, attrs }">
         <v-btn
@@ -33,7 +33,7 @@
       <span>{{ deleteTooltip }}</span>
     </v-tooltip>
     <slot />
-  </span>
+  </div>
 </template>
 
 <script lang="ts">

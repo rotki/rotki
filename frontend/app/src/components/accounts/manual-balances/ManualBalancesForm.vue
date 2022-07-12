@@ -17,10 +17,9 @@
       @focus="delete errors['label']"
     />
 
-    <v-select
+    <balance-type-input
       v-model="balanceType"
       :label="$t('manual_balances_form.fields.balance_type')"
-      :items="balanceTypes"
       outlined
     />
 
@@ -77,6 +76,7 @@ import { get, set } from '@vueuse/core';
 import { IVueI18n } from 'vue-i18n';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { setupManualBalances } from '@/composables/balances';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
@@ -106,7 +106,7 @@ const setupRules = (i18n: IVueI18n) => {
 
 const ManualBalancesForm = defineComponent({
   name: 'ManualBalancesForm',
-  components: { LocationSelector, TagInput, AssetSelect },
+  components: { BalanceTypeInput, LocationSelector, TagInput, AssetSelect },
   props: {
     edit: {
       required: false,
@@ -228,17 +228,6 @@ const ManualBalancesForm = defineComponent({
       }
     });
 
-    const balanceTypes = [
-      {
-        value: BalanceType.ASSET,
-        text: i18n.t('manual_balances_form.type.asset')
-      },
-      {
-        value: BalanceType.LIABILITY,
-        text: i18n.t('manual_balances_form.type.liability')
-      }
-    ];
-
     return {
       form,
       valid,
@@ -251,7 +240,6 @@ const ManualBalancesForm = defineComponent({
       location,
       balanceType,
       ...setupRules(i18n),
-      balanceTypes,
       input,
       save,
       clear,

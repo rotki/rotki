@@ -23,6 +23,7 @@ import {
   FetchPricePayload,
   HistoricPricePayload,
   LocationBalance,
+  NonFungibleBalances,
   OracleCachePayload,
   XpubPayload
 } from '@/store/balances/types';
@@ -59,6 +60,10 @@ export const setupGeneralBalances = () => {
 
   const blockchainTotals = computed<BlockchainTotal[]>(() => {
     return store.getters['balances/blockchainTotals'];
+  });
+
+  const nonFungibleBalances = computed<NonFungibleBalances>(() => {
+    return store.state.balances!.nonFungibleBalances;
   });
 
   const hasDetails = (account: string) =>
@@ -136,6 +141,7 @@ export const setupGeneralBalances = () => {
     manualBalanceByLocation,
     liabilities,
     blockchainTotals,
+    nonFungibleBalances,
     hasDetails,
     accountAssets,
     accountLiabilities,

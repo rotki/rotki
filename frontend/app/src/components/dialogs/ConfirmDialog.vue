@@ -4,7 +4,7 @@
       v-if="display"
       :value="true"
       persistent
-      max-width="500"
+      :max-width="maxWidth"
       class="confirm-dialog"
       @keydown.esc.stop="cancel()"
     >
@@ -83,7 +83,8 @@ const ConfirmDialog = defineComponent({
     },
     disabled: { type: Boolean, required: false, default: false },
     singleAction: { required: false, type: Boolean, default: false },
-    loading: { required: false, type: Boolean, default: false }
+    loading: { required: false, type: Boolean, default: false },
+    maxWidth: { required: false, type: String, default: '500' }
   },
   emits: ['confirm', 'cancel'],
   setup(props, { emit }) {

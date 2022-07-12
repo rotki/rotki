@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2219` Users will now be able to edit balance snapshots.
 * :feature:`4495` Users will now be able to toggle ETH staking taxation.
 * :feature:`1420` Add functionality to add alias name for ETH addresses.
 * :feature:`-` Add zoom feature for line charts.
