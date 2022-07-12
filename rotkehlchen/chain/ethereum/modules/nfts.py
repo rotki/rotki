@@ -128,8 +128,12 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         May raise:
         - RemoteError
         """
+        with self.db.conn.read_ctx() as cursor:
+            accounts = self.db.get_blockchain_accounts(cursor=cursor)
+        # Be sure that the only addresses queried already exist in the database. Fix for #4456
+        queried_addresses = list(set(accounts.eth) & set(addresses))
         result: DefaultDict[ChecksumEthAddress, List[Dict[str, Any]]] = defaultdict(list)
-        nft_results, _ = self._get_all_nft_data(addresses, ignore_cache=ignore_cache)
+        nft_results, _ = self._get_all_nft_data(queried_addresses, ignore_cache=ignore_cache)
         cached_db_result = self.get_nfts_with_price()
         cached_db_prices = {x['asset']: x for x in cached_db_result}
         db_data: List[Tuple[str, str, Optional[str], Optional[str], int, ChecksumEthAddress]] = []
