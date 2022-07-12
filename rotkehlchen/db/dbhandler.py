@@ -2763,6 +2763,9 @@ class DBHandler:
 
         The list is sorted by usd value going from higher to lower
         """
+        with self.user_write() as write_cursor:
+            ignored_assets = self.get_ignored_assets(write_cursor)
+
         with self.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '
@@ -2772,10 +2775,13 @@ class DBHandler:
             )
             asset_balances = []
             for result in cursor:
+                asset = Asset(result[1])
+                if asset in ignored_assets:
+                    continue
                 asset_balances.append(
                     DBAssetBalance(
                         time=result[0],
-                        asset=Asset(result[1]),
+                        asset=asset,
                         amount=result[2],
                         usd_value=result[3],
                         category=BalanceType.deserialize_from_db(result[4]),
