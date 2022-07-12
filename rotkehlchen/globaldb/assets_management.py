@@ -106,8 +106,11 @@ def export_assets_from_file(
         dirpath = Path(tempfile.TemporaryDirectory().name)
         dirpath.mkdir(parents=True, exist_ok=True)
 
+    globaldb = GlobalDBHandler()
+
     with db_handler.user_write() as cursor:
-        assets = GlobalDBHandler().get_user_added_assets(cursor, user_db=db_handler)
+        with globaldb.conn.read_ctx() as gdb_cursor:
+            assets = globaldb.get_user_added_assets(gdb_cursor, cursor, user_db=db_handler)
     serialized = []
     for asset_identifier in assets:
         try:
@@ -116,13 +119,13 @@ def export_assets_from_file(
         except UnknownAsset as e:
             log.error(e)
 
-    cursor = GlobalDBHandler().conn.cursor()
-    query = cursor.execute('SELECT value from settings WHERE name="version";')
-    version = query.fetchone()[0]
-    data = {
-        'version': version,
-        'assets': serialized,
-    }
+    with globaldb.conn.read_ctx() as gdb_cursor:
+        query = gdb_cursor.execute('SELECT value from settings WHERE name="version";')
+        version = query.fetchone()[0]
+        data = {
+            'version': version,
+            'assets': serialized,
+        }
 
     zip_path = dirpath / 'assets.zip'
     with ZipFile(file=zip_path, mode='w', compression=ZIP_DEFLATED) as assets_zip:

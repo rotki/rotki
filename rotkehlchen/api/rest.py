@@ -1382,7 +1382,8 @@ class RestAPI():
                 # Before deleting, also make sure we have up to date global DB owned data
                 self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
                 self.rotkehlchen.data.db.delete_asset_identifier(cursor, identifier)
-                GlobalDBHandler().delete_custom_asset(identifier)
+                with GlobalDBHandler().conn.write_ctx() as cursor:
+                    GlobalDBHandler().delete_custom_asset(cursor, identifier)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -1463,7 +1464,8 @@ class RestAPI():
                 # Before deleting, also make sure we have up to date global DB owned data
                 self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
                 self.rotkehlchen.data.db.delete_asset_identifier(cursor, ethaddress_to_identifier(address))  # noqa: E501
-                identifier = GlobalDBHandler().delete_ethereum_token(address=address)
+                with GlobalDBHandler().conn.write_ctx() as gcursor:
+                    identifier = GlobalDBHandler().delete_ethereum_token(write_cursor=gcursor, address=address)  # noqa: E501
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 

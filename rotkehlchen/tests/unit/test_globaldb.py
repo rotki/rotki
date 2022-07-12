@@ -58,8 +58,9 @@ bidr_asset_data = AssetData(
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
 def test_get_ethereum_token_identifier(globaldb):
-    assert globaldb.get_ethereum_token_identifier('0xnotexistingaddress') is None
-    token_0_id = globaldb.get_ethereum_token_identifier(INITIAL_TOKENS[0].ethereum_address)
+    with globaldb.conn.read_ctx() as cursor:
+        assert globaldb.get_ethereum_token_identifier(cursor, '0xnotexistingaddress') is None
+        token_0_id = globaldb.get_ethereum_token_identifier(cursor, INITIAL_TOKENS[0].ethereum_address)  # noqa: E501
     assert token_0_id == ethaddress_to_identifier(INITIAL_TOKENS[0].ethereum_address)
 
 
@@ -108,7 +109,8 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         data=token_to_delete,
     )
     asset_to_delete = Asset(token_to_delete_id)
-    assert globaldb.delete_ethereum_token(address_to_delete) == token_to_delete_id
+    with globaldb.conn.write_ctx() as cursor:
+        assert globaldb.delete_ethereum_token(cursor, address_to_delete) == token_to_delete_id
 
     # now try to add a new token with swapped_for pointing to a non existing token in the DB
     with pytest.raises(InputError):
