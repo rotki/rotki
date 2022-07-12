@@ -9,6 +9,7 @@ import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.data_handler import DataHandler
@@ -47,13 +48,28 @@ creation_patch = patch(
 )
 
 
-def assert_tx_hash_is_bytes(old: list, new: list, tx_hash_index: int) -> None:
+def assert_tx_hash_is_bytes(
+        old: list,
+        new: list,
+        tx_hash_index: int,
+        is_history_event: bool = False,
+) -> None:
+    """This function does the following:
+    - Checks that the entries for `tx_hash_index` provided for `old` is string type.
+    - Checks that the entries for `tx_hash_index` provided for `new` is bytes type.
+    - Checks that comparing the entries after converting the bytes to its string equivalent yields
+    the same as its `old` counterpart.
+    """
     for _old, _new in zip(old, new):
         assert isinstance(_new[tx_hash_index], bytes)
         assert isinstance(_old[tx_hash_index], str)
         _old = list(_old)
         _new = list(_new)
-        _new[tx_hash_index] = make_evm_tx_hash(_new[tx_hash_index]).hex()  # noqa: 501 pylint: disable=no-member
+        if is_history_event is True:
+            _new_deserialized = HistoryBaseEntry.deserialize_from_db(_new)
+            _new[tx_hash_index] = _new_deserialized.serialized_event_identifier
+        else:
+            _new[tx_hash_index] = make_evm_tx_hash(_new[tx_hash_index]).hex()  # noqa: 501 pylint: disable=no-member
         assert _old == _new
 
 
@@ -2681,15 +2697,22 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
 
     # get tables with tx_hash as string.
     old_aave_events = cursor.execute('SELECT * FROM aave_events').fetchall()
+    assert len(old_aave_events) == 4
     old_adex_events = cursor.execute('SELECT * FROM adex_events').fetchall()
+    assert len(old_adex_events) == 2
     old_balancer_events = cursor.execute('SELECT * FROM balancer_events').fetchall()
+    assert len(old_balancer_events) == 2
     old_yearn_vaults_events = cursor.execute('SELECT * FROM yearn_vaults_events').fetchall()
+    assert len(old_yearn_vaults_events) == 2
     old_amm_events = cursor.execute('SELECT * FROM amm_events').fetchall()
+    assert len(old_amm_events) == 2
     old_amm_swaps = cursor.execute('SELECT * FROM amm_swaps').fetchall()
+    assert len(old_amm_swaps) == 2
     old_combined_trades_views = cursor.execute('SELECT * FROM combined_trades_view;').fetchall()
+    assert len(old_combined_trades_views) == 7
     # get history events
     old_history_events = cursor.execute('SELECT * FROM history_events').fetchall()  # noqa: 501
-    assert len(old_history_events) == 1
+    assert len(old_history_events) == 5
     db_v32.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2721,23 +2744,30 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
 
     # check that forcing bytes for tx hashes did not break anything.
     new_aave_events = cursor.execute('SELECT * FROM aave_events').fetchall()
+    assert len(new_aave_events) == 4
     new_adex_events = cursor.execute('SELECT * FROM adex_events').fetchall()
+    assert len(new_adex_events) == 2
     new_balancer_events = cursor.execute('SELECT * FROM balancer_events').fetchall()
+    assert len(new_balancer_events) == 2
     new_yearn_vaults_events = cursor.execute('SELECT * FROM yearn_vaults_events').fetchall()
+    assert len(new_yearn_vaults_events) == 2
     new_amm_events = cursor.execute('SELECT * FROM amm_events').fetchall()
+    assert len(new_amm_events) == 2
     new_amm_swaps = cursor.execute('SELECT * FROM amm_swaps').fetchall()
+    assert len(new_amm_swaps) == 2
     new_combined_trades_views = cursor.execute('SELECT * FROM combined_trades_view;').fetchall()
-    new_history_events = cursor.execute('SELECT * FROM history_events').fetchall()  # noqa: 501
-    assert len(new_history_events) == 1
+    assert len(new_combined_trades_views) == 7
+    new_history_events = cursor.execute('SELECT * FROM history_events').fetchall()
+    assert len(new_history_events) == 5
     assert_tx_hash_is_bytes(old=old_aave_events, new=new_aave_events, tx_hash_index=4)
     assert_tx_hash_is_bytes(old=old_adex_events, new=new_adex_events, tx_hash_index=0)
     assert_tx_hash_is_bytes(old=old_balancer_events, new=new_balancer_events, tx_hash_index=0)
-    assert_tx_hash_is_bytes(old=old_yearn_vaults_events, new=new_yearn_vaults_events, tx_hash_index=12)  # noqa; 501
+    assert_tx_hash_is_bytes(old=old_yearn_vaults_events, new=new_yearn_vaults_events, tx_hash_index=12)  # noqa: E501
     assert_tx_hash_is_bytes(old=old_amm_events, new=new_amm_events, tx_hash_index=0)
     assert_tx_hash_is_bytes(old=old_amm_swaps, new=new_amm_swaps, tx_hash_index=0)
     # not all combined_trades_views have tx hash.
-    assert_tx_hash_is_bytes(old=old_combined_trades_views[:1], new=new_combined_trades_views[:1], tx_hash_index=10)  # noqa: 501
-    assert_tx_hash_is_bytes(old=old_history_events, new=new_history_events, tx_hash_index=1)
+    assert_tx_hash_is_bytes(old=old_combined_trades_views[:1], new=new_combined_trades_views[:1], tx_hash_index=10)  # noqa: E501
+    assert_tx_hash_is_bytes(old=old_history_events, new=new_history_events, tx_hash_index=1, is_history_event=True)  # noqa: E501
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

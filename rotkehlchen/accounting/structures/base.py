@@ -19,15 +19,14 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_optional,
     deserialize_timestamp,
 )
-from rotkehlchen.types import (
-    EVMTxHash,
-    Location,
-    Timestamp,
-    TimestampMS,
-    deserialize_evm_tx_hash,
-    make_evm_tx_hash,
+from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import (
+    is_valid_ethereum_tx_hash,
+    timestamp_to_date,
+    ts_ms_to_sec,
+    ts_sec_to_ms,
 )
-from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec, ts_sec_to_ms
 
 from .balance import Balance
 
@@ -83,7 +82,7 @@ class HistoryBaseEntry(AccountingEventMixin):
     Intended to be the base unit of any type of accounting. All trades, deposits,
     swaps etc. are going to be made up of multiple HistoryBaseEntry
     """
-    event_identifier: EVMTxHash  # identifier shared between related events
+    event_identifier: bytes  # identifier shared between related events
     sequence_index: int  # When this transaction was executed relative to other related events
     timestamp: TimestampMS
     location: Location
@@ -143,7 +142,7 @@ class HistoryBaseEntry(AccountingEventMixin):
         try:
             return HistoryBaseEntry(
                 identifier=entry[0],
-                event_identifier=make_evm_tx_hash(entry[1]),
+                event_identifier=entry[1],
                 sequence_index=entry[2],
                 timestamp=TimestampMS(entry[3]),
                 location=Location.deserialize_from_db(entry[4]),
@@ -164,13 +163,37 @@ class HistoryBaseEntry(AccountingEventMixin):
         except ValueError as e:
             raise DeserializationError(
                 f'Failed to read FVal value from database history event with '
-                f'event identifier {entry[1].decode()}. {str(e)}',
+                f'event identifier {str(entry[1])}. {str(e)}',
             ) from e
+
+    @property
+    def serialized_event_identifier(self) -> str:
+        """Take a HistoryBaseEntry's event_identifier and returns a string representation."""
+        if self.location == Location.KRAKEN:
+            return self.event_identifier.decode()
+
+        hex_representation = self.event_identifier.hex()
+        if hex_representation.startswith('0x') is True:
+            return hex_representation
+        return '0x' + hex_representation
+
+    @classmethod
+    def deserialize_event_identifier_from_kraken(cls, val: str) -> bytes:
+        """Takes a `refid` from Kraken exchange and turns it into a bytes event_identifier."""
+        return val.encode()
+
+    @classmethod
+    def deserialize_event_identifier(cls, val: str) -> bytes:
+        """Takes an abritrary string and turns it into a bytes event_identifier.
+        May raise:
+        - DeserializationError if value is not valid transaction hash.
+        """
+        return hexstring_to_bytes(val)
 
     def serialize(self) -> Dict[str, Any]:
         return {
             'identifier': self.identifier,
-            'event_identifier': self.event_identifier.hex(),
+            'event_identifier': self.serialized_event_identifier,
             'sequence_index': self.sequence_index,
             'timestamp': ts_ms_to_sec(self.timestamp),  # serialize to api in seconds MS
             'location': str(self.location),
@@ -191,8 +214,12 @@ class HistoryBaseEntry(AccountingEventMixin):
             - KeyError
             - UnknownAsset
         """
+        if is_valid_ethereum_tx_hash(data['event_identifier']):
+            event_identifier = cls.deserialize_event_identifier(data['event_identifier'])  # noqa: 501
+        else:
+            event_identifier = cls.deserialize_event_identifier_from_kraken(data['event_identifier'])  # noqa: 501
         return cls(
-            event_identifier=deserialize_evm_tx_hash(data['event_identifier']),
+            event_identifier=event_identifier,
             sequence_index=data['sequence_index'],
             timestamp=ts_sec_to_ms(deserialize_timestamp(data['timestamp'])),
             location=Location.deserialize(data['location']),
@@ -244,8 +271,11 @@ class HistoryBaseEntry(AccountingEventMixin):
         return AccountingEventType.HISTORY_BASE_ENTRY
 
     def should_ignore(self, ignored_ids_mapping: Dict[ActionType, List[str]]) -> bool:
+        if not self.serialized_event_identifier.startswith('0x'):
+            return False
+
         ignored_ids = ignored_ids_mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
-        return self.event_identifier.hex() in ignored_ids
+        return self.serialized_event_identifier in ignored_ids
 
     def get_identifier(self) -> str:
         assert self.identifier is not None, 'Should never be called without identifier'

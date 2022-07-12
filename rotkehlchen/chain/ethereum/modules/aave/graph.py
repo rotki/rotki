@@ -325,11 +325,10 @@ def _parse_atoken_balance_history(
             continue
 
         try:
-            raw_tx_hash = '0x' + pairs[4]
-            tx_hash = deserialize_evm_tx_hash(raw_tx_hash)
+            tx_hash = deserialize_evm_tx_hash(pairs[4])
         except DeserializationError:
             log.error(
-                f'Error deserializing transaction hash {raw_tx_hash}',
+                f'Error deserializing transaction hash 0x{pairs[4]}',
             )
             continue
 

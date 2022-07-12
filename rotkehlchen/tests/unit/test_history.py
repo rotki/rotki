@@ -16,7 +16,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location, make_evm_tx_hash
+from rotkehlchen.types import Location
 
 
 def test_query_ledger_actions(events_historian, function_scope_messages_aggregator):
@@ -117,7 +117,7 @@ def test_pnl_processing_with_eth2_staking_setting(accountant, db_settings):
             end_amount=FVal('32.045'),
             pnl=FVal('-0.005'),  # -0.005 * 469.82 + 0.005 * 469.82 - 0.005*449.68 = -2.2484
         ), HistoryBaseEntry(
-            event_identifier=make_evm_tx_hash('XXX'.encode()),
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier_from_kraken('XXX'),
             sequence_index=0,
             timestamp=1625001464000,  # ETH price: 1837.31 ETH/EUR
             location=Location.KRAKEN,
@@ -131,7 +131,7 @@ def test_pnl_processing_with_eth2_staking_setting(accountant, db_settings):
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,  # 0.0000541090 * 1837.31 = 0.09941500679
         ), HistoryBaseEntry(
-            event_identifier=make_evm_tx_hash('XXX'.encode()),
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier_from_kraken('XXX'),
             sequence_index=0,
             timestamp=1640493374000,  # ETH price: 4072.51 ETH/EUR
             location=Location.KRAKEN,

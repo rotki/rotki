@@ -85,7 +85,7 @@ from rotkehlchen.types import (
     TradeType,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash, ts_now
 
 from .fields import (
     AmountField,
@@ -416,7 +416,7 @@ class StakingQuerySchema(
 
 class HistoryBaseEntrySchema(Schema):
     identifier = fields.Integer(load_default=None, required=False)
-    event_identifier = EVMTransactionHashField(required=True)
+    event_identifier = fields.String(required=True)
     sequence_index = fields.Integer(required=True)
     # Timestamp coming in from the API is in seconds, in contrast to what we save in the struct
     timestamp = TimestampField(ts_multiplier=1000, required=True)
@@ -446,6 +446,13 @@ class HistoryBaseEntrySchema(Schema):
     ) -> None:
         if self.identifier_required is True and data['identifier'] is None:
             raise ValidationError('History event identifier should be given')
+        try:
+            if is_valid_ethereum_tx_hash(data['event_identifier']):
+                data['event_identifier'] = HistoryBaseEntry.deserialize_event_identifier(data['event_identifier'])  # noqa: 501
+            else:
+                data['event_identifier'] = HistoryBaseEntry.deserialize_event_identifier_from_kraken(data['event_identifier'])  # noqa: 501
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
 
     @post_load
     def make_history_base_entry(  # pylint: disable=no-self-use
@@ -455,7 +462,6 @@ class HistoryBaseEntrySchema(Schema):
     ) -> Dict[str, Any]:
         if data['event_subtype'] is None:
             data['event_subtype'] = HistoryEventSubType.NONE
-
         return {'event': HistoryBaseEntry(**data)}
 
 

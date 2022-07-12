@@ -65,7 +65,7 @@ class AaveEvent:
         )
 
     def __hash__(self) -> int:
-        return hash(self.event_type + self.tx_hash.hex() + str(self.log_index))
+        return hash(self.event_type.encode() + self.tx_hash + str(self.log_index).encode())
 
     def __eq__(self, other: Any) -> bool:
         return hash(self) == hash(other)

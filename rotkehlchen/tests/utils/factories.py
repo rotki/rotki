@@ -95,11 +95,11 @@ def make_ethereum_event(
     if tx_hash is None:
         tx_hash = make_random_bytes(42)
     return HistoryBaseEntry(
-        event_identifier=make_evm_tx_hash(tx_hash),
+        event_identifier=tx_hash,
         sequence_index=index,
         identifier=index,
         timestamp=TimestampMS(0),
-        location=Location.KRAKEN,
+        location=Location.EXTERNAL,
         event_type=HistoryEventType.UNKNOWN,
         event_subtype=HistoryEventSubType.NONE,
         asset=asset,

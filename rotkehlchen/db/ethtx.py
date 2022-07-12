@@ -398,8 +398,8 @@ class DBEthTx():
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)
         write_cursor.executemany(
-            'DELETE FROM ethereum_transactions WHERE tx_hash=? AND ? NOT IN (SELECT event_identifier FROM history_events)',  # noqa: E501
-            [(x, x) for x in tx_hashes],
+            'DELETE FROM ethereum_transactions WHERE tx_hash=? AND tx_hash NOT IN (SELECT event_identifier FROM history_events)',  # noqa: E501
+            [(x,) for x in tx_hashes],
         )
         # Delete all remaining evm_tx_mappings so decoding can happen again for customized events
         write_cursor.executemany(

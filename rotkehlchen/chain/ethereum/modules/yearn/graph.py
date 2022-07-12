@@ -104,8 +104,8 @@ class YearnVaultsV2Graph:
         for entry in events:
             # The id returned is a composition of hash + '-' + log_index
             try:
-                _, tx_hash, log_index, _ = entry['id'].split('-')
-                tx_hash = deserialize_evm_tx_hash(tx_hash)
+                _, raw_tx_hash, log_index, _ = entry['id'].split('-')
+                tx_hash = deserialize_evm_tx_hash(raw_tx_hash)
             except (ValueError, DeserializationError) as e:
                 log.debug(
                     f'Failed to extract transaction hash and log index from {event_type} event '

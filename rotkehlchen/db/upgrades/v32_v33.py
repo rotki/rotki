@@ -1,7 +1,9 @@
 from typing import TYPE_CHECKING
 
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import deserialize_evm_tx_hash
+from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -87,6 +89,12 @@ def _create_nodes(cursor: 'DBCursor') -> None:
 
 
 def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
+    """This DB upgrade function:
+    - Updates the `tx_hash` column schema in aave_events, adex_events, balancer_events, amm_swaps,
+    amm_events & yearn_vaults_events from TEXT to BLOB.
+    - Updates the `event_identifier` column schema of history_events from TEXT to BLOB to force
+    bytes event identifiers.
+    """
     # aave_events
     cursor.execute("""
     CREATE TABLE aave_events_copy (
@@ -109,18 +117,19 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     );
     """)
     aave_events = cursor.execute('SELECT * FROM aave_events')
+    new_aave_events = []
     for aave_event in aave_events:
         aave_event = list(aave_event)
         try:
             aave_event[4] = deserialize_evm_tx_hash(aave_event[4])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes
-            aave_event[4] = deserialize_evm_tx_hash(aave_event[4].encode())
-        cursor.execute(
-            'INSERT INTO aave_events_copy VALUES'
-            '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-            tuple(aave_event),
-        )
+            continue
+        new_aave_events.append(tuple(aave_event))
+    cursor.executemany(
+        'INSERT INTO aave_events_copy VALUES'
+        '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+        new_aave_events,
+    )
     cursor.execute('DROP TABLE aave_events;')
     cursor.execute('ALTER TABLE aave_events_copy RENAME TO aave_events;')
 
@@ -147,18 +156,19 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     );
     """)
     adex_events = cursor.execute('SELECT * FROM adex_events')
+    new_adex_events = []
     for adex_event in adex_events:
         adex_event = list(adex_event)
         try:
             adex_event[0] = deserialize_evm_tx_hash(adex_event[0])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes
-            adex_event[0] = deserialize_evm_tx_hash(adex_event[0].encode())
-        cursor.execute(
-            'INSERT INTO adex_events_copy VALUES'
-            '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-            tuple(adex_event),
-        )
+            continue
+        new_adex_events.append(tuple(adex_event))
+    cursor.executemany(
+        'INSERT INTO adex_events_copy VALUES'
+        '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+        new_adex_events,
+    )
     cursor.execute('DROP TABLE adex_events;')
     cursor.execute('ALTER TABLE adex_events_copy RENAME TO adex_events;')
 
@@ -186,18 +196,19 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     );
     """)
     balancer_events = cursor.execute('SELECT * FROM balancer_events')
+    new_balance_events = []
     for balancer_event in balancer_events:
         balancer_event = list(balancer_event)
         try:
             balancer_event[0] = deserialize_evm_tx_hash(balancer_event[0])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes
-            balancer_event[0] = deserialize_evm_tx_hash(balancer_event[0].encode())
-        cursor.execute(
-            'INSERT INTO balancer_events_copy VALUES'
-            '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-            tuple(balancer_event),
-        )
+            continue
+        new_balance_events.append(tuple(balancer_event))
+    cursor.executemany(
+        'INSERT INTO balancer_events_copy VALUES'
+        '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+        new_balance_events,
+    )
     cursor.execute('DROP TABLE balancer_events;')
     cursor.execute('ALTER TABLE balancer_events_copy RENAME TO balancer_events;')
 
@@ -225,18 +236,19 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     );
     """)
     yearn_vaults_events = cursor.execute('SELECT * FROM yearn_vaults_events')
+    new_yearn_vaults_events = []
     for yearn_vault_event in yearn_vaults_events:
         yearn_vault_event = list(yearn_vault_event)
         try:
             yearn_vault_event[12] = deserialize_evm_tx_hash(yearn_vault_event[12])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes
-            yearn_vault_event[12] = deserialize_evm_tx_hash(yearn_vault_event[12].encode())
-        cursor.execute(
-            'INSERT INTO yearn_vaults_events_copy VALUES'
-            '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-            tuple(yearn_vault_event),
-        )
+            continue
+        new_yearn_vaults_events.append(tuple(yearn_vault_event))
+    cursor.executemany(
+        'INSERT INTO yearn_vaults_events_copy VALUES'
+        '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+        new_yearn_vaults_events,
+    )
     cursor.execute('DROP TABLE yearn_vaults_events;')
     cursor.execute('ALTER TABLE yearn_vaults_events_copy RENAME TO yearn_vaults_events;')
 
@@ -261,22 +273,24 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     );
     """)
     amm_events = cursor.execute('SELECT * FROM amm_events')
+    new_amm_events = []
     for amm_event in amm_events:
         amm_event = list(amm_event)
         try:
             amm_event[0] = deserialize_evm_tx_hash(amm_event[0])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes
-            amm_event[0] = deserialize_evm_tx_hash(amm_event[0].encode())
-        cursor.execute(
-            'INSERT INTO amm_events_copy VALUES'
-            '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-            tuple(amm_event),
-        )
+            continue
+        new_amm_events.append(tuple(amm_event))
+    cursor.executemany(
+        'INSERT INTO amm_events_copy VALUES'
+        '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+        new_amm_events,
+    )
     cursor.execute('DROP TABLE amm_events;')
     cursor.execute('ALTER TABLE amm_events_copy RENAME TO amm_events;')
 
     # amm_swaps
+    # drop the read only table and re create after modification
     cursor.execute('DROP VIEW combined_trades_view;')
     cursor.execute("""
     CREATE TABLE amm_swaps_copy (
@@ -299,18 +313,19 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     );
     """)
     amm_swaps = cursor.execute('SELECT * FROM amm_swaps')
+    new_amm_swaps = []
     for amm_swap in amm_swaps:
         amm_swap = list(amm_swap)
         try:
             amm_swap[0] = deserialize_evm_tx_hash(amm_swap[0])
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes
-            amm_swap[0] = deserialize_evm_tx_hash(amm_swap[0].encode())
-        cursor.execute(
-            'INSERT INTO amm_swaps_copy VALUES'
-            '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-            tuple(amm_swap),
-        )
+            continue
+        new_amm_swaps.append(tuple(amm_swap))
+    cursor.executemany(
+        'INSERT INTO amm_swaps_copy VALUES'
+        '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+        new_amm_swaps,
+    )
     cursor.execute('DROP TABLE amm_swaps;')
     cursor.execute('ALTER TABLE amm_swaps_copy RENAME TO amm_swaps;')
     cursor.execute("""
@@ -412,9 +427,8 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     SELECT * from trades;
     """)  # noqa: 501
 
-
-def _change_event_identifier_to_bytes(cursor: 'DBCursor') -> None:
-    history_events_mappings = cursor.execute('SELECT * FROM history_events_mappings').fetchall()
+    # this is cascaded when `history_events` is dropped, so keep a copy
+    history_events_mappings = cursor.execute('SELECT * FROM history_events_mappings').fetchall()  # noqa: 501
     cursor.execute("""
     CREATE TABLE history_events_copy (
         identifier INTEGER NOT NULL PRIMARY KEY,
@@ -434,19 +448,24 @@ def _change_event_identifier_to_bytes(cursor: 'DBCursor') -> None:
         UNIQUE(event_identifier, sequence_index)
     );
     """)
+
     history_events = cursor.execute('SELECT * FROM history_events')
+    new_history_events = []
     for history_event in history_events:
         history_event = list(history_event)
         try:
-            history_event[1] = deserialize_evm_tx_hash(history_event[1])
+            if is_valid_ethereum_tx_hash(history_event[1]):
+                history_event[1] = HistoryBaseEntry.deserialize_event_identifier(history_event[1])
+            else:
+                history_event[1] = HistoryBaseEntry.deserialize_event_identifier_from_kraken(history_event[1])  # noqa: 501
         except DeserializationError:
-            # Not a valid hex string, so manually encode to bytes
-            history_event[1] = deserialize_evm_tx_hash(history_event[1].encode())
-        cursor.execute(
-            'INSERT INTO history_events_copy VALUES'
-            '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-            tuple(history_event),
-        )
+            continue
+        new_history_events.append(tuple(history_event))
+    cursor.executemany(
+        'INSERT INTO history_events_copy VALUES'
+        '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+        new_history_events,
+    )
     cursor.execute('DROP TABLE history_events;')
     cursor.execute('ALTER TABLE history_events_copy RENAME TO history_events;')
 
@@ -464,14 +483,11 @@ def upgrade_v32_to_v33(db: 'DBHandler') -> None:
     """Upgrades the DB from v32 to v33
     - Change the schema of `blockchain` column in `xpub_mappings` table to be required.
     - Add blockchain column to `xpubs` table.
-    - Change tx_hash for tables to BLOB type.
-    - Change HistoryBaseEntry's event_identifier column to BLOB type.
+    - Change tx_hash for tables to BLOB type & history events event_identifier column to BLOB type.
     """
-    cursor = db.conn.cursor()
-    _refactor_xpubs_and_xpub_mappings(cursor)
-    _create_new_tables(cursor)
-    _refactor_blockchain_account_labels(cursor)
-    _create_nodes(cursor)
-    _force_bytes_for_tx_hashes(cursor)
-    _change_event_identifier_to_bytes(cursor)
-    db.conn.commit()
+    with db.user_write() as cursor:
+        _refactor_xpubs_and_xpub_mappings(cursor)
+        _create_new_tables(cursor)
+        _refactor_blockchain_account_labels(cursor)
+        _create_nodes(cursor)
+        _force_bytes_for_tx_hashes(cursor)

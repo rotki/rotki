@@ -22,6 +22,7 @@ from typing import (
 )
 
 import pkg_resources
+from eth_utils import is_hexstr
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
@@ -364,3 +365,8 @@ def shift_num_right_by(num: int, digits: int) -> int:
         if num != 0:
             log.error(f'At shift_num_right_by() got unecpected value {num} for num')
         return 0
+
+
+def is_valid_ethereum_tx_hash(val: str) -> bool:
+    """Validates an Ethereum transaction hash."""
+    return len(val) == 66 and is_hexstr(val) is True

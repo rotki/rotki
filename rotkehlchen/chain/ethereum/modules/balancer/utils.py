@@ -246,6 +246,12 @@ def deserialize_pool_share(
 
 
 def deserialize_transaction_id(raw_tx_id: str) -> Tuple[EVMTxHash, int]:
+    """This function deserializes a Balancer's transaction id from the Graph API to
+    get the transaction hash & log index.
+    May raise:
+    - DeserializationError if there's an error splitting the raw transaction id or
+    deserializing the tx_hash.
+    """
     try:
         tx_hash, raw_log_index = raw_tx_id.split('-')
         log_index = int(raw_log_index)

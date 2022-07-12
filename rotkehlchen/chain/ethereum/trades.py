@@ -63,7 +63,7 @@ class AMMSwap(NamedTuple):
     amount1_out: AssetAmount
 
     def __hash__(self) -> int:
-        return hash(self.tx_hash.hex() + str(self.log_index))
+        return hash(self.tx_hash + str(self.log_index).encode())
 
     def __eq__(self, other: Any) -> bool:
         if other is None:

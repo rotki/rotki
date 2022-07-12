@@ -30,7 +30,6 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
     TradeType,
-    deserialize_evm_tx_hash,
 )
 
 history5 = history1 + [Trade(
@@ -111,7 +110,7 @@ def test_include_gas_costs(accountant, google_service):
             fee_currency=None,
             link=None,
         ), HistoryBaseEntry(
-            event_identifier=deserialize_evm_tx_hash(tx_hash),
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hash),
             sequence_index=0,
             timestamp=1569924574000,
             location=Location.BLOCKCHAIN,
@@ -159,7 +158,7 @@ def test_ignored_transactions(accountant, google_service):
             link=None,
         ), HistoryBaseEntry(
             identifier='uniqueid1',  # should normally be given by DB at write time
-            event_identifier=deserialize_evm_tx_hash(tx_hash),
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hash),
             sequence_index=0,
             timestamp=1569924574000,
             location=Location.BLOCKCHAIN,
@@ -172,7 +171,7 @@ def test_ignored_transactions(accountant, google_service):
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
             identifier='uniqueid2',    # should normally be given by DB at write time
-            event_identifier=deserialize_evm_tx_hash(ignored_tx_hash),
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(ignored_tx_hash),
             sequence_index=0,
             timestamp=1569934574000,
             location=Location.BLOCKCHAIN,

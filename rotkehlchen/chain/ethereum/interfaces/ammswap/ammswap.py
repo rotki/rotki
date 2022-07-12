@@ -539,7 +539,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                             tx_hash_deserialized = deserialize_evm_tx_hash(swap['id'].split('-')[0])  # noqa: 501
                         except DeserializationError:
                             msg = (
-                                f'Failed to deserialize addresses in trade from {self.location} graph'  # noqa
+                                f'Failed to deserialize addresses/txn hash in trade from {self.location} graph'  # noqa
                                 f' with token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '  # noqa
                                 f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
                             )

@@ -101,7 +101,7 @@ class BalancerInvestEvent(NamedTuple):
     amount: AssetAmount  # added or removed token amount
 
     def __hash__(self) -> int:
-        return hash(self.tx_hash.hex() + str(self.log_index))
+        return hash(self.tx_hash + str(self.log_index).encode())
 
     def __eq__(self, other: Any) -> bool:
         if other is None:
@@ -130,7 +130,7 @@ class BalancerBPTEvent(NamedTuple):
     amount: AssetAmount  # minted or burned BPT amount
 
     def __hash__(self) -> int:
-        return hash(self.tx_hash.hex() + str(self.log_index))
+        return hash(self.tx_hash + str(self.log_index).encode())
 
     def __eq__(self, other: Any) -> bool:
         if other is None:

@@ -11,7 +11,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import HexBytes, Location, Price, Timestamp
+from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 T = TypeVar('T', bound='ProcessedAccountingEvent')
@@ -112,8 +112,6 @@ class ProcessedAccountingEvent:
         data['index'] = self.index
         data['count_entire_amount_spend'] = self.count_entire_amount_spend
         data['count_cost_basis_pnl'] = self.count_cost_basis_pnl
-        if data['extra_data'].get('tx_hash') is not None and isinstance(data['extra_data']['tx_hash'], HexBytes):  # noqa: 501
-            data['extra_data']['tx_hash'] = data['extra_data']['tx_hash'].hex()
         return data
 
     def calculate_pnl(

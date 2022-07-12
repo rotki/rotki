@@ -13,7 +13,7 @@ from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import DBIgnoreValuesFilter, DBStringFilter, HistoryEventFilterQuery
+from rotkehlchen.db.filtering import DBEqualsFilter, DBIgnoreValuesFilter, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.misc import RemoteError
@@ -354,7 +354,7 @@ class TaskManager():
         db = DBHistoryEvents(self.database)
         new_query_filter = copy.deepcopy(query_filter)
         new_query_filter.filters.append(
-            DBStringFilter(and_op=True, column='usd_value', value='0'),
+            DBEqualsFilter(and_op=True, column='usd_value', value='0'),
         )
         new_query_filter.filters.append(
             DBIgnoreValuesFilter(

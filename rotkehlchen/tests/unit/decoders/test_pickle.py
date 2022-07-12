@@ -82,7 +82,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
     assert len(events) == 3
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=deserialize_evm_tx_hash(
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
                 '0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd',
             ),
             sequence_index=0,
@@ -99,7 +99,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
             notes='Burned 0.00393701451 ETH in gas from 0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=deserialize_evm_tx_hash(
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
                 '0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd',
             ),
             sequence_index=260,
@@ -113,7 +113,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
             notes='Deposit 907.258590539447889901 LOOKS in pickle contract',
             counterparty='pickle finance',
         ), HistoryBaseEntry(
-            event_identifier=deserialize_evm_tx_hash(
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
                 '0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd',
             ),
             sequence_index=262,
@@ -195,7 +195,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
     assert len(events) == 3
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=deserialize_evm_tx_hash(
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
                 '0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab',
             ),
             sequence_index=0,
@@ -212,7 +212,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
             notes='Burned 0.00393701451 ETH in gas from 0xC7Dc4Cd171812a441A30472219d390f4F15f6070',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=deserialize_evm_tx_hash(
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
                 '0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab',
             ),
             sequence_index=106,
@@ -226,7 +226,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
             notes='Return 245.522202162316534411 pLOOKS to the pickle contract',
             counterparty='pickle finance',
         ), HistoryBaseEntry(
-            event_identifier=deserialize_evm_tx_hash(
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
                 '0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab',
             ),
             sequence_index=107,

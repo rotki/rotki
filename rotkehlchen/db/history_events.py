@@ -93,7 +93,7 @@ class DBHistoryEvents():
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 msg = (
-                    f'Tried to edit event to have event_identifier {event.event_identifier.hex()} '
+                    f'Tried to edit event to have event_identifier {event.serialized_event_identifier} '  # noqa: 501
                     f'and sequence_index {event.sequence_index} but it already exists'
                 )
                 return False, msg

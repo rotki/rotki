@@ -55,7 +55,6 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
     TradeType,
-    make_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import pairwise, ts_ms_to_sec, ts_now
@@ -214,7 +213,7 @@ def history_event_from_kraken(
             # Make sure to not generate an event for KFEES that is not of type FEE
             if asset != A_KFEE:
                 group_events.append(HistoryBaseEntry(
-                    event_identifier=make_evm_tx_hash(identifier.encode()),
+                    event_identifier=HistoryBaseEntry.deserialize_event_identifier_from_kraken(identifier),  # noqa: 501
                     sequence_index=idx,
                     timestamp=timestamp,
                     location=Location.KRAKEN,
@@ -230,7 +229,7 @@ def history_event_from_kraken(
                 ))
             if fee_amount != ZERO:
                 group_events.append(HistoryBaseEntry(
-                    event_identifier=make_evm_tx_hash(identifier.encode()),
+                    event_identifier=HistoryBaseEntry.deserialize_event_identifier_from_kraken(identifier),  # noqa: 501
                     sequence_index=current_fee_index,
                     timestamp=timestamp,
                     location=Location.KRAKEN,
@@ -822,7 +821,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     amount=amount,
                     fee_asset=asset,
                     fee=fee,
-                    link=movement.event_identifier.hex(),
+                    link=movement.serialized_event_identifier,
                 ))
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
@@ -872,7 +871,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             adjustments.append(trade_parts[0])
             return None  # skip as they don't have same refid
 
-        event_id = trade_parts[0].event_identifier
+        event_id = trade_parts[0].serialized_event_identifier
         is_spend_receive = False
         trade_assets = []
         spend_part, receive_part, fee_part, kfee_part = None, None, None, None
@@ -905,11 +904,11 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         if is_spend_receive and len(trade_parts) < 2:
             log.warning(
-                f'Found kraken spend/receive events {event_id.hex()} with '
+                f'Found kraken spend/receive events {event_id} with '
                 f'less than 2 parts. {trade_parts}',
             )
             self.msg_aggregator.add_warning(
-                f'Found kraken spend/receive events {event_id.hex()} with '
+                f'Found kraken spend/receive events {event_id} with '
                 f'less than 2 parts. Skipping...',
             )
             return None
@@ -952,11 +951,11 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         if spend_part is None or receive_part is None:
             log.error(
-                f'Failed to process {event_id.hex()}. Couldnt find '
+                f'Failed to process {event_id}. Couldnt find '
                 f'spend/receive parts {trade_parts}',
             )
             self.msg_aggregator.add_error(
-                f'Failed to read trades for event {event_id.hex()}. '
+                f'Failed to read trades for event {event_id}. '
                 f'More details are available at the logs',
             )
             return None
@@ -971,7 +970,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if amount == ZERO:
                 self.msg_aggregator.add_warning(
                     f'Rate for kraken trade couldnt be calculated. Base amount is ZERO '
-                    f'for event {event_id.hex()}. Skipping event',
+                    f'for event {event_id}. Skipping event',
                 )
                 return None
 
@@ -984,7 +983,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if amount == ZERO:
                 self.msg_aggregator.add_warning(
                     f'Rate for kraken trade couldnt be calculated. Base amount is ZERO '
-                    f'for event {event_id.hex()}. Skipping event',
+                    f'for event {event_id}. Skipping event',
                 )
                 return None
 
@@ -1087,7 +1086,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     rate=rate,
                     fee=None,
                     fee_currency=None,
-                    link='adjustment' + a1.event_identifier.hex() + a2.event_identifier.hex(),
+                    link='adjustment' + a1.serialized_event_identifier + a2.serialized_event_identifier,  # noqa: 501
                 )
                 trades.append(trade)
 

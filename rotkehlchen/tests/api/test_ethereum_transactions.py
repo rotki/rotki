@@ -35,6 +35,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
+from rotkehlchen.tests.utils.constants import TXHASH_HEX_TO_BYTES
 from rotkehlchen.tests.utils.factories import (
     generate_tx_entries_response,
     make_ethereum_address,
@@ -43,13 +44,7 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import (
-    EthereumTransaction,
-    EVMTxHash,
-    Timestamp,
-    deserialize_evm_tx_hash,
-    make_evm_tx_hash,
-)
+from rotkehlchen.types import EthereumTransaction, EVMTxHash, Timestamp, make_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 EXPECTED_AFB7_TXS = [{
@@ -314,7 +309,7 @@ def test_query_transactions(rotkehlchen_api_server):
             events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
-                    event_identifier=deserialize_evm_tx_hash(tx_hash_hex),
+                    event_identifier=TXHASH_HEX_TO_BYTES[tx_hash_hex],
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
@@ -340,7 +335,7 @@ def test_query_transactions(rotkehlchen_api_server):
             events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
-                    event_identifier=deserialize_evm_tx_hash(tx_hash_hex),
+                    event_identifier=TXHASH_HEX_TO_BYTES[tx_hash_hex],
                 ),
                 has_premium=True,  # for this function we don't limit. We only limit txs.
             )
@@ -710,7 +705,6 @@ def test_query_transactions_from_to_address(
                     'address': address,
                 },
             )
-            print('RESPONSE: ', response.json())
             result = assert_proper_response_with_result(response)
             assert len(result['entries']) == expected_entries[address]
             assert result['entries_limit'] == FREE_ETH_TX_LIMIT
@@ -887,29 +881,28 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         assert result['entries_found'] == 2
         assert result['entries_total'] == 2
 
-        # TODO: Restore those checks once filtering is back
-        # response = requests.get(
-        #     api_url_for(
-        #         rotkehlchen_api_server,
-        #         'per_address_ethereum_transactions_resource',
-        #         address=ethereum_accounts[0],
-        #     ),
-        # )
-        # result = assert_proper_response_with_result(response)
-        # assert len(result['entries']) == 1
-        # assert result['entries_found'] == 1
-        # assert result['entries_total'] == 2
-        # response = requests.get(
-        #     api_url_for(
-        #         rotkehlchen_api_server,
-        #         'per_address_ethereum_transactions_resource',
-        #         address=ethereum_accounts[1],
-        #     ),
-        # )
-        # result = assert_proper_response_with_result(response)
-        # assert len(result['entries']) == 2
-        # assert result['entries_found'] == 2
-        # assert result['entries_total'] == 2
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'per_address_ethereum_transactions_resource',
+                address=ethereum_accounts[0],
+            ),
+        )
+        result = assert_proper_response_with_result(response)
+        assert len(result['entries']) == 1
+        assert result['entries_found'] == 1
+        assert result['entries_total'] == 2
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'per_address_ethereum_transactions_resource',
+                address=ethereum_accounts[1],
+            ),
+        )
+        result = assert_proper_response_with_result(response)
+        assert len(result['entries']) == 2
+        assert result['entries_found'] == 2
+        assert result['entries_total'] == 2
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x6e15887E2CEC81434C16D587709f64603b39b545']])
