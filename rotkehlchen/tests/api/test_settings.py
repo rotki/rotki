@@ -148,10 +148,6 @@ def test_set_settings(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('rpc_setting, error_msg', [
     (
-        'eth_rpc_endpoint',
-        'Failed to connect to ethereum node own node at endpoint',
-    ),
-    (
         'ksm_rpc_endpoint',
         'Kusama failed to connect to own node at endpoint',
     ),
@@ -186,7 +182,7 @@ def test_set_rpc_endpoint_fail_not_set_others(
     assert result[rpc_setting] != rpc_endpoint
 
 
-@pytest.mark.parametrize('rpc_setting', ['eth_rpc_endpoint', 'ksm_rpc_endpoint'])
+@pytest.mark.parametrize('rpc_setting', ['ksm_rpc_endpoint'])
 def test_unset_rpc_endpoint(rotkehlchen_api_server, rpc_setting):
     """Test the rpc endpoint can be unset"""
     response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
@@ -261,29 +257,6 @@ def test_set_settings_errors(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # set timeout to 1 second to timeout faster
     rotki.chain_manager.ethereum.eth_rpc_timeout = 1
-
-    # Eth rpc endpoint to which we can't connect
-    endpoint = 'http://lol.com:5555'
-    data = {
-        'settings': {'eth_rpc_endpoint': endpoint},
-    }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg=f'Failed to connect to ethereum node own node at endpoint {endpoint}',
-        status_code=HTTPStatus.CONFLICT,
-    )
-
-    # Invalid type for eth_rpc_endpoint
-    data = {
-        'settings': {'eth_rpc_endpoint': 5555},
-    }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Not a valid string',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
 
     # Invalid type for premium_should_sync
     data = {

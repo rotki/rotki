@@ -34,6 +34,7 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.substrate.types import (
     KusamaAddress,
     PolkadotAddress,
@@ -2254,3 +2255,43 @@ class SnapshotEditingSchema(Schema):
                 f'timestamp provided {data["timestamp"]} is not the same as the '
                 f'one for the entries provided.',
             )
+
+
+class EthereumNodeSchema(Schema):
+    name = fields.String(
+        required=True,
+        validate=webargs.validate.NoneOf(
+            iterable=['', ETHERSCAN_NODE_NAME],
+            error=f'Name can\'t be empty or {ETHERSCAN_NODE_NAME}',
+        ),
+    )
+    endpoint = fields.String(
+        required=True,
+        validate=webargs.validate.Length(
+            min=1,
+            error='endpoint can\'t be empty',
+        ),
+    )
+    owned = fields.Boolean(load_default=False)
+    weight = FloatingPercentageField(required=True)
+    active = fields.Boolean(load_default=False)
+
+
+class EthereumNodeEditSchema(EthereumNodeSchema):
+    name = fields.String(
+        required=True,
+        validate=webargs.validate.NoneOf(
+            iterable=[''],
+            error='Name can\'t be empty',
+        ),
+    )
+
+
+class EthereumNodeListDeleteSchema(Schema):
+    node_name = fields.String(
+        required=True,
+        validate=webargs.validate.NoneOf(
+            iterable=['', ETHERSCAN_NODE_NAME],
+            error=f'Name can\'t be empty or {ETHERSCAN_NODE_NAME}',
+        ),
+    )

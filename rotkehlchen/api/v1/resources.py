@@ -55,6 +55,9 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
+    EthereumNodeEditSchema,
+    EthereumNodeListDeleteSchema,
+    EthereumNodeSchema,
     EthereumTransactionDecodingSchema,
     EthereumTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
@@ -127,6 +130,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -476,6 +480,64 @@ class EthereumAirdropsResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_ethereum_airdrops(async_query)
+
+
+class EthereumNodesResource(BaseMethodView):
+
+    put_schema = EthereumNodeSchema()
+    post_schema = EthereumNodeEditSchema()
+    delete_schema = EthereumNodeListDeleteSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_web3_nodes()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json_and_query')
+    def put(
+        self,
+        name: str,
+        endpoint: str,
+        owned: bool,
+        weight: FVal,
+        active: bool,
+    ) -> Response:
+        node = WeightedNode(
+            node_info=NodeName(
+                name=name,
+                endpoint=endpoint,
+                owned=owned,
+            ),
+            weight=weight,
+            active=active,
+        )
+        return self.rest_api.add_web3_node(node)
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
+        self,
+        name: str,
+        endpoint: str,
+        owned: bool,
+        weight: FVal,
+        active: bool,
+    ) -> Response:
+        node = WeightedNode(
+            node_info=NodeName(
+                name=name,
+                endpoint=endpoint,
+                owned=owned,
+            ),
+            weight=weight,
+            active=active,
+        )
+        return self.rest_api.update_web3_node(node)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json_and_query')
+    def delete(self, node_name: str) -> Response:
+        return self.rest_api.delete_web3_node(node_name)
 
 
 class ExternalServicesResource(BaseMethodView):

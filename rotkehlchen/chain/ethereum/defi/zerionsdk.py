@@ -11,11 +11,11 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
-from rotkehlchen.chain.ethereum.types import NodeName, string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode, string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS, ZERION_ABI
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -29,6 +29,7 @@ from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -137,6 +138,17 @@ KNOWN_ZERION_PROTOCOL_NAMES = (
     'TimeWarp • Staking',
     'Gelato Network • Locked GEL',
 )
+WEIGHTED_NODES_WITH_HIGH_GAS_LIMIT = (
+    WeightedNode(
+        node_info=NodeName(
+            name='1inch',
+            endpoint='https://web3.1inch.exchange',
+            owned=False,
+        ),
+        weight=FVal(0.15),
+        active=True,
+    ),
+)
 
 
 def _is_token_non_standard(symbol: str, address: ChecksumEthAddress) -> bool:
@@ -199,6 +211,7 @@ class ZerionSDK():
             self,
             ethereum_manager: 'EthereumManager',
             msg_aggregator: MessagesAggregator,
+            database: 'DBHandler',
     ) -> None:
         self.ethereum = ethereum_manager
         self.msg_aggregator = msg_aggregator
@@ -207,6 +220,7 @@ class ZerionSDK():
             abi=ZERION_ABI,
             deployed_block=1586199170,
         )
+        self.database = database
         self.protocol_names: Optional[List[str]] = None
 
     def _get_protocol_names(self) -> List[str]:
@@ -230,14 +244,19 @@ class ZerionSDK():
         return protocol_names
 
     def _query_chain_for_all_balances(self, account: ChecksumEthAddress) -> List:
-        if NodeName.OWN in self.ethereum.web3_mapping:
+        if (own_node_info := self.ethereum.get_own_node_info()) is not None:
             try:
                 # In this case we don't care about the gas limit
+                own_node = WeightedNode(
+                    node_info=own_node_info,
+                    active=True,
+                    weight=ONE,
+                )
                 return self.contract.call(
                     ethereum=self.ethereum,
                     method_name='getBalances',
                     arguments=[account],
-                    call_order=[NodeName.OWN, NodeName.ONEINCH],
+                    call_order=(own_node, ) + WEIGHTED_NODES_WITH_HIGH_GAS_LIMIT,
                 )
             except RemoteError:
                 log.warning(

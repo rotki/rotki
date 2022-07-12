@@ -59,6 +59,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultHistory,
 )
 from rotkehlchen.chain.ethereum.trades import AMMTrade
+from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
@@ -122,6 +123,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             XpubData,
             Eth2Deposit,
             StakingEvent,
+            NodeName,
     )):
         return entry.serialize()
     if isinstance(entry, (
@@ -154,6 +156,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             DillBalance,
             NFTResult,
             ExchangeLocationID,
+            WeightedNode,
     )):
         return process_result(entry.serialize())
     if isinstance(entry, (
@@ -192,6 +195,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             LiquityStakeEventType,
             BalanceType,
             CostBasisMethod,
+            NodeName,
     )):
         return str(entry)
 

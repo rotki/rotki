@@ -29,7 +29,13 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED, A_YAM_V1
+from rotkehlchen.tests.utils.constants import (
+    A_DOLLAR_BASED,
+    A_YAM_V1,
+    AVADO_POOL_NODE_NAME,
+    BLOCKSOUT_NODE_NAME,
+    MYCRYPTO_NODE_NAME,
+)
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
@@ -64,9 +70,9 @@ def test_get_balances_module_not_activated(
 
 UNISWAP_TEST_OPTIONS = [
     # Test with infura (as own node), many open nodes, and premium + graph
-    (False, INFURA_TEST, (NodeName.OWN, NodeName.MYCRYPTO)),
-    (False, '', (NodeName.MYCRYPTO, NodeName.BLOCKSCOUT, NodeName.AVADO_POOL)),
-    (True, '', ()),
+    (False, (NodeName(name='own', endpoint=INFURA_TEST, owned=True), MYCRYPTO_NODE_NAME)),
+    (False, (MYCRYPTO_NODE_NAME, BLOCKSOUT_NODE_NAME, AVADO_POOL_NODE_NAME)),
+    (True, ()),
 ]
 # Skipped infura and many open nodes for now in the CI. Fails flakily due to timeouts
 # from time to time. We should run locally to make sure that it still works.
@@ -76,7 +82,7 @@ SKIPPED_UNISWAP_TEST_OPTIONS = [UNISWAP_TEST_OPTIONS[-1]]
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize(
-    'start_with_valid_premium,ethrpc_endpoint,ethereum_manager_connect_at_start',
+    'start_with_valid_premium,ethereum_manager_connect_at_start',
     SKIPPED_UNISWAP_TEST_OPTIONS,
 )
 def test_get_balances(

@@ -22,6 +22,7 @@ def test_query_all_protocol_balances_for_account(
         inquirer,  # pylint: disable=unused-argument
         ethereum_manager_connect_at_start,
         call_order,  # pylint: disable=unused-argument
+        database,
 ):
     """Simple test that we can get balances for various defi protocols via zerion
 
@@ -36,7 +37,7 @@ def test_query_all_protocol_balances_for_account(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         ethereum=ethereum_manager,
     )
-    zerion = ZerionSDK(ethereum_manager, function_scope_messages_aggregator)
+    zerion = ZerionSDK(ethereum_manager, function_scope_messages_aggregator, database)
     balances = zerion.all_balances_for_account('0xf753beFE986e8Be8EBE7598C9d2b6297D9DD6662')
 
     if len(balances) == 0:
@@ -54,8 +55,9 @@ def test_protocol_names_are_known(
         ethereum_manager,
         function_scope_messages_aggregator,
         inquirer,  # pylint: disable=unused-argument
+        database,
 ):
-    zerion = ZerionSDK(ethereum_manager, function_scope_messages_aggregator)
+    zerion = ZerionSDK(ethereum_manager, function_scope_messages_aggregator, database)
     protocol_names = zerion.contract.call(
         ethereum=zerion.ethereum,
         method_name='getProtocolNames',

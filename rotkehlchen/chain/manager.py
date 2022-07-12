@@ -403,13 +403,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.defichad = DefiChad(
             ethereum_manager=self.ethereum,
             msg_aggregator=self.msg_aggregator,
+            database=self.database,
         )
 
     def __del__(self) -> None:
         del self.ethereum
-
-    def set_eth_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
-        return self.ethereum.set_rpc_endpoint(endpoint)
 
     def set_ksm_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
         return self.kusama.set_rpc_endpoint(endpoint)

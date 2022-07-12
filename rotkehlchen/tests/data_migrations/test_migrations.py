@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -160,3 +161,35 @@ def test_migration_3(rotkehlchen_api_server):
 
     assert btc_iconpath.is_file() is False
     assert eth_iconpath.is_file() is False
+
+
+@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_migration_4(rotkehlchen_api_server):
+    """
+    Test that the fourth data migration for rotki works. This migration adds the ethereum nodes
+    that will be used as open nodes to the database.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=MIGRATION_LIST[3:],
+    )
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
+    dir_path = Path(__file__).resolve().parent.parent.parent
+    with open(dir_path / 'data' / 'nodes.json', 'r') as f:
+        nodes = json.loads(f.read())
+        web3_nodes = database.get_web3_nodes()
+        assert len(web3_nodes) == len(nodes)
+        for node in nodes:
+            for web3_node in web3_nodes:
+                if web3_node.node_info.name == node['node']:
+                    assert web3_node.node_info.endpoint == node['endpoint']
+                    assert web3_node.active == node['active']
+                    assert web3_node.node_info.owned == node['owned']
+                    assert web3_node.weight == FVal(node['weight'])
+                    continue

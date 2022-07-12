@@ -34,11 +34,7 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
 from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
-from rotkehlchen.chain.ethereum.manager import (
-    ETHEREUM_NODES_TO_CONNECT_AT_START,
-    EthereumManager,
-    NodeName,
-)
+from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
@@ -242,7 +238,6 @@ class Rotkehlchen():
             )
             self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
             self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
-            eth_rpc_endpoint = settings.eth_rpc_endpoint
             # Initialize the price historian singleton
             PriceHistorian(
                 data_directory=self.data_dir,
@@ -258,13 +253,14 @@ class Rotkehlchen():
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
 
+        ethereum_nodes = self.data.db.get_web3_nodes(only_active=True)
         # Initialize blockchain querying modules
         ethereum_manager = EthereumManager(
-            ethrpc_endpoint=eth_rpc_endpoint,
             etherscan=self.etherscan,
             msg_aggregator=self.msg_aggregator,
             greenlet_manager=self.greenlet_manager,
-            connect_at_start=ETHEREUM_NODES_TO_CONNECT_AT_START,
+            database=self.data.db,
+            connect_at_start=ethereum_nodes,
         )
         kusama_manager = SubstrateManager(
             chain=SubstrateChain.KUSAMA,
@@ -837,11 +833,6 @@ class Rotkehlchen():
 
     def set_settings(self, settings: ModifiableDBSettings) -> Tuple[bool, str]:
         """Tries to set new settings. Returns True in success or False with message if error"""
-        if settings.eth_rpc_endpoint is not None:
-            result, msg = self.chain_manager.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
-            if not result:
-                return False, msg
-
         if settings.ksm_rpc_endpoint is not None:
             result, msg = self.chain_manager.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
             if not result:
@@ -931,7 +922,7 @@ class Rotkehlchen():
         if self.user_is_logged_in:
             with self.data.db.conn.read_ctx() as cursor:
                 result['last_balance_save'] = self.data.db.get_last_balance_save_time(cursor)
-                result['eth_node_connection'] = self.chain_manager.ethereum.web3_mapping.get(NodeName.OWN, None) is not None  # noqa : E501
+                result['eth_node_connection'] = self.chain_manager.ethereum.get_own_node_web3() is not None  # noqa : E501
                 result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa : E501
         return result
 

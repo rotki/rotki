@@ -3,17 +3,10 @@ import os
 import pytest
 
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
-from rotkehlchen.chain.ethereum.manager import (
-    ETHEREUM_NODES_TO_CONNECT_AT_START,
-    OPEN_NODES,
-    OPEN_NODES_WEIGHT_MAP,
-    NodeName,
-)
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
+from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 from rotkehlchen.constants.ethereum import ATOKEN_ABI, ERC20TOKEN_ABI, YEARN_YCRV_VAULT
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_FULL_TEST_PARAMETERS,
@@ -156,29 +149,25 @@ def test_get_transaction_by_hash(ethereum_manager, call_order, ethereum_manager_
     assert result == expected_tx
 
 
-@pytest.mark.parametrize('ethrpc_endpoint,ethereum_manager_connect_at_start,call_order', [
-    (
-        '',
-        [x for x in OPEN_NODES if x != NodeName.ETHERSCAN],
-        [x for x in OPEN_NODES if x != NodeName.ETHERSCAN],
-    ),
-])
-def test_use_open_nodes(ethereum_manager, call_order, ethereum_manager_connect_at_start):
+def test_use_open_nodes(ethereum_manager, database):
     """Test that we can connect to and use the open nodes (except from etherscan)
 
     Note: If this fails with transaction not found probably open nodes started pruning.
     Change test to use a more recent transaction.
     """
     # Wait until all nodes are connected
+    web3_nodes_all = database.get_web3_nodes(only_active=True)
+    web3_nodes = [node for node in web3_nodes_all if node.node_info.name != ETHERSCAN_NODE_NAME]
+    ethereum_manager.connect_to_multiple_nodes(web3_nodes)
     wait_until_all_nodes_connected(
-        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        ethereum_manager_connect_at_start=web3_nodes,
         ethereum=ethereum_manager,
     )
     result = ethereum_manager.get_transaction_receipt(
-        '0x1470187132df3b6755ed30774a772ec8bbc1cd27f10a8a6b7f6095dd95560f20',
-        call_order=call_order,
+        '0x76dbd4fd8769af995b3597733ff6bf5daca619cb55a9d7347d8e3ab949ac5984',
+        call_order=web3_nodes,
     )
-    block_hash = '0x23daab1980fd238778750bf9ac732fa1bb45e3439fa208ac47f5995efb5924e3'
+    block_hash = '0xfd7d2542ce9804f3fc4df304bc6ec259db3934d8e75b4f9228c5395e3083cc47'
     assert result['blockHash'] == block_hash
 
 
@@ -300,24 +289,6 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
         call_order=call_order,
     )
     assert all(x['transactionIndex'] == 0 for x in result['logs'])
-
-
-def test_nodes_weight_map():
-    """Test the weight map has no duplicates and adds to 100%"""
-    nodes_set = set()
-    total = ZERO
-    for node, value in OPEN_NODES_WEIGHT_MAP.items():
-        assert node not in nodes_set, f'node {str(node)} appears more than once'
-        nodes_set.add(node)
-        total += FVal(value)
-
-    assert total == ONE
-
-
-def test_nodes_sets():
-    """Test that all nodes sets contain the nodes they should"""
-    assert set(OPEN_NODES) - set({NodeName.ETHERSCAN}) == set(ETHEREUM_NODES_TO_CONNECT_AT_START) - set({NodeName.OWN})  # noqa: E501
-    assert set(OPEN_NODES_WEIGHT_MAP.keys()) - set({NodeName.ETHERSCAN}) == set(ETHEREUM_NODES_TO_CONNECT_AT_START) - set({NodeName.OWN})  # noqa: E501
 
 
 @pytest.mark.skipif(

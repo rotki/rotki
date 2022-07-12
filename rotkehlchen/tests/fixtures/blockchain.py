@@ -117,21 +117,16 @@ def fixture_covalent_avalanche(messages_aggregator, database):
 def fixture_ethereum_manager(
         etherscan,
         messages_aggregator,
-        ethrpc_endpoint,
         ethereum_manager_connect_at_start,
         greenlet_manager,
+        database,
 ):
-    if ethrpc_endpoint is None:
-        endpoint = 'http://localhost:8545'
-    else:
-        endpoint = ethrpc_endpoint
-
     manager = EthereumManager(
-        ethrpc_endpoint=endpoint,
         etherscan=etherscan,
         msg_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
         connect_at_start=ethereum_manager_connect_at_start,
+        database=database,
     )
     wait_until_all_nodes_connected(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,

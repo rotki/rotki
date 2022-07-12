@@ -8,6 +8,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 class DefiChad():
@@ -17,9 +18,14 @@ class DefiChad():
             self,
             ethereum_manager: 'EthereumManager',
             msg_aggregator: MessagesAggregator,
+            database: 'DBHandler',
     ) -> None:
         self.ethereum = ethereum_manager
-        self.zerion_sdk = ZerionSDK(ethereum_manager, msg_aggregator)
+        self.zerion_sdk = ZerionSDK(
+            ethereum_manager=ethereum_manager,
+            msg_aggregator=msg_aggregator,
+            database=database,
+        )
 
     def query_defi_balances(
             self,

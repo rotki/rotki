@@ -20,8 +20,9 @@ from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
 from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
+    from rotkehlchen.chain.ethereum.types import WeightedNode
 
 WEB3 = Web3()
 
@@ -36,7 +37,7 @@ class EthereumContract(NamedTuple):
             ethereum: 'EthereumManager',
             method_name: str,
             arguments: Optional[List[Any]] = None,
-            call_order: Optional[Sequence['NodeName']] = None,
+            call_order: Optional[Sequence['WeightedNode']] = None,
             block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
         return ethereum.call_contract(
@@ -55,7 +56,7 @@ class EthereumContract(NamedTuple):
             argument_filters: Dict[str, Any],
             from_block: int,
             to_block: Union[int, Literal['latest']] = 'latest',
-            call_order: Optional[Sequence['NodeName']] = None,
+            call_order: Optional[Sequence['WeightedNode']] = None,
     ) -> Any:
         return ethereum.get_logs(
             contract_address=self.address,

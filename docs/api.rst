@@ -709,6 +709,157 @@ Getting or modifying settings
    :statuscode 409: No user is logged in or tried to set eth rpc endpoint that could not be reached.
    :statuscode 500: Internal rotki error
 
+Adding information for ethereum nodes
+=====================================
+
+.. http:get:: /api/(version)/blochchains/ETH/nodes
+
+   By querying this endpoint the information for all the nodes in the database will be returned
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blochchains/ETH/nodes HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   The following is an example response of querying ethereum nodes information.
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": [
+            {
+                "node": "etherscan",
+                "endpoint": "",
+                "owned": false,
+                "weight": 40,
+                "active": true
+            },
+            {
+                "node": "mycrypto",
+                "endpoint": "https://api.mycryptoapi.com/eth",
+                "owned": false,
+                "weight": 20,
+                "active": true
+            },
+            {
+                "node": "blockscout",
+                "endpoint": "https://mainnet-nethermind.blockscout.com/",
+                "owned": false,
+                "weight": 20,
+                "active": true
+            },
+            {
+                "node": "avado pool",
+                "endpoint": "https://mainnet.eth.cloud.ava.do/",
+                "owned": false,
+                "weight": 20,
+                "active": true
+            }
+        ],
+        "message": ""
+      }
+
+   :resjson list result: A list with information about the ethereum nodes.
+   :resjson string node: Name and primary key of the node.
+   :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
+   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string owned: True if the user owns the node or false if is a public node.
+   :resjson string active: True if the node should be used or false if it shouldn't.
+
+   :statuscode 200: Querying was successful
+   :statuscode 409: No user is logged.
+   :statuscode 500: Internal rotki error
+
+.. http:put:: /api/(version)/blochchains/ETH/nodes
+
+   By doing a PUT on this endpoint you will be able to add a new node to the list of nodes.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blochchains/ETH/nodes HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+        "name": "my_node",
+        "endpoint": "http://localhost:8385",
+        "owned": true,
+        "weight": 40,
+        "active": true
+      }
+
+   :resjson string name: Name and primary key of the node. This field has to be unique. This field cannot be empty or use the key ``etherscan``.
+   :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
+   :resjson string owned: True if the user owns the node or false if is a public node.
+   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string active: True if the node should be used or false if it shouldn't.
+
+   :statuscode 200: Insertion was successful.
+   :statuscode 409: No user is logged or entrie couldn't be created.
+   :statuscode 500: Internal rotki error
+
+.. http:post:: /api/(version)/blochchains/ETH/nodes
+
+   By doing a POST on this endpoint you will be able to edit an already existing node entry with the information provided.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blochchains/ETH/nodes HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+        "name": "my_node",
+        "endpoint": "http://localhost:8386",
+        "owned": true,
+        "weight": 80,
+        "active": false
+      }
+
+   :resjson string name: Name and primary key of the node. This field cannot be modified.
+   :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
+   :resjson string owned: True if the user owns the node or false if is a public node.
+   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string active: True if the node should be used or false if it shouldn't.
+
+   :statuscode 200: Update was successful.
+   :statuscode 409: No user is logged or entrie couldn't be updated.
+   :statuscode 500: Internal rotki error
+
+.. http:delete:: /api/(version)/blochchains/ETH/nodes
+
+   By doing a DELETE on this endpoint you will be able to delete an already existing node.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blochchains/ETH/nodes HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+        "node_name": "1inch"
+      }
+
+   :resjson string node_name: Name and primary key of the node. Cannot delete the ``etherscan`` entry.
+
+   :statuscode 200: Deletion was successful.
+   :statuscode 409: No user is logged or failed to delete because the node name is not in the database.
+   :statuscode 500: Internal rotki error
+
+
 Query the result of an ongoing backend task
 ===========================================
 

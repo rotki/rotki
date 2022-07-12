@@ -71,6 +71,18 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
 """)
 
 
+def _create_nodes(cursor: 'DBCursor') -> None:
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS web3_nodes(
+    name TEXT NOT NULL PRIMARY KEY,
+    address TEXT NOT NULL,
+    owned BOOLEAN NOT NULL DEFAULT FALSE,
+    active BOOLEAN NOT NULL DEFAULT FALSE,
+    weight INTEGER NOT NULL
+    );
+""")
+
+
 def _refactor_blockchain_account_labels(cursor: 'DBCursor') -> None:
     cursor.execute('UPDATE blockchain_accounts SET label = NULL WHERE label = ""')
 
@@ -84,4 +96,5 @@ def upgrade_v32_to_v33(db: 'DBHandler') -> None:
     _refactor_xpubs_and_xpub_mappings(cursor)
     _create_new_tables(cursor)
     _refactor_blockchain_account_labels(cursor)
+    _create_nodes(cursor)
     db.conn.commit()

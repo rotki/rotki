@@ -1,4 +1,10 @@
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import (
+    ETHERSCAN_NODE_NAME,
+    NodeName,
+    WeightedNode,
+    string_to_ethereum_address,
+)
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
 RANGE_PREFIX_ETHTX = 'ethtxs'
@@ -14,3 +20,13 @@ GENESIS_HASH = deserialize_evm_tx_hash('0x' + '0' * 64)  # hash for transactions
 ETHEREUM_BEGIN = Timestamp(1438269973)
 
 CPT_KRAKEN = 'kraken'
+
+ETHERSCAN_NODE = WeightedNode(
+    node_info=NodeName(
+        name=ETHERSCAN_NODE_NAME,
+        endpoint='',
+        owned=False,
+    ),
+    weight=ONE,
+    active=True,
+)
