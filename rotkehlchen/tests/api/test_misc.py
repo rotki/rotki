@@ -3,8 +3,8 @@ from typing import Any, Dict
 from unittest.mock import patch
 
 import requests
-from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 
+from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -129,7 +129,9 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
 
 def test_manage_ethereum_nodes(rotkehlchen_api_server):
     """Test that list of nodes can be correctly updated and queried"""
-    response = requests.get(api_url_for(rotkehlchen_api_server, "ethereumnodesresource"))
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    nodes_at_start = len(database.get_web3_nodes(only_active=True))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
     assert len(result) == 7
     for node in result:
@@ -140,18 +142,18 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
 
     # try to delete a node
     response = requests.delete(
-        api_url_for(rotkehlchen_api_server, "ethereumnodesresource"),
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={'node_name': '1inch'},
     )
     assert_proper_response(response)
     # check that is not anymore in the returned list
-    response = requests.get(api_url_for(rotkehlchen_api_server, "ethereumnodesresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
     assert not any([node['node'] == '1inch' for node in result])
 
     # now try to add it again
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "ethereumnodesresource"),
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
             'name': '1inch',
             'endpoint': 'https://web3.1inch.exchange',
@@ -161,7 +163,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         },
     )
     assert_proper_response(response)
-    response = requests.get(api_url_for(rotkehlchen_api_server, "ethereumnodesresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
     for node in result:
         if node['node'] == '1inch':
@@ -173,7 +175,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
 
     # Try to add etherscan as node
     response = requests.put(
-        api_url_for(rotkehlchen_api_server, "ethereumnodesresource"),
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
             'name': 'etherscan',
             'endpoint': 'ewarwae',
@@ -190,7 +192,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
 
     # try to edit a node
     response = requests.post(
-        api_url_for(rotkehlchen_api_server, "ethereumnodesresource"),
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
             'name': '1inch',
             'endpoint': 'ewarwae',
@@ -200,7 +202,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         },
     )
     assert_proper_response(response)
-    response = requests.get(api_url_for(rotkehlchen_api_server, "ethereumnodesresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
     for node in result:
         if node['node'] == '1inch':
@@ -209,3 +211,16 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             assert node['endpoint'] == 'ewarwae'
             assert node['owned'] is True
             break
+
+    # set weight to 0
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
+        json={
+            'name': '1inch',
+            'endpoint': 'https://web3.1inch.exchange',
+            'owned': False,
+            'weight': 0,
+            'active': True,
+        },
+    )
+    assert nodes_at_start - len(database.get_web3_nodes(only_active=True)) == 1

@@ -2518,6 +2518,9 @@ class RestAPI():
             self.rotkehlchen.data.db.add_web3_node(node)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        # Update the connected nodes
+        nodes_to_connect = self.rotkehlchen.data.db.get_web3_nodes(only_active=True)
+        self.rotkehlchen.chain_manager.ethereum.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def update_web3_node(self, node: WeightedNode) -> Response:
@@ -2525,6 +2528,9 @@ class RestAPI():
             self.rotkehlchen.data.db.update_web3_node(node)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        # Update the connected nodes
+        nodes_to_connect = self.rotkehlchen.data.db.get_web3_nodes(only_active=True)
+        self.rotkehlchen.chain_manager.ethereum.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def delete_web3_node(self, node_name: str) -> Response:
@@ -2532,6 +2538,9 @@ class RestAPI():
             self.rotkehlchen.data.db.delete_web3_node(node_name)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        # Update the connected nodes
+        nodes_to_connect = self.rotkehlchen.data.db.get_web3_nodes(only_active=True)
+        self.rotkehlchen.chain_manager.ethereum.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def purge_module_data(self, module_name: Optional[ModuleName]) -> Response:

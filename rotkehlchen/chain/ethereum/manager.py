@@ -904,6 +904,7 @@ class EthereumManager():
             tx_hash: EVMTxHash,
             call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> EthereumTransaction:
+        print('0000', call_order)
         return self.query(
             method=self._get_transaction_by_hash,
             call_order=call_order if call_order is not None else self.default_call_order(),

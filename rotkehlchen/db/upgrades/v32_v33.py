@@ -81,13 +81,6 @@ def _create_nodes(cursor: 'DBCursor') -> None:
     weight INTEGER NOT NULL
     );
 """)
-    cursor.execute('INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("etherscan", "", FALSE, TRUE, 0.3);')  # noqa: E501
-    cursor.execute('INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("mycrypto", "https://api.mycryptoapi.com/eth", FALSE, TRUE, 0.15);')  # noqa: E501
-    cursor.execute('INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("blockscout", "https://mainnet-nethermind.blockscout.com/", FALSE, TRUE, 0.1);')  # noqa: E501
-    cursor.execute('INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("avado pool", "https://mainnet.eth.cloud.ava.do/", FALSE, TRUE, 0.05);')  # noqa: E501
-    cursor.execute('INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("1inch", "https://web3.1inch.exchange", FALSE, TRUE, 0.15);')  # noqa: E501
-    cursor.execute('INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("myetherwallet", "https://nodes.mewapi.io/rpc/eth", FALSE, TRUE, 0.15);')  # noqa: E501
-    cursor.execute('INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES ("cloudflare", "https://cloudflare-eth.com/", FALSE, TRUE, 0.1);')  # noqa: E501
 
 
 def _refactor_blockchain_account_labels(cursor: 'DBCursor') -> None:

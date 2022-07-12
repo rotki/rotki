@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, NamedTuple, Tuple, Type, Union
 
 from eth_typing import HexAddress, HexStr
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 
 from rotkehlchen.types import ChecksumEthAddress
@@ -60,16 +59,12 @@ class WeightedNode(NamedTuple):
         }
 
     def serialize_for_db(self) -> Tuple[str, str, bool, bool, str]:
-        if self.weight == ZERO:
-            weight_string = '0.0'
-        else:
-            weight_string = str(self.weight)
         return (
             self.node_info.name,
             self.node_info.endpoint,
             self.node_info.owned,
             self.active,
-            weight_string,
+            str(self.weight),
         )
 
     @classmethod

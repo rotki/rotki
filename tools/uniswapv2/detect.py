@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.constants import WEIGHTED_ETHEREUM_NODES
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName, WeightedNode
@@ -28,14 +27,13 @@ DB_PASSWORD_VAR = 'DB_PASSWORD'
 
 
 def init_ethereum(rpc_endpoint: str, use_other_nodes: bool, database: DBHandler) -> EthereumManager:
-    nodes_to_connect = WEIGHTED_ETHEREUM_NODES if use_other_nodes else (WeightedNode(node=NodeName.OWN,weight=ONE))
+    nodes_to_connect = database.get_web3_nodes(only_active=True) if use_other_nodes else (WeightedNode(node=NodeName.OWN,weight=ONE))
     msg_aggregator = MessagesAggregator()
     etherscan = Etherscan(database=None, msg_aggregator=msg_aggregator)
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)
     greenlet_manager = GreenletManager(msg_aggregator=msg_aggregator)
     etherscan.api_key = api_key
     ethereum = EthereumManager(
-        ethrpc_endpoint=rpc_endpoint,
         etherscan=etherscan,
         msg_aggregator=msg_aggregator,
         greenlet_manager=greenlet_manager,

@@ -6,6 +6,7 @@ import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION, DataMigrationManager
+from rotkehlchen.data_migrations.migrations.migration_4 import read_and_write_nodes_in_database
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
@@ -90,6 +91,11 @@ def fixture_perform_upgrades_at_unlock():
     return True
 
 
+@pytest.fixture(name='perform_nodes_insertion')
+def fixture_perform_nodes_insertion():
+    return True
+
+
 def initialize_mock_rotkehlchen_instance(
         rotki,
         start_with_logged_in_user,
@@ -119,6 +125,7 @@ def initialize_mock_rotkehlchen_instance(
         user_data_dir,
         perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
+        perform_nodes_insertion,
 ):
     if not start_with_logged_in_user:
         return
@@ -221,6 +228,10 @@ def initialize_mock_rotkehlchen_instance(
     # customized fixtures that may have been set by the tests
     rotki.chain_manager.accounts = blockchain_accounts
 
+    if perform_nodes_insertion:
+        with rotki.data.db.user_write() as cursor:
+            read_and_write_nodes_in_database(write_cursor=cursor)
+
     maybe_mock_historical_price_queries(
         historian=PriceHistorian(),
         should_mock_price_queries=should_mock_price_queries,
@@ -284,6 +295,7 @@ def fixture_rotkehlchen_api_server(
         user_data_dir,
         perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
+        perform_nodes_insertion,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -321,6 +333,7 @@ def fixture_rotkehlchen_api_server(
         user_data_dir=user_data_dir,
         perform_migrations_at_unlock=perform_migrations_at_unlock,
         perform_upgrades_at_unlock=perform_upgrades_at_unlock,
+        perform_nodes_insertion=perform_nodes_insertion,
     )
     yield api_server
     api_server.stop()
@@ -356,6 +369,7 @@ def rotkehlchen_instance(
         user_data_dir,
         perform_migrations_at_unlock,
         perform_upgrades_at_unlock,
+        perform_nodes_insertion,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -388,6 +402,7 @@ def rotkehlchen_instance(
         user_data_dir=user_data_dir,
         perform_migrations_at_unlock=perform_migrations_at_unlock,
         perform_upgrades_at_unlock=perform_upgrades_at_unlock,
+        perform_nodes_insertion=perform_nodes_insertion,
     )
     return uninitialized_rotkehlchen
 

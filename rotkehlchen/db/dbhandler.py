@@ -3274,7 +3274,7 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             if only_active:
-                cursor.execute('SELECT name, address, owned, weight, active FROM web3_nodes WHERE active=TRUE AND WEIGHT != "0.0";')  # noqa: E501
+                cursor.execute('SELECT name, address, owned, weight, active FROM web3_nodes WHERE active=TRUE AND CAST(weight as decimal) != 0;')  # noqa: E501
             else:
                 cursor.execute('SELECT name, address, owned, weight, active FROM web3_nodes;')
             return [
@@ -3304,19 +3304,15 @@ class DBHandler:
         with self.conn.read_ctx() as cursor:
             cursor.execute('SELECT COUNT(*) FROM web3_nodes WHERE name=?', (node.node_info.name,))
             if cursor.fetchone() != (1,):
-                raise InputError(f'Node with name {node.node_info.name} doesn\'t exists')
+                raise InputError(f'Node with name {node.node_info.name} doesn\'t exist')
         with self.user_write() as cursor:
-            if node.weight == ZERO:
-                weight = '0.0'
-            else:
-                weight = str(node.weight)
             cursor.execute(
                 'UPDATE web3_nodes SET address=?, owned=?, active=?, weight=? WHERE name=?',
                 (
                     node.node_info.endpoint,
                     node.node_info.owned,
                     node.active,
-                    weight,
+                    str(node.weight),
                     node.node_info.name,
                 ),
             )

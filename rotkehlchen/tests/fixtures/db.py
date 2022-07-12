@@ -7,6 +7,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.data_migrations.migrations.migration_4 import read_and_write_nodes_in_database
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.tests.utils.database import (
@@ -153,11 +154,12 @@ def database(
         manually_tracked_balances,
         data_migration_version,
         use_custom_database,
+        perform_nodes_insertion,
 ) -> Optional[DBHandler]:
     if not start_with_logged_in_user:
         return None
 
-    return _init_database(
+    db_handler = _init_database(
         data_dir=user_data_dir,
         msg_aggregator=function_scope_messages_aggregator,
         password=db_password,
@@ -171,6 +173,10 @@ def database(
         data_migration_version=data_migration_version,
         use_custom_database=use_custom_database,
     )
+    if perform_nodes_insertion:
+        with db_handler.user_write() as cursor:
+            read_and_write_nodes_in_database(write_cursor=cursor)
+    return db_handler
 
 
 @pytest.fixture(scope='session')
