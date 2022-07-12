@@ -254,7 +254,7 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/liquity/staking', LiquityStakingResource),
     ('/blockchains/ETH/modules/pickle/dill', PickleDillResource),
     ('/blockchains/ETH/modules/loopring/balances', LoopringBalancesResource),
-    ('/blochchains/ETH/nodes', EthereumNodesResource),
+    ('/blockchains/ETH/nodes', EthereumNodesResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/blockchains/<string:blockchain>/xpub', BTCXpubResource),
     ('/blockchains/AVAX/transactions', AvalancheTransactionsResource),

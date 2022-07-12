@@ -712,7 +712,7 @@ Getting or modifying settings
 Adding information for ethereum nodes
 =====================================
 
-.. http:get:: /api/(version)/blochchains/ETH/nodes
+.. http:get:: /api/(version)/blockchains/ETH/nodes
 
    By querying this endpoint the information for all the nodes in the database will be returned
 
@@ -720,7 +720,7 @@ Adding information for ethereum nodes
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blochchains/ETH/nodes HTTP/1.1
+      GET /api/1/blockchains/ETH/nodes HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
@@ -777,7 +777,7 @@ Adding information for ethereum nodes
    :statuscode 409: No user is logged.
    :statuscode 500: Internal rotki error
 
-.. http:put:: /api/(version)/blochchains/ETH/nodes
+.. http:put:: /api/(version)/blockchains/ETH/nodes
 
    By doing a PUT on this endpoint you will be able to add a new node to the list of nodes.
 
@@ -785,7 +785,7 @@ Adding information for ethereum nodes
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blochchains/ETH/nodes HTTP/1.1
+      PUT /api/1/blockchains/ETH/nodes HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json
 
@@ -807,7 +807,7 @@ Adding information for ethereum nodes
    :statuscode 409: No user is logged or entrie couldn't be created.
    :statuscode 500: Internal rotki error
 
-.. http:post:: /api/(version)/blochchains/ETH/nodes
+.. http:post:: /api/(version)/blockchains/ETH/nodes
 
    By doing a POST on this endpoint you will be able to edit an already existing node entry with the information provided.
 
@@ -815,7 +815,7 @@ Adding information for ethereum nodes
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blochchains/ETH/nodes HTTP/1.1
+      PUT /api/1/blockchains/ETH/nodes HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json
 
@@ -837,7 +837,7 @@ Adding information for ethereum nodes
    :statuscode 409: No user is logged or entrie couldn't be updated.
    :statuscode 500: Internal rotki error
 
-.. http:delete:: /api/(version)/blochchains/ETH/nodes
+.. http:delete:: /api/(version)/blockchains/ETH/nodes
 
    By doing a DELETE on this endpoint you will be able to delete an already existing node.
 
@@ -845,7 +845,7 @@ Adding information for ethereum nodes
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blochchains/ETH/nodes HTTP/1.1
+      PUT /api/1/blockchains/ETH/nodes HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json
 
