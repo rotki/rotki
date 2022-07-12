@@ -16,6 +16,7 @@ Changelog
 * :bug:`4459` Transactions that happened in genesis block are now queried and stored properly.
 * :bug:`-` The electron application will now terminate properly if the backend fails to start.
 * :bug:`-` Now querying ens names for an empty list of addresses won't be causing an error.
+* :bug:`4456` Now NFTs query should not raise any unhandled error during the process of adding new ethereum addresses.
 * :bug:`-` Fix empty asset location distribution for ETH2.
 * :bug:`-` In a rare edge case the database with past profit and loss reports won't block the version upgrade process.
 * :bug:`4417` Activating privacy mode will now also scramble the value, to prevent other users from estimating the value (e.g. By estimating the length of digit of the value, or using advanced software to unblur the text).
