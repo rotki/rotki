@@ -742,6 +742,14 @@ def test_get_latest_asset_value_distribution(data_dir, username):
     assert assets[3] == balances[2]
     assert FVal(assets[2].usd_value) > FVal(assets[3].usd_value)
 
+    # test that ignored assets are not ignored in the value distribution by location
+    result, _ = data.add_ignored_assets([A_BTC])
+    assert result
+    assets = data.db.get_latest_asset_value_distribution()
+    assert len(assets) == 3
+    assert FVal(assets[0].usd_value) > FVal(assets[1].usd_value)
+    assert FVal(assets[1].usd_value) > FVal(assets[2].usd_value)
+
 
 def test_get_netvalue_data(data_dir, username):
     msg_aggregator = MessagesAggregator()
