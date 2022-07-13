@@ -257,8 +257,46 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
         Limits the query to the given time range and also if only_cache is True returns
         only what is already saved in the DB without performing an exchange query
+
+        Returns the trades sorted in an ascending timestamp order
         """
         log.debug(f'Querying trade history for {self.name} exchange')
+        if only_cache is False:
+            ranges = DBQueryRanges(self.db)
+            location_string = f'{str(self.location)}_trades_{self.name}'
+            with self.db.conn.read_ctx() as cursor:
+                ranges_to_query = ranges.get_location_query_ranges(
+                    cursor=cursor,
+                    location_string=location_string,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                )
+
+            for query_start_ts, query_end_ts in ranges_to_query:
+                # If we have a time frame we have not asked the exchange for trades then
+                # go ahead and do that now
+                log.debug(
+                    f'Querying online trade history for {self.name} between '
+                    f'{query_start_ts} and {query_end_ts}',
+                )
+                new_trades, queried_range = self.query_online_trade_history(
+                    start_ts=query_start_ts,
+                    end_ts=query_end_ts,
+                )
+
+                # make sure to add them to the DB
+                with self.db.user_write() as cursor:
+                    if new_trades != []:
+                        self.db.add_trades(write_cursor=cursor, trades=new_trades)
+
+                    # and also set the used queried timestamp range for the exchange
+                    ranges.update_used_query_range(
+                        write_cursor=cursor,
+                        location_string=location_string,
+                        queried_ranges=[queried_range],
+                    )
+
+        # Read all requested trades from the DB
         with self.db.conn.read_ctx() as cursor:
             filter_query = TradesFilterQuery.make(
                 from_ts=start_ts,
@@ -270,43 +308,6 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 filter_query=filter_query,
                 has_premium=True,  # is okay since the returned trades don't make it to the user
             )
-            if only_cache:
-                return trades
-
-            ranges = DBQueryRanges(self.db)
-            location_string = f'{str(self.location)}_trades_{self.name}'
-            ranges_to_query = ranges.get_location_query_ranges(
-                cursor=cursor,
-                location_string=location_string,
-                start_ts=start_ts,
-                end_ts=end_ts,
-            )
-
-        for query_start_ts, query_end_ts in ranges_to_query:
-            # If we have a time frame we have not asked the exchange for trades then
-            # go ahead and do that now
-            log.debug(
-                f'Querying online trade history for {self.name} between '
-                f'{query_start_ts} and {query_end_ts}',
-            )
-            new_trades, queried_range = self.query_online_trade_history(
-                start_ts=query_start_ts,
-                end_ts=query_end_ts,
-            )
-
-            # make sure to add them to the DB
-            with self.db.user_write() as cursor:
-                if new_trades != []:
-                    self.db.add_trades(write_cursor=cursor, trades=new_trades)
-
-                # and also set the used queried timestamp range for the exchange
-                ranges.update_used_query_range(
-                    write_cursor=cursor,
-                    location_string=location_string,
-                    queried_ranges=[queried_range],
-                )
-            # finally append them to the already returned DB trades
-            trades.extend(new_trades)
 
         return trades
 

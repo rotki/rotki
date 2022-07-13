@@ -220,7 +220,7 @@ def test_query_trade_history(function_scope_independentreserve):
             fee_currency=A_ETH,
             link='foo1',
         )]
-    assert trades == expected_trades[::-1]
+    assert trades == expected_trades
 
 
 # TODO: Make a test for asset movements.
