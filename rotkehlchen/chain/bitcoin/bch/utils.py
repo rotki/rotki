@@ -183,8 +183,8 @@ def validate_bch_address_input(address: str, given_addresses: Set[ChecksumAddres
     May raise ValidationError if all checks are not passed.
     """
     not_valid_address = (
-        (address.startswith('bitcoincash:') and not is_valid_bitcoin_cash_address(address)) or
-        (not (address.startswith('bitcoincash:') or address.endswith('.eth')) and not is_valid_btc_address(address))  # noqa: 501
+        not address.endswith('.eth') and
+        not (is_valid_bitcoin_cash_address(address) or is_valid_btc_address(address))
     )
     if not_valid_address:
         raise ValidationError(

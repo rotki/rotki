@@ -36,6 +36,13 @@ def get_bitcoin_cash_addresses_balances(accounts: List[BTCAddress]) -> Dict[BTCA
                         name='balance',
                         location='bitcoin cash balance querying',
                     ))
+                # if the address was initially provided in CashAddr format without the prefix
+                elif entry['address'].split(':')[1] in accounts_chunk:
+                    balances[entry['address'].split(':')[1]] = satoshis_to_btc(deserialize_fval(
+                        value=entry['confirmed'],
+                        name='balance',
+                        location='bitcoin cash balance querying',
+                    ))
                 else:
                     address = cash_to_legacy_address(entry['address'])
                     if address is not None:

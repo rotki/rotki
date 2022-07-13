@@ -14,7 +14,9 @@ from rotkehlchen.chain.bitcoin.bch.utils import (
 def test_is_valid_bitcoin_cash_address():
     """Test that addresses follow the Bitcoin Cash CashAddr format."""
     assert is_valid_bitcoin_cash_address('bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa')
+    assert is_valid_bitcoin_cash_address('qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa')
     assert is_valid_bitcoin_cash_address('bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g')
+    assert is_valid_bitcoin_cash_address('pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g')
     assert not is_valid_bitcoin_cash_address('BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4')
     assert not is_valid_bitcoin_cash_address('abcdefghijssfs')
 
@@ -62,7 +64,10 @@ def test_validate_bch_address_input():
     """Test that an address is properly validated for Bitcoin Cash."""
     empty_set = set()
     assert validate_bch_address_input('bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa', empty_set) is None  # noqa: 501
+    assert validate_bch_address_input('qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa', empty_set) is None  # noqa: 501
     assert validate_bch_address_input('bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt', empty_set) is None  # noqa: 501
+    assert validate_bch_address_input('qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt', empty_set) is None  # noqa: 501
+    assert validate_bch_address_input('pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g', empty_set) is None  # noqa: 501
     assert validate_bch_address_input('38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr', empty_set) is None
 
     with pytest.raises(ValidationError) as exc_info:
