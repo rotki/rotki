@@ -213,17 +213,6 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
     assert len(errors) == 0
     assert len(trades) == 2
     expected_trades = [Trade(
-        timestamp=1500705839,
-        location=Location.COINBASE,
-        base_asset=A_BTC,
-        quote_asset=A_USD,
-        trade_type=TradeType.BUY,
-        amount=FVal("486.34313725"),
-        rate=FVal("9.997920454875299055122012005"),
-        fee=FVal("1.01"),
-        fee_currency=A_USD,
-        link='9e14d574-30fa-5d85-b02c-6be0d851d61d',
-    ), Trade(
         timestamp=1459024920,
         location=Location.COINBASE,
         base_asset=A_ETH,
@@ -234,6 +223,17 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
         fee=FVal("10.1"),
         fee_currency=A_USD,
         link='1e14d574-30fa-5d85-b02c-6be0d851d61d',
+    ), Trade(
+        timestamp=1500705839,
+        location=Location.COINBASE,
+        base_asset=A_BTC,
+        quote_asset=A_USD,
+        trade_type=TradeType.BUY,
+        amount=FVal("486.34313725"),
+        rate=FVal("9.997920454875299055122012005"),
+        fee=FVal("1.01"),
+        fee_currency=A_USD,
+        link='9e14d574-30fa-5d85-b02c-6be0d851d61d',
     )]
     assert trades == expected_trades
 

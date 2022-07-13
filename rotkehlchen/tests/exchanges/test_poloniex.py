@@ -239,27 +239,27 @@ def test_query_trade_history(function_scope_poloniex):
         )
 
     assert len(trades) == 2
-    assert trades[0].timestamp == 1539713117
+    assert trades[0].timestamp == 1539709423
     assert trades[0].location == Location.POLONIEX
-    assert trades[0].base_asset == A_BCH
+    assert trades[0].base_asset == A_ETH
     assert trades[0].quote_asset == A_BTC
-    assert trades[0].trade_type == TradeType.SELL
-    assert trades[0].amount == FVal('1.40308443')
-    assert trades[0].rate == FVal('0.06935244')
-    assert trades[0].fee.is_close(FVal('0.00009730732'))
+    assert trades[0].trade_type == TradeType.BUY
+    assert trades[0].amount == FVal('3600.53748129')
+    assert trades[0].rate == FVal('0.00003432')
+    assert trades[0].fee.is_close(FVal('7.20107496258'))
     assert isinstance(trades[0].fee_currency, Asset)
-    assert trades[0].fee_currency == A_BTC
+    assert trades[0].fee_currency == A_ETH
 
-    assert trades[1].timestamp == 1539709423
+    assert trades[1].timestamp == 1539713117
     assert trades[1].location == Location.POLONIEX
-    assert trades[1].base_asset == A_ETH
+    assert trades[1].base_asset == A_BCH
     assert trades[1].quote_asset == A_BTC
-    assert trades[1].trade_type == TradeType.BUY
-    assert trades[1].amount == FVal('3600.53748129')
-    assert trades[1].rate == FVal('0.00003432')
-    assert trades[1].fee.is_close(FVal('7.20107496258'))
+    assert trades[1].trade_type == TradeType.SELL
+    assert trades[1].amount == FVal('1.40308443')
+    assert trades[1].rate == FVal('0.06935244')
+    assert trades[1].fee.is_close(FVal('0.00009730732'))
     assert isinstance(trades[1].fee_currency, Asset)
-    assert trades[1].fee_currency == A_ETH
+    assert trades[1].fee_currency == A_BTC
 
 
 def test_query_trade_history_unexpected_data(function_scope_poloniex):

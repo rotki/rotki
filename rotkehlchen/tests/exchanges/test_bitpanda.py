@@ -200,17 +200,6 @@ def test_trades(mock_bitpanda):
     assert len(errors) == 0
 
     expected_trades = [Trade(
-        timestamp=1634963958,
-        location=Location.BITPANDA,
-        base_asset=A_LTC,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('0.00917887'),
-        rate=FVal('180.85'),
-        fee=FVal('1.71800028'),
-        fee_currency=A_BEST,
-        link='tradeid1',
-    ), Trade(
         timestamp=1629440767,
         location=Location.BITPANDA,
         base_asset=A_ADA,
@@ -221,6 +210,17 @@ def test_trades(mock_bitpanda):
         fee=ZERO,
         fee_currency=A_BEST,
         link='tradeid2',
+    ), Trade(
+        timestamp=1634963958,
+        location=Location.BITPANDA,
+        base_asset=A_LTC,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=FVal('0.00917887'),
+        rate=FVal('180.85'),
+        fee=FVal('1.71800028'),
+        fee_currency=A_BEST,
+        link='tradeid1',
     )]
     assert expected_trades == trades
 
