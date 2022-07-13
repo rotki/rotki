@@ -110,7 +110,7 @@ a = Entrypoint(
             'rotkehlchen/chain/ethereum/modules/dxdaomesa/data',
         ),
     ],
-    excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter'],
+    excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter', 'debugimporter'],
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
