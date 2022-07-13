@@ -113,6 +113,22 @@ module.exports = {
       }
     },
     {
+      files: ['src/locales/**/*.json'],
+      rules: {
+        'jsonc/sort-keys': [
+          'error',
+          'asc',
+          {
+            caseSensitive: true,
+            natural: false,
+            minKeys: 2
+          }
+        ]
+      },
+      parser: 'jsonc-eslint-parser',
+      extends: ['plugin:jsonc/recommended-with-json']
+    },
+    {
       files: ['*.json', '*.json5'],
       extends: ['plugin:@intlify/vue-i18n/base']
     },
