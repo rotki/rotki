@@ -93,8 +93,8 @@ class DBHistoryEvents():
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 msg = (
-                    f'Tried to edit event to have event_identifier {event.event_identifier} and '
-                    f'sequence_index {event.sequence_index} but it already exists'
+                    f'Tried to edit event to have event_identifier {event.serialized_event_identifier} '  # noqa: 501
+                    f'and sequence_index {event.sequence_index} but it already exists'
                 )
                 return False, msg
 
@@ -149,10 +149,9 @@ class DBHistoryEvents():
         querystr = 'DELETE FROM history_events WHERE event_identifier=?'
         if length != 0:
             querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
-            bindings = [(x.hex(), *customized_event_ids) for x in tx_hashes]
+            bindings = [(x, *customized_event_ids) for x in tx_hashes]
         else:
-            bindings = [(x.hex(),) for x in tx_hashes]
-
+            bindings = [(x,) for x in tx_hashes]
         write_cursor.executemany(querystr, bindings)
 
     def get_customized_event_identifiers(self, cursor: 'DBCursor') -> List[int]:      # pylint: disable=no-self-use  # noqa: E501

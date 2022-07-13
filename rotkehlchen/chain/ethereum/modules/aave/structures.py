@@ -7,7 +7,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_optional_to_fval
-from rotkehlchen.types import ChecksumEthAddress, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, EVMTxHash, Timestamp, make_evm_tx_hash
 
 AAVE_EVENT_TYPE = Literal['deposit', 'withdrawal', 'interest', 'borrow', 'repay', 'liquidation']
 AAVE_EVENT_DB_TUPLE = Tuple[
@@ -15,7 +15,7 @@ AAVE_EVENT_DB_TUPLE = Tuple[
     AAVE_EVENT_TYPE,
     int,  # block_number
     Timestamp,
-    str,  # transaction hash
+    bytes,  # transaction hash
     int,  # log index
     str,  # asset1 identifier
     str,  # asset1 amount
@@ -36,21 +36,23 @@ class AaveEvent:
     # https://github.com/aave/aave-protocol/blob/f7ef52000af2964046857da7e5fe01894a51f2ab/thegraph/raw/schema.graphql#L144
     block_number: int
     timestamp: Timestamp
-    tx_hash: str
+    tx_hash: EVMTxHash
     # only used to identify uniqueness. Does not really correspond to the real log
     # index for graph queries. Because of this "TODO":
     # https://github.com/aave/aave-protocol/blob/f7ef52000af2964046857da7e5fe01894a51f2ab/thegraph/raw/schema.graphql#L144
     log_index: int
 
     def serialize(self) -> Dict[str, Any]:
-        return dataclasses.asdict(self)
+        data = dataclasses.asdict(self)
+        data['tx_hash'] = self.tx_hash.hex()
+        return data
 
     def to_db_tuple(self, address: ChecksumEthAddress) -> Tuple[
         ChecksumEthAddress,
         AAVE_EVENT_TYPE,
         int,
         Timestamp,
-        str,
+        EVMTxHash,
         int,
     ]:
         return (
@@ -63,7 +65,7 @@ class AaveEvent:
         )
 
     def __hash__(self) -> int:
-        return hash(self.event_type + self.tx_hash + str(self.log_index))
+        return hash(self.event_type.encode() + self.tx_hash + str(self.log_index).encode())
 
     def __eq__(self, other: Any) -> bool:
         return hash(self) == hash(other)
@@ -196,7 +198,7 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
     event_type = event_tuple[1]
     block_number = event_tuple[2]
     timestamp = Timestamp(event_tuple[3])
-    tx_hash = event_tuple[4]
+    tx_hash = make_evm_tx_hash(event_tuple[4])
     log_index = event_tuple[5]
     asset2 = None
     if event_tuple[9] is not None:

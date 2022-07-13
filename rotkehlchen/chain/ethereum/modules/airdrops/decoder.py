@@ -230,7 +230,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             if other_log.address == A_ELFI.ethereum_address and transfer_raw == raw_amount:
                 delegate_str = 'self-delegate' if user_address == delegate_address else f'delegate it to {delegate_address}'  # noqa: E501
                 event = HistoryBaseEntry(
-                    event_identifier=transaction.tx_hash.hex(),
+                    event_identifier=transaction.tx_hash,
                     sequence_index=self.base.get_sequence_index(tx_log),
                     timestamp=ts_sec_to_ms(transaction.timestamp),
                     location=Location.BLOCKCHAIN,

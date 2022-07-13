@@ -9,7 +9,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_optional_to_fval,
     deserialize_timestamp,
 )
-from rotkehlchen.types import ChecksumEthAddress, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, EVMTxHash, Timestamp, make_evm_tx_hash
 
 YEARN_EVENT_DB_TUPLE = Tuple[
     ChecksumEthAddress,
@@ -24,7 +24,7 @@ YEARN_EVENT_DB_TUPLE = Tuple[
     Optional[str],  # pnl usd value
     str,  # block number
     str,  # str of timestamp
-    str,  # tx hash
+    bytes,  # tx hash
     int,  # log index
     int,  # version
 ]
@@ -40,7 +40,7 @@ class YearnVaultEvent:
     to_asset: Asset
     to_value: Balance
     realized_pnl: Optional[Balance]
-    tx_hash: str
+    tx_hash: EVMTxHash
     log_index: int
     version: int
 
@@ -56,7 +56,7 @@ class YearnVaultEvent:
             'to_asset': self.to_asset.serialize(),
             'to_value': self.to_value.serialize(),
             'realized_pnl': self.realized_pnl.serialize() if self.realized_pnl else None,
-            'tx_hash': self.tx_hash,
+            'tx_hash': self.tx_hash.hex(),
             'log_index': self.log_index,
         }
 
@@ -144,7 +144,7 @@ class YearnVaultEvent:
             realized_pnl=realized_pnl,
             block_number=block_number,
             timestamp=deserialize_timestamp(result[11]),
-            tx_hash=result[12],
+            tx_hash=make_evm_tx_hash(result[12]),
             log_index=result[13],
             version=result[14],
         )

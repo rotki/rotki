@@ -15,7 +15,15 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.types import AssetAmount, ChecksumEthAddress, Location, Price, TradeType
+from rotkehlchen.types import (
+    AssetAmount,
+    ChecksumEthAddress,
+    EVMTxHash,
+    Location,
+    Price,
+    TradeType,
+    deserialize_evm_tx_hash,
+)
 
 from .types import (
     BalancerBPTEvent,
@@ -237,13 +245,20 @@ def deserialize_pool_share(
     return user_address, pool
 
 
-def deserialize_transaction_id(raw_tx_id: str) -> Tuple[str, int]:
+def deserialize_transaction_id(raw_tx_id: str) -> Tuple[EVMTxHash, int]:
+    """This function deserializes a Balancer's transaction id from the Graph API to
+    get the transaction hash & log index.
+    May raise:
+    - DeserializationError if there's an error splitting the raw transaction id or
+    deserializing the tx_hash.
+    """
     try:
         tx_hash, raw_log_index = raw_tx_id.split('-')
         log_index = int(raw_log_index)
+        deserialized_tx_hash = deserialize_evm_tx_hash(tx_hash)
     except ValueError as e:
         raise DeserializationError(f'Unexpected transaction id: {raw_tx_id}.') from e
-    return tx_hash, log_index
+    return deserialized_tx_hash, log_index
 
 
 def deserialize_swap(userdb: 'DBHandler', raw_swap: Dict[str, Any]) -> AMMSwap:

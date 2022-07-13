@@ -314,7 +314,7 @@ class EVMTransactionDecoder():
                 events = self.dbevents.get_history_events(
                     cursor=write_cursor,
                     filter_query=HistoryEventFilterQuery.make(
-                        event_identifier=transaction.tx_hash.hex(),
+                        event_identifier=transaction.tx_hash,
                     ),
                     has_premium=True,  # for this function we don't limit anything
                 )
@@ -329,7 +329,6 @@ class EVMTransactionDecoder():
         tx: EthereumTransaction,
         tx_receipt: EthereumTxReceipt,
         events: List[HistoryBaseEntry],
-        tx_hash_hex: str,
         ts_ms: TimestampMS,
     ) -> None:
         """
@@ -355,7 +354,7 @@ class EVMTransactionDecoder():
 
             event_type, location_label, counterparty, verb = direction_result
             events.append(HistoryBaseEntry(
-                event_identifier=tx_hash_hex,
+                event_identifier=tx.tx_hash,
                 sequence_index=self.base.get_next_sequence_counter(),
                 timestamp=ts_ms,
                 location=Location.BLOCKCHAIN,
@@ -375,7 +374,6 @@ class EVMTransactionDecoder():
     ) -> List[HistoryBaseEntry]:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
         events: List[HistoryBaseEntry] = []
-        tx_hash_hex = tx.tx_hash.hex()
         ts_ms = ts_sec_to_ms(tx.timestamp)
 
         # check for gas spent
@@ -385,7 +383,7 @@ class EVMTransactionDecoder():
             if event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
                 eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
                 events.append(HistoryBaseEntry(
-                    event_identifier=tx_hash_hex,
+                    event_identifier=tx.tx_hash,
                     sequence_index=self.base.get_next_sequence_counter(),
                     timestamp=ts_ms,
                     location=Location.BLOCKCHAIN,
@@ -403,7 +401,6 @@ class EVMTransactionDecoder():
             tx=tx,
             tx_receipt=tx_receipt,
             events=events,
-            tx_hash_hex=tx_hash_hex,
             ts_ms=ts_ms,
         )
 
@@ -419,7 +416,7 @@ class EVMTransactionDecoder():
                 return events
 
             events.append(HistoryBaseEntry(  # contract deployment
-                event_identifier=tx_hash_hex,
+                event_identifier=tx.tx_hash,
                 sequence_index=self.base.get_next_sequence_counter(),
                 timestamp=ts_ms,
                 location=Location.BLOCKCHAIN,
@@ -438,7 +435,7 @@ class EVMTransactionDecoder():
 
         preposition = 'to' if verb == 'Send' else 'from'
         events.append(HistoryBaseEntry(
-            event_identifier=tx_hash_hex,
+            event_identifier=tx.tx_hash,
             sequence_index=self.base.get_next_sequence_counter(),
             timestamp=ts_ms,
             location=Location.BLOCKCHAIN,
@@ -485,7 +482,7 @@ class EVMTransactionDecoder():
         prefix = f'Revoke {token.symbol} approval' if amount == ZERO else f'Approve {amount} {token.symbol}'  # noqa: E501
         notes = f'{prefix} of {owner_address} for spending by {spender_address}'
         return HistoryBaseEntry(
-            event_identifier=transaction.tx_hash.hex(),
+            event_identifier=transaction.tx_hash,
             sequence_index=self.base.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
@@ -657,7 +654,7 @@ class EVMTransactionDecoder():
             proposal_text = decoded_data[8]
             notes = f'Create {governance_name} proposal {proposal_id}. {proposal_text}'
             return HistoryBaseEntry(
-                event_identifier=transaction.tx_hash.hex(),
+                event_identifier=transaction.tx_hash,
                 sequence_index=self.base.get_sequence_index(tx_log),
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.BLOCKCHAIN,

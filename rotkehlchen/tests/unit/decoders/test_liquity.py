@@ -106,7 +106,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
     assert len(events) == 3
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=0,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -121,7 +121,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
             notes=f'Burned 0.00393701451 ETH in gas from {user_address}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=1,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -133,7 +133,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
             notes='Deposit 2.1 ETH as collateral for liquity',
             counterparty='liquity',
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=100,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -221,7 +221,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=0,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -236,7 +236,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
             notes=f'Burned 0.00393701451 ETH in gas from {user_address}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=208,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -334,7 +334,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
     assert len(events) == 3
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=0,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -349,7 +349,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
             notes=f'Burned 0.00393701451 ETH in gas from {user_address}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=1,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -361,7 +361,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
             notes='Withdraw 32 ETH collateral from liquity',
             counterparty='liquity',
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=295,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,

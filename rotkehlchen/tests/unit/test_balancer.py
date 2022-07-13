@@ -7,11 +7,20 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.api.test_balancer import get_balancer_test_addr2_expected_trades
 from rotkehlchen.tests.utils.constants import A_AMPL
-from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import (
+    AssetAmount,
+    Location,
+    Price,
+    Timestamp,
+    TradeType,
+    deserialize_evm_tx_hash,
+)
 
 TEST_SWAPS_TX_1 = [
     AMMSwap(
-        tx_hash='0x1b0d3525964d8e5fbcc0dcdeebcced4bec9017f648e97c3c9761fda1ca6e7b22',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x1b0d3525964d8e5fbcc0dcdeebcced4bec9017f648e97c3c9761fda1ca6e7b22',
+        ),
         log_index=254,
         address=string_to_ethereum_address('0x8e670b4d6651C4051e65B21AA4a575F3f99b8B83'),
         from_address=string_to_ethereum_address('0x65003947dC16956AfC4400008606001500940000'),
@@ -28,7 +37,9 @@ TEST_SWAPS_TX_1 = [
 ]
 TEST_SWAPS_TX_2 = [
     AMMSwap(
-        tx_hash='0x1b0d3525964d8e5fbcc0dcdeebcced4bec9017f648e97c3c9761fda1ca6e7b22',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x1b0d3525964d8e5fbcc0dcdeebcced4bec9017f648e97c3c9761fda1ca6e7b22',
+        ),
         log_index=254,
         address=string_to_ethereum_address('0x8e670b4d6651C4051e65B21AA4a575F3f99b8B83'),
         from_address=string_to_ethereum_address('0x65003947dC16956AfC4400008606001500940000'),
@@ -43,7 +54,9 @@ TEST_SWAPS_TX_2 = [
         amount1_out=AssetAmount(FVal('14285.153512382')),
     ),
     AMMSwap(
-        tx_hash='0x1b0d3525964d8e5fbcc0dcdeebcced4bec9017f648e97c3c9761fda1ca6e7b22',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x1b0d3525964d8e5fbcc0dcdeebcced4bec9017f648e97c3c9761fda1ca6e7b22',
+        ),
         log_index=258,
         address=string_to_ethereum_address('0x8e670b4d6651C4051e65B21AA4a575F3f99b8B83'),
         from_address=string_to_ethereum_address('0x65003947dC16956AfC4400008606001500940000'),
@@ -60,7 +73,9 @@ TEST_SWAPS_TX_2 = [
 ]
 TEST_SWAPS_TX_3 = [
     AMMSwap(
-        tx_hash='0x70b50d011f23f8437aa32b4155972098b34b5fb19b02198f3bc7f2456c4c3ffc',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x70b50d011f23f8437aa32b4155972098b34b5fb19b02198f3bc7f2456c4c3ffc',
+        ),
         log_index=2,
         address=string_to_ethereum_address('0x029f388ac4d5c8bff490550ce0853221030e822b'),
         from_address=string_to_ethereum_address('0x0000000000007f150bd6f54c40a34d7c3d5e9f56'),
@@ -75,7 +90,9 @@ TEST_SWAPS_TX_3 = [
         amount1_out=AssetAmount(FVal('3197.944466059874991601')),
     ),
     AMMSwap(
-        tx_hash='0x70b50d011f23f8437aa32b4155972098b34b5fb19b02198f3bc7f2456c4c3ffc',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x70b50d011f23f8437aa32b4155972098b34b5fb19b02198f3bc7f2456c4c3ffc',
+        ),
         log_index=6,
         address=string_to_ethereum_address('0x029f388ac4d5c8bff490550ce0853221030e822b'),
         from_address=string_to_ethereum_address('0x0000000000007f150bd6f54c40a34d7c3d5e9f56'),
@@ -90,7 +107,9 @@ TEST_SWAPS_TX_3 = [
         amount1_out=AssetAmount(FVal('186.643670114899291543')),
     ),
     AMMSwap(
-        tx_hash='0x70b50d011f23f8437aa32b4155972098b34b5fb19b02198f3bc7f2456c4c3ffc',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x70b50d011f23f8437aa32b4155972098b34b5fb19b02198f3bc7f2456c4c3ffc',
+        ),
         log_index=10,
         address=string_to_ethereum_address('0x029f388ac4d5c8bff490550ce0853221030e822b'),
         from_address=string_to_ethereum_address('0x0000000000007f150bd6f54c40a34d7c3d5e9f56'),

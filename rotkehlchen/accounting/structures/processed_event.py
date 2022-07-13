@@ -75,7 +75,6 @@ class ProcessedAccountingEvent:
             'pnl_free': str(self.pnl.free),
         }
         tx_hash = self.extra_data.get('tx_hash', None)
-
         if eth_explorer:
             taxable_basis = free_basis = ''
             if self.cost_basis is not None:

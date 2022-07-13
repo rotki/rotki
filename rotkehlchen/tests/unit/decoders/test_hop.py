@@ -28,7 +28,7 @@ def test_hop_l2_deposit(database, ethereum_manager, function_scope_messages_aggr
     )
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1653219722000,
             location=Location.BLOCKCHAIN,
@@ -40,7 +40,7 @@ def test_hop_l2_deposit(database, ethereum_manager, function_scope_messages_aggr
             notes=f'Burned 0.001964214783875487 ETH in gas from {ADDY}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=1,
             timestamp=1653219722000,
             location=Location.BLOCKCHAIN,

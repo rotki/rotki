@@ -31,7 +31,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
     chispender_addy = '0xed04A060050cc289d91779A8BB3942C3A6589254'
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1594500575000,
             location=Location.BLOCKCHAIN,
@@ -43,7 +43,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             notes=f'Burned 0.00896373909 ETH in gas from {ADDY}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=90,
             timestamp=1594500575000,
             location=Location.BLOCKCHAIN,
@@ -55,7 +55,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             notes=f'Swap 138.75 USDC in 1inch-v1 from {ADDY}',
             counterparty=CPT_ONEINCH_V1,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=91,
             timestamp=1594500575000,
             location=Location.BLOCKCHAIN,
@@ -67,7 +67,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             notes=f'Receive 135.959878392183347402 DAI from 1inch-v1 swap in {ADDY}',
             counterparty=CPT_ONEINCH_V1,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=102,
             timestamp=1594500575000,
             location=Location.BLOCKCHAIN,
@@ -79,7 +79,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             notes=f'Send 0 CHI from {ADDY} to {ZERO_ADDRESS}',
             counterparty=ZERO_ADDRESS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=103,
             timestamp=1594500575000,
             location=Location.BLOCKCHAIN,
@@ -114,7 +114,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
     oneinch_v2_addy = '0x111111125434b319222CdBf8C261674aDB56F3ae'
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=0,
             timestamp=1608498702000,
             location=Location.BLOCKCHAIN,
@@ -126,7 +126,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
             notes=f'Burned 0.002618947 ETH in gas from {ADDY}',
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=217,
             timestamp=1608498702000,
             location=Location.BLOCKCHAIN,
@@ -138,7 +138,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
             notes='Swap 2152.63 PAN in 1inch-v2',
             counterparty=CPT_ONEINCH_V2,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=218,
             timestamp=1608498702000,
             location=Location.BLOCKCHAIN,
@@ -150,7 +150,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
             notes='Receive 0.220582251767407014 ETH from 1inch-v2 swap',
             counterparty=CPT_ONEINCH_V2,
         ), HistoryBaseEntry(
-            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            event_identifier=tx_hash,
             sequence_index=221,
             timestamp=1608498702000,
             location=Location.BLOCKCHAIN,

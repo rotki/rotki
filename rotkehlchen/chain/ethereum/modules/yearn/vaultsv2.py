@@ -185,7 +185,7 @@ class YearnVaultsV2(EthereumModule):
                     usd_price = get_usd_price_zero_if_error(
                         asset=event.to_asset,
                         time=event.timestamp,
-                        location=f'yearn vault v2 event {event.tx_hash} processing',
+                        location=f'yearn vault v2 event {event.tx_hash.hex()} processing',
                         msg_aggregator=self.msg_aggregator,
                     )
                     profit = Balance(profit_amount, profit_amount * usd_price)

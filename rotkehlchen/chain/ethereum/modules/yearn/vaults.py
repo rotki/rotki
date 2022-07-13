@@ -115,7 +115,13 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.types import (
+    YEARN_VAULTS_V2_PROTOCOL,
+    ChecksumEthAddress,
+    Price,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
@@ -481,7 +487,11 @@ class YearnVaults(EthereumModule):
             from_block: int,
             to_block: int,
     ) -> List[YearnVaultEvent]:
-        """Get all deposit events of the underlying token to the vault"""
+        """Get all deposit events of the underlying token to the vault
+        May raise:
+        - DeserializationError if tx_hash cannot be converted to bytes or mint_amount cannot be
+          converted from hex string to int.
+        """
         events: List[YearnVaultEvent] = []
         argument_filters = {'from': address, 'to': vault.contract.address}
         deposit_events = self.ethereum.get_logs(
@@ -498,7 +508,7 @@ class YearnVaults(EthereumModule):
                 token_amount=hexstr_to_int(deposit_event['data']),
                 token=vault.underlying_token,
             )
-            tx_hash = deposit_event['transactionHash']
+            tx_hash = deserialize_evm_tx_hash(deposit_event['transactionHash'])
             tx_receipt = self.ethereum.get_transaction_receipt(tx_hash)
             deposit_index = deposit_event['logIndex']
             mint_amount = None
@@ -517,7 +527,7 @@ class YearnVaults(EthereumModule):
 
             if mint_amount is None:
                 self.msg_aggregator.add_error(
-                    f'Ignoring yearn deposit event with tx_hash {tx_hash} and log index '
+                    f'Ignoring yearn deposit event with tx_hash {tx_hash.hex()} and log index '  # noqa: 501 pylint: disable=no-member
                     f'{deposit_index} due to inability to find corresponding mint event',
                 )
                 continue
@@ -525,13 +535,13 @@ class YearnVaults(EthereumModule):
             deposit_usd_price = get_usd_price_zero_if_error(
                 asset=vault.underlying_token,
                 time=timestamp,
-                location=f'yearn vault deposit {tx_hash}',
+                location=f'yearn vault deposit {tx_hash.hex()}',  # noqa: 501 pylint: disable=no-member
                 msg_aggregator=self.msg_aggregator,
             )
             mint_usd_price = get_usd_price_zero_if_error(
                 asset=vault.token,
                 time=timestamp,
-                location=f'yearn vault mint {tx_hash}',
+                location=f'yearn vault mint {tx_hash.hex()}',  # noqa: 501 pylint: disable=no-member
                 msg_aggregator=self.msg_aggregator,
             )
             events.append(YearnVaultEvent(
@@ -563,7 +573,11 @@ class YearnVaults(EthereumModule):
             from_block: int,
             to_block: int,
     ) -> List[YearnVaultEvent]:
-        """Get all withdraw events of the underlying token to the vault"""
+        """Get all withdraw events of the underlying token to the vault
+        May raise:
+        - DeserializationError if tx_hash cannot be converted to bytes or burn_amount cannot be
+          converted from hex string to int.
+        """
         events: List[YearnVaultEvent] = []
         argument_filters = {'from': vault.contract.address, 'to': address}
         withdraw_events = self.ethereum.get_logs(
@@ -580,7 +594,7 @@ class YearnVaults(EthereumModule):
                 token_amount=hexstr_to_int(withdraw_event['data']),
                 token=vault.token,
             )
-            tx_hash = withdraw_event['transactionHash']
+            tx_hash = deserialize_evm_tx_hash(withdraw_event['transactionHash'])
             tx_receipt = self.ethereum.get_transaction_receipt(tx_hash)
             withdraw_index = withdraw_event['logIndex']
             burn_amount = None
@@ -599,7 +613,7 @@ class YearnVaults(EthereumModule):
 
             if burn_amount is None:
                 self.msg_aggregator.add_error(
-                    f'Ignoring yearn withdraw event with tx_hash {tx_hash} and log index '
+                    f'Ignoring yearn withdraw event with tx_hash {tx_hash.hex()} and log index '  # noqa: 501 pylint: disable=no-member
                     f'{withdraw_index} due to inability to find corresponding burn event',
                 )
                 continue
@@ -607,13 +621,13 @@ class YearnVaults(EthereumModule):
             withdraw_usd_price = get_usd_price_zero_if_error(
                 asset=vault.underlying_token,
                 time=timestamp,
-                location=f'yearn vault withdraw {tx_hash}',
+                location=f'yearn vault withdraw {tx_hash.hex()}',  # noqa: 501 pylint: disable=no-member
                 msg_aggregator=self.msg_aggregator,
             )
             burn_usd_price = get_usd_price_zero_if_error(
                 asset=vault.token,
                 time=timestamp,
-                location=f'yearn vault withdraw {tx_hash}',
+                location=f'yearn vault withdraw {tx_hash.hex()}',  # noqa: 501 pylint: disable=no-member
                 msg_aggregator=self.msg_aggregator,
             )
             events.append(YearnVaultEvent(
@@ -656,7 +670,7 @@ class YearnVaults(EthereumModule):
                     usd_price = get_usd_price_zero_if_error(
                         asset=event.to_asset,
                         time=event.timestamp,
-                        location=f'yearn vault event {event.tx_hash} processing',
+                        location=f'yearn vault event {event.tx_hash.hex()} processing',
                         msg_aggregator=self.msg_aggregator,
                     )
                     profit = Balance(profit_amount, profit_amount * usd_price)

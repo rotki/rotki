@@ -151,7 +151,7 @@ class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         amount = asset_normalized_value(amount=log_data[0], asset=token)
 
         event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash.hex(),
+            event_identifier=transaction.tx_hash,
             sequence_index=self.base.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
@@ -200,7 +200,7 @@ class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         buy_amount = asset_normalized_value(amount=log_data[3], asset=buy_token)
         sell_amount = asset_normalized_value(amount=log_data[4], asset=sell_token)
         event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash.hex(),
+            event_identifier=transaction.tx_hash,
             sequence_index=self.base.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,

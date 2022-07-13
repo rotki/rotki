@@ -83,7 +83,9 @@ def test_votium_claim(database, ethereum_manager, eth_transactions):
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(
-            event_identifier='0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30',
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
+                '0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30',
+            ),
             sequence_index=0,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
@@ -98,7 +100,9 @@ def test_votium_claim(database, ethereum_manager, eth_transactions):
             notes='Burned 0.00393701451 ETH in gas from 0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier='0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30',
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
+                '0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30',
+            ),
             sequence_index=351,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,

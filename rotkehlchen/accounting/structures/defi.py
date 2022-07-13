@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import EVMTxHash, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -58,13 +58,13 @@ class DefiEvent(AccountingEventMixin):
     # So it will count as if you got asset at given amount and price of timestamp
     # and spent asset at given amount and price of timestamp
     count_spent_got_cost_basis: bool
-    tx_hash: Optional[str] = None
+    tx_hash: Optional[EVMTxHash] = None
 
     def __str__(self) -> str:
         """Default string constructor"""
         result = str(self.wrapped_event)
         if self.tx_hash is not None:
-            result += f' {self.tx_hash}'
+            result += f' {self.tx_hash.hex()}'
         return result
 
     def to_string(self, timestamp_converter: Callable[[Timestamp], str]) -> str:

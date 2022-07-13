@@ -7,7 +7,7 @@ from eth_typing import ChecksumAddress
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import EVMTxHash, Timestamp
 
 # Pools data
 TOM_POOL_ID = '0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28'
@@ -17,7 +17,7 @@ POOL_ID_POOL_NAME = {
 
 AdexEventDBTuple = (
     Tuple[
-        str,  # tx_hash
+        bytes,  # tx_hash
         str,  # address
         str,  # identity_address
         int,  # timestamp
@@ -57,14 +57,14 @@ class AdexEventType(Enum):
 
 @dataclass(init=True, repr=True)
 class AdexEvent:
-    tx_hash: str
+    tx_hash: EVMTxHash
     address: ChecksumAddress
     identity_address: ChecksumAddress
     timestamp: Timestamp
 
     def serialize(self) -> Dict[str, Any]:
         return {
-            'tx_hash': self.tx_hash,
+            'tx_hash': self.tx_hash.hex(),
             'identity_address': self.identity_address,
             'timestamp': self.timestamp,
         }
@@ -91,7 +91,7 @@ class Bond(AdexEvent):
 
     def to_db_tuple(self) -> AdexEventDBTuple:
         return (
-            str(self.tx_hash),
+            self.tx_hash,
             str(self.address),
             str(self.identity_address),
             int(self.timestamp),
@@ -132,7 +132,7 @@ class Unbond(AdexEvent):
 
     def to_db_tuple(self) -> AdexEventDBTuple:
         return (
-            str(self.tx_hash),
+            self.tx_hash,
             str(self.address),
             str(self.identity_address),
             int(self.timestamp),
@@ -174,7 +174,7 @@ class UnbondRequest(AdexEvent):
 
     def to_db_tuple(self) -> AdexEventDBTuple:
         return (
-            str(self.tx_hash),
+            self.tx_hash,
             str(self.address),
             str(self.identity_address),
             int(self.timestamp),
@@ -217,7 +217,7 @@ class ChannelWithdraw(AdexEvent):
 
     def to_db_tuple(self) -> AdexEventDBTuple:
         return (
-            str(self.tx_hash),
+            self.tx_hash,
             str(self.address),
             str(self.identity_address),
             int(self.timestamp),

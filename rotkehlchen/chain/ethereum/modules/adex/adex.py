@@ -33,7 +33,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.types import ChecksumEthAddress, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
@@ -318,7 +318,7 @@ class Adex(EthereumModule):
             )
 
         return ChannelWithdraw(
-            tx_hash=tx_hash,
+            tx_hash=deserialize_evm_tx_hash(tx_hash),
             address=address,
             identity_address=identity_address,
             timestamp=timestamp,
@@ -369,7 +369,7 @@ class Adex(EthereumModule):
         timestamp = deserialize_timestamp(raw_event['timestamp'])
 
         return AdexEvent(
-            tx_hash=tx_hash,
+            tx_hash=deserialize_evm_tx_hash(tx_hash),
             address=address,
             identity_address=identity_address,
             timestamp=timestamp,

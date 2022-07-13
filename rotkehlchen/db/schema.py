@@ -221,7 +221,7 @@ CREATE TABLE IF NOT EXISTS aave_events (
     event_type VARCHAR[10] NOT NULL,
     block_number INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
-    tx_hash VARCHAR[66] NOT NULL,
+    tx_hash BLOB NOT NULL,
     log_index INTEGER NOT NULL,
     asset1 TEXT NOT NULL,
     asset1_amount TEXT NOT NULL,
@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS yearn_vaults_events (
     pnl_usd_value TEXT,
     block_number INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
-    tx_hash VARCHAR[66] NOT NULL,
+    tx_hash BLOB NOT NULL,
     log_index INTEGER NOT NULL,
     version INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
@@ -525,7 +525,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 DB_CREATE_AMM_SWAPS = """
 CREATE TABLE IF NOT EXISTS amm_swaps (
-    tx_hash VARCHAR[42] NOT NULL,
+    tx_hash BLOB NOT NULL,
     log_index INTEGER NOT NULL,
     address VARCHAR[42] NOT NULL,
     from_address VARCHAR[42] NOT NULL,
@@ -546,7 +546,7 @@ CREATE TABLE IF NOT EXISTS amm_swaps (
 
 DB_CREATE_AMM_EVENTS = """
 CREATE TABLE IF NOT EXISTS amm_events (
-    tx_hash VARCHAR[42] NOT NULL,
+    tx_hash BLOB NOT NULL,
     log_index INTEGER NOT NULL,
     address VARCHAR[42] NOT NULL,
     timestamp INTEGER NOT NULL,
@@ -613,7 +613,7 @@ CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
 DB_CREATE_HISTORY_EVENTS = """
 CREATE TABLE IF NOT EXISTS history_events (
     identifier INTEGER NOT NULL PRIMARY KEY,
-    event_identifier TEXT NOT NULL,
+    event_identifier BLOB NOT NULL,
     sequence_index INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
     location TEXT NOT NULL,
@@ -641,7 +641,7 @@ CREATE TABLE IF NOT EXISTS history_events_mappings (
 
 DB_CREATE_ADEX_EVENTS = """
 CREATE TABLE IF NOT EXISTS adex_events (
-    tx_hash VARCHAR[42] NOT NULL,
+    tx_hash BLOB NOT NULL,
     address VARCHAR[42] NOT NULL,
     identity_address VARCHAR[42] NOT NULL,
     timestamp INTEGER NOT NULL,
@@ -663,7 +663,7 @@ CREATE TABLE IF NOT EXISTS adex_events (
 
 DB_CREATE_BALANCER_EVENTS = """
 CREATE TABLE IF NOT EXISTS balancer_events (
-    tx_hash VARCHAR[42] NOT NULL,
+    tx_hash BLOB NOT NULL,
     log_index INTEGER NOT NULL,
     address VARCHAR[42] NOT NULL,
     timestamp INTEGER NOT NULL,

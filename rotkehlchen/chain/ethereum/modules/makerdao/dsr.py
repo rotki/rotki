@@ -17,7 +17,13 @@ from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.types import (
+    ChecksumEthAddress,
+    EVMTxHash,
+    Price,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hexstr_to_int, ts_now
 
@@ -45,7 +51,7 @@ class DSRMovement:
     amount_usd_value: FVal
     block_number: int
     timestamp: Timestamp
-    tx_hash: str
+    tx_hash: EVMTxHash
 
     def __str__(self) -> str:
         """Used in DefiEvent processing during accounting"""
@@ -84,7 +90,7 @@ class DSRAccountReport(NamedTuple):
                 },
                 'block_number': movement.block_number,
                 'timestamp': movement.timestamp,
-                'tx_hash': movement.tx_hash,
+                'tx_hash': movement.tx_hash.hex(),
             }
             serialized_report['movements'].append(serialized_movement)  # type: ignore
         return serialized_report
@@ -235,6 +241,7 @@ class MakerdaoDsr(HasDSProxy):
         for join_event in join_events:
             try:
                 wad_val = hexstr_to_int(join_event['topics'][2])
+                tx_hash = deserialize_evm_tx_hash(join_event['transactionHash'])
             except DeserializationError as e:
                 msg = f'Error at reading DSR join event topics. {str(e)}. Skipping event...'
                 self.msg_aggregator.add_error(msg)
@@ -271,7 +278,7 @@ class MakerdaoDsr(HasDSProxy):
                     amount_usd_value=_dsrdai_to_dai(dai_value) * usd_price,
                     block_number=join_event['blockNumber'],
                     timestamp=timestamp,
-                    tx_hash=join_event['transactionHash'],
+                    tx_hash=tx_hash,
                 ),
             )
 
@@ -289,6 +296,7 @@ class MakerdaoDsr(HasDSProxy):
         for exit_event in exit_events:
             try:
                 wad_val = hexstr_to_int(exit_event['topics'][2])
+                tx_hash = deserialize_evm_tx_hash(exit_event['transactionHash'])
             except DeserializationError as e:
                 msg = f'Error at reading DSR exit event topics. {str(e)}. Skipping event...'
                 self.msg_aggregator.add_error(msg)
@@ -325,7 +333,7 @@ class MakerdaoDsr(HasDSProxy):
                     amount_usd_value=_dsrdai_to_dai(dai_value) * usd_price,
                     block_number=exit_event['blockNumber'],
                     timestamp=timestamp,
-                    tx_hash=exit_event['transactionHash'],
+                    tx_hash=tx_hash,
                 ),
             )
 

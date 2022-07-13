@@ -95,7 +95,9 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
     assert len(events) == 3
     expected_events = [
         HistoryBaseEntry(
-            event_identifier='0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
+                '0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
+            ),
             sequence_index=0,
             timestamp=1591043988000,
             location=Location.BLOCKCHAIN,
@@ -110,7 +112,9 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
             notes='Burned 0.01212979988 ETH in gas from 0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier='0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
+                '0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
+            ),
             sequence_index=1,
             timestamp=1591043988000,
             location=Location.BLOCKCHAIN,
@@ -122,7 +126,9 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
             notes='Swap 45 USDC in kyber',
             counterparty='kyber legacy',
         ), HistoryBaseEntry(
-            event_identifier='0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
+                '0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
+            ),
             sequence_index=89,
             timestamp=1591043988000,
             location=Location.BLOCKCHAIN,
@@ -216,7 +222,9 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
     assert len(events) == 3
     expected_events = [
         HistoryBaseEntry(
-            event_identifier='0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
+                '0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
+            ),
             sequence_index=0,
             timestamp=1644182638000,
             location=Location.BLOCKCHAIN,
@@ -231,7 +239,9 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
             notes='Burned 0.066614401 ETH in gas from 0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier='0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
+                '0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
+            ),
             sequence_index=350,
             timestamp=1644182638000,
             location=Location.BLOCKCHAIN,
@@ -243,7 +253,9 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
             notes='Swap 8139.77872 USDC in kyber',
             counterparty='kyber legacy',
         ), HistoryBaseEntry(
-            event_identifier='0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
+            event_identifier=HistoryBaseEntry.deserialize_event_identifier(
+                '0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
+            ),
             sequence_index=370, timestamp=1644182638000,
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,

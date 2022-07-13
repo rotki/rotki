@@ -108,7 +108,7 @@ def test_curve_deposit(database, ethereum_manager, eth_transactions):
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=0,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -123,7 +123,7 @@ def test_curve_deposit(database, ethereum_manager, eth_transactions):
             notes='Burned 0.00393701451 ETH in gas from 0x57bF3B0f29E37619623994071C9e12091919675c',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=371,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -135,7 +135,7 @@ def test_curve_deposit(database, ethereum_manager, eth_transactions):
             notes='Deposit 401746.57 DAI in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=384,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -147,7 +147,7 @@ def test_curve_deposit(database, ethereum_manager, eth_transactions):
             notes='Deposit 25977.37 USDT in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=397,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -248,7 +248,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=0,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -263,7 +263,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             notes='Burned 0.00393701451 ETH in gas from 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=1,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -275,7 +275,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             notes='Deposit 0.2 ETH in curve pool',
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=414,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -287,7 +287,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             notes='Deposit 0.19993786 stETH in curve pool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=415,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -299,7 +299,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             notes='Approve 1.157920892373161954235709850E+59 stETH of 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2 for spending by 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
             counterparty='0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=416,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -398,7 +398,7 @@ def test_curve_remove_liquidity(database, ethereum_manager, eth_transactions):
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=0,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -413,7 +413,7 @@ def test_curve_remove_liquidity(database, ethereum_manager, eth_transactions):
             notes='Burned 0.00393701451 ETH in gas from 0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=507,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -425,7 +425,7 @@ def test_curve_remove_liquidity(database, ethereum_manager, eth_transactions):
             notes='Return 3108.372467134893484707 linkCRV',
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=508,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -514,7 +514,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager, eth_tr
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=0,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -529,7 +529,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager, eth_tr
             notes='Burned 0.00393701451 ETH in gas from 0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=1,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -541,7 +541,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager, eth_tr
             notes='Remove 1.02930131799766041 ETH from the curve pool',
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=193,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -681,7 +681,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
     expected_events = [
         HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=0,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -696,7 +696,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             notes='Burned 0.00393701451 ETH in gas from 0x2fac74A3a04B031F240923621a578724C40678af',  # noqa: E501
             counterparty=CPT_GAS,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=2184,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,
@@ -708,7 +708,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             notes='Return 584.093916507047953183 yDAI+yUSDC+yUSDT+yTUSD',
             counterparty=CPT_CURVE,
         ), HistoryBaseEntry(
-            event_identifier=tx_hex,
+            event_identifier=evmhash,
             sequence_index=2190,
             timestamp=1650276061000,
             location=Location.BLOCKCHAIN,

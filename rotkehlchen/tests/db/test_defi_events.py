@@ -18,7 +18,7 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.aave import A_ADAI_V1
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -36,7 +36,9 @@ def test_add_and_get_aave_events(data_dir, username):
         value=Balance(amount=ONE, usd_value=ONE),
         block_number=1,
         timestamp=Timestamp(1),
-        tx_hash='0x01653e88600a6492ad6e9ae2af415c990e623479057e4e93b163e65cfb2d4436',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x01653e88600a6492ad6e9ae2af415c990e623479057e4e93b163e65cfb2d4436',
+        ),
         log_index=1,
     ), AaveDepositWithdrawalEvent(
         event_type='withdrawal',
@@ -45,7 +47,9 @@ def test_add_and_get_aave_events(data_dir, username):
         value=Balance(amount=ONE, usd_value=ONE),
         block_number=2,
         timestamp=Timestamp(2),
-        tx_hash='0x4147da3e5d3c0565a99192ce0b32182ab30b8e1067921d9b2a8ef3bd60b7e2ce',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x4147da3e5d3c0565a99192ce0b32182ab30b8e1067921d9b2a8ef3bd60b7e2ce',
+        ),
         log_index=2,
     )]
     with data.db.user_write() as cursor:
@@ -59,7 +63,9 @@ def test_add_and_get_aave_events(data_dir, username):
             value=Balance(amount=ONE, usd_value=ONE),
             block_number=1,
             timestamp=Timestamp(1),
-            tx_hash='0x8c094d58f33e8dedcd348cb33b58f3bd447602f1fecb99e51b1c2868029eab55',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x8c094d58f33e8dedcd348cb33b58f3bd447602f1fecb99e51b1c2868029eab55',
+            ),
             log_index=1,
         ), AaveDepositWithdrawalEvent(
             event_type='withdrawal',
@@ -68,7 +74,9 @@ def test_add_and_get_aave_events(data_dir, username):
             value=Balance(amount=ONE, usd_value=ONE),
             block_number=2,
             timestamp=Timestamp(2),
-            tx_hash='0x58c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x58c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            ),
             log_index=2,
         )]
         data.db.add_aave_events(cursor, address=addr2, events=addr2_events)
@@ -82,7 +90,9 @@ def test_add_and_get_aave_events(data_dir, username):
             value=Balance(amount=ONE, usd_value=ONE),
             block_number=1,
             timestamp=Timestamp(1),
-            tx_hash='0x9e394d58f33e8dedcd348cb33b58f3bd447602f1fecb99e51b1c2868029eab55',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x9e394d58f33e8dedcd348cb33b58f3bd447602f1fecb99e51b1c2868029eab55',
+            ),
             log_index=1,
         ), AaveDepositWithdrawalEvent(
             event_type='withdrawal',
@@ -91,7 +101,9 @@ def test_add_and_get_aave_events(data_dir, username):
             value=Balance(amount=ONE, usd_value=ONE),
             block_number=2,
             timestamp=Timestamp(2),
-            tx_hash='0x4c167445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x4c167445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            ),
             log_index=2,
         ), AaveInterestEvent(
             event_type='interest',
@@ -99,7 +111,9 @@ def test_add_and_get_aave_events(data_dir, username):
             value=Balance(amount=ONE, usd_value=ONE),
             block_number=4,
             timestamp=Timestamp(4),
-            tx_hash='0x49c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x49c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            ),
             log_index=4,
         ), AaveBorrowEvent(
             event_type='borrow',
@@ -107,7 +121,9 @@ def test_add_and_get_aave_events(data_dir, username):
             value=Balance(amount=ONE, usd_value=ONE),
             block_number=5,
             timestamp=Timestamp(5),
-            tx_hash='0x19c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x19c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            ),
             log_index=5,
             borrow_rate_mode='stable',
             borrow_rate=FVal('0.05233232323423432'),
@@ -118,7 +134,9 @@ def test_add_and_get_aave_events(data_dir, username):
             value=Balance(amount=ONE, usd_value=ONE),
             block_number=6,
             timestamp=Timestamp(6),
-            tx_hash='0x29c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x29c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            ),
             log_index=6,
             fee=Balance(amount=FVal('0.1'), usd_value=FVal('0.1')),
         ), AaveLiquidationEvent(
@@ -130,7 +148,9 @@ def test_add_and_get_aave_events(data_dir, username):
             block_number=7,
             log_index=7,
             timestamp=Timestamp(7),
-            tx_hash='0x39c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x39c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            ),
         )]
         data.db.add_aave_events(cursor, address=addr3, events=addr3_events)
 
@@ -164,7 +184,9 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
         realized_pnl=None,
         block_number=1,
         timestamp=Timestamp(1),
-        tx_hash='0x01653e88600a6492ad6e9ae2af415c990e623479057e4e93b163e65cfb2d4436',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x01653e88600a6492ad6e9ae2af415c990e623479057e4e93b163e65cfb2d4436',
+        ),
         log_index=1,
         version=1,
     ), YearnVaultEvent(
@@ -176,7 +198,9 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
         realized_pnl=Balance(amount=FVal('0.01'), usd_value=FVal('0.01')),
         block_number=2,
         timestamp=Timestamp(2),
-        tx_hash='0x4147da3e5d3c0565a99192ce0b32182ab30b8e1067921d9b2a8ef3bd60b7e2ce',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x4147da3e5d3c0565a99192ce0b32182ab30b8e1067921d9b2a8ef3bd60b7e2ce',
+        ),
         log_index=2,
         version=1,
     )]
@@ -192,7 +216,9 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
             realized_pnl=None,
             block_number=1,
             timestamp=Timestamp(1),
-            tx_hash='0x8c094d58f33e8dedcd348cb33b58f3bd447602f1fecb99e51b1c2868029eab55',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x8c094d58f33e8dedcd348cb33b58f3bd447602f1fecb99e51b1c2868029eab55',
+            ),
             log_index=1,
             version=1,
         ), YearnVaultEvent(
@@ -204,7 +230,9 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
             realized_pnl=Balance(amount=FVal('0.01'), usd_value=FVal('0.01')),
             block_number=2,
             timestamp=Timestamp(2),
-            tx_hash='0x58c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            tx_hash=deserialize_evm_tx_hash(
+                '0x58c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            ),
             log_index=2,
             version=1,
         )]

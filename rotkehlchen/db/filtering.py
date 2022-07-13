@@ -102,7 +102,7 @@ class DBETHTransactionJoinsFilter(DBFilter):
         if self.should_join_events is True:
             query_filters.append(
                 'LEFT JOIN (SELECT event_identifier, counterparty, asset FROM history_events) '
-                'ON lower(hex(ethereum_transactions.tx_hash))=lower(substr(event_identifier, 3))',
+                'ON ethereum_transactions.tx_hash=event_identifier',
             )
         if self.addresses is not None:
             questionmarks = '?' * len(self.addresses)
@@ -308,14 +308,13 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             order_by_rules: Optional[List[Tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
-            # temporary unused argument here and below. Remove warning later.
-            addresses: Optional[List[ChecksumEthAddress]] = None,  # pylint: disable=unused-argument  # noqa: E501
+            addresses: Optional[List[ChecksumEthAddress]] = None,  # noqa: E501
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
-            protocols: Optional[List[str]] = None,  # pylint: disable=unused-argument
-            asset: Optional[Asset] = None,  # pylint: disable=unused-argument
-            exclude_ignored_assets: bool = False,  # pylint: disable=unused-argument
+            protocols: Optional[List[str]] = None,
+            asset: Optional[Asset] = None,
+            exclude_ignored_assets: bool = False,
     ) -> 'ETHTransactionsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -331,21 +330,20 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBETHTransactionHashFilter(and_op=False, tx_hash=tx_hash))
         else:
-            # temporary to remove filtering https://github.com/rotki/rotki/issues/4379
-            # should_join_events = asset is not None or protocols is not None or exclude_ignored_assets is True  # noqa: E501
-            # if addresses is not None or should_join_events is True:
-            #     filter_query.join_clause = DBETHTransactionJoinsFilter(
-            #         and_op=False,
-            #         addresses=addresses,
-            #         should_join_events=should_join_events,
-            #     )
+            should_join_events = asset is not None or protocols is not None or exclude_ignored_assets is True  # noqa: E501
+            if addresses is not None or should_join_events is True:
+                filter_query.join_clause = DBETHTransactionJoinsFilter(
+                    and_op=False,
+                    addresses=addresses,
+                    should_join_events=should_join_events,
+                )
 
-            # if asset is not None:
-            #     filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
-            # if protocols is not None:
-            #     filters.append(DBProtocolsFilter(and_op=True, protocols=protocols))
-            # if exclude_ignored_assets is True:
-            #     filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
+            if asset is not None:
+                filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
+            if protocols is not None:
+                filters.append(DBProtocolsFilter(and_op=True, protocols=protocols))
+            if exclude_ignored_assets is True:
+                filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
 
             filter_query.timestamp_filter = DBTimestampFilter(
                 and_op=True,
@@ -411,10 +409,10 @@ class DBTypeFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBStringFilter(DBFilter):
-    """Filter a column having a string value"""
+class DBEqualsFilter(DBFilter):
+    """Filter a column by comparing its column to its value for equality."""
     column: str
-    value: str
+    value: Union[str, bytes]
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
         return [f'{self.column}=?'], [self.value]
@@ -746,7 +744,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             location_label: Optional[str] = None,
             ignored_ids: Optional[List[str]] = None,
             null_columns: Optional[List[str]] = None,
-            event_identifier: Optional[str] = None,
+            event_identifier: Optional[bytes] = None,
             protocols: Optional[List[str]] = None,
             exclude_ignored_assets: bool = False,
     ) -> 'HistoryEventFilterQuery':
@@ -797,7 +795,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             filters.append(filter_query.location_filter)
         if location_label is not None:
             filters.append(
-                DBStringFilter(and_op=True, column='location_label', value=location_label),
+                DBEqualsFilter(and_op=True, column='location_label', value=location_label),
             )
         if ignored_ids is not None:
             filters.append(
@@ -816,7 +814,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             )
         if event_identifier is not None:
             filters.append(
-                DBStringFilter(and_op=True, column='event_identifier', value=event_identifier),
+                DBEqualsFilter(and_op=True, column='event_identifier', value=event_identifier),
             )
         if protocols is not None:
             filters.append(

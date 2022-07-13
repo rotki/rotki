@@ -111,7 +111,7 @@ class Oneinchv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         # And now create a new event for the fee
         fee_amount = asset_normalized_value(fee_raw, to_asset)
         fee_event = HistoryBaseEntry(
-            event_identifier=transaction.tx_hash.hex(),
+            event_identifier=transaction.tx_hash,
             sequence_index=self.base.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,

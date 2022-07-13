@@ -20,6 +20,7 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
     TradeType,
+    deserialize_evm_tx_hash,
 )
 
 
@@ -154,7 +155,9 @@ def test_associated_locations(database):
         # Add uniswap and sushiswap events
         database.add_amm_events(cursor, [
             LiquidityPoolEvent(
-                tx_hash='0x47ea26957ce09e84a51b51dfdab6a4ac1c3672a372eef77b15ef7677174ac847',
+                tx_hash=deserialize_evm_tx_hash(
+                    '0x47ea26957ce09e84a51b51dfdab6a4ac1c3672a372eef77b15ef7677174ac847',
+                ),
                 log_index=23,
                 address=ChecksumEthAddress('0x3163Bb273E8D9960Ce003fD542bF26b4C529f515'),
                 timestamp=Timestamp(1590011534),

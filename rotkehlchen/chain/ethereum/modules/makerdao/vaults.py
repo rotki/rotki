@@ -78,7 +78,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.types import ChecksumEthAddress, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, EVMTxHash, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, shift_num_right_by, ts_now
 
@@ -174,7 +174,7 @@ class VaultEvent(NamedTuple):
     event_type: VaultEventType
     value: Balance
     timestamp: Timestamp
-    tx_hash: str
+    tx_hash: EVMTxHash
 
     def __str__(self) -> str:
         """Used in DefiEvent processing during accounting"""

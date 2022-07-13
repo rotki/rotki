@@ -44,7 +44,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_ADAI
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
 A_AENJ_V1 = EthereumToken('0x712DB54daA836B53Ef1EcBb9c6ba3b9Efb073F40')
 A_ADAI_V1 = EthereumToken('0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d')
@@ -163,7 +163,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=9963767,
         timestamp=Timestamp(1588114293),
-        tx_hash='0x8b72307967c4f7a486c1cb1b6ebca5e549de06e02930ece0399e2096f1a132c5',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x8b72307967c4f7a486c1cb1b6ebca5e549de06e02930ece0399e2096f1a132c5',
+        ),
         log_index=72,
     ), AaveDepositWithdrawalEvent(
         event_type='deposit',
@@ -175,7 +177,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=9987395,
         timestamp=Timestamp(1588430911),
-        tx_hash='0x78ae48d93e0284d1f9a5e1cd4a7e5f2e3daf65ab5dafb0c4bd626aa90e783d60',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x78ae48d93e0284d1f9a5e1cd4a7e5f2e3daf65ab5dafb0c4bd626aa90e783d60',
+        ),
         log_index=146,
     ), AaveInterestEvent(
         event_type='interest',
@@ -186,7 +190,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=9987395,
         timestamp=Timestamp(1588430911),
-        tx_hash='0x78ae48d93e0284d1f9a5e1cd4a7e5f2e3daf65ab5dafb0c4bd626aa90e783d60',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x78ae48d93e0284d1f9a5e1cd4a7e5f2e3daf65ab5dafb0c4bd626aa90e783d60',
+        ),
         log_index=142,
     ), AaveDepositWithdrawalEvent(
         event_type='deposit',
@@ -198,7 +204,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=9989872,
         timestamp=Timestamp(1588463542),
-        tx_hash='0xb9999b06b706dcc973bcf381d69f12620f1bef887082bce9679cf256f7e8023c',
+        tx_hash=deserialize_evm_tx_hash(
+            '0xb9999b06b706dcc973bcf381d69f12620f1bef887082bce9679cf256f7e8023c',
+        ),
         log_index=157,
     ), AaveInterestEvent(
         event_type='interest',
@@ -209,7 +217,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=9989872,
         timestamp=Timestamp(1588463542),
-        tx_hash='0xb9999b06b706dcc973bcf381d69f12620f1bef887082bce9679cf256f7e8023c',
+        tx_hash=deserialize_evm_tx_hash(
+            '0xb9999b06b706dcc973bcf381d69f12620f1bef887082bce9679cf256f7e8023c',
+        ),
         log_index=153,
     ), AaveDepositWithdrawalEvent(
         event_type='deposit',
@@ -221,7 +231,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=10041636,
         timestamp=Timestamp(1589155650),
-        tx_hash='0x28054d29620515337b8ffb2f7f2dda5b2033beae9844b42359893f4f73d855bc',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x28054d29620515337b8ffb2f7f2dda5b2033beae9844b42359893f4f73d855bc',
+        ),
         log_index=35,
     ), AaveInterestEvent(
         event_type='interest',
@@ -232,7 +244,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=10041636,
         timestamp=Timestamp(1589155650),
-        tx_hash='0x28054d29620515337b8ffb2f7f2dda5b2033beae9844b42359893f4f73d855bc',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x28054d29620515337b8ffb2f7f2dda5b2033beae9844b42359893f4f73d855bc',
+        ),
         log_index=31,
     ), AaveInterestEvent(
         event_type='interest',
@@ -243,7 +257,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=10160566,
         timestamp=Timestamp(1590753905),
-        tx_hash='0x07ac09cc06c7cd74c7312f3a82c9f77d69ba7a89a4a3b7ded33db07e32c3607c',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x07ac09cc06c7cd74c7312f3a82c9f77d69ba7a89a4a3b7ded33db07e32c3607c',
+        ),
         log_index=152,
     ), AaveDepositWithdrawalEvent(
         event_type='deposit',
@@ -255,7 +271,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=10266740,
         timestamp=Timestamp(1592175763),
-        tx_hash='0x90b818ba8d3b55f332b64f3df58bf37f33addcbfc1f27bd1ec6102ae4bf2d871',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x90b818ba8d3b55f332b64f3df58bf37f33addcbfc1f27bd1ec6102ae4bf2d871',
+        ),
         log_index=82,
     ), AaveInterestEvent(
         event_type='interest',
@@ -266,7 +284,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=10266740,
         timestamp=Timestamp(1592175763),
-        tx_hash='0x90b818ba8d3b55f332b64f3df58bf37f33addcbfc1f27bd1ec6102ae4bf2d871',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x90b818ba8d3b55f332b64f3df58bf37f33addcbfc1f27bd1ec6102ae4bf2d871',
+        ),
         log_index=78,
     ), AaveDepositWithdrawalEvent(
         event_type='deposit',
@@ -278,7 +298,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=10440633,
         timestamp=Timestamp(1594502373),
-        tx_hash='0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
+        tx_hash=deserialize_evm_tx_hash(
+            '0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
+        ),
         log_index=104,
     ), AaveInterestEvent(
         event_type='interest',
@@ -289,7 +311,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=10440633,
         timestamp=Timestamp(1594502373),
-        tx_hash='0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
+        tx_hash=deserialize_evm_tx_hash(
+            '0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
+        ),
         log_index=100,
     ), AaveDepositWithdrawalEvent(
         event_type='deposit',
@@ -301,7 +325,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=10505913,
         timestamp=Timestamp(1595376667),
-        tx_hash='0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410',
+        ),
         log_index=96,
     ), AaveInterestEvent(
         event_type='interest',
@@ -312,7 +338,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=10505913,
         timestamp=Timestamp(1595376667),
-        tx_hash='0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410',
+        ),
         log_index=92,
     ), AaveInterestEvent(
         event_type='interest',
@@ -323,7 +351,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=10718983,
         timestamp=Timestamp(1598217272),
-        tx_hash='0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486',
+        ),
         log_index=97,
     ), AaveDepositWithdrawalEvent(
         event_type='withdrawal',
@@ -335,7 +365,9 @@ expected_aave_deposit_test_events = [
         ),
         block_number=10718983,
         timestamp=Timestamp(1598217272),
-        tx_hash='0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486',
+        ),
         log_index=102,
     ),
 ]
@@ -351,7 +383,9 @@ expected_aave_liquidation_test_events = [
         ),
         block_number=0,
         timestamp=Timestamp(1598799955),
-        tx_hash='0x400b21334279498fc5b7ff469fec0c5e94620001104f18267c796497a7260ada',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x400b21334279498fc5b7ff469fec0c5e94620001104f18267c796497a7260ada',
+        ),
         log_index=1,
     ), AaveBorrowEvent(
         event_type='borrow',
@@ -362,7 +396,9 @@ expected_aave_liquidation_test_events = [
         ),
         block_number=0,
         timestamp=Timestamp(1598800092),
-        tx_hash='0x819cdd20760ab68bc7bf9343cb2e5552ab512dcf071afe1c3995a07a379f0961',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x819cdd20760ab68bc7bf9343cb2e5552ab512dcf071afe1c3995a07a379f0961',
+        ),
         log_index=2,
         borrow_rate_mode='variable',
         borrow_rate=FVal('0.018558721449222331635565398'),
@@ -381,7 +417,9 @@ expected_aave_liquidation_test_events = [
         ),
         block_number=0,
         timestamp=Timestamp(1598941756),
-        tx_hash='0x00eea6359d247c9433d32620358555a0fd3265378ff146b9511b7cff1ecb7829',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x00eea6359d247c9433d32620358555a0fd3265378ff146b9511b7cff1ecb7829',
+        ),
         log_index=8,
     ), AaveRepayEvent(
         event_type='repay',
@@ -393,7 +431,9 @@ expected_aave_liquidation_test_events = [
         fee=Balance(amount=ZERO, usd_value=ZERO),
         block_number=0,
         timestamp=Timestamp(1599023196),
-        tx_hash='0xb30831fcc5f02e551befa6238839354e602b0a351cdf77eb170c29427c326304',
+        tx_hash=deserialize_evm_tx_hash(
+            '0xb30831fcc5f02e551befa6238839354e602b0a351cdf77eb170c29427c326304',
+        ),
         log_index=4,
     ), AaveRepayEvent(
         event_type='repay',
@@ -405,7 +445,9 @@ expected_aave_liquidation_test_events = [
         fee=Balance(amount=ZERO, usd_value=ZERO),
         block_number=0,
         timestamp=Timestamp(1599401677),
-        tx_hash='0xefde39a330215fb189b70e9964b4f7d8cd6f1335c5994899dd04de7a1b30b3aa',
+        tx_hash=deserialize_evm_tx_hash(
+            '0xefde39a330215fb189b70e9964b4f7d8cd6f1335c5994899dd04de7a1b30b3aa',
+        ),
         log_index=4,
     ), AaveInterestEvent(
         event_type='interest',
@@ -416,7 +458,9 @@ expected_aave_liquidation_test_events = [
         ),
         block_number=0,
         timestamp=Timestamp(1599401782),
-        tx_hash='0x54eee67a3f1e114d102ea76d69298636caf717e19c1b910264d955c4ba942905',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x54eee67a3f1e114d102ea76d69298636caf717e19c1b910264d955c4ba942905',
+        ),
         log_index=4,
     ), AaveDepositWithdrawalEvent(
         event_type='withdrawal',
@@ -428,7 +472,9 @@ expected_aave_liquidation_test_events = [
         ),
         block_number=0,
         timestamp=Timestamp(1599401782),
-        tx_hash='0x54eee67a3f1e114d102ea76d69298636caf717e19c1b910264d955c4ba942905',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x54eee67a3f1e114d102ea76d69298636caf717e19c1b910264d955c4ba942905',
+        ),
         log_index=3,
     ), AaveDepositWithdrawalEvent(
         event_type='deposit',
@@ -440,7 +486,9 @@ expected_aave_liquidation_test_events = [
         ),
         block_number=0,
         timestamp=Timestamp(1601394794),
-        tx_hash='0x70ca1f4a64bd2be9bff8a6d42e333e89f855a9fec2df643b76fe9401c2b1867c',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x70ca1f4a64bd2be9bff8a6d42e333e89f855a9fec2df643b76fe9401c2b1867c',
+        ),
         log_index=1,
     ), AaveBorrowEvent(
         event_type='borrow',
@@ -451,7 +499,9 @@ expected_aave_liquidation_test_events = [
         ),
         block_number=0,
         timestamp=Timestamp(1601398506),
-        tx_hash='0xb59ff2759b37da52537f43aaa5cbce3bcab77ef208cba80e22086610323c2a17',
+        tx_hash=deserialize_evm_tx_hash(
+            '0xb59ff2759b37da52537f43aaa5cbce3bcab77ef208cba80e22086610323c2a17',
+        ),
         log_index=2,
         borrow_rate_mode='variable',
         borrow_rate=FVal('0.048662000571241866099699838'),
@@ -471,7 +521,9 @@ expected_aave_v2_events = [
         ),
         block_number=0,
         timestamp=Timestamp(1615333105),
-        tx_hash='0x75444c0ae48700f388d05ec8380b3922c4daf1e8eef2476001437b68d36f56a1',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x75444c0ae48700f388d05ec8380b3922c4daf1e8eef2476001437b68d36f56a1',
+        ),
         log_index=216,
     ), AaveBorrowEvent(
         event_type='borrow',
@@ -482,7 +534,9 @@ expected_aave_v2_events = [
         ),
         block_number=0,
         timestamp=Timestamp(1615333284),
-        tx_hash='0x74e8781fd86e81a87a4ba93bc7755d4a94901765cd72399f0372d36e7a26a03a',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x74e8781fd86e81a87a4ba93bc7755d4a94901765cd72399f0372d36e7a26a03a',
+        ),
         log_index=352,
         borrow_rate_mode='stable',
         borrow_rate=FVal('0.088712770921360153608109216'),
@@ -497,7 +551,9 @@ expected_aave_v2_events = [
         fee=Balance(amount=ZERO, usd_value=ZERO),
         block_number=0,
         timestamp=Timestamp(1615587042),
-        tx_hash='0x164e3eafef02ac1a956ba3c7d027506d47de36b34daee1e05ca0d178413911c1',
+        tx_hash=deserialize_evm_tx_hash(
+            '0x164e3eafef02ac1a956ba3c7d027506d47de36b34daee1e05ca0d178413911c1',
+        ),
         log_index=29,
     ), AaveInterestEvent(
         event_type='interest',
@@ -508,7 +564,9 @@ expected_aave_v2_events = [
         ),
         block_number=0,
         timestamp=Timestamp(1615669328),
-        tx_hash='0xfeee61357d43e79a2beae9edab860c30db9765964be26eff82c6834d4e2c2db7',
+        tx_hash=deserialize_evm_tx_hash(
+            '0xfeee61357d43e79a2beae9edab860c30db9765964be26eff82c6834d4e2c2db7',
+        ),
         log_index=133,
     ), AaveDepositWithdrawalEvent(
         event_type='withdrawal',
@@ -520,7 +578,9 @@ expected_aave_v2_events = [
         ),
         block_number=0,
         timestamp=Timestamp(1615669328),
-        tx_hash='0xfeee61357d43e79a2beae9edab860c30db9765964be26eff82c6834d4e2c2db7',
+        tx_hash=deserialize_evm_tx_hash(
+            '0xfeee61357d43e79a2beae9edab860c30db9765964be26eff82c6834d4e2c2db7',
+        ),
         log_index=132,
     ),
 ]
