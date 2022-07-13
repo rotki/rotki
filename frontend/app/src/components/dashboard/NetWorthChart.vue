@@ -646,6 +646,7 @@ export default defineComponent({
       const scale = x / width;
 
       const { min, max, range } = get(dataTimeRange);
+      if (range < oneDayTimestamp) return;
       const { min: displayedMin, max: displayedMax } = get(displayedXRange);
 
       const chart = getChart();
