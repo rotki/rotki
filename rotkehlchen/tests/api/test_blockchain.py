@@ -516,6 +516,7 @@ def test_add_blockchain_accounts(
     ), json={'accounts': [
         {'address': 'prettyirrelevant.eth'},
         {'address': '12tkqA9xSoowkzoERHMWNKsTey55YEBqkv'},
+        {'address': 'pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g'},
     ]})
 
     result = assert_proper_response_with_result(response)
@@ -524,7 +525,7 @@ def test_add_blockchain_accounts(
     # Check that the BCH balance is present in DB
     with rotki.data.db.conn.read_ctx() as cursor:
         accounts = rotki.data.db.get_blockchain_accounts(cursor)
-    assert len(accounts.bch) == 2
+    assert len(accounts.bch) == 3
 
     # Try adding same BCH address but in different formats
     response = requests.put(api_url_for(
