@@ -16,7 +16,7 @@
               <v-col cols="auto">
                 <v-menu offset-y>
                   <template #activator="{ on }">
-                    <v-btn color="primary" depressed v-on="on">
+                    <v-btn color="primary" depressed height="100%" v-on="on">
                       {{ $t('transactions.redecode_events.title') }}
                     </v-btn>
                   </template>
@@ -35,7 +35,7 @@
                 </v-menu>
               </v-col>
               <v-col>
-                <div v-if="false">
+                <div>
                   <blockchain-account-selector
                     v-model="account"
                     :chains="['ETH']"
@@ -50,7 +50,7 @@
             </v-row>
           </v-col>
           <v-col cols="12" md="6">
-            <div v-if="false">
+            <div>
               <table-filter
                 :matchers="matchers"
                 @update:matches="updateFilterHandler($event)"

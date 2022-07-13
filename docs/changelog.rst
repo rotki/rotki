@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`4438` Filtering of ethereum transactions is now enabled.
 * :feature:`2219` Users will now be able to edit balance snapshots.
 * :feature:`4495` Users will now be able to toggle ETH staking taxation.
 * :feature:`1420` Add functionality to add alias name for ETH addresses.
