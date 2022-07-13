@@ -19,7 +19,6 @@ def get_bitcoin_cash_addresses_balances(accounts: List[BTCAddress]) -> Dict[BTCA
 
     May raise:
     - RemoteError if there is a problem querying api.haskoin.com
-    - DeserializationError if
     """
     balances: Dict[BTCAddress, FVal] = {}
     try:
