@@ -383,7 +383,7 @@ class APIServer():
         self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
         self.flask_app.register_error_handler(Exception, self.unhandled_exception)
         self.flask_app.before_request(self.before_request_callback)
-        self.flask_app.after_request(self.after_request_callback)  # type: ignore
+        self.flask_app.after_request(self.after_request_callback)
 
     @staticmethod
     def unhandled_exception(exception: Exception) -> Response:
