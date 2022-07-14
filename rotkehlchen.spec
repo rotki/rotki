@@ -101,6 +101,7 @@ a = Entrypoint(
         ('rotkehlchen/data/uniswapv2_lp_tokens.meta', 'rotkehlchen/data'),
         ('rotkehlchen/data/global.db', 'rotkehlchen/data'),
         ('rotkehlchen/data/curve_pools.json', 'rotkehlchen/data'),
+        ('rotkehlchen/data/nodes.json', 'rotkehlchen/data'),
         # TODO
         # We probably should have a better way to specify some data should be loaded
         # by a module in pyinstaller. Should be loaded dynamically by rotki and not

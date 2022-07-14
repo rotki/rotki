@@ -546,7 +546,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if raw_movement_key in KNOWN_NON_ASSET_KEYS_FOR_MOVEMENTS:
                 continue
             try:
-                candicate_fee_asset = asset_from_bitstamp(raw_movement_key)
+                candidate_fee_asset = asset_from_bitstamp(raw_movement_key)
             except (UnknownAsset, DeserializationError):
                 continue
             try:
@@ -554,7 +554,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except DeserializationError:
                 continue
             if amount != ZERO:
-                fee_asset = candicate_fee_asset
+                fee_asset = candidate_fee_asset
                 break
 
         if amount == ZERO:
