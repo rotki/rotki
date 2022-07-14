@@ -191,6 +191,11 @@ def test_cryptocompare_asset_support(cryptocompare):
         'AUSD',  # alpaca usd but cc has appeal dollar
         'PLY',  # Aurigami but cc has playcoin
         'MLS',  # Pikaster but cc has crop
+        ethaddress_to_identifier('0xcCeD5B8288086BE8c38E23567e684C3740be4D48'),  # noqa: E501 # rouletteToken but cc has Runner land
+        ethaddress_to_identifier('0xb4bebD34f6DaaFd808f73De0d10235a92Fbb6c3D'),  # noqa: E501 # Yearn index but cc has yeti finance
+        ethaddress_to_identifier('0xC76FB75950536d98FA62ea968E1D6B45ffea2A55'),  # noqa: E501 # Unit protocol but cc has clash of lilliput
+        ethaddress_to_identifier('0xbc6E06778708177a18210181b073DA747C88490a'),  # noqa: E501 # Syndicate but cc has mobland
+        ethaddress_to_identifier('0x23894DC9da6c94ECb439911cAF7d337746575A72'),  # noqa: E501 # geojam but cc has tune.fm
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (

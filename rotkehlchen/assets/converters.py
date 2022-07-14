@@ -721,6 +721,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'APE3S',  # no cryptocompare/coingecko data
     'GMT3L',  # no cryptocompare/coingecko data
     'GMT3S',  # no cryptocompare/coingecko data
+    'JASMY3L',  # no cryptocompare/coingecko data
+    'JASMY3S',  # no cryptocompare/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets

@@ -103,6 +103,8 @@ WORLD_TO_BITTREX = {
     strethaddress_to_identifier('0x653430560bE843C4a3D143d0110e896c2Ab8ac0D'): '_MOF',
     strethaddress_to_identifier('0x909E34d3f6124C324ac83DccA84b74398a6fa173'): 'ZKP',
     strethaddress_to_identifier('0xa3EE21C306A700E682AbCdfe9BaA6A08F3820419'): 'CTC',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
 }
 
 WORLD_TO_BITSTAMP = {
@@ -219,6 +221,7 @@ WORLD_TO_KRAKEN = {
     'JPY': 'ZJPY',
     'CHF': 'CHF',
     'KRW': 'ZKRW',
+    'AED': 'AED',
     # REP V2
     strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REPV2',
     'DAO': 'XDAO',
@@ -375,6 +378,31 @@ WORLD_TO_KRAKEN = {
     strethaddress_to_identifier('0x41e5560054824eA6B0732E656E3Ad64E20e94E45'): 'CVC',
     strethaddress_to_identifier('0xe53EC727dbDEB9E2d5456c3be40cFF031AB40A55'): 'SUPER',
     strethaddress_to_identifier('0x31c8EAcBFFdD875c74b94b077895Bd78CF1E64A3'): 'RAD',
+    'NEAR': 'NEAR',
+    strethaddress_to_identifier('0x8CE9137d39326AD0cD6491fb5CC0CbA0e089b6A9'): 'SXP',
+    'LUNA-3': 'LUNA2',
+    strethaddress_to_identifier('0x888888848B652B3E3a0f34c96E00EEC0F3a23F72'): 'TLM',
+    strethaddress_to_identifier('0x3597bfD533a99c9aa083587B074434E61Eb0A258'): 'DENT',
+    strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
+    strethaddress_to_identifier('0xADE00C28244d5CE17D72E40330B1c318cD12B7c3'): 'ADX',
+    strethaddress_to_identifier('0x037A54AaB062628C9Bbae1FDB1583c195585fe41'): 'LCX',
+    strethaddress_to_identifier('0xd084B83C305daFD76AE3E1b4E1F1fe2eCcCb3988'): 'TVK',
+    strethaddress_to_identifier('0x4E15361FD6b4BB609Fa63C81A2be19d873717870'): 'FTM',
+    strethaddress_to_identifier('0xB705268213D593B8FD88d3FDEFF93AFF5CbDcfAE'): 'IDEX',
+    'BTT': 'BTT',
+    strethaddress_to_identifier('0x8f8221aFbB33998d8584A2B05749bA73c37a938a'): 'REQ',
+    strethaddress_to_identifier('0x915044526758533dfB918ecEb6e44bc21632060D'): 'CHR',
+    strethaddress_to_identifier('0x77FbA179C79De5B7653F68b5039Af940AdA60ce0'): 'FORTH',
+    strethaddress_to_identifier('0xef3A930e1FfFFAcd2fc13434aC81bD278B0ecC8d'): 'FIS',
+    strethaddress_to_identifier('0x5Ca381bBfb58f0092df149bD3D243b08B9a8386e'): 'MXC',
+    strethaddress_to_identifier('0xa0246c9032bC3A600820415aE600c6388619A14D'): 'FARM',
+    strethaddress_to_identifier('0xEd04915c23f00A313a544955524EB7DBD823143d'): 'ACH',
+    'MV': 'MV',
+    'EGLD': 'EGLD',
+    'UNFI': 'UNFI',
+    'COTI': 'COTI',
+    strethaddress_to_identifier('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7'): 'KEY',
+    strethaddress_to_identifier('0x1A4b46696b2bB4794Eb3D4c26f1c55F9170fa4C5'): 'BIT',
 }
 
 WORLD_TO_BINANCE = {
@@ -426,6 +454,7 @@ WORLD_TO_BINANCE = {
     strethaddress_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF'): 'IMX',
     strethaddress_to_identifier('0x27702a26126e0B3702af63Ee09aC4d1A084EF628'): 'ALEPH',
     strethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7'): 'USDT',
+    'NFT': 'APENFT'
 }
 
 WORLD_TO_BITFINEX = {
@@ -463,6 +492,9 @@ WORLD_TO_BITFINEX = {
     strethaddress_to_identifier('0x42d6622deCe394b54999Fbd73D108123806f6a18'): 'SPK',
     strethaddress_to_identifier('0xC581b735A1688071A1746c968e0798D642EDE491'): 'EUT',
     strethaddress_to_identifier('0xC4f6E93AEDdc11dc22268488465bAbcAF09399aC'): 'HIX',
+    'NFT': 'APENFT',
+    'LUNA-3': 'LUNA2',
+    strethaddress_to_identifier('0xF411903cbC70a74d22900a5DE66A2dda66507255'): 'VRA',
 }
 
 WORLD_TO_KUCOIN = {
@@ -558,6 +590,8 @@ WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0x9E46A38F5DaaBe8683E10793b06749EEF7D733d1'): 'NCT',
     strethaddress_to_identifier('0xec67005c4E498Ec7f55E092bd1d35cbC47C91892'): 'MLN',
     strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
+    strethaddress_to_identifier('0xfB7B4564402E5500dB5bB6d63Ae671302777C75a'): 'DEXT',
+    strethaddress_to_identifier('0x27702a26126e0B3702af63Ee09aC4d1A084EF628'): 'ALEPH',
 }
 
 WORLD_TO_COINBASE = {
