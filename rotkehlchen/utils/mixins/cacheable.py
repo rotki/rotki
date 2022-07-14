@@ -61,7 +61,7 @@ def cache_response_timewise(
     is completely skipped
 
     If arguments_matter is True then a different cache is kept for each different
-    combination of argumnents.
+    combination of arguments.
 
     if forward_ignore_cache is True then if the ignore_cache argument is given it's
     forward to the decorated function instead of being silently consumed.

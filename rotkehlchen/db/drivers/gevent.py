@@ -22,7 +22,7 @@ UnderlyingConnection = Union[sqlite3.Connection, sqlcipher.Connection]  # pylint
 import logging
 
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
-SQL_VM_INSTRUCTIONS_CB = 1000
+SQL_VM_INSTRUCTIONS_CB = 5000  # maybe make this configurable
 
 
 class DBCursor:
