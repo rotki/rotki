@@ -503,6 +503,7 @@ class EthereumNodesResource(BaseMethodView):
         active: bool,
     ) -> Response:
         node = WeightedNode(
+            identifier=0,  # Not used during insertion
             node_info=NodeName(
                 name=name,
                 endpoint=endpoint,
@@ -517,6 +518,7 @@ class EthereumNodesResource(BaseMethodView):
     @use_kwargs(post_schema, location='json_and_query')
     def post(
         self,
+        identifier: int,
         name: str,
         endpoint: str,
         owned: bool,
@@ -524,6 +526,7 @@ class EthereumNodesResource(BaseMethodView):
         active: bool,
     ) -> Response:
         node = WeightedNode(
+            identifier=identifier,
             node_info=NodeName(
                 name=name,
                 endpoint=endpoint,
@@ -536,8 +539,8 @@ class EthereumNodesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_query')
-    def delete(self, name: str) -> Response:
-        return self.rest_api.delete_web3_node(name)
+    def delete(self, identifier: int) -> Response:
+        return self.rest_api.delete_web3_node(identifier)
 
 
 class ExternalServicesResource(BaseMethodView):

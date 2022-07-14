@@ -79,8 +79,9 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
 def _create_nodes(cursor: 'DBCursor') -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS web3_nodes(
-    name TEXT NOT NULL PRIMARY KEY,
-    address TEXT NOT NULL,
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    endpoint TEXT NOT NULL,
     owned BOOLEAN NOT NULL DEFAULT FALSE,
     active BOOLEAN NOT NULL DEFAULT FALSE,
     weight INTEGER NOT NULL

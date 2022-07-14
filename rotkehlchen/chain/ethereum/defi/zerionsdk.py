@@ -140,6 +140,7 @@ KNOWN_ZERION_PROTOCOL_NAMES = (
 )
 WEIGHTED_NODES_WITH_HIGH_GAS_LIMIT = (
     WeightedNode(
+        identifier=0,  # not used
         node_info=NodeName(
             name='1inch',
             endpoint='https://web3.1inch.exchange',
@@ -248,6 +249,7 @@ class ZerionSDK():
             try:
                 # In this case we don't care about the gas limit
                 own_node = WeightedNode(
+                    identifier=0,  # not used
                     node_info=own_node_info,
                     active=True,
                     weight=ONE,

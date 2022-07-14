@@ -20,7 +20,7 @@ def read_and_write_nodes_in_database(write_cursor: 'DBCursor') -> None:
         nodes_info = json.loads(f.read())
         for node in nodes_info:
             write_cursor.execute(
-                'INSERT OR IGNORE INTO web3_nodes(name, address, owned, active, weight) VALUES (?, ?, ?, ?, ?);',  # noqa: E501
+                'INSERT OR IGNORE INTO web3_nodes(name, endpoint, owned, active, weight) VALUES (?, ?, ?, ?, ?);',  # noqa: E501
                 (
                     node['name'],
                     node['endpoint'],

@@ -60,7 +60,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.names import search_for_addresses_names
-from rotkehlchen.chain.ethereum.types import WeightedNode
+from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME, WeightedNode
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
@@ -2526,6 +2526,11 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def update_web3_node(self, node: WeightedNode) -> Response:
+        if node.identifier == 1 and node.node_info.name != ETHERSCAN_NODE_NAME:
+            return api_response(
+                wrap_in_fail_result('Can\'t change the etherscan node name'),
+                status_code=HTTPStatus.CONFLICT,
+            )
         try:
             self.rotkehlchen.data.db.update_web3_node(node)
         except InputError as e:
@@ -2535,9 +2540,14 @@ class RestAPI():
         self.rotkehlchen.chain_manager.ethereum.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def delete_web3_node(self, name: str) -> Response:
+    def delete_web3_node(self, identifier: int) -> Response:
+        if identifier == 1:
+            return api_response(
+                wrap_in_fail_result('Can\'t delete the etherscan node'),
+                status_code=HTTPStatus.CONFLICT,
+            )
         try:
-            self.rotkehlchen.data.db.delete_web3_node(name)
+            self.rotkehlchen.data.db.delete_web3_node(identifier)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         # Update the connected nodes

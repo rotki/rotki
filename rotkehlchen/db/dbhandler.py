@@ -62,7 +62,7 @@ from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
-from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
+from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
@@ -3286,31 +3286,70 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             if only_active:
-                cursor.execute('SELECT name, address, owned, weight, active FROM web3_nodes WHERE active=TRUE AND CAST(weight as decimal) != 0;')  # noqa: E501
+                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active FROM web3_nodes WHERE active=TRUE AND CAST(weight as decimal) != 0;')  # noqa: E501
             else:
-                cursor.execute('SELECT name, address, owned, weight, active FROM web3_nodes;')
+                cursor.execute(
+                    'SELECT identifier, name, endpoint, owned, weight, active FROM web3_nodes;',
+                )
             return [
                 WeightedNode(
+                    identifier=entry[0],
                     node_info=NodeName(
-                        name=entry[0],
-                        endpoint=entry[1],
-                        owned=bool(entry[2]),
+                        name=entry[1],
+                        endpoint=entry[2],
+                        owned=bool(entry[3]),
                     ),
-                    weight=FVal(entry[3]),
-                    active=bool(entry[4]),
+                    weight=FVal(entry[4]),
+                    active=bool(entry[5]),
                 )
                 for entry in cursor
             ]
+
+    def _rebalance_web3_nodes_weights(
+        self,
+        write_cursor: 'DBCursor',
+        proportion_to_share: FVal,
+        exclude_identifier: Optional[int],
+    ) -> None:
+        """
+        Weights for nodes have to be in the 0-1 range. So after setting a node weight to X
+        proportion_to_share = 1 - X. And we re-scale the weight of each node to keep their
+        proportion in proportion_to_share respect to the other nodes.
+        """
+        if exclude_identifier is None:
+            write_cursor.execute('SELECT identifier, weight FROM web3_nodes')
+        else:
+            write_cursor.execute(
+                'SELECT identifier, weight FROM web3_nodes where identifier != ?',
+                (exclude_identifier,),
+            )
+        new_weights = []
+        nodes_weights = write_cursor.fetchall()
+        weight_sum = sum(FVal(node[1]) for node in nodes_weights)
+        for node_id, weight in nodes_weights:
+            if exclude_identifier:
+                new_weights.append((str(FVal(weight) / weight_sum * proportion_to_share), node_id))
+            else:
+                new_weights.append((str(FVal(weight) / weight_sum), node_id))
+        write_cursor.executemany(
+            'UPDATE web3_nodes SET weight=? WHERE identifier=?',
+            new_weights,
+        )
 
     def add_web3_node(self, node: WeightedNode) -> None:
         with self.user_write() as cursor:
             try:
                 cursor.execute(
-                    'INSERT INTO web3_nodes(name, address, owned, active, weight) VALUES (?, ?, ?, ?, ?)',   # noqa: E501
+                    'INSERT INTO web3_nodes(name, endpoint, owned, active, weight) VALUES (?, ?, ?, ?, ?)',   # noqa: E501
                     node.serialize_for_db(),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 raise InputError(f'Node with name {node.node_info.name} already exists in db') from e  # noqa: E501
+            self._rebalance_web3_nodes_weights(
+                write_cursor=cursor,
+                proportion_to_share=ONE - node.weight,
+                exclude_identifier=cursor.lastrowid,
+            )
 
     def update_web3_node(self, node: WeightedNode) -> None:
         with self.conn.read_ctx() as cursor:
@@ -3319,22 +3358,33 @@ class DBHandler:
                 raise InputError(f'Node with name {node.node_info.name} doesn\'t exist')
         with self.user_write() as cursor:
             cursor.execute(
-                'UPDATE web3_nodes SET address=?, owned=?, active=?, weight=? WHERE name=?',
+                'UPDATE web3_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=?',  # noqa: E501
                 (
+                    node.node_info.name,
                     node.node_info.endpoint,
                     node.node_info.owned,
                     node.active,
                     str(node.weight),
-                    node.node_info.name,
+                    node.identifier,
                 ),
             )
+            self._rebalance_web3_nodes_weights(
+                write_cursor=cursor,
+                proportion_to_share=ONE - node.weight,
+                exclude_identifier=node.identifier,
+            )
 
-    def delete_web3_node(self, name: str) -> None:
+    def delete_web3_node(self, identifier: int) -> None:
         """Delete a web3 node based on name.
         May raise:
         - InputError if no entry with such name is in the database.
         """
         with self.user_write() as cursor:
-            cursor.execute('DELETE FROM web3_nodes WHERE name=?', (name,))
+            cursor.execute('DELETE FROM web3_nodes WHERE identifier=?', (identifier,))
             if cursor.rowcount == 0:
-                raise InputError(f'node with name {name} was not found in the database')
+                raise InputError(f'node with name {identifier} was not found in the database')
+            self._rebalance_web3_nodes_weights(
+                write_cursor=cursor,
+                proportion_to_share=FVal(1),
+                exclude_identifier=None,
+            )

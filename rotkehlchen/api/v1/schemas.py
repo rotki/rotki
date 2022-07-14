@@ -2291,13 +2291,8 @@ class EthereumNodeEditSchema(EthereumNodeSchema):
             error='Name can\'t be empty',
         ),
     )
+    identifier = fields.Integer(required=True)
 
 
 class EthereumNodeListDeleteSchema(Schema):
-    name = fields.String(
-        required=True,
-        validate=webargs.validate.NoneOf(
-            iterable=['', ETHERSCAN_NODE_NAME],
-            error=f'Name can\'t be empty or {ETHERSCAN_NODE_NAME}',
-        ),
-    )
+    identifier = fields.Integer(required=True)

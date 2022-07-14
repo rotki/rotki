@@ -735,6 +735,7 @@ Adding information for ethereum nodes
       {
         "result": [
             {
+                "identifier": 1,
                 "name": "etherscan",
                 "endpoint": "",
                 "owned": false,
@@ -742,6 +743,7 @@ Adding information for ethereum nodes
                 "active": true
             },
             {
+                "identifier": 2,
                 "name": "mycrypto",
                 "endpoint": "https://api.mycryptoapi.com/eth",
                 "owned": false,
@@ -749,6 +751,7 @@ Adding information for ethereum nodes
                 "active": true
             },
             {
+                "identifier": 3,
                 "name": "blockscout",
                 "endpoint": "https://mainnet-nethermind.blockscout.com/",
                 "owned": false,
@@ -756,6 +759,7 @@ Adding information for ethereum nodes
                 "active": true
             },
             {
+                "identifier": 4,
                 "name": "avado pool",
                 "endpoint": "https://mainnet.eth.cloud.ava.do/",
                 "owned": false,
@@ -820,6 +824,7 @@ Adding information for ethereum nodes
       Content-Type: application/json
 
       {
+        "identifier": 8,
         "name": "my_node",
         "endpoint": "http://localhost:8386",
         "owned": true,
@@ -827,7 +832,8 @@ Adding information for ethereum nodes
         "active": false
       }
 
-   :resjson string name: Name and primary key of the node. This field cannot be modified.
+   :resjson int identifier: Id of the node that wants to be edited.
+   :resjson string name: Name of the node that will be edited.
    :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
    :resjson string owned: True if the user owns the node or false if is a public node.
    :resjson int weight: Weight of the node in the range of 0 to 100.
@@ -850,10 +856,10 @@ Adding information for ethereum nodes
       Content-Type: application/json
 
       {
-        "name": "1inch"
+        "identifier": 8
       }
 
-   :resjson string name: Name and primary key of the node. Cannot delete the ``etherscan`` entry.
+   :resjson int identifier: Id of the node that wants to be deleted.
 
    :statuscode 200: Deletion was successful.
    :statuscode 409: No user is logged or failed to delete because the node name is not in the database.

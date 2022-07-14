@@ -289,7 +289,7 @@ class EthereumManager():
             # Assigning one is just a default since we always use it.
             # The weight is only important for the other nodes since they
             # are selected using this parameter
-            ordered_list = [WeightedNode(node_info=node, weight=ONE, active=True) for node in owned_nodes] + ordered_list  # noqa: E501
+            ordered_list = [WeightedNode(identifier=0, node_info=node, weight=ONE, active=True) for node in owned_nodes] + ordered_list  # noqa: E501
         return ordered_list
 
     def get_own_node_web3(self) -> Optional[Web3]:
@@ -978,6 +978,7 @@ class EthereumManager():
             if (node_info := self.get_own_node_info()) is not None:
                 call_order.append(
                     WeightedNode(
+                        identifier=0,  # Not used
                         node_info=node_info,
                         active=True,
                         weight=ONE,

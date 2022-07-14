@@ -5,6 +5,7 @@ from unittest.mock import patch
 import requests
 
 from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -143,7 +144,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     # try to delete a node
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
-        json={'name': '1inch'},
+        json={'identifier': 5},
     )
     assert_proper_response(response)
     # check that is not anymore in the returned list
@@ -167,7 +168,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     for node in result:
         if node['name'] == '1inch':
-            assert node['weight'] == 15
+            assert FVal(node['weight']) == 15
             assert node['active'] is True
             assert node['endpoint'] == 'https://web3.1inch.exchange'
             assert node['owned'] is False
@@ -194,11 +195,12 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
+            'identifier': 8,
             'name': '1inch',
             'endpoint': 'ewarwae',
             'owned': True,
             'weight': 40,
-            'active': False,
+            'active': True,
         },
     )
     assert_proper_response(response)
@@ -206,21 +208,22 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     for node in result:
         if node['name'] == '1inch':
-            assert node['weight'] == 40
-            assert node['active'] is False
+            assert FVal(node['weight']) == 40
+            assert node['active'] is True
             assert node['endpoint'] == 'ewarwae'
             assert node['owned'] is True
             break
 
     # set weight to 0
-    response = requests.put(
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
+            'identifier': 8,
             'name': '1inch',
             'endpoint': 'https://web3.1inch.exchange',
             'owned': False,
             'weight': 0,
-            'active': True,
+            'active': False,
         },
     )
     assert nodes_at_start - len(database.get_web3_nodes(only_active=True)) == 1
