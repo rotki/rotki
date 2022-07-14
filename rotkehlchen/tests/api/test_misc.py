@@ -159,7 +159,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             'name': '1inch',
             'endpoint': 'https://web3.1inch.exchange',
             'owned': False,
-            'weight': 15,
+            'weight': '15',
             'active': True,
         },
     )
@@ -181,7 +181,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             'name': 'etherscan',
             'endpoint': 'ewarwae',
             'owned': False,
-            'weight': 0.3,
+            'weight': '0.3',
             'active': True,
         },
     )
@@ -199,7 +199,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             'name': '1inch',
             'endpoint': 'ewarwae',
             'owned': True,
-            'weight': 40,
+            'weight': '40',
             'active': True,
         },
     )
@@ -222,8 +222,9 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             'name': '1inch',
             'endpoint': 'https://web3.1inch.exchange',
             'owned': False,
-            'weight': 0,
+            'weight': '0',
             'active': False,
         },
     )
+    result = assert_proper_response_with_result(response)
     assert nodes_at_start - len(database.get_web3_nodes(only_active=True)) == 1

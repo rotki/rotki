@@ -2293,6 +2293,30 @@ class EthereumNodeEditSchema(EthereumNodeSchema):
     )
     identifier = fields.Integer(required=True)
 
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['identifier'] == 1 and data['name'] != ETHERSCAN_NODE_NAME:
+            raise ValidationError(
+                message='Can\'t change the etherscan node name',
+                field_name='name',
+            )
+
 
 class EthereumNodeListDeleteSchema(Schema):
     identifier = fields.Integer(required=True)
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['identifier'] == 1:
+            raise ValidationError(
+                message='Can\'t delete the etherscan node',
+                field_name='identifier',
+            )

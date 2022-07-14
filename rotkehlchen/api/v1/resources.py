@@ -503,7 +503,6 @@ class EthereumNodesResource(BaseMethodView):
         active: bool,
     ) -> Response:
         node = WeightedNode(
-            identifier=0,  # Not used during insertion
             node_info=NodeName(
                 name=name,
                 endpoint=endpoint,

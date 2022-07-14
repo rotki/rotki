@@ -22,7 +22,6 @@ ETHEREUM_BEGIN = Timestamp(1438269973)
 CPT_KRAKEN = 'kraken'
 
 ETHERSCAN_NODE = WeightedNode(
-    identifier=0,  # not used
     node_info=NodeName(
         name=ETHERSCAN_NODE_NAME,
         endpoint='',

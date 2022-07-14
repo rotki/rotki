@@ -167,6 +167,7 @@ def test_migration_3(rotkehlchen_api_server):
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('perform_nodes_insertion', [False])
 def test_migration_4(rotkehlchen_api_server):
     """
     Test that the fourth data migration for rotki works. This migration adds the ethereum nodes

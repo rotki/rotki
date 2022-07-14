@@ -1,10 +1,10 @@
+from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Tuple, Type
 
 from eth_typing import HexAddress, HexStr
+
 from rotkehlchen.fval import FVal
-
 from rotkehlchen.types import ChecksumEthAddress
-
 
 ETHERSCAN_NODE_NAME = 'etherscan'
 
@@ -44,11 +44,12 @@ class EnsContractParams(NamedTuple):
     arguments: List[Any]
 
 
-class WeightedNode(NamedTuple):
-    identifier: int
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class WeightedNode:
     node_info: NodeName
     active: bool
     weight: FVal
+    identifier: int = 0
 
     def serialize(self) -> Dict[str, Any]:
         return {

@@ -3306,15 +3306,17 @@ class DBHandler:
             ]
 
     def _rebalance_web3_nodes_weights(
-        self,
-        write_cursor: 'DBCursor',
-        proportion_to_share: FVal,
-        exclude_identifier: Optional[int],
+            self,
+            write_cursor: 'DBCursor',
+            proportion_to_share: FVal,
+            exclude_identifier: Optional[int],
     ) -> None:
         """
-        Weights for nodes have to be in the 0-1 range. So after setting a node weight to X
-        proportion_to_share = 1 - X. And we re-scale the weight of each node to keep their
-        proportion in proportion_to_share respect to the other nodes.
+        Weights for nodes have to be in the range between 0 and 1. This function adjusts the
+        weights of all other nodes to keep the proportions correct. After setting a node weight
+        to X, the `proportion_to_share` between all remaining nodes becomes `1 - X`.
+        exclude_identifier is the identifier of the node whose weight we add or edit.
+        In case of deletion it's omitted and `None`is passed.
         """
         if exclude_identifier is None:
             write_cursor.execute('SELECT identifier, weight FROM web3_nodes')
@@ -3385,6 +3387,6 @@ class DBHandler:
                 raise InputError(f'node with name {identifier} was not found in the database')
             self._rebalance_web3_nodes_weights(
                 write_cursor=cursor,
-                proportion_to_share=FVal(1),
+                proportion_to_share=ONE,
                 exclude_identifier=None,
             )

@@ -39,7 +39,7 @@ def test_all_action_types_writtable_in_db(database, function_scope_messages_aggr
                 timestamp=1,
                 action_type=entry,
                 location=Location.EXTERNAL,
-                amount=FVal(1),
+                amount=ONE,
                 asset=A_ETH,
                 rate=None,
                 rate_asset=None,

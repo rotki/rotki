@@ -539,7 +539,6 @@ def check_vault_history(name, expected_history, result_history):
     [
         (
             WeightedNode(
-                identifier=0,  # not used
                 node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True),
                 weight=ONE,
                 active=True,

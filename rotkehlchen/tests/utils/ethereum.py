@@ -50,8 +50,8 @@ ETHERSCAN_PARAMS: Tuple[str, List[Tuple]] = ('ethereum_manager_connect_at_start,
 ETHERSCAN_AND_INFURA_PARAMS: Tuple[str, List[Tuple]] = ('ethereum_manager_connect_at_start, call_order', [  # noqa: E501
     ((), (ETHERSCAN_NODE,)),
     (
-        (WeightedNode(identifier=0, node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
-        (WeightedNode(identifier=0, node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
+        (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
+        (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
     ),
 ])
 
@@ -61,12 +61,12 @@ ETHERSCAN_AND_INFURA_AND_ALCHEMY: Tuple[str, List[Tuple]] = ('ethereum_manager_c
     ((), (ETHERSCAN_NODE,)),
     # For "our own" node querying use infura
     (
-        (WeightedNode(identifier=0, node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
-        (WeightedNode(identifier=0, node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
+        (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
+        (WeightedNode(node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
     ),
     (
-        (WeightedNode(identifier=0, node_info=NodeName(name='own', endpoint=ALCHEMY_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
-        (WeightedNode(identifier=0, node_info=NodeName(name='own', endpoint=ALCHEMY_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
+        (WeightedNode(node_info=NodeName(name='own', endpoint=ALCHEMY_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
+        (WeightedNode(node_info=NodeName(name='own', endpoint=ALCHEMY_TEST, owned=True), weight=ONE, active=True),),  # noqa: E501
     ),
 ])
 

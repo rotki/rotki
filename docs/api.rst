@@ -739,7 +739,7 @@ Adding information for ethereum nodes
                 "name": "etherscan",
                 "endpoint": "",
                 "owned": false,
-                "weight": 40,
+                "weight": "40.00",
                 "active": true
             },
             {
@@ -747,7 +747,7 @@ Adding information for ethereum nodes
                 "name": "mycrypto",
                 "endpoint": "https://api.mycryptoapi.com/eth",
                 "owned": false,
-                "weight": 20,
+                "weight": "20.00",
                 "active": true
             },
             {
@@ -755,7 +755,7 @@ Adding information for ethereum nodes
                 "name": "blockscout",
                 "endpoint": "https://mainnet-nethermind.blockscout.com/",
                 "owned": false,
-                "weight": 20,
+                "weight": "20.00",
                 "active": true
             },
             {
@@ -763,7 +763,7 @@ Adding information for ethereum nodes
                 "name": "avado pool",
                 "endpoint": "https://mainnet.eth.cloud.ava.do/",
                 "owned": false,
-                "weight": 20,
+                "weight": "20.00",
                 "active": true
             }
         ],
@@ -773,7 +773,7 @@ Adding information for ethereum nodes
    :resjson list result: A list with information about the ethereum nodes.
    :resjson string name: Name and primary key of the node.
    :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
-   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string weight: Weight of the node in the range of 0 to 100 with 2 decimals.
    :resjson string owned: True if the user owns the node or false if is a public node.
    :resjson string active: True if the node should be used or false if it shouldn't.
 
@@ -797,14 +797,14 @@ Adding information for ethereum nodes
         "name": "my_node",
         "endpoint": "http://localhost:8385",
         "owned": true,
-        "weight": 40,
+        "weight": "40.30",
         "active": true
       }
 
    :resjson string name: Name and primary key of the node. This field has to be unique. This field cannot be empty or use the key ``etherscan``.
    :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
    :resjson string owned: True if the user owns the node or false if is a public node.
-   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string weight: Weight of the node in the range of 0 to 100 with 2 decimals.
    :resjson string active: True if the node should be used or false if it shouldn't.
 
    :statuscode 200: Insertion was successful.
@@ -832,11 +832,11 @@ Adding information for ethereum nodes
         "active": false
       }
 
-   :resjson int identifier: Id of the node that wants to be edited.
+   :resjson int identifier: Id of the node that will be edited.
    :resjson string name: Name of the node that will be edited.
    :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
    :resjson string owned: True if the user owns the node or false if is a public node.
-   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string weight: Weight of the node in the range of 0 to 100 with 2 decimals.
    :resjson string active: True if the node should be used or false if it shouldn't.
 
    :statuscode 200: Update was successful.
@@ -859,7 +859,7 @@ Adding information for ethereum nodes
         "identifier": 8
       }
 
-   :resjson int identifier: Id of the node that wants to be deleted.
+   :resjson int identifier: Id of the node that will be deleted.
 
    :statuscode 200: Deletion was successful.
    :statuscode 409: No user is logged or failed to delete because the node name is not in the database.

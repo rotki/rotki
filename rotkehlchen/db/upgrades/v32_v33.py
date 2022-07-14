@@ -82,8 +82,8 @@ def _create_nodes(cursor: 'DBCursor') -> None:
     identifier INTEGER NOT NULL PRIMARY KEY,
     name TEXT NOT NULL,
     endpoint TEXT NOT NULL,
-    owned BOOLEAN NOT NULL DEFAULT FALSE,
-    active BOOLEAN NOT NULL DEFAULT FALSE,
+    owned INTEGER NOT NULL CHECK (owned IN (0, 1)),
+    active INTEGER NOT NULL CHECK (active IN (0, 1)),
     weight INTEGER NOT NULL
     );
 """)
