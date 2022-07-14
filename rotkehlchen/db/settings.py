@@ -83,7 +83,6 @@ INTEGER_KEYS = (
     'last_data_migration',
 )
 STRING_KEYS = (
-    'eth_rpc_endpoint',
     'ksm_rpc_endpoint',
     'dot_rpc_endpoint',
     'date_display_format',
@@ -103,7 +102,6 @@ class DBSettings(NamedTuple):
     taxfree_after_period: Optional[int] = DEFAULT_TAXFREE_AFTER_PERIOD
     balance_save_frequency: int = DEFAULT_BALANCE_SAVE_FREQUENCY
     include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
-    eth_rpc_endpoint: str = 'http://localhost:8545'
     ksm_rpc_endpoint: str = 'http://localhost:9933'
     dot_rpc_endpoint: str = ''  # same as kusama -- must be set by user
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
@@ -149,7 +147,6 @@ class ModifiableDBSettings(NamedTuple):
     taxfree_after_period: Optional[int] = None
     balance_save_frequency: Optional[int] = None
     include_gas_costs: Optional[bool] = None
-    eth_rpc_endpoint: Optional[str] = None
     ksm_rpc_endpoint: Optional[str] = None
     dot_rpc_endpoint: Optional[str] = None
     main_currency: Optional[Asset] = None

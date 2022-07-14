@@ -138,6 +138,8 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     for node in result:
         if node['name'] != ETHERSCAN_NODE_NAME:
             assert node['endpoint'] != ''
+        else:
+            assert node['identifier'] == 1
         if node['active']:
             assert node['weight'] != 0
 
@@ -213,18 +215,34 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             assert node['endpoint'] == 'ewarwae'
             assert node['owned'] is True
             break
-
-    # set weight to 0
+    result = assert_proper_response_with_result(response)
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
+        json={
+            'name': 'my_super_node',
+            'endpoint': 'ewarwae',
+            'owned': True,
+            'weight': '0.3',
+            'active': True,
+        },
+    )
+    # set owned to false and see that we have the expected amount of nodes
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
-            'identifier': 8,
-            'name': '1inch',
-            'endpoint': 'https://web3.1inch.exchange',
+            'identifier': 4,
+            'name': 'avado pool',
+            'endpoint': 'https://mainnet.eth.cloud.ava.do/',
             'owned': False,
             'weight': '0',
             'active': False,
         },
     )
+    assert nodes_at_start - len(database.get_web3_nodes(only_active=True)) == 0
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
-    assert nodes_at_start - len(database.get_web3_nodes(only_active=True)) == 1
+    # Check that the rebalancing didn't get affected by the owned node
+    for node in result:
+        if node['name'] == '1inch':
+            assert FVal(node['weight']) == 40
+            break

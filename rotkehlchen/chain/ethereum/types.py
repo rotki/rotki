@@ -53,7 +53,7 @@ class WeightedNode:
 
     def serialize(self) -> Dict[str, Any]:
         return {
-            'id': self.identifier,
+            'identifier': self.identifier,
             'name': self.node_info.name,
             'endpoint': self.node_info.endpoint,
             'weight': self.weight.to_percentage(precision=2, with_perc_sign=False),

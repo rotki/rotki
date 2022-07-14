@@ -116,7 +116,6 @@ def initialize_mock_rotkehlchen_instance(
         default_mock_price_value,
         ethereum_manager_connect_at_start,
         kusama_manager_connect_at_start,
-        eth_rpc_endpoint,
         ksm_rpc_endpoint,
         max_tasks_num,
         legacy_messages_via_websockets,
@@ -136,7 +135,6 @@ def initialize_mock_rotkehlchen_instance(
     def mock_get_settings(_cursor) -> DBSettings:
         settings = DBSettings(
             active_modules=ethereum_modules,
-            eth_rpc_endpoint=eth_rpc_endpoint,
             ksm_rpc_endpoint=ksm_rpc_endpoint,
         )
         return settings
@@ -286,7 +284,6 @@ def fixture_rotkehlchen_api_server(
         default_mock_price_value,
         ethereum_manager_connect_at_start,
         kusama_manager_connect_at_start,
-        ethrpc_endpoint,
         ksm_rpc_endpoint,
         max_tasks_num,
         legacy_messages_via_websockets,
@@ -324,7 +321,6 @@ def fixture_rotkehlchen_api_server(
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
-        eth_rpc_endpoint=ethrpc_endpoint,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
         legacy_messages_via_websockets=legacy_messages_via_websockets,
@@ -360,7 +356,6 @@ def rotkehlchen_instance(
         default_mock_price_value,
         ethereum_manager_connect_at_start,
         kusama_manager_connect_at_start,
-        ethrpc_endpoint,
         ksm_rpc_endpoint,
         max_tasks_num,
         legacy_messages_via_websockets,
@@ -393,7 +388,6 @@ def rotkehlchen_instance(
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
-        eth_rpc_endpoint=ethrpc_endpoint,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
         legacy_messages_via_websockets=legacy_messages_via_websockets,

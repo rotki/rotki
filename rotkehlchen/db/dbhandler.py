@@ -3319,10 +3319,10 @@ class DBHandler:
         In case of deletion it's omitted and `None`is passed.
         """
         if exclude_identifier is None:
-            write_cursor.execute('SELECT identifier, weight FROM web3_nodes')
+            write_cursor.execute('SELECT identifier, weight FROM web3_nodes WHERE owned=0')
         else:
             write_cursor.execute(
-                'SELECT identifier, weight FROM web3_nodes where identifier != ?',
+                'SELECT identifier, weight FROM web3_nodes WHERE identifier != ? AND owned=0',
                 (exclude_identifier,),
             )
         new_weights = []
