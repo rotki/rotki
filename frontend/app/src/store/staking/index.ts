@@ -6,6 +6,8 @@ import {
 } from '@rotki/common/lib/staking/eth2';
 import { ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { omitBy } from 'lodash';
+import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { Module } from 'vuex';
 import { getPremium } from '@/composables/session';
@@ -149,18 +151,22 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       Section.STAKING_ETH2_STATS
     );
 
-    const fetchStats = async (parameters?: Partial<Eth2DailyStatsPayload>) => {
+    const fetchStats = async (onlyCache: boolean) => {
       const defaults: Eth2DailyStatsPayload = {
         limit: 0,
         offset: 0,
         ascending: false,
-        orderByAttribute: 'timestamp'
+        orderByAttribute: 'timestamp',
+        onlyCache
       };
 
-      const params = Object.assign(defaults, parameters);
+      const payload = Object.assign(defaults, {
+        ...get(pagination),
+        onlyCache
+      });
 
-      if (params.onlyCache) {
-        return await api.eth2Stats(params);
+      if (onlyCache) {
+        return await api.eth2Stats(payload);
       }
 
       const { taskId } = await api.eth2StatsTask(defaults);
@@ -179,30 +185,34 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
         taskMeta,
         true
       );
+
+      setStatus(
+        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
+      );
+
       return Eth2DailyStats.parse(result);
     };
 
-    async function loadPage(payload: Eth2DailyStatsPayload) {
-      const cacheParams = { ...payload, onlyCache: true };
-      set(stats, await fetchStats(cacheParams));
-    }
-
     try {
       const firstLoad = isFirstLoad();
-      if (get(isTaskRunning(taskType)) || (loading() && !refresh)) {
+      const onlyCache = firstLoad ? false : !refresh;
+      if ((get(isTaskRunning(taskType)) || loading()) && !onlyCache) {
         return;
       }
 
+      const fetchOnlyCache = async () => {
+        set(stats, await fetchStats(true));
+      };
+
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
 
-      if (refresh || firstLoad) {
-        if (firstLoad) {
-          await loadPage(get(pagination));
-        }
+      await fetchOnlyCache();
+
+      if (!onlyCache) {
         setStatus(Status.REFRESHING);
-        await fetchStats();
+        await fetchStats(false);
+        await fetchOnlyCache();
       }
-      await loadPage(get(pagination));
 
       setStatus(
         get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
@@ -221,8 +231,11 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   };
 
   const updatePagination = async (data: Eth2DailyStatsPayload) => {
-    set(pagination, data);
-    await fetchDailyStats();
+    const filteredData = omitBy(data, value => value === undefined);
+    if (!isEqual(get(pagination), filteredData)) {
+      set(pagination, filteredData);
+      await fetchDailyStats();
+    }
   };
 
   const load = async (refresh: boolean = false) => {

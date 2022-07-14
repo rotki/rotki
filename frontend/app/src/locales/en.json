@@ -1823,7 +1823,7 @@
         "address": "Address",
         "name": "Name"
       },
-      "subtitle": "Add, edit, remove name for ETH addresses. Changes in the names will be reflected across all your accounts.",
+      "subtitle": "Add, edit, remove name for ETH addresses. Changes in the names will be reflected across the app.",
       "title": "Address Book"
     },
     "title": "Eth Address Book Management"

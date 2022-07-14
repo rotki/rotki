@@ -19,6 +19,7 @@ import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
+import { isValidEthAddress } from '@/utils/text';
 import { actions } from './actions';
 import { getters } from './getters';
 import { mutations } from './mutations';
@@ -45,9 +46,10 @@ export const useEthNamesStore = defineStore('ethNames', () => {
   const { notify } = useNotifications();
 
   const updateEnsAddresses = (newAddresses: string[]): boolean => {
-    const newEnsAddresses = [...get(ensAddresses), ...newAddresses].filter(
-      uniqueStrings
-    );
+    const newEnsAddresses = [...get(ensAddresses), ...newAddresses]
+      .filter(uniqueStrings)
+      .filter(address => isValidEthAddress(address));
+
     const currentEnsAddresses = [...get(ensAddresses)];
 
     const changed = !isEqual(newEnsAddresses, currentEnsAddresses);
