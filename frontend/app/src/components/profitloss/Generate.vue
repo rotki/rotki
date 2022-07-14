@@ -34,19 +34,21 @@
               :disabled="!valid"
               @click="generate()"
             >
+              <v-icon class="mr-2">mdi-file-chart</v-icon>
               {{ $t('generate.generate') }}
             </v-btn>
           </v-col>
           <v-col cols="auto">
-            <v-menu offset-y left>
+            <v-menu v-if="isDevelopment" offset-y left>
               <template #activator="{ on }">
                 <v-btn
                   color="warning"
                   depressed
                   large
-                  class="px-8 ml-4"
+                  class="px-4 ml-4"
                   v-on="on"
                 >
+                  <v-icon class="mr-2">mdi-wrench</v-icon>
                   {{ $t('profit_loss_reports.debug.title') }}
                 </v-btn>
               </template>
@@ -73,6 +75,17 @@
                 </v-list-item>
               </v-list>
             </v-menu>
+            <v-btn
+              v-else
+              color="warning"
+              depressed
+              large
+              class="px-4 ml-4"
+              @click="exportReportData"
+            >
+              <v-icon class="mr-2">mdi-export</v-icon>
+              {{ $t('profit_loss_reports.debug.export_data') }}
+            </v-btn>
           </v-col>
         </v-row>
       </template>
@@ -122,7 +135,10 @@ export default defineComponent({
       emit('import-data');
     };
 
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
     return {
+      isDevelopment,
       range,
       valid,
       generate,
