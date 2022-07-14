@@ -95,6 +95,11 @@ def test_coverage_of_kraken_balances(kraken):
     got_assets.remove('TRX.S')
     got_assets.remove('LUNA.S')
     got_assets.remove('SCRT.S')
+    got_assets.remove('MATIC.S')
+    got_assets.remove('GBP.HOLD')
+    got_assets.remove('CHF.HOLD')
+    got_assets.remove('CAD.HOLD')
+    got_assets.remove('AUD.HOLD')
 
     diff = expected_assets.symmetric_difference(got_assets)
     if len(diff) != 0:

@@ -191,6 +191,14 @@ def test_cryptocompare_asset_support(cryptocompare):
         'AUSD',  # alpaca usd but cc has appeal dollar
         'PLY',  # Aurigami but cc has playcoin
         'MLS',  # Pikaster but cc has crop
+        ethaddress_to_identifier('0xcCeD5B8288086BE8c38E23567e684C3740be4D48'),  # noqa: E501 # rouletteToken but cc has Runner land
+        ethaddress_to_identifier('0xb4bebD34f6DaaFd808f73De0d10235a92Fbb6c3D'),  # noqa: E501 # Yearn index but cc has yeti finance
+        ethaddress_to_identifier('0xC76FB75950536d98FA62ea968E1D6B45ffea2A55'),  # noqa: E501 # Unit protocol but cc has clash of lilliput
+        ethaddress_to_identifier('0xbc6E06778708177a18210181b073DA747C88490a'),  # noqa: E501 # Syndicate but cc has mobland
+        ethaddress_to_identifier('0x23894DC9da6c94ECb439911cAF7d337746575A72'),  # noqa: E501 # geojam but cc has tune.fm
+        'WELL',  # Moonwell but cc has well
+        ethaddress_to_identifier('0xeEd4d7316a04ee59de3d301A384262FFbDbd589a'),  # noqa: E501 # Page network but cc has PhiGold
+        ethaddress_to_identifier('0xbb70AdbE39408cB1E5258702ea8ADa7c81165b73'),  # noqa: E501 # AnteDao but cc has ante
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -447,6 +455,10 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x13f25cd52b21650caa8225C9942337d914C9B030'),
         # we have plutusdefi (usde) but coingecko has energi dollar
         'USDE',
+        # gearbox is not returned by the coingecko api
+        ethaddress_to_identifier('0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
+        # bitcoindark bu coingecko has bitdollars
+        'BTCD',
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

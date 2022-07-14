@@ -458,6 +458,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'TYB',  # neither in coingecko nor cryptocompare
     'PANDO',  # neither in coingecko nor cryptocompare (own blockchain, released on 2020)
     'SMBSWAP',  # neither in coingecko nor cryptocompare
+    'SML',  # neither in coingecko nor cryptocompare
     'SQUID',  # neither in coingecko nor cryptocompare
     'UPCO2',  # neither in coingecko nor cryptocompare
     'VIL',  # neither in coingecko nor cryptocompare (VICDeal)
@@ -721,6 +722,12 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'APE3S',  # no cryptocompare/coingecko data
     'GMT3L',  # no cryptocompare/coingecko data
     'GMT3S',  # no cryptocompare/coingecko data
+    'JASMY3L',  # no cryptocompare/coingecko data
+    'JASMY3S',  # no cryptocompare/coingecko data
+    'SRBP',  # no cryptocompare/coingecko data
+    'RBP',  # no cryptocompare/coingecko data
+    'IDLENFT',  # no cryptocompare/coingecko data
+    'RBS',  # no cryptocompare/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
