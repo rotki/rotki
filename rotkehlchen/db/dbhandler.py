@@ -3286,7 +3286,7 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             if only_active:
-                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active FROM web3_nodes WHERE active=TRUE AND CAST(weight as decimal) != 0;')  # noqa: E501
+                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active FROM web3_nodes WHERE active=1 AND CAST(weight as decimal) != 0;')  # noqa: E501
             else:
                 cursor.execute(
                     'SELECT identifier, name, endpoint, owned, weight, active FROM web3_nodes;',

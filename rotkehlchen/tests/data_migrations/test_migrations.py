@@ -187,6 +187,11 @@ def test_migration_4(rotkehlchen_api_server):
     with migration_patch:
         DataMigrationManager(rotki).maybe_migrate_data()
     dir_path = Path(__file__).resolve().parent.parent.parent
+    with database.conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT * from settings where name=?', ('eth_rpc_endpoint',),
+        )
+        assert cursor.fetchone() is None, 'Setting should have been deleted'
     with open(dir_path / 'data' / 'nodes.json', 'r') as f:
         nodes = json.loads(f.read())
         web3_nodes = database.get_web3_nodes()
@@ -221,6 +226,11 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
     with migration_patch:
         DataMigrationManager(rotki).maybe_migrate_data()
     dir_path = Path(__file__).resolve().parent.parent.parent
+    with database.conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT * from settings where name=?', ('eth_rpc_endpoint',),
+        )
+        assert cursor.fetchone() is None, 'Setting should have been deleted'
     web3_nodes = database.get_web3_nodes()
     with open(dir_path / 'data' / 'nodes.json', 'r') as f:
         nodes = json.loads(f.read())

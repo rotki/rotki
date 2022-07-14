@@ -351,7 +351,6 @@ def test_writing_fetching_data(data_dir, username):
     assert 0 <= last_write_diff < 3
     expected_dict = {
         'have_premium': False,
-        'eth_rpc_endpoint': 'http://localhost:8545',
         'ksm_rpc_endpoint': 'http://localhost:9933',
         'dot_rpc_endpoint': '',
         'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION,
@@ -404,7 +403,6 @@ def test_settings_entry_types(database):
             ui_floating_precision=1,
             taxfree_after_period=1,
             include_gas_costs=True,
-            eth_rpc_endpoint='http://localhost:8545',
             balance_save_frequency=24,
             date_display_format='%d/%m/%Y %H:%M:%S %z',
             submit_usage_analytics=False,
@@ -422,8 +420,6 @@ def test_settings_entry_types(database):
     assert res.ui_floating_precision == 1
     assert isinstance(res.taxfree_after_period, int)
     assert res.taxfree_after_period == 1
-    assert isinstance(res.eth_rpc_endpoint, str)
-    assert res.eth_rpc_endpoint == 'http://localhost:8545'
     assert isinstance(res.balance_save_frequency, int)
     assert res.balance_save_frequency == 24
     assert isinstance(res.last_balance_save, int)
