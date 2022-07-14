@@ -1,48 +1,48 @@
 [
     {
-        "node": "etherscan",
+        "name": "etherscan",
         "endpoint": "",
         "weight": 0.30,
         "owned": false,
         "active": true
     },
     {
-        "node": "mycrypto",
+        "name": "mycrypto",
         "endpoint": "https://api.mycryptoapi.com/eth",
         "weight": 0.15,
         "owned": false,
         "active": true
     },
     {
-        "node": "blockscout",
+        "name": "blockscout",
         "endpoint": "https://mainnet-nethermind.blockscout.com/",
         "weight": 0.10,
         "owned": false,
         "active": true
     },
     {
-        "node": "avado pool",
+        "name": "avado pool",
         "endpoint": "https://mainnet.eth.cloud.ava.do/",
         "weight": 0.05,
         "owned": false,
         "active": true
     },
     {
-        "node": "1inch",
+        "name": "1inch",
         "endpoint": "https://web3.1inch.exchange",
         "weight": 0.15,
         "owned": false,
         "active": true
     },
     {
-        "node": "myetherwallet",
-        "endpoint": "https://nodes.mewapi.io/rpc/eth",
+        "name": "myetherwallet",
+        "endpoint": "https://names.mewapi.io/rpc/eth",
         "weight": 0.15,
         "owned": false,
         "active": true
     },
     {
-        "node": "cloudflare",
+        "name": "cloudflare",
         "endpoint": "https://cloudflare-eth.com/",
         "weight": 0.10,
         "owned": false,

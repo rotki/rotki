@@ -2294,7 +2294,7 @@ class EthereumNodeEditSchema(EthereumNodeSchema):
 
 
 class EthereumNodeListDeleteSchema(Schema):
-    node_name = fields.String(
+    name = fields.String(
         required=True,
         validate=webargs.validate.NoneOf(
             iterable=['', ETHERSCAN_NODE_NAME],

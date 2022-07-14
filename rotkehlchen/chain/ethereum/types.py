@@ -51,7 +51,7 @@ class WeightedNode(NamedTuple):
 
     def serialize(self) -> Dict[str, Union[str, Union[str, int]]]:
         return {
-            'node': self.node_info.name,
+            'name': self.node_info.name,
             'endpoint': self.node_info.endpoint,
             'weight': (self.weight * 100).to_int(exact=False),
             'owned': self.node_info.owned,

@@ -735,28 +735,28 @@ Adding information for ethereum nodes
       {
         "result": [
             {
-                "node": "etherscan",
+                "name": "etherscan",
                 "endpoint": "",
                 "owned": false,
                 "weight": 40,
                 "active": true
             },
             {
-                "node": "mycrypto",
+                "name": "mycrypto",
                 "endpoint": "https://api.mycryptoapi.com/eth",
                 "owned": false,
                 "weight": 20,
                 "active": true
             },
             {
-                "node": "blockscout",
+                "name": "blockscout",
                 "endpoint": "https://mainnet-nethermind.blockscout.com/",
                 "owned": false,
                 "weight": 20,
                 "active": true
             },
             {
-                "node": "avado pool",
+                "name": "avado pool",
                 "endpoint": "https://mainnet.eth.cloud.ava.do/",
                 "owned": false,
                 "weight": 20,
@@ -767,7 +767,7 @@ Adding information for ethereum nodes
       }
 
    :resjson list result: A list with information about the ethereum nodes.
-   :resjson string node: Name and primary key of the node.
+   :resjson string name: Name and primary key of the node.
    :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
    :resjson int weight: Weight of the node in the range of 0 to 100.
    :resjson string owned: True if the user owns the node or false if is a public node.
@@ -850,10 +850,10 @@ Adding information for ethereum nodes
       Content-Type: application/json
 
       {
-        "node_name": "1inch"
+        "name": "1inch"
       }
 
-   :resjson string node_name: Name and primary key of the node. Cannot delete the ``etherscan`` entry.
+   :resjson string name: Name and primary key of the node. Cannot delete the ``etherscan`` entry.
 
    :statuscode 200: Deletion was successful.
    :statuscode 409: No user is logged or failed to delete because the node name is not in the database.
