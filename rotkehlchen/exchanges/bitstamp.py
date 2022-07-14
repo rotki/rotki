@@ -91,23 +91,12 @@ USER_TRANSACTION_MIN_SINCE_ID = 1
 USER_TRANSACTION_TRADE_TYPE = {2}
 # Asset movement type int: 0 - deposit, 1 - withdrawal
 USER_TRANSACTION_ASSET_MOVEMENT_TYPE = {0, 1}
-
-# from https://www.bitstamp.net/api/#user-transactions
-BITSTAMP_ASSET_MOVEMENT_SYMBOLS = (
-    'usd',
-    'eur',
-    'btc',
-    'xrp',
-    'gbp',
-    'ltc',
-    'eth',
-    'bch',
-    'xlm',
-    'pax',
-    'link',
-    'omg',
-    'usdc',
-)
+KNOWN_NON_ASSET_KEYS_FOR_MOVEMENTS = {
+    'datetime',
+    'id',
+    'type',
+    'fee',
+}
 
 
 class TradePairData(NamedTuple):
@@ -551,12 +540,21 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise AssertionError(f'Unexpected Bitstamp asset movement case: {type_}.')
 
         timestamp = deserialize_timestamp_from_bitstamp_date(raw_movement['datetime'])
-        amount: FVal
+        amount: FVal = ZERO
         fee_asset: Asset
-        for symbol in BITSTAMP_ASSET_MOVEMENT_SYMBOLS:
-            amount = deserialize_asset_amount(raw_movement.get(symbol, '0'))
+        for raw_movement_key, value in raw_movement.items():
+            if raw_movement_key in KNOWN_NON_ASSET_KEYS_FOR_MOVEMENTS:
+                continue
+            try:
+                candicate_fee_asset = asset_from_bitstamp(raw_movement_key)
+            except (UnknownAsset, DeserializationError):
+                continue
+            try:
+                amount = deserialize_asset_amount(value)
+            except DeserializationError:
+                continue
             if amount != ZERO:
-                fee_asset = asset_from_bitstamp(symbol)
+                fee_asset = candicate_fee_asset
                 break
 
         if amount == ZERO:
