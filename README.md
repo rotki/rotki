@@ -12,6 +12,7 @@ rotki is an open source portfolio tracking, analytics, accounting and tax report
 [![GitHub commits](https://img.shields.io/github/commits-since/rotki/rotki/latest.svg)](https://GitHub.com/rotki/rotki/commit/)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/rotki/rotki.svg?style=flat)](https://github.com/rotki/rotki/graphs/contributors)
+[![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/rotki/rotki/badge)](https://www.gitpoap.io/gh/rotki/rotki)
 [![Github All Releases](https://img.shields.io/github/downloads/rotki/rotki/total.svg)](https://GitHub.com/rotki/rotki/releases/)
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/rotkiapp.svg?style=social)](https://twitter.com/rotkiapp)
