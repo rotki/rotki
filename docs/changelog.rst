@@ -2,17 +2,18 @@
 Changelog
 =========
 
-* :feature:`3325` Users will now be able to manage the ethereum nodes queried and their priority
+* :feature:`3325` Users will now be able to manage all ethereum nodes queried, their querying priority and add any arbitrary number of nodes to query.
 * :bug:`4438` Filtering of ethereum transactions is now enabled.
 * :feature:`2219` Users will now be able to edit balance snapshots.
 * :feature:`4495` Users will now be able to toggle ETH staking taxation.
-* :feature:`1420` Add functionality to add alias name for ETH addresses.
+* :feature:`1420` Add address book for ETH addresses.
 * :feature:`-` Add zoom feature for line charts.
 * :feature:`3095` The application will now notify the user if there is a status change for the premium subscription.
 * :feature:`1028` Native support for Bitcoin Cash blockchain.
 * :feature:`4268` Add a premium setting to follow the system's theme.
-* :feature:`4443` Users will now be able to get the latest icon of the assets.
+* :feature:`4243` Users will now be able to refresh the icons of an asset
 * :feature:`3798` Users will be now able to combine ETH and ETH2 and display it as one in the interface.
+* :feature:`4099` Users are now able to export an event list of a PnL run to provide to the developers for debugging purposes.
 * :feature:`44` Add option to change cost basis method (FIFO and LIFO order).
 * :bug:`-` Now no missing acquisitions should appear for fiat assets during accounting.
 * :bug:`4459` Transactions that happened in genesis block are now queried and stored properly.
