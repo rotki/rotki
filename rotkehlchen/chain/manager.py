@@ -1762,8 +1762,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             raise ModuleInactive('Cant query eth2 staking details since eth2 module is not active')
         return eth2.get_details(addresses=self.queried_addresses_for_module('eth2'))
 
-    @protect_with_lock()
-    @cache_response_timewise()
     def get_eth2_daily_stats(
             self,
             filter_query: Eth2DailyStatsFilterQuery,
