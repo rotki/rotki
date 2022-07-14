@@ -16,6 +16,7 @@
           <v-icon>{{ privacyModeIcon }}</v-icon>
         </menu-tooltip-button>
         <v-btn
+          data-cy="privacy-menu"
           class="privacy-mode-dropdown__expander pa-0"
           depressed
           fab

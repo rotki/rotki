@@ -88,8 +88,8 @@ export class DefiApi {
     return fetchExternalAsync(this.api, url);
   }
 
-  async fetchUniswapBalances(): Promise<PendingTask> {
-    const url = 'blockchains/ETH/modules/uniswap/balances';
+  async fetchUniswapV2Balances(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/uniswap/v2/balances';
     return fetchExternalAsync(this.api, url);
   }
 

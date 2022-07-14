@@ -41,6 +41,9 @@ describe('settings', () => {
   });
 
   describe('General Settings', () => {
+    const name = 'local';
+    const endpoint = 'http://localhost:9001';
+
     before(() => {
       pageGeneral.visit();
     });
@@ -81,28 +84,24 @@ describe('settings', () => {
       );
     });
 
-    it('change general settings', () => {
-      // pageGeneral.confirmSuccess();
+    it('verify changed settings', () => {
+      pageGeneral.navigateAway();
+      pageGeneral.visit();
+      pageGeneral.verify(settings);
+      pageGeneral.confirmRPCmissing(name, endpoint);
+    });
+
+    it('add ethereum rpc', () => {
+      pageGeneral.confirmRPCmissing(name, endpoint);
+      pageGeneral.addEthereumRPC(name, endpoint);
+      pageGeneral.confirmRPCAddition(name, endpoint);
     });
 
     it('verify changed settings', () => {
       pageGeneral.navigateAway();
       pageGeneral.visit();
       pageGeneral.verify(settings);
-    });
-
-    it('change rpc without success', () => {
-      pageGeneral.setRpcEndpoint('http://localhost:9001');
-      pageGeneral.confirmInlineFailure(
-        '.general-settings__fields__rpc-endpoint',
-        'http://localhost:9001'
-      );
-    });
-
-    it('verify changed settings', () => {
-      pageGeneral.navigateAway();
-      pageGeneral.visit();
-      pageGeneral.verify(settings);
+      pageGeneral.confirmRPCAddition(name, endpoint);
     });
   });
 

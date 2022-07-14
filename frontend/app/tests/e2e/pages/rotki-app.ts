@@ -65,7 +65,7 @@ export class RotkiApp {
   }
 
   changePrivacyMode(mode: number) {
-    cy.get('.privacy-mode-dropdown').click();
+    cy.get('[data-cy=privacy-menu]').click();
     cy.get(
       '[data-cy="privacy-mode-dropdown__input"] ~ .v-slider__thumb-container'
     ).as('input');
@@ -75,7 +75,7 @@ export class RotkiApp {
     if (mode > 0) {
       cy.get('@input').type('{uparrow}'.repeat(mode));
     }
-    cy.get('.privacy-mode-dropdown').click();
+    cy.get('[data-cy=privacy-menu]').click();
   }
 
   drawerIsVisible(isVisible: boolean) {

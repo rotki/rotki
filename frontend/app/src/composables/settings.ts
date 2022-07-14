@@ -11,7 +11,11 @@ import {
   FrontendSettingsPayload,
   RoundingMode
 } from '@/types/frontend-settings';
-import { AccountingSettings, SettingsUpdate } from '@/types/user';
+import {
+  AccountingSettings,
+  GeneralSettings,
+  SettingsUpdate
+} from '@/types/user';
 import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';
 
@@ -101,6 +105,10 @@ export const useSettings = () => {
     return store.state!.session!.accountingSettings;
   });
 
+  const generalSettings = computed<GeneralSettings>(() => {
+    return store.state!.session!.generalSettings;
+  });
+
   const updateSetting = async (
     settings: SettingsUpdate,
     messages: BaseMessage
@@ -134,6 +142,7 @@ export const useSettings = () => {
 
   return {
     accountingSettings,
+    generalSettings,
     updateSetting
   };
 };

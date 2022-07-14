@@ -85,7 +85,7 @@ export const useUniswap = defineStore('defi/uniswap', () => {
     const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_UNISWAP_BALANCES;
-      const { taskId } = await api.defi.fetchUniswapBalances();
+      const { taskId } = await api.defi.fetchUniswapV2Balances();
       const { result } = await awaitTask<XswapBalances, TaskMeta>(
         taskId,
         taskType,

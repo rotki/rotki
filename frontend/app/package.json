@@ -29,6 +29,8 @@
   "dependencies": {
     "@rotki/common": "1.0.0",
     "@vue/composition-api": "1.4.6",
+    "@vuelidate/core": "2.0.0-alpha.42",
+    "@vuelidate/validators": "2.0.0-alpha.30",
     "@vueuse/core": "8.0.0",
     "axios": "0.26.0",
     "chart.js": "3.8.0",
@@ -81,6 +83,7 @@
     "electron-store": "8.0.2",
     "eslint": "8.13.0",
     "eslint-plugin-cypress": "2.12.1",
+    "eslint-plugin-jsonc": "2.3.1",
     "eslint-plugin-vue": "8.6.0",
     "eslint-plugin-vuetify": "1.1.0",
     "flush-promises": "1.0.2",
@@ -109,7 +112,7 @@
   },
   "optionalDependencies": {
     "@cypress/code-coverage": "3.10.0",
-    "cypress": "10.0.1",
+    "cypress": "10.3.0",
     "dmg-license": "1.0.10"
   },
   "engines": {

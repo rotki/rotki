@@ -69,6 +69,7 @@ import {
   LoginCredentials,
   SyncConflictError
 } from '@/types/login';
+import { EthereumRpcNode, EthereumRpcNodeList } from '@/types/settings';
 import {
   emptyPagination,
   KrakenStakingEvents,
@@ -1359,6 +1360,46 @@ export class RotkehlchenApi {
       }
     );
 
+    return handleResponse(response);
+  }
+
+  async fetchEthereumNodes(): Promise<EthereumRpcNodeList> {
+    const response = await this.axios.get<ActionResult<EthereumRpcNodeList>>(
+      '/blockchains/ETH/nodes'
+    );
+    return EthereumRpcNodeList.parse(handleResponse(response));
+  }
+
+  async addEthereumNode(node: EthereumRpcNode): Promise<boolean> {
+    const response = await this.axios.put<ActionResult<boolean>>(
+      '/blockchains/ETH/nodes',
+      axiosSnakeCaseTransformer(node),
+      {
+        validateStatus: validStatus
+      }
+    );
+    return handleResponse(response);
+  }
+
+  async editEthereumNode(node: EthereumRpcNode): Promise<boolean> {
+    const response = await this.axios.post<ActionResult<boolean>>(
+      '/blockchains/ETH/nodes',
+      axiosSnakeCaseTransformer(node),
+      {
+        validateStatus: validStatus
+      }
+    );
+    return handleResponse(response);
+  }
+
+  async deleteEthereumNode(name: string): Promise<boolean> {
+    const response = await this.axios.delete<ActionResult<boolean>>(
+      '/blockchains/ETH/nodes',
+      {
+        data: axiosSnakeCaseTransformer({ name }),
+        validateStatus: validStatus
+      }
+    );
     return handleResponse(response);
   }
 }

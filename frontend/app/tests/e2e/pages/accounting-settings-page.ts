@@ -85,19 +85,4 @@ export class AccountingSettingsPage {
     }
     cy.get(`${target} .v-messages__message`).should('not.exist');
   }
-
-  confirmInlineFailure(target: string, messageContains?: string) {
-    cy.get(`${target} .v-messages__message`).should('be.visible');
-    cy.get(`${target} .v-messages__message`).should(
-      'include.text',
-      'Setting not saved'
-    );
-    if (messageContains) {
-      cy.get(`${target} .v-messages__message`).should(
-        'include.text',
-        messageContains
-      );
-    }
-    cy.get(`${target} .v-messages__message`).should('not.exist');
-  }
 }

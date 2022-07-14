@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3325` Users will now be able to manage the ethereum nodes queried and their priority
 * :bug:`4438` Filtering of ethereum transactions is now enabled.
 * :feature:`2219` Users will now be able to edit balance snapshots.
 * :feature:`4495` Users will now be able to toggle ETH staking taxation.

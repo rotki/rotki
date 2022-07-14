@@ -279,56 +279,8 @@
 
           <rounding-settings />
         </card>
-        <card class="mt-8">
-          <template #title>
-            {{ $t('general_settings.local_nodes.title') }}
-          </template>
-          <v-text-field
-            v-model="rpcEndpoint"
-            outlined
-            class="general-settings__fields__rpc-endpoint"
-            :label="$t('general_settings.labels.rpc_endpoint')"
-            type="text"
-            :success-messages="settingsMessages[RPC_ENDPOINT].success"
-            :error-messages="settingsMessages[RPC_ENDPOINT].error"
-            clearable
-            @paste="onRpcEndpointChange($event.clipboardData.getData('text'))"
-            @click:clear="onRpcEndpointChange('')"
-            @change="onRpcEndpointChange($event)"
-          />
-
-          <v-text-field
-            v-model="ksmRpcEndpoint"
-            outlined
-            class="general-settings__fields__ksm-rpc-endpoint"
-            :label="$t('general_settings.labels.ksm_rpc_endpoint')"
-            type="text"
-            :success-messages="settingsMessages[KSM_RPC_ENDPOINT].success"
-            :error-messages="settingsMessages[KSM_RPC_ENDPOINT].error"
-            clearable
-            @paste="
-              onKsmRpcEndpointChange($event.clipboardData.getData('text'))
-            "
-            @click:clear="onKsmRpcEndpointChange('')"
-            @change="onKsmRpcEndpointChange($event)"
-          />
-
-          <v-text-field
-            v-model="dotRpcEndpoint"
-            outlined
-            class="general-settings__fields__dot-rpc-endpoint"
-            :label="$t('general_settings.labels.dot_rpc_endpoint')"
-            type="text"
-            :success-messages="settingsMessages[DOT_RPC_ENDPOINT].success"
-            :error-messages="settingsMessages[DOT_RPC_ENDPOINT].error"
-            clearable
-            @paste="
-              onDotRpcEndpointChange($event.clipboardData.getData('text'))
-            "
-            @click:clear="onDotRpcEndpointChange('')"
-            @change="onDotRpcEndpointChange($event)"
-          />
-        </card>
+        <ethereum-rpc-node-manager />
+        <rpc-settings />
         <price-oracle-settings />
         <frontend-settings />
       </v-col>
@@ -343,6 +295,8 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import RoundingSettings from '@/components/settings/explorers/RoundingSettings.vue';
 import FrontendSettings from '@/components/settings/FrontendSettings.vue';
 import DateInputFormatSelector from '@/components/settings/general/DateInputFormatSelector.vue';
+import EthereumRpcNodeManager from '@/components/settings/general/rpc/EthereumRpcNodeManager.vue';
+import RpcSettings from '@/components/settings/general/rpc/RpcSettings.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
 import PriceOracleSettings from '@/components/settings/PriceOracleSettings.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
@@ -375,9 +329,6 @@ import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
 
 const SETTING_FLOATING_PRECISION = 'floatingPrecision';
 const SETTING_ANONYMOUS_USAGE_ANALYTICS = 'anonymousUsageAnalytics';
-const SETTING_RPC_ENDPOINT = 'rpcEndpoint';
-const SETTING_KSM_RPC_ENDPOINT = 'ksmRpcEndpoint';
-const SETTING_DOT_RPC_ENDPOINT = 'dotRpcEndpoint';
 const SETTING_BALANCE_SAVE_FREQUENCY = 'balanceSaveFrequency';
 const SETTING_DATE_DISPLAY_FORMAT = 'dateDisplayFormat';
 const SETTING_DATE_INPUT_FORMAT = 'dateInputFormat';
@@ -395,9 +346,6 @@ const SETTING_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED =
 const SETTINGS = [
   SETTING_FLOATING_PRECISION,
   SETTING_ANONYMOUS_USAGE_ANALYTICS,
-  SETTING_RPC_ENDPOINT,
-  SETTING_KSM_RPC_ENDPOINT,
-  SETTING_DOT_RPC_ENDPOINT,
   SETTING_BALANCE_SAVE_FREQUENCY,
   SETTING_DATE_DISPLAY_FORMAT,
   SETTING_DATE_INPUT_FORMAT,
@@ -419,6 +367,8 @@ type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
   components: {
+    EthereumRpcNodeManager,
+    RpcSettings,
     DateInputFormatSelector,
     DateFormatHelp,
     RoundingSettings,
@@ -439,9 +389,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
 
   floatingPrecision: string = '0';
   anonymousUsageAnalytics: boolean = false;
-  rpcEndpoint: string = Defaults.RPC_ENDPOINT;
-  ksmRpcEndpoint: string = Defaults.KSM_RPC_ENDPOINT;
-  dotRpcEndpoint: string = Defaults.DOT_RPC_ENDPOINT;
   balanceSaveFrequency: string = '0';
   dateDisplayFormat: string = '';
   dateInputFormat: string = '';
@@ -461,9 +408,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
 
   readonly FLOATING_PRECISION = SETTING_FLOATING_PRECISION;
   readonly ANONYMOUS_USAGE_ANALYTICS = SETTING_ANONYMOUS_USAGE_ANALYTICS;
-  readonly RPC_ENDPOINT = SETTING_RPC_ENDPOINT;
-  readonly KSM_RPC_ENDPOINT = SETTING_KSM_RPC_ENDPOINT;
-  readonly DOT_RPC_ENDPOINT = SETTING_DOT_RPC_ENDPOINT;
   readonly BALANCE_SAVE_FREQUENCY = SETTING_BALANCE_SAVE_FREQUENCY;
   readonly DATE_DISPLAY_FORMAT = SETTING_DATE_DISPLAY_FORMAT;
   readonly DATE_INPUT_FORMAT = SETTING_DATE_INPUT_FORMAT;
@@ -479,7 +423,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   readonly ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED =
     SETTING_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED;
 
-  historicDateMenu: boolean = false;
   date: string = '';
   amountExample = bigNumberify(123456.789);
 
@@ -908,91 +851,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
   }
 
-  async onRpcEndpointChange(endpoint: string) {
-    const previousValue = this.generalSettings.ethRpcEndpoint;
-
-    if (!this.notTheSame(endpoint, previousValue) && endpoint !== '') {
-      return;
-    }
-
-    const message = makeMessage(
-      `${this.$t('general_settings.validation.rpc.error')}`,
-      endpoint
-        ? `${this.$t('general_settings.validation.rpc.success_set', {
-            endpoint
-          })}`
-        : `${this.$t('general_settings.validation.rpc.success_unset')}`
-    );
-
-    const success = await this.update(
-      { ethRpcEndpoint: endpoint },
-      SETTING_RPC_ENDPOINT,
-      message
-    );
-
-    if (!success) {
-      this.rpcEndpoint = previousValue || '';
-    }
-  }
-
-  async onKsmRpcEndpointChange(endpoint: string) {
-    const previousValue = this.generalSettings.ksmRpcEndpoint;
-
-    if (!this.notTheSame(endpoint, previousValue) && endpoint !== '') {
-      return;
-    }
-
-    const message = makeMessage(
-      this.$t('general_settings.validation.ksm_rpc.error').toString(),
-      endpoint
-        ? this.$t('general_settings.validation.ksm_rpc.success_set', {
-            endpoint
-          }).toString()
-        : this.$t(
-            'general_settings.validation.ksm_rpc.success_unset'
-          ).toString()
-    );
-
-    const success = await this.update(
-      { ksmRpcEndpoint: endpoint },
-      SETTING_KSM_RPC_ENDPOINT,
-      message
-    );
-
-    if (!success) {
-      this.ksmRpcEndpoint = previousValue || '';
-    }
-  }
-
-  async onDotRpcEndpointChange(endpoint: string) {
-    const previousValue = this.generalSettings.dotRpcEndpoint;
-
-    if (!this.notTheSame(endpoint, previousValue) && endpoint !== '') {
-      return;
-    }
-
-    const message = makeMessage(
-      this.$t('general_settings.validation.dot_rpc.error').toString(),
-      endpoint
-        ? this.$t('general_settings.validation.dot_rpc.success_set', {
-            endpoint
-          }).toString()
-        : this.$t(
-            'general_settings.validation.dot_rpc.success_unset'
-          ).toString()
-    );
-
-    const success = await this.update(
-      { dotRpcEndpoint: endpoint },
-      SETTING_DOT_RPC_ENDPOINT,
-      message
-    );
-
-    if (!success) {
-      this.dotRpcEndpoint = previousValue || '';
-    }
-  }
-
   formatDate(date: string) {
     if (!date) return '';
 
@@ -1029,8 +887,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     const settings = this.generalSettings;
     this.floatingPrecision = settings.uiFloatingPrecision.toString();
     this.anonymousUsageAnalytics = settings.submitUsageAnalytics;
-    this.rpcEndpoint = settings.ethRpcEndpoint;
-    this.ksmRpcEndpoint = settings.ksmRpcEndpoint;
     this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();
     this.dateDisplayFormat = settings.dateDisplayFormat;
     this.btcDerivationGapLimit = settings.btcDerivationGapLimit.toString();

@@ -20,42 +20,9 @@ export class GeneralSettingsPage {
     );
   }
 
-  setHistoryDataStart() {
-    cy.get('.general-settings__fields__historic-data-start input').click();
-    cy.get('.v-picker__body .v-date-picker-header__value button').click(); // click up to month selection
-    cy.get('.v-picker__body .v-date-picker-header__value button')
-      .contains(/^2015$/)
-      .click(); // clear up to year selection
-    cy.get('.v-picker__body .v-date-picker-years li').contains('2018').click();
-    cy.get('.v-picker__body .v-date-picker-table--month .v-btn__content')
-      .contains('Oct')
-      .click();
-    cy.get('.v-picker__body .v-date-picker-table--date .v-btn__content')
-      .contains('3')
-      .click();
-  }
-
   selectCurrency(value: string) {
     cy.get('.general-settings__fields__currency-selector').click();
     cy.get(`#currency__${value.toLocaleLowerCase()}`).click();
-  }
-
-  setThousandSeparator(value: string) {
-    cy.get('.general-settings__fields__thousand-separator input').clear();
-    cy.get('.general-settings__fields__thousand-separator').type(value);
-    cy.get('.general-settings__fields__thousand-separator input').blur();
-  }
-
-  setDecimalSeparator(value: string) {
-    cy.get('.general-settings__fields__decimal-separator input').clear();
-    cy.get('.general-settings__fields__decimal-separator').type(value);
-    cy.get('.general-settings__fields__decimal-separator input').blur();
-  }
-
-  setCurrencyLocation(value: 'after' | 'before') {
-    cy.get('.general-settings__fields__currency-location input').clear();
-    cy.get('.general-settings__fields__currency-location').type(value);
-    cy.get('.general-settings__fields__currency-location input').blur();
   }
 
   setBalanceSaveFrequency(value: string) {
@@ -99,15 +66,6 @@ export class GeneralSettingsPage {
     cy.get(
       '.general-settings__account-and-security__buttons__change-password'
     ).click();
-  }
-
-  saveSettings() {
-    cy.get('.general-settings__buttons__save').click();
-  }
-
-  confirmSuccess() {
-    cy.get('.message-dialog__title').should('include.text', 'Success');
-    cy.get('.message-dialog__buttons__confirm').click();
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
@@ -180,14 +138,6 @@ export class GeneralSettingsPage {
     cy.get(
       `.general-settings__fields__currency-location input[aria-checked=true]`
     ).should('have.value', settings.currencyLocation);
-    this.verifyRPCEndpoint(settings.rpcEndpoint);
-  }
-
-  verifyRPCEndpoint(rpcEndpoint: string) {
-    cy.get('.general-settings__fields__rpc-endpoint input').should(
-      'have.value',
-      rpcEndpoint
-    );
   }
 
   navigateAway() {
@@ -195,14 +145,28 @@ export class GeneralSettingsPage {
     cy.get('.navigation__dashboard').click();
   }
 
-  setRpcEndpoint(value: string) {
-    cy.get('.general-settings__fields__rpc-endpoint input').clear();
-    cy.get('.general-settings__fields__rpc-endpoint').type(value);
-    cy.get('.general-settings__fields__rpc-endpoint input').blur();
+  addEthereumRPC(name: string, endpoint: string) {
+    cy.get('[data-cy=add-node]').click();
+    cy.get('[data-cy=bottom-dialog]').should('be.visible');
+    cy.get('[data-cy=node-name]').type(name);
+    cy.get('[data-cy=node-endpoint]').type(endpoint);
+    cy.get('[data-cy=confirm]').click();
+    cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
   }
 
-  confirmFailure() {
-    cy.get('.message-dialog__title').should('include.text', 'Settings Error');
-    cy.get('.message-dialog__buttons__confirm').click();
+  confirmRPCAddition(name: string, endpoint: string) {
+    cy.get('[data-cy=ethereum-node]').children().should('contain.text', name);
+    cy.get('[data-cy=ethereum-node]')
+      .children()
+      .should('contain.text', endpoint);
+  }
+
+  confirmRPCmissing(name: string, endpoint: string) {
+    cy.get('[data-cy=ethereum-node]')
+      .children()
+      .should('not.contain.text', name);
+    cy.get('[data-cy=ethereum-node]')
+      .children()
+      .should('not.contain.text', endpoint);
   }
 }
