@@ -5007,7 +5007,8 @@ Query saved PnL Reports
                   "include_crypto2crypto": true,
                   "calculate_past_cost_basis": true,
                   "include_gas_costs": true,
-                  "account_for_assets_movements": true
+                  "account_for_assets_movements": true,
+                  "cost_basis_method": "lifo"
               },
               "overview": {
                   "trade": {"free": "0", "taxable": "60.1"},
@@ -5029,7 +5030,8 @@ Query saved PnL Reports
                   "include_crypto2crypto": true,
                   "calculate_past_cost_basis": true,
                   "include_gas_costs": true,
-                  "account_for_assets_movements": true
+                  "account_for_assets_movements": true,
+                  "cost_basis_method": "fifo
               },
               "overview": {
                   "trade": {"free": "0", "taxable": "60.1"},
@@ -5050,7 +5052,8 @@ Query saved PnL Reports
                   "include_crypto2crypto": true,
                   "calculate_past_cost_basis": true,
                   "include_gas_costs": true,
-                  "account_for_assets_movements": true
+                  "account_for_assets_movements": true,
+                  "cost_basis_method": "fifo"
               },
               "overview": {
                   "asset movement": {"free": "0", "taxable": "5"},
@@ -5086,6 +5089,7 @@ Query saved PnL Reports
    :resjson bool calculate_past_cost_basis: The value of the setting used in the PnL report.
    :resjson bool include_gas_costs: The value of the setting used in the PnL report.
    :resjson bool account_for_assets_movements: The value of the setting used in the PnL report.
+   :resjson str cost_basis_method: The method for cost basis calculation. Either fifo or lifo.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.
