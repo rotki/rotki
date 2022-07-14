@@ -187,7 +187,7 @@ def test_migration_4(rotkehlchen_api_server):
         assert len(web3_nodes) == len(nodes)
         for node in nodes:
             for web3_node in web3_nodes:
-                if web3_node.node_info.name == node['node']:
+                if web3_node.node_info.name == node['name']:
                     assert web3_node.node_info.endpoint == node['endpoint']
                     assert web3_node.active == node['active']
                     assert web3_node.node_info.owned == node['owned']

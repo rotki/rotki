@@ -536,8 +536,8 @@ class EthereumNodesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_query')
-    def delete(self, node_name: str) -> Response:
-        return self.rest_api.delete_web3_node(node_name)
+    def delete(self, name: str) -> Response:
+        return self.rest_api.delete_web3_node(name)
 
 
 class ExternalServicesResource(BaseMethodView):

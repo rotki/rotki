@@ -135,7 +135,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert len(result) == 7
     for node in result:
-        if node['node'] != ETHERSCAN_NODE_NAME:
+        if node['name'] != ETHERSCAN_NODE_NAME:
             assert node['endpoint'] != ''
         if node['active']:
             assert node['weight'] != 0
@@ -143,13 +143,13 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     # try to delete a node
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
-        json={'node_name': '1inch'},
+        json={'name': '1inch'},
     )
     assert_proper_response(response)
     # check that is not anymore in the returned list
     response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
-    assert not any([node['node'] == '1inch' for node in result])
+    assert not any([node['name'] == '1inch' for node in result])
 
     # now try to add it again
     response = requests.put(
@@ -166,7 +166,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
     for node in result:
-        if node['node'] == '1inch':
+        if node['name'] == '1inch':
             assert node['weight'] == 15
             assert node['active'] is True
             assert node['endpoint'] == 'https://web3.1inch.exchange'
@@ -205,7 +205,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
     for node in result:
-        if node['node'] == '1inch':
+        if node['name'] == '1inch':
             assert node['weight'] == 40
             assert node['active'] is False
             assert node['endpoint'] == 'ewarwae'

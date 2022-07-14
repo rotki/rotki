@@ -3329,12 +3329,12 @@ class DBHandler:
                 ),
             )
 
-    def delete_web3_node(self, node_name: str) -> None:
+    def delete_web3_node(self, name: str) -> None:
         """Delete a web3 node based on name.
         May raise:
         - InputError if no entry with such name is in the database.
         """
         with self.user_write() as cursor:
-            cursor.execute('DELETE FROM web3_nodes WHERE name=?', (node_name,))
+            cursor.execute('DELETE FROM web3_nodes WHERE name=?', (name,))
             if cursor.rowcount == 0:
-                raise InputError(f'node with name {node_name} was not found in the database')
+                raise InputError(f'node with name {name} was not found in the database')
