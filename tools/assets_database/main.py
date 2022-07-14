@@ -6,11 +6,16 @@ import shutil
 import sys
 from pathlib import Path
 
+from gevent import monkey  # isort:skip # noqa
+monkey.patch_all()  # isort:skip # noqa
 import requests
 
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import AssetsUpdater
+from rotkehlchen.logging import TRACE, add_logging_level
 from rotkehlchen.user_messages import MessagesAggregator
+
+add_logging_level('TRACE', TRACE)
 
 
 def parse_args() -> argparse.Namespace:

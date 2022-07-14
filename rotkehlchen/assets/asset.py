@@ -403,6 +403,8 @@ WORLD_TO_KRAKEN = {
     'COTI': 'COTI',
     strethaddress_to_identifier('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7'): 'KEY',
     strethaddress_to_identifier('0x1A4b46696b2bB4794Eb3D4c26f1c55F9170fa4C5'): 'BIT',
+    'INTR': 'INTR',
+    'TEER': 'TEER',
 }
 
 WORLD_TO_BINANCE = {
@@ -454,7 +456,7 @@ WORLD_TO_BINANCE = {
     strethaddress_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF'): 'IMX',
     strethaddress_to_identifier('0x27702a26126e0B3702af63Ee09aC4d1A084EF628'): 'ALEPH',
     strethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7'): 'USDT',
-    'NFT': 'APENFT'
+    'NFT': 'APENFT',
 }
 
 WORLD_TO_BITFINEX = {
@@ -544,6 +546,7 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0xDaF88906aC1DE12bA2b1D2f7bfC94E9638Ac40c4'): 'EPK',
     'ARN': 'ARNM',
     strethaddress_to_identifier('0xC775C0C30840Cb9F51e21061B054ebf1A00aCC29'): 'PSL',
+    strethaddress_to_identifier('0x29d578CEc46B50Fa5C88a99C6A4B70184C062953'): 'EVER',
 }
 
 WORLD_TO_ICONOMI = {
