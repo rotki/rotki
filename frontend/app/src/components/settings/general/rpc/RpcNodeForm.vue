@@ -3,6 +3,7 @@
     <v-text-field
       v-model="state.name"
       outlined
+      data-cy="node-name"
       :disabled="edit"
       :label="$tc('rpc_node_form.name')"
       :error-messages="v$.name.$errors.map(e => e.$message)"
@@ -11,6 +12,7 @@
     <v-text-field
       v-model="state.endpoint"
       outlined
+      data-cy="node-endpoint"
       :error-messages="v$.endpoint.$errors.map(e => e.$message)"
       :label="$tc('rpc_node_form.endpoint')"
       @blur="v$.endpoint.$touch()"

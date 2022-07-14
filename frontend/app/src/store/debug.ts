@@ -51,10 +51,16 @@ const setState = (key: string, state: any) => {
   storage.setItem(key, JSON.stringify(convert(state)));
 };
 
-export const storeVuexPlugins = () => {
+function shouldPersistStore(): any {
   const debugSettings = window.interop?.debugSettings?.();
-  const persistStore =
-    debugSettings?.persistStore || import.meta.env.VITE_PERSIST_STORE;
+  const menuEnabled = debugSettings?.persistStore;
+  const envEnabled = import.meta.env.VITE_PERSIST_STORE;
+  const isTest = process.env.VITE_TEST;
+  return (menuEnabled || envEnabled) && !isTest;
+}
+
+export const storeVuexPlugins = () => {
+  const persistStore = shouldPersistStore();
 
   if (!persistStore) {
     storage.removeItem('vuex');
@@ -70,9 +76,7 @@ export const storeVuexPlugins = () => {
 };
 
 export const storePiniaPlugins = (context: PiniaPluginContext) => {
-  const debugSettings = window.interop?.debugSettings?.();
-  const persistStore =
-    debugSettings?.persistStore || import.meta.env.VITE_PERSIST_STORE;
+  const persistStore = shouldPersistStore();
 
   const { store } = context;
   const storeId = store.$id;

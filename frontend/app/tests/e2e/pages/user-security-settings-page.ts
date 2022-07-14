@@ -32,9 +32,4 @@ export class UserSecuritySettingsPage {
     cy.get('.message-dialog__title').should('include.text', 'Success');
     cy.get('.message-dialog__buttons__confirm').click();
   }
-
-  confirmFailure() {
-    cy.get('.message-dialog__title').should('include.text', 'Settings Error');
-    cy.get('.message-dialog__buttons__confirm').click();
-  }
 }

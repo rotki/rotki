@@ -4,7 +4,7 @@
     <v-list max-height="300px" :class="$style.list" three-line>
       <template v-for="(item, index) in nodes">
         <v-divider v-if="index !== 0" :key="index" />
-        <v-list-item :key="item.node">
+        <v-list-item :key="item.node" data-cy="ethereum-node">
           <v-avatar>
             <v-tooltip v-if="!item.owned" top open-delay="400">
               <template #activator="{ on, attrs }">
@@ -68,7 +68,12 @@
       </template>
     </v-list>
     <template #buttons>
-      <v-btn depressed color="primary" @click="showForm = true">
+      <v-btn
+        depressed
+        color="primary"
+        data-cy="add-node"
+        @click="showForm = true"
+      >
         {{ $tc('ethereum_rpc_node_manager.add_button') }}
       </v-btn>
     </template>
