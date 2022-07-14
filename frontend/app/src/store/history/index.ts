@@ -1,7 +1,7 @@
 import { computed, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
-import { acceptHMRUpdate, defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { exchangeName } from '@/components/history/consts';
 import i18n from '@/i18n';
 import { IgnoredActions } from '@/services/history/const';
@@ -207,7 +207,9 @@ export const useHistory = defineStore('history', () => {
 });
 
 export const useTrades = defineStore('history/trades', () => {
-  const { fetchAssociatedLocations } = useHistory();
+  const history = useHistory();
+  const { associatedLocations } = storeToRefs(history);
+  const { fetchAssociatedLocations } = history;
 
   const trades = ref(defaultHistoricState<TradeEntry>()) as Ref<
     Collection<TradeEntry>
@@ -233,7 +235,7 @@ export const useTrades = defineStore('history/trades', () => {
       parameters?: Partial<TradeRequestPayload>
     ) => {
       const defaults: TradeRequestPayload = {
-        limit: 1,
+        limit: 0,
         offset: 0,
         ascending: false,
         orderByAttribute: 'time',
@@ -289,7 +291,7 @@ export const useTrades = defineStore('history/trades', () => {
       }
 
       if (firstLoad || refresh) {
-        fetchAssociatedLocations().then();
+        await fetchAssociatedLocations();
       }
 
       const fetchOnlyCache = async () => {
@@ -304,23 +306,30 @@ export const useTrades = defineStore('history/trades', () => {
         setStatus(Status.REFRESHING);
         const { notify } = useNotifications();
 
-        const exchange = onlyLocation
-          ? exchangeName(onlyLocation as TradeLocation)
-          : i18n.tc('actions.trades.all_exchanges');
+        const locations = onlyLocation
+          ? [onlyLocation]
+          : get(associatedLocations);
 
-        await fetchTradesHandler(false, { location: onlyLocation }).catch(
-          error => {
-            notify({
-              title: i18n.tc('actions.trades.error.title', undefined, {
-                exchange
-              }),
-              message: i18n.tc('actions.trades.error.description', undefined, {
-                exchange,
-                error
-              }),
-              display: true
+        await Promise.all(
+          locations.map(async location => {
+            const exchange = exchangeName(location as TradeLocation);
+            await fetchTradesHandler(false, { location }).catch(error => {
+              notify({
+                title: i18n.tc('actions.trades.error.title', undefined, {
+                  exchange
+                }),
+                message: i18n.tc(
+                  'actions.trades.error.description',
+                  undefined,
+                  {
+                    exchange,
+                    error
+                  }
+                ),
+                display: true
+              });
             });
-          }
+          })
         );
 
         if (!onlyLocation) await fetchOnlyCache();
@@ -406,7 +415,9 @@ export const useTrades = defineStore('history/trades', () => {
 });
 
 export const useAssetMovements = defineStore('history/assetMovements', () => {
-  const { fetchAssociatedLocations } = useHistory();
+  const history = useHistory();
+  const { associatedLocations } = storeToRefs(history);
+  const { fetchAssociatedLocations } = history;
 
   const assetMovements = ref(defaultHistoricState<AssetMovementEntry>()) as Ref<
     Collection<AssetMovementEntry>
@@ -432,7 +443,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
       parameters?: Partial<AssetMovementRequestPayload>
     ) => {
       const defaults: AssetMovementRequestPayload = {
-        limit: 1,
+        limit: 0,
         offset: 0,
         ascending: false,
         orderByAttribute: 'time',
@@ -515,7 +526,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
       }
 
       if (firstLoad || refresh) {
-        fetchAssociatedLocations().then();
+        await fetchAssociatedLocations();
       }
 
       const fetchOnlyCache = async () => {
@@ -530,28 +541,37 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
         setStatus(Status.REFRESHING);
         const { notify } = useNotifications();
 
-        const exchange = onlyLocation
-          ? exchangeName(onlyLocation as TradeLocation)
-          : i18n.tc('actions.asset_movements.all_exchanges');
+        const locations = onlyLocation
+          ? [onlyLocation]
+          : get(associatedLocations);
 
-        await fetchAssetMovementsHandler(false, {
-          location: onlyLocation
-        }).catch(error => {
-          notify({
-            title: i18n.tc('actions.asset_movements.error.title', undefined, {
-              exchange
-            }),
-            message: i18n.tc(
-              'actions.asset_movements.error.description',
-              undefined,
-              {
-                exchange,
-                error
-              }
-            ),
-            display: true
-          });
-        });
+        await Promise.all(
+          locations.map(async location => {
+            const exchange = exchangeName(location as TradeLocation);
+            await fetchAssetMovementsHandler(false, {
+              location
+            }).catch(error => {
+              notify({
+                title: i18n.tc(
+                  'actions.asset_movements.error.title',
+                  undefined,
+                  {
+                    exchange
+                  }
+                ),
+                message: i18n.tc(
+                  'actions.asset_movements.error.description',
+                  undefined,
+                  {
+                    exchange,
+                    error
+                  }
+                ),
+                display: true
+              });
+            });
+          })
+        );
 
         if (!onlyLocation) await fetchOnlyCache();
       }
