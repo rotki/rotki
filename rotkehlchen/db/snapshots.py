@@ -10,7 +10,9 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
@@ -34,8 +36,8 @@ class DBSnapshot:
         self.db = db_handler
         self.msg_aggregator = msg_aggregator
 
-    @staticmethod
     def get_timed_balances(
+            self,
             cursor: 'DBCursor',
             timestamp: Timestamp,
     ) -> List[DBAssetBalance]:
@@ -47,15 +49,26 @@ class DBSnapshot:
         )
 
         for data in cursor:
-            balances_data.append(
-                DBAssetBalance(
-                    category=BalanceType.deserialize_from_db(data[0]),
-                    time=data[1],
-                    amount=data[2],
-                    asset=Asset(data[3]),
-                    usd_value=str(FVal(data[4])),
-                ),
-            )
+            try:
+                balances_data.append(
+                    DBAssetBalance(
+                        category=BalanceType.deserialize_from_db(data[0]),
+                        time=data[1],
+                        amount=data[2],
+                        asset=Asset(data[3]),
+                        usd_value=str(FVal(data[4])),
+                    ),
+                )
+            except UnknownAsset as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to include balance for asset {data[3]}. Verify that the'
+                    f'asset is in your list of known assets. Skipping this entry. {str(e)}',
+                )
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to read location {data[0]} during balances retrieval.'
+                    f'Skipping. {str(e)}',
+                )
         return balances_data
 
     @staticmethod

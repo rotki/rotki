@@ -61,6 +61,30 @@ def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Ti
         ])
 
 
+def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
+    db.add_multiple_balances(
+        write_cursor=write_cursor,
+        balances=[
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=ts,
+                asset=A_BTC,
+                amount='1.00',
+                usd_value='178.44',
+            ),
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=ts,
+                asset=Asset(
+                    identifier='YABXROT',
+                    form_with_incomplete_data=True,
+                ),
+                amount='1.00',
+                usd_value='87',
+            ),
+        ])
+
+
 def _populate_db_with_location_data(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
     db.add_multiple_location_data(
         write_cursor=write_cursor,
@@ -368,6 +392,27 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
             response,
             contained_in_msg='A path has to be provided when action is export',
         )
+
+
+def test_export_snapshot_unknown_asset(rotkehlchen_api_server, tmpdir_factory):
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    ts = ts_now()
+    csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
+    csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
+    with db.user_write() as cursor:
+        _populate_db_with_balances_unknown_asset(cursor, db, ts)
+        _populate_db_with_location_data(cursor, db, ts)
+        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'per_timestamp_db_snapshots_resource',
+                timestamp=ts,
+                path=csv_dir,
+                action='export',
+            ),
+        )
+        assert_csv_export_response(response, csv_dir, main_currency=A_EUR, is_download=False)
 
 
 def test_download_snapshot(rotkehlchen_api_server):
