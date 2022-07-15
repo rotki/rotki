@@ -429,6 +429,7 @@ class TaskManager():
         if now - self.last_premium_status_check < PREMIUM_STATUS_CHECK:
             return
 
+        log.debug('Running the premium status check')
         with self.database.conn.read_ctx() as cursor:
             db_credentials = self.database.get_rotkehlchen_premium(cursor)
         if db_credentials is None:
@@ -440,8 +441,13 @@ class TaskManager():
         except RemoteError:
             if self.premium_check_retries < PREMIUM_CHECK_RETRY_LIMIT:
                 self.premium_check_retries += 1
+                log.debug(
+                    f'Premium check failed {self.premium_check_retries} times. Not '
+                    f'sending deactivate message yet',
+                )
                 self.last_premium_status_check = now
                 return
+            log.debug('Premium check failed due to remote error. Sending deactivate message')
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
                 data={
@@ -451,6 +457,7 @@ class TaskManager():
             )
             self.deactivate_premium()
         except PremiumAuthenticationError:
+            log.debug('Premium check failed due to authentication error. Sending deactivate message')  # noqa: E501
             self.deactivate_premium()
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
@@ -460,6 +467,7 @@ class TaskManager():
                 },
             )
         else:
+            log.debug('Premium check succesful. Sending activate message')
             self.activate_premium(premium)
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
