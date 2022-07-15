@@ -16,6 +16,7 @@ Changelog
 * :feature:`3798` Users will be now able to combine ETH and ETH2 and display it as one in the interface.
 * :feature:`4099` Users are now able to export an event list of a PnL run to provide to the developers for debugging purposes.
 * :feature:`44` Add option to change cost basis method (FIFO and LIFO order).
+* :feature:`4067` macOS compatibility has been improved with native support for Apple Silicon. Now two binaries for x86 and ARM architectures are generated.
 * :bug:`-` Now no missing acquisitions should appear for fiat assets during accounting.
 * :bug:`4459` Transactions that happened in genesis block are now queried and stored properly.
 * :bug:`4530` Movements from Bitstamp should now be correctly read if the asset is known.
