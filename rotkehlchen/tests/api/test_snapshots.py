@@ -99,9 +99,9 @@ def _populate_db_with_location_data(write_cursor: 'DBCursor', db: 'DBHandler', t
 
 
 def _write_balances_csv_row(
-    writer: 'csv.DictWriter',
-    timestamp: Timestamp,
-    include_unknown_asset: Optional[bool] = None,
+        writer: 'csv.DictWriter',
+        timestamp: Timestamp,
+        include_unknown_asset: Optional[bool] = None,
 ) -> None:
     if include_unknown_asset:
         writer.writerow(
@@ -175,8 +175,8 @@ def _write_balances_csv_row_with_invalid_headers(
 
 
 def _write_location_data_csv_row_with_invalid_headers(
-    writer: 'csv.DictWriter',
-    timestamp: Timestamp,
+        writer: 'csv.DictWriter',
+        timestamp: Timestamp,
 ) -> None:
     writer.writerow(
         {
@@ -277,11 +277,11 @@ def _create_snapshot_with_invalid_headers(directory: str, timestamp: Timestamp) 
 
 
 def assert_csv_export_response(
-    response,
-    csv_dir,
-    main_currency: Asset,
-    is_download=False,
-    expected_entries=2,
+        response,
+        csv_dir,
+        main_currency: Asset,
+        is_download=False,
+        expected_entries=2,
 ):
     if is_download:
         assert response.status_code == HTTPStatus.OK
