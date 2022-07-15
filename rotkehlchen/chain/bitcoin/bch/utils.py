@@ -5,7 +5,7 @@ from base58 import b58decode_check, b58encode_check
 from eth_typing import ChecksumAddress
 from marshmallow import ValidationError
 
-from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address
+from rotkehlchen.chain.bitcoin.utils import is_valid_base58_address
 from rotkehlchen.types import BTCAddress
 
 _CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
@@ -139,6 +139,8 @@ def cash_to_legacy_address(address: str) -> Optional[BTCAddress]:
         is_valid = is_valid_bitcoin_cash_address(address)
         if not is_valid:
             return None
+        if address.startswith(_PREFIX) is False:
+            address = _PREFIX + ':' + address
 
         _, base32string = address.split(':')
         decoded_string = _b32decode(base32string)
@@ -159,10 +161,8 @@ def force_address_to_legacy_address(address: str) -> BTCAddress:
     """
     Changes the format of a BCH address to Legacy.
     If address already in legacy format, return as is.
-
-    This assumes that the address being passed is valid.
     """
-    if ':' in address:
+    if is_valid_bitcoin_cash_address(address):
         addr = cash_to_legacy_address(address)
         if addr is not None:
             return addr
@@ -184,7 +184,7 @@ def validate_bch_address_input(address: str, given_addresses: Set[ChecksumAddres
     """
     not_valid_address = (
         not address.endswith('.eth') and
-        not (is_valid_bitcoin_cash_address(address) or is_valid_btc_address(address))
+        not (is_valid_bitcoin_cash_address(address) or is_valid_base58_address(address))
     )
     if not_valid_address:
         raise ValidationError(

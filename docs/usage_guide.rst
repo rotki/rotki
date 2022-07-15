@@ -1433,6 +1433,18 @@ Timeout or price not found for timestamp
 It's possible that rotki is not able to find the price of assets. You have to input the price manually, otherwise the event will be skipped from pnl reports. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. You can add the prices on the spot, or open :ref:`manage-historical-price-cache`.
 
 
+Seeking help with complicated errors during PnL report generation
+------------------------------------------------------------------
+
+.. image:: images/sc_pnl_export_debug_data.png
+   :alt: Export PnL debug data
+   :align: center
+
+It's possible that many errors could occur during the PnL report generation due to certain event(s) not accounted for properly. In such a scenario if all else fails, exporting the PnL debug data allows us to fully replicate the issue encountered and find a solution.
+
+**Note: Only share PnL debug data with the developers as it may contain sensitive information.**
+
+
 Statistics
 **********
 
