@@ -697,7 +697,7 @@ Adding and Removing Blockchain Accounts
 
 rotki allows to track balances of blockchain accounts.
 
-To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Ethereum, Kusama, Polkadot and Avalanche chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button.
+To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Bitcoin Cash, Ethereum, Kusama, Polkadot and Avalanche chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button.
 When scrolling through the page the "+" will automatically switch the pre-selected chain based on the context. For example
 if the table displaying the screen center is the BTC table then BTC will be pre-selected when pressing "+".
 
@@ -713,9 +713,11 @@ To stop tracking one or more accounts you can check the corresponding box in the
 
 If an ethereum account also contains tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
 
-For Bitcoin you can add addresses manually or let rotki discover them using an xpub. From this key rotki can generate your addresses and query the Bitcoin blockchain for each one of them until it finds unused addresses.
+For Bitcoin/Bitcoin Cash you can add addresses manually or let rotki discover them using an xpub. From this key rotki can generate your addresses and query the Bitcoin/Bitcoin Cash blockchain for each one of them until it finds unused addresses.
 There are also different types of xpubs. P2PKH xpubs generate addresses that have "1" as a prefix, P2SH_P2WPKH xpubs generate addresses that start with a "3" and WPKH xpubs generate addresses that start with "bc1". You will need to know what type of xpub your bitcoin wallet generates in order to choose the correct type at the dropdown menu. If your wallet generates an xpub prefixed with ``ypub`` or an xpub prefix with ``zpub`` rotki can deduce the type for you automatically.
 An xpub does not allow spending your coins but provides information about your wallet. In rotki this information is stored safely encrypted in your local database.
+
+**NOTE: Bitcoin Cash(BCH) only supports P2PKH & P2SH_P2WPKH xpubs.**
 
 .. image:: images/add_xpub_key.png
    :alt: Add a bitcoin account using XPUB
@@ -1500,6 +1502,26 @@ Some actions provided by this global search:
 .. image:: images/global_searchbox.gif
    :alt: Global Search
    :align: center
+
+
+Ethereum Address Book
+******************************
+
+Rotki now provides an addressbook for the Ethereum blockchain. This replaces addresses with names provided by the user across the application. Addressbook is split into two different kinds:
+
+1. **Global Addressbook**: It replaces addresses with the names provided across the entire application irrespective of user logged in.
+2. **Private Addressbook**: It replaces addresses with the names provided for the user currently logged in. It takes precedence over names found in the global addressbook.
+
+.. image:: images/add_eth_address_book.png
+   :alt: Adding entry to ETH address book.
+   :align: center
+
+.. image:: images/display_eth_address_book_behaviour.png
+   :alt: Displaying behaviour of an ETH address book
+   :align: center
+
+**NOTE:** Address resolution follows this order, Private Address Book -> Blockchain Account Labels -> Global Address Book -> Ethereum Tokens -> Hardcoded Mappings -> ENS names.
+
 
 .. _set-the-backend-s-arguments:
 
