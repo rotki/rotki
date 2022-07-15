@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.25.0 <2022-07-15>`
 * :feature:`3325` Users will now be able to manage all ethereum nodes queried, their querying priority and add any arbitrary number of nodes to query.
 * :bug:`4438` Filtering of ethereum transactions is now enabled.
 * :feature:`2219` Users will now be able to edit balance snapshots.
