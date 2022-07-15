@@ -33,7 +33,6 @@ type OtherSettings = z.infer<typeof OtherSettings>;
 const GeneralSettings = z.object({
   uiFloatingPrecision: z.number(),
   submitUsageAnalytics: z.boolean(),
-  ethRpcEndpoint: z.string(),
   ksmRpcEndpoint: z.string(),
   dotRpcEndpoint: z.string(),
   balanceSaveFrequency: z.preprocess(
@@ -59,23 +58,24 @@ const GeneralSettings = z.object({
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
 
-export const BaseAccountingSettings = z.object({
-  calculatePastCostBasis: z.boolean(),
-  includeCrypto2crypto: z.boolean(),
-  includeGasCosts: z.boolean(),
-  taxfreeAfterPeriod: z.number().nullish(),
-  accountForAssetsMovements: z.boolean(),
-  profitCurrency: z.string().nullish()
-});
-
-export type BaseAccountingSettings = z.infer<typeof BaseAccountingSettings>;
-
 export enum CostBasisMethod {
   Fifo = 'fifo',
   Lifo = 'lifo'
 }
 
 export const CostBasisMethodEnum = z.nativeEnum(CostBasisMethod);
+
+export const BaseAccountingSettings = z.object({
+  calculatePastCostBasis: z.boolean(),
+  includeCrypto2crypto: z.boolean(),
+  includeGasCosts: z.boolean(),
+  taxfreeAfterPeriod: z.number().nullish(),
+  accountForAssetsMovements: z.boolean(),
+  profitCurrency: z.string().nullish(),
+  costBasisMethod: CostBasisMethodEnum
+});
+
+export type BaseAccountingSettings = z.infer<typeof BaseAccountingSettings>;
 
 const AccountingSettings = z
   .object({
@@ -131,7 +131,6 @@ const getGeneralSettings = (settings: UserSettings): GeneralSettings => ({
   mainCurrency: settings.mainCurrency,
   dateDisplayFormat: settings.dateDisplayFormat,
   balanceSaveFrequency: settings.balanceSaveFrequency,
-  ethRpcEndpoint: settings.ethRpcEndpoint,
   ksmRpcEndpoint: settings.ksmRpcEndpoint,
   dotRpcEndpoint: settings.dotRpcEndpoint,
   submitUsageAnalytics: settings.submitUsageAnalytics,

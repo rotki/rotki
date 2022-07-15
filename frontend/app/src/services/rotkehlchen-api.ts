@@ -1370,7 +1370,9 @@ export class RotkehlchenApi {
     return EthereumRpcNodeList.parse(handleResponse(response));
   }
 
-  async addEthereumNode(node: EthereumRpcNode): Promise<boolean> {
+  async addEthereumNode(
+    node: Omit<EthereumRpcNode, 'identifier'>
+  ): Promise<boolean> {
     const response = await this.axios.put<ActionResult<boolean>>(
       '/blockchains/ETH/nodes',
       axiosSnakeCaseTransformer(node),
@@ -1392,11 +1394,11 @@ export class RotkehlchenApi {
     return handleResponse(response);
   }
 
-  async deleteEthereumNode(name: string): Promise<boolean> {
+  async deleteEthereumNode(identifier: number): Promise<boolean> {
     const response = await this.axios.delete<ActionResult<boolean>>(
       '/blockchains/ETH/nodes',
       {
-        data: axiosSnakeCaseTransformer({ name }),
+        data: axiosSnakeCaseTransformer({ identifier }),
         validateStatus: validStatus
       }
     );

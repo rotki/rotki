@@ -8,7 +8,6 @@ import {
 
 export const defaultGeneralSettings = (): GeneralSettings => ({
   uiFloatingPrecision: Defaults.FLOATING_PRECISION,
-  ethRpcEndpoint: Defaults.RPC_ENDPOINT,
   ksmRpcEndpoint: Defaults.KSM_RPC_ENDPOINT,
   dotRpcEndpoint: Defaults.DOT_RPC_ENDPOINT,
   balanceSaveFrequency: Defaults.BALANCE_SAVE_FREQUENCY,

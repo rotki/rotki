@@ -262,7 +262,8 @@ import { LoginCredentials, SyncApproval } from '@/types/login';
 
 const setupLogout = () => {
   const store = useStore();
-  const logoutRemoteSession = () => store.dispatch('logoutRemoteSession');
+  const logoutRemoteSession = () =>
+    store.dispatch('session/logoutRemoteSession');
 
   return {
     logoutRemoteSession

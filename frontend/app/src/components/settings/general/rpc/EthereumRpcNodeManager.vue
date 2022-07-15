@@ -56,7 +56,7 @@
                   :delete-tooltip="
                     $tc('ethereum_rpc_node_manager.delete_tooltip')
                   "
-                  :disabled="isEtherscan(item)"
+                  :delete-disabled="isEtherscan(item)"
                   :edit-tooltip="$tc('ethereum_rpc_node_manager.edit_tooltip')"
                   @edit-click="edit(item)"
                   @delete-click="confirmDelete = item"
@@ -89,7 +89,7 @@
     >
       <rpc-node-form
         v-model="selectedNode"
-        :edit="isEdit"
+        :is-etherscan="isEdit && isEtherscan(selectedNode)"
         :error-messages="errors"
         @update:valid="updateValid($event)"
       />
@@ -112,6 +112,7 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { omit } from 'lodash';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RpcNodeForm from '@/components/settings/general/rpc/RpcNodeForm.vue';
@@ -166,7 +167,7 @@ export default defineComponent({
         if (editing) {
           await api.editEthereumNode(node);
         } else {
-          await api.addEthereumNode(node);
+          await api.addEthereumNode(omit(node, 'identifier'));
         }
         await loadNodes();
       } catch (e: any) {
@@ -219,9 +220,9 @@ export default defineComponent({
       try {
         let node = get(confirmDelete);
         assert(node);
-        const name = node.name;
+        const identifier = node.identifier;
         set(confirmDelete, null);
-        await api.deleteEthereumNode(name);
+        await api.deleteEthereumNode(identifier);
         await loadNodes();
       } catch (e: any) {
         setMessage({
