@@ -17,6 +17,7 @@
       :eth2-details="details"
       :eth2-deposits="deposits"
       :eth2-stats="stats"
+      :eth2-stats-loading="eth2StatsLoading"
       :ownership="ownership"
       @refresh="refresh"
       @update:stats-pagination="updatePagination"
@@ -71,7 +72,7 @@ import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { setupBlockchainAccounts } from '@/composables/balances';
-import { setupStatusChecking } from '@/composables/common';
+import { isSectionLoading, setupStatusChecking } from '@/composables/common';
 import { getPremium, setupModuleEnabled } from '@/composables/session';
 import { Eth2Staking } from '@/premium/premium';
 import { Section } from '@/store/const';
@@ -114,6 +115,7 @@ const Eth2Page = defineComponent({
     const secondaryRefreshing = isSectionRefreshing(
       Section.STAKING_ETH2_DEPOSITS
     );
+    const eth2StatsLoading = isSectionLoading(Section.STAKING_ETH2_STATS);
 
     const { eth2Validators } = setupBlockchainAccounts();
     watch(filterType, () => set(selection, []));
@@ -137,6 +139,7 @@ const Eth2Page = defineComponent({
       loading,
       primaryRefreshing,
       secondaryRefreshing,
+      eth2StatsLoading,
       enabled,
       filterType,
       eth2Validators,

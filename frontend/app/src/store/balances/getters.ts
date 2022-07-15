@@ -690,7 +690,9 @@ export const getters: Getters<
       });
     }
 
-    return totals.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+    return totals
+      .filter(item => item.usdValue.gt(0))
+      .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
 
   accountAssets: (state: BalanceState) => (account: string) => {

@@ -140,7 +140,7 @@ export default defineComponent({
       }
 
       const defaultSetting: ExplorerUrls = explorerUrls[get(chain)];
-      let formattedBaseUrl: string;
+      let formattedBaseUrl: string = '';
       if (get(chain) === 'zksync') {
         formattedBaseUrl = get(tx)
           ? defaultSetting.transaction
@@ -148,10 +148,15 @@ export default defineComponent({
       } else {
         const explorersSetting =
           get(explorers)[get(chain) as Exclude<Chains, 'zksync'>];
-        formattedBaseUrl = get(tx)
-          ? explorersSetting?.transaction ?? defaultSetting.transaction
-          : explorersSetting?.address ?? defaultSetting.address;
+
+        if (explorersSetting || defaultSetting) {
+          formattedBaseUrl = get(tx)
+            ? explorersSetting?.transaction ?? defaultSetting.transaction
+            : explorersSetting?.address ?? defaultSetting.address;
+        }
       }
+
+      if (!formattedBaseUrl) return '';
 
       return formattedBaseUrl.endsWith('/')
         ? formattedBaseUrl

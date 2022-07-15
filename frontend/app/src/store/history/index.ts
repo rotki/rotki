@@ -513,7 +513,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
         }
       });
 
-      fetchEnsNames(addresses, true);
+      fetchEnsNames(addresses, false);
 
       return mapped;
     };

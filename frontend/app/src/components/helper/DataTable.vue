@@ -67,6 +67,8 @@ export default defineComponent({
     const tableRef = ref<any>(null);
 
     const onItemsPerPageChange = async (newValue: number) => {
+      if (get(itemsPerPage) === newValue) return;
+
       await updateSetting({
         [ITEMS_PER_PAGE]: newValue
       });
