@@ -70,7 +70,8 @@
       "multiple": "Add multiple addresses"
     },
     "validation": {
-      "address_non_empty": "The address cannot be empty"
+      "address_non_empty": "The address cannot be empty",
+      "xpub_non_empty": "The XPUB field cannot be empty"
     }
   },
   "account_group_header": {

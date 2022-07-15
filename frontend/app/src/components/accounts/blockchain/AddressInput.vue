@@ -95,7 +95,7 @@ export default defineComponent({
   },
   emits: ['update:addresses'],
   setup(props, { emit }) {
-    const { errorMessages, addresses } = toRefs(props);
+    const { errorMessages, addresses, disabled } = toRefs(props);
     const address = ref('');
     const userAddresses = ref('');
     const multiple = ref(false);
@@ -121,6 +121,7 @@ export default defineComponent({
     });
 
     const onPasteMulti = (event: ClipboardEvent) => {
+      if (get(disabled)) return;
       const paste = trimOnPaste(event);
       if (paste) {
         userAddresses.value += paste.replace(/,(0x)/g, ',\n0x');
@@ -128,6 +129,7 @@ export default defineComponent({
     };
 
     const onPasteAddress = (event: ClipboardEvent) => {
+      if (get(disabled)) return;
       const paste = trimOnPaste(event);
       if (paste) {
         set(address, paste);
