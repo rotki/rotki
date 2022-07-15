@@ -157,6 +157,11 @@ BTC Derivation gap limit
 
 This is the derivation gap limit that will be used when trying to derive addresses from a bitcoin xpub. For more information check `here <https://blog.blockonomics.co/bitcoin-what-is-this-gap-limit-4f098e52d7e1>`__.
 
+Treat staked ETH as ETH
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If this setting is set then ETH2 (staked ETH) will appear as ETH in the UI and all the tables and charts will use ETH combining the values of both ETH and ETH2.
+
 
 Amount Settings
 -----------------
@@ -342,6 +347,19 @@ Calculate past cost basis
 When creating a profit/loss report we also need to figure out where and when all of the assets that the user is using were acquired from. Which is why we also go through all past events, even before the start of the period.
 
 This behavior can be disabled by turning this setting off.
+
+Omit ETH staking events
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Specify whether ETH events related to staking should be taken into account before withdrawals are enabled after the ETH2 merge.
+
+Cost basis method
+^^^^^^^^^^^^^^^^^^^^^
+
+The method that should be used during the profit and loss execution to calculate cost basis. The methods available at the moment are:
+
+- FIFO: `First In First Out`
+- LIFO: `Last In First Out``
 
 Asset settings
 --------------
