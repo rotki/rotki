@@ -1515,6 +1515,16 @@ We have introduced an option in the asset graphs to select the `Missing snapshot
    :alt: Multiplying option in assets graphs
    :align: center
 
+All the assets graphs as well as the dashboard graph have the possibility of selecting a range for zooming. This can be done by left clicking and dragging on the graph itself or using the selector under the graph. The graph can be zoomed out by double clicking on it.
+
+.. image:: images/zooming_in_graph.png
+   :alt: Zooming in the graphs
+   :align: center
+
+.. image:: images/zooming_in_graph_statistics.png
+   :alt: Zooming in the graphs
+   :align: center
+
 Furthermore you can see a piechart of the distribution of your netvalue across different locations. So you can determine how exposed you are to having a big part of your net value in exchanges, in banks e.t.c.
 
 .. image:: images/sc_stats_distribution_location.png
