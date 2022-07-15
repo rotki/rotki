@@ -246,3 +246,17 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         if node['name'] == '1inch':
             assert FVal(node['weight']) == 40
             break
+
+    # Try to edit etherscan weight
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
+        json={
+            'identifier': 1,
+            'name': 'etherscan',
+            'endpoint': '',
+            'owned': False,
+            'weight': '20',
+            'active': True,
+        },
+    )
+    assert_proper_response_with_result(response)
