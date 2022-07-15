@@ -2269,13 +2269,7 @@ class EthereumNodeSchema(Schema):
             error=f'Name can\'t be empty or {ETHERSCAN_NODE_NAME}',
         ),
     )
-    endpoint = fields.String(
-        required=True,
-        validate=webargs.validate.Length(
-            min=1,
-            error='endpoint can\'t be empty',
-        ),
-    )
+    endpoint = fields.String(required=True)
     owned = fields.Boolean(load_default=False)
     weight = FloatingPercentageField(required=True)
     active = fields.Boolean(load_default=False)
@@ -2301,6 +2295,11 @@ class EthereumNodeEditSchema(EthereumNodeSchema):
             raise ValidationError(
                 message='Can\'t change the etherscan node name',
                 field_name='name',
+            )
+        if data['identifier'] != 1 and len(data['endpoint'].strip()) == 0:
+            raise ValidationError(
+                message="endpoint can't be empty",
+                field_name='endpoint',
             )
 
 
