@@ -245,6 +245,9 @@ def db_settings_from_dict(
         elif key == 'cost_basis_method':
             specified_args[key] = CostBasisMethod.deserialize(value)
         else:
+            if key == 'eth_rpc_endpoint':
+                continue  # temporary since setting is removed in migration and may still get here
+
             msg_aggregator.add_warning(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '
                 f'happen so please open an issue in Github.',
