@@ -51,10 +51,12 @@ def test_force_addresses_to_legacy_addresses():
         'bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa',
         'bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt',
         '38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr',
+        'pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g',
     }
     converted_addresses = {
         '1Mnwij9Zkk6HtmdNzyEUFgp6ojoLaZekP8',
         '17CTr5NPYx7NcLp6w8mwZamfq7Xam8QrAe',
+        '38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr',
         '38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr',
     }
     assert force_addresses_to_legacy_addresses(addresses) == converted_addresses

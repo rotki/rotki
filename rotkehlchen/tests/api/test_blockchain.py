@@ -527,6 +527,29 @@ def test_add_blockchain_accounts(
         accounts = rotki.data.db.get_blockchain_accounts(cursor)
     assert len(accounts.bch) == 3
 
+    # Try adding an already saved BCH address in different format
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='BCH',
+    ), json={'accounts': [
+        # 12tkqA9xSoowkzoERHMWNKsTey55YEBqkv
+        {'address': 'bitcoincash:qq2vrmtj6zg4pw897jwef4fswrfvruwmxcfxq3r9dt'},
+        # pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g
+        {'address': '38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr'},
+    ]})
+    assert_error_response(response, 'Blockchain account/s bitcoincash:qq2vrmtj6zg4pw897jwef4fswrfvruwmxcfxq3r9dt,38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr already exist')  # noqa: E501
+
+    # Try adding a segwit BTC address
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='BCH',
+    ), json={'accounts': [
+        {'address': 'bc1qazcm763858nkj2dj986etajv6wquslv8uxwczt'},
+    ]})
+    assert_error_response(response, 'Given value bc1qazcm763858nkj2dj986etajv6wquslv8uxwczt is not a valid bitcoin cash address')  # noqa: E501
+
     # Try adding same BCH address but in different formats
     response = requests.put(api_url_for(
         rotkehlchen_api_server,

@@ -28,6 +28,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
+from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
@@ -286,7 +287,18 @@ class BlockchainBalances:
         if blockchain == SupportedBlockchain.BITCOIN:
             return account in self.btc
         if blockchain == SupportedBlockchain.BITCOIN_CASH:
-            return account in self.bch
+            # an already existing bch address can be added but in a different format
+            # so convert all bch addresses to the same format and compare.
+            with self.db.conn.read_ctx() as cursor:
+                bch_accounts = self.db.get_blockchain_account_data(
+                    cursor=cursor,
+                    blockchain=blockchain,
+                )
+                forced_bch_legacy_addresses = {
+                    force_address_to_legacy_address(account.address)
+                    for account in bch_accounts
+                }
+                return force_address_to_legacy_address(account) in forced_bch_legacy_addresses or account in self.bch  # noqa: E501
         if blockchain == SupportedBlockchain.KUSAMA:
             return account in self.ksm
         if blockchain == SupportedBlockchain.POLKADOT:
