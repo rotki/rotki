@@ -145,32 +145,12 @@
 
           <v-switch
             v-model="treatEth2asEth"
-            class="general-settings__fields__treat-eth2-as-eth mb-4 mt-0"
+            class="general-settings__fields__treat-eth2-as-eth mb-2 mt-0"
             color="primary"
             :label="$t('general_settings.labels.treat_eth2_as_eth')"
             :success-messages="settingsMessages[TREAT_ETH2_AS_ETH].success"
             :error-messages="settingsMessages[TREAT_ETH2_AS_ETH].error"
             @change="onTreatEth2AsEthChanged($event)"
-          />
-
-          <v-switch
-            v-model="ethStakingTaxableAfterWithdrawalEnabled"
-            class="general-settings__fields__eth_staking_taxable_after_withdrawal_enabled mb-4 mt-0"
-            color="primary"
-            :label="
-              $t(
-                'general_settings.labels.eth_staking_taxable_after_withdrawal_enabled'
-              )
-            "
-            :success-messages="
-              settingsMessages[ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED]
-                .success
-            "
-            :error-messages="
-              settingsMessages[ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED]
-                .error
-            "
-            @change="onEthStakingTaxableAfterWithdrawalEnabled($event)"
           />
         </card>
         <card class="mt-8">
@@ -340,8 +320,6 @@ const SETTING_BTC_DERIVATION_GAP_LIMIT = 'btcDerivationGapLimit';
 const SETTING_DISPLAY_DATE_IN_LOCALTIME = 'displayDateInLocaltime';
 const SETTING_VERSION_UPDATE_CHECK_FREQUENCY = 'versionUpdateCheckFrequency';
 const SETTING_TREAT_ETH2_AS_ETH = 'treatEth2AsEth';
-const SETTING_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED =
-  'ethStakingTaxableAfterWithdrawalEnabled';
 
 const SETTINGS = [
   SETTING_FLOATING_PRECISION,
@@ -356,8 +334,7 @@ const SETTINGS = [
   SETTING_BTC_DERIVATION_GAP_LIMIT,
   SETTING_DISPLAY_DATE_IN_LOCALTIME,
   SETTING_VERSION_UPDATE_CHECK_FREQUENCY,
-  SETTING_TREAT_ETH2_AS_ETH,
-  SETTING_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED
+  SETTING_TREAT_ETH2_AS_ETH
 ] as const;
 
 const MAX_BALANCE_SAVE_FREQUENCY = Constraints.MAX_HOURS_DELAY;
@@ -401,7 +378,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   versionUpdateCheckFrequency: string = '';
   versionUpdateCheckEnabled: boolean = false;
   treatEth2asEth: boolean = false;
-  ethStakingTaxableAfterWithdrawalEnabled: boolean = false;
 
   formatHelp: boolean = false;
   readonly now = new Date();
@@ -420,8 +396,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   readonly VERSION_UPDATE_CHECK_FREQUENCY =
     SETTING_VERSION_UPDATE_CHECK_FREQUENCY;
   readonly TREAT_ETH2_AS_ETH = SETTING_TREAT_ETH2_AS_ETH;
-  readonly ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED =
-    SETTING_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED;
 
   date: string = '';
   amountExample = bigNumberify(123456.789);
@@ -474,20 +448,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     await this.update(
       { treatEth2AsEth: enabled },
       SETTING_TREAT_ETH2_AS_ETH,
-      message
-    );
-  }
-
-  async onEthStakingTaxableAfterWithdrawalEnabled(enabled: boolean) {
-    const message = makeMessage(
-      `${this.$t(
-        'general_settings.validation.eth_staking_taxable_after_withdrawal_enabled.error'
-      )}`
-    );
-
-    await this.update(
-      { ethStakingTaxableAfterWithdrawalEnabled: enabled },
-      SETTING_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED,
       message
     );
   }
@@ -891,8 +851,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     this.dateDisplayFormat = settings.dateDisplayFormat;
     this.btcDerivationGapLimit = settings.btcDerivationGapLimit.toString();
     this.treatEth2asEth = settings.treatEth2AsEth;
-    this.ethStakingTaxableAfterWithdrawalEnabled =
-      settings.ethStakingTaxableAfterWithdrawalEnabled;
 
     const state = this.$store.state;
     this.thousandSeparator = state.settings![THOUSAND_SEPARATOR];

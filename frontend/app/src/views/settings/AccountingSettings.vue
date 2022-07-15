@@ -133,6 +133,40 @@
 
           <settings-option
             #default="{ error, success, update }"
+            setting="ethStakingTaxableAfterWithdrawalEnabled"
+            :error-message="
+              $tc(
+                'account_settings.messages.eth_staking_taxable_after_withdrawal.error'
+              )
+            "
+            :success-message="
+              enabled =>
+                enabled
+                  ? $tc(
+                      'account_settings.messages.eth_staking_taxable_after_withdrawal.enabled'
+                    )
+                  : $tc(
+                      'account_settings.messages.eth_staking_taxable_after_withdrawal.disabled'
+                    )
+            "
+          >
+            <v-switch
+              v-model="ethStakingTaxableAfterWithdrawalEnabled"
+              class="accounting-settings__eth-staking-taxable-after-withdrawal"
+              :success-messages="success"
+              :error-messages="error"
+              :label="
+                $tc(
+                  'accounting_settings.labels.eth_staking_taxable_after_withdrawal'
+                )
+              "
+              color="primary"
+              @change="update($event)"
+            />
+          </settings-option>
+
+          <settings-option
+            #default="{ error, success, update }"
             setting="costBasisMethod"
             :success-message="
               method =>
@@ -260,6 +294,7 @@ export default defineComponent({
     const taxFreePeriod = ref(false);
     const accountForAssetsMovements = ref(false);
     const calculatePastCostBasis = ref(false);
+    const ethStakingTaxableAfterWithdrawalEnabled = ref(false);
     const costBasisMethod = ref<CostBasisMethod>(CostBasisMethod.Fifo);
 
     const taxFreeRules = [
@@ -280,6 +315,10 @@ export default defineComponent({
       set(gasCosts, settings.includeGasCosts);
       set(accountForAssetsMovements, settings.accountForAssetsMovements);
       set(calculatePastCostBasis, settings.calculatePastCostBasis);
+      set(
+        ethStakingTaxableAfterWithdrawalEnabled,
+        settings.ethStakingTaxableAfterWithdrawalEnabled
+      );
       set(costBasisMethod, settings.costBasisMethod);
 
       if (settings.taxfreeAfterPeriod) {
@@ -326,6 +365,7 @@ export default defineComponent({
       taxFreePeriod,
       accountForAssetsMovements,
       calculatePastCostBasis,
+      ethStakingTaxableAfterWithdrawalEnabled,
       costBasisMethod,
       taxFreeRules,
       getTaxFreePeriod,

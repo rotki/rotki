@@ -157,17 +157,12 @@ export const setupGeneralSettings = () => {
     return sessionState.generalSettings.treatEth2AsEth;
   });
 
-  const ethStakingTaxableAfterWithdrawalEnabled = computed<boolean>(() => {
-    return sessionState.generalSettings.ethStakingTaxableAfterWithdrawalEnabled;
-  });
-
   return {
     currency,
     currencySymbol,
     floatingPrecision,
     dateDisplayFormat,
-    treatEth2AsEth,
-    ethStakingTaxableAfterWithdrawalEnabled
+    treatEth2AsEth
   };
 };
 
