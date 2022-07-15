@@ -9,7 +9,7 @@
           item-value="value"
           item-text="label"
           :disabled="disabled"
-          :items="keyType"
+          :items="keyTypeList"
         />
       </v-col>
       <v-col>
@@ -21,6 +21,7 @@
           autocomplete="off"
           :error-messages="errorMessages[fields.XPUB]"
           :disabled="disabled"
+          :rules="rules"
           @paste="onPasteXpub"
         >
           <template #append-outer>
@@ -66,7 +67,9 @@
 </template>
 
 <script lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
+  computed,
   defineComponent,
   onMounted,
   PropType,
@@ -79,13 +82,26 @@ import {
   getKeyType,
   getPrefix,
   keyType,
-  XpubPrefix
+  XpubPrefix,
+  XpubType
 } from '@/components/accounts/blockchain/xpub';
+import i18n from '@/i18n';
 import { XpubPayload } from '@/store/balances/types';
 import { trimOnPaste } from '@/utils/event';
 
 const FIELD_XPUB = 'xpub';
 const FIELD_DERIVATION_PATH = 'derivation_path';
+
+const setupValidationRules = () => {
+  const nonEmptyRule = (value: string) => {
+    return (
+      !!value || i18n.t('account_form.validation.xpub_non_empty').toString()
+    );
+  };
+
+  const rules = [nonEmptyRule];
+  return { rules };
+};
 
 export default defineComponent({
   name: 'XpubInput',
@@ -99,11 +115,15 @@ export default defineComponent({
       required: false,
       default: null,
       type: Object as PropType<XpubPayload>
+    },
+    blockchain: {
+      required: true,
+      type: String as PropType<Blockchain.BTC | Blockchain.BCH>
     }
   },
   emits: ['update:xpub'],
   setup(props, { emit }) {
-    const { xpub } = toRefs(props);
+    const { xpub, disabled, blockchain } = toRefs(props);
     const xpubKey = ref('');
     const derivationPath = ref('');
     const xpubKeyPrefix = ref<XpubPrefix>(XpubPrefix.XPUB);
@@ -135,9 +155,13 @@ export default defineComponent({
       set(derivationPath, xpub?.derivationPath);
     });
 
+    watch(blockchain, () => {
+      set(xpubKeyPrefix, get(keyTypeListData)[0].value);
+    });
+
     onMounted(() => {
       const payload = get(xpub);
-      set(xpubKey, payload?.xpub);
+      set(xpubKey, payload?.xpub || '');
       set(xpubKeyPrefix, getPrefix(payload?.xpubType));
       set(derivationPath, payload?.derivationPath);
     });
@@ -159,6 +183,7 @@ export default defineComponent({
     });
 
     const onPasteXpub = (event: ClipboardEvent) => {
+      if (get(disabled)) return;
       const paste = trimOnPaste(event);
       if (paste) {
         setXpubKeyType(paste);
@@ -166,14 +191,20 @@ export default defineComponent({
       }
     };
 
+    const keyTypeListData = computed<XpubType[]>(() => {
+      if (get(blockchain) === Blockchain.BTC) return keyType;
+      return keyType.filter(item => item.value !== XpubPrefix.ZPUB);
+    });
+
     return {
       xpubKey,
       xpubKeyPrefix,
       derivationPath,
-      keyType,
+      keyTypeList: keyTypeListData,
       advanced,
       fields,
-      onPasteXpub
+      onPasteXpub,
+      ...setupValidationRules()
     };
   }
 });

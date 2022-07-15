@@ -22,6 +22,7 @@
       :disabled="loading || !!edit"
       :error-messages="errorMessages"
       :xpub="xpub"
+      :blockchain="blockchain"
       @update:xpub="xpub = $event"
     />
 
