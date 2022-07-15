@@ -15,16 +15,7 @@
           class-name="secondary--text text--lighten-4"
           :on-menu="on"
         >
-          <v-badge v-if="xsOnly" color="transparent" bottom overlap>
-            <template #badge>
-              <v-icon v-if="nodeConnection" color="primary" x-small>
-                mdi-link
-              </v-icon>
-              <v-icon v-else color="primary" x-small>mdi-link-off</v-icon>
-            </template>
-            <v-icon> mdi-content-save </v-icon>
-          </v-badge>
-          <v-icon v-else> mdi-content-save </v-icon>
+          <v-icon> mdi-content-save </v-icon>
         </menu-tooltip-button>
       </template>
       <div>
@@ -193,7 +184,6 @@
             </div>
           </div>
         </div>
-        <node-status v-if="xsOnly" :connected="nodeConnection" />
       </div>
     </v-menu>
     <confirm-dialog
@@ -232,7 +222,6 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import Fragment from '@/components/helper/Fragment';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
-import NodeStatus from '@/components/status/NodeStatus.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import { setupGeneralBalances } from '@/composables/balances';
 import { setupThemeCheck } from '@/composables/common';
@@ -251,7 +240,6 @@ export default defineComponent({
   name: 'SyncIndicator',
   components: {
     FileUpload,
-    NodeStatus,
     Fragment,
     ConfirmDialog,
     SyncButtons,
@@ -259,8 +247,7 @@ export default defineComponent({
     MenuTooltipButton
   },
   setup() {
-    const { lastBalanceSave, lastDataUpload, nodeConnection, forceSync } =
-      setupSession();
+    const { lastBalanceSave, lastDataUpload, forceSync } = setupSession();
 
     const { fetchBalances } = setupGeneralBalances();
     const { currentBreakpoint } = setupThemeCheck();
@@ -399,7 +386,6 @@ export default defineComponent({
       premium,
       lastBalanceSave,
       lastDataUpload,
-      nodeConnection,
       pending,
       confirmChecked,
       ignoreErrors,

@@ -1,5 +1,6 @@
 import { Severity } from '@rotki/common/lib/messages';
-import { setPremium } from '@/composables/session';
+import { get } from '@vueuse/core';
+import { getPremium, setPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import {
   BalanceSnapshotError,
@@ -46,8 +47,9 @@ export async function handleLegacyMessage(message: string, isWarning: boolean) {
 export async function handlePremiumStatusUpdate(data: PremiumStatusUpdateData) {
   const { notify } = useNotifications();
   const { is_premium_active: active, expired } = data;
+  const isPremium = getPremium();
 
-  if (active) {
+  if (active && !get(isPremium)) {
     notify({
       title: i18n.t('notification_messages.premium.active.title').toString(),
       message: i18n
@@ -56,7 +58,7 @@ export async function handlePremiumStatusUpdate(data: PremiumStatusUpdateData) {
       display: true,
       severity: Severity.INFO
     });
-  } else {
+  } else if (!active && get(isPremium)) {
     notify({
       title: i18n.t('notification_messages.premium.inactive.title').toString(),
       message: expired
