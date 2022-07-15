@@ -195,24 +195,40 @@ Amount Rounding
 
 This setting modifies the rounding mechanism choosing from ``Round up``, ``Round down`` and ``Half even`` (rounds to the nearest value). It can be individually modified how amounts and values are rounded.
 
+Ethereum RPC nodes
+^^^^^^^^^^^^^^^^^^^^^
+
+This settings allow you to modify the nodes that will be queried to interact with the Ethereum blockchain. We provide a list of public nodes but sometimes they are not available or are overloaded, this is why is a good idea to have more nodes just in case.
+When making queries we always give preference to your own nodes if you have any and then add a small list of randomly selected open nodes in case they are needed. If you don't have your own node then the open nodes are always selected. The weight of the node sets the probability
+of picking it and is represented by a percentage. From that list is also possible to mark them as active or inactive by switching on or off the toggle button.
+
+.. image:: images/rotki_nodes_managment.png
+   :alt: Customizing the app's connection to ethereum nodes
+   :align: center
+
+In this menu you can also edit, delete or add more nodes.
+
+.. image:: images/rotki_nodes_managment_edition.png
+   :alt: Editing an ethereum node
+   :align: center
+
+The slider lets you modify the weight of the node and you can also manually imput a value. The owned parameter gives priority over the rest of not owned nodes to the one that you are editing and you can also mark the node as not active in this screen to completely ignore it in the selection process.
+Similarly you can add your own node.
+
+
 Local nodes
 ------------
 
-.. image:: images/sc_localnode_settings.png
-   :alt: Customizing the app's connection to local nodes
-   :align: center
-
-Connecting to an Ethereum Client
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When rotki begins it tries to connect to a local ethereum node running with an rpc port set at the default port ``8545``. If no client is running then all blockchain queries will use an external service such as etherscan and this will be rather slower.
-
-If you want to connect to another ethereum client you can set the URL and port through the settings. Click the person icon on the top right menu and select "Settings" from the drop down menu. This will take you to the settings page. Write the desired url/port in the ETH RPC endpoing textbox.
-
 Connecting to a Kusama Client
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Just like with ethereum you can set the rpc endpoint of a kusama node you would like to connect to here.
+When rotki begins it tries to connect to a local kusama node running with an rpc port set at the default port ``9933``. If no client is running then all blockchain queries will use an external service that can be slower or not available at the moment.
+
+Connecting to a Polkadot Client
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Just like with kusama you can set the rpc endpoint of a Polkadot node you would like to connect to here.
+
 
 Price Oracle settings
 ---------------------
