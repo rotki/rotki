@@ -61,7 +61,7 @@ class DBSnapshot:
                 )
             except UnknownAsset as e:
                 self.msg_aggregator.add_error(
-                    f'Failed to include balance for asset {data[3]}. Verify that the'
+                    f'Failed to include balance for asset {data[3]}. Verify that the '
                     f'asset is in your list of known assets. Skipping this entry. {str(e)}',
                 )
             except DeserializationError as e:

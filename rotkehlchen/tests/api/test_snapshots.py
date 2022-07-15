@@ -61,28 +61,18 @@ def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Ti
         ])
 
 
-def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
-    db.add_multiple_balances(
-        write_cursor=write_cursor,
-        balances=[
-            DBAssetBalance(
-                category=BalanceType.ASSET,
-                time=ts,
-                asset=A_BTC,
-                amount='1.00',
-                usd_value='178.44',
-            ),
-            DBAssetBalance(
-                category=BalanceType.ASSET,
-                time=ts,
-                asset=Asset(
-                    identifier='YABXROT',
-                    form_with_incomplete_data=True,
-                ),
-                amount='1.00',
-                usd_value='87',
-            ),
-        ])
+def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Timestamp):
+    write_cursor.execute('INSERT INTO assets(identifier) VALUES ("YABIRXROTKI")')
+    serialized_balances = [
+        (ts, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
+        (ts, 'YABIRXROTKI', '1.00', '87', BalanceType.ASSET.serialize_for_db()),
+    ]
+    write_cursor.executemany(
+        'INSERT INTO timed_balances('
+        '    time, currency, amount, usd_value, category) '
+        ' VALUES(?, ?, ?, ?, ?)',
+        serialized_balances,
+    )
 
 
 def _populate_db_with_location_data(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
@@ -286,7 +276,13 @@ def _create_snapshot_with_invalid_headers(directory: str, timestamp: Timestamp) 
         _write_location_data_csv_row_with_invalid_headers(writer, timestamp)
 
 
-def assert_csv_export_response(response, csv_dir, main_currency: Asset, is_download=False):
+def assert_csv_export_response(
+    response,
+    csv_dir,
+    main_currency: Asset,
+    is_download=False,
+    expected_entries=2,
+):
     if is_download:
         assert response.status_code == HTTPStatus.OK
     else:
@@ -306,7 +302,7 @@ def assert_csv_export_response(response, csv_dir, main_currency: Asset, is_downl
             assert row['timestamp'] is not None
             assert row[f'{main_currency.symbol.lower()}_value'] is not None
             count += 1
-        assert count == 2
+        assert count == expected_entries
 
     with open(os.path.join(csv_dir, BALANCES_FOR_IMPORT_FILENAME), newline='') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -322,7 +318,7 @@ def assert_csv_export_response(response, csv_dir, main_currency: Asset, is_downl
             assert row['timestamp'] is not None
             assert row['usd_value'] is not None
             count += 1
-        assert count == 2
+        assert count == expected_entries
 
     with open(os.path.join(csv_dir, LOCATION_DATA_FILENAME), newline='') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -398,9 +394,8 @@ def test_export_snapshot_unknown_asset(rotkehlchen_api_server, tmpdir_factory):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
-    csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
     with db.user_write() as cursor:
-        _populate_db_with_balances_unknown_asset(cursor, db, ts)
+        _populate_db_with_balances_unknown_asset(cursor, ts)
         _populate_db_with_location_data(cursor, db, ts)
         db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
         response = requests.get(
@@ -412,7 +407,16 @@ def test_export_snapshot_unknown_asset(rotkehlchen_api_server, tmpdir_factory):
                 action='export',
             ),
         )
-        assert_csv_export_response(response, csv_dir, main_currency=A_EUR, is_download=False)
+        assert_csv_export_response(
+            response,
+            csv_dir,
+            main_currency=A_EUR,
+            is_download=False,
+            expected_entries=1,
+        )
+        errors = rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator.consume_errors()
+        assert len(errors) == 1
+        assert 'Failed to include balance for asset YABIRXROTKI.' in errors[0]
 
 
 def test_download_snapshot(rotkehlchen_api_server):
