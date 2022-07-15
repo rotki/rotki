@@ -72,7 +72,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert overview[str(AccountingEventType.FEE)] is not None
 
     settings = report['settings']
-    assert len(settings) == 7
+    assert len(settings) == 8
     assert settings['profit_currency'] == 'EUR'
     assert settings['account_for_assets_movements'] is True
     assert settings['calculate_past_cost_basis'] is True
@@ -80,6 +80,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert settings['include_gas_costs'] is True
     assert settings['taxfree_after_period'] == 31536000
     assert settings['cost_basis_method'] == 'fifo'
+    assert settings['eth_staking_taxable_after_withdrawal_enabled'] is False
 
     assert events_result['entries_limit'] == FREE_PNL_EVENTS_LIMIT
     entries_length = 47 if start_ts == 0 else 44
