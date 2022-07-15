@@ -157,6 +157,11 @@ BTC Derivation gap limit
 
 This is the derivation gap limit that will be used when trying to derive addresses from a bitcoin xpub. For more information check `here <https://blog.blockonomics.co/bitcoin-what-is-this-gap-limit-4f098e52d7e1>`__.
 
+Treat staked ETH as ETH
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If this setting is set then ETH2 (staked ETH) will appear as ETH in the UI and all the tables and charts will use ETH combining the values of both ETH and ETH2.
+
 
 Amount Settings
 -----------------
@@ -195,24 +200,40 @@ Amount Rounding
 
 This setting modifies the rounding mechanism choosing from ``Round up``, ``Round down`` and ``Half even`` (rounds to the nearest value). It can be individually modified how amounts and values are rounded.
 
+Ethereum RPC nodes
+^^^^^^^^^^^^^^^^^^^^^
+
+This setting allows you to modify the nodes that will be queried to interact with the Ethereum blockchain. We provide a list of public nodes but sometimes they are not available or are overloaded. This is why it is a good idea to have more nodes just in case and to have the possibility to customize the priority with which they are queried.
+When making queries we always give preference to your own nodes if you have any and then add a small list of randomly selected open nodes in case they are needed. If you don't have your own node then the open nodes are always selected. The weight of the node sets the probability
+of picking it and is represented by a percentage. From that list is also possible to mark them as active or inactive by using the toggle button.
+
+.. image:: images/rotki_nodes_management.png
+   :alt: Customizing the app's connection to ethereum nodes
+   :align: center
+
+In this menu you can also edit, delete or add more nodes.
+
+.. image:: images/rotki_nodes_management_edition.png
+   :alt: Editing an ethereum node
+   :align: center
+
+The slider lets you modify the weight of the node and you can also manually imput a value. The owned parameter gives priority to the selected node over the rest of not owned nodes. You can also mark the node as not active in this screen to completely ignore it in the selection process.
+Similarly you can add more nodes.
+
+
 Local nodes
 ------------
 
-.. image:: images/sc_localnode_settings.png
-   :alt: Customizing the app's connection to local nodes
-   :align: center
-
-Connecting to an Ethereum Client
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-When rotki begins it tries to connect to a local ethereum node running with an rpc port set at the default port ``8545``. If no client is running then all blockchain queries will use an external service such as etherscan and this will be rather slower.
-
-If you want to connect to another ethereum client you can set the URL and port through the settings. Click the person icon on the top right menu and select "Settings" from the drop down menu. This will take you to the settings page. Write the desired url/port in the ETH RPC endpoing textbox.
-
 Connecting to a Kusama Client
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Just like with ethereum you can set the rpc endpoint of a kusama node you would like to connect to here.
+When rotki begins it tries to connect to a local kusama node running with an rpc port set at the default port ``9933``. If no client is running then all blockchain queries will use an external service that can be slower or not available at the moment.
+
+Connecting to a Polkadot Client
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Just like with kusama you can set the rpc endpoint of a Polkadot node you would like to connect to here.
+
 
 Price Oracle settings
 ---------------------
@@ -326,6 +347,19 @@ Calculate past cost basis
 When creating a profit/loss report we also need to figure out where and when all of the assets that the user is using were acquired from. Which is why we also go through all past events, even before the start of the period.
 
 This behavior can be disabled by turning this setting off.
+
+Omit ETH staking events
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Specify whether the staking of ETH is taxable only after the merge and withdrawals are enabled or if each eth staking event is considered taxable at the point of receiving if you can't yet withdraw.
+
+Cost basis method
+^^^^^^^^^^^^^^^^^^^^^
+
+The method that should be used during the profit and loss execution to calculate cost basis. The methods available at the moment are:
+
+- FIFO: `First In First Out`
+- LIFO: `Last In First Out``
 
 Asset settings
 --------------
@@ -939,13 +973,19 @@ You can force a snapshot taking by clicking in the floppy disk icon at the top b
 
 Snapshots won't be saved if there is any error querying information for external sources. If you want to force the snapshot to be saved when an external source is reporting an error you can select the option `Ignore Errors`.
 
-It is possible to remove balance snapshots from the history in case the information is not correct or needs to be modified. To do so click on a snapshot's point at the dashboard's net value graph and this will open a menu.
+It is possible to remove balance snapshots from the history or edit them in case the information is not correct or needs to be modified. To do so click on a snapshot's point at the dashboard's net value graph and this will open a menu.
 
 .. image:: images/delete_snapshot_menu.png
    :alt: Delete snapshot
    :align: center
 
 Clicking on delete will remove the saved information for that snapshot. The same menu allows exporting the information of the balance snapshot to an external file. Four files are then generated, two meant to be used if you want to import information about snapshots later and the other 2 have the same information in a human readable format to be used in accounting. ``balances_snapshot``  contains information about the balances at the snapshot time for all the different assets rotki knew you had and ``location_data_snapshot`` has the value per location for the same assets.
+
+If you choose to edit the snapshot you can modify the values per asset and location as shown in the screenshot
+
+.. image:: images/edit_snapshot_menu.png
+   :alt: Edit snapshot
+   :align: center
 
 Finally information about snapshots can be imported back into the app using the files you exported with the suffix ``_import```. To import them use the import functionality by clicking on the save disk icon at the top bar.
 
