@@ -78,8 +78,6 @@ def test_set_settings(rotkehlchen_api_server):
 
         if setting == 'date_display_format':
             value = '%d/%m/%Y-%H:%M:%S'
-        elif setting == 'eth_rpc_endpoint':
-            value = 'http://working.nodes.com:8545'
         elif setting == 'main_currency':
             value = 'JPY'
         elif type(value) == bool:  # pylint: disable=unidiomatic-typecheck

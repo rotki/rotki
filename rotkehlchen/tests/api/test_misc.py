@@ -5,6 +5,7 @@ from unittest.mock import patch
 import requests
 
 from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -137,13 +138,15 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     for node in result:
         if node['name'] != ETHERSCAN_NODE_NAME:
             assert node['endpoint'] != ''
+        else:
+            assert node['identifier'] == 1
         if node['active']:
             assert node['weight'] != 0
 
     # try to delete a node
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
-        json={'name': '1inch'},
+        json={'identifier': 5},
     )
     assert_proper_response(response)
     # check that is not anymore in the returned list
@@ -158,7 +161,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             'name': '1inch',
             'endpoint': 'https://web3.1inch.exchange',
             'owned': False,
-            'weight': 15,
+            'weight': '15',
             'active': True,
         },
     )
@@ -167,7 +170,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     for node in result:
         if node['name'] == '1inch':
-            assert node['weight'] == 15
+            assert FVal(node['weight']) == 15
             assert node['active'] is True
             assert node['endpoint'] == 'https://web3.1inch.exchange'
             assert node['owned'] is False
@@ -180,7 +183,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             'name': 'etherscan',
             'endpoint': 'ewarwae',
             'owned': False,
-            'weight': 0.3,
+            'weight': '0.3',
             'active': True,
         },
     )
@@ -194,11 +197,12 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
+            'identifier': 8,
             'name': '1inch',
             'endpoint': 'ewarwae',
             'owned': True,
-            'weight': 40,
-            'active': False,
+            'weight': '40',
+            'active': True,
         },
     )
     assert_proper_response(response)
@@ -206,21 +210,39 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     for node in result:
         if node['name'] == '1inch':
-            assert node['weight'] == 40
-            assert node['active'] is False
+            assert FVal(node['weight']) == 40
+            assert node['active'] is True
             assert node['endpoint'] == 'ewarwae'
             assert node['owned'] is True
             break
-
-    # set weight to 0
+    result = assert_proper_response_with_result(response)
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
-            'name': '1inch',
-            'endpoint': 'https://web3.1inch.exchange',
-            'owned': False,
-            'weight': 0,
+            'name': 'my_super_node',
+            'endpoint': 'ewarwae',
+            'owned': True,
+            'weight': '0.3',
             'active': True,
         },
     )
-    assert nodes_at_start - len(database.get_web3_nodes(only_active=True)) == 1
+    # set owned to false and see that we have the expected amount of nodes
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
+        json={
+            'identifier': 4,
+            'name': 'avado pool',
+            'endpoint': 'https://mainnet.eth.cloud.ava.do/',
+            'owned': False,
+            'weight': '0',
+            'active': False,
+        },
+    )
+    assert nodes_at_start - len(database.get_web3_nodes(only_active=True)) == 0
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
+    result = assert_proper_response_with_result(response)
+    # Check that the rebalancing didn't get affected by the owned node
+    for node in result:
+        if node['name'] == '1inch':
+            assert FVal(node['weight']) == 40
+            break

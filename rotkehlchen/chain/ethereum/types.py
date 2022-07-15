@@ -1,10 +1,10 @@
-from typing import Any, Dict, List, NamedTuple, Tuple, Type, Union
+from dataclasses import dataclass
+from typing import Any, Dict, List, NamedTuple, Tuple, Type
 
 from eth_typing import HexAddress, HexStr
+
 from rotkehlchen.fval import FVal
-
 from rotkehlchen.types import ChecksumEthAddress
-
 
 ETHERSCAN_NODE_NAME = 'etherscan'
 
@@ -44,16 +44,19 @@ class EnsContractParams(NamedTuple):
     arguments: List[Any]
 
 
-class WeightedNode(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class WeightedNode:
     node_info: NodeName
     active: bool
     weight: FVal
+    identifier: int = 0
 
-    def serialize(self) -> Dict[str, Union[str, Union[str, int]]]:
+    def serialize(self) -> Dict[str, Any]:
         return {
+            'identifier': self.identifier,
             'name': self.node_info.name,
             'endpoint': self.node_info.endpoint,
-            'weight': (self.weight * 100).to_int(exact=False),
+            'weight': self.weight.to_percentage(precision=2, with_perc_sign=False),
             'owned': self.node_info.owned,
             'active': self.active,
         }
@@ -73,6 +76,7 @@ class WeightedNode(NamedTuple):
         data: Dict[str, str],
     ) -> 'WeightedNode':
         return WeightedNode(
+            identifier=int(data['identifier']),
             node_info=NodeName(
                 name=data['node'],
                 endpoint=data['endpoint'],

@@ -144,7 +144,6 @@ Handling user creation, sign-in, log-out and querying
                   "taxfree_after_period": 31536000,
                   "balance_save_frequency": 24,
                   "include_gas_costs": true,
-                  "eth_rpc_endpoint": "http://localhost:8545",
                   "ksm_rpc_endpoint": "http://localhost:9933",
                   "main_currency": "USD",
                   "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
@@ -212,7 +211,6 @@ Handling user creation, sign-in, log-out and querying
                   "taxfree_after_period": 31536000,
                   "balance_save_frequency": 24,
                   "include_gas_costs": true,
-                  "eth_rpc_endpoint": "http://localhost:8545",
                   "ksm_rpc_endpoint": "http://localhost:9933",
                   "main_currency": "USD",
                   "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
@@ -584,7 +582,6 @@ Getting or modifying settings
               "taxfree_after_period": 31536000,
               "balance_save_frequency": 24,
               "include_gas_costs": true,
-              "eth_rpc_endpoint": "http://localhost:8545",
               "ksm_rpc_endpoint": "http://localhost:9933",
               "main_currency": "USD",
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
@@ -612,7 +609,6 @@ Getting or modifying settings
    :resjson int taxfree_after_period: The number of seconds after which holding a crypto in FIFO order is considered no longer taxable. Must be either a positive number, or -1. 0 is not a valid value. The default is 1 year, as per current german tax rules. Can also be set to ``-1`` which will then set the taxfree_after_period to ``null`` which means there is no taxfree period.
    :resjson int balance_save_frequency: The number of hours after which user balances should be saved in the DB again. This is useful for the statistics kept in the DB for each user. Default is 24 hours. Can't be less than 1 hour.
    :resjson bool include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
-   :resjson string eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
    :resjson string ksm_rpc_endpoint: A URL denoting the rpc endpoint for the Kusama node to use when contacting the Kusama blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :resjson string dot_rpc_endpoint: A URL denoting the rpc endpoint for the Polkadot node to use when contacting the Polkadot blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :resjson string main_currency: The asset to use for all profit/loss calculation. USD by default.
@@ -655,7 +651,6 @@ Getting or modifying settings
    :reqjson int[optional] taxfree_after_period: The number of seconds after which holding a crypto in FIFO order is considered no longer taxable. Must be either a positive number, or -1. 0 is not a valid value. The default is 1 year, as per current german tax rules. Can also be set to ``-1`` which will then set the taxfree_after_period to ``null`` which means there is no taxfree period.
    :reqjson int[optional] balance_save_frequency: The number of hours after which user balances should be saved in the DB again. This is useful for the statistics kept in the DB for each user. Default is 24 hours. Can't be less than 1 hour.
    :reqjson bool[optional] include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
-   :reqjson string[optional] eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
    :reqjson string[optional] ksm_rpc_endpoint: A URL denoting the rpc endpoint for the Kusama node to use when contacting the Kusama blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :reqjson string[optional] dot_rpc_endpoint: A URL denoting the rpc endpoint for the Polkadot node to use when contacting the Polkadot blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :reqjson string[optional] main_currency: The FIAT currency to use for all profit/loss calculation. USD by default.
@@ -686,7 +681,6 @@ Getting or modifying settings
               "taxfree_after_period": 31536000,
               "balance_save_frequency": 24,
               "include_gas_costs": false,
-              "eth_rpc_endpoint": "http://localhost:8545",
               "ksm_rpc_endpoint": "http://localhost:9933",
               "main_currency": "USD",
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
@@ -735,31 +729,35 @@ Adding information for ethereum nodes
       {
         "result": [
             {
+                "identifier": 1,
                 "name": "etherscan",
                 "endpoint": "",
                 "owned": false,
-                "weight": 40,
+                "weight": "40.00",
                 "active": true
             },
             {
+                "identifier": 2,
                 "name": "mycrypto",
                 "endpoint": "https://api.mycryptoapi.com/eth",
                 "owned": false,
-                "weight": 20,
+                "weight": "20.00",
                 "active": true
             },
             {
+                "identifier": 3,
                 "name": "blockscout",
                 "endpoint": "https://mainnet-nethermind.blockscout.com/",
                 "owned": false,
-                "weight": 20,
+                "weight": "20.00",
                 "active": true
             },
             {
+                "identifier": 4,
                 "name": "avado pool",
                 "endpoint": "https://mainnet.eth.cloud.ava.do/",
                 "owned": false,
-                "weight": 20,
+                "weight": "20.00",
                 "active": true
             }
         ],
@@ -769,7 +767,7 @@ Adding information for ethereum nodes
    :resjson list result: A list with information about the ethereum nodes.
    :resjson string name: Name and primary key of the node.
    :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
-   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string weight: Weight of the node in the range of 0 to 100 with 2 decimals.
    :resjson string owned: True if the user owns the node or false if is a public node.
    :resjson string active: True if the node should be used or false if it shouldn't.
 
@@ -793,14 +791,14 @@ Adding information for ethereum nodes
         "name": "my_node",
         "endpoint": "http://localhost:8385",
         "owned": true,
-        "weight": 40,
+        "weight": "40.30",
         "active": true
       }
 
    :resjson string name: Name and primary key of the node. This field has to be unique. This field cannot be empty or use the key ``etherscan``.
    :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
    :resjson string owned: True if the user owns the node or false if is a public node.
-   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string weight: Weight of the node in the range of 0 to 100 with 2 decimals.
    :resjson string active: True if the node should be used or false if it shouldn't.
 
    :statuscode 200: Insertion was successful.
@@ -820,6 +818,7 @@ Adding information for ethereum nodes
       Content-Type: application/json
 
       {
+        "identifier": 8,
         "name": "my_node",
         "endpoint": "http://localhost:8386",
         "owned": true,
@@ -827,10 +826,11 @@ Adding information for ethereum nodes
         "active": false
       }
 
-   :resjson string name: Name and primary key of the node. This field cannot be modified.
+   :resjson int identifier: Id of the node that will be edited.
+   :resjson string name: Name of the node that will be edited.
    :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
    :resjson string owned: True if the user owns the node or false if is a public node.
-   :resjson int weight: Weight of the node in the range of 0 to 100.
+   :resjson string weight: Weight of the node in the range of 0 to 100 with 2 decimals.
    :resjson string active: True if the node should be used or false if it shouldn't.
 
    :statuscode 200: Update was successful.
@@ -850,10 +850,10 @@ Adding information for ethereum nodes
       Content-Type: application/json
 
       {
-        "name": "1inch"
+        "identifier": 8
       }
 
-   :resjson string name: Name and primary key of the node. Cannot delete the ``etherscan`` entry.
+   :resjson int identifier: Id of the node that will be deleted.
 
    :statuscode 200: Deletion was successful.
    :statuscode 409: No user is logged or failed to delete because the node name is not in the database.
@@ -4687,7 +4687,6 @@ Export PnL report debug data
                 "taxfree_after_period": 31536000,
                 "balance_save_frequency": 24,
                 "include_gas_costs": true,
-                "eth_rpc_endpoint": "http://localhost:8545",
                 "ksm_rpc_endpoint": "http://localhost:9933",
                 "dot_rpc_endpoint": "",
                 "main_currency": "USD",
@@ -5008,7 +5007,8 @@ Query saved PnL Reports
                   "include_crypto2crypto": true,
                   "calculate_past_cost_basis": true,
                   "include_gas_costs": true,
-                  "account_for_assets_movements": true
+                  "account_for_assets_movements": true,
+                  "cost_basis_method": "lifo"
               },
               "overview": {
                   "trade": {"free": "0", "taxable": "60.1"},
@@ -5030,7 +5030,8 @@ Query saved PnL Reports
                   "include_crypto2crypto": true,
                   "calculate_past_cost_basis": true,
                   "include_gas_costs": true,
-                  "account_for_assets_movements": true
+                  "account_for_assets_movements": true,
+                  "cost_basis_method": "fifo
               },
               "overview": {
                   "trade": {"free": "0", "taxable": "60.1"},
@@ -5051,7 +5052,8 @@ Query saved PnL Reports
                   "include_crypto2crypto": true,
                   "calculate_past_cost_basis": true,
                   "include_gas_costs": true,
-                  "account_for_assets_movements": true
+                  "account_for_assets_movements": true,
+                  "cost_basis_method": "fifo"
               },
               "overview": {
                   "asset movement": {"free": "0", "taxable": "5"},
@@ -5087,6 +5089,7 @@ Query saved PnL Reports
    :resjson bool calculate_past_cost_basis: The value of the setting used in the PnL report.
    :resjson bool include_gas_costs: The value of the setting used in the PnL report.
    :resjson bool account_for_assets_movements: The value of the setting used in the PnL report.
+   :resjson str cost_basis_method: The method for cost basis calculation. Either fifo or lifo.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.

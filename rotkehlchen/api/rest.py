@@ -2535,9 +2535,9 @@ class RestAPI():
         self.rotkehlchen.chain_manager.ethereum.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def delete_web3_node(self, name: str) -> Response:
+    def delete_web3_node(self, identifier: int) -> Response:
         try:
-            self.rotkehlchen.data.db.delete_web3_node(name)
+            self.rotkehlchen.data.db.delete_web3_node(identifier)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         # Update the connected nodes
