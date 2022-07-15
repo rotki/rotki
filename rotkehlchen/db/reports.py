@@ -110,6 +110,7 @@ class DBAccountingReports():
                     (report_id, 'include_gas_costs', 'bool', settings.include_gas_costs),
                     (report_id, 'account_for_assets_movements', 'bool', settings.account_for_assets_movements),  # noqa: E501
                     (report_id, 'cost_basis_method', 'string', settings.cost_basis_method.serialize()),  # noqa: E501
+                    (report_id, 'eth_staking_taxable_after_withdrawal_enabled', 'bool', settings.eth_staking_taxable_after_withdrawal_enabled),  # noqa: E501
                 ])
 
         return report_id
