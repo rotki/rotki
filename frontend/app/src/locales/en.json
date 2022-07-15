@@ -3021,10 +3021,6 @@
   "no_task_running": {
     "description": "No Pending tasks"
   },
-  "node_status_indicator": {
-    "connected": "Connected to an ethereum node",
-    "disconnected": "Not connected to an ethereum node"
-  },
   "non_fungible_balance": {
     "column": {
       "actions": "Actions",

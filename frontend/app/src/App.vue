@@ -51,7 +51,6 @@
           @click="toggleDrawer()"
         />
         <div class="d-flex overflow-hidden">
-          <node-status-indicator v-if="!xsOnly" />
           <balance-saved-indicator />
           <global-search />
           <back-button :can-navigate-back="canNavigateBack" />
@@ -165,7 +164,6 @@ import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
 import PrivacyModeDropdown from '@/components/PrivacyModeDropdown.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import FrontendUpdateNotifier from '@/components/status/FrontendUpdateNotifier.vue';
-import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
 import NotificationSidebar from '@/components/status/notifications/NotificationSidebar.vue';
@@ -209,7 +207,6 @@ export default defineComponent({
     AppUpdateIndicator,
     NotificationIndicator,
     BalanceSavedIndicator: SyncIndicator,
-    NodeStatusIndicator,
     MessageDialog,
     CurrencyDropdown,
     NavigationMenu,
