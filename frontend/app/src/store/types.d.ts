@@ -43,8 +43,8 @@ export interface RotkehlchenState {
   statistics?: StatisticsState;
 }
 
-export type ActionDataEntry = {
-  readonly identifier: string;
+export type ActionDataEntry<T = string> = {
+  readonly identifier: T;
   readonly label: string;
   readonly icon?: string | undefined;
   readonly image?: string | undefined;

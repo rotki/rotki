@@ -143,6 +143,7 @@
   },
   "account_settings_display": {
     "account_asset_movement": "Account asset movement fees were taken into account:",
+    "cost_basis_method": "Cost basis method:",
     "crypto2crypto": "Crypto to crypto trades were taken into account:",
     "days": "{days} days",
     "gas_costs": "Gas costs were taken into account:",
@@ -3528,7 +3529,8 @@
     "owned": "Owned",
     "owned_hint": "Enable if this node is a private node owned by the user",
     "weight": "Weight",
-    "weight_hint": "Node weight {weight}/100 (when adjusting a public node's weight other nodes will be adjusted accordingly)"
+    "weight_hint": "Node weight {weight}/100 (when adjusting a public node's weight other nodes will be adjusted accordingly)",
+    "weight_per_hundred": "/100"
   },
   "service_key": {
     "actions": {

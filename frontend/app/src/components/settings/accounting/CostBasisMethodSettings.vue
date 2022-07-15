@@ -1,10 +1,10 @@
 <template>
   <v-select
     v-bind="$attrs"
-    item-text="value"
-    item-value="value"
     outlined
     persistent-hint
+    item-value="identifier"
+    item-text="identifier"
     :items="selections"
     v-on="$listeners"
   >
@@ -12,40 +12,28 @@
       <v-list-item v-bind="attrs" v-on="on">
         <v-list-item-content>
           <v-list-item-title :class="$style.title">
-            {{ item.value }}
+            {{ item.identifier }}
           </v-list-item-title>
           <v-list-item-subtitle>
-            {{ item.text }}
+            {{ item.label }}
           </v-list-item-subtitle>
         </v-list-item-content>
       </v-list-item>
     </template>
     <template #selection="{ item }">
-      <span :class="$style.title">{{ item.value }}</span>
+      <span :class="$style.title">{{ item.identifier }}</span>
     </template>
   </v-select>
 </template>
 
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api';
-import i18n from '@/i18n';
-import { CostBasisMethod } from '@/types/user';
+import { costBasisMethodData } from '@/store/reports/consts';
 export default defineComponent({
   name: 'CostBasisMethodSettings',
   setup() {
-    const selections = [
-      {
-        value: CostBasisMethod.Fifo,
-        text: i18n.t('account_settings.cost_basis_method_settings.labels.fifo')
-      },
-      {
-        value: CostBasisMethod.Lifo,
-        text: i18n.t('account_settings.cost_basis_method_settings.labels.lifo')
-      }
-    ];
-
     return {
-      selections
+      selections: costBasisMethodData
     };
   }
 });

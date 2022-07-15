@@ -72,14 +72,33 @@
           </v-icon>
         </span>
       </v-col>
+      <v-col v-if="costBasisMethodItem" cols="12" sm="6">
+        <span class="text--primary">
+          {{ $t('account_settings_display.cost_basis_method') }}
+        </span>
+        <span class="ms-2">
+          <span class="accounting-settings-display--uppercase">
+            {{ costBasisMethodItem.identifier }}
+          </span>
+          <span>({{ costBasisMethodItem.label }})</span>
+        </span>
+      </v-col>
     </v-row>
   </card>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import i18n from '@/i18n';
-import { AccountingSettings } from '@/types/user';
+import { costBasisMethodData } from '@/store/reports/consts';
+import { ActionDataEntry } from '@/store/types';
+import { AccountingSettings, CostBasisMethod } from '@/types/user';
 
 const AccountingSettingsDisplay = defineComponent({
   name: 'AccountingSettingsDisplay',
@@ -89,7 +108,8 @@ const AccountingSettingsDisplay = defineComponent({
       type: Object as PropType<AccountingSettings>
     }
   },
-  setup() {
+  setup(props) {
+    const { accountingSettings } = toRefs(props);
     const color = (enabled: boolean) => {
       return enabled
         ? 'accounting-settings-display--yes'
@@ -105,10 +125,19 @@ const AccountingSettingsDisplay = defineComponent({
       return i18n.t('account_settings_display.days', { days }).toString();
     };
 
+    const costBasisMethodItem =
+      computed<ActionDataEntry<CostBasisMethod> | null>(() => {
+        const method = get(accountingSettings).costBasisMethod;
+        return (
+          costBasisMethodData.find(item => item.identifier === method) || null
+        );
+      });
+
     return {
       color,
       icon,
-      taxFreePeriod
+      taxFreePeriod,
+      costBasisMethodItem
     };
   }
 });
@@ -124,6 +153,10 @@ export default AccountingSettingsDisplay;
 
   &--no {
     color: var(--v-rotki-loss-base);
+  }
+
+  &--uppercase {
+    text-transform: uppercase;
   }
 }
 </style>
