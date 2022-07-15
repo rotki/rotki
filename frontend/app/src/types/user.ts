@@ -52,8 +52,7 @@ const GeneralSettings = z.object({
   historicalPriceOracles: z.array(PriceOracle),
   ssf0graphMultiplier: z.number().default(0),
   nonSyncingExchanges: z.array(Exchange),
-  treatEth2AsEth: z.boolean(),
-  ethStakingTaxableAfterWithdrawalEnabled: z.boolean()
+  treatEth2AsEth: z.boolean()
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
@@ -72,7 +71,8 @@ export const BaseAccountingSettings = z.object({
   taxfreeAfterPeriod: z.number().nullish(),
   accountForAssetsMovements: z.boolean(),
   profitCurrency: z.string().nullish(),
-  costBasisMethod: CostBasisMethodEnum
+  ethStakingTaxableAfterWithdrawalEnabled: z.boolean().nullish(),
+  costBasisMethod: CostBasisMethodEnum.nullish()
 });
 
 export type BaseAccountingSettings = z.infer<typeof BaseAccountingSettings>;
@@ -123,7 +123,9 @@ const getAccountingSettings = (settings: UserSettings): AccountingSettings => ({
   accountForAssetsMovements: settings.accountForAssetsMovements,
   calculatePastCostBasis: settings.calculatePastCostBasis,
   taxableLedgerActions: settings.taxableLedgerActions,
-  costBasisMethod: settings.costBasisMethod
+  costBasisMethod: settings.costBasisMethod,
+  ethStakingTaxableAfterWithdrawalEnabled:
+    settings.ethStakingTaxableAfterWithdrawalEnabled
 });
 
 const getGeneralSettings = (settings: UserSettings): GeneralSettings => ({
@@ -141,9 +143,7 @@ const getGeneralSettings = (settings: UserSettings): GeneralSettings => ({
   historicalPriceOracles: settings.historicalPriceOracles,
   ssf0graphMultiplier: settings.ssf0graphMultiplier,
   nonSyncingExchanges: settings.nonSyncingExchanges,
-  treatEth2AsEth: settings.treatEth2AsEth,
-  ethStakingTaxableAfterWithdrawalEnabled:
-    settings.ethStakingTaxableAfterWithdrawalEnabled
+  treatEth2AsEth: settings.treatEth2AsEth
 });
 
 const getOtherSettings = (settings: UserSettings): OtherSettings => ({

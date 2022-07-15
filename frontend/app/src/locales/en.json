@@ -126,6 +126,11 @@
         "success": "Successfully change cost basis method to {method}"
       },
       "crypto_to_crypto": "Error setting crypto to crypto: {message}",
+      "eth_staking_taxable_after_withdrawal": {
+        "disabled": "Successfully disabled eth staking taxable after withdrawal setting",
+        "enabled": "Successfully enabled eth staking taxable after withdrawal setting",
+        "error": "Failed to change eth staking taxable after withdrawal setting: {message}"
+      },
       "export_csv_formulas": "Error setting the option to include formulas in CSV export: {message}",
       "gas_costs": "Error setting Ethereum gas costs: {message}",
       "have_csv_summary": "Error setting the option to include summary in CSV export: {message}",
@@ -146,6 +151,7 @@
     "cost_basis_method": "Cost basis method:",
     "crypto2crypto": "Crypto to crypto trades were taken into account:",
     "days": "{days} days",
+    "eth_staking_taxable_after_withdrawal_enabled": "ETH staking events are omitted until withdrawals are enabled",
     "gas_costs": "Gas costs were taken into account:",
     "past_cost_basis": "Past cost basis was calculated during the report creation:",
     "profit_currency": "Profit Currency",
@@ -161,6 +167,7 @@
       "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
       "cost_basis_method": "Cost basis method",
       "crypto_to_crypto": "Take into account crypto to crypto trades",
+      "eth_staking_taxable_after_withdrawal": "Should omit ETH staking events from accounting until withdrawals are enabled",
       "gas_costs": "Take into account Ethereum gas costs",
       "tax_free": "Is there a tax free period?",
       "tax_free_period": "Tax free after how many days"
@@ -2208,7 +2215,6 @@
       "date_input_format": "Date input format",
       "display_date_in_localtime": "Display date in localtime and not in UTC in CSV export, backend logs and other locations",
       "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
-      "eth_staking_taxable_after_withdrawal_enabled": "Should omit ETH/ETH2 staking events from accounting until withdrawal enabled",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
       "version_update_check": "Set the version update check period while in app",
@@ -2265,9 +2271,6 @@
         "error": "There was an error setting the Polkadot node RPC endpoint",
         "success_set": "The Polkadot node RPC endpoint was set to {endpoint}",
         "success_unset": "The Polkadot node RPC endpoint was successfully unset"
-      },
-      "eth_staking_taxable_after_withdrawal_enabled": {
-        "error": "Error setting ETH staking taxable after withdrawal enabled"
       },
       "floating_precision": {
         "error": "Floating precision set to {precision}",

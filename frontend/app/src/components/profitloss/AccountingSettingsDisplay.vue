@@ -72,6 +72,34 @@
           </v-icon>
         </span>
       </v-col>
+
+      <v-col
+        v-if="
+          accountingSettings.ethStakingTaxableAfterWithdrawalEnabled !==
+          undefined
+        "
+        cols="12"
+        sm="6"
+      >
+        <span class="text--primary">
+          {{
+            $t(
+              'account_settings_display.eth_staking_taxable_after_withdrawal_enabled'
+            )
+          }}
+        </span>
+        <span class="ms-2">
+          <v-icon
+            :class="
+              color(accountingSettings.ethStakingTaxableAfterWithdrawalEnabled)
+            "
+          >
+            {{
+              icon(accountingSettings.ethStakingTaxableAfterWithdrawalEnabled)
+            }}
+          </v-icon>
+        </span>
+      </v-col>
       <v-col v-if="costBasisMethodItem" cols="12" sm="6">
         <span class="text--primary">
           {{ $t('account_settings_display.cost_basis_method') }}
@@ -128,6 +156,7 @@ const AccountingSettingsDisplay = defineComponent({
     const costBasisMethodItem =
       computed<ActionDataEntry<CostBasisMethod> | null>(() => {
         const method = get(accountingSettings).costBasisMethod;
+        if (!method) return null;
         return (
           costBasisMethodData.find(item => item.identifier === method) || null
         );

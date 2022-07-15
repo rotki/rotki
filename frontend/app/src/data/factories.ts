@@ -21,8 +21,7 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
   historicalPriceOracles: [],
   ssf0graphMultiplier: 0,
   nonSyncingExchanges: [],
-  treatEth2AsEth: false,
-  ethStakingTaxableAfterWithdrawalEnabled: false
+  treatEth2AsEth: false
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({
@@ -34,5 +33,6 @@ export const defaultAccountingSettings = (): AccountingSettings => ({
   accountForAssetsMovements: true,
   calculatePastCostBasis: true,
   taxableLedgerActions: [],
+  ethStakingTaxableAfterWithdrawalEnabled: false,
   costBasisMethod: CostBasisMethod.Fifo
 });
