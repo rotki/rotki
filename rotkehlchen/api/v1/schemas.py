@@ -2296,6 +2296,7 @@ class EthereumNodeEditSchema(EthereumNodeSchema):
                 message='Can\'t change the etherscan node name',
                 field_name='name',
             )
+        # verify that if the node is not etherscan the endpoint field has valid information
         if data['identifier'] != 1 and len(data['endpoint'].strip()) == 0:
             raise ValidationError(
                 message="endpoint can't be empty",
