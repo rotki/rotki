@@ -27,7 +27,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.types import ActionType
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import (
@@ -128,7 +128,7 @@ from rotkehlchen.types import (
     AssetMovementCategory,
     BlockchainAccountData,
     BTCAddress,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     ExchangeApiCredentials,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -775,7 +775,7 @@ class DBHandler:
             ) from e
 
     # pylint: disable=no-self-use
-    def add_aave_events(self, write_cursor: 'DBCursor', address: ChecksumEthAddress, events: Sequence[AaveEvent]) -> None:  # noqa: E501
+    def add_aave_events(self, write_cursor: 'DBCursor', address: ChecksumEvmAddress, events: Sequence[AaveEvent]) -> None:  # noqa: E501
         for e in events:
             event_tuple = e.to_db_tuple(address)
             try:
@@ -808,8 +808,8 @@ class DBHandler:
     def get_aave_events(
             self,
             cursor: 'DBCursor',
-            address: ChecksumEthAddress,
-            atoken: Optional[EthereumToken] = None,
+            address: ChecksumEvmAddress,
+            atoken: Optional[EvmToken] = None,
     ) -> List[AaveEvent]:
         """Get aave for a single address and a single aToken """
         querystr = 'SELECT * FROM aave_events '
@@ -890,7 +890,7 @@ class DBHandler:
             cursor: 'DBCursor',
             from_timestamp: Optional[Timestamp] = None,
             to_timestamp: Optional[Timestamp] = None,
-            address: Optional[ChecksumEthAddress] = None,
+            address: Optional[ChecksumEvmAddress] = None,
             bond_id: Optional[str] = None,
             event_type: Optional[AdexEventType] = None,
     ) -> List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]:
@@ -1006,7 +1006,7 @@ class DBHandler:
             events: List[EventType],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            address: Optional[ChecksumEthAddress] = None,
+            address: Optional[ChecksumEvmAddress] = None,
     ) -> List[LiquidityPoolEvent]:
         """Returns a list of amm events optionally filtered by time, location
         and address
@@ -1337,7 +1337,7 @@ class DBHandler:
     def _get_address_details(
             self,
             cursor: 'DBCursor',
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[Timestamp]]:
         query = cursor.execute(
             'SELECT tokens_list, timestamp FROM ethereum_accounts_details WHERE account = ?',
@@ -1367,8 +1367,8 @@ class DBHandler:
     def get_tokens_for_address(
             self,
             cursor: 'DBCursor',
-            address: ChecksumEthAddress,
-    ) -> Tuple[Optional[List[EthereumToken]], Optional[Timestamp]]:
+            address: ChecksumEvmAddress,
+    ) -> Tuple[Optional[List[EvmToken]], Optional[Timestamp]]:
         """Gets the detected tokens for the given address if the given current time
         is recent enough.
 
@@ -1394,7 +1394,7 @@ class DBHandler:
         returned_list = []
         for x in tokens_list:
             try:
-                token = EthereumToken.from_identifier(x)
+                token = EvmToken.from_identifier(x)
             except (DeserializationError, UnknownAsset):
                 token = None
             if token is None:
@@ -1408,7 +1408,7 @@ class DBHandler:
 
         return returned_list, last_update_ts
 
-    def _get_address_details_json(self, cursor: 'DBCursor', address: ChecksumEthAddress) -> Optional[Dict[str, Any]]:  # noqa: E501
+    def _get_address_details_json(self, cursor: 'DBCursor', address: ChecksumEvmAddress) -> Optional[Dict[str, Any]]:  # noqa: E501
         query = cursor.execute(
             'SELECT tokens_list, timestamp FROM ethereum_accounts_details WHERE account = ?',
             (address,),
@@ -1432,8 +1432,8 @@ class DBHandler:
     def save_tokens_for_address(
             self,
             write_cursor: 'DBCursor',
-            address: ChecksumEthAddress,
-            tokens: List[EthereumToken],
+            address: ChecksumEvmAddress,
+            tokens: List[EvmToken],
     ) -> None:
         """Saves detected tokens for an address"""
         old_details = self._get_address_details_json(write_cursor, address)
@@ -1963,7 +1963,7 @@ class DBHandler:
             tuple_type: DBTupleType,
             query: str,
             tuples: Sequence[Tuple[Any, ...]],
-            **kwargs: Optional[ChecksumEthAddress],
+            **kwargs: Optional[ChecksumEvmAddress],
     ) -> None:
         relevant_address = kwargs.get('relevant_address')
         try:
@@ -2213,7 +2213,7 @@ class DBHandler:
         cursor.execute(cursorstr)
         return cursor.fetchone()[0]
 
-    def delete_data_for_ethereum_address(self, write_cursor: 'DBCursor', address: ChecksumEthAddress) -> None:  # noqa: E501
+    def delete_data_for_ethereum_address(self, write_cursor: 'DBCursor', address: ChecksumEvmAddress) -> None:  # noqa: E501
         """Deletes all ethereum related data from the DB for a single ethereum address"""
         other_eth_accounts = self.get_blockchain_accounts(write_cursor).eth
         if address in other_eth_accounts:
@@ -2428,7 +2428,7 @@ class DBHandler:
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             location: Optional[Location] = None,
-            address: Optional[ChecksumEthAddress] = None,
+            address: Optional[ChecksumEvmAddress] = None,
     ) -> List[AMMSwap]:
         """Returns a list of AMM swaps optionally filtered by time, location
         and address

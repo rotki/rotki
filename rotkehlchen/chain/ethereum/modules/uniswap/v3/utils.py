@@ -8,8 +8,8 @@ from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.utils import get_or_create_ethereum_token
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import AssetToPrice, LiquidityPoolAsset
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import (
@@ -29,11 +29,12 @@ from rotkehlchen.constants.ethereum import (
     UNISWAP_V3_POOL_ABI,
 )
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, Price
+from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 
@@ -58,11 +59,11 @@ class UnrecognizedFeeTierException(Exception):
 
 def uniswap_v3_lp_token_balances(
         userdb: 'DBHandler',
-        address: ChecksumEthAddress,
+        address: ChecksumEvmAddress,
         ethereum: 'EthereumManager',
         msg_aggregator: MessagesAggregator,
-        price_known_assets: Set[EthereumToken],
-        price_unknown_assets: Set[EthereumToken],
+        price_known_assets: Set[EvmToken],
+        price_unknown_assets: Set[EvmToken],
 ) -> List[NFTLiquidityPool]:
     """
     Fetches all the Uniswap V3 LP positions for the specified address.
@@ -329,7 +330,7 @@ def compute_pool_address(
         token0_address_raw: str,
         token1_address_raw: str,
         fee: int,
-) -> ChecksumEthAddress:
+) -> ChecksumEvmAddress:
     """
     Generate the pool address from the Uniswap Factory Address, pair of tokens
     and the fee using CREATE2 opcode.
@@ -465,8 +466,8 @@ def _decode_uniswap_v3_token(entry: Dict[str, Any]) -> TokenDetails:
 def _decode_uniswap_v3_result(
         userdb: 'DBHandler',
         data: Tuple,
-        price_known_assets: Set[EthereumToken],
-        price_unknown_assets: Set[EthereumToken],
+        price_known_assets: Set[EvmToken],
+        price_unknown_assets: Set[EvmToken],
 ) -> NFTLiquidityPool:
     """
     Takes the data aggregated from the Positions NFT contract & LP contract and converts it
@@ -492,10 +493,11 @@ def _decode_uniswap_v3_result(
         # Set the asset balance to ZERO if the asset raises `NotERC20Conformant` exception
         asset_balance = ZERO
         try:
-            asset = get_or_create_ethereum_token(
+            asset = get_or_create_evm_token(
                 userdb=userdb,
                 symbol=token.symbol,
-                ethereum_address=token.address,
+                evm_address=token.address,
+                chain=ChainID.ETHEREUM,
                 name=token.name,
                 decimals=token.decimals,
             )
@@ -529,7 +531,7 @@ def _decode_uniswap_v3_result(
 
 def get_unknown_asset_price_chain(
         ethereum: 'EthereumManager',
-        unknown_assets: Set[EthereumToken],
+        unknown_assets: Set[EvmToken],
 ) -> AssetToPrice:
     """Get token price using Uniswap V3 Oracle."""
     oracle = UniswapV3Oracle(eth_manager=ethereum)
@@ -537,13 +539,13 @@ def get_unknown_asset_price_chain(
     for from_asset in unknown_assets:
         try:
             price = oracle.query_current_price(from_asset, A_USDC)
-            asset_price[from_asset.ethereum_address] = price
+            asset_price[from_asset.evm_address] = price
         except (PriceQueryUnsupportedAsset, RemoteError) as e:
             log.error(
                 f'Failed to find price for {str(from_asset)}/{str(A_USDC) } LP using '
                 f'Uniswap V3 oracle due to: {str(e)}.',
             )
-            asset_price[from_asset.ethereum_address] = Price(ZERO)
+            asset_price[from_asset.evm_address] = Price(ZERO)
 
     return asset_price
 

@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, NamedTuple
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import (
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     Eth2PubKey,
     EVMTxHash,
     Location,
@@ -343,7 +343,7 @@ Eth2DepositDBTuple = (
 class ValidatorDetails(NamedTuple):
     validator_index: Optional[int]
     public_key: str
-    eth1_depositor: ChecksumEthAddress
+    eth1_depositor: ChecksumEvmAddress
     performance: ValidatorPerformance
 
     def serialize(self, eth_usd_price: FVal) -> Dict[str, Any]:
@@ -356,7 +356,7 @@ class ValidatorDetails(NamedTuple):
 
 
 class Eth2Deposit(NamedTuple):
-    from_address: ChecksumEthAddress
+    from_address: ChecksumEvmAddress
     pubkey: str  # hexstring
     withdrawal_credentials: str  # hexstring
     value: Balance
@@ -391,7 +391,7 @@ class Eth2Deposit(NamedTuple):
         return cls(
             tx_hash=make_evm_tx_hash(deposit_tuple[0]),
             tx_index=int(deposit_tuple[1]),
-            from_address=string_to_ethereum_address(deposit_tuple[2]),
+            from_address=string_to_evm_address(deposit_tuple[2]),
             timestamp=Timestamp(int(deposit_tuple[3])),
             pubkey=deposit_tuple[4],
             withdrawal_credentials=deposit_tuple[5],

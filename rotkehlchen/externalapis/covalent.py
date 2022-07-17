@@ -11,7 +11,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, CovalentTransaction, ExternalService, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, CovalentTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import create_timestamp, ts_now
 
@@ -148,7 +148,7 @@ class Covalent(ExternalServiceWithApiKey):
 
     def get_transactions(
             self,
-            account: ChecksumEthAddress,
+            account: ChecksumEvmAddress,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> Optional[List[CovalentTransaction]]:
@@ -245,7 +245,7 @@ class Covalent(ExternalServiceWithApiKey):
 
     def get_token_balances_address(
             self,
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
     ) -> Optional[List[Dict[str, Any]]]:
         options = {'limit': COVALENT_QUERY_LIMIT, 'page-size': PAGESIZE}
         result = self._query(

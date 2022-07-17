@@ -14,7 +14,7 @@ from rotkehlchen.externalapis.opensea import NFT, Opensea
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, Price
+from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
@@ -33,7 +33,7 @@ FREE_NFT_LIMIT = 10
 
 
 class NFTResult(NamedTuple):
-    addresses: Dict[ChecksumEthAddress, List[NFT]]
+    addresses: Dict[ChecksumEvmAddress, List[NFT]]
     entries_found: int
     entries_limit: int
 
@@ -65,10 +65,10 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
     @cache_response_timewise()
     def _get_all_nft_data(
             self,  # pylint: disable=unused-argument
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
-    ) -> Tuple[Dict[ChecksumEthAddress, List[NFT]], int]:
+    ) -> Tuple[Dict[ChecksumEvmAddress, List[NFT]], int]:
         """May raise RemoteError"""
         result = {}
         total_nfts_num = 0
@@ -96,7 +96,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
 
     def get_all_info(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             ignore_cache: bool,
     ) -> NFTResult:
         """Gets info for all NFTs of the given addresses
@@ -118,11 +118,11 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
 
     def get_balances(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             uniswap_nfts: Optional[AddressToUniswapV3LPBalances],
             return_zero_values: bool,
             ignore_cache: bool,
-    ) -> Dict[ChecksumEthAddress, List[Dict[str, Any]]]:
+    ) -> Dict[ChecksumEvmAddress, List[Dict[str, Any]]]:
         """Gets all NFT balances. The actual opensea querying part is protected by a lock.
         If `uniswap_nfts` is not None then the worth of the LPs are used as the value of the NFTs.
         If `return_zero_values` is False then zero value NFTs are not returned in the result.
@@ -134,11 +134,11 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
             accounts = self.db.get_blockchain_accounts(cursor=cursor)
         # Be sure that the only addresses queried already exist in the database. Fix for #4456
         queried_addresses = list(set(accounts.eth) & set(addresses))
-        result: DefaultDict[ChecksumEthAddress, List[Dict[str, Any]]] = defaultdict(list)
+        result: DefaultDict[ChecksumEvmAddress, List[Dict[str, Any]]] = defaultdict(list)
         nft_results, _ = self._get_all_nft_data(queried_addresses, ignore_cache=ignore_cache)
         cached_db_result = self.get_nfts_with_price()
         cached_db_prices = {x['asset']: x for x in cached_db_result}
-        db_data: List[Tuple[str, str, Optional[str], Optional[str], int, ChecksumEthAddress]] = []
+        db_data: List[Tuple[str, str, Optional[str], Optional[str], int, ChecksumEvmAddress]] = []
         # get uniswap v3 lp balances and update nfts that are LPs with their worths.
         for address, nfts in nft_results.items():
             for nft in nfts:
@@ -299,10 +299,10 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         return True
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
         pass
 
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         pass
 
     def deactivate(self) -> None:

@@ -10,11 +10,15 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ONE
-from rotkehlchen.constants.resolver import ethaddress_to_identifier, strethaddress_to_identifier
+from rotkehlchen.constants.resolver import (
+    ChainID,
+    ethaddress_to_identifier,
+    strethaddress_to_identifier,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
 from rotkehlchen.tests.utils.api import (
@@ -24,7 +28,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.types import Location
+from rotkehlchen.types import EvmTokenKind, Location
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -848,8 +852,10 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_cus
     globaldb.add_asset(
         asset_id=identifier,
         asset_type=AssetType.ETHEREUM_TOKEN,
-        data=EthereumToken.initialize(
+        data=EvmToken.initialize(
             address=eth_address,
+            chain=ChainID.ETHEREUM,
+            token_kind=EvmTokenKind.ERC20,
             decimals=18,
             name='yabirtoken',
             symbol='YAB',
@@ -894,7 +900,7 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_cus
                 'coingecko': 'YAB',
                 'protocol': None,
                 'underlying_tokens': None,
-                'ethereum_address': eth_address,
+                'evm_address': eth_address,
             }
         else:
             assert response.status_code == HTTPStatus.OK
@@ -946,7 +952,7 @@ def test_importing_custom_assets_list(rotkehlchen_api_server, method, file_type)
     assert len(warnings) == 0
 
     assert_proper_response_with_result(response)
-    stinch = EthereumToken('0xA0446D8804611944F1B527eCD37d7dcbE442caba')
+    stinch = EvmToken('eip155:1/erc20:0xA0446D8804611944F1B527eCD37d7dcbE442caba')
     assert stinch.symbol == 'st1INCH'
     assert len(stinch.underlying_tokens) == 1
     assert stinch.decimals == 18

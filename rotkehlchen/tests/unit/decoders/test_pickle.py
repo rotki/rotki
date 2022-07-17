@@ -3,11 +3,11 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ethtx import DBEthTx
@@ -47,7 +47,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
             EthereumTxReceiptLog(
                 log_index=259,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000312ebe013bcd5d6fed'),  # noqa: E501
-                address=string_to_ethereum_address('0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
+                address=string_to_evm_address('0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -57,7 +57,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=261,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000001e67da0f130b2d9371'),  # noqa: E501
-                address=string_to_ethereum_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
+                address=string_to_evm_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -107,7 +107,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-            asset=EthereumToken('0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
+            asset=EvmToken('eip155:1/erc20:0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
             balance=Balance(amount=FVal('907.258590539447889901'), usd_value=ZERO),
             location_label='0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',
             notes='Deposit 907.258590539447889901 LOOKS in pickle contract',
@@ -121,7 +121,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=EthereumToken('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
+            asset=EvmToken('eip155:1/erc20:0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
             balance=Balance(amount=FVal('560.885632516582380401'), usd_value=ZERO),
             location_label='0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',
             notes='Receive 560.885632516582380401 pLOOKS after depositing in pickle contract',
@@ -160,7 +160,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
             EthereumTxReceiptLog(
                 log_index=105,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000d4f4e1608c485628b'),  # noqa: E501
-                address=string_to_ethereum_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
+                address=string_to_evm_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -170,7 +170,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=106,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000015da18947013228f17'),  # noqa: E501
-                address=string_to_ethereum_address('0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
+                address=string_to_evm_address('0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -220,7 +220,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-            asset=EthereumToken('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
+            asset=EvmToken('eip155:1/erc20:0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
             balance=Balance(amount=FVal('245.522202162316534411'), usd_value=ZERO),
             location_label='0xC7Dc4Cd171812a441A30472219d390f4F15f6070',
             notes='Return 245.522202162316534411 pLOOKS to the pickle contract',
@@ -234,7 +234,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
-            asset=EthereumToken('0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
+            asset=EvmToken('eip155:1/erc20:0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
             balance=Balance(amount=FVal('403.097099656688209687'), usd_value=ZERO),
             location_label='0xC7Dc4Cd171812a441A30472219d390f4F15f6070',
             notes='Unstake 403.097099656688209687 LOOKS from the pickle contract',

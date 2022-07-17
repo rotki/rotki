@@ -6,13 +6,13 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.types import ChecksumEthAddress, EnsMapping, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, EnsMapping, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 START_TS = Timestamp(1279940400)
 
 
-def _simple_ens_setup(database, freezer) -> Tuple[DBEns, ChecksumEthAddress, ChecksumEthAddress]:
+def _simple_ens_setup(database, freezer) -> Tuple[DBEns, ChecksumEvmAddress, ChecksumEvmAddress]:
     dbens = DBEns(database)
     freezer.move_to(datetime.fromtimestamp(START_TS))
     addy1 = make_ethereum_address()

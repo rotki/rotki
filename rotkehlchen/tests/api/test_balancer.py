@@ -7,14 +7,14 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
+from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.ethereum.modules.balancer.types import (
     BalancerBPTEventType,
     BalancerEvent,
     BalancerPoolEventsBalance,
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_AAVE,
@@ -27,6 +27,7 @@ from rotkehlchen.constants.assets import (
     A_WETH,
     A_ZRX,
 )
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -39,6 +40,7 @@ from rotkehlchen.tests.utils.constants import A_API3, A_BAND, A_MFT, A_SYN
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import (
     AssetAmount,
+    EvmTokenKind,
     Location,
     Price,
     Timestamp,
@@ -47,31 +49,35 @@ from rotkehlchen.types import (
 )
 
 # Top holder of WBTC-WETH pool (0x1eff8af5d577060ba4ac8a29a13525bb0ee2a3d5)
-BALANCER_TEST_ADDR1 = string_to_ethereum_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')
-BALANCER_TEST_ADDR2 = string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b')
-BALANCER_TEST_ADDR3 = string_to_ethereum_address('0x7716a99194d758c8537F056825b75Dd0C8FDD89f')
-BALANCER_TEST_ADDR4 = string_to_ethereum_address('0x231DC6af3C66741f6Cf618884B953DF0e83C1A2A')
-BALANCER_TEST_ADDR3_POOL1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
+BALANCER_TEST_ADDR1 = string_to_evm_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')
+BALANCER_TEST_ADDR2 = string_to_evm_address('0x029f388aC4D5C8BfF490550ce0853221030E822b')
+BALANCER_TEST_ADDR3 = string_to_evm_address('0x7716a99194d758c8537F056825b75Dd0C8FDD89f')
+BALANCER_TEST_ADDR4 = string_to_evm_address('0x231DC6af3C66741f6Cf618884B953DF0e83C1A2A')
+BALANCER_TEST_ADDR3_POOL1 = EvmToken.initialize(
+    address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
+    chain=ChainID.ETHEREUM,
+    token_kind=EvmTokenKind.ERC20,
     symbol='BPT',
     protocol='balancer',
     underlying_tokens=[
-        UnderlyingToken(address=string_to_ethereum_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), weight=FVal(0.2)),  # noqa: E501  # WETH
-        UnderlyingToken(address=string_to_ethereum_address('0xba100000625a3754423978a60c9317c58a424e3D'), weight=FVal(0.8)),  # noqa: E501  # BAL
+        UnderlyingToken(address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal(0.2)),  # noqa: E501  # WETH
+        UnderlyingToken(address=string_to_evm_address('0xba100000625a3754423978a60c9317c58a424e3D'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal(0.8)),  # noqa: E501  # BAL
     ],
 )
-BALANCER_TEST_ADDR3_POOL2 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x574FdB861a0247401B317a3E68a83aDEAF758cf6'),
+BALANCER_TEST_ADDR3_POOL2 = EvmToken.initialize(
+    address=string_to_evm_address('0x574FdB861a0247401B317a3E68a83aDEAF758cf6'),
+    chain=ChainID.ETHEREUM,
+    token_kind=EvmTokenKind.ERC20,
     symbol='BPT',
     protocol='balancer',
     underlying_tokens=[
-        UnderlyingToken(address=string_to_ethereum_address('0x0D8775F648430679A709E98d2b0Cb6250d2887EF'), weight=FVal(0.1)),  # noqa: E501  # BAT
-        UnderlyingToken(address=string_to_ethereum_address('0x514910771AF9Ca656af840dff83E8264EcF986CA'), weight=FVal(0.35)),  # noqa: E501  # LINK
-        UnderlyingToken(address=string_to_ethereum_address('0x80fB784B7eD66730e8b1DBd9820aFD29931aab03'), weight=FVal(0.1)),  # noqa: E501  # LEND
-        UnderlyingToken(address=string_to_ethereum_address('0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'), weight=FVal(0.1)),  # noqa: E501  # MKR
-        UnderlyingToken(address=string_to_ethereum_address('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F'), weight=FVal(0.1)),  # noqa: E501  # SNX
-        UnderlyingToken(address=string_to_ethereum_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), weight=FVal(0.15)),  # noqa: E501  # WETH
-        UnderlyingToken(address=string_to_ethereum_address('0xdd974D5C2e2928deA5F71b9825b8b646686BD200'), weight=FVal(0.1)),  # noqa: E501  # KNC
+        UnderlyingToken(address=string_to_evm_address('0x0D8775F648430679A709E98d2b0Cb6250d2887EF'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal(0.1)),  # noqa: E501  # BAT
+        UnderlyingToken(address=string_to_evm_address('0x514910771AF9Ca656af840dff83E8264EcF986CA'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal(0.35)),  # noqa: E501  # LINK
+        UnderlyingToken(address=string_to_evm_address('0x80fB784B7eD66730e8b1DBd9820aFD29931aab03'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal(0.1)),  # noqa: E501  # LEND
+        UnderlyingToken(address=string_to_evm_address('0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal(0.1)),  # noqa: E501  # MKR
+        UnderlyingToken(address=string_to_evm_address('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal(0.1)),  # noqa: E501  # SNX
+        UnderlyingToken(address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal(0.15)),  # noqa: E501  # WETH
+        UnderlyingToken(address=string_to_evm_address('0xdd974D5C2e2928deA5F71b9825b8b646686BD200'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal(0.1)),  # noqa: E501  # KNC
     ],
 )
 
@@ -149,8 +155,10 @@ def test_get_balances(
 
 def get_balancer_test_addr2_expected_trades():
     """In a function since the new(unknown) assets needs to have been loaded in the DB"""
-    A_WCRES = EthereumToken.initialize(  # noqa: N806
-        address=string_to_ethereum_address('0xa0afAA285Ce85974c3C881256cB7F225e3A1178a'),
+    A_WCRES = EvmToken.initialize(  # noqa: N806
+        address=string_to_evm_address('0xa0afAA285Ce85974c3C881256cB7F225e3A1178a'),
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         decimals=18,
         symbol='wCRES',
     )
@@ -168,9 +176,9 @@ def get_balancer_test_addr2_expected_trades():
                         '0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',
                     ),
                     log_index=24,
-                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                    to_address=string_to_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
+                    address=string_to_evm_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_evm_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_evm_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
                     timestamp=Timestamp(1607008178),
                     location=Location.BALANCER,
                     token0=A_AAVE,
@@ -195,9 +203,9 @@ def get_balancer_test_addr2_expected_trades():
                         '0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',
                     ),
                     log_index=18,
-                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                    to_address=string_to_ethereum_address('0x70985E557aE0CD6dC88189a532e54FbC61927BAd'),  # noqa: E501
+                    address=string_to_evm_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_evm_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_evm_address('0x70985E557aE0CD6dC88189a532e54FbC61927BAd'),  # noqa: E501
                     timestamp=Timestamp(1607008178),
                     location=Location.BALANCER,
                     token0=A_WETH,
@@ -222,9 +230,9 @@ def get_balancer_test_addr2_expected_trades():
                         '0x5e235216cb03e4eb234014f5ccf3efbfddd40c4576424e2a8204f1d12b96ed35',
                     ),
                     log_index=143,
-                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                    to_address=string_to_ethereum_address('0x8982E9bBf7AC6A49c434aD81D2fF8e16895318e5'),  # noqa: E501
+                    address=string_to_evm_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_evm_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_evm_address('0x8982E9bBf7AC6A49c434aD81D2fF8e16895318e5'),  # noqa: E501
                     timestamp=Timestamp(1607008218),
                     location=Location.BALANCER,
                     token0=A_SYN,
@@ -249,9 +257,9 @@ def get_balancer_test_addr2_expected_trades():
                         '0xf54be824b4619777f1db0e3da91b0cd52f6dba730c95a75644e2b085e6ab9824',
                     ),
                     log_index=300,
-                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                    to_address=string_to_ethereum_address('0x10996eC4f3E7A1b314EbD966Fa8b1ad0fE0f8307'),  # noqa: E501
+                    address=string_to_evm_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_evm_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_evm_address('0x10996eC4f3E7A1b314EbD966Fa8b1ad0fE0f8307'),  # noqa: E501
                     timestamp=Timestamp(1607009877),
                     location=Location.BALANCER,
                     token0=A_WCRES,
@@ -276,9 +284,9 @@ def get_balancer_test_addr2_expected_trades():
                         '0xfed4e15051e3ce4dc0d2816f719701e5920e40bf41614b5feaa3c5a6a0186c03',
                     ),
                     log_index=22,
-                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                    to_address=string_to_ethereum_address('0x997c0fc9578a8194EFDdE2E0cD7aa6A69cFCD7c1'),  # noqa: E501
+                    address=string_to_evm_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_evm_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_evm_address('0x997c0fc9578a8194EFDdE2E0cD7aa6A69cFCD7c1'),  # noqa: E501
                     timestamp=Timestamp(1607010888),
                     location=Location.BALANCER,
                     token0=A_WETH,
@@ -303,9 +311,9 @@ def get_balancer_test_addr2_expected_trades():
                         '0xf0147c4b81098676c08ae20ae5bf8f8b60d0ad79eec484f3f93ac6ab49a3c51c',
                     ),
                     log_index=97,
-                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                    to_address=string_to_ethereum_address('0x2Eb6CfbFFC8785Cd0D9f2d233d0a617bF4269eeF'),  # noqa: E501
+                    address=string_to_evm_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_evm_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_evm_address('0x2Eb6CfbFFC8785Cd0D9f2d233d0a617bF4269eeF'),  # noqa: E501
                     timestamp=Timestamp(1607015059),
                     location=Location.BALANCER,
                     token0=A_MFT,
@@ -330,9 +338,9 @@ def get_balancer_test_addr2_expected_trades():
                         '0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',
                     ),
                     log_index=37,
-                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                    to_address=string_to_ethereum_address('0x0E552307659E70bF61f918f96AA880Cdec40d7E2'),  # noqa: E501
+                    address=string_to_evm_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_evm_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_evm_address('0x0E552307659E70bF61f918f96AA880Cdec40d7E2'),  # noqa: E501
                     timestamp=Timestamp(1607015339),
                     location=Location.BALANCER,
                     token0=A_AAVE,
@@ -357,9 +365,9 @@ def get_balancer_test_addr2_expected_trades():
                         '0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',
                     ),
                     log_index=31,
-                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                    to_address=string_to_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
+                    address=string_to_evm_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_evm_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_evm_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
                     timestamp=Timestamp(1607015339),
                     location=Location.BALANCER,
                     token0=A_WETH,
@@ -490,9 +498,9 @@ def test_get_trade_with_1_token_pool(
                     '0x4f9e0d8aa660a5d3db276a1ade038f7027f29838dd22d5276571d2e4ea7131ae',
                 ),
                 log_index=84,
-                address=string_to_ethereum_address(BALANCER_TEST_ADDR4),  # noqa: E501
-                from_address=string_to_ethereum_address('0xFD3dFB524B2dA40c8a6D703c62BE36b5D8540626'),  # noqa: E501
-                to_address=string_to_ethereum_address('0x582818356331877553F3E9Cf9557b48e5DdbD54a'),  # noqa: E501
+                address=string_to_evm_address(BALANCER_TEST_ADDR4),  # noqa: E501
+                from_address=string_to_evm_address('0xFD3dFB524B2dA40c8a6D703c62BE36b5D8540626'),  # noqa: E501
+                to_address=string_to_evm_address('0x582818356331877553F3E9Cf9557b48e5DdbD54a'),  # noqa: E501
                 timestamp=Timestamp(1621358339),
                 location=Location.BALANCER,
                 token0=A_WBTC,
@@ -728,7 +736,7 @@ def test_get_events_history_1(
     pool_event_balances = [
         pool_events_balance
         for pool_events_balance in address_pool_events_balances
-        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR3_POOL1.ethereum_address
+        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR3_POOL1.evm_address
     ]
 
     assert len(pool_event_balances) == 1
@@ -782,7 +790,7 @@ def test_get_events_history_2(
     pool_event_balances = [
         pool_events_balance
         for pool_events_balance in address_pool_events_balances
-        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR3_POOL2.ethereum_address
+        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR3_POOL2.evm_address
     ]
 
     assert len(pool_event_balances) == 1

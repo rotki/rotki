@@ -76,7 +76,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     ListOfBlockchainAddresses,
     Location,
     SupportedBlockchain,
@@ -601,7 +601,7 @@ class Rotkehlchen():
             blockchain=blockchain,
             accounts=accounts,
         )
-        eth_addresses: List[ChecksumEthAddress] = cast(List[ChecksumEthAddress], accounts) if blockchain == SupportedBlockchain.ETHEREUM else []  # noqa: E501
+        eth_addresses: List[ChecksumEvmAddress] = cast(List[ChecksumEvmAddress], accounts) if blockchain == SupportedBlockchain.ETHEREUM else []  # noqa: E501
         with contextlib.ExitStack() as stack:
             cursor = stack.enter_context(self.data.db.user_write())
             if blockchain == SupportedBlockchain.ETHEREUM:

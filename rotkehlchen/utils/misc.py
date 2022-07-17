@@ -28,7 +28,7 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEthAddress, Timestamp, TimestampMS
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp, TimestampMS
 
 log = logging.getLogger(__name__)
 
@@ -285,7 +285,7 @@ def hex_or_bytes_to_str(value: Union[bytes, str]) -> str:
     return hexstr
 
 
-def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
+def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEvmAddress:
     """Turns a 32bit bytes/HexBytes or a hexstring into an address
 
     May raise:
@@ -297,14 +297,14 @@ def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
     except ConversionError as e:
         raise DeserializationError(f'Could not turn {value!r} to an ethereum address') from e
     try:
-        return ChecksumEthAddress(to_checksum_address('0x' + hexstr[24:]))
+        return ChecksumEvmAddress(to_checksum_address('0x' + hexstr[24:]))
     except ValueError as e:
         raise DeserializationError(
             f'Invalid ethereum address: {hexstr[24:]}',
         ) from e
 
 
-def address_to_bytes32(address: ChecksumEthAddress) -> str:
+def address_to_bytes32(address: ChecksumEvmAddress) -> str:
     return '0x' + 24 * '0' + address.lower()[2:]
 
 

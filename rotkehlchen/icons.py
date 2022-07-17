@@ -1,6 +1,7 @@
 import itertools
 import logging
 import shutil
+import urllib.parse
 from http import HTTPStatus
 from pathlib import Path
 from typing import Optional, Set
@@ -43,11 +44,12 @@ class IconManager():
         self.failed_asset_ids: Set[str] = set()
 
     def iconfile_path(self, asset: Asset) -> Path:
-        return self.icons_dir / f'{asset.identifier}_small.png'
+        return self.icons_dir / f'{urllib.parse.quote_plus(asset.identifier)}_small.png'
 
     def custom_iconfile_path(self, asset: Asset) -> Optional[Path]:
         for suffix in ALLOWED_ICON_EXTENSIONS:
-            icon_path = self.custom_icons_dir / f'{asset.identifier}{suffix}'
+            asset_id_quoted = urllib.parse.quote_plus(asset.identifier)
+            icon_path = self.custom_icons_dir / f'{asset_id_quoted}{suffix}'
             if icon_path.is_file():
                 return icon_path
 
@@ -199,9 +201,10 @@ class IconManager():
 
         Completely replaces what was there before
         """
+        quoted_identifier = urllib.parse.quote_plus(asset.identifier)
         shutil.copyfile(
             icon_path,
-            self.custom_icons_dir / f'{asset.identifier}{icon_path.suffix}',
+            self.custom_icons_dir / f'{quoted_identifier}{icon_path.suffix}',
         )
 
     def delete_icon(self, asset: Asset) -> None:

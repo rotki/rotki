@@ -16,8 +16,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, 
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.utils import get_or_create_ethereum_token
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.graph import (
     GRAPH_QUERY_LIMIT,
     GRAPH_QUERY_SKIP_LIMIT,
@@ -44,6 +44,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import (
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -54,7 +55,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.types import (
     AssetAmount,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     Location,
     Price,
     Timestamp,
@@ -88,7 +89,7 @@ def add_trades_from_swaps(
         both_in: bool,
         quote_assets: Sequence[Tuple[Any, ...]],
         token_amount: AssetAmount,
-        token: EthereumToken,
+        token: EvmToken,
         trade_index: int,
 ) -> List[AMMTrade]:
     bought_amount = AssetAmount(token_amount / 2) if both_in else token_amount
@@ -150,7 +151,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def _calculate_events_balances(
         self,
-        address: ChecksumEthAddress,
+        address: ChecksumEvmAddress,
         events: List[LiquidityPoolEvent],
         balances: List[LiquidityPool],
     ) -> List[LiquidityPoolEventsBalance]:
@@ -165,10 +166,10 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         specific time range.
         """
         events_balances: List[LiquidityPoolEventsBalance] = []
-        pool_balance: Dict[ChecksumEthAddress, LiquidityPool] = (
+        pool_balance: Dict[ChecksumEvmAddress, LiquidityPool] = (
             {pool.address: pool for pool in balances}
         )
-        pool_aggregated_amount: Dict[ChecksumEthAddress, AggregatedAmount] = {}
+        pool_aggregated_amount: Dict[ChecksumEvmAddress, AggregatedAmount] = {}
         # Populate `pool_aggregated_amount` dict, being the keys the pools'
         # addresses and the values the aggregated amounts from their events
         for event in events:
@@ -224,8 +225,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     @staticmethod
     def _get_known_asset_price(
-            known_assets: Set[EthereumToken],
-            unknown_assets: Set[EthereumToken],
+            known_assets: Set[EvmToken],
+            unknown_assets: Set[EvmToken],
     ) -> AssetToPrice:
         """Get the tokens prices via Inquirer
 
@@ -238,7 +239,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             asset_usd_price = Inquirer().find_usd_price(known_asset)
 
             if asset_usd_price != Price(ZERO):
-                asset_price[known_asset.ethereum_address] = asset_usd_price
+                asset_price[known_asset.evm_address] = asset_usd_price
             else:
                 unknown_assets.add(known_asset)
 
@@ -339,7 +340,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def _get_events_graph(
             self,
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
             event_type: EventType,
@@ -415,17 +416,19 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     log.error(msg)
                     raise RemoteError(msg) from e
 
-                token0 = get_or_create_ethereum_token(
+                token0 = get_or_create_evm_token(
                     userdb=self.database,
                     symbol=token0_['symbol'],
-                    ethereum_address=token0_deserialized,
+                    evm_address=token0_deserialized,
+                    chain=ChainID.ETHEREUM,
                     name=token0_['name'],
                     decimals=token0_['decimals'],
                 )
-                token1 = get_or_create_ethereum_token(
+                token1 = get_or_create_evm_token(
                     userdb=self.database,
                     symbol=token1_['symbol'],
-                    ethereum_address=token1_deserialized,
+                    evm_address=token1_deserialized,
+                    chain=ChainID.ETHEREUM,
                     name=token1_['name'],
                     decimals=int(token1_['decimals']),
                 )
@@ -467,7 +470,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def _read_subgraph_trades(
             self,
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AMMTrade]:
@@ -546,17 +549,19 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                             log.error(msg)
                             continue
 
-                        token0 = get_or_create_ethereum_token(
+                        token0 = get_or_create_evm_token(
                             userdb=self.database,
                             symbol=swap_token0['symbol'],
-                            ethereum_address=token0_deserialized,
+                            evm_address=token0_deserialized,
+                            chain=ChainID.ETHEREUM,
                             name=swap_token0['name'],
                             decimals=swap_token0['decimals'],
                         )
-                        token1 = get_or_create_ethereum_token(
+                        token1 = get_or_create_evm_token(
                             userdb=self.database,
                             symbol=swap_token1['symbol'],
-                            ethereum_address=token1_deserialized,
+                            evm_address=token1_deserialized,
+                            chain=ChainID.ETHEREUM,
                             name=swap_token1['name'],
                             decimals=int(swap_token1['decimals']),
                         )
@@ -625,7 +630,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def _get_trades_graph(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> AddressTrades:
@@ -639,7 +644,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def _get_trades(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             only_cache: bool,
@@ -649,8 +654,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         DB and finally all DB trades are read and returned.
         """
         address_amm_trades: AddressTrades = {}
-        new_addresses: List[ChecksumEthAddress] = []
-        existing_addresses: List[ChecksumEthAddress] = []
+        new_addresses: List[ChecksumEvmAddress] = []
+        existing_addresses: List[ChecksumEvmAddress] = []
         min_end_ts: Timestamp = to_timestamp
 
         with self.database.conn.read_ctx() as cursor:
@@ -721,7 +726,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def _get_unknown_asset_price_graph(
             self,
-            unknown_assets: Set[EthereumToken],
+            unknown_assets: Set[EvmToken],
     ) -> AssetToPrice:
         """Get today's tokens prices via the AMM subgraph
 
@@ -731,7 +736,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         asset_price: AssetToPrice = {}
 
         unknown_assets_addresses = (
-            [asset.ethereum_address.lower() for asset in unknown_assets]
+            [asset.evm_address.lower() for asset in unknown_assets]
         )
         querystr = format_query_indentation(TOKEN_DAY_DATAS_QUERY.format())
         today_epoch = int(
@@ -790,7 +795,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def get_events_history(
         self,
-        addresses: List[ChecksumEthAddress],
+        addresses: List[ChecksumEvmAddress],
         reset_db_data: bool,
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
@@ -812,7 +817,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def get_trades(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             only_cache: bool,
@@ -836,7 +841,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
     def _fetch_trades_from_db(
             self,
             cursor: 'DBCursor',
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> AddressTrades:
@@ -858,15 +863,15 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     def _get_balances_graph(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> ProtocolBalance:
         """Get the addresses' pools data querying this AMM's subgraph
 
         Each liquidity position is converted into a <LiquidityPool>.
         """
         address_balances: DDAddressToLPBalances = defaultdict(list)
-        known_assets: Set[EthereumToken] = set()
-        unknown_assets: Set[EthereumToken] = set()
+        known_assets: Set[EvmToken] = set()
+        unknown_assets: Set[EvmToken] = set()
 
         addresses_lower = [address.lower() for address in addresses]
         querystr = format_query_indentation(LIQUIDITY_POSITIONS_QUERY.format())
@@ -936,10 +941,11 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                         log.error(msg)
                         raise RemoteError(msg) from e
 
-                    asset = get_or_create_ethereum_token(
+                    asset = get_or_create_evm_token(
                         userdb=self.database,
                         symbol=token['symbol'],
-                        ethereum_address=deserialized_eth_address,
+                        evm_address=deserialized_eth_address,
+                        chain=ChainID.ETHEREUM,
                         name=token['name'],
                         decimals=int(token['decimals']),
                     )
@@ -1004,9 +1010,10 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         symbol = 'UNI-V2' if protocol == 'uniswap-v2' else 'SLP'
         for lp_balances in lp_balances_mappings.values():
             for lp_balance in lp_balances:
-                get_or_create_ethereum_token(
+                get_or_create_evm_token(
                     userdb=self.database,
-                    ethereum_address=lp_balance.address,
+                    evm_address=lp_balance.address,
+                    chain=ChainID.ETHEREUM,
                     decimals=18,
                     protocol=protocol,
                     name=name,
@@ -1016,7 +1023,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _get_trades_graph_for_address(
             self,
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AMMTrade]:
@@ -1025,7 +1032,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_trades_history(
         self,
-        addresses: List[ChecksumEthAddress],
+        addresses: List[ChecksumEvmAddress],
         reset_db_data: bool,
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
@@ -1037,7 +1044,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
     def _get_events_balances(
             self,
             write_cursor: 'DBCursor',
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> AddressEventsBalances:

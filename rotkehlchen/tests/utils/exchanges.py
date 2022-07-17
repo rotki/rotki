@@ -1108,7 +1108,7 @@ TRANSACTIONS_RESPONSE = """{
     "confirmations": 86
    },
     "to": {
-      "resource": "ethereum_address",
+      "resource": "evm_address",
       "address": "0x6dcd6449dbca615e40d696328209686ea95327b2",
       "currency": "ETH",
       "address_info": {"address": "0xboo"}
@@ -1134,7 +1134,7 @@ TRANSACTIONS_RESPONSE = """{
   "resource_path": "/v2/accounts/foo/transactions/coo",
   "instant_exchange": false,
     "to": {
-      "resource": "ethereum_address",
+      "resource": "evm_address",
       "address": "0x6dcd6449dbca615e40d696328209686ea95327b2",
       "currency": "ETH",
       "address_info": {"address": "0xboo"}

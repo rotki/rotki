@@ -1,7 +1,7 @@
 from typing import Callable, Dict, List, Literal, NamedTuple, Union
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 
 class DefiProtocol(NamedTuple):
@@ -15,7 +15,7 @@ class DefiProtocol(NamedTuple):
 
 
 class DefiBalance(NamedTuple):
-    token_address: ChecksumEthAddress
+    token_address: ChecksumEvmAddress
     token_name: str
     token_symbol: str
     balance: Balance
@@ -30,12 +30,12 @@ class DefiProtocolBalances(NamedTuple):
 
 # Type of the argument given to functions that need the defi balances
 GIVEN_DEFI_BALANCES = Union[
-    Dict[ChecksumEthAddress, List[DefiProtocolBalances]],
-    Callable[[], Dict[ChecksumEthAddress, List[DefiProtocolBalances]]],
+    Dict[ChecksumEvmAddress, List[DefiProtocolBalances]],
+    Callable[[], Dict[ChecksumEvmAddress, List[DefiProtocolBalances]]],
 ]
 
 # Type of the argument given to functions that need the eth balances
 GIVEN_ETH_BALANCES = Union[
-    Dict[ChecksumEthAddress, BalanceSheet],
-    Callable[[], Dict[ChecksumEthAddress, BalanceSheet]],
+    Dict[ChecksumEvmAddress, BalanceSheet],
+    Callable[[], Dict[ChecksumEvmAddress, BalanceSheet]],
 ]

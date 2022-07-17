@@ -2,7 +2,7 @@ from typing import Callable, List, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
@@ -22,7 +22,7 @@ class Uniswapv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def _maybe_decode_swap(  # pylint: disable=no-self-use
             self,
-            token: Optional[EthereumToken],  # pylint: disable=unused-argument
+            token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],

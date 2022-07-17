@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
@@ -19,7 +19,7 @@ from rotkehlchen.constants.assets import (
     A_LINK,
     A_USD,
 )
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -33,7 +33,7 @@ from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.types import EvmTokenKind, Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 UNDERLYING_ASSET_PRICES = {
@@ -157,9 +157,9 @@ def test_parsing_forex_cache_works(
 def test_fallback_to_coingecko(inquirer):  # pylint: disable=unused-argument
     """Cryptocompare does not return current prices for some assets.
     For those we are going to be using coingecko"""
-    price = inquirer.find_usd_price(EthereumToken('0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'))  # RARRI # noqa: E501
+    price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'))  # RARRI # noqa: E501
     assert price != Price(ZERO)
-    price = inquirer.find_usd_price(EthereumToken('0x679131F591B4f369acB8cd8c51E68596806c3916'))  # TLN # noqa: E501
+    price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0x679131F591B4f369acB8cd8c51E68596806c3916'))  # TLN # noqa: E501
     assert price != Price(ZERO)
 
 
@@ -285,46 +285,52 @@ def test_find_usd_price_via_second_oracle(inquirer):
 def test_price_underlying_tokens(inquirer, globaldb):
     aave_weight, link_weight, crv_weight = FVal('0.6'), FVal('0.2'), FVal('0.2')
     address = make_ethereum_address()
-    token = EthereumToken.initialize(
+    identifier = ethaddress_to_identifier(address)
+    token = EvmToken.initialize(
         address=address,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='Test',
         symbol='YAB',
         underlying_tokens=[
-            UnderlyingToken(address=A_AAVE.ethereum_address, weight=aave_weight),
-            UnderlyingToken(address=A_LINK.ethereum_address, weight=link_weight),
-            UnderlyingToken(address=A_CRV.ethereum_address, weight=crv_weight),
+            UnderlyingToken(address=A_AAVE.evm_address, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=aave_weight),  # noqa: E501
+            UnderlyingToken(address=A_LINK.evm_address, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=link_weight),  # noqa: E501
+            UnderlyingToken(address=A_CRV.evm_address, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=crv_weight),  # noqa: E501
         ],
     )
     globaldb.add_asset(
-        asset_id=ethaddress_to_identifier(address),
+        asset_id=identifier,
         asset_type=AssetType.ETHEREUM_TOKEN,
         data=token,
     )
 
-    price = inquirer.find_price(EthereumToken(address), A_USD)
+    price = inquirer.find_price(EvmToken(identifier), A_USD)
     assert price == FVal(67)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
-    addess = '0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'
+    address = '0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'
+    identifier = ethaddress_to_identifier(address)
     inquirer.inject_ethereum(ethereum_manager)
-    token = EthereumToken.initialize(
-        address=addess,
+    token = EvmToken.initialize(
+        address=address,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='Uniswap LINK/ETH',
         symbol='UNI-V2',
         protocol='UNI-V2',
     )
     globaldb.add_asset(
-        asset_id=ethaddress_to_identifier(addess),
+        asset_id=identifier,
         asset_type=AssetType.ETHEREUM_TOKEN,
         data=token,
     )
 
-    price = inquirer.find_uniswap_v2_lp_price(EthereumToken(addess))
+    price = inquirer.find_uniswap_v2_lp_price(EvmToken(identifier))
     assert price is not None
 
 
@@ -332,12 +338,13 @@ def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
     address = '0xb19059ebb43466C323583928285a49f558E572Fd'
+    identifier = ethaddress_to_identifier(address)
     inquirer_defi.inject_ethereum(ethereum_manager)
 
-    price = inquirer_defi.find_curve_pool_price(EthereumToken(address))
+    price = inquirer_defi.find_curve_pool_price(EvmToken(identifier))
     assert price is not None
     # Check that the protocol is correctly caught by the inquirer
-    assert price == inquirer_defi.find_usd_price(EthereumToken(address))
+    assert price == inquirer_defi.find_usd_price(EvmToken(identifier))
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

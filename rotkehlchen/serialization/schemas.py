@@ -9,7 +9,7 @@ from rotkehlchen.api.v1.fields import (
     TimestampField,
 )
 from rotkehlchen.api.v1.schemas import UnderlyingTokenInfoSchema
-from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
+from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
 
 
@@ -22,7 +22,7 @@ class AssetDataSchema(Schema):
     swapped_for = AssetField(required=True, allow_none=True)
     cryptocompare = fields.String(required=True, allow_none=True)
     coingecko = fields.String(required=True, allow_none=True)
-    ethereum_address = EthereumAddressField(required=False)
+    evm_address = EthereumAddressField(required=False)
     decimals = fields.Integer(required=False)
     protocol = fields.String(allow_none=True)
     underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), allow_none=True)
@@ -49,17 +49,21 @@ class AssetDataSchema(Schema):
                 underlying_tokens.append(UnderlyingToken(
                     address=entry['address'],
                     weight=entry['weight'],
+                    chain=data['chain'],
+                    token_kind=data['token_kind'],
                 ))
 
         asset_type = data['asset_type']
-        extra_information: Union[Dict[str, Any], EthereumToken]
+        extra_information: Union[Dict[str, Any], EvmToken]
         swapped_for, swapped_for_ident = data.pop('swapped_for'), None
         if swapped_for is not None:
             swapped_for_ident = swapped_for.identifier
 
         if asset_type == AssetType.ETHEREUM_TOKEN:
-            extra_information = EthereumToken.initialize(
-                address=data.pop('ethereum_address'),
+            extra_information = EvmToken.initialize(
+                address=data.pop('evm_address'),
+                chain=data.pop('chain'),
+                token_kind=data.pop('token_kind'),
                 name=data.get('name'),
                 symbol=data.get('symbol'),
                 decimals=data.pop('decimals'),

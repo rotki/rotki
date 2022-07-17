@@ -16,7 +16,7 @@ from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, Timestamp, Tuple, Union
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp, Tuple, Union
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -87,7 +87,7 @@ class DBEth2():
             cursor: 'DBCursor',
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            address: Optional[ChecksumEthAddress] = None,
+            address: Optional[ChecksumEvmAddress] = None,
     ) -> List[Eth2Deposit]:
         """Returns a list of Eth2Deposit filtered by time and address"""
         query = (

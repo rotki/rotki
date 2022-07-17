@@ -4,7 +4,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.types import MissingPrice
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_COMP, A_ETH, A_EUR, A_USD
 from rotkehlchen.exchanges.data_structures import Trade
@@ -240,7 +240,7 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
     Regression for https://github.com/rotki/rotki/issues/432
     Updated with https://github.com/rotki/rotki/pull/4196
     """
-    fgp = EthereumToken('0xd9A8cfe21C232D485065cb62a96866799d4645f7')
+    fgp = EvmToken('eip155:1/erc20:0xd9A8cfe21C232D485065cb62a96866799d4645f7')
     time = Timestamp(1492685761)
     trade = Trade(
         timestamp=time,

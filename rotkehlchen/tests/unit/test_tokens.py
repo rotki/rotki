@@ -5,7 +5,7 @@ from flaky import flaky
 
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.tokens import EthTokens, generate_multicall_chunks
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import multicall
 from rotkehlchen.constants.assets import A_OMG
 from rotkehlchen.fval import FVal
@@ -30,8 +30,8 @@ def test_detect_tokens_for_addresses(ethtokens):
     USD price queries are mocked so we don't care about the result.
     Just check that all prices are included
     """
-    addr1 = string_to_ethereum_address('0x8d89170b92b2Be2C08d57C48a7b190a2f146720f')
-    addr2 = string_to_ethereum_address('0xB756AD52f3Bf74a7d24C67471E0887436936504C')
+    addr1 = string_to_evm_address('0x8d89170b92b2Be2C08d57C48a7b190a2f146720f')
+    addr2 = string_to_evm_address('0xB756AD52f3Bf74a7d24C67471E0887436936504C')
 
     ethtokens.ethereum.multicall_used = False
 

@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.utils import (
     ethaddress_to_asset,
     multicall_specific,
 )
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
+from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 from .constants import CPT_DXDAO_MESA
@@ -217,7 +217,7 @@ class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
             self.contract.address: (self._decode_events,),  # noqa: E501
         }

@@ -10,10 +10,10 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 
-def _get_timestamps(db: DBEns, addresses: List[ChecksumEthAddress]):
+def _get_timestamps(db: DBEns, addresses: List[ChecksumEvmAddress]):
     timestamps = []
     with db.db.conn.read_ctx() as cursor:
         for value in db.get_reverse_ens(cursor, addresses).values():

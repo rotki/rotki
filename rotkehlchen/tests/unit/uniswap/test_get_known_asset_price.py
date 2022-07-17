@@ -20,7 +20,7 @@ def test_known_asset_has_usd_price(mock_uniswap, inquirer):  # pylint: disable=u
         unknown_assets=unknown_assets,
     )
 
-    assert known_asset_price == {A_WETH.ethereum_address: USD_PRICE_WETH}
+    assert known_asset_price == {A_WETH.evm_address: USD_PRICE_WETH}
     assert unknown_assets == set()
 
 

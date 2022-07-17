@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Set, Tuple
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 
 @dataclass(init=True, repr=True)
@@ -21,7 +21,7 @@ class NFTLiquidityPool(LiquidityPool):
         return result
 
 
-AddressToUniswapV3LPBalances = Dict[ChecksumEthAddress, List[NFTLiquidityPool]]
+AddressToUniswapV3LPBalances = Dict[ChecksumEvmAddress, List[NFTLiquidityPool]]
 
 
 class UniswapV3ProtocolBalance(NamedTuple):
@@ -31,5 +31,5 @@ class UniswapV3ProtocolBalance(NamedTuple):
     Unknown assets are those we would have to try to query through uniswap directly.
     """
     address_balances: AddressToUniswapV3LPBalances
-    known_assets: Set[EthereumToken]
-    unknown_assets: Set[EthereumToken]
+    known_assets: Set[EvmToken]
+    unknown_assets: Set[EvmToken]

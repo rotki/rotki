@@ -1,9 +1,11 @@
-from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Set, Type
+from rotkehlchen.constants.resolver import ChainID
+from rotkehlchen.types import EvmTokenKind
 
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
 if TYPE_CHECKING:
-    from rotkehlchen.types import ChecksumEthAddress, Timestamp
+    from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 
 class AssetType(DBEnumMixIn):
@@ -33,6 +35,25 @@ class AssetType(DBEnumMixIn):
     AVALANCHE_TOKEN = 24
     SOLANA_TOKEN = 25
     NFT = 26
+    OPTIMISM_TOKEN = 27
+    ARBITRUM_TOKEN = 28
+    GNOSIS_TOKEN = 29
+    POLYGON_TOKEN = 30
+    FANTOM_TOKEN = 31
+
+    @classmethod
+    def evm_compatible_types(cls: Type['AssetType']) -> Set['AssetType']:
+        return {
+            AssetType.ETHEREUM_TOKEN,
+            AssetType.OPTIMISM_TOKEN,
+            AssetType.ARBITRUM_TOKEN,
+            AssetType.GNOSIS_TOKEN,
+            AssetType.POLYGON_TOKEN,
+            AssetType.FANTOM_TOKEN,
+        }
+
+    def is_evm_compatible(self) -> bool:
+        return self in self.evm_compatible_types()
 
 
 class AssetData(NamedTuple):
@@ -46,7 +67,9 @@ class AssetData(NamedTuple):
     started: Optional['Timestamp']
     forked: Optional[str]
     swapped_for: Optional[str]
-    ethereum_address: Optional['ChecksumEthAddress']
+    evm_address: Optional['ChecksumEvmAddress']
+    chain: Optional[ChainID]
+    token_kind: Optional[EvmTokenKind]
     decimals: Optional[int]
     # None means, no special mapping. '' means not supported
     cryptocompare: Optional[str]
@@ -57,4 +80,8 @@ class AssetData(NamedTuple):
         result = self._asdict()  # pylint: disable=no-member
         result.pop('identifier')
         result['asset_type'] = str(self.asset_type)
+        if self.chain is not None:
+            result['chain'] = self.chain.serialize()
+        if self.token_kind is not None:
+            result['token_kind'] = self.token_kind.serialize()
         return result

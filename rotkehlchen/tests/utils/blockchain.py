@@ -5,11 +5,12 @@ from unittest.mock import patch
 from web3 import Web3
 from web3._utils.abi import get_abi_input_types, get_abi_output_types
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -19,7 +20,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import BTCAddress, ChecksumEthAddress
+from rotkehlchen.types import BTCAddress, ChecksumEvmAddress
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 
@@ -72,9 +73,9 @@ def assert_eth_balances_result(
         result: Dict[str, Any],
         eth_accounts: List[str],
         eth_balances: List[str],
-        token_balances: Dict[EthereumToken, List[str]],
+        token_balances: Dict[EvmToken, List[str]],
         also_btc: bool,
-        expected_liabilities: Dict[EthereumToken, List[str]] = None,
+        expected_liabilities: Dict[EvmToken, List[str]] = None,
         totals_only: bool = False,
 ) -> None:
     """Asserts for correct ETH blockchain balances when mocked in tests
@@ -152,16 +153,17 @@ def assert_eth_balances_result(
             assert FVal(totals[symbol]['usd_value']) > ZERO
 
 
-def _get_token(value: Any) -> Optional[EthereumToken]:
+def _get_token(value: Any) -> Optional[EvmToken]:
     """Interprets the given value as token if possible"""
     if isinstance(value, str):
         try:
-            token = EthereumToken(value)
+            identifier = strethaddress_to_identifier(value)
+            token = EvmToken(identifier)
         except (UnknownAsset, DeserializationError):
             # not a token
             return None
         return token
-    if isinstance(value, EthereumToken):
+    if isinstance(value, EvmToken):
         return value
     # else
     return None
@@ -188,7 +190,7 @@ def mock_beaconchain(
 
 
 def mock_etherscan_query(
-        eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]],
+        eth_map: Dict[ChecksumEvmAddress, Dict[Union[str, EvmToken], Any]],
         etherscan: Etherscan,
         original_queries: Optional[List[str]],
         extra_flags: Optional[List[str]],
@@ -448,7 +450,7 @@ def mock_etherscan_query(
                             if given_asset is None:
                                 # not a token
                                 continue
-                            if token_address != given_asset.ethereum_address:
+                            if token_address != given_asset.evm_address:
                                 continue
                             value_to_add = int(value)
                             break
@@ -483,7 +485,7 @@ def mock_etherscan_query(
                             # not a token
                             continue
 
-                        if token_address != given_asset.ethereum_address:
+                        if token_address != given_asset.evm_address:
                             continue
                         value_to_add = int(value)
                         break

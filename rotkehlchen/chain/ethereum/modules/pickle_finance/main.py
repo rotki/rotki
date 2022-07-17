@@ -10,7 +10,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import ChecksumEthAddress, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
@@ -58,8 +58,8 @@ class PickleFinance(EthereumModule):
 
     def get_dill_balances(
         self,
-        addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, DillBalance]:
+        addresses: List[ChecksumEvmAddress],
+    ) -> Dict[ChecksumEvmAddress, DillBalance]:
         """
         Query information for amount locked, pending rewards and time until unlock
         for Pickle's dill.
@@ -131,11 +131,11 @@ class PickleFinance(EthereumModule):
 
     def balances_in_protocol(
         self,
-        addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, List['AssetBalance']]:
+        addresses: List[ChecksumEvmAddress],
+    ) -> Dict[ChecksumEvmAddress, List['AssetBalance']]:
         """Queries all the pickles deposited and available to claim in the protocol"""
         dill_balances = self.get_dill_balances(addresses)
-        balances_per_address: Dict[ChecksumEthAddress, List['AssetBalance']] = defaultdict(list)
+        balances_per_address: Dict[ChecksumEvmAddress, List['AssetBalance']] = defaultdict(list)
         for address, dill_balance in dill_balances.items():
             pickles = dill_balance.dill_amount + dill_balance.pending_rewards
             if pickles.balance.amount != 0:
@@ -143,10 +143,10 @@ class PickleFinance(EthereumModule):
         return balances_per_address
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
         return self.balances_in_protocol([address]).get(address, None)
 
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         pass
 
     def deactivate(self) -> None:

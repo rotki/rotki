@@ -11,7 +11,7 @@ from gql.transport.requests import RequestsHTTPTransport
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -40,7 +40,7 @@ def format_query_indentation(querystr: str) -> str:
 def get_common_params(
         from_ts: Timestamp,
         to_ts: Timestamp,
-        address: ChecksumEthAddress,
+        address: ChecksumEvmAddress,
         address_type: Literal['Bytes!', 'String!'] = 'Bytes!',
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     param_types = {

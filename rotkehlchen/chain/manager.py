@@ -22,7 +22,7 @@ from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
@@ -48,7 +48,7 @@ from rotkehlchen.chain.ethereum.modules import (
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerPoolBalance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.tokens import EthTokens
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
@@ -65,6 +65,7 @@ from rotkehlchen.constants.assets import (
     A_LQTY,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -83,7 +84,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     BTCAddress,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     Eth2PubKey,
     ListOfBlockchainAddresses,
     Location,
@@ -171,13 +172,13 @@ T = TypeVar('T')
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BlockchainBalances:
     db: 'DBHandler'  # Need this to serialize BTC accounts with xpub mappings
-    eth: DefaultDict[ChecksumEthAddress, BalanceSheet] = field(init=False)
+    eth: DefaultDict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     eth2: DefaultDict[Eth2PubKey, BalanceSheet] = field(init=False)
     btc: Dict[BTCAddress, Balance] = field(init=False)
     bch: Dict[BTCAddress, Balance] = field(init=False)
     ksm: Dict[KusamaAddress, BalanceSheet] = field(init=False)
     dot: Dict[PolkadotAddress, BalanceSheet] = field(init=False)
-    avax: DefaultDict[ChecksumEthAddress, BalanceSheet] = field(init=False)
+    avax: DefaultDict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
 
     def copy(self) -> 'BlockchainBalances':
         balances = BlockchainBalances(db=self.db)
@@ -344,7 +345,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.beaconchain = beaconchain
         self.btc_derivation_gap_limit = btc_derivation_gap_limit
         self.defi_balances_last_query_ts = Timestamp(0)
-        self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
+        self.defi_balances: Dict[ChecksumEvmAddress, List[DefiProtocolBalances]] = {}
 
         self.defi_lock = Semaphore()
         self.btc_lock = Semaphore()
@@ -411,7 +412,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         for name, module in self.eth_modules.items():
             yield name, module
 
-    def queried_addresses_for_module(self, module: ModuleName) -> List[ChecksumEthAddress]:
+    def queried_addresses_for_module(self, module: ModuleName) -> List[ChecksumEvmAddress]:
         """Returns the addresses to query for the given module/protocol"""
         with self.database.conn.read_ctx() as cursor:
             result = QueriedAddresses(self.database).get_queried_addresses_for_module(cursor, module)  # noqa: E501
@@ -879,7 +880,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     def modify_btc_bch_avax_accounts(
             self,
-            accounts: Union[List[BTCAddress], List[ChecksumEthAddress]],
+            accounts: Union[List[BTCAddress], List[ChecksumEvmAddress]],
             blockchain: Literal[
                 SupportedBlockchain.BITCOIN,
                 SupportedBlockchain.BITCOIN_CASH,
@@ -904,7 +905,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     def modify_eth_accounts(
             self,
-            accounts: List[ChecksumEthAddress],
+            accounts: List[ChecksumEvmAddress],
             append_or_remove: Literal['append', 'remove'],
     ) -> None:
         """May raise:
@@ -915,7 +916,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self.flush_cache('query_ethereum_balances')
 
             for account in accounts:
-                address = string_to_ethereum_address(account)
+                address = string_to_evm_address(account)
                 if append_or_remove == 'append':
                     self.accounts.eth.append(address)
                     for _, module in self.iterate_modules():
@@ -1020,8 +1021,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def _update_balances_after_token_query(
             self,
             dsr_proxy_append: bool,
-            balance_result: Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]],
-            token_usd_price: Dict[EthereumToken, Price],
+            balance_result: Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]],
+            token_usd_price: Dict[EvmToken, Price],
     ) -> None:
         # Update the per account token balance and usd value
         eth_balances = self.balances.eth
@@ -1069,7 +1070,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             token_usd_price=token_usd_price,
         )
 
-    def query_defi_balances(self) -> Dict[ChecksumEthAddress, List[DefiProtocolBalances]]:
+    def query_defi_balances(self) -> Dict[ChecksumEvmAddress, List[DefiProtocolBalances]]:
         """Queries DeFi balances from Zerion contract and updates the state
 
         - RemoteError if an external service such as Etherscan or cryptocompare
@@ -1175,7 +1176,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 if isinstance(lp, BalancerPoolBalance):
                     balances[loc_key][lp.pool_token] = lp.user_balance
                 else:
-                    balances[loc_key][EthereumToken(lp.address)] = lp.user_balance
+                    balances[loc_key][EvmToken(ethaddress_to_identifier(lp.address))] = lp.user_balance  # noqa: E501
 
     def _add_protocol_balances(self) -> None:
         """Also count token balances that may come from various protocols"""
@@ -1278,7 +1279,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     def _add_account_defi_balances_to_token(
             self,
-            account: ChecksumEthAddress,
+            account: ChecksumEvmAddress,
             balances: List[DefiProtocolBalances],
     ) -> None:
         """Add a single account's defi balances to per account"""
@@ -1311,7 +1312,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 continue
 
             try:
-                token = EthereumToken(entry.base_balance.token_address)
+                token = EvmToken(entry.base_balance.token_address)
             except UnknownAsset:
                 log.warning(
                     f'Found unknown asset {entry.base_balance.token_symbol} in DeFi '

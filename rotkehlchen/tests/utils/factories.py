@@ -9,7 +9,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.fval import FVal
@@ -17,7 +17,7 @@ from rotkehlchen.types import (
     AddressbookEntry,
     ApiKey,
     ApiSecret,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     EthereumTransaction,
     Location,
     Timestamp,
@@ -64,7 +64,7 @@ def make_api_secret() -> ApiSecret:
     return ApiSecret(base64.b64encode(make_random_b64bytes(128)))
 
 
-def make_ethereum_address() -> ChecksumEthAddress:
+def make_ethereum_address() -> ChecksumEvmAddress:
     return to_checksum_address('0x' + make_random_bytes(20).hex())
 
 
@@ -186,4 +186,4 @@ UNIT_BTC_ADDRESS1 = '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2'
 UNIT_BTC_ADDRESS2 = '1CounterpartyXXXXXXXXXXXXXXXUWLpVr'
 UNIT_BTC_ADDRESS3 = '18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2'
 
-ZERO_ETH_ADDRESS = string_to_ethereum_address('0x' + '0' * 40)
+ZERO_ETH_ADDRESS = string_to_evm_address('0x' + '0' * 40)

@@ -5,10 +5,10 @@ import os
 from typing import Any, Dict, List, Optional
 
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 
 MAX_BLOCKTIME_CACHE = 250  # 55 mins with 13 secs avg block time
-ETH_SPECIAL_ADDRESS = string_to_ethereum_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
+ETH_SPECIAL_ADDRESS = string_to_evm_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
 
 
 class EthereumConstants():

@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, Callable, List
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EthereumTransaction
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-GITCOIN_BULK_CHECKOUT = string_to_ethereum_address('0x7d655c57f71464B6f83811C55D84009Cd9f5221C')
+GITCOIN_BULK_CHECKOUT = string_to_evm_address('0x7d655c57f71464B6f83811C55D84009Cd9f5221C')
 
 
 class GitcoinDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -37,7 +37,7 @@ class GitcoinDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def _maybe_enrich_gitcoin_transfers(  # pylint: disable=no-self-use
             self,
-            token: EthereumToken,  # pylint: disable=unused-argument
+            token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,  # pylint: disable=unused-argument
             transaction: EthereumTransaction,
             event: HistoryBaseEntry,

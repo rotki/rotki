@@ -7,7 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.modules.yearn.db import (
     get_yearn_vaults_events,
@@ -468,14 +468,14 @@ EXPECTED_HISTORY = {
 }
 
 EXPECTED_V2_HISTORY = {
-    '_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44': YearnVaultHistory(
+    'eip155:1/erc20:0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44': YearnVaultHistory(
         events=[YearnVaultEvent(
             event_type='deposit',
             block_number=12462638,
             timestamp=Timestamp(1621397797),
-            from_asset=EthereumToken('0x94e131324b6054c0D789b190b2dAC504e4361b53'),
+            from_asset=EvmToken('eip155:1/erc20:0x94e131324b6054c0D789b190b2dAC504e4361b53'),
             from_value=Balance(amount=FVal('32064.715735449204040742'), usd_value=ONE),
-            to_asset=EthereumToken('0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44'),
+            to_asset=EvmToken('eip155:1/erc20:0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44'),
             to_value=Balance(amount=FVal('32064.715735449204040742'), usd_value=ONE),
             realized_pnl=None,
             tx_hash=deserialize_evm_tx_hash(
@@ -487,9 +487,9 @@ EXPECTED_V2_HISTORY = {
             event_type='withdraw',
             block_number=12494161,
             timestamp=Timestamp(1621820621),
-            from_asset=EthereumToken('0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44'),
+            from_asset=EvmToken('eip155:1/erc20:0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44'),
             from_value=Balance(amount=FVal('32064.715735449204040742'), usd_value=ONE),
-            to_asset=EthereumToken('0x94e131324b6054c0D789b190b2dAC504e4361b53'),
+            to_asset=EvmToken('eip155:1/erc20:0x94e131324b6054c0D789b190b2dAC504e4361b53'),
             to_value=Balance(amount=FVal('32092.30659836985292638'), usd_value=ONE),
             realized_pnl=None,
             tx_hash=deserialize_evm_tx_hash(
@@ -642,8 +642,8 @@ def test_query_yearn_vault_v2_balances(rotkehlchen_api_server, ethereum_accounts
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
         token_balances={
-            EthereumToken('0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9'): ['70000000'],
-            EthereumToken('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'): ['2550000000000000000000'],  # noqa: E501
+            EvmToken('0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9'): ['70000000'],
+            EvmToken('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'): ['2550000000000000000000'],  # noqa: E501
         },
     )
 
@@ -686,8 +686,8 @@ def test_query_yearn_vault_v2_history(rotkehlchen_api_server, ethereum_accounts)
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
         token_balances={
-            EthereumToken('0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9'): ['70000000'],
-            EthereumToken('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'): ['2550000000000000000000'],  # noqa: E501
+            EvmToken('0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9'): ['70000000'],
+            EvmToken('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'): ['2550000000000000000000'],  # noqa: E501
         },
         original_queries=['blocknobytime'],
     )
@@ -714,7 +714,7 @@ def test_query_yearn_vault_v2_history(rotkehlchen_api_server, ethereum_accounts)
 
     result = result[TEST_V2_ACC2]
     check_vault_history(
-        '_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44',
+        'eip155:1/erc20:0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44',
         EXPECTED_V2_HISTORY,
         result,
     )

@@ -5,7 +5,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
@@ -25,7 +25,7 @@ from rotkehlchen.chain.ethereum.modules.convex.constants import (
 )
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 
@@ -88,7 +88,7 @@ class ConvexDecoder(DecoderInterface):
 
     @staticmethod
     def _maybe_enrich_convex_transfers(
-            token: EthereumToken,  # pylint: disable=unused-argument
+            token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,
             event: HistoryBaseEntry,
@@ -113,8 +113,8 @@ class ConvexDecoder(DecoderInterface):
             return True
         return False
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
-        decoder_mappings: Dict[ChecksumEthAddress, Tuple[Callable, ...]] = {
+    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
+        decoder_mappings: Dict[ChecksumEvmAddress, Tuple[Callable, ...]] = {
             BOOSTER: (self._decode_convex_events,),
             CVX_LOCKER: (self._decode_convex_events,),
             CVX_LOCKER_V2: (self._decode_convex_events,),

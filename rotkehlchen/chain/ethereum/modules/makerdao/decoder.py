@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     multicall,
@@ -72,7 +72,7 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
+from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
@@ -115,7 +115,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             msg_aggregator=msg_aggregator,
         )
 
-    def _get_address_or_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
+    def _get_address_or_proxy(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
         if self.base.is_tracked(address):
             return address
 
@@ -130,7 +130,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
     def _get_vault_details(
             self,
             cdp_id: int,
-    ) -> Tuple[ChecksumEthAddress, ChecksumEthAddress]:
+    ) -> Tuple[ChecksumEvmAddress, ChecksumEvmAddress]:
         """
         Queries the CDPManager to get the CDP details.
         Returns a tuple with the CDP address and the CDP owner as of the
@@ -554,7 +554,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
             MAKERDAO_BAT_A_JOIN.address: (self.decode_makerdao_vault_action, A_BAT, 'BAT-A'),
             MAKERDAO_ETH_A_JOIN.address: (self.decode_makerdao_vault_action, A_ETH, 'ETH-A'),
@@ -583,8 +583,8 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             MAKERDAO_MATIC_A_JOIN.address: (self.decode_makerdao_vault_action, A_MATIC, 'MATIC-A'),
             MAKERDAO_POT.address: (self.decode_pot_for_dsr,),
             MAKERDAO_DAI_JOIN.address: (self.decode_makerdao_debt_payback,),
-            string_to_ethereum_address('0xA26e15C895EFc0616177B7c1e7270A4C7D51C997'): (self.decode_proxy_creation,),  # noqa: E501
-            string_to_ethereum_address('0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'): (self.decode_saidai_migration,),  # noqa: E501
+            string_to_evm_address('0xA26e15C895EFc0616177B7c1e7270A4C7D51C997'): (self.decode_proxy_creation,),  # noqa: E501
+            string_to_evm_address('0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'): (self.decode_saidai_migration,),  # noqa: E501
             MAKERDAO_CDP_MANAGER.address: (self.decode_cdp_manager_events,),
         }
 

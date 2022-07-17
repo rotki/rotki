@@ -13,7 +13,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 
@@ -48,7 +48,7 @@ class AvalancheManager():
     def get_latest_block_number(self) -> int:
         return self.w3.eth.block_number
 
-    def get_avax_balance(self, account: ChecksumEthAddress) -> FVal:
+    def get_avax_balance(self, account: ChecksumEvmAddress) -> FVal:
         """Gets the balance of the given account in AVAX
 
         May raise:
@@ -70,8 +70,8 @@ class AvalancheManager():
 
     def get_multiavax_balance(
             self,
-            accounts: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, FVal]:
+            accounts: List[ChecksumEvmAddress],
+    ) -> Dict[ChecksumEvmAddress, FVal]:
         """Returns a dict with keys being accounts and balances in AVAX
 
         May raise:
@@ -96,7 +96,7 @@ class AvalancheManager():
         block_data['hash'] = hex_or_bytes_to_str(block_data['hash'])
         return dict(block_data)
 
-    def get_code(self, account: ChecksumEthAddress) -> str:
+    def get_code(self, account: ChecksumEvmAddress) -> str:
         """Gets the deployment bytecode at the given address
 
         May raise:
@@ -144,7 +144,7 @@ class AvalancheManager():
 
     def call_contract(
             self,
-            contract_address: ChecksumEthAddress,
+            contract_address: ChecksumEvmAddress,
             abi: List,
             method_name: str,
             arguments: Optional[List[Any]] = None,
@@ -168,7 +168,7 @@ class AvalancheManager():
         return result
 
     @staticmethod
-    def get_basic_contract_info(address: ChecksumEthAddress) -> Dict[str, Any]:
+    def get_basic_contract_info(address: ChecksumEvmAddress) -> Dict[str, Any]:
         """
         Query a contract address in pangolin graph node and return basic information as:
         - Decimals

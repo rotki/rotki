@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Callable, List
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
@@ -34,11 +34,11 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             msg_aggregator=msg_aggregator,
         )
         jars = GlobalDBHandler().get_ethereum_tokens(protocol=PICKLE_JAR_PROTOCOL)
-        self.pickle_contracts = {jar.ethereum_address for jar in jars}
+        self.pickle_contracts = {jar.evm_address for jar in jars}
 
     def _maybe_enrich_pickle_transfers(  # pylint: disable=no-self-use
             self,
-            token: EthereumToken,  # pylint: disable=unused-argument
+            token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,
             event: HistoryBaseEntry,
@@ -58,7 +58,7 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             event.location_label == transaction.from_address and
             hex_or_bytes_to_address(tx_log.topics[2]) in self.pickle_contracts
         ):
-            if EthereumToken(tx_log.address) != event.asset:
+            if EvmToken(tx_log.address) != event.asset:
                 return True
             amount_raw = hex_or_bytes_to_int(tx_log.data)
             amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
@@ -86,7 +86,7 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             hex_or_bytes_to_address(tx_log.topics[2]) == ZERO_ADDRESS and
             hex_or_bytes_to_address(tx_log.topics[1]) in transaction.from_address
         ):
-            if event.asset != EthereumToken(tx_log.address):
+            if event.asset != EvmToken(tx_log.address):
                 return True
             amount_raw = hex_or_bytes_to_int(tx_log.data)
             amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
@@ -102,7 +102,7 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             hex_or_bytes_to_address(tx_log.topics[2]) == transaction.from_address and
             hex_or_bytes_to_address(tx_log.topics[1]) in self.pickle_contracts
         ):
-            if event.asset != EthereumToken(tx_log.address):
+            if event.asset != EvmToken(tx_log.address):
                 return True
             amount_raw = hex_or_bytes_to_int(tx_log.data)
             amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
