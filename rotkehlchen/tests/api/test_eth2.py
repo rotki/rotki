@@ -340,7 +340,7 @@ def test_eth2_add_eth1_account(rotkehlchen_api_server):
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             'blockchainbalancesresource',
-        ), json={'blockchain': 'eth2'})
+        ))
         result = assert_proper_response_with_result(response)
         per_acc = result['per_account']
         assert FVal(per_acc['ETH'][new_account]['assets']['ETH']['amount']) > ZERO
