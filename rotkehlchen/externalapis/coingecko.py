@@ -35,7 +35,7 @@ class CoingeckoAssetData(NamedTuple):
     image_url: str
 
 
-DELISTED_ASSETS = [
+DELISTED_ASSETS = {
     strethaddress_to_identifier('0x0F72714B35a366285Df85886A2eE174601292A17'),
     'FLUZ',
     'EBCH',
@@ -266,7 +266,7 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0xC76FB75950536d98FA62ea968E1D6B45ffea2A55'),
     'FAIR',
     'BUX',
-]
+}
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [
     "btc",
