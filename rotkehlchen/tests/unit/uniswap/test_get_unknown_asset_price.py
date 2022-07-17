@@ -28,7 +28,7 @@ def test_unknown_asset_has_usd_price(mock_uniswap):
     asset_price = mock_uniswap._get_unknown_asset_price_graph(unknown_assets=unknown_assets)
 
     exp_asset_price = {
-        A_CAR.ethereum_address: Price(FVal(TOKEN_DAY_DATA_CAR['priceUSD'])),
+        A_CAR.evm_address: Price(FVal(TOKEN_DAY_DATA_CAR['priceUSD'])),
     }
     assert asset_price == exp_asset_price
 

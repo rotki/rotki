@@ -35,7 +35,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     EthereumInternalTransaction,
     EthereumTransaction,
     EVMTxHash,
@@ -241,7 +241,7 @@ class Etherscan(ExternalServiceWithApiKey):
     @overload
     def get_transactions(
             self,
-            account: ChecksumEthAddress,
+            account: ChecksumEvmAddress,
             action: Literal['txlistinternal'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
@@ -251,7 +251,7 @@ class Etherscan(ExternalServiceWithApiKey):
     @overload
     def get_transactions(
             self,
-            account: ChecksumEthAddress,
+            account: ChecksumEvmAddress,
             action: Literal['txlist'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
@@ -260,7 +260,7 @@ class Etherscan(ExternalServiceWithApiKey):
 
     def get_transactions(
             self,
-            account: ChecksumEthAddress,
+            account: ChecksumEvmAddress,
             action: Literal['txlist', 'txlistinternal'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
@@ -336,7 +336,7 @@ class Etherscan(ExternalServiceWithApiKey):
 
     def get_token_transaction_hashes(
             self,
-            account: ChecksumEthAddress,
+            account: ChecksumEvmAddress,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> Iterator[List[str]]:
@@ -411,7 +411,7 @@ class Etherscan(ExternalServiceWithApiKey):
         transaction_data = self._query(module='proxy', action='eth_getTransactionByHash', options=options)  # noqa: E501
         return transaction_data
 
-    def get_code(self, account: ChecksumEthAddress) -> str:
+    def get_code(self, account: ChecksumEvmAddress) -> str:
         """Gets the deployment bytecode at the given address
 
         May raise:
@@ -436,7 +436,7 @@ class Etherscan(ExternalServiceWithApiKey):
 
     def eth_call(
             self,
-            to_address: ChecksumEthAddress,
+            to_address: ChecksumEvmAddress,
             input_data: str,
     ) -> str:
         """Performs an eth_call on the given address and the given input data.
@@ -455,7 +455,7 @@ class Etherscan(ExternalServiceWithApiKey):
 
     def get_logs(
             self,
-            contract_address: ChecksumEthAddress,
+            contract_address: ChecksumEvmAddress,
             topics: List[str],
             from_block: int,
             to_block: Union[int, str] = 'latest',

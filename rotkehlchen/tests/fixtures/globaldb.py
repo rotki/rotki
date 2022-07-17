@@ -4,7 +4,7 @@ from typing import List, Optional
 
 import pytest
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.fval import FVal
@@ -14,7 +14,7 @@ from rotkehlchen.types import Price, Timestamp
 
 
 @pytest.fixture(name='custom_ethereum_tokens')
-def fixture_custom_ethereum_tokens() -> Optional[List[EthereumToken]]:
+def fixture_custom_ethereum_tokens() -> Optional[List[EvmToken]]:
     return None
 
 

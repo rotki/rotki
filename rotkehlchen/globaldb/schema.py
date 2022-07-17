@@ -1,12 +1,12 @@
 DB_CREATE_ETHEREUM_TOKENS_LIST = """
 CREATE TABLE IF NOT EXISTS underlying_tokens_list (
-    address VARCHAR[42] NOT NULL,
+    identifier VARCHAR[42] NOT NULL,
     weight TEXT NOT NULL,
     parent_token_entry TEXT NOT NULL,
-    FOREIGN KEY(parent_token_entry) REFERENCES ethereum_tokens(address)
+    FOREIGN KEY(parent_token_entry) REFERENCES evm_tokens(identifier)
         ON DELETE CASCADE ON UPDATE CASCADE
-    FOREIGN KEY(address) REFERENCES ethereum_tokens(address) ON UPDATE CASCADE
-    PRIMARY KEY(address, parent_token_entry)
+    FOREIGN KEY(identifier) REFERENCES evm_tokens(identifier) ON UPDATE CASCADE
+    PRIMARY KEY(identifier, parent_token_entry)
 );
 """  # noqa: E501
 
@@ -81,10 +81,13 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 26);
 # Using asset_id as a primary key here since nothing else is guaranteed to be unique
 # Advantage we have here is that by deleting the parent asset this also gets deleted
 DB_CREATE_COMMON_ASSET_DETAILS = """
-CREATE TABLE IF NOT EXISTS common_asset_details (
-    asset_id TEXT PRIMARY KEY NOT NULL,
-    forked STRING,
-    FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+CREATE TABLE IF NOT EXISTS common_asset_details(
+    identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+    name TEXT,
+    symbol TEXT,
+    coingecko TEXT,
+    cryptocompare TEXT,
+    forked TEXT,
     FOREIGN KEY(forked) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
@@ -96,13 +99,8 @@ DB_CREATE_ASSETS = """
 CREATE TABLE IF NOT EXISTS assets (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
     type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type),
-    name TEXT,
-    symbol TEXT,
     started INTEGER,
     swapped_for TEXT,
-    coingecko TEXT,
-    cryptocompare TEXT,
-    details_reference TEXT,
     FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
@@ -111,6 +109,26 @@ DB_CREATE_SETTINGS = """
 CREATE TABLE IF NOT EXISTS settings (
     name VARCHAR[24] NOT NULL PRIMARY KEY,
     value TEXT
+);
+"""
+
+DB_CREATE_EVM_TOKENS = """
+CREATE TABLE IF NOT EXISTS evm_tokens (
+    identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+    token_kind CHAR(1) NOT NULL DEFAULT('A'),
+    chain CHAR(1) NOT NULL DEFAULT('A'),
+    address VARCHAR[42] NOT NULL,
+    decimals INTEGER,
+    protocol TEXT
+);
+"""
+
+DB_CREATE_MULTIASSETS = """
+CREATE TABLE IF NOT EXISTS multiasset_collector(
+    identifier TEXT NOT NULL,
+    child_asset_id TEXT,
+    FOREIGN KEY(child_asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
+    PRIMARY KEY(identifier, child_asset_id)
 );
 """
 
@@ -179,6 +197,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_SETTINGS}
 {DB_CREATE_ASSET_TYPES}
 {DB_CREATE_ASSETS}
+{DB_CREATE_EVM_TOKENS}
+{DB_CREATE_MULTIASSETS}
 {DB_CREATE_COMMON_ASSET_DETAILS}
 {DB_CREATE_USER_OWNED_ASSETS}
 {DB_CREATE_PRICE_HISTORY_SOURCE_TYPES}

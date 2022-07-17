@@ -5,15 +5,16 @@ from typing import TYPE_CHECKING, Any, Dict, Set
 import requests
 from eth_utils import to_checksum_address
 
-from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.utils import get_or_create_ethereum_token
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SPAM_PROTOCOL, ChecksumEthAddress
+from rotkehlchen.types import SPAM_PROTOCOL, ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -26,108 +27,108 @@ log = RotkehlchenLogsAdapter(logger)
 MISSING_NAME_SPAM_TOKEN = 'Autodetected spam token'
 MISSING_SYMBOL_SPAM_TOKEN = 'SPAM-TOKEN'
 
-KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEthAddress, Dict[str, Any]] = {
+KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
     # khex.net and said to be spam by etherscan
-    string_to_ethereum_address('0x4AF9ab04615cB91e2EE8cbEDb43fb52eD205041B'): {
+    string_to_evm_address('0x4AF9ab04615cB91e2EE8cbEDb43fb52eD205041B'): {
         'name': MISSING_NAME_SPAM_TOKEN,
         'symbol': MISSING_SYMBOL_SPAM_TOKEN,
         'decimals': 18,
     },
     # yLiquidate (YQI) seems to be a scam
-    string_to_ethereum_address('0x3d3d5cCE38afb7a379B2C3175Ee56e2dC72CD7C8'): {
+    string_to_evm_address('0x3d3d5cCE38afb7a379B2C3175Ee56e2dC72CD7C8'): {
         'name': 'yLiquidate',
         'symbol': 'YQI',
         'decimals': 18,
     },
     # Old kick token
-    string_to_ethereum_address('0xC12D1c73eE7DC3615BA4e37E4ABFdbDDFA38907E'): {
+    string_to_evm_address('0xC12D1c73eE7DC3615BA4e37E4ABFdbDDFA38907E'): {
         'name': 'KICK TOKEN OLD',
         'symbol': 'KICK',
         'decimals': 18,
     },
     # kick token. Only can be withdrawn from their exchange
-    string_to_ethereum_address('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC'): {
+    string_to_evm_address('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC'): {
         'name': 'KICK TOKEN',
         'symbol': 'KICK',
         'decimals': 18,
     },
     # Fake gear token warned by etherscan
-    string_to_ethereum_address('0x6D38b496dCc9664C6908D8Afba6ff926887Fc359'): {
+    string_to_evm_address('0x6D38b496dCc9664C6908D8Afba6ff926887Fc359'): {
         'name': 'FAKE gear token',
         'symbol': MISSING_SYMBOL_SPAM_TOKEN,
         'decimals': 18,
     },
     # EthTrader Contribution (CONTRIB) few txs and all failed
-    string_to_ethereum_address('0xbe1fffB262a2C3e65c5eb90f93caf4eDC7d28c8d'): {
+    string_to_evm_address('0xbe1fffB262a2C3e65c5eb90f93caf4eDC7d28c8d'): {
         'name': 'EthTrader Contribution',
         'symbol': 'CONTRIB',
         'decimals': 18,
     },
-    string_to_ethereum_address('0x1412ECa9dc7daEf60451e3155bB8Dbf9DA349933'): {
+    string_to_evm_address('0x1412ECa9dc7daEf60451e3155bB8Dbf9DA349933'): {
         'name': 'a68.net',
         'symbol': MISSING_SYMBOL_SPAM_TOKEN,
         'decimals': 18,
     },
-    string_to_ethereum_address('0x82dfDB2ec1aa6003Ed4aCBa663403D7c2127Ff67'): {
+    string_to_evm_address('0x82dfDB2ec1aa6003Ed4aCBa663403D7c2127Ff67'): {
         'name': 'akswap.io',
         'symbol': 'akswap.io',
         'decimals': 18,
     },
-    string_to_ethereum_address('0x43661F4b1c67dd6c1e48C6Faf2887b22AeE3dDf5'): {
+    string_to_evm_address('0x43661F4b1c67dd6c1e48C6Faf2887b22AeE3dDf5'): {
         'name': 'akswap.io',
         'symbol': 'akswap.io',
         'decimals': 18,
     },
-    string_to_ethereum_address('0xF9d25EB4C75ed744596392cf89074aFaA43614a8'): {
+    string_to_evm_address('0xF9d25EB4C75ed744596392cf89074aFaA43614a8'): {
         'name': 'UP1.org',
         'symbol': MISSING_SYMBOL_SPAM_TOKEN,
         'decimals': 18,
     },
-    string_to_ethereum_address('0x01454cdC3FAb2a026CC7d1CB2aEa9B909D5bA0EE'): {
+    string_to_evm_address('0x01454cdC3FAb2a026CC7d1CB2aEa9B909D5bA0EE'): {
         'name': 'deApy.org',
         'symbol': 'deApy.org',
         'decimals': 18,
     },
-    string_to_ethereum_address('0x73885eb0dA4ba8B061acF1bfC5eA7073B07ccEA2'): {
+    string_to_evm_address('0x73885eb0dA4ba8B061acF1bfC5eA7073B07ccEA2'): {
         'name': 'Adidas fake token',
         'symbol': MISSING_SYMBOL_SPAM_TOKEN,
         'decimals': 18,
     },
-    string_to_ethereum_address('0xc85E0474068dbA5B49450c26879541EE6Cc94554'): {
+    string_to_evm_address('0xc85E0474068dbA5B49450c26879541EE6Cc94554'): {
         'name': 'KyDy.org',
         'symbol': MISSING_SYMBOL_SPAM_TOKEN,
         'decimals': 18,
     },
-    string_to_ethereum_address('0x1412ECa9dc7daEf60451e3155bB8Dbf9DA349933'): {
+    string_to_evm_address('0x1412ECa9dc7daEf60451e3155bB8Dbf9DA349933'): {
         'name': 'A68.net',
         'symbol': MISSING_SYMBOL_SPAM_TOKEN,
         'decimals': 18,
     },
     # Apple spam/scam token
-    string_to_ethereum_address('0x3c4f8Fe3Cf50eCA5439F8D4DE5BDf40Ae71860Ae'): {
+    string_to_evm_address('0x3c4f8Fe3Cf50eCA5439F8D4DE5BDf40Ae71860Ae'): {
         'name': 'Apple 29',
         'symbol': MISSING_SYMBOL_SPAM_TOKEN,
         'decimals': 18,
     },
     # Blizzard spam/scam token
-    string_to_ethereum_address('0xbb97a6449A6f5C53b7e696c8B5b6E6A53CF20143'): {
+    string_to_evm_address('0xbb97a6449A6f5C53b7e696c8B5b6E6A53CF20143'): {
         'name': 'Activision Blizzard DAO',
         'symbol': 'BLIZZARD',
         'decimals': 18,
     },
     # Audi spam/scam token
-    string_to_ethereum_address('0x9b9090DfA2cEbBef592144EE01Fe508f0c817B3A'): {
+    string_to_evm_address('0x9b9090DfA2cEbBef592144EE01Fe508f0c817B3A'): {
         'name': 'Audi Metaverse',
         'symbol': 'Audi',
         'decimals': 18,
     },
     # LunaV2.io (Luna Token)
-    string_to_ethereum_address('0xAF0b2fBeDd5d1Fda457580FB3DAbAD1F5C8bBC36'): {
+    string_to_evm_address('0xAF0b2fBeDd5d1Fda457580FB3DAbAD1F5C8bBC36'): {
         'name': 'LunaV2.io',
         'symbol': 'Luna Token',
         'decimals': 18,
     },
-    string_to_ethereum_address('0x3baB61Ad5D103Bb5b203C9092Eb3a5e11677a5D0'): {
+    string_to_evm_address('0x3baB61Ad5D103Bb5b203C9092Eb3a5e11677a5D0'): {
         'name': 'ETH2Dao.net',
         'symbol': 'ETH2DAO.net',
         'decimals': 18,
@@ -135,7 +136,7 @@ KNOWN_ETH_SPAM_TOKENS: Dict[ChecksumEthAddress, Dict[str, Any]] = {
 }
 
 
-def query_token_spam_list(db: 'DBHandler') -> Set[EthereumToken]:
+def query_token_spam_list(db: 'DBHandler') -> Set[EvmToken]:
     """Generate a set of assets that can be ignored combining information of cryptoscamdb
     and the list of spam assets KNOWN_ETH_SPAM_TOKENS. This function also makes sure to get the
     bad assets in the list of cryptoscamdb and ensures that they exists in the globaldb before
@@ -183,7 +184,7 @@ def query_token_spam_list(db: 'DBHandler') -> Set[EthereumToken]:
             log.debug(f'Failed to read address from cryptoscamdb. {str(e)}')
             continue
         try:
-            token = EthereumToken(checksumed_address)
+            token = EvmToken(checksumed_address)
         except UnknownAsset:
             continue
         if token is not None:
@@ -192,9 +193,10 @@ def query_token_spam_list(db: 'DBHandler') -> Set[EthereumToken]:
     # Try to add custom list
     for token_address, info in KNOWN_ETH_SPAM_TOKENS.items():
         try:
-            own_token = get_or_create_ethereum_token(
+            own_token = get_or_create_evm_token(
                 userdb=db,
-                ethereum_address=token_address,
+                evm_address=token_address,
+                chain=ChainID.ETHEREUM,
                 protocol=SPAM_PROTOCOL,
                 form_with_incomplete_data=True,
                 decimals=info.get('decimals', 18),

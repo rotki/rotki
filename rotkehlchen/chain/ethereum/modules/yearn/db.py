@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, List
 
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -13,7 +13,7 @@ from .structures import YearnVault, YearnVaultEvent
 
 def add_yearn_vaults_events(
         write_cursor: 'DBCursor',
-        address: ChecksumEthAddress,
+        address: ChecksumEvmAddress,
         events: List[YearnVaultEvent],
 ) -> None:
     serialized_events = [e.serialize_for_db(address) for e in events]
@@ -41,7 +41,7 @@ def add_yearn_vaults_events(
 
 def get_yearn_vaults_events(
         cursor: 'DBCursor',
-        address: ChecksumEthAddress,
+        address: ChecksumEvmAddress,
         vault: YearnVault,
         msg_aggregator: MessagesAggregator,
 ) -> List[YearnVaultEvent]:
@@ -63,7 +63,7 @@ def get_yearn_vaults_events(
 
 def get_yearn_vaults_v2_events(
         cursor: 'DBCursor',
-        address: ChecksumEthAddress,
+        address: ChecksumEvmAddress,
         from_block: int,
         to_block: int,
         msg_aggregator: MessagesAggregator,

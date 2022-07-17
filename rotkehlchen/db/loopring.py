@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -15,7 +15,7 @@ class DBLoopring():
     def add_accountid_mapping(  # pylint: disable=no-self-use
             self,
             write_cursor: 'DBCursor',
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             account_id: int,
     ) -> None:
         write_cursor.execute(
@@ -23,7 +23,7 @@ class DBLoopring():
             (f'loopring_{address}_account_id', str(account_id)),
         )
 
-    def remove_accountid_mapping(self, write_cursor: 'DBCursor', address: ChecksumEthAddress) -> None:  # pylint: disable=no-self-use  # noqa: E501
+    def remove_accountid_mapping(self, write_cursor: 'DBCursor', address: ChecksumEvmAddress) -> None:  # pylint: disable=no-self-use  # noqa: E501
         write_cursor.execute(
             'DELETE FROM multisettings WHERE name=?;',
             (f'loopring_{address}_account_id',),
@@ -32,7 +32,7 @@ class DBLoopring():
     def get_accountid_mapping(  # pylint: disable=no-self-use
             self,
             cursor: 'DBCursor',
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
     ) -> Optional[int]:
         cursor.execute(
             'SELECT value FROM multisettings WHERE name=?;',

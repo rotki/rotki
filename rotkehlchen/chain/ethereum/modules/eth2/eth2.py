@@ -15,7 +15,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import ChecksumEthAddress, Eth2PubKey, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import from_gwei, ts_now
@@ -78,7 +78,7 @@ class Eth2(EthereumModule):
 
     def get_staking_deposits(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> List[Eth2Deposit]:
         """Get the eth2 deposits for all tracked validators and all validators associated
         with any given eth1 address.
@@ -129,7 +129,7 @@ class Eth2(EthereumModule):
 
     def fetch_eth1_validator_data(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> List[ValidatorID]:
         """Query all eth1 addresses for their validators and get all corresponding deposits.
 
@@ -177,7 +177,7 @@ class Eth2(EthereumModule):
 
     def get_balances(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             fetch_validators_for_eth1: bool,
     ) -> Dict[Eth2PubKey, Balance]:
         """
@@ -228,7 +228,7 @@ class Eth2(EthereumModule):
 
     def get_details(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> List[ValidatorDetails]:
         """Go through the list of eth1 addresses and find all eth2 validators associated
         with them along with their details.
@@ -460,7 +460,7 @@ class Eth2(EthereumModule):
         ])
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:  # pylint: disable=useless-return  # noqa: E501
+    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List[AssetBalance]]:  # pylint: disable=useless-return  # noqa: E501
         """Just query balances and add detected validators to DB. Return nothing"""
         try:
             self.get_balances(
@@ -475,7 +475,7 @@ class Eth2(EthereumModule):
 
         return None
 
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         pass
 
     def deactivate(self) -> None:

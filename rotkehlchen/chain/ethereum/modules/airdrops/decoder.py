@@ -7,10 +7,10 @@ from rotkehlchen.chain.ethereum.decoding.constants import ERC20_OR_ERC721_TRANSF
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
+from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 from .constants import (
@@ -29,24 +29,24 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
 
-UNISWAP_DISTRIBUTOR = string_to_ethereum_address('0x090D4613473dEE047c3f2706764f49E0821D256e')
+UNISWAP_DISTRIBUTOR = string_to_evm_address('0x090D4613473dEE047c3f2706764f49E0821D256e')
 UNISWAP_TOKEN_CLAIMED = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 
-BADGERHUNT = string_to_ethereum_address('0x394DCfbCf25C5400fcC147EbD9970eD34A474543')
+BADGERHUNT = string_to_evm_address('0x394DCfbCf25C5400fcC147EbD9970eD34A474543')
 BADGER_HUNT_EVENT = b'\x8e\xaf\x15aI\x08\xa4\xe9\x02!A\xfeJYk\x1a\xb0\xcbr\xab2\xb2P#\xe3\xda*E\x9c\x9a3\\'  # noqa: E501
 
-ONEINCH = string_to_ethereum_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe')
+ONEINCH = string_to_evm_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe')
 ONEINCH_CLAIMED = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 
-FPIS = string_to_ethereum_address('0x61A1f84F12Ba9a56C22c31dDB10EC2e2CA0ceBCf')
-CONVEX = string_to_ethereum_address('0x2E088A0A19dda628B4304301d1EA70b114e4AcCd')
+FPIS = string_to_evm_address('0x61A1f84F12Ba9a56C22c31dDB10EC2e2CA0ceBCf')
+CONVEX = string_to_evm_address('0x2E088A0A19dda628B4304301d1EA70b114e4AcCd')
 FPIS_CONVEX_CLAIM = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\x8cW\xd7\r\xbc\xebNDX\xbb\xd6\x0e9\xd4'  # noqa: E501
 
-FOX_DISTRIBUTOR = string_to_ethereum_address('0xe099e688D12DBc19ab46D128d1Db297575474a0d')
+FOX_DISTRIBUTOR = string_to_evm_address('0xe099e688D12DBc19ab46D128d1Db297575474a0d')
 FOX_CLAIMED = b"R\x897\xb30\x08-\x89*\x98\xd4\xe4(\xab-\xcc\xa7\x84KQ\xd2'\xa1\xc0\xaeg\xf0\xb5&\x1a\xcb\xd9"  # noqa: E501
 
 
-ELFI_LOCKING = string_to_ethereum_address('0x02Bd4A3b1b95b01F2Aa61655415A5d3EAAcaafdD')
+ELFI_LOCKING = string_to_evm_address('0x02Bd4A3b1b95b01F2Aa61655415A5d3EAAcaafdD')
 ELFI_VOTE_CHANGE = b'3\x16\x1c\xf2\xda(\xd7G\xbe\x9d\xf16\xb6\xf3r\x93\x90)\x84\x94\x94rht1\x93\xc5=s\xd3\xc2\xe0'  # noqa: E501
 
 
@@ -227,7 +227,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 continue
 
             transfer_raw = hex_or_bytes_to_int(other_log.data[0:32])
-            if other_log.address == A_ELFI.ethereum_address and transfer_raw == raw_amount:
+            if other_log.address == A_ELFI.evm_address and transfer_raw == raw_amount:
                 delegate_str = 'self-delegate' if user_address == delegate_address else f'delegate it to {delegate_address}'  # noqa: E501
                 event = HistoryBaseEntry(
                     event_identifier=transaction.tx_hash,
@@ -248,7 +248,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
             UNISWAP_DISTRIBUTOR: (self._decode_uniswap_claim,),
             BADGERHUNT: (self._decode_badger_claim,),

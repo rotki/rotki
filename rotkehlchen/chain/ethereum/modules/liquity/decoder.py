@@ -5,14 +5,14 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LUSD
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction
 
 from .constants import CPT_LIQUITY
 
 BALANCE_UPDATE = b'\xca#+Z\xbb\x98\x8cT\x0b\x95\x9f\xf6\xc3\xbf\xae>\x97\xff\xf9d\xfd\t\x8cP\x8f\x96\x13\xc0\xa6\xbf\x1a\x80'  # noqa: E501
-STABILITY_POOL = string_to_ethereum_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F')
+STABILITY_POOL = string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F')
 
 
 class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -53,7 +53,7 @@ class LiquityDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
             STABILITY_POOL: (self._decode_trove_operations,),  # noqa: E501
         }

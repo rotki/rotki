@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_norma
 from rotkehlchen.constants.assets import A_COMP
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import COMPTROLLER_PROXY, CPT_COMPOUND
@@ -45,7 +45,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             transaction: EthereumTransaction,
             tx_log: EthereumTxReceiptLog,
             decoded_events: List[HistoryBaseEntry],
-            compound_token: EthereumToken,
+            compound_token: EvmToken,
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         minter = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(minter):
@@ -90,7 +90,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             self,
             tx_log: EthereumTxReceiptLog,
             decoded_events: List[HistoryBaseEntry],
-            compound_token: EthereumToken,
+            compound_token: EvmToken,
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         redeemer = hex_or_bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(redeemer):
@@ -127,7 +127,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             decoded_events: List[HistoryBaseEntry],
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
-            compound_token: EthereumToken,
+            compound_token: EvmToken,
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         if tx_log.topics[0] == MINT_COMPOUND_TOKEN:
             log.debug(f'Hash: {transaction.tx_hash.hex()}')
@@ -174,14 +174,14 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         compound_tokens = GlobalDBHandler().get_ethereum_tokens(protocol='compound')
-        mapping: Dict[ChecksumEthAddress, Tuple[Any, ...]] = {}
+        mapping: Dict[ChecksumEvmAddress, Tuple[Any, ...]] = {}
         for token in compound_tokens:
             if token == A_COMP:
                 continue
 
-            mapping[token.ethereum_address] = (self.decode_compound_token_movement, token)
+            mapping[token.evm_address] = (self.decode_compound_token_movement, token)
         mapping[COMPTROLLER_PROXY.address] = (self.decode_comp_claim,)
         return mapping
 

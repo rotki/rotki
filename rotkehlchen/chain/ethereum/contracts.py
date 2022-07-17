@@ -17,7 +17,7 @@ from web3._utils.abi import get_abi_output_types
 from web3.types import BlockIdentifier
 
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -28,7 +28,7 @@ WEB3 = Web3()
 
 
 class EthereumContract(NamedTuple):
-    address: ChecksumEthAddress
+    address: ChecksumEvmAddress
     abi: List[Dict[str, Any]]
     deployed_block: int
 

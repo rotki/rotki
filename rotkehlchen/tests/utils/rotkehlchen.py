@@ -5,7 +5,7 @@ from unittest.mock import _patch, patch
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
@@ -22,13 +22,13 @@ from rotkehlchen.tests.utils.exchanges import (
     patch_poloniex_balances_query,
     try_get_first_exchange,
 )
-from rotkehlchen.types import BTCAddress, ChecksumEthAddress, Location, Timestamp
+from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, Location, Timestamp
 
 
 class BalancesTestSetup(NamedTuple):
     eth_balances: List[str]
     btc_balances: List[str]
-    token_balances: Dict[EthereumToken, List[str]]
+    token_balances: Dict[EvmToken, List[str]]
     binance_balances: Dict[Asset, FVal]
     poloniex_balances: Dict[Asset, FVal]
     manually_tracked_balances: List[ManuallyTrackedBalance]
@@ -62,12 +62,12 @@ class BalancesTestSetup(NamedTuple):
 
 def setup_balances(
         rotki,
-        ethereum_accounts: Optional[List[ChecksumEthAddress]],
+        ethereum_accounts: Optional[List[ChecksumEvmAddress]],
         btc_accounts: Optional[List[BTCAddress]],
         eth_balances: Optional[List[str]] = None,
-        token_balances: Optional[Dict[EthereumToken, List[str]]] = None,
+        token_balances: Optional[Dict[EvmToken, List[str]]] = None,
         populate_detected_tokens: bool = True,
-        liabilities: Optional[Dict[EthereumToken, List[str]]] = None,
+        liabilities: Optional[Dict[EvmToken, List[str]]] = None,
         btc_balances: Optional[List[str]] = None,
         manually_tracked_balances: Optional[List[ManuallyTrackedBalance]] = None,
         original_queries: Optional[List[str]] = None,
@@ -123,7 +123,7 @@ def setup_balances(
         else:
             btc_balances = []
 
-    eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]] = {}
+    eth_map: Dict[ChecksumEvmAddress, Dict[Union[str, EvmToken], Any]] = {}
     with rotki.data.db.user_write() as write_cursor:
         for idx, acc in enumerate(ethereum_accounts):
             eth_map[acc] = {}

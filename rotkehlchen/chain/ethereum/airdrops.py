@@ -27,7 +27,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 logger = logging.getLogger(__name__)
@@ -276,15 +276,15 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> Dict[str, Any]:
 
 
 def check_airdrops(
-        addresses: List[ChecksumEthAddress],
+        addresses: List[ChecksumEvmAddress],
         data_dir: Path,
-) -> Dict[ChecksumEthAddress, Dict]:
+) -> Dict[ChecksumEvmAddress, Dict]:
     """Checks airdrop data for the given list of ethereum addresses
 
     May raise:
         - RemoteError if the remote request fails
     """
-    found_data: Dict[ChecksumEthAddress, Dict] = defaultdict(lambda: defaultdict(dict))
+    found_data: Dict[ChecksumEvmAddress, Dict] = defaultdict(lambda: defaultdict(dict))
     for protocol_name, airdrop_data in AIRDROPS.items():
         data, csvfile = get_airdrop_data(protocol_name, data_dir)
         for row in data:

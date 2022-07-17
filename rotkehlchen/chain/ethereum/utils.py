@@ -5,13 +5,14 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_MULTICALL_2, ETH_SPECIAL_ADDRESS
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import get_chunks
 
@@ -70,7 +71,7 @@ def token_raw_value_decimals(token_amount: FVal, token_decimals: Optional[int]) 
 
 def token_normalized_value(
         token_amount: int,
-        token: EthereumToken,
+        token: EvmToken,
 ) -> FVal:
     return token_normalized_value_decimals(token_amount, token.decimals)
 
@@ -84,7 +85,7 @@ def asset_normalized_value(amount: int, asset: Asset) -> FVal:
     if asset.identifier == 'ETH':
         decimals = 18
     else:
-        token = EthereumToken.from_asset(asset)
+        token = EvmToken.from_asset(asset)
         if token is None:
             raise UnsupportedAsset(asset.identifier)
         decimals = token.decimals
@@ -101,7 +102,7 @@ def asset_raw_value(amount: FVal, asset: Asset) -> int:
     if asset.identifier == 'ETH':
         decimals = 18
     else:
-        token = EthereumToken.from_asset(asset)
+        token = EvmToken.from_asset(asset)
         if token is None:
             raise UnsupportedAsset(asset.identifier)
         decimals = token.decimals
@@ -111,7 +112,7 @@ def asset_raw_value(amount: FVal, asset: Asset) -> int:
 
 def multicall(
         ethereum: 'EthereumManager',
-        calls: List[Tuple[ChecksumEthAddress, str]],
+        calls: List[Tuple[ChecksumEvmAddress, str]],
         # only here to comply with multicall_2
         require_success: bool = True,  # pylint: disable=unused-argument
         call_order: Optional[Sequence['WeightedNode']] = None,
@@ -135,7 +136,7 @@ def multicall(
 
 def multicall_2(
         ethereum: 'EthereumManager',
-        calls: List[Tuple[ChecksumEthAddress, str]],
+        calls: List[Tuple[ChecksumEvmAddress, str]],
         require_success: bool,
         call_order: Optional[Sequence['WeightedNode']] = None,
         block_identifier: BlockIdentifier = 'latest',
@@ -174,7 +175,7 @@ def generate_address_via_create2(
         address: str,
         salt: str,
         init_code: str,
-) -> ChecksumEthAddress:
+) -> ChecksumEvmAddress:
     """Python implementation of CREATE2 opcode.
 
     Given an address (deployer), a salt and an init code (contract creation
@@ -198,7 +199,7 @@ def generate_address_via_create2(
     return to_checksum_address(contract_address)
 
 
-def ethaddress_to_asset(address: ChecksumEthAddress) -> Optional[Asset]:
+def ethaddress_to_asset(address: ChecksumEvmAddress) -> Optional[Asset]:
     """Takes an ethereum address and returns a token/asset for it
 
     Checks for special cases like the special ETH address used in some protocols
@@ -207,7 +208,7 @@ def ethaddress_to_asset(address: ChecksumEthAddress) -> Optional[Asset]:
         return A_ETH
 
     try:
-        asset = EthereumToken(address)
+        asset = EvmToken(ethaddress_to_identifier(address))
     except UnknownAsset:
         log.error(f'Could not find asset/token for address {address}')
         return None

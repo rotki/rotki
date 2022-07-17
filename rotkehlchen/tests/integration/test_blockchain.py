@@ -12,7 +12,7 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocolBalances,
 )
 from rotkehlchen.chain.ethereum.tokens import EthTokens
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.tests.utils.blockchain import mock_beaconchain, mock_etherscan_query
@@ -37,8 +37,8 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     we don't end up double counting:
     (1) the DeFi balances (2) the protocol balances such as DSR / makerdao vaults etc.
     """
-    addr1 = string_to_ethereum_address('0xe188c6BEBB81b96A65aa20dDB9e2aef62627fa4c')
-    addr2 = string_to_ethereum_address('0x78a087fCf440315b843632cFd6FDE6E5adcCc2C2')
+    addr1 = string_to_evm_address('0xe188c6BEBB81b96A65aa20dDB9e2aef62627fa4c')
+    addr2 = string_to_evm_address('0x78a087fCf440315b843632cFd6FDE6E5adcCc2C2')
     etherscan_patch = mock_etherscan_query(
         eth_map={addr1: {A_ETH: 1, A_DAI: 1 * 10**18}, addr2: {A_ETH: 2}},
         etherscan=blockchain.ethereum.etherscan,
@@ -62,13 +62,13 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
                 protocol=DefiProtocol('a', 'b', 'c', 1),
                 balance_type='Asset',
                 base_balance=DefiBalance(
-                    token_address=A_DAI.ethereum_address,
+                    token_address=A_DAI.evm_address,
                     token_name='DAI',
                     token_symbol='DAI',
                     balance=Balance(amount=ONE, usd_value=ONE),
                 ),
                 underlying_balances=[DefiBalance(
-                    token_address=A_DAI.ethereum_address,
+                    token_address=A_DAI.evm_address,
                     token_name='DAI',
                     token_symbol='DAI',
                     balance=Balance(amount=ONE, usd_value=ONE),

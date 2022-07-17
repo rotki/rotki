@@ -2,14 +2,14 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.defi.curve_pools import get_curve_pools
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 from .constants import CPT_CURVE
@@ -28,7 +28,7 @@ REMOVE_ONE = b'\x9e\x96\xdd;\x99z*%~\xecM\xf9\xbbn\xafbn m\xf5\xf5C\xbd\x966\x82
 REMOVE_LIQUIDITY_3_ASSETS = b'\xa4\x9dL\xf0&V\xae\xbf\x8cw\x1fZ\x85\x85c\x8a*\x15\xeel\x97\xcfr\x05\xd4 \x8e\xd7\xc1\xdf%-'  # noqa: E501
 REMOVE_LIQUIDITY_4_ASSETS = b'\x98x\xca7^\x10o*C\xc3\xb5\x99\xfcbEh\x13\x1cL\x9aK\xa6j\x14V7\x15v;\xe9\xd5\x9d'  # noqa: E501
 REMOVE_LIQUIDITY_IMBALANCE = b'\xb9d\xb7/s\xf5\xef[\xf0\xfd\xc5Y\xb2\xfa\xb9\xa7\xb1*9\xe4x\x17\xa5G\xf1\xf0\xae\xe4\x7f\xeb\xd6\x02'  # noqa: E501
-CURVE_Y_DEPOSIT = string_to_ethereum_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3')
+CURVE_Y_DEPOSIT = string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3')
 
 
 class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -53,7 +53,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         tx_log: EthereumTxReceiptLog,
         transaction: EthereumTransaction,
         decoded_events: List[HistoryBaseEntry],
-        user_address: ChecksumEthAddress,
+        user_address: ChecksumEvmAddress,
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         """Decode information related to withdrawing assets from curve pools"""
         for event in decoded_events:
@@ -97,7 +97,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         self,
         tx_log: EthereumTxReceiptLog,
         decoded_events: List[HistoryBaseEntry],
-        user_address: ChecksumEthAddress,
+        user_address: ChecksumEvmAddress,
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         """Decode information related to depositing assets in curve pools"""
         for event in decoded_events:
@@ -191,7 +191,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def _maybe_enrich_curve_transfers(  # pylint: disable=no-self-use
             self,
-            token: EthereumToken,  # pylint: disable=unused-argument
+            token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,
             event: HistoryBaseEntry,
@@ -214,7 +214,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
             address: (self._decode_curve_events,)
             for address in self.curve_pools

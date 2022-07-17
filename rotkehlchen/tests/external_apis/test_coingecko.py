@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_YFI
 from rotkehlchen.errors.asset import UnsupportedAsset
 from rotkehlchen.externalapis.coingecko import CoingeckoAssetData
@@ -41,7 +41,7 @@ def test_asset_data(session_coingecko):
     assert_coin_data_same(data, expected_data, compare_description=False)
 
     with pytest.raises(UnsupportedAsset):
-        session_coingecko.asset_data(EthereumToken('0x1844b21593262668B7248d0f57a220CaaBA46ab9'))  # PRL, a token without coingecko page  # noqa: E501
+        session_coingecko.asset_data(EvmToken('0x1844b21593262668B7248d0f57a220CaaBA46ab9'))  # PRL, a token without coingecko page  # noqa: E501
 
 
 def test_coingecko_historical_price(session_coingecko):

@@ -26,7 +26,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.accounting.types import SchemaEventType
-from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
+from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.bch.utils import validate_bch_address_input
@@ -48,6 +48,7 @@ from rotkehlchen.chain.substrate.utils import (
 )
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -75,8 +76,9 @@ from rotkehlchen.types import (
     AddressbookType,
     AssetMovementCategory,
     BTCAddress,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     CostBasisMethod,
+    EvmTokenKind,
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -1421,7 +1423,7 @@ def _transform_btc_or_bch_address(
 
 
 def _transform_eth_address(
-        ethereum: EthereumManager, given_address: str) -> ChecksumEthAddress:
+        ethereum: EthereumManager, given_address: str) -> ChecksumEvmAddress:
     try:
         address = to_checksum_address(given_address)
     except ValueError:
@@ -1651,15 +1653,19 @@ class IgnoredActionsModifySchema(Schema):
 
 class OptionalEthereumAddressSchema(Schema):
     address = EthereumAddressField(required=False, load_default=None)
+    chain = SerializableEnumField(enum_class=ChainID, required=False, load_default=None)
 
 
 class RequiredEthereumAddressSchema(Schema):
     address = EthereumAddressField(required=True)
+    chain = SerializableEnumField(enum_class=ChainID, required=False, load_default=None)
 
 
 class UnderlyingTokenInfoSchema(Schema):
     address = EthereumAddressField(required=True)
     weight = FloatingPercentageField(required=True)
+    chain = SerializableEnumField(enum_class=ChainID, required=True)
+    token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
 
 
 def _validate_external_ids(
@@ -1719,6 +1725,8 @@ class AssetSchema(Schema):
 
 class EthereumTokenSchema(Schema):
     address = EthereumAddressField(required=True)
+    chain = SerializableEnumField(enum_class=ChainID, required=True)
+    token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
     decimals = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
@@ -1783,7 +1791,7 @@ class EthereumTokenSchema(Schema):
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
-    ) -> EthereumToken:
+    ) -> EvmToken:
         given_underlying_tokens = data.pop('underlying_tokens', None)
         underlying_tokens = None
         if given_underlying_tokens is not None:
@@ -1791,9 +1799,11 @@ class EthereumTokenSchema(Schema):
             for entry in given_underlying_tokens:
                 underlying_tokens.append(UnderlyingToken(
                     address=entry['address'],
+                    chain=entry['chain'],
+                    token_kind=entry['token_kind'],
                     weight=entry['weight'],
                 ))
-        return EthereumToken.initialize(**data, underlying_tokens=underlying_tokens)
+        return EvmToken.initialize(**data, underlying_tokens=underlying_tokens)
 
 
 class ModifyEthereumTokenSchema(Schema):

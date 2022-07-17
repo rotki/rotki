@@ -7,9 +7,9 @@ from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
+from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 from ..constants import CPT_ONEINCH_V1
@@ -142,9 +142,9 @@ class Oneinchv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
-            string_to_ethereum_address('0x11111254369792b2Ca5d084aB5eEA397cA8fa48B'): (self.decode_action,),  # noqa: E501
+            string_to_evm_address('0x11111254369792b2Ca5d084aB5eEA397cA8fa48B'): (self.decode_action,),  # noqa: E501
         }
 
     def counterparties(self) -> List[str]:

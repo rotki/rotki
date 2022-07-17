@@ -23,7 +23,7 @@ from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.types import (
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     Eth2PubKey,
     ExternalService,
     deserialize_evm_tx_hash,
@@ -274,7 +274,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         return performance
 
-    def get_eth1_address_validators(self, address: ChecksumEthAddress) -> List[ValidatorID]:
+    def get_eth1_address_validators(self, address: ChecksumEvmAddress) -> List[ValidatorID]:
         """Get a list of Validators that are associated with the given eth1 address.
 
         Each entry is a tuple of (optional) validator index and pubkey

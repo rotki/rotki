@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional, Set
 import requests
 from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool
@@ -16,13 +16,14 @@ from rotkehlchen.chain.ethereum.utils import multicall, multicall_2
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import UNISWAP_V2_LP_ABI, ZERION_ABI
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Price, Timestamp
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
@@ -36,11 +37,11 @@ log = RotkehlchenLogsAdapter(logger)
 
 def uniswap_lp_token_balances(
         userdb: 'DBHandler',
-        address: ChecksumEthAddress,
+        address: ChecksumEvmAddress,
         ethereum: 'EthereumManager',
-        lp_addresses: List[ChecksumEthAddress],
-        known_assets: Set[EthereumToken],
-        unknown_assets: Set[EthereumToken],
+        lp_addresses: List[ChecksumEvmAddress],
+        known_assets: Set[EvmToken],
+        unknown_assets: Set[EvmToken],
 ) -> List[LiquidityPool]:
     """Query uniswap token balances from ethereum chain
 
@@ -78,7 +79,7 @@ def uniswap_lp_token_balances(
     return balances
 
 
-def get_latest_lp_addresses(data_directory: Path) -> List[ChecksumEthAddress]:
+def get_latest_lp_addresses(data_directory: Path) -> List[ChecksumEvmAddress]:
     """Gets the latest lp addresses either locally or from the remote
 
     Checks the remote (github) and if there is a newer file there it pulls it,
@@ -144,7 +145,7 @@ def get_latest_lp_addresses(data_directory: Path) -> List[ChecksumEthAddress]:
 
 def find_uniswap_v2_lp_price(
         ethereum: 'EthereumManager',
-        token: EthereumToken,
+        token: EvmToken,
         token_price_func: Callable,
         token_price_func_args: List[Any],
         block_identifier: BlockIdentifier,
@@ -159,7 +160,7 @@ def find_uniswap_v2_lp_price(
     - Pooled amount of token 1
     - Total supply of of pool token
     """
-    address = token.ethereum_address
+    address = token.evm_address
     contract = EthereumContract(address=address, abi=UNISWAP_V2_LP_ABI, deployed_block=0)
     methods = ['token0', 'token1', 'totalSupply', 'getReserves', 'decimals']
     multicall_method = multicall_2  # choose which multicall to use
@@ -184,7 +185,7 @@ def find_uniswap_v2_lp_price(
     except RemoteError as e:
         log.error(
             f'Remote error calling multicall contract for uniswap v2 lp '
-            f'token {token.ethereum_address} properties: {str(e)}',
+            f'token {token.evm_address} properties: {str(e)}',
         )
         return None
 
@@ -207,14 +208,15 @@ def find_uniswap_v2_lp_price(
         else:
             log.debug(
                 f'Multicall to Uniswap V2 LP failed to fetch field {method_name} '
-                f'for token {token.ethereum_address}',
+                f'for token {token.evm_address}',
             )
             return None
 
     try:
-        token0 = EthereumToken(decoded[0])
-        token1 = EthereumToken(decoded[1])
+        token0 = EvmToken(ethaddress_to_identifier(decoded[0]))
+        token1 = EvmToken(ethaddress_to_identifier(decoded[1]))
     except UnknownAsset:
+        log.debug(f'Unknown assets while querying uniswap v2 lp price {decoded[0]} {decoded[1]}')
         return None
 
     try:
@@ -242,7 +244,7 @@ def find_uniswap_v2_lp_price(
 
 def historical_uniswap_v2_lp_price(
         ethereum: 'EthereumManager',
-        token: EthereumToken,
+        token: EvmToken,
         to_asset: Asset,
         timestamp: Timestamp,
 ) -> Optional[Price]:

@@ -1,4 +1,5 @@
 import logging
+import urllib.parse
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Type, Union
 
@@ -32,7 +33,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     EVMTxHash,
     Fee,
     HexColorCode,
@@ -380,7 +381,7 @@ class AssetField(fields.Field):
             **_kwargs: Any,
     ) -> Optional[str]:
         # Asset can be missing so we need to handle None when serializing from schema
-        return str(value.identifier) if value else None
+        return value.identifier if value else None
 
     def _deserialize(
             self,
@@ -390,7 +391,10 @@ class AssetField(fields.Field):
             **_kwargs: Any,
     ) -> Asset:
         try:
-            asset = Asset(value, form_with_incomplete_data=self.form_with_incomplete_data)
+            asset = Asset(
+                identifier=urllib.parse.unquote(value),
+                form_with_incomplete_data=self.form_with_incomplete_data,
+            )
         except (DeserializationError, UnknownAsset) as e:
             raise ValidationError(str(e)) from e
 
@@ -434,7 +438,7 @@ class EthereumAddressField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: ChecksumEthAddress,
+            value: ChecksumEvmAddress,
             attr: str,  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
@@ -447,7 +451,7 @@ class EthereumAddressField(fields.Field):
             attr: Optional[str],  # pylint: disable=unused-argument
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> ChecksumEthAddress:
+    ) -> ChecksumEvmAddress:
         # Make sure that given value is an ethereum address
         try:
             address = to_checksum_address(value)

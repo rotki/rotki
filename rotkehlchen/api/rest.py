@@ -45,7 +45,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.assets.types import AssetType
@@ -81,7 +81,11 @@ from rotkehlchen.constants.misc import (
     ONE,
     ZERO,
 )
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.resolver import (
+    ChainID,
+    ethaddress_to_identifier,
+    evm_address_to_identifier,
+)
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
@@ -147,9 +151,10 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     BlockchainAccountData,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     EnsMapping,
     Eth2PubKey,
+    EvmTokenKind,
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -1419,11 +1424,17 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @staticmethod
-    def get_custom_ethereum_tokens(address: Optional[ChecksumEthAddress]) -> Response:
-        if address is not None:
-            token = GlobalDBHandler().get_ethereum_token(address)
+    def get_custom_ethereum_tokens(
+            address: Optional[ChecksumEvmAddress],
+            chain: Optional[ChainID],
+    ) -> Response:
+        if address is not None and chain is not None:
+            token = GlobalDBHandler().get_evm_token(
+                address=address,
+                chain=chain,
+            )
             if token is None:
-                result = wrap_in_fail_result(f'Custom token with address {address} not found')
+                result = wrap_in_fail_result(f'Custom token with address {address} and chain {chain} not found')  # noqa: E501
                 status_code = HTTPStatus.NOT_FOUND
             else:
                 result = _wrap_in_ok_result(token.serialize_all_info())
@@ -1439,8 +1450,8 @@ class RestAPI():
             log_result=False,
         )
 
-    def add_custom_ethereum_token(self, token: EthereumToken) -> Response:
-        identifier = ethaddress_to_identifier(token.ethereum_address)
+    def add_custom_ethereum_token(self, token: EvmToken) -> Response:
+        identifier = ethaddress_to_identifier(token.evm_address)
         try:
             GlobalDBHandler().add_asset(
                 asset_id=identifier,
@@ -1461,9 +1472,9 @@ class RestAPI():
         )
 
     @staticmethod
-    def edit_custom_ethereum_token(token: EthereumToken) -> Response:
+    def edit_custom_ethereum_token(token: EvmToken) -> Response:
         try:
-            identifier = GlobalDBHandler().edit_ethereum_token(token)
+            identifier = GlobalDBHandler().edit_evm_token(token)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -1475,14 +1486,23 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    def delete_custom_ethereum_token(self, address: ChecksumEthAddress) -> Response:
+    def delete_custom_ethereum_token(
+            self,
+            address: ChecksumEvmAddress,
+            chain: ChainID,
+    ) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
                 # Before deleting, also make sure we have up to date global DB owned data
                 self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
-                self.rotkehlchen.data.db.delete_asset_identifier(cursor, ethaddress_to_identifier(address))  # noqa: E501
+                identifier = evm_address_to_identifier(
+                    address=address,
+                    chain=chain,
+                    token_type=EvmTokenKind.ERC20,
+                )
+                self.rotkehlchen.data.db.delete_asset_identifier(cursor, identifier)  # noqa: E501
                 with GlobalDBHandler().conn.write_ctx() as gcursor:
-                    identifier = GlobalDBHandler().delete_ethereum_token(write_cursor=gcursor, address=address)  # noqa: E501
+                    identifier = GlobalDBHandler().delete_evm_token(write_cursor=gcursor, address=address, chain=chain)  # noqa: E501
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -2176,7 +2196,7 @@ class RestAPI():
     def add_queried_address_per_module(
             self,
             module: ModuleName,
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
     ) -> Response:
         try:
             QueriedAddresses(self.rotkehlchen.data.db).add_queried_address_for_module(module, address)  # noqa: E501
@@ -2188,7 +2208,7 @@ class RestAPI():
     def remove_queried_address_per_module(
             self,
             module: ModuleName,
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
     ) -> Response:
         try:
             QueriedAddresses(self.rotkehlchen.data.db).remove_queried_address_for_module(module, address)  # noqa: E501
@@ -3529,7 +3549,7 @@ class RestAPI():
         result_dict = _wrap_in_ok_result(data)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def _get_token_info(self, address: ChecksumEthAddress) -> Dict[str, Any]:
+    def _get_token_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
         eth_manager = self.rotkehlchen.chain_manager.ethereum
         try:
             info = eth_manager.get_basic_contract_info(address=address)
@@ -3542,7 +3562,7 @@ class RestAPI():
 
     def get_token_information(
         self,
-        token_address: ChecksumEthAddress,
+        token_address: ChecksumEvmAddress,
         async_query: bool,
     ) -> Response:
 
@@ -3718,7 +3738,7 @@ class RestAPI():
 
     def _get_avalanche_transactions(
         self,
-        address: ChecksumEthAddress,
+        address: ChecksumEvmAddress,
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> Dict[str, Any]:
@@ -3749,7 +3769,7 @@ class RestAPI():
     def get_avalanche_transactions(
         self,
         async_query: bool,
-        address: ChecksumEthAddress,
+        address: ChecksumEvmAddress,
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> Response:
@@ -3781,7 +3801,7 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
-    def _get_avax_token_info(self, address: ChecksumEthAddress) -> Dict[str, Any]:
+    def _get_avax_token_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
         avax_manager = self.rotkehlchen.chain_manager.avalanche
         try:
             info = avax_manager.get_basic_contract_info(address=address)
@@ -3794,7 +3814,7 @@ class RestAPI():
 
     def get_avax_token_information(
         self,
-        token_address: ChecksumEthAddress,
+        token_address: ChecksumEvmAddress,
         async_query: bool,
     ) -> Response:
 
@@ -4278,10 +4298,10 @@ class RestAPI():
 
     def _get_ens_mappings(
         self,
-        addresses: List[ChecksumEthAddress],
+        addresses: List[ChecksumEvmAddress],
         ignore_cache: bool,
     ) -> Dict[str, Any]:
-        mappings_to_send: Dict[ChecksumEthAddress, str] = {}
+        mappings_to_send: Dict[ChecksumEvmAddress, str] = {}
         dbens = DBEns(self.rotkehlchen.data.db)
 
         with self.rotkehlchen.data.db.user_write() as cursor:
@@ -4312,7 +4332,7 @@ class RestAPI():
 
     def get_ens_mappings(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             ignore_cache: bool,
             async_query: bool,
     ) -> Response:
@@ -4388,7 +4408,7 @@ class RestAPI():
     def get_addressbook_entries(
             self,
             book_type: AddressbookType,
-            addresses: Optional[List[ChecksumEthAddress]],
+            addresses: Optional[List[ChecksumEvmAddress]],
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         with db_addressbook.read_ctx(book_type) as cursor:
@@ -4432,7 +4452,7 @@ class RestAPI():
     def delete_addressbook_entries(
             self,
             book_type: AddressbookType,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         try:
@@ -4444,7 +4464,7 @@ class RestAPI():
                 status_code=HTTPStatus.CONFLICT,
             )
 
-    def search_for_names_everywhere(self, addresses: List[ChecksumEthAddress]) -> Response:
+    def search_for_names_everywhere(self, addresses: List[ChecksumEvmAddress]) -> Response:
         mappings = search_for_addresses_names(
             database=self.rotkehlchen.data.db,
             addresses=addresses,
@@ -4454,7 +4474,7 @@ class RestAPI():
     def _detect_ethereum_tokens(
             self,
             only_cache: bool,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> Dict[str, Any]:
         ethtokens = EthTokens(
             database=self.rotkehlchen.data.db,
@@ -4484,7 +4504,7 @@ class RestAPI():
             self,
             async_query: bool,
             only_cache: bool,
-            addresses: Optional[List[ChecksumEthAddress]],
+            addresses: Optional[List[ChecksumEvmAddress]],
     ) -> Response:
         if addresses is None:
             addresses = self.rotkehlchen.chain_manager.accounts.eth

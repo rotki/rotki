@@ -54,7 +54,7 @@ class V24V25UpgradeHelper():
         try:
             asset = self.assets[old_id]
             if asset['type'] == 'ethereum token':
-                address = asset['ethereum_address']  # should be checksummed
+                address = asset['evm_address']  # should be checksummed
 
                 return ETHEREUM_DIRECTIVE + address
 

@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.accounting.structures import TxEventSettings, Tx
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 from .constants import CPT_DSR, CPT_MIGRATION, CPT_VAULT
 
@@ -21,7 +21,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
 
     def reset(self) -> None:
         self.vault_balances: Dict[str, FVal] = defaultdict(FVal)
-        self.dsr_balances: Dict[ChecksumEthAddress, FVal] = defaultdict(FVal)
+        self.dsr_balances: Dict[ChecksumEvmAddress, FVal] = defaultdict(FVal)
 
     def _process_vault_dai_generation(
             self,
@@ -60,7 +60,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             event: HistoryBaseEntry,
             other_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
-        address = cast(ChecksumEthAddress, event.location_label)  # should always exist
+        address = cast(ChecksumEvmAddress, event.location_label)  # should always exist
         self.dsr_balances[address] += event.balance.amount
 
     def _process_dsr_withdraw(
@@ -69,7 +69,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             event: HistoryBaseEntry,
             other_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
     ) -> None:
-        address = cast(ChecksumEthAddress, event.location_label)  # should always exist
+        address = cast(ChecksumEvmAddress, event.location_label)  # should always exist
         self.dsr_balances[address] -= event.balance.amount
         if self.dsr_balances[address] < ZERO:
             profit = -1 * self.dsr_balances[address]

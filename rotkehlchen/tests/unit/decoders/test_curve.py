@@ -3,12 +3,12 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_LINK, A_USDC, A_USDT
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
@@ -56,7 +56,7 @@ def test_curve_deposit(database, ethereum_manager, eth_transactions):
             EthereumTxReceiptLog(
                 log_index=370,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000005512b9a6a67264010000'),  # noqa: E501
-                address=string_to_ethereum_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+                address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -66,7 +66,7 @@ def test_curve_deposit(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=383,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000060c5f3590'),  # noqa: E501
-                address=string_to_ethereum_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+                address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -76,7 +76,7 @@ def test_curve_deposit(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=396,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000005328394d50efea7abaf4'),  # noqa: E501
-                address=string_to_ethereum_address('0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900'),
+                address=string_to_evm_address('0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -86,7 +86,7 @@ def test_curve_deposit(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=397,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000005512b9a6a672640100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000060c5f3590000000000000000000000000000000000000000000000002038eb27e79fe96ef0000000000000000000000000000000000000000000000000000000002e973710000000000000000000000000000000000000000000000000000000001832b050000000000000000000000000000000000000000002a38dd00eecdefe02a2fcf00000000000000000000000000000000000000000026c6b056a9a8e3b89d5717'),  # noqa: E501
-                address=string_to_ethereum_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),
+                address=string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0x423f6495a08fc652425cf4ed0d1f9e37e571d9b9529b1c1c23cce780b2e7df0d'),  # noqa: E501
@@ -153,7 +153,7 @@ def test_curve_deposit(database, ethereum_manager, eth_transactions):
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=EthereumToken('0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900'),
+            asset=EvmToken('eip155:1/erc20:0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900'),
             balance=Balance(amount=FVal('392698.416886553664731892'), usd_value=ZERO),
             location_label=location_label,
             notes='Receive 392698.416886553664731892 a3CRV after depositing in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',  # noqa: E501
@@ -196,7 +196,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             EthereumTxReceiptLog(
                 log_index=412,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000002c6526ca273a800'),  # noqa: E501
-                address=string_to_ethereum_address('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
+                address=string_to_evm_address('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -206,7 +206,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=413,
                 data=hexstring_to_bytes('0xfffffffffffffffffffffffffffffffffffffffffffffffffd39ad935d8c57ff'),  # noqa: E501
-                address=string_to_ethereum_address('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
+                address=string_to_evm_address('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'),  # noqa: E501
@@ -216,7 +216,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=414,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000005589f42020a37df'),  # noqa: E501
-                address=string_to_ethereum_address('0x06325440D014e39736583c165C2963BA99fAf14E'),
+                address=string_to_evm_address('0x06325440D014e39736583c165C2963BA99fAf14E'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -226,7 +226,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=415,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000002c68af0bb14000000000000000000000000000000000000000000000000000002c6526ca273a80000000000000000000000000000000000000000000000000000000016a92ed4ce00000000000000000000000000000000000000000000000000000016a9b386830000000000000000000000000000000000000000000156e4db21d9cf6a6d4f3f000000000000000000000000000000000000000000014a4959a6fb2bf53a7108'),  # noqa: E501
-                address=string_to_ethereum_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
+                address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0x26f55a85081d24974e85c6c00045d0f0453991e95873f52bff0d21af4079a768'),  # noqa: E501
@@ -281,7 +281,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-            asset=EthereumToken('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
+            asset=EvmToken('eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
             balance=Balance(amount=FVal('0.19993786'), usd_value=ZERO),
             location_label=location_label,
             notes='Deposit 0.19993786 stETH in curve pool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
@@ -293,7 +293,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
-            asset=EthereumToken('0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
+            asset=EvmToken('eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59'), usd_value=ZERO),
             location_label=location_label,
             notes='Approve 1.157920892373161954235709850E+59 stETH of 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2 for spending by 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
@@ -305,7 +305,7 @@ def test_curve_deposit_eth(database, ethereum_manager, eth_transactions):
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=EthereumToken('0x06325440D014e39736583c165C2963BA99fAf14E'),
+            asset=EvmToken('eip155:1/erc20:0x06325440D014e39736583c165C2963BA99fAf14E'),
             balance=Balance(amount=FVal('0.385232873991059423'), usd_value=ZERO),
             location_label=location_label,
             notes='Receive 0.385232873991059423 steCRV after depositing in curve pool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
@@ -347,7 +347,7 @@ def test_curve_remove_liquidity(database, ethereum_manager, eth_transactions):
             EthereumTxReceiptLog(
                 log_index=506,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000a8815561fefbe56aa3'),  # noqa: E501
-                address=string_to_ethereum_address('0xcee60cFa923170e4f8204AE08B4fA6A3F5656F3a'),
+                address=string_to_evm_address('0xcee60cFa923170e4f8204AE08B4fA6A3F5656F3a'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -357,7 +357,7 @@ def test_curve_remove_liquidity(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=507,
                 data=hexstring_to_bytes('0000000000000000000000000000000000000000000000a93078ae269dbeca10'),  # noqa: E501
-                address=string_to_ethereum_address('0x514910771AF9Ca656af840dff83E8264EcF986CA'),
+                address=string_to_evm_address('0x514910771AF9Ca656af840dff83E8264EcF986CA'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -367,7 +367,7 @@ def test_curve_remove_liquidity(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=508,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000a8815561fefbe56aa30000000000000000000000000000000000000000000000a93078ae269dbeca100000000000000000000000000000000000000000000092c009040e68c381c519'),  # noqa: E501
-                address=string_to_ethereum_address('0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0'),
+                address=string_to_evm_address('0xF178C0b5Bb7e7aBF4e12A4838C7b7c5bA2C623c0'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0x5ad056f2e28a8cec232015406b843668c1e36cda598127ec3b8c59b8c72773a0'),  # noqa: E501
@@ -376,7 +376,7 @@ def test_curve_remove_liquidity(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=415,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000002c68af0bb14000000000000000000000000000000000000000000000000000002c6526ca273a80000000000000000000000000000000000000000000000000000000016a92ed4ce00000000000000000000000000000000000000000000000000000016a9b386830000000000000000000000000000000000000000000156e4db21d9cf6a6d4f3f000000000000000000000000000000000000000000014a4959a6fb2bf53a7108'),  # noqa: E501
-                address=string_to_ethereum_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
+                address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0x26f55a85081d24974e85c6c00045d0f0453991e95873f52bff0d21af4079a768'),  # noqa: E501
@@ -419,7 +419,7 @@ def test_curve_remove_liquidity(database, ethereum_manager, eth_transactions):
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-            asset=EthereumToken('0xcee60cFa923170e4f8204AE08B4fA6A3F5656F3a'),
+            asset=EvmToken('eip155:1/erc20:0xcee60cFa923170e4f8204AE08B4fA6A3F5656F3a'),
             balance=Balance(amount=FVal('3108.372467134893484707'), usd_value=ZERO),
             location_label=location_label,
             notes='Return 3108.372467134893484707 linkCRV',
@@ -473,7 +473,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager, eth_tr
             EthereumTxReceiptLog(
                 log_index=191,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000dc335d474901e08'),  # noqa: E501
-                address=string_to_ethereum_address('0x06325440D014e39736583c165C2963BA99fAf14E'),
+                address=string_to_evm_address('0x06325440D014e39736583c165C2963BA99fAf14E'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -483,7 +483,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager, eth_tr
             ), EthereumTxReceiptLog(
                 log_index=192,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000dc335d474901e080000000000000000000000000000000000000000000000000e48d018621788fa'),  # noqa: E501
-                address=string_to_ethereum_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
+                address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0x9e96dd3b997a2a257eec4df9bb6eaf626e206df5f543bd963682d143300be310'),  # noqa: E501
@@ -547,7 +547,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_manager, eth_tr
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-            asset=EthereumToken('0x06325440D014e39736583c165C2963BA99fAf14E'),
+            asset=EvmToken('eip155:1/erc20:0x06325440D014e39736583c165C2963BA99fAf14E'),
             balance=Balance(amount=FVal('0.991695529556581896'), usd_value=ZERO),
             location_label=location_label,
             notes='Return 0.991695529556581896 steCRV',
@@ -589,7 +589,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             EthereumTxReceiptLog(
                 log_index=2183,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000001fa9ee7266a543831f'),  # noqa: E501
-                address=string_to_ethereum_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
+                address=string_to_evm_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -599,7 +599,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=2184,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
-                address=string_to_ethereum_address('0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01'),
+                address=string_to_evm_address('0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -609,7 +609,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=2185,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000001fdb750a'),  # noqa: E501
-                address=string_to_ethereum_address('0xd6aD7a6750A7593E092a9B218d66C0A814a3436e'),
+                address=string_to_evm_address('0xd6aD7a6750A7593E092a9B218d66C0A814a3436e'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -619,7 +619,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=2186,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
-                address=string_to_ethereum_address('0x83f798e925BcD4017Eb265844FDDAbb448f1707D'),
+                address=string_to_evm_address('0x83f798e925BcD4017Eb265844FDDAbb448f1707D'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -629,7 +629,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=2187,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
-                address=string_to_ethereum_address('0x73a052500105205d34Daf004eAb301916DA8190f'),
+                address=string_to_evm_address('0x73a052500105205d34Daf004eAb301916DA8190f'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -639,7 +639,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=2188,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
-                address=string_to_ethereum_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
+                address=string_to_evm_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -649,7 +649,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=2189,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001fdb750a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000045cf4bec2e53f0000000000000000000000000000000000000000000000000000000000000e07e000000000000000000000000000000000000000000000000000000000000570d0000000000000000000000000000000000000000000000000051077d9dc293100000000000000000000000000000000000000000000c740195f187122987a9ef0000000000000000000000000000000000000000000aeddccb3976328f7d90bd'),  # noqa: E501
-                address=string_to_ethereum_address('0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51'),
+                address=string_to_evm_address('0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xb964b72f73f5ef5bf0fdc559b2fab9a7b12a39e47817a547f1f0aee47febd602'),  # noqa: E501
@@ -659,7 +659,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=2189,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000027a72df9'),  # noqa: E501
-                address=string_to_ethereum_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+                address=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -702,7 +702,7 @@ def test_curve_remove_imbalanced(database, ethereum_manager, eth_transactions):
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-            asset=EthereumToken('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
+            asset=EvmToken('eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
             balance=Balance(amount=FVal('584.093916507047953183'), usd_value=ZERO),
             location_label=location_label,
             notes='Return 584.093916507047953183 yDAI+yUSDC+yUSDT+yTUSD',

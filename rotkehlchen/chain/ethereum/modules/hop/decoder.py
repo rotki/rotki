@@ -5,16 +5,16 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_HOP
 
 # https://github.com/hop-protocol/hop/blob/develop/packages/core/src/addresses/mainnet.ts
-ETH_BRIDGE = string_to_ethereum_address('0xb8901acB165ed027E32754E0FFe830802919727f')
+ETH_BRIDGE = string_to_evm_address('0xb8901acB165ed027E32754E0FFe830802919727f')
 
 TRANSFER_TO_L2 = b'\n\x06\x07h\x8c\x86\xec\x17u\xab\xcd\xba\xb7\xb3::5\xa6\xc9\xcd\xe6w\xc9\xbe\x88\x01P\xc21\xcck\x0b'  # noqa: E501
 
@@ -66,7 +66,7 @@ class HopDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
         return {
             ETH_BRIDGE: (self._decode_send_eth,),  # noqa: E501
         }

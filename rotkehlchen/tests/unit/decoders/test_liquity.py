@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_LUSD
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
@@ -54,7 +54,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
             EthereumTxReceiptLog(
                 log_index=91,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000014a3a4295480654a6'),  # noqa: E501
-                address=string_to_ethereum_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
+                address=string_to_evm_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -64,7 +64,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=95,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000021e19de846fc75de296000000000000000000000000000000000000000000000000429d069189e00000000000000000000000000000000000000000000000000000429d069189e000000000000000000000000000000000000000000000000000000000000000000002'),  # noqa: E501
-                address=string_to_ethereum_address('0x24179CD81c9e782A4096035f7eC97fB8B783e007'),
+                address=string_to_evm_address('0x24179CD81c9e782A4096035f7eC97fB8B783e007'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xc3770d654ed33aeea6bf11ac8ef05d02a6a04ed4686dd2f624d853bbec43cc8b'),  # noqa: E501
@@ -73,7 +73,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=98,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000001018f9e3f8eea75e010'),  # noqa: E501
-                address=string_to_ethereum_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
+                address=string_to_evm_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -83,7 +83,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=99,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000004e97821fe7ced4f8b2fb'),  # noqa: E501
-                address=string_to_ethereum_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
+                address=string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xca232b5abb988c540b959ff6c3bfae3e97fff964fd098c508f9613c0a6bf1a80'),  # noqa: E501
@@ -180,7 +180,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
             EthereumTxReceiptLog(
                 log_index=204,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000038f9ba4f4e8bb875c546b0000000000000000000000000000000000000000000000aed129e69968ff40000000000000000000000000000000000000000000000000aed129e69968ff40000000000000000000000000000000000000000000000000000000000000000002'),  # noqa: E501
-                address=string_to_ethereum_address('0x24179CD81c9e782A4096035f7eC97fB8B783e007'),
+                address=string_to_evm_address('0x24179CD81c9e782A4096035f7eC97fB8B783e007'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xc3770d654ed33aeea6bf11ac8ef05d02a6a04ed4686dd2f624d853bbec43cc8b'),  # noqa: E501
@@ -189,7 +189,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
             ), EthereumTxReceiptLog(
                 log_index=207,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000001906c5721af5fbe70000'),  # noqa: E501
-                address=string_to_ethereum_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
+                address=string_to_evm_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -199,7 +199,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
             ), EthereumTxReceiptLog(
                 log_index=208,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000004e900a6a97e3873abb07'),  # noqa: E501
-                address=string_to_ethereum_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
+                address=string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xca232b5abb988c540b959ff6c3bfae3e97fff964fd098c508f9613c0a6bf1a80'),  # noqa: E501
@@ -283,7 +283,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
             EthereumTxReceiptLog(
                 log_index=204,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000038f9ba4f4e8bb875c546b0000000000000000000000000000000000000000000000aed129e69968ff40000000000000000000000000000000000000000000000000aed129e69968ff40000000000000000000000000000000000000000000000000000000000000000002'),  # noqa: E501
-                address=string_to_ethereum_address('0x24179CD81c9e782A4096035f7eC97fB8B783e007'),
+                address=string_to_evm_address('0x24179CD81c9e782A4096035f7eC97fB8B783e007'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xc3770d654ed33aeea6bf11ac8ef05d02a6a04ed4686dd2f624d853bbec43cc8b'),  # noqa: E501
@@ -292,7 +292,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=293,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
-                address=string_to_ethereum_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
+                address=string_to_evm_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
@@ -302,7 +302,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
             ), EthereumTxReceiptLog(
                 log_index=208,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000004e927b246c443a2daac9'),  # noqa: E501
-                address=string_to_ethereum_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
+                address=string_to_evm_address('0xDf9Eb223bAFBE5c5271415C75aeCD68C21fE3D7F'),
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xca232b5abb988c540b959ff6c3bfae3e97fff964fd098c508f9613c0a6bf1a80'),  # noqa: E501

@@ -15,7 +15,7 @@ def test_upgrade_v1_v2(globaldb):
 
     for identifier, entry in globaldb.get_all_asset_data(mapping=True, serialized=False).items():
         if entry.asset_type == AssetType.ETHEREUM_TOKEN:
-            assert identifier == ethaddress_to_identifier(entry.ethereum_address)
+            assert identifier == ethaddress_to_identifier(entry.evm_address)
 
         swapped_for = entry.swapped_for
 
@@ -54,7 +54,7 @@ def test_upgrade_v1_v2(globaldb):
     )
     assert query.fetchone()[0] == 4
     query = cursor.execute(
-        'SELECT COUNT(*) from ethereum_tokens where address IN (?, ?, ?, ?);',
+        'SELECT COUNT(*) from evm_tokens where address IN (?, ?, ?, ?);',
         ('0x35bD01FC9d6D5D81CA9E055Db88Dc49aa2c699A8',
          '0xBBc2AE13b23d715c30720F079fcd9B4a74093505',
          '0x42Fa37aC7c115bf17ca5DDfcb94b73b91B10B61B',

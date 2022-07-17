@@ -7,13 +7,13 @@ from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.globaldb import GlobalDBHandler
-from rotkehlchen.types import AddressbookType, ChecksumEthAddress, EnsMapping, SupportedBlockchain
+from rotkehlchen.types import AddressbookType, ChecksumEvmAddress, EnsMapping, SupportedBlockchain
 
 
 def search_for_addresses_names(
         database: DBHandler,
-        addresses: List[ChecksumEthAddress],
-) -> Dict[ChecksumEthAddress, str]:
+        addresses: List[ChecksumEvmAddress],
+) -> Dict[ChecksumEvmAddress, str]:
     """This method searches for all names of provided addresses known to rotki. We can show
     only one name per address, and thus we prioritize known names. Priority is the following:
     blockchain account labels -> private addressbook -> global addressbook
@@ -51,7 +51,7 @@ def search_for_addresses_names(
         if account.address in addresses_set:
             labels[account.address] = account.label
 
-    result_mappings: Dict[ChecksumEthAddress, str] = {}
+    result_mappings: Dict[ChecksumEvmAddress, str] = {}
     for mapping in reverse_ens:
         if isinstance(mapping, EnsMapping):
             result_mappings[mapping.address] = mapping.name

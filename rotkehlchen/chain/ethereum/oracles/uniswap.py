@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, List, NamedTuple, Optional, Union
 from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.utils import multicall, multicall_specific, token_normalized_value
@@ -20,13 +20,14 @@ from rotkehlchen.constants.ethereum import (
     UNISWAP_V3_POOL_ABI,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, Price
+from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 
 if TYPE_CHECKING:
@@ -40,8 +41,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 class PoolPrice(NamedTuple):
     price: FVal
-    token_0: EthereumToken
-    token_1: EthereumToken
+    token_0: EvmToken
+    token_1: EvmToken
 
     def swap_tokens(self) -> 'PoolPrice':
         return PoolPrice(
@@ -74,8 +75,8 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
     @abc.abstractmethod
     def get_pool(
         self,
-        token_0: EthereumToken,
-        token_1: EthereumToken,
+        token_0: EvmToken,
+        token_1: EvmToken,
     ) -> List[str]:
         """Given two tokens returns a list of pools where they can be swapped"""
         ...
@@ -83,7 +84,7 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
     @abc.abstractmethod
     def get_pool_price(
         self,
-        pool_addr: ChecksumEthAddress,
+        pool_addr: ChecksumEvmAddress,
         block_identifier: BlockIdentifier = 'latest',
     ) -> PoolPrice:
         """Returns the price for the tokens in the given pool and the token0 and
@@ -95,8 +96,8 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
 
     def _find_pool_for(
         self,
-        asset: EthereumToken,
-        link_asset: EthereumToken,
+        asset: EvmToken,
+        link_asset: EvmToken,
         path: List[str],
     ) -> bool:
         pools = self.get_pool(asset, link_asset)
@@ -107,7 +108,7 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
 
         return False
 
-    def find_route(self, from_asset: EthereumToken, to_asset: EthereumToken) -> List[str]:
+    def find_route(self, from_asset: EvmToken, to_asset: EvmToken) -> List[str]:
         """
         Calculate the path needed to go from from_asset to to_asset and return a
         list of the pools needed to jump through to do that.
@@ -216,16 +217,16 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
             )
 
         # Could be that we are dealing with ethereum tokens as instances of Asset instead of
-        # EthereumToken, handle the conversion
-        from_asset_raw: Union[Asset, EthereumToken] = from_asset
-        to_asset_raw: Union[Asset, EthereumToken] = to_asset
-        if not isinstance(from_asset, EthereumToken):
-            from_as_token = EthereumToken.from_asset(from_asset)
+        # EvmToken, handle the conversion
+        from_asset_raw: Union[Asset, EvmToken] = from_asset
+        to_asset_raw: Union[Asset, EvmToken] = to_asset
+        if not isinstance(from_asset, EvmToken):
+            from_as_token = EvmToken.from_asset(from_asset)
             if from_as_token is None:
                 raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {from_asset_raw}')
             from_asset = from_as_token
-        if not isinstance(to_asset, EthereumToken):
-            to_as_token = EthereumToken.from_asset(to_asset)
+        if not isinstance(to_asset, EvmToken):
+            to_as_token = EvmToken.from_asset(to_asset)
             if to_as_token is None:
                 raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {to_asset_raw}')
             to_asset = to_as_token
@@ -290,16 +291,16 @@ class UniswapV3Oracle(UniswapOracle):
     @cache_response_timewise()
     def get_pool(
         self,
-        token_0: EthereumToken,
-        token_1: EthereumToken,
+        token_0: EvmToken,
+        token_1: EvmToken,
     ) -> List[str]:
         result = multicall_specific(
             ethereum=self.eth_manager,
             contract=UNISWAP_V3_FACTORY,
             method_name='getPool',
             arguments=[[
-                token_0.ethereum_address,
-                token_1.ethereum_address,
+                token_0.evm_address,
+                token_1.evm_address,
                 fee,
             ] for fee in (3000, 500, 10000)],
         )
@@ -328,7 +329,7 @@ class UniswapV3Oracle(UniswapOracle):
 
     def get_pool_price(
         self,
-        pool_addr: ChecksumEthAddress,
+        pool_addr: ChecksumEvmAddress,
         block_identifier: BlockIdentifier = 'latest',
     ) -> PoolPrice:
         """
@@ -360,11 +361,11 @@ class UniswapV3Oracle(UniswapOracle):
             require_success=True,
             block_identifier=block_identifier,
         )
-        token_0 = EthereumToken(
-            to_checksum_address(pool_contract.decode(output[1], 'token0')[0]),  # noqa: E501 pylint:disable=unsubscriptable-object
+        token_0 = EvmToken(
+            ethaddress_to_identifier(to_checksum_address(pool_contract.decode(output[1], 'token0')[0])),  # noqa: E501 pylint:disable=unsubscriptable-object
         )
-        token_1 = EthereumToken(
-            to_checksum_address(pool_contract.decode(output[2], 'token1')[0]),  # noqa: E501 pylint:disable=unsubscriptable-object
+        token_1 = EvmToken(
+            ethaddress_to_identifier(to_checksum_address(pool_contract.decode(output[2], 'token1')[0])),  # noqa: E501 pylint:disable=unsubscriptable-object
         )
 
         sqrt_price_x96, _, _, _, _, _, _ = pool_contract.decode(output[0], 'slot0')
@@ -390,22 +391,22 @@ class UniswapV2Oracle(UniswapOracle):
     @cache_response_timewise()
     def get_pool(
         self,
-        token_0: EthereumToken,
-        token_1: EthereumToken,
+        token_0: EvmToken,
+        token_1: EvmToken,
     ) -> List[str]:
         result = UNISWAP_V2_FACTORY.call(
             ethereum=self.eth_manager,
             method_name='getPair',
             arguments=[
-                token_0.ethereum_address,
-                token_1.ethereum_address,
+                token_0.evm_address,
+                token_1.evm_address,
             ],
         )
         return [result]
 
     def get_pool_price(
         self,
-        pool_addr: ChecksumEthAddress,
+        pool_addr: ChecksumEvmAddress,
         block_identifier: BlockIdentifier = 'latest',
     ) -> PoolPrice:
         """
@@ -437,11 +438,11 @@ class UniswapV2Oracle(UniswapOracle):
             require_success=True,
             block_identifier=block_identifier,
         )
-        token_0 = EthereumToken(
-            to_checksum_address(pool_contract.decode(output[1], 'token0')[0]),  # noqa: E501 pylint:disable=unsubscriptable-object
+        token_0 = EvmToken(
+            ethaddress_to_identifier(to_checksum_address(pool_contract.decode(output[1], 'token0')[0])),  # noqa: E501 pylint:disable=unsubscriptable-object
         )
-        token_1 = EthereumToken(
-            to_checksum_address(pool_contract.decode(output[2], 'token1')[0]),  # noqa: E501 pylint:disable=unsubscriptable-object
+        token_1 = EvmToken(
+            ethaddress_to_identifier(to_checksum_address(pool_contract.decode(output[2], 'token1')[0])),  # noqa: E501 pylint:disable=unsubscriptable-object
         )
 
         if token_0.decimals is None:

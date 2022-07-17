@@ -1,11 +1,11 @@
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.balancer.db import add_balancer_events
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerBPTEventType, BalancerEvent
 from rotkehlchen.chain.ethereum.trades import AMMSwap
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_EUR, A_USD
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.exchanges.data_structures import Trade
@@ -14,7 +14,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     Fee,
     Location,
     Price,
@@ -159,12 +159,12 @@ def test_associated_locations(database):
                     '0x47ea26957ce09e84a51b51dfdab6a4ac1c3672a372eef77b15ef7677174ac847',
                 ),
                 log_index=23,
-                address=ChecksumEthAddress('0x3163Bb273E8D9960Ce003fD542bF26b4C529f515'),
+                address=ChecksumEvmAddress('0x3163Bb273E8D9960Ce003fD542bF26b4C529f515'),
                 timestamp=Timestamp(1590011534),
                 event_type=EventType.MINT_SUSHISWAP,
-                pool_address=ChecksumEthAddress('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'),
-                token0=EthereumToken('0x514910771AF9Ca656af840dff83E8264EcF986CA'),
-                token1=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+                pool_address=ChecksumEvmAddress('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'),
+                token0=EvmToken('eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA'),
+                token1=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
                 amount0=FVal('3.313676003468974932'),
                 amount1=FVal('0.064189269269768657'),
                 usd_price=FVal('26.94433946158740371839009166230438'),
@@ -175,13 +175,13 @@ def test_associated_locations(database):
             AMMSwap(
                 tx_hash='0xa54bf4c68d435e3c8f432fd7e62b7f8aca497a831a3d3fca305a954484ddd7b2',
                 log_index=208,
-                address=ChecksumEthAddress('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'),
-                from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),  # noqa: E501
-                to_address=string_to_ethereum_address('0xC9cB53B48A2f3A9e75982685644c1870F1405CCb'),  # noqa: E501
+                address=ChecksumEvmAddress('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'),
+                from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),  # noqa: E501
+                to_address=string_to_evm_address('0xC9cB53B48A2f3A9e75982685644c1870F1405CCb'),  # noqa: E501
                 timestamp=Timestamp(1609301469),
                 location=Location.UNISWAP,
-                token0=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                token1=EthereumToken('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+                token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+                token1=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
                 amount0_in=AssetAmount(FVal('2.6455727132446468')),
                 amount1_in=AssetAmount(ZERO),
                 amount0_out=AssetAmount(ZERO),
@@ -194,10 +194,10 @@ def test_associated_locations(database):
                 BalancerEvent(
                     tx_hash='0xa54bf4c68d435e3c8f432fd7e62b7f8aca497a831a3d3fca305a954484ddd7b3',
                     log_index=23,
-                    address=ChecksumEthAddress('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'),
+                    address=ChecksumEvmAddress('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'),
                     timestamp=Timestamp(1609301469),
                     event_type=BalancerBPTEventType.MINT,
-                    pool_address_token=EthereumToken('0x514910771AF9Ca656af840dff83E8264EcF986CA'),
+                    pool_address_token=EvmToken('eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA'),  # noqa: E501
                     lp_balance=Balance(amount=FVal(2), usd_value=FVal(3)),
                     amounts=[
                         AssetAmount(ONE),

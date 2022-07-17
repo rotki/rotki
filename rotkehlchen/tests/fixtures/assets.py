@@ -4,7 +4,7 @@ import pytest
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.tests.utils.mock import MockResponse
 
 
@@ -72,7 +72,11 @@ def asset_resolver(
     # add any custom ethereum tokens given by the fixtures for a test
     if custom_ethereum_tokens is not None:
         for entry in custom_ethereum_tokens:
-            asset_id = ETHEREUM_DIRECTIVE + entry.ethereum_address
+            asset_id = evm_address_to_identifier(
+                address=entry.evm_address,
+                chain=entry.chain,
+                token_type=entry.token_kind,
+            )
             globaldb.add_asset(asset_id=asset_id, asset_type=AssetType.ETHEREUM_TOKEN, data=entry)
 
     return resolver

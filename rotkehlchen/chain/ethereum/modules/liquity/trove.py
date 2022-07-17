@@ -28,7 +28,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_optional_to_fval,
 )
-from rotkehlchen.types import ChecksumEthAddress, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
@@ -203,8 +203,8 @@ class Liquity(HasDSProxy):
 
     def get_positions(
         self,
-        addresses_list: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, Trove]:
+        addresses_list: List[ChecksumEvmAddress],
+    ) -> Dict[ChecksumEvmAddress, Trove]:
         contract = EthereumContract(
             address=LIQUITY_TROVE_MANAGER.address,
             abi=LIQUITY_TROVE_MANAGER.abi,
@@ -226,7 +226,7 @@ class Liquity(HasDSProxy):
             calls=calls,
         )
 
-        data: Dict[ChecksumEthAddress, Trove] = {}
+        data: Dict[ChecksumEvmAddress, Trove] = {}
         eth_price = Inquirer().find_usd_price(A_ETH)
         lusd_price = Inquirer().find_usd_price(A_LUSD)
         for idx, output in enumerate(outputs):
@@ -289,8 +289,8 @@ class Liquity(HasDSProxy):
 
     def liquity_staking_balances(
         self,
-        addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, StakePosition]:
+        addresses: List[ChecksumEvmAddress],
+    ) -> Dict[ChecksumEvmAddress, StakePosition]:
         staked = self._get_raw_history(addresses, 'stake')
         lqty_price = Inquirer().find_usd_price(A_LQTY)
         data = {}
@@ -323,7 +323,7 @@ class Liquity(HasDSProxy):
 
     def _get_raw_history(
         self,
-        addresses: List[ChecksumEthAddress],
+        addresses: List[ChecksumEvmAddress],
         query_for: Literal['stake', 'trove'],
     ) -> Dict[str, Any]:
         param_types = {
@@ -344,10 +344,10 @@ class Liquity(HasDSProxy):
 
     def get_trove_history(
         self,
-        addresses: List[ChecksumEthAddress],
+        addresses: List[ChecksumEvmAddress],
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
-    ) -> Dict[ChecksumEthAddress, List[LiquityEvent]]:
+    ) -> Dict[ChecksumEvmAddress, List[LiquityEvent]]:
         addresses_to_query = list(addresses)
         proxied_addresses = self._get_accounts_having_proxy()
         proxies_to_address = {v: k for k, v in proxied_addresses.items()}
@@ -359,7 +359,7 @@ class Liquity(HasDSProxy):
             log.error(f'Failed to query trove graph events for liquity. {str(e)}')
             query = {}
 
-        result: Dict[ChecksumEthAddress, List[LiquityEvent]] = defaultdict(list)
+        result: Dict[ChecksumEvmAddress, List[LiquityEvent]] = defaultdict(list)
         for trove in query.get('troves', []):
             owner = to_checksum_address(trove['owner']['id'])
             if owner in proxies_to_address:
@@ -454,17 +454,17 @@ class Liquity(HasDSProxy):
 
     def get_staking_history(
         self,
-        addresses: List[ChecksumEthAddress],
+        addresses: List[ChecksumEvmAddress],
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
-    ) -> Dict[ChecksumEthAddress, List[LiquityEvent]]:
+    ) -> Dict[ChecksumEvmAddress, List[LiquityEvent]]:
         try:
             staked = self._get_raw_history(addresses, 'stake')
         except RemoteError as e:
             log.error(f'Failed to query stake graph events for liquity. {str(e)}')
             staked = {}
 
-        result: Dict[ChecksumEthAddress, List[LiquityEvent]] = defaultdict(list)
+        result: Dict[ChecksumEvmAddress, List[LiquityEvent]] = defaultdict(list)
         for stake in staked.get('lqtyStakes', []):
             owner = to_checksum_address(stake['id'])
             for change in stake['changes']:
@@ -555,7 +555,7 @@ class Liquity(HasDSProxy):
         return result
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
         super().on_account_addition(address)
         trove_info = self.get_positions([address])
         result = []

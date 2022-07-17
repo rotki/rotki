@@ -11,9 +11,10 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
@@ -41,7 +42,7 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_update_owned_assets,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.types import ChecksumEthAddress, make_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, make_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -1859,8 +1860,10 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
     globaldb.add_asset(
         asset_id='_ceth_0xa54d2EBfD977ad836203c85F18db2F0a0cF88854',
         asset_type=AssetType.ETHEREUM_TOKEN,
-        data=EthereumToken.initialize(
-            address=ChecksumEthAddress('0xa54d2EBfD977ad836203c85F18db2F0a0cF88854'),
+        data=EvmToken.initialize(
+            address=ChecksumEvmAddress('0xa54d2EBfD977ad836203c85F18db2F0a0cF88854'),
+            chain=ChainID.ETHEREUM,
+            token_kind=EvmTokenKind.ERC20,
             decimals=18,
             name='foo',
             symbol='FOO',

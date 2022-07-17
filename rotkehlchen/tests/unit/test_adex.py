@@ -1,9 +1,9 @@
 from rotkehlchen.chain.ethereum.modules.adex.adex import Adex
 from rotkehlchen.chain.ethereum.modules.adex.types import TOM_POOL_ID
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 
-TEST_ADDR = string_to_ethereum_address('0x494B9728BECA6C03269c38Ed86179757F77Cc0dd')
-TEST_ADDR_USER_IDENTITY = string_to_ethereum_address('0xaC29E71ACA2ff1C121673f0FC9d47e7616F692Ae')  # noqa: E501
+TEST_ADDR = string_to_evm_address('0x494B9728BECA6C03269c38Ed86179757F77Cc0dd')
+TEST_ADDR_USER_IDENTITY = string_to_evm_address('0xaC29E71ACA2ff1C121673f0FC9d47e7616F692Ae')  # noqa: E501
 
 
 def test_get_user_identity():

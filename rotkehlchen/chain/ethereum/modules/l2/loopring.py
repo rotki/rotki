@@ -126,7 +126,7 @@ from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
-from rotkehlchen.types import ChecksumEthAddress, ExternalService
+from rotkehlchen.types import ChecksumEvmAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
@@ -394,7 +394,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
 
         return json_ret
 
-    def ethereum_account_to_loopring_id(self, l1_address: ChecksumEthAddress) -> int:
+    def ethereum_account_to_loopring_id(self, l1_address: ChecksumEvmAddress) -> int:
         """Get the integer corresponding to the loopring account id
         of the owner of the given ETH L1 address.
 
@@ -478,8 +478,8 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
     @protect_with_lock()
     def get_balances(
             self,
-            addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, Dict[Asset, Balance]]:
+            addresses: List[ChecksumEvmAddress],
+    ) -> Dict[ChecksumEvmAddress, Dict[Asset, Balance]]:
         """Gets all loopring balances of the given addresses
 
         Since this is the only point of entry to loopring here we check for api key.
@@ -530,10 +530,10 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         return result
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
         pass
 
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         pass
 
     def deactivate(self) -> None:

@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DOGE, A_ETH, A_LINK, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -36,7 +36,7 @@ def test_uniswap_oracles_asset_to_asset(inquirer_defi):
         defi_price = inquirer_defi.find_usd_price(A_LINK, ignore_cache=True)
         assert abs(defi_price - link_price) / link_price < FVal(0.1), f'{defi_price=} and {link_price=} have more than 10% difference'  # noqa: E501
 
-        # test with ethereum tokens but as assets instead of instance of the EthereumToken class
+        # test with ethereum tokens but as assets instead of instance of the EvmToken class
         a1inch = Asset(A_1INCH.identifier)
         alink = Asset(A_LINK.identifier)
         price_as_assets = price_instance.query_current_price(a1inch, alink)
@@ -83,7 +83,7 @@ def test_uniswap_no_decimals(inquirer_defi):
         return patch.object(asset_resolver, 'get_asset_data', wraps=mocked_asset_getter)
 
     with fake_weth_token():
-        weth = EthereumToken(A_WETH.ethereum_address)
+        weth = EvmToken(A_WETH.identifier)
         assert weth.decimals is None
         with pytest.raises(DefiPoolError):
             inquirer_defi._uniswapv2.query_current_price(weth, A_USDC)

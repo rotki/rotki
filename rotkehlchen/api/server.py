@@ -394,6 +394,8 @@ class APIServer():
     @staticmethod
     def unhandled_exception(exception: Exception) -> Response:
         """ Flask.errorhandler when an exception wasn't correctly handled """
+        if __debug__:
+            logger.exception(exception)
         log.critical(
             'Unhandled exception when processing endpoint request',
             exc_info=True,

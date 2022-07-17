@@ -78,7 +78,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.types import ChecksumEthAddress, EVMTxHash, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, shift_num_right_by, ts_now
 
@@ -189,7 +189,7 @@ class MakerdaoVault(NamedTuple):
     # The type of collateral used for the vault. asset + set of parameters.
     # e.g. ETH-A. Various types can be seen here: https://catflip.co/
     collateral_type: str
-    owner: ChecksumEthAddress
+    owner: ChecksumEvmAddress
     collateral_asset: Asset
     # The amount/usd_value of collateral tokens locked
     collateral: Balance
@@ -201,7 +201,7 @@ class MakerdaoVault(NamedTuple):
     liquidation_ratio: FVal
     # The USD price of collateral at which the Vault becomes unsafe. None if nothing is locked in.
     liquidation_price: Optional[FVal]
-    urn: ChecksumEthAddress
+    urn: ChecksumEvmAddress
     stability_fee: FVal
 
     def serialize(self) -> Dict[str, Any]:
@@ -265,7 +265,7 @@ class MakerdaoVaults(HasDSProxy):
         self.reset_last_query_ts()
         self.lock = Semaphore()
         self.usd_price: Dict[str, FVal] = defaultdict(FVal)
-        self.vault_mappings: Dict[ChecksumEthAddress, List[MakerdaoVault]] = defaultdict(list)
+        self.vault_mappings: Dict[ChecksumEvmAddress, List[MakerdaoVault]] = defaultdict(list)
         self.ilk_to_stability_fee: Dict[bytes, FVal] = {}
         self.vault_details: List[MakerdaoVaultDetails] = []
 
@@ -288,8 +288,8 @@ class MakerdaoVaults(HasDSProxy):
     def _query_vault_data(
             self,
             identifier: int,
-            owner: ChecksumEthAddress,
-            urn: ChecksumEthAddress,
+            owner: ChecksumEvmAddress,
+            urn: ChecksumEvmAddress,
             ilk: bytes,
     ) -> Optional[MakerdaoVault]:
         collateral_type = ilk.split(b'\0', 1)[0].decode()
@@ -345,8 +345,8 @@ class MakerdaoVaults(HasDSProxy):
     def _query_vault_details(
             self,
             vault: MakerdaoVault,
-            proxy: ChecksumEthAddress,
-            urn: ChecksumEthAddress,
+            proxy: ChecksumEvmAddress,
+            urn: ChecksumEvmAddress,
     ) -> Optional[MakerdaoVaultDetails]:
         # They can raise:
         # DeserializationError due to hex_or_bytes_to_address, hexstr_to_int
@@ -631,8 +631,8 @@ class MakerdaoVaults(HasDSProxy):
 
     def _get_vaults_of_address(
             self,
-            user_address: ChecksumEthAddress,
-            proxy_address: ChecksumEthAddress,
+            user_address: ChecksumEvmAddress,
+            proxy_address: ChecksumEvmAddress,
     ) -> List[MakerdaoVault]:
         """Gets the vaults of a single address
 
@@ -810,17 +810,17 @@ class MakerdaoVaults(HasDSProxy):
 
         return events
 
-    def get_balances(self) -> Dict[ChecksumEthAddress, BalanceSheet]:
+    def get_balances(self) -> Dict[ChecksumEvmAddress, BalanceSheet]:
         """Return a mapping of all assets locked as collateral in the vaults and
         all DAI owed as debt
         """
-        balances: DefaultDict[ChecksumEthAddress, BalanceSheet] = defaultdict(BalanceSheet)
+        balances: DefaultDict[ChecksumEvmAddress, BalanceSheet] = defaultdict(BalanceSheet)
         for vault in self.get_vaults():
             balances[vault.owner] += vault.get_balance()
         return balances
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:  # pylint: disable=useless-return  # noqa: E501
+    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List[AssetBalance]]:  # pylint: disable=useless-return  # noqa: E501
         super().on_account_addition(address)
         # Check if it has been added to the mapping
         proxy_address = self.address_to_proxy.get(address)

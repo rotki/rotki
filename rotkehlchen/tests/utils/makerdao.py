@@ -15,12 +15,12 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import ZERO_ETH_ADDRESS
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 
 class VaultTestData(NamedTuple):
     vaults: List[MakerdaoVault]
-    proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress]
+    proxy_mappings: Dict[ChecksumEvmAddress, ChecksumEvmAddress]
     mock_contracts: List[str]
 
 
@@ -56,7 +56,7 @@ def mock_get_cdps_asc(
     return result
 
 
-def mock_registry_proxies(self, address) -> ChecksumEthAddress:
+def mock_registry_proxies(self, address) -> ChecksumEvmAddress:
     return self.test_data.proxy_mappings.get(address, ZERO_ETH_ADDRESS)
 
 
@@ -147,10 +147,10 @@ def create_web3_mock(web3: Web3, test_data: VaultTestData):
 
 def mock_proxies(
         rotki,
-        mapping: Dict[ChecksumEthAddress, ChecksumEthAddress],
+        mapping: Dict[ChecksumEvmAddress, ChecksumEvmAddress],
         given_module: str,
 ) -> None:
-    def mock_get_proxies() -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
+    def mock_get_proxies() -> Dict[ChecksumEvmAddress, ChecksumEvmAddress]:
         return mapping
 
     module = rotki.chain_manager.get_module(given_module)
