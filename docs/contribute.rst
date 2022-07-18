@@ -376,3 +376,24 @@ Finally open the svg with any compatible viewer and explore the flamegraph. It w
 .. image:: images/flamegraph_example.svg
    :alt: A flamegraph profiling example
    :align: center
+
+Docker publishing (manual)
+*****************
+
+If a need exists to publish on hub.docker.com then the following steps need to be followed.
+
+.. note::
+
+    Make sure that you are logged with an account that has access to publish to docker.
+
+This installs the qemu binaries required to build the arm64 binary and uses buildx to build the images.
+Please replace the the ``REVISION`` with the git sha of the tag and the ``ROTKI_VERSION`` with the
+tag name.
+
+.. code-block::
+
+    docker pull tonistiigi/binfmt:latest
+    docker run --rm --privileged tonistiigi/binfmt:latest --install arm64
+    docker buildx create --name imgbldr --use
+    docker buildx inspect --bootstrap --builder imgbldr
+    docker buildx build --build-arg REVISION='git sha' --build-arg ROTKI_VERSION=vx.x.x --file ./Dockerfile --platform linux/amd64 --platform linux/arm64 --tag rotki/rotki:vx.x.x --tag rotki/rotki:latest --push .
