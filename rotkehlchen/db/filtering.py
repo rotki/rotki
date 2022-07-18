@@ -59,7 +59,6 @@ class DBFilter():
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBTimestampFilter(DBFilter):
-    timestamp_attribute: str = 'timestamp'
     from_ts: Optional[Timestamp] = None
     to_ts: Optional[Timestamp] = None
     scaling_factor: Optional[FVal] = None
@@ -68,13 +67,13 @@ class DBTimestampFilter(DBFilter):
         filters = []
         bindings = []
         if self.from_ts is not None:
-            filters.append(f'{self.timestamp_attribute} >= ?')
+            filters.append('timestamp >= ?')
             from_ts = self.from_ts
             if self.scaling_factor is not None:
                 from_ts = Timestamp((from_ts * self.scaling_factor).to_int(exact=False))
             bindings.append(from_ts)
         if self.to_ts is not None:
-            filters.append(f'{self.timestamp_attribute} <= ?')
+            filters.append('timestamp <= ?')
             to_ts = self.to_ts
             if self.scaling_factor is not None:
                 to_ts = Timestamp((to_ts * self.scaling_factor).to_int(exact=False))
@@ -349,7 +348,6 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
                 and_op=True,
                 from_ts=from_ts,
                 to_ts=to_ts,
-                timestamp_attribute='timestamp',
             )
             filters.append(filter_query.timestamp_filter)
 
@@ -449,7 +447,7 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
             location: Optional[Location] = None,
     ) -> 'TradesFilterQuery':
         if order_by_rules is None:
-            order_by_rules = [('time', True)]
+            order_by_rules = [('timestamp', True)]
 
         filter_query = cls.create(
             and_op=and_op,
@@ -495,7 +493,6 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
             and_op=True,
             from_ts=from_ts,
             to_ts=to_ts,
-            timestamp_attribute='time',
         )
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters
@@ -518,7 +515,7 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
             location: Optional[Location] = None,
     ) -> 'AssetMovementsFilterQuery':
         if order_by_rules is None:
-            order_by_rules = [('time', True)]
+            order_by_rules = [('timestamp', True)]
 
         filter_query = cls.create(
             and_op=and_op,
@@ -549,7 +546,6 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
             and_op=True,
             from_ts=from_ts,
             to_ts=to_ts,
-            timestamp_attribute='time',
         )
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters
@@ -602,7 +598,6 @@ class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoc
             and_op=True,
             from_ts=from_ts,
             to_ts=to_ts,
-            timestamp_attribute='timestamp',
         )
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters
@@ -638,7 +633,6 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             and_op=True,
             from_ts=from_ts,
             to_ts=to_ts,
-            timestamp_attribute='timestamp',
         )
         filters.append(filter_query.timestamp_filter)
         filters.append(DBEth2ValidatorIndicesFilter(and_op=True, validators=validators))
@@ -707,7 +701,6 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
             and_op=True,
             from_ts=from_ts,
             to_ts=to_ts,
-            timestamp_attribute='timestamp',
         )
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters
@@ -827,7 +820,6 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             and_op=True,
             from_ts=from_ts,
             to_ts=to_ts,
-            timestamp_attribute='timestamp',
             scaling_factor=FVal(1000),  # these timestamps are in MS
         )
         filters.append(filter_query.timestamp_filter)

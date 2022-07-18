@@ -3,6 +3,7 @@ import os
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from shutil import copyfile
+from typing import TYPE_CHECKING, List
 from unittest.mock import patch
 
 import pytest
@@ -14,7 +15,6 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.filtering import AssetMovementsFilterQuery
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
@@ -31,6 +31,7 @@ from rotkehlchen.db.upgrades.v7_v8 import (
 )
 from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
 from rotkehlchen.errors.misc import DBUpgradeError
+from rotkehlchen.exchanges.data_structures import AssetMovement
 from rotkehlchen.tests.utils.database import (
     _init_prepared_db,
     _use_prepared_db,
@@ -41,6 +42,9 @@ from rotkehlchen.tests.utils.database import (
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import ChecksumEthAddress, make_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 creation_patch = patch(
     'rotkehlchen.db.dbhandler.DB_SCRIPT_CREATE_TABLES',
@@ -1492,6 +1496,22 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     - trade pairs are now replaced by base/quote asset
     - purges some tables
     """
+
+    def get_asset_movements_pre_v34(cursor: 'DBCursor') -> List[AssetMovement]:
+        """This function has been extracted from the db handler class because in v34 we have
+        changed the timestamp column name from time -> timestamp and this test used this method
+        to make a read query.
+        Returns a list of asset movements optionally filtered.
+        """
+        query = 'SELECT * from asset_movements ORDER BY time ASC'
+        results = cursor.execute(query, [])
+        asset_movements = []
+        for result in results:
+            movement = AssetMovement.deserialize_from_db(result)
+            asset_movements.append(movement)
+
+        return asset_movements
+
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v24_rotkehlchen.db')
     with mock_dbhandler_ensura_data_integrity():
@@ -1692,11 +1712,7 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
         assert len(raw_upgraded) == asset_movements_count - 2, 'coinbase/pro movements should have been deleted'  # noqa: E501
     # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
     with db.conn.read_ctx() as cursor:
-        movements = db.get_asset_movements(
-            cursor=cursor,
-            filter_query=AssetMovementsFilterQuery.make(),
-            has_premium=True,
-        )
+        movements = get_asset_movements_pre_v34(cursor=cursor)
 
     assert all(x.identifier == raw_upgraded[idx][0] for idx, x in enumerate(movements))
 
@@ -2656,6 +2672,49 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     assert cursor.fetchone() == (1, expected_timestamp // 10)
     cursor.execute('SELECT COUNT(*), timestamp FROM history_events WHERE subtype="remove asset" AND type="staking"')  # noqa: E501
     assert cursor.fetchone() == (1, expected_timestamp // 10)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
+    """Test upgrading the DB from version 33 to version 34.
+
+    - Check that expected information for the changes in timestamps exists and is correct
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v33_rotkehlchen.db')
+    db_v33 = _init_db_with_target_version(
+        target_version=33,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    upgraded_tables = (
+        'timed_balances',
+        'timed_location_data',
+        'ethereum_accounts_details',
+        'trades',
+        'asset_movements',
+    )
+    expected_timestamps = (
+        [(1658564495,)],
+        [(1637574520,)],
+        [(1637574640,)],
+        [(1595640208,), (1595640208,), (1595640208,)],
+        [(1,)],
+    )
+    with db_v33.conn.read_ctx() as cursor:
+        for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
+            cursor.execute(f'SELECT time from {table_name}')
+            assert cursor.fetchall() == expected_result
+    # Migrate the database
+    db_v34 = _init_db_with_target_version(
+        target_version=34,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    with db_v34.conn.read_ctx() as cursor:
+        for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
+            cursor.execute(f'SELECT timestamp from {table_name}')
+            assert cursor.fetchall() == expected_result
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

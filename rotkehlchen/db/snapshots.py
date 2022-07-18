@@ -44,8 +44,8 @@ class DBSnapshot:
         """Retrieves the timed_balances from the db for a given timestamp."""
         balances_data = []
         cursor.execute(
-            'SELECT category, time, amount, currency, usd_value FROM timed_balances '
-            'WHERE time=?', (timestamp,),
+            'SELECT category, timestamp, amount, currency, usd_value FROM timed_balances '
+            'WHERE timestamp=?', (timestamp,),
         )
 
         for data in cursor:
@@ -79,8 +79,8 @@ class DBSnapshot:
         """Retrieves the timed_location_data from the db for a given timestamp."""
         location_data = []
         cursor.execute(
-            'SELECT time, location, usd_value FROM timed_location_data '
-            'WHERE time=?',
+            'SELECT timestamp, location, usd_value FROM timed_location_data '
+            'WHERE timestamp=?',
             (timestamp,),
         )
         for data in cursor:
@@ -260,10 +260,10 @@ class DBSnapshot:
         May raise:
         - InputError
         """
-        write_cursor.execute('DELETE FROM timed_balances WHERE time=?', (timestamp,))
+        write_cursor.execute('DELETE FROM timed_balances WHERE timestamp=?', (timestamp,))
         if write_cursor.rowcount == 0:
             raise InputError('No snapshot found for the specified timestamp')
-        write_cursor.execute('DELETE FROM timed_location_data WHERE time=?', (timestamp,))
+        write_cursor.execute('DELETE FROM timed_location_data WHERE timestamp=?', (timestamp,))
         if write_cursor.rowcount == 0:
             raise InputError('No snapshot found for the specified timestamp')
 
