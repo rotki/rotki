@@ -322,7 +322,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         all_transactions = []
 
         while True:
-            resp = self._api_query('get', 'user/activity', {"pageNumber": str(page)})
+            resp = self._api_query('get', 'user/activity', {'pageNumber': str(page)})
 
             if len(resp['transactions']) == 0:
                 break

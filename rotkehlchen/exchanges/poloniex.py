@@ -485,7 +485,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     @cache_response_timewise()
     def query_balances(self) -> ExchangeQueryBalances:
         try:
-            resp = self.api_query_dict('returnCompleteBalances', {"account": "all"})
+            resp = self.api_query_dict('returnCompleteBalances', {'account': 'all'})
         except RemoteError as e:
             msg = (
                 'Poloniex API request failed. Could not reach poloniex due '
