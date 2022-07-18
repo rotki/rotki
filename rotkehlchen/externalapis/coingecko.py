@@ -343,7 +343,7 @@ class Coingecko(HistoricalPriceOracleInterface):
             self,
             module: Literal['coins/list'],
             subpath: Optional[str] = None,
-            options: Optional[Dict[str, Any]] = None,
+            options: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, Any]]:
         ...
 
@@ -352,7 +352,7 @@ class Coingecko(HistoricalPriceOracleInterface):
             self,
             module: Literal['coins', 'simple/price'],
             subpath: Optional[str] = None,
-            options: Optional[Dict[str, Any]] = None,
+            options: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         ...
 
@@ -360,7 +360,7 @@ class Coingecko(HistoricalPriceOracleInterface):
             self,
             module: str,
             subpath: Optional[str] = None,
-            options: Optional[Dict[str, Any]] = None,
+            options: Optional[Dict[str, str]] = None,
     ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Performs a coingecko query
 
@@ -431,17 +431,17 @@ class Coingecko(HistoricalPriceOracleInterface):
         """
         options = {
             # Include all localized languages in response (true/false) [default: true]
-            'localization': False,
+            'localization': 'false',
             # Include tickers data (true/false) [default: true]
-            'tickers': False,
+            'tickers': 'false',
             # Include market_data (true/false) [default: true]
-            'market_data': False,
+            'market_data': 'false',
             # Include communitydata (true/false) [default: true]
-            'community_data': False,
+            'community_data': 'false',
             # Include developer data (true/false) [default: true]
-            'developer_data': False,
+            'developer_data': 'false',
             # Include sparkline 7 days data (eg. true, false) [default: false]
-            'sparkline': False,
+            'sparkline': 'false',
         }
         gecko_id = asset.to_coingecko()
         data = self._query(
@@ -604,7 +604,7 @@ class Coingecko(HistoricalPriceOracleInterface):
             subpath=f'{from_coingecko_id}/history',
             options={
                 'date': date,
-                'localization': False,
+                'localizatioen': 'false',
             },
         )
 
