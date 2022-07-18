@@ -103,11 +103,15 @@ def _clean(json_data: Dict[str, Any]) -> Dict[str, Any]:
 def main():
     add_logging_level('TRACE', TRACE)
     parser = argparse.ArgumentParser(description='Get multichain information')  # noqa: E501
+    parser.add_argument('-d', '--data-dir', type=str, help='Data directory to get gloal DB from')
     parser.add_argument('-o', '--output', type=str, help='Output json file. If existing its appended to')  # noqa: E501
     parser.add_argument('-c', '--clean', action='store_true', help='Clean file from all empty value assets')  # noqa: E501
     args = parser.parse_args()
     coingecko = ScriptGecko()
-    data_dir = Path('/home/lefteris/.local/share/rotki/data')
+    data_dir = Path(args.data_dir)
+    if not data_dir.is_dir():
+        print(f'Given data directory {data_dir} is not a directory')
+        exit(1)
     GlobalDBHandler(data_dir=data_dir)
 
     output_path = Path(args.output)
