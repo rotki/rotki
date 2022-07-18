@@ -102,7 +102,7 @@
           :value="item.fee"
         />
       </template>
-      <template #item.time="{ item }">
+      <template #item.timestamp="{ item }">
         <date-display :timestamp="item.timestamp" />
       </template>
       <template #expanded-item="{ headers, item }">
@@ -235,7 +235,7 @@ const tableHeaders = (locationOverview: string): DataTableHeader[] => {
     },
     {
       text: i18n.t('deposits_withdrawals.headers.timestamp').toString(),
-      value: 'time'
+      value: 'timestamp'
     },
     { text: '', value: 'data-table-expand', sortable: false }
   ];
@@ -381,7 +381,7 @@ export default defineComponent({
         paginationOptions = {
           limit: itemsPerPage,
           offset,
-          orderByAttribute: sortBy.length > 0 ? sortBy[0] : 'time',
+          orderByAttribute: sortBy.length > 0 ? sortBy[0] : 'timestamp',
           ascending: !sortDesc[0]
         };
       }

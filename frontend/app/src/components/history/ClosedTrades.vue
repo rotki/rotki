@@ -134,7 +134,7 @@
             :value="item.amount"
           />
         </template>
-        <template #item.time="{ item }">
+        <template #item.timestamp="{ item }">
           <date-display :timestamp="item.timestamp" />
         </template>
         <template #item.actions="{ item }">
@@ -320,7 +320,7 @@ const tableHeaders = (locationOverview: string): DataTableHeader[] => {
     },
     {
       text: i18n.t('closed_trades.headers.timestamp').toString(),
-      value: 'time'
+      value: 'timestamp'
     },
     {
       text: i18n.t('closed_trades.headers.actions').toString(),
@@ -579,7 +579,7 @@ export default defineComponent({
         paginationOptions = {
           limit: itemsPerPage,
           offset,
-          orderByAttribute: sortBy.length > 0 ? sortBy[0] : 'time',
+          orderByAttribute: sortBy.length > 0 ? sortBy[0] : 'timestamp',
           ascending: !sortDesc[0]
         };
       }
