@@ -244,43 +244,19 @@ jobs:
           } | ConvertTo-Json
           Invoke-RestMethod -Method Post -Uri $uri -ContentType "application/json" -Body $body
 
-  docker-matrix:
-    name: Prepare docker platform matrix
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: 'Check if scheduled'
-        id: set-matrix
-        run: |
-          X86_64="{\"name\":\"x86_64\",\"platform\":\"linux/amd64\"}"
-          ARM64="{\"name\":\"arm64\",\"platform\":\"linux/arm64\"}"
-          if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then
-            MATRIX="[$X86_64,$ARM64]"
-          else
-            MATRIX="[$X86_64]"
-          fi
-          echo "::set-output name=matrix::$MATRIX"
-
   build-docker:
-    name: Build docker image (${{ matrix.arch.name }})
+    name: Build docker images
     runs-on: ubuntu-18.04
-    needs: docker-matrix
     environment: docker
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: ${{ fromJSON(needs.docker-matrix.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up QEMU
-        if: startsWith(matrix.arch.name, 'arm64')
         uses: docker/setup-qemu-action@v2
         with:
-          platforms: ${{ matrix.arch.name }}
+          platforms: arm64
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to DockerHub
@@ -298,10 +274,11 @@ jobs:
       - name: Build Information
         id: build_information
         run: |
-          PLATFORMS='${{ matrix.arch.platform }}'
           if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then
+            PLATFORMS='linux/amd64,linux/arm64'
             TAG=nightly
           else
+            PLATFORMS=linux/amd64
             TAG=dev
           fi
           echo "::set-output name=tag::$TAG"
