@@ -12,6 +12,10 @@ If the asset has other platforms known to coingecko is a mapping of addreses lik
 If not it's a mapping to an empty string to signify the asset has been queried
 
 Run the script as many times as is needed to complete the entire json file
+
+Once it's run you can also give the --clean argument which will take the file and clean it from
+all empty string value assets, so the end result contains only identifiers that exists in other
+platforms
 """
 
 from gevent import monkey  # isort:skip # noqa
@@ -19,7 +23,7 @@ monkey.patch_all()  # isort:skip # noqa
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
@@ -52,23 +56,8 @@ class ScriptGecko(Coingecko):
         return data.get('platforms', None)
 
 
-def main():
-    add_logging_level('TRACE', TRACE)
-    parser = argparse.ArgumentParser(description='Get multichain information')  # noqa: E501
-    parser.add_argument('-o', '--output', type=str, help='Output json file. If existing its appended to')  # noqa: E501
-    args = parser.parse_args()
-    coingecko = ScriptGecko()
-    data_dir = Path('/home/lefteris/.local/share/rotki/data')
-    globaldb = GlobalDBHandler(data_dir=data_dir)
-
-    output_path = Path(args.output)
-    json_data = {}
-    if output_path.is_file():
-        with open(output_path, 'r') as f:
-            json_data = json.load(f)
-
-    # protocols = coingecko.get_coin_data('dai')
-    # __import__("pdb").set_trace()
+def _query_and_populate(coingecko: Coingecko, json_data: Dict[str, Any]) -> Dict[str, Any]:
+    globaldb = GlobalDBHandler()
     assets = globaldb.get_all_asset_data(mapping=False)
     for entry in assets:
         if entry.identifier in json_data:
@@ -98,6 +87,39 @@ def main():
         json_data[entry.identifier] = '' if protocols is None else protocols
     else:
         print('Success! iterated all assets')
+
+    return json_data
+
+
+def _clean(json_data: Dict[str, Any]) -> Dict[str, Any]:
+    new_data = json_data.copy()
+    for identifier, value in json_data.items():
+        if value == '':
+            new_data.pop(identifier)
+
+    return new_data
+
+
+def main():
+    add_logging_level('TRACE', TRACE)
+    parser = argparse.ArgumentParser(description='Get multichain information')  # noqa: E501
+    parser.add_argument('-o', '--output', type=str, help='Output json file. If existing its appended to')  # noqa: E501
+    parser.add_argument('-c', '--clean', action='store_true', help='Clean file from all empty value assets')  # noqa: E501
+    args = parser.parse_args()
+    coingecko = ScriptGecko()
+    data_dir = Path('/home/lefteris/.local/share/rotki/data')
+    GlobalDBHandler(data_dir=data_dir)
+
+    output_path = Path(args.output)
+    json_data = {}
+    if output_path.is_file():
+        with open(output_path, 'r') as f:
+            json_data = json.load(f)
+
+    if args.clean:
+        json_data = _clean(json_data)
+    else:
+        json_data = _query_and_populate(coingecko, json_data)
 
     with open(output_path, 'w') as f:
         f.write(json.dumps(json_data))
