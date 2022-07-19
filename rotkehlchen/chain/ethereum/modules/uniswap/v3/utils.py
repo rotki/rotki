@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Set, Tuple
 
 from eth_abi import encode_abi
 from eth_abi.packed import encode_abi_packed
-from eth_utils import to_checksum_address
+from eth_utils import to_checksum_address, to_normalized_address
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput
 
@@ -28,7 +28,7 @@ from rotkehlchen.constants.ethereum import (
     UNISWAP_V3_NFT_MANAGER,
     UNISWAP_V3_POOL_ABI,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -454,7 +454,7 @@ def calculate_total_amounts_of_tokens(
 
 def _decode_uniswap_v3_token(entry: Dict[str, Any]) -> TokenDetails:
     return TokenDetails(
-        address=entry['address'],
+        address=to_checksum_address(entry['address']),
         name=entry['name'],
         symbol=entry['symbol'],
         decimals=entry['decimals'],
@@ -478,7 +478,7 @@ def _decode_uniswap_v3_result(
 
     Edge cases whereby a token does not conform to ERC20 standard,the user balance is set to ZERO.
     """
-    nft_id = data[0]
+    nft_id = NFT_DIRECTIVE + to_normalized_address(UNISWAP_V3_NFT_MANAGER.address) + '_' + str(data[0])  # noqa: E501
     pool_token = data[1]
     token0 = _decode_uniswap_v3_token(data[4])
     token1 = _decode_uniswap_v3_token(data[5])

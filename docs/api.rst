@@ -10689,7 +10689,8 @@ Show NFT Balances
                         "price_asset": "ETH",
                         "price_in_asset": "1",
                         "usd_price": "2501.15"
-                        "image_url": "https://storage.opensea.io/files/305952feb5321a50d5d4f6ab6c16da1f.mov"
+                        "image_url": "https://storage.opensea.io/files/305952feb5321a50d5d4f6ab6c16da1f.mov",
+                        "is_lp": false
                     }, {
                         "id": "unique id 2",
                         "name": null,
@@ -10697,7 +10698,8 @@ Show NFT Balances
                         "price_asset": "USD",
                         "price_in_asset": "150.55",
                         "usd_price": "150.55"
-                        "image_url": "https://lh3.googleusercontent.com/xJpOAw7P96jdPgs91w7ZQMTq91tvcCva4J2RYHh7LjFufod_UP9FE0bVjhp1cYpbx2p1qFFj2NDFf3oS0eEcNI3L5w"
+                        "image_url": "https://lh3.googleusercontent.com/xJpOAw7P96jdPgs91w7ZQMTq91tvcCva4J2RYHh7LjFufod_UP9FE0bVjhp1cYpbx2p1qFFj2NDFf3oS0eEcNI3L5w",
+                        "is_lp": true
                 }],
             },
             "message": ""

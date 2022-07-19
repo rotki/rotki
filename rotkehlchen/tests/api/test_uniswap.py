@@ -1241,7 +1241,7 @@ def test_get_v3_balances_premium(rotkehlchen_api_server):
         assert len(lp['price_range']) == 2
         assert isinstance(lp['price_range'], list)
         assert lp['nft_id']
-        assert isinstance(lp['nft_id'], int)
+        assert isinstance(lp['nft_id'], str)
         assert len(lp['assets']) == 2
         assert lp['user_balance']['amount']
         assert lp['user_balance']['usd_value']
@@ -1288,7 +1288,7 @@ def test_get_v3_balances_no_premium(rotkehlchen_api_server):
         assert len(lp['price_range']) == 2
         assert isinstance(lp['price_range'], list)
         assert lp['nft_id']
-        assert isinstance(lp['nft_id'], int)
+        assert isinstance(lp['nft_id'], str)
         assert len(lp['assets']) == 0
         assert lp['user_balance']['amount']
         assert lp['user_balance']['usd_value']

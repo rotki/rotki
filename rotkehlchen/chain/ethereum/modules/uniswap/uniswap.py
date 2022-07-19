@@ -583,10 +583,9 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             known_asset_price=known_asset_price,
             unknown_asset_price=unknown_asset_price,
         )
-        self._update_v3_balances_for_premium(
+        return self._update_v3_balances_for_premium(
             address_balances=protocol_balance.address_balances,
         )
-        return protocol_balance.address_balances
 
     def _update_v3_balances_for_premium(
             self,
@@ -595,7 +594,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         """Update the Uniswap V3 LP positions to remove certain fields depending
         on the premium status of the user.
         """
-        if self.premium is None:
+        if not self.premium:
             for lps in address_balances.values():
                 for lp in lps:
                     lp.total_supply = None

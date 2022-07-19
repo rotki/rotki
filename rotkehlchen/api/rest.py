@@ -3817,16 +3817,34 @@ class RestAPI():
             ignore_cache=ignore_cache,
         )
 
-    def get_nfts_balances(self, async_query: bool, ignore_cache: bool) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
+    def _get_nfts_balances(self, ignore_cache: bool) -> Dict[str, Any]:
+        uniswap_result = self._eth_module_query(
+            module_name='uniswap',
+            method='get_v3_balances',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
+        )
+        return self._eth_module_query(
             module_name='nfts',
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('nfts'),
+            uniswap_nfts=uniswap_result['result'],
             return_zero_values=True,
             ignore_cache=ignore_cache,
         )
+
+    def get_nfts_balances(self, async_query: bool, ignore_cache: bool) -> Response:
+        if async_query is True:
+            return self._query_async(
+                command=self._get_nfts_balances,
+                ignore_cache=ignore_cache,
+            )
+
+        response = self._get_nfts_balances(ignore_cache=ignore_cache)
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def get_nfts_with_price(self) -> Response:
         return self._api_query_for_eth_module(
