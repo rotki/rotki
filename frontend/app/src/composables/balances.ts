@@ -20,6 +20,7 @@ import {
   BlockchainTotal,
   ExchangeBalancePayload,
   ExchangeRateGetter,
+  ExchangeSetupPayload,
   FetchPricePayload,
   HistoricPricePayload,
   LocationBalance,
@@ -414,11 +415,21 @@ export const setupExchanges = () => {
     );
   };
 
+  const setupExchange = async (payload: ExchangeSetupPayload) => {
+    return await store.dispatch('balances/setupExchange', payload);
+  };
+
+  const removeExchange = async (exchange: Exchange) => {
+    return await store.dispatch('balances/removeExchange', exchange);
+  };
+
   return {
     exchanges,
     exchangeBalances,
     connectedExchanges,
     fetchExchangeBalances,
-    fetchConnectedExchangeBalances
+    fetchConnectedExchangeBalances,
+    setupExchange,
+    removeExchange
   };
 };

@@ -2,12 +2,14 @@ import { computed, ref, watch } from '@vue/composition-api';
 import { promiseTimeout, set, useTimeoutFn } from '@vueuse/core';
 import { BaseMessage } from '@/components/settings/utils';
 import i18n from '@/i18n';
+import { EditableSessionState } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { DateFormat } from '@/types/date-format';
 import {
   DashboardTablesVisibleColumns,
   ExplorersSettings,
+  FrontendSettings,
   FrontendSettingsPayload,
   RoundingMode
 } from '@/types/frontend-settings';
@@ -98,6 +100,12 @@ export const setupSettings = () => {
   };
 };
 
+export enum SettingLocation {
+  FRONTEND,
+  SESSION,
+  GENERAL
+}
+
 export const useSettings = () => {
   const store = useStore();
 
@@ -109,9 +117,13 @@ export const useSettings = () => {
     return store.state!.session!.generalSettings;
   });
 
-  const updateSetting = async (
+  const frontendSettings = computed<FrontendSettings>(() => {
+    return store.state!.settings!;
+  });
+
+  const updateGeneralSetting = async (
     settings: SettingsUpdate,
-    messages: BaseMessage
+    messages?: BaseMessage
   ) => {
     const updateKeys = Object.keys(settings);
     assert(
@@ -120,18 +132,21 @@ export const useSettings = () => {
     );
 
     let message: { success: string } | { error: string } = {
-      error: messages.error
+      error: messages?.error || ''
     };
     try {
-      const { success } = (await store.dispatch(
+      // @ts-ignore
+      const { success, message: backendMessage } = (await store.dispatch(
         'session/settingsUpdate',
         settings
       )) as ActionStatus;
 
       if (success) {
         message = {
-          success: messages.success
+          success: messages?.success || ''
         };
+      } else if (backendMessage) {
+        message.error = `${message.error} (${backendMessage})`;
       }
     } catch (e) {
       logger.error(e);
@@ -140,9 +155,83 @@ export const useSettings = () => {
     return message;
   };
 
+  const updateFrontendSetting = async (
+    settings: FrontendSettingsPayload,
+    messages?: BaseMessage
+  ) => {
+    const updateKeys = Object.keys(settings);
+    assert(
+      updateKeys.length === 1,
+      'Settings update should only contain a single setting'
+    );
+
+    let message: { success: string } | { error: string } = {
+      error: messages?.error || ''
+    };
+    try {
+      // @ts-ignore
+      const { success, message: backendMessage } = (await store.dispatch(
+        'settings/updateSetting',
+        settings
+      )) as ActionStatus;
+
+      if (success) {
+        message = {
+          success: messages?.success || ''
+        };
+      } else if (backendMessage) {
+        message.error = `${message.error} (${backendMessage})`;
+      }
+    } catch (e) {
+      logger.error(e);
+    }
+
+    return message;
+  };
+
+  const updateSetting = async (
+    settingKey:
+      | keyof SettingsUpdate
+      | keyof FrontendSettingsPayload
+      | keyof EditableSessionState,
+    settingValue: any,
+    settingLocation: SettingLocation,
+    message: BaseMessage
+  ) => {
+    let result;
+
+    if (settingLocation === SettingLocation.SESSION) {
+      const { dispatch } = useStore();
+      try {
+        await dispatch(`session/${settingKey}`, settingValue);
+        result = { success: message.success };
+      } catch (e: any) {
+        result = {
+          error: `${message.error} (${e.message})}`
+        };
+      }
+    } else {
+      const caller =
+        settingLocation === SettingLocation.FRONTEND
+          ? updateFrontendSetting
+          : updateGeneralSetting;
+
+      result = await caller(
+        {
+          [settingKey]: settingValue
+        },
+        message
+      );
+    }
+    return result;
+  };
+
   return {
     accountingSettings,
     generalSettings,
+    frontendSettings,
+    updateGeneralSetting,
+    updateFrontendSetting,
     updateSetting
   };
 };
@@ -158,17 +247,26 @@ export const useClearableMessages = () => {
 
   const formatMessage = (base: string, extra?: string) => {
     if (extra) {
-      return `${base}: ${extra}`;
+      if (base) {
+        return `${base}: ${extra}`;
+      }
+      return extra;
     }
     return base;
   };
 
-  const setSuccess = (message: string) => {
-    set(success, formatMessage(i18n.tc('settings.saved'), message));
+  const setSuccess = (message: string, useBase: boolean = true) => {
+    set(
+      success,
+      formatMessage(useBase ? i18n.tc('settings.saved') : '', message)
+    );
   };
 
-  const setError = (message: string) => {
-    set(error, formatMessage(i18n.tc('settings.not_saved'), message));
+  const setError = (message: string, useBase: boolean = true) => {
+    set(
+      error,
+      formatMessage(useBase ? i18n.tc('settings.not_saved') : '', message)
+    );
   };
 
   const wait = async () => await promiseTimeout(200);

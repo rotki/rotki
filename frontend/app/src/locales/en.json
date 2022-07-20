@@ -2151,20 +2151,17 @@
         "error": "Error setting animations state: {message}"
       },
       "enable_eth_names": {
-        "error": "Failed to change ETH names visibility",
-        "success": "ETH names is enabled",
-        "success_disabled": "ETH names is disabled"
+        "error": "Failed to change ETH names visibility"
       },
       "periodic_query": {
         "error": "Error setting query period",
         "invalid_period": "Period must be between {start} and {end}",
-        "success": "Query period set to {period} seconds"
+        "non_empty": "Please enter the number of seconds"
       },
       "refresh_period": {
         "error": "Failed to set the refresh period",
         "invalid_period": "Period must be between {start} and {end} min",
-        "success": "Automatic refresh was successfully changed to every {period} min",
-        "success_disabled": "Automatic refresh was successfully deactivated"
+        "non_empty": "Please enter the number of minutes"
       },
       "scramble": {
         "error": "Error setting scramble mode: {message}"
@@ -2239,6 +2236,7 @@
       "balance_frequency": {
         "error": "Error setting balance save frequency to {frequency}",
         "invalid_frequency": "Frequency must be between {start} and {end} hours",
+        "non_empty": "Please enter the number of hours",
         "success": "Data save frequency set to {frequency} hours"
       },
       "btc_derivation_gap": {
@@ -2274,8 +2272,9 @@
         "success_unset": "The Polkadot node RPC endpoint was successfully unset"
       },
       "floating_precision": {
-        "error": "Floating precision set to {precision}",
-        "success": "Error setting floating precision to {precision}"
+        "error": "Error setting floating precision to {precision}",
+        "non_empty": "Please input the floating precision",
+        "success": "Floating precision set to {precision}"
       },
       "ksm_rpc": {
         "error": "There was an error setting the Kusama node RPC endpoint",
@@ -2292,8 +2291,7 @@
       "version_update_check_frequency": {
         "error": "Error setting version update check frequency",
         "invalid_frequency": "Period must be between {start} and {end} hours",
-        "success": "Version update check was successfully changed to every {frequency} hours",
-        "success_disabled": "Version update check was successfully deactivated"
+        "non_empty": "Please enter the number of hours"
       }
     },
     "version_update_check_hint": "How often (in hours) your app version will be checked for update"

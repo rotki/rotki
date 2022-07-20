@@ -58,8 +58,11 @@
     />
     <big-dialog
       :display="showForm"
-      :title="dialogTitle"
-      :subtitle="dialogSubtitle"
+      :title="
+        edit
+          ? $tc('exchange_settings.dialog.edit.title')
+          : $tc('exchange_settings.dialog.add.title')
+      "
       :primary-action="$t('exchange_settings.button.save')"
       :secondary-action="$t('exchange_settings.button.cancel')"
       :action-disabled="!valid || pending"
@@ -77,20 +80,21 @@
   </div>
 </template>
 
-<script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
+<script setup lang="ts">
+import { computed, onBeforeMount, onMounted, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
-import { mapActions, mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { exchangeName } from '@/components/history/consts';
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
-import SettingsMixin from '@/mixins/settings-mixin';
-import { ExchangePayload, ExchangeSetupPayload } from '@/store/balances/types';
+import { setupExchanges } from '@/composables/balances';
+import { useRouter } from '@/composables/common';
+import { useSettings } from '@/composables/settings';
+import i18n from '@/i18n';
+import { ExchangePayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { Nullable, Writeable } from '@/types';
 import { Exchange, SupportedExchange } from '@/types/exchanges';
@@ -108,198 +112,181 @@ const placeholder: () => ExchangePayload = () => ({
   ftxSubaccount: null
 });
 
-@Component({
-  components: {
-    BigDialog,
-    ExchangeKeysForm,
-    RowActions,
-    ExchangeDisplay,
-    RevealableInput,
-    ConfirmDialog,
-    BaseExternalLink
-  },
-  computed: {
-    ...mapState('balances', ['connectedExchanges'])
-  },
-  methods: {
-    ...mapActions('balances', ['setupExchange', 'removeExchange'])
-  }
-})
-export default class ExchangeSettings extends Mixins(SettingsMixin) {
-  nonSyncingExchanges: Exchange[] = [];
-  pendingRemoval: Nullable<Exchange> = null;
-  confirmation: boolean = false;
-  setupExchange!: (payload: ExchangeSetupPayload) => Promise<boolean>;
-  removeExchange!: (exchange: Exchange) => Promise<boolean>;
+const nonSyncingExchanges = ref<Exchange[]>([]);
+const pendingRemoval = ref<Nullable<Exchange>>(null);
+const confirmation = ref<boolean>(false);
 
-  exchange: ExchangePayload = placeholder();
+const { connectedExchanges, setupExchange, removeExchange } = setupExchanges();
 
-  showForm: boolean = false;
-  edit: boolean = false;
-  valid: boolean = false;
-  pending: boolean = false;
-  binancePairs: string[] = [];
+const exchange = ref<ExchangePayload>(placeholder());
 
-  created() {
-    this.nonSyncingExchanges = this.generalSettings.nonSyncingExchanges;
-  }
+const showForm = ref<boolean>(false);
+const edit = ref<boolean>(false);
+const valid = ref<boolean>(false);
+const pending = ref<boolean>(false);
 
-  mounted() {
-    const { currentRoute } = this.$router;
-    if (currentRoute.query.add) {
-      this.addExchange();
-      this.$router.replace({ query: {} });
-    }
-  }
+const { generalSettings, updateSetting } = useSettings();
 
-  findNonSyncExchangeIndex(exchange: Exchange) {
-    return this.nonSyncingExchanges.findIndex((item: Exchange) => {
-      return item.name === exchange.name && item.location === exchange.location;
-    });
+const findNonSyncExchangeIndex = (exchange: Exchange) => {
+  return get(nonSyncingExchanges).findIndex((item: Exchange) => {
+    return item.name === exchange.name && item.location === exchange.location;
+  });
+};
+
+const isNonSyncExchange = (exchange: Exchange) => {
+  return findNonSyncExchangeIndex(exchange) > -1;
+};
+
+const resetNonSyncingExchanges = () => {
+  set(nonSyncingExchanges, get(generalSettings).nonSyncingExchanges);
+};
+
+const toggleSync = async (exchange: Exchange) => {
+  const index = findNonSyncExchangeIndex(exchange);
+
+  let data = [...get(nonSyncingExchanges)];
+
+  let enable = true;
+
+  if (index > -1) {
+    enable = false;
+    data.splice(index);
+  } else {
+    data.push({ location: exchange.location, name: exchange.name });
   }
 
-  isNonSyncExchange(exchange: Exchange) {
-    return this.findNonSyncExchangeIndex(exchange) > -1;
-  }
+  const status = await updateSetting({
+    nonSyncingExchanges: data
+  });
 
-  async toggleSync(exchange: Exchange) {
-    const index = this.findNonSyncExchangeIndex(exchange);
-
-    let data = [...this.nonSyncingExchanges];
-
-    let enable = true;
-
-    if (index > -1) {
-      enable = false;
-      data.splice(index);
-    } else {
-      data.push({ location: exchange.location, name: exchange.name });
-    }
-
-    const status = await this.settingsUpdate({
-      nonSyncingExchanges: data
-    });
-
-    if (!status.success) {
-      const { notify } = useNotifications();
-      notify({
-        title: this.$t('exchange_settings.sync.messages.title').toString(),
-        message: this.$t('exchange_settings.sync.messages.description', {
+  if ('error' in status) {
+    const { notify } = useNotifications();
+    notify({
+      title: i18n.t('exchange_settings.sync.messages.title').toString(),
+      message: i18n
+        .t('exchange_settings.sync.messages.description', {
           action: enable
-            ? this.$t('exchange_settings.sync.messages.enable')
-            : this.$t('exchange_settings.sync.messages.disable'),
+            ? i18n.t('exchange_settings.sync.messages.enable')
+            : i18n.t('exchange_settings.sync.messages.disable'),
           location: exchange.location,
           name: exchange.name,
-          message: status.message
-        }).toString(),
-        display: true
-      });
-    }
-
-    this.nonSyncingExchanges = this.generalSettings.nonSyncingExchanges;
-  }
-
-  get dialogTitle(): string {
-    return this.edit
-      ? this.$t('exchange_settings.dialog.edit.title').toString()
-      : this.$t('exchange_settings.dialog.add.title').toString();
-  }
-
-  get dialogSubtitle(): string {
-    return '';
-  }
-
-  get message() {
-    const exchange = this.pendingRemoval;
-
-    return {
-      name: exchange?.name ?? '',
-      location: exchange ? exchangeName(exchange.location) : ''
-    };
-  }
-
-  readonly headers: DataTableHeader[] = [
-    {
-      text: this.$t('exchange_settings.header.location').toString(),
-      value: 'location',
-      width: '120px',
-      align: 'center'
-    },
-    {
-      text: this.$t('exchange_settings.header.name').toString(),
-      value: 'name'
-    },
-    {
-      text: this.$t('exchange_settings.header.sync_enabled').toString(),
-      value: 'syncEnabled'
-    },
-    {
-      text: this.$t('exchange_settings.header.actions').toString(),
-      value: 'actions',
-      width: '105px',
-      align: 'center',
-      sortable: false
-    }
-  ];
-
-  confirmRemoval(exchange: Exchange) {
-    this.confirmation = true;
-    this.pendingRemoval = exchange;
-  }
-
-  addExchange() {
-    this.edit = false;
-    this.showForm = true;
-    this.exchange = placeholder();
-  }
-
-  editExchange(exchange: Exchange) {
-    this.edit = true;
-    this.showForm = true;
-    this.exchange = { ...placeholder(), ...exchange, newName: exchange.name };
-  }
-
-  cancel() {
-    this.showForm = false;
-    this.exchange = placeholder();
-  }
-
-  async setup() {
-    this.pending = true;
-    const exchange: Writeable<ExchangePayload> = { ...this.exchange };
-    if (exchange.name === exchange.newName) {
-      exchange.newName = null;
-    }
-
-    if (
-      !!exchange.ftxSubaccount &&
-      exchange.ftxSubaccount.trim().length === 0
-    ) {
-      exchange.ftxSubaccount = null;
-    }
-
-    const success = await this.setupExchange({
-      exchange: exchange,
-      edit: this.edit
+          message: status.error
+        })
+        .toString(),
+      display: true
     });
-    this.pending = false;
-    if (success) {
-      this.cancel();
-    }
   }
 
-  async remove() {
-    this.confirmation = false;
-    const exchange = this.pendingRemoval;
-    assert(exchange !== null);
-    this.pendingRemoval = null;
-    const success = await this.removeExchange(exchange);
+  resetNonSyncingExchanges();
+};
 
-    if (success) {
-      this.exchange = placeholder();
-    }
+const message = computed(() => {
+  const exchange = get(pendingRemoval);
+
+  return {
+    name: exchange?.name ?? '',
+    location: exchange ? exchangeName(exchange.location) : ''
+  };
+});
+
+const confirmRemoval = (exchangePayload: Exchange) => {
+  set(confirmation, true);
+  set(pendingRemoval, exchangePayload);
+};
+
+const addExchange = () => {
+  set(edit, false);
+  set(showForm, true);
+  set(exchange, placeholder());
+};
+
+const editExchange = (exchangePayload: Exchange) => {
+  set(edit, true);
+  set(showForm, true);
+  set(exchange, {
+    ...placeholder(),
+    ...exchangePayload,
+    newName: exchangePayload.name
+  });
+};
+
+const cancel = () => {
+  set(showForm, false);
+  set(exchange, placeholder());
+};
+
+const setup = async () => {
+  set(pending, true);
+  const writeableExchange: Writeable<ExchangePayload> = { ...get(exchange) };
+  if (writeableExchange.name === writeableExchange.newName) {
+    writeableExchange.newName = null;
   }
-}
+
+  if (
+    !!writeableExchange.ftxSubaccount &&
+    writeableExchange.ftxSubaccount.trim().length === 0
+  ) {
+    writeableExchange.ftxSubaccount = null;
+  }
+
+  const success = await setupExchange({
+    exchange: writeableExchange,
+    edit: get(edit)
+  });
+  set(pending, false);
+  if (success) {
+    cancel();
+  }
+};
+
+const remove = async () => {
+  set(confirmation, false);
+  const pending = get(pendingRemoval);
+  assert(pending !== null);
+  set(pendingRemoval, null);
+  const success = await removeExchange(pending);
+
+  if (success) {
+    set(exchange, placeholder());
+  }
+};
+
+onBeforeMount(() => {
+  resetNonSyncingExchanges();
+});
+
+const router = useRouter();
+onMounted(() => {
+  const { currentRoute } = router;
+  if (currentRoute.query.add) {
+    addExchange();
+    router.replace({ query: {} });
+  }
+});
+
+const headers: DataTableHeader[] = [
+  {
+    text: i18n.t('exchange_settings.header.location').toString(),
+    value: 'location',
+    width: '120px',
+    align: 'center'
+  },
+  {
+    text: i18n.t('exchange_settings.header.name').toString(),
+    value: 'name'
+  },
+  {
+    text: i18n.t('exchange_settings.header.sync_enabled').toString(),
+    value: 'syncEnabled'
+  },
+  {
+    text: i18n.t('exchange_settings.header.actions').toString(),
+    value: 'actions',
+    width: '105px',
+    align: 'center',
+    sortable: false
+  }
+];
 </script>
 
 <style scoped lang="scss">

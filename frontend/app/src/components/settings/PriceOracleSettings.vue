@@ -9,29 +9,41 @@
 
     <v-row>
       <v-col cols="12" md="6">
-        <price-oracle-selection
-          :value="currentOracles"
-          :all-items="availableCurrentOracles"
-          :status="currentError"
-          @input="onCurrentChange($event)"
+        <settings-option
+          #default="{ error, success, update }"
+          setting="currentPriceOracles"
+          @finished="resetCurrentPriceOracles"
         >
-          <template #title>
-            {{ $t('price_oracle_settings.current_prices') }}
-          </template>
-        </price-oracle-selection>
+          <price-oracle-selection
+            :value="currentOracles"
+            :all-items="availableCurrentOracles"
+            :status="{ error, success }"
+            @input="update"
+          >
+            <template #title>
+              {{ $t('price_oracle_settings.current_prices') }}
+            </template>
+          </price-oracle-selection>
+        </settings-option>
       </v-col>
 
       <v-col cols="12" md="6">
-        <price-oracle-selection
-          :value="historicOracles"
-          :all-items="availableHistoricOracles"
-          :status="historicError"
-          @input="onHistoricChange($event)"
+        <settings-option
+          #default="{ error, success, update }"
+          setting="historicalPriceOracles"
+          @finished="resetHistoricalPriceOracles"
         >
-          <template #title>
-            {{ $t('price_oracle_settings.historic_prices') }}
-          </template>
-        </price-oracle-selection>
+          <price-oracle-selection
+            :value="historicOracles"
+            :all-items="availableHistoricOracles"
+            :status="{ error, success }"
+            @input="update"
+          >
+            <template #title>
+              {{ $t('price_oracle_settings.historic_prices') }}
+            </template>
+          </price-oracle-selection>
+        </settings-option>
       </v-col>
     </v-row>
     <v-row>
@@ -42,62 +54,37 @@
   </setting-category>
 </template>
 
-<script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
+<script setup lang="ts">
+import { onMounted, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import PriceOracleSelection from '@/components/settings/PriceOracleSelection.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
-import SettingsMixin from '@/mixins/settings-mixin';
-import { ActionStatus } from '@/store/types';
-import { PriceOracle } from '@/types/user';
+import { useSettings } from '@/composables/settings';
 
-@Component({
-  components: { PriceOracleSelection, SettingCategory }
-})
-export default class PriceOracleSettings extends Mixins(SettingsMixin) {
-  private readonly baseAvailableOracles = ['cryptocompare', 'coingecko'];
-  readonly availableCurrentOracles: string[] = [
-    ...this.baseAvailableOracles,
-    'uniswapv2',
-    'uniswapv3',
-    'saddle'
-  ];
-  readonly availableHistoricOracles = [...this.baseAvailableOracles, 'manual'];
+const baseAvailableOracles = ['cryptocompare', 'coingecko'];
+const availableCurrentOracles: string[] = [
+  ...baseAvailableOracles,
+  'uniswapv2',
+  'uniswapv3',
+  'saddle'
+];
+const availableHistoricOracles = [...baseAvailableOracles, 'manual'];
 
-  currentOracles: string[] = [];
-  historicOracles: string[] = [];
+const currentOracles = ref<string[]>([]);
+const historicOracles = ref<string[]>([]);
 
-  currentError: ActionStatus | null = null;
-  historicError: ActionStatus | null = null;
+const { generalSettings } = useSettings();
+const resetCurrentPriceOracles = () => {
+  set(currentOracles, get(generalSettings).currentPriceOracles);
+};
 
-  mounted() {
-    this.currentOracles = this.generalSettings.currentPriceOracles;
-    this.historicOracles = this.generalSettings.historicalPriceOracles;
-  }
+const resetHistoricalPriceOracles = () => {
+  set(historicOracles, get(generalSettings).historicalPriceOracles);
+};
 
-  async onCurrentChange(oracles: PriceOracle[]) {
-    this.currentError = null;
-    const previous = [...this.currentOracles];
-    this.currentOracles = oracles;
-    const status = await this.settingsUpdate({
-      currentPriceOracles: oracles
-    });
-    if (!status.success) {
-      this.currentError = status;
-      this.currentOracles = previous;
-    }
-  }
-
-  async onHistoricChange(oracles: PriceOracle[]) {
-    this.historicError = null;
-    const previous = [...this.historicOracles];
-    this.historicOracles = oracles;
-    const status = await this.settingsUpdate({
-      historicalPriceOracles: oracles
-    });
-    if (!status.success) {
-      this.historicError = status;
-      this.historicOracles = previous;
-    }
-  }
-}
+onMounted(() => {
+  resetCurrentPriceOracles();
+  resetHistoricalPriceOracles();
+});
 </script>
