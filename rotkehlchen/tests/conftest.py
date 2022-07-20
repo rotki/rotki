@@ -7,6 +7,7 @@ from pathlib import Path
 import py
 import pytest
 
+from rotkehlchen.args import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import TRACE, add_logging_level, configure_logging
@@ -14,7 +15,7 @@ from rotkehlchen.tests.utils.args import default_args
 
 add_logging_level('TRACE', TRACE)
 configure_logging(default_args())
-GlobalDBHandler(default_data_directory())
+GlobalDBHandler(default_data_directory(), DEFAULT_SQL_VM_INSTRUCTIONS_CB)
 
 from rotkehlchen.tests.fixtures import *  # noqa: F401,F403
 

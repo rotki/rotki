@@ -22,7 +22,6 @@ UnderlyingConnection = Union[sqlite3.Connection, sqlcipher.Connection]  # pylint
 import logging
 
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
-SQL_VM_INSTRUCTIONS_CB = 5000  # maybe make this configurable
 
 
 class DBCursor:
@@ -186,13 +185,19 @@ class DBConnection:
     def _set_progress_handler(self) -> None:
         callback = CALLBACK_MAP.get(self.connection_type)
         # https://github.com/python/typeshed/issues/8105
-        self._conn.set_progress_handler(callback, SQL_VM_INSTRUCTIONS_CB)  # type: ignore
+        self._conn.set_progress_handler(callback, self.sql_vm_instructions_cb)  # type: ignore
 
-    def __init__(self, path: Union[str, Path], connection_type: DBConnectionType) -> None:
+    def __init__(
+            self,
+            path: Union[str, Path],
+            connection_type: DBConnectionType,
+            sql_vm_instructions_cb: int,
+    ) -> None:
         self._conn: UnderlyingConnection
         self._in_critical_section = False
         self.in_callback = gevent.lock.Semaphore()
         self.connection_type = connection_type
+        self.sql_vm_instructions_cb = sql_vm_instructions_cb
         if connection_type == DBConnectionType.GLOBAL:
             self._conn = sqlite3.connect(path, check_same_thread=False)
         else:

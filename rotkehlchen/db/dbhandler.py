@@ -245,6 +245,7 @@ class DBHandler:
             password: str,
             msg_aggregator: MessagesAggregator,
             initial_settings: Optional[ModifiableDBSettings],
+            sql_vm_instructions_cb: int,
     ):
         """Database constructor
 
@@ -256,6 +257,7 @@ class DBHandler:
         """
         self.msg_aggregator = msg_aggregator
         self.user_data_dir = user_data_dir
+        self.sql_vm_instructions_cb = sql_vm_instructions_cb
         self.sqlcipher_version = detect_sqlcipher_version()
         self.last_write_ts: Optional[Timestamp] = None
         self.conn: DBConnection = None  # type: ignore
@@ -405,7 +407,11 @@ class DBHandler:
             fullpath = self.user_data_dir / TRANSIENT_DB_NAME
             connection_type = DBConnectionType.TRANSIENT
         try:
-            conn = DBConnection(path=str(fullpath), connection_type=connection_type)
+            conn = DBConnection(
+                path=str(fullpath),
+                connection_type=connection_type,
+                sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+            )
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             raise SystemPermissionError(
                 f'Could not open database file: {fullpath}. Permission errors?',
@@ -501,7 +507,11 @@ class DBHandler:
                 f.write(unencrypted_db_data)
 
             # Now attach to the unencrypted DB and copy it to our DB and encrypt it
-            self.conn = DBConnection(path=tempdbpath, connection_type=DBConnectionType.USER)
+            self.conn = DBConnection(
+                path=tempdbpath,
+                connection_type=DBConnectionType.USER,
+                sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+            )
             password_for_sqlcipher = _protect_password_sqlcipher(password)
             script = f'ATTACH DATABASE "{rdbpath}" AS encrypted KEY "{password_for_sqlcipher}";'
             if self.sqlcipher_version == 3:

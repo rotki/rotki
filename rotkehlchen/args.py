@@ -6,6 +6,7 @@ from rotkehlchen.utils.misc import get_system_spec
 
 DEFAULT_MAX_LOG_SIZE_IN_MB = 300
 DEFAULT_MAX_LOG_BACKUP_FILES = 3
+DEFAULT_SQL_VM_INSTRUCTIONS_CB = 5000
 
 
 class CommandAction(argparse.Action):
@@ -117,6 +118,12 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         '--max-logfiles-num',
         help='This is the maximum number of logfiles to keep',
         default=DEFAULT_MAX_LOG_BACKUP_FILES,
+        type=int,
+    )
+    p.add_argument(
+        '--sqlite-instructions',
+        help='Instructions per sqlite context switch',
+        default=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
         type=int,
     )
     p.add_argument(

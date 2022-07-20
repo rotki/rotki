@@ -386,7 +386,7 @@ class AssetsUpdater():
         global_db_path = data_directory / 'global_data' / 'global.db'
         with TemporaryDirectory() as tmpdirname:
             tempdbpath = Path(tmpdirname) / 'temp.db'
-            connection = initialize_globaldb(tempdbpath)
+            connection = initialize_globaldb(tempdbpath, GlobalDBHandler().conn.sql_vm_instructions_cb)  # noqa: E501
             _replace_assets_from_db(connection, global_db_path)
             self._perform_update(
                 connection=connection,

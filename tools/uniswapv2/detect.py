@@ -204,7 +204,7 @@ if __name__ == "__main__":
         assert DB_USERNAME_VAR in os.environ, f'Missing {DB_USERNAME_VAR} in the env vars'
         assert DB_PASSWORD_VAR in os.environ, f'Missing {DB_PASSWORD_VAR} in the env vars'
         db_username, db_password = os.environ.get(DB_USERNAME_VAR), os.environ.get(DB_PASSWORD_VAR)
-        database = DBHandler(db_username, db_password, msg_aggregator, None)
+        database = DBHandler(db_username, db_password, msg_aggregator, None, 5000)
         ethereum = init_ethereum(
             rpc_endpoint=args.eth_rpc_endpoint,
             use_other_nodes=args.use_other_nodes,

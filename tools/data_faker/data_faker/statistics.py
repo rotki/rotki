@@ -39,6 +39,7 @@ class StatisticsFaker():
             password=args.user_password,
             msg_aggregator=MessagesAggregator(),
             initial_settings=None,
+            sql_vm_instructions_cb=5000,
         )
 
     def _clean_tables(self) -> None:

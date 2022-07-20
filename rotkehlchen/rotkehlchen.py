@@ -136,8 +136,12 @@ class Rotkehlchen():
         self.msg_aggregator.rotki_notifier = self.rotki_notifier
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         # Initialize the GlobalDBHandler singleton. Has to be initialized BEFORE asset resolver
-        GlobalDBHandler(data_dir=self.data_dir)
-        self.data = DataHandler(self.data_dir, self.msg_aggregator)
+        GlobalDBHandler(data_dir=self.data_dir, sql_vm_instructions_cb=args.sqlite_instructions)
+        self.data = DataHandler(
+            self.data_dir,
+            self.msg_aggregator,
+            sql_vm_instructions_cb=args.sqlite_instructions,
+        )
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
         self.coingecko = Coingecko()
         self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
