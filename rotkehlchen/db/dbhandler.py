@@ -59,7 +59,7 @@ from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
@@ -2772,6 +2772,7 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             ignored_assets = self.get_ignored_assets(cursor)
+            treat_eth2_as_eth = self.get_settings(cursor).treat_eth2_as_eth
             cursor.execute(
                 'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '
                 'time=(SELECT MAX(time) from timed_balances) AND category = ? ORDER BY '
@@ -2779,20 +2780,41 @@ class DBHandler:
                 (BalanceType.ASSET.serialize_for_db(),),  # pylint: disable=no-member
             )
             asset_balances = []
+            eth_balance: Dict[str, Union[str, int]] = {
+                'time': 0,
+                'amount': '0',
+                'usd_value': '0',
+            }
             for result in cursor:
                 asset = Asset(result[1])
                 if asset in ignored_assets:
                     continue
+                # show eth & eth2 as eth in value distribution by asset
+                if treat_eth2_as_eth is True and asset in (A_ETH, A_ETH2):
+                    eth_balance['time'] = int(result[0])
+                    eth_balance['amount'] = str(FVal(eth_balance['amount']) + FVal(result[2]))
+                    eth_balance['usd_value'] = str(FVal(eth_balance['usd_value']) + FVal(result[3]))  # noqa: E501
+                else:
+                    asset_balances.append(
+                        DBAssetBalance(
+                            time=Timestamp(result[0]),
+                            asset=asset,
+                            amount=result[2],
+                            usd_value=result[3],
+                            category=BalanceType.deserialize_from_db(result[4]),
+                        ),
+                    )
+            # only add the eth_balance if it contains a balance > 0
+            if FVal(eth_balance['amount']) > ZERO or FVal(eth_balance['usd_value']) > ZERO:
                 asset_balances.append(
                     DBAssetBalance(
-                        time=result[0],
-                        asset=asset,
-                        amount=result[2],
-                        usd_value=result[3],
-                        category=BalanceType.deserialize_from_db(result[4]),
+                        time=Timestamp(int(eth_balance['time'])),
+                        asset=A_ETH,
+                        amount=str(eth_balance['amount']),
+                        usd_value=str(eth_balance['usd_value']),
+                        category=BalanceType.ASSET,
                     ),
                 )
-
         return asset_balances
 
     def get_tags(self, cursor: 'DBCursor') -> Dict[str, Tag]:
