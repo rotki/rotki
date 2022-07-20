@@ -383,7 +383,7 @@ class EthTransactions:
                             )
             except RemoteError as e:
                 self.ethereum.msg_aggregator.add_error(
-                    f'Got error "{str(e)}" while querying token transactions'
+                    f'Got error "{str(e)}" while querying token transactions '
                     f'from Etherscan. Transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
