@@ -1,5 +1,5 @@
 import { computed, onMounted, ref } from '@vue/composition-api';
-import { get } from '@vueuse/core';
+import { get, set } from '@vueuse/core';
 import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/store';
@@ -36,7 +36,7 @@ export const setupBackendManagement = (loaded: () => void = () => {}) => {
   const interop = useInterop();
 
   const defaultLogLevel = computed<LogLevel>(() => getDefaultLogLevel());
-  const logLevel = ref<LogLevel>(defaultLogLevel.value);
+  const logLevel = ref<LogLevel>(get(defaultLogLevel));
   const userOptions = ref<Partial<BackendOptions>>({});
   const fileConfig = ref<Partial<BackendOptions>>({});
   const defaultLogDirectory = ref('');
@@ -48,7 +48,7 @@ export const setupBackendManagement = (loaded: () => void = () => {}) => {
   onMounted(async () => {
     await load();
     loaded();
-    setLevel(options.value.loglevel);
+    setLevel(get(options).loglevel);
   });
 
   const restartBackendWithOptions = async (
@@ -64,16 +64,16 @@ export const setupBackendManagement = (loaded: () => void = () => {}) => {
     if (!interop.isPackaged) {
       return;
     }
-    userOptions.value = loadUserOptions();
-    fileConfig.value = await interop.config(false);
+    set(userOptions, loadUserOptions());
+    set(fileConfig, await interop.config(false));
     const { logDirectory } = await interop.config(true);
     if (logDirectory) {
-      defaultLogDirectory.value = logDirectory;
+      set(defaultLogDirectory, logDirectory);
     }
   };
 
   const saveOptions = async (opts: Partial<BackendOptions>) => {
-    const { logDirectory, dataDirectory, loglevel } = userOptions.value;
+    const { logDirectory, dataDirectory, loglevel } = get(userOptions);
     const updatedOptions = {
       logDirectory,
       dataDirectory,
@@ -81,14 +81,14 @@ export const setupBackendManagement = (loaded: () => void = () => {}) => {
       ...opts
     };
     saveUserOptions(updatedOptions);
-    userOptions.value = updatedOptions;
-    await restartBackendWithOptions(options.value);
+    set(userOptions, updatedOptions);
+    await restartBackendWithOptions(get(options));
   };
 
   const resetOptions = async () => {
     saveUserOptions({});
-    userOptions.value = {};
-    await restartBackendWithOptions(options.value);
+    set(userOptions, {});
+    await restartBackendWithOptions(get(options));
   };
 
   const restartBackend = async () => {
@@ -96,7 +96,7 @@ export const setupBackendManagement = (loaded: () => void = () => {}) => {
       return;
     }
     await load();
-    await restartBackendWithOptions(options.value);
+    await restartBackendWithOptions(get(options));
   };
 
   return {

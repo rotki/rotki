@@ -32,6 +32,7 @@ export const BackendOptions = z.object({
   sleepSeconds: z.number().nonnegative().optional(),
   logFromOtherModules: z.boolean().optional(),
   maxSizeInMbAllLogs: z.number().optional(),
+  sqliteInstructions: z.number().optional(),
   maxLogfilesNum: z.number().optional()
 });
 
