@@ -245,7 +245,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             # Get latest link from the DB to know where to resume from
             cursor = self.db.conn.cursor()
             query_result = cursor.execute(
-                'SELECT link FROM asset_movements WHERE location=? AND time <= ? ORDER BY time DESC LIMIT 1',  # noqa: E501
+                'SELECT link FROM asset_movements WHERE location=? AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1',  # noqa: E501
                 (Location.BITSTAMP.serialize_for_db(), start_ts),
             ).fetchone()
             if query_result is not None:
@@ -282,7 +282,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             # Get latest link from the DB to know where to resume from
             cursor = self.db.conn.cursor()
             query_result = cursor.execute(
-                'SELECT link FROM trades WHERE location=? AND time <= ? ORDER BY time DESC LIMIT 1',  # noqa: E501
+                'SELECT link FROM trades WHERE location=? AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1',  # noqa: E501
                 (Location.BITSTAMP.serialize_for_db(), start_ts),
             ).fetchone()
             if query_result is not None:

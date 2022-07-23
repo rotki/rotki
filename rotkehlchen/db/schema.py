@@ -175,21 +175,21 @@ CREATE TABLE IF NOT EXISTS ignored_actions (
 DB_CREATE_TIMED_BALANCES = """
 CREATE TABLE IF NOT EXISTS timed_balances (
     category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
-    time INTEGER,
+    timestamp INTEGER,
     currency TEXT,
     amount TEXT,
     usd_value TEXT,
     FOREIGN KEY(currency) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    PRIMARY KEY (time, currency, category)
+    PRIMARY KEY (timestamp, currency, category)
 );
 """
 
 DB_CREATE_TIMED_LOCATION_DATA = """
 CREATE TABLE IF NOT EXISTS timed_location_data (
-    time INTEGER,
+    timestamp INTEGER,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     usd_value TEXT,
-    PRIMARY KEY (time, location)
+    PRIMARY KEY (timestamp, location)
 );
 """
 
@@ -317,7 +317,7 @@ DB_CREATE_ETHEREUM_ACCOUNTS_DETAILS = """
 CREATE TABLE IF NOT EXISTS ethereum_accounts_details (
     account VARCHAR[42] NOT NULL PRIMARY KEY,
     tokens_list TEXT NOT NULL,
-    time INTEGER NOT NULL
+    timestamp INTEGER NOT NULL
 );
 """
 
@@ -355,7 +355,7 @@ CREATE TABLE IF NOT EXISTS multisettings (
 DB_CREATE_TRADES = """
 CREATE TABLE IF NOT EXISTS trades (
     id TEXT PRIMARY KEY NOT NULL,
-    time INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     base_asset TEXT NOT NULL,
     quote_asset TEXT NOT NULL,
@@ -396,7 +396,7 @@ CREATE TABLE IF NOT EXISTS asset_movements (
     category CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_movement_category(category),
     address TEXT,
     transaction_id TEXT,
-    time INTEGER,
+    timestamp INTEGER,
     asset TEXT NOT NULL,
     amount TEXT,
     fee_asset TEXT,
@@ -705,7 +705,7 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
           SELECT
           A.tx_hash AS txhash,
           A.log_index AS logindex,
-          A.timestamp AS time,
+          A.timestamp AS timestamp,
           A.location AS location,
           FE.amount1_in AS first1in,
           FE.amount0_in AS first0in,
@@ -722,19 +722,19 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
           LE.tx_hash = A.tx_hash AND LE.log_index=(SELECT MAX(log_index) FROM amm_swaps WHERE tx_hash=A.tx_hash)
           WHERE A.tx_hash IN (SELECT DISTINCT tx_hash FROM amm_swaps) GROUP BY A.tx_hash
     ), C1 AS (
-        SELECT lasttoken0 AS base1, firsttoken0 AS quote1, last0out AS amount1, cast(first0in AS REAL) / CAST(last0out AS REAL) AS rate1, txhash, logindex, time, location
+        SELECT lasttoken0 AS base1, firsttoken0 AS quote1, last0out AS amount1, cast(first0in AS REAL) / CAST(last0out AS REAL) AS rate1, txhash, logindex, timestamp, location
         FROM amounts_query
         WHERE first0in > 0 AND last0out > 0 AND first1in == 0 AND last1out == 0
     ), C2 AS (
-        SELECT lasttoken1 AS base1, firsttoken0 AS quote1, last1out AS amount1, cast(first0in AS REAL) / CAST(last1out AS REAL) AS rate1, txhash, logindex, time, location
+        SELECT lasttoken1 AS base1, firsttoken0 AS quote1, last1out AS amount1, cast(first0in AS REAL) / CAST(last1out AS REAL) AS rate1, txhash, logindex, timestamp, location
         FROM amounts_query
         WHERE first0in > 0 AND last1out > 0 AND first1in == 0 AND last0out == 0
     ), C3 AS (
-        SELECT lasttoken0 AS base1, firsttoken1 AS quote1, last0out AS amount1, CAST(first1in AS REAL) / CAST(last0out AS REAL) AS rate1, txhash, logindex, time, location
+        SELECT lasttoken0 AS base1, firsttoken1 AS quote1, last0out AS amount1, CAST(first1in AS REAL) / CAST(last0out AS REAL) AS rate1, txhash, logindex, timestamp, location
         FROM amounts_query
         WHERE first1in > 0 AND last0out > 0 AND first0in == 0 AND last1out == 0
     ), C4 AS (
-        SELECT lasttoken1 AS base1, firsttoken1 AS quote1, last1out AS amount1, CAST(first1in AS REAL) / CAST(last1out AS REAL) AS rate1, txhash, logindex, time, location
+        SELECT lasttoken1 AS base1, firsttoken1 AS quote1, last1out AS amount1, CAST(first1in AS REAL) / CAST(last1out AS REAL) AS rate1, txhash, logindex, timestamp, location
         FROM amounts_query
         WHERE first1in > 0 AND last1out > 0 AND first0in == 0 AND last0out == 0
     ), C5 AS (
@@ -747,7 +747,7 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
             firsttoken0 AS quote2,
             (CAST(last1out AS REAL) / 2) AS amount2,
             CAST(first0in AS REAL) / (CAST(last1out AS REAL) / 2) AS rate2,
-            txhash, logindex, time, location
+            txhash, logindex, timestamp, location
         FROM amounts_query
         WHERE first1in > 0 AND first0in > 0 AND last1out > 0 AND last0out == 0
     ), C6 AS (
@@ -760,29 +760,29 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
             firsttoken0 AS quote2,
             last0out AS amount2,
             CAST(first0in AS REAL) / CAST(last0out AS REAL) AS rate2,
-            txhash, logindex, time, location
+            txhash, logindex, timestamp, location
         FROM amounts_query
         WHERE first1in > 0 AND first0in > 0 AND last1out > 0 AND last0out > 0
     ), SWAPS AS (
-    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C1
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, timestamp, location FROM C1
     UNION ALL /* using union all as there can be no duplicates so no need to handle them */
-    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C2
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, timestamp, location FROM C2
     UNION ALL /* using union all as there can be no duplicates so no need to handle them */
-    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C3
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, timestamp, location FROM C3
     UNION ALL /* using union all as there can be no duplicates so no need to handle them */
-    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C4
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, timestamp, location FROM C4
     UNION ALL /* using union all as there can be no duplicates so no need to handle them */
-    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C5
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, timestamp, location FROM C5
     UNION ALL /* using union all as there can be no duplicates so no need to handle them */
-    SELECT base2 AS base_asset, quote2 AS quote_asset, amount2 AS amount, rate2 AS rate, txhash, logindex, time, location FROM C5
+    SELECT base2 AS base_asset, quote2 AS quote_asset, amount2 AS amount, rate2 AS rate, txhash, logindex, timestamp, location FROM C5
     UNION ALL /* using union all as there can be no duplicates so no need to handle them */
-    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C6
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, timestamp, location FROM C6
     UNION ALL /* using union all as there can be no duplicates so no need to handle them */
-    SELECT base2 AS base_asset, quote2 AS quote_asset, amount2 AS amount, rate2 AS rate, txhash, logindex, time, location FROM C6
+    SELECT base2 AS base_asset, quote2 AS quote_asset, amount2 AS amount, rate2 AS rate, txhash, logindex, timestamp, location FROM C6
    )
    SELECT
        txhash + logindex AS id,
-       time,
+       timestamp,
        location,
        base_asset,
        quote_asset,

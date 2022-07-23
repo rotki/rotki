@@ -286,7 +286,7 @@ class TradesQuerySchema(
         value = data['order_by_attribute']
         if data['order_by_attribute'] not in (
                 None,
-                'time',
+                'timestamp',
                 'location',
                 'type',
                 'amount',
@@ -304,7 +304,7 @@ class TradesQuerySchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'time'  # noqa: E501
+        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         base_assets: Optional[Tuple['Asset', ...]] = None
         quote_assets: Optional[Tuple['Asset', ...]] = None
         if data['base_asset'] is not None:
@@ -493,7 +493,7 @@ class AssetMovementsQuerySchema(
         value = data['order_by_attribute']
         if data['order_by_attribute'] not in (
                 None,
-                'time',
+                'timestamp',
                 'location',
                 'category',
                 'amount',
@@ -510,7 +510,7 @@ class AssetMovementsQuerySchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'time'  # noqa: E501
+        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         asset_list: Optional[Tuple['Asset', ...]] = None
         if data['asset'] is not None:
             asset_list = (data['asset'],)

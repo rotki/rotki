@@ -347,7 +347,7 @@
   ],
   "settings": {
     "have_premium": false,
-    "version": 33,
+    "version": 34,
     "last_write_ts": 1656344880,
     "premium_should_sync": false,
     "include_crypto2crypto": true,

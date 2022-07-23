@@ -11,10 +11,9 @@ from rotkehlchen.data_migrations.manager import (
     DataMigrationManager,
     MigrationRecord,
 )
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import Location, TradeType
 
 
 def _create_invalid_icon(icon_identifier: str, icons_dir: Path) -> Path:
@@ -75,22 +74,37 @@ def test_migration_1(rotkehlchen_api_server):
     # Migration shouldn't execute and information should stay in database
     with db.user_write() as cursor:
         for exchange_location in [Location.BINANCE, Location.KRAKEN]:
-            db.add_trades(
-                write_cursor=cursor,
-                trades=[
-                    Trade(
-                        timestamp=Timestamp(1),
-                        location=exchange_location,
-                        base_asset=A_BTC,
-                        quote_asset=A_ETH,
-                        trade_type=TradeType.BUY,
-                        amount=AssetAmount(ONE),
-                        rate=Price(ONE),
-                        fee=Fee(FVal('0.1')),
-                        fee_currency=A_ETH,
-                        link='foo',
-                        notes='boo',
-                    )])
+            trade_tuples = ((
+                f'custom-trade-id-{exchange_location}',
+                1,
+                exchange_location.serialize_for_db(),
+                A_BTC.identifier,
+                A_ETH.identifier,
+                TradeType.BUY.serialize_for_db(),
+                str(ONE),
+                str(ONE),
+                str(FVal('0.1')),
+                A_ETH.identifier,
+                'foo',
+                'boo',
+            ),)
+            query = """
+                INSERT INTO trades(
+                id,
+                time,
+                location,
+                base_asset,
+                quote_asset,
+                type,
+                amount,
+                rate,
+                fee,
+                fee_currency,
+                link,
+                notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            db.write_tuples(write_cursor=cursor, tuple_type='trade', query=query, tuples=trade_tuples)  # noqa: E501
             db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_trades_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
             db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_margins_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
             db.update_used_query_range(write_cursor=cursor, name=f'{str(exchange_location)}_asset_movements_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501

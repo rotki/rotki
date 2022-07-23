@@ -750,7 +750,7 @@ class DBHandler:
         try:
             write_cursor.executemany(
                 'INSERT INTO timed_balances('
-                '    time, currency, amount, usd_value, category) '
+                '    timestamp, currency, amount, usd_value, category) '
                 ' VALUES(?, ?, ?, ?, ?)',
                 serialized_balances,
             )
@@ -1196,7 +1196,7 @@ class DBHandler:
 
     def get_last_balance_save_time(self, cursor: 'DBCursor') -> Timestamp:
         cursor.execute(
-            'SELECT MAX(time) from timed_location_data',
+            'SELECT MAX(timestamp) from timed_location_data',
         )
         result = cursor.fetchone()
         if result is None or result[0] is None:
@@ -1210,7 +1210,7 @@ class DBHandler:
             try:
                 write_cursor.execute(
                     'INSERT INTO timed_location_data('
-                    '    time, location, usd_value) '
+                    '    timestamp, location, usd_value) '
                     ' VALUES(?, ?, ?)',
                     (entry.time, entry.location, entry.usd_value),
                 )
@@ -1327,7 +1327,7 @@ class DBHandler:
             current_time: Timestamp,
     ) -> Optional[Dict[str, Any]]:
         query = cursor.execute(
-            'SELECT tokens_list, time FROM ethereum_accounts_details WHERE account = ?',
+            'SELECT tokens_list, timestamp FROM ethereum_accounts_details WHERE account = ?',
             (address,),
         )
         result = query.fetchall()
@@ -1396,7 +1396,7 @@ class DBHandler:
 
     def _get_address_details_json(self, cursor: 'DBCursor', address: ChecksumEthAddress) -> Optional[Dict[str, Any]]:  # noqa: E501
         query = cursor.execute(
-            'SELECT tokens_list, time FROM ethereum_accounts_details WHERE account = ?',
+            'SELECT tokens_list, timestamp FROM ethereum_accounts_details WHERE account = ?',
             (address,),
         )
         result = query.fetchall()
@@ -1430,7 +1430,7 @@ class DBHandler:
         now = ts_now()
         write_cursor.execute(
             'INSERT OR REPLACE INTO ethereum_accounts_details '
-            '(account, tokens_list, time) VALUES (?, ?, ?)',
+            '(account, tokens_list, timestamp) VALUES (?, ?, ?)',
             (address, json.dumps(new_details), now),
         )
 
@@ -2105,7 +2105,7 @@ class DBHandler:
               id,
               location,
               category,
-              time,
+              timestamp,
               asset,
               amount,
               fee_asset,
@@ -2149,7 +2149,7 @@ class DBHandler:
             query = 'SELECT * from asset_movements ' + query
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT * from asset_movements ORDER BY time DESC LIMIT ?) ' + query  # noqa: E501
+            query = 'SELECT * FROM (SELECT * from asset_movements ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_ASSET_MOVEMENTS_LIMIT] + bindings)
 
         asset_movements = []
@@ -2266,7 +2266,7 @@ class DBHandler:
         query = """
             INSERT INTO trades(
               id,
-              time,
+              timestamp,
               location,
               base_asset,
               quote_asset,
@@ -2290,7 +2290,7 @@ class DBHandler:
         write_cursor.execute(
             'UPDATE trades SET '
             '  id=?, '
-            '  time=?,'
+            '  timestamp=?,'
             '  location=?,'
             '  base_asset=?,'
             '  quote_asset=?,'
@@ -2351,7 +2351,7 @@ class DBHandler:
             query = 'SELECT * from combined_trades_view ' + query
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT * from trades ORDER BY time DESC LIMIT ?) ' + query  # noqa: E501
+            query = 'SELECT * FROM (SELECT * from trades ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_TRADES_LIMIT] + bindings)
 
         trades = []
@@ -2509,15 +2509,15 @@ class DBHandler:
         with self.conn.read_ctx() as cursor:
             # Get the total location ("H") entries in ascending time
             cursor.execute(
-                'SELECT time, usd_value FROM timed_location_data '
-                'WHERE location="H" AND time >= ? ORDER BY time ASC;',
+                'SELECT timestamp, usd_value FROM timed_location_data '
+                'WHERE location="H" AND timestamp >= ? ORDER BY timestamp ASC;',
                 (from_ts,),
             )
             if not include_nfts:
                 with self.conn.read_ctx() as nft_cursor:
                     nft_cursor.execute(
-                        'SELECT time, SUM(usd_value) FROM timed_balances WHERE time >= ? '
-                        'AND currency LIKE ? GROUP BY time',
+                        'SELECT timestamp, SUM(usd_value) FROM timed_balances WHERE '
+                        'timestamp >= ? AND currency LIKE ? GROUP BY timestamp',
                         (from_ts, f'{NFT_DIRECTIVE}%'),
                     )
                     nft_values = {time: value for time, value in nft_cursor}
@@ -2552,8 +2552,8 @@ class DBHandler:
 
         settings = self.get_settings(cursor)
         querystr = (
-            'SELECT time, amount, usd_value, category FROM timed_balances '
-            'WHERE time BETWEEN ? AND ? AND currency=?'
+            'SELECT timestamp, amount, usd_value, category FROM timed_balances '
+            'WHERE timestamp BETWEEN ? AND ? AND currency=?'
         )
         bindings = [from_ts, to_ts, asset.identifier]
 
@@ -2565,7 +2565,7 @@ class DBHandler:
         if balance_type is not None:
             querystr += ' AND category=?'
             bindings.append(balance_type.serialize_for_db())
-        querystr += ' ORDER BY time ASC;'
+        querystr += ' ORDER BY timestamp ASC;'
 
         cursor.execute(querystr, bindings)
         results = cursor.fetchall()
@@ -2739,8 +2739,8 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT time, location, usd_value FROM timed_location_data WHERE '
-                'time=(SELECT MAX(time) FROM timed_location_data) AND usd_value!=0;',
+                'SELECT timestamp, location, usd_value FROM timed_location_data WHERE '
+                'timestamp=(SELECT MAX(timestamp) FROM timed_location_data) AND usd_value!=0;',
             )
             locations = []
             for result in cursor:
@@ -2769,9 +2769,9 @@ class DBHandler:
 
         with self.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '
-                'time=(SELECT MAX(time) from timed_balances) AND category = ? ORDER BY '
-                'CAST(usd_value AS REAL) DESC;',
+                'SELECT timestamp, currency, amount, usd_value, category FROM timed_balances '
+                'WHERE timestamp=(SELECT MAX(timestamp) from timed_balances) AND category = ? '
+                'ORDER BY CAST(usd_value AS REAL) DESC;',
                 (BalanceType.ASSET.serialize_for_db(),),  # pylint: disable=no-member
             )
             asset_balances = []

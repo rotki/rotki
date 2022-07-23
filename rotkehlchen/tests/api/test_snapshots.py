@@ -69,7 +69,7 @@ def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Times
     ]
     write_cursor.executemany(
         'INSERT INTO timed_balances('
-        '    time, currency, amount, usd_value, category) '
+        '    timestamp, currency, amount, usd_value, category) '
         ' VALUES(?, ?, ?, ?, ?)',
         serialized_balances,
     )
@@ -585,8 +585,8 @@ def test_delete_snapshot(rotkehlchen_api_server):
     )
     assert_simple_ok_response(response)
     cursor = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.cursor()
-    assert len(cursor.execute('SELECT time FROM timed_balances WHERE time=?', (ts,)).fetchall()) == 0  # noqa: 501
-    assert len(cursor.execute('SELECT time FROM timed_location_data WHERE time=?', (ts,)).fetchall()) == 0  # noqa: 501
+    assert len(cursor.execute('SELECT timestamp FROM timed_balances WHERE timestamp=?', (ts,)).fetchall()) == 0  # noqa: E501
+    assert len(cursor.execute('SELECT timestamp FROM timed_location_data WHERE timestamp=?', (ts,)).fetchall()) == 0  # noqa: E501
 
     # check that an error is thrown for invalid timestamp
     response = requests.delete(
