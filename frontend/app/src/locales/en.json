@@ -1109,6 +1109,9 @@
         "label": "Log Level"
       }
     },
+    "sqlite_instructions": {
+      "label": "Instructions per SQLite context switch"
+    },
     "subtitle": "Modify the backend settings",
     "title": "Backend Settings"
   },

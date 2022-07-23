@@ -54,8 +54,12 @@ def _get_setting_value(cursor: DBCursor, name: str, default_value: int) -> int:
     return int(result[0][0])
 
 
-def initialize_globaldb(dbpath: Path) -> DBConnection:
-    connection = DBConnection(path=dbpath, connection_type=DBConnectionType.GLOBAL)
+def initialize_globaldb(dbpath: Path, sql_vm_instructions_cb: int) -> DBConnection:
+    connection = DBConnection(
+        path=dbpath,
+        connection_type=DBConnectionType.GLOBAL,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+    )
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     cursor = connection.cursor()
     db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
@@ -75,7 +79,7 @@ def initialize_globaldb(dbpath: Path) -> DBConnection:
     return connection
 
 
-def _initialize_global_db_directory(data_dir: Path) -> DBConnection:
+def _initialize_global_db_directory(data_dir: Path, sql_vm_instructions_cb: int) -> DBConnection:
     global_dir = data_dir / 'global_data'
     global_dir.mkdir(parents=True, exist_ok=True)
     dbname = global_dir / 'global.db'
@@ -84,7 +88,7 @@ def _initialize_global_db_directory(data_dir: Path) -> DBConnection:
         root_dir = Path(__file__).resolve().parent.parent
         builtin_data_dir = root_dir / 'data'
         shutil.copyfile(builtin_data_dir / 'global.db', global_dir / 'global.db')
-    return initialize_globaldb(dbname)
+    return initialize_globaldb(dbname, sql_vm_instructions_cb)
 
 
 class GlobalDBHandler():
@@ -96,6 +100,7 @@ class GlobalDBHandler():
     def __new__(
             cls,
             data_dir: Path = None,
+            sql_vm_instructions_cb: int = None,
     ) -> 'GlobalDBHandler':
         """
         Initializes the GlobalDB.
@@ -107,9 +112,10 @@ class GlobalDBHandler():
             return GlobalDBHandler.__instance
 
         assert data_dir, 'First instantiation of GlobalDBHandler should have a data_dir'
+        assert sql_vm_instructions_cb, 'First instantiation of GlobalDBHandler should have a sql_vm_instructions_cb'  # noqa: E501
         GlobalDBHandler.__instance = object.__new__(cls)
         GlobalDBHandler.__instance._data_directory = data_dir
-        GlobalDBHandler.__instance.conn = _initialize_global_db_directory(data_dir)
+        GlobalDBHandler.__instance.conn = _initialize_global_db_directory(data_dir, sql_vm_instructions_cb)  # noqa: E501
         _reload_constant_assets(GlobalDBHandler.__instance)
         return GlobalDBHandler.__instance
 

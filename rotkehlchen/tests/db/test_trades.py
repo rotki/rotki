@@ -25,10 +25,10 @@ def assert_trades_equal(t1: Trade, t2: Trade) -> None:
             assert val == getattr(t2, key)
 
 
-def test_query_trades_including_ammswaps(data_dir, username):
+def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions_cb):
     """Test that querying trades succesfully queries from both the trades and ammswaps"""
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
 
     trades = [

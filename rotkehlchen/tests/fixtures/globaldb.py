@@ -20,17 +20,18 @@ def fixture_custom_ethereum_tokens() -> Optional[List[EthereumToken]]:
 
 def create_globaldb(
         data_directory,
+        sql_vm_instructions_cb,
 ) -> GlobalDBHandler:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
     GlobalDBHandler._GlobalDBHandler__instance = None  # type: ignore
 
-    handler = GlobalDBHandler(data_dir=data_directory)
+    handler = GlobalDBHandler(data_dir=data_directory, sql_vm_instructions_cb=sql_vm_instructions_cb)  # noqa: E501
     return handler
 
 
 @pytest.fixture(name='globaldb')
-def fixture_globaldb(globaldb_version, tmpdir_factory):
+def fixture_globaldb(globaldb_version, tmpdir_factory, sql_vm_instructions_cb):
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
     AssetResolver().clean_memory_cache()
@@ -43,7 +44,7 @@ def fixture_globaldb(globaldb_version, tmpdir_factory):
     new_global_dir = new_data_dir / 'global_data'
     new_global_dir.mkdir(parents=True, exist_ok=True)
     copyfile(source_db_path, new_global_dir / 'global.db')
-    return create_globaldb(new_data_dir)
+    return create_globaldb(new_data_dir, sql_vm_instructions_cb)
 
 
 @pytest.fixture(name='globaldb_version')

@@ -12,6 +12,7 @@ const DATA_DIR = 'data-dir';
 const LOG_FROM_OTHER_MODULES = 'logfromothermodules';
 const MAX_LOG_SIZE = 'max_size_in_mb_all_logs';
 const MAX_LOG_NUMBER = 'max_logfiles_num';
+const SQLITE_INSTRUCTIONS = 'sqlite_instructions';
 
 export function loadConfig(): Partial<BackendOptions> {
   const options: Writeable<Partial<BackendOptions>> = {};
@@ -53,6 +54,10 @@ export function loadConfig(): Partial<BackendOptions> {
 
     if (MAX_LOG_NUMBER in config) {
       options.maxLogfilesNum = parseInt(config[MAX_LOG_NUMBER]);
+    }
+
+    if (SQLITE_INSTRUCTIONS in config) {
+      options.sqliteInstructions = parseInt(config[SQLITE_INSTRUCTIONS]);
     }
 
     return options;

@@ -127,6 +127,21 @@
             type="number"
           />
 
+          <v-text-field
+            v-model="sqliteInstructions"
+            outlined
+            :hint="
+              !!fileConfig.sqliteInstructions
+                ? $t('backend_settings.config_file_disabled')
+                : ''
+            "
+            :label="$t('backend_settings.sqlite_instructions.label')"
+            :disabled="fileConfig.sqliteInstructions"
+            :persistent-hint="!!fileConfig.sqliteInstructions"
+            clearable
+            type="number"
+          />
+
           <v-checkbox
             v-model="logFromOtherModules"
             :label="$t('backend_settings.log_from_other_modules.label')"
@@ -189,6 +204,7 @@ export default class BackendSettings extends Mixins(BackendMixin) {
   logFromOtherModules: boolean = false;
   mainLoopSleep: string = '';
   maxLogSize: string = '';
+  sqliteInstructions: string = '';
   maxLogFiles: string = '';
 
   readonly levels = Object.values(LogLevel);
@@ -246,6 +262,13 @@ export default class BackendSettings extends Mixins(BackendMixin) {
       }
     }
 
+    if (this.sqliteInstructions) {
+      const num = parseInt(this.sqliteInstructions);
+      if (isFinite(num) && !isNaN(num)) {
+        options.sqliteInstructions = num;
+      }
+    }
+
     return options;
   }
 
@@ -280,6 +303,7 @@ export default class BackendSettings extends Mixins(BackendMixin) {
     this.logFromOtherModules = this.options.logFromOtherModules ?? false;
     this.maxLogFiles = this.options.maxLogfilesNum?.toString() ?? '';
     this.maxLogSize = this.options.maxSizeInMbAllLogs?.toString() ?? '';
+    this.sqliteInstructions = this.options.sqliteInstructions?.toString() ?? '';
   }
 
   async save() {

@@ -26,13 +26,18 @@ BUFFERSIZE = 64 * 1024
 
 class DataHandler():
 
-    def __init__(self, data_directory: Path, msg_aggregator: MessagesAggregator):
-
+    def __init__(
+            self,
+            data_directory: Path,
+            msg_aggregator: MessagesAggregator,
+            sql_vm_instructions_cb: int,
+    ):
         self.logged_in = False
         self.data_directory = data_directory
         self.username = 'no_user'
         self.password = ''
         self.msg_aggregator = msg_aggregator
+        self.sql_vm_instructions_cb = sql_vm_instructions_cb
 
     def logout(self) -> None:
         if self.logged_in:
@@ -115,6 +120,7 @@ class DataHandler():
             password=password,
             msg_aggregator=self.msg_aggregator,
             initial_settings=initial_settings,
+            sql_vm_instructions_cb=self.sql_vm_instructions_cb,
         )
         self.user_data_dir = user_data_dir
         self.logged_in = True
