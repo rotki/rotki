@@ -193,6 +193,7 @@ class DBConnection:
             connection_type: DBConnectionType,
             sql_vm_instructions_cb: int,
     ) -> None:
+        CONNECTION_MAP[connection_type] = self
         self._conn: UnderlyingConnection
         self._in_critical_section = False
         self.in_callback = gevent.lock.Semaphore()
@@ -203,7 +204,6 @@ class DBConnection:
         else:
             self._conn = sqlcipher.connect(path, check_same_thread=False)  # pylint: disable=no-member  # noqa: E501
         self._set_progress_handler()
-        CONNECTION_MAP[connection_type] = self
 
     def enter_critical_section(self) -> None:
         with self.in_callback:
