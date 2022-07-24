@@ -2,6 +2,7 @@
  https://github.com/gilesbrown/gsqlite3/blob/fef400f1c5bcbc546772c827d3992e578ea5f905/gsqlite3.py
 but heavily modified"""
 
+import random
 import sqlite3
 from contextlib import contextmanager
 from enum import Enum, auto
@@ -37,7 +38,6 @@ class DBCursor:
 
     def __next__(self) -> Any:
         """
-
         We type this and other function returning Any since anything else has
         too many false positives. Same as typeshed:
         https://github.com/python/typeshed/blob/a750a42c65b77963ff097b6cbb6d36cef5912eb7/stdlib/sqlite3/dbapi2.pyi#L397
@@ -46,6 +46,8 @@ class DBCursor:
             logger.trace(f'Get next item for cursor {self._cursor}')
         result = next(self._cursor, None)
         if result is None:
+            if __debug__:
+                logger.trace(f'Stopping iteration for cursor {self._cursor}')
             raise StopIteration()
 
         if __debug__:
@@ -151,10 +153,11 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
 
     with connection.in_callback:
         if __debug__:
-            logger.trace('Got in the progress callback')
+            identifier = random.random()
+            logger.trace(f'Got in the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501
         gevent.sleep(0)
         if __debug__:
-            logger.trace('Going out of the progress callback')
+            logger.trace(f'Going out of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501
         return 0
 
 
@@ -208,15 +211,16 @@ class DBConnection:
     def enter_critical_section(self) -> None:
         with self.in_callback:
             if __debug__:
-                logger.trace('entering critical section')
+                logger.trace(f'entering critical section for {self.connection_type}')
             self._in_critical_section = True
             self._conn.set_progress_handler(None, 0)
 
     def exit_critical_section(self) -> None:
-        if __debug__:
-            logger.trace('exiting critical section')
-        self._in_critical_section = False
-        self._set_progress_handler()
+        with self.in_callback:  # not sure if this is actually needed
+            if __debug__:
+                logger.trace(f'exiting critical section for {self.connection_type}')
+            self._in_critical_section = False
+            self._set_progress_handler()
 
     def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
         if __debug__:
