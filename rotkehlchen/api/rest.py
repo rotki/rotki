@@ -2084,7 +2084,7 @@ class RestAPI():
         )
 
     def get_ignored_assets(self) -> Response:
-        with self.rotkehlchen.data.db.user_write() as cursor:
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             result = [asset.identifier for asset in self.rotkehlchen.data.db.get_ignored_assets(cursor)]  # noqa: E501
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 

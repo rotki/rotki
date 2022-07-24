@@ -229,7 +229,7 @@ class Accountant():
         - RemoteError if there is a problem reaching the price oracle server
         or with reading the response returned by the server
         """
-        with self.db.user_write() as cursor:
+        with self.db.conn.read_ctx() as cursor:
             ignored_assets = self.db.get_ignored_assets(cursor)
         event = next(events_iterator, None)
         if event is None:

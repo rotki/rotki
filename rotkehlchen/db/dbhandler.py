@@ -662,13 +662,12 @@ class DBHandler:
             (asset.identifier,),
         )
 
-    # pylint: disable=no-self-use
-    def get_ignored_assets(self, write_cursor: 'DBCursor') -> List[Asset]:
-        write_cursor.execute(
+    def get_ignored_assets(self, cursor: 'DBCursor') -> List[Asset]:
+        cursor.execute(
             'SELECT value FROM multisettings WHERE name="ignored_asset";',
         )
         assets = []
-        for asset_setting in write_cursor:
+        for asset_setting in cursor:
             try:
                 asset = Asset(asset_setting[0])
             except UnknownAsset:
@@ -676,10 +675,11 @@ class DBHandler:
                     f'Found unknown asset {asset_setting[0]} in the list of ignored '
                     f'assets. Removing it.'
                 )
-                write_cursor.execute(
-                    'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
-                    (asset_setting[0],),
-                )
+                with self.user_write() as write_cursor:
+                    write_cursor.execute(
+                        'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
+                        (asset_setting[0],),
+                    )
                 self.msg_aggregator.add_warning(msg)
                 continue
 
@@ -2774,10 +2774,8 @@ class DBHandler:
 
         The list is sorted by usd value going from higher to lower
         """
-        with self.user_write() as write_cursor:
-            ignored_assets = self.get_ignored_assets(write_cursor)
-
         with self.conn.read_ctx() as cursor:
+            ignored_assets = self.get_ignored_assets(cursor)
             cursor.execute(
                 'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '
                 'time=(SELECT MAX(time) from timed_balances) AND category = ? ORDER BY '
