@@ -3165,14 +3165,14 @@ class DBHandler:
 
     def _ensure_data_integrity(
             self,
-            write_cursor: 'DBCursor',
+            cursor: 'DBCursor',
             table_name: str,
             klass: Union[Type[Trade], Type[AssetMovement], Type[MarginPosition]],
     ) -> None:
         updates: List[Tuple[str, str]] = []
         log.debug(f'db integrity: start {table_name}')
-        write_cursor.execute(f'SELECT * from {table_name};')
-        for result in write_cursor:
+        cursor.execute(f'SELECT * from {table_name};')
+        for result in cursor:
             try:
                 obj = klass.deserialize_from_db(result)
             except (DeserializationError, UnknownAsset):
@@ -3189,7 +3189,8 @@ class DBHandler:
                 f'Found {len(updates)} identifier discrepancies in the DB '
                 f'for {table_name}. Correcting...',
             )
-            write_cursor.executemany(f'UPDATE {table_name} SET id = ? WHERE id =?;', updates)
+            with self.user_write() as write_cursor:
+                write_cursor.executemany(f'UPDATE {table_name} SET id = ? WHERE id =?;', updates)
         log.debug(f'db integrity: end {table_name}')
 
     def ensure_data_integrity(self) -> None:
@@ -3201,7 +3202,7 @@ class DBHandler:
         """
         start_time = ts_now()
         log.debug('Starting DB data integrity check')
-        with self.user_write() as cursor:
+        with self.conn.read_ctx() as cursor:
             self._ensure_data_integrity(cursor, 'trades', Trade)
             self._ensure_data_integrity(cursor, 'asset_movements', AssetMovement)
             self._ensure_data_integrity(cursor, 'margin_positions', MarginPosition)
