@@ -251,7 +251,6 @@ class DBConnection:
         try:
             self._conn.commit()
         finally:
-            self.exit_critical_section()
             if __debug__:
                 logger.trace('FINISH DB CONNECTION COMMIT')
 
@@ -261,7 +260,6 @@ class DBConnection:
         try:
             self._conn.rollback()
         finally:
-            self.exit_critical_section()
             if __debug__:
                 logger.trace('FINISH DB CONNECTION ROLLBACK')
 
