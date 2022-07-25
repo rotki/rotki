@@ -151,6 +151,7 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
     if connection is None:
         return 0
 
+    # without this rotkehlchen/tests/db/test_async.py::test_async_segfault fails
     with connection.in_callback:
         if __debug__:
             identifier = random.random()
@@ -198,7 +199,6 @@ class DBConnection:
     ) -> None:
         CONNECTION_MAP[connection_type] = self
         self._conn: UnderlyingConnection
-        self._in_critical_section = False
         self.in_callback = gevent.lock.Semaphore()
         self.connection_type = connection_type
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
@@ -212,14 +212,12 @@ class DBConnection:
         with self.in_callback:
             if __debug__:
                 logger.trace(f'entering critical section for {self.connection_type}')
-            self._in_critical_section = True
             self._conn.set_progress_handler(None, 0)
 
     def exit_critical_section(self) -> None:
         with self.in_callback:  # not sure if this is actually needed
             if __debug__:
                 logger.trace(f'exiting critical section for {self.connection_type}')
-            self._in_critical_section = False
             self._set_progress_handler()
 
     def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
