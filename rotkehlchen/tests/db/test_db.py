@@ -331,7 +331,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         result, _ = data.add_ignored_assets([A_DOGE])
         assert result is None
 
-        with data.db.user_write() as cursor:
+        with data.db.conn.read_ctx() as cursor:
             ignored_assets = data.db.get_ignored_assets(cursor)
             assert all(isinstance(asset, Asset) for asset in ignored_assets)
             assert set(ignored_assets) == {A_DAO, A_DOGE}

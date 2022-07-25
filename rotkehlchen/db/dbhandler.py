@@ -536,7 +536,6 @@ class DBHandler:
         also update the last write timestamp
         """
         cursor = self.conn.cursor()
-        self.conn.enter_critical_section()
         try:
             yield cursor
         except Exception:
@@ -552,7 +551,6 @@ class DBHandler:
             self.conn.commit()
         finally:
             cursor.close()
-            self.conn.exit_critical_section()
 
     @contextmanager
     def transient_write(self) -> Iterator[DBCursor]:
@@ -560,7 +558,6 @@ class DBHandler:
         also commit
         """
         cursor = self.conn_transient.cursor()
-        self.conn_transient.enter_critical_section()
         try:
             yield cursor
         except Exception:
@@ -570,7 +567,6 @@ class DBHandler:
             self.conn_transient.commit()
         finally:
             cursor.close()
-            self.conn_transient.exit_critical_section()
 
     # pylint: disable=no-self-use
     def get_settings(self, cursor: 'DBCursor', have_premium: bool = False) -> DBSettings:
@@ -662,13 +658,12 @@ class DBHandler:
             (asset.identifier,),
         )
 
-    # pylint: disable=no-self-use
-    def get_ignored_assets(self, write_cursor: 'DBCursor') -> List[Asset]:
-        write_cursor.execute(
+    def get_ignored_assets(self, cursor: 'DBCursor') -> List[Asset]:
+        cursor.execute(
             'SELECT value FROM multisettings WHERE name="ignored_asset";',
         )
         assets = []
-        for asset_setting in write_cursor:
+        for asset_setting in cursor:
             try:
                 asset = Asset(asset_setting[0])
             except UnknownAsset:
@@ -676,10 +671,11 @@ class DBHandler:
                     f'Found unknown asset {asset_setting[0]} in the list of ignored '
                     f'assets. Removing it.'
                 )
-                write_cursor.execute(
-                    'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
-                    (asset_setting[0],),
-                )
+                with self.user_write() as write_cursor:
+                    write_cursor.execute(
+                        'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
+                        (asset_setting[0],),
+                    )
                 self.msg_aggregator.add_warning(msg)
                 continue
 
@@ -2774,10 +2770,8 @@ class DBHandler:
 
         The list is sorted by usd value going from higher to lower
         """
-        with self.user_write() as write_cursor:
-            ignored_assets = self.get_ignored_assets(write_cursor)
-
         with self.conn.read_ctx() as cursor:
+            ignored_assets = self.get_ignored_assets(cursor)
             cursor.execute(
                 'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '
                 'time=(SELECT MAX(time) from timed_balances) AND category = ? ORDER BY '
@@ -3167,14 +3161,14 @@ class DBHandler:
 
     def _ensure_data_integrity(
             self,
-            write_cursor: 'DBCursor',
+            cursor: 'DBCursor',
             table_name: str,
             klass: Union[Type[Trade], Type[AssetMovement], Type[MarginPosition]],
     ) -> None:
         updates: List[Tuple[str, str]] = []
         log.debug(f'db integrity: start {table_name}')
-        write_cursor.execute(f'SELECT * from {table_name};')
-        for result in write_cursor:
+        cursor.execute(f'SELECT * from {table_name};')
+        for result in cursor:
             try:
                 obj = klass.deserialize_from_db(result)
             except (DeserializationError, UnknownAsset):
@@ -3191,7 +3185,8 @@ class DBHandler:
                 f'Found {len(updates)} identifier discrepancies in the DB '
                 f'for {table_name}. Correcting...',
             )
-            write_cursor.executemany(f'UPDATE {table_name} SET id = ? WHERE id =?;', updates)
+            with self.user_write() as write_cursor:
+                write_cursor.executemany(f'UPDATE {table_name} SET id = ? WHERE id =?;', updates)
         log.debug(f'db integrity: end {table_name}')
 
     def ensure_data_integrity(self) -> None:
@@ -3203,7 +3198,7 @@ class DBHandler:
         """
         start_time = ts_now()
         log.debug('Starting DB data integrity check')
-        with self.user_write() as cursor:
+        with self.conn.read_ctx() as cursor:
             self._ensure_data_integrity(cursor, 'trades', Trade)
             self._ensure_data_integrity(cursor, 'asset_movements', AssetMovement)
             self._ensure_data_integrity(cursor, 'margin_positions', MarginPosition)

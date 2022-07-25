@@ -117,7 +117,7 @@ class EthTokens():
             'Querying/detecting token balances for all addresses',
             force_detection=force_detection,
         )
-        with self.db.user_write() as cursor:
+        with self.db.conn.read_ctx() as cursor:
             ignored_assets = self.db.get_ignored_assets(cursor)
 
         exceptions = [

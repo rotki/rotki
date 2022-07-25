@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Some cases of python segfaulting under specific conditions of reading/writing to the DB should now be fixed.
 * :bug:`4586` DB yielding instructions is now an argument and can be configured by the user. It can be set to any positive integer or zero to disable it. There is a class of bugs that can lead to crash of the backend when this is enabled, so disabling is now an easy way to avoid them. With this enabled DB access parallelization is achieved for long running queries.
 * :bug:`4597` Tokens with no information about decimals won't make the price query stop if the uniswap oracles are used.
 * :bug:`4502` Nexo importer now supports updated format.
