@@ -749,15 +749,11 @@ class DBHandler:
     # pylint: disable=no-self-use
     def add_multiple_balances(self, write_cursor: 'DBCursor', balances: List[DBAssetBalance]) -> None:  # noqa: E501
         """Execute addition of multiple balances in the DB"""
-        serialized_balances = [
-            (x.time, x.asset.identifier, x.amount, x.usd_value, x.category.serialize_for_db())
-            for x in balances
-        ]
+        serialized_balances = [balance.serialize_for_db() for balance in balances]
         try:
             write_cursor.executemany(
-                'INSERT INTO timed_balances('
-                '    time, currency, amount, usd_value, category) '
-                ' VALUES(?, ?, ?, ?, ?)',
+                'INSERT INTO timed_balances(category, time, currency, amount, usd_value) '
+                'VALUES(?, ?, ?, ?, ?)',
                 serialized_balances,
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -1650,8 +1646,8 @@ class DBHandler:
                 category=BalanceType.ASSET,
                 time=timestamp,
                 asset=key,
-                amount=str(val['amount']),
-                usd_value=str(val['usd_value']),
+                amount=val['amount'],
+                usd_value=val['usd_value'],
             ))
 
         for key, val in data['liabilities'].items():
@@ -1661,8 +1657,8 @@ class DBHandler:
                 category=BalanceType.LIABILITY,
                 time=timestamp,
                 asset=key,
-                amount=str(val['amount']),
-                usd_value=str(val['usd_value']),
+                amount=val['amount'],
+                usd_value=val['usd_value'],
             ))
 
         for key2, val2 in data['location'].items():
@@ -2780,41 +2776,44 @@ class DBHandler:
                 (BalanceType.ASSET.serialize_for_db(),),  # pylint: disable=no-member
             )
             asset_balances = []
-            eth_balance: Dict[str, Union[str, int]] = {
-                'time': 0,
-                'amount': '0',
-                'usd_value': '0',
-            }
+            eth_balance = DBAssetBalance(
+                time=Timestamp(0),
+                category=BalanceType.ASSET,
+                asset=A_ETH,
+                amount=ZERO,
+                usd_value=ZERO,
+            )
             for result in cursor:
                 asset = Asset(result[1])
+                time = Timestamp(result[0])
+                amount = FVal(result[2])
+                usd_value = FVal(result[3])
                 if asset in ignored_assets:
                     continue
                 # show eth & eth2 as eth in value distribution by asset
                 if treat_eth2_as_eth is True and asset in (A_ETH, A_ETH2):
-                    eth_balance['time'] = int(result[0])
-                    eth_balance['amount'] = str(FVal(eth_balance['amount']) + FVal(result[2]))
-                    eth_balance['usd_value'] = str(FVal(eth_balance['usd_value']) + FVal(result[3]))  # noqa: E501
+                    eth_balance.time = time
+                    eth_balance.amount = eth_balance.amount + amount
+                    eth_balance.usd_value = eth_balance.usd_value + usd_value
                 else:
                     asset_balances.append(
                         DBAssetBalance(
-                            time=Timestamp(result[0]),
+                            time=time,
                             asset=asset,
-                            amount=result[2],
-                            usd_value=result[3],
+                            amount=amount,
+                            usd_value=usd_value,
                             category=BalanceType.deserialize_from_db(result[4]),
                         ),
                     )
             # only add the eth_balance if it contains a balance > 0
-            if FVal(eth_balance['amount']) > ZERO or FVal(eth_balance['usd_value']) > ZERO:
-                asset_balances.append(
-                    DBAssetBalance(
-                        time=Timestamp(int(eth_balance['time'])),
-                        asset=A_ETH,
-                        amount=str(eth_balance['amount']),
-                        usd_value=str(eth_balance['usd_value']),
-                        category=BalanceType.ASSET,
-                    ),
-                )
+            if eth_balance.amount > ZERO:
+                # respect descending order `usd_value`
+                for index, balance in enumerate(asset_balances):
+                    if eth_balance.usd_value > balance.usd_value:
+                        asset_balances.insert(index, eth_balance)
+                        break
+                else:
+                    asset_balances.append(eth_balance)
         return asset_balances
 
     def get_tags(self, cursor: 'DBCursor') -> Dict[str, Tag]:

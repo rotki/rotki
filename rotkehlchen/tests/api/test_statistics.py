@@ -321,12 +321,16 @@ def test_query_statistics_value_distribution(
                 'EUR': get_asset_balance_total(A_EUR, setup),
                 A_RDN.identifier: get_asset_balance_total(A_RDN, setup),
             }
-            for entry in result:
+            for index, entry in enumerate(result):
                 assert len(entry) == 5
                 assert entry['time'] >= start_time
                 assert entry['category'] == 'asset'
                 assert entry['usd_value'] is not None
                 assert FVal(entry['amount']) == totals[entry['asset']]
+                # check that the usd_value is in descending order
+                if index == 0:
+                    continue
+                assert FVal(result[index - 1]['usd_value']) > FVal(entry['usd_value'])
         else:
             assert len(result) == 5
             totals = {
@@ -336,12 +340,16 @@ def test_query_statistics_value_distribution(
                 'EUR': get_asset_balance_total(A_EUR, setup),
                 A_RDN.identifier: get_asset_balance_total(A_RDN, setup),
             }
-            for entry in result:
+            for index, entry in enumerate(result):
                 assert len(entry) == 5
                 assert entry['time'] >= start_time
                 assert entry['category'] == 'asset'
                 assert entry['usd_value'] is not None
                 assert FVal(entry['amount']) == totals[entry['asset']]
+                # check that the usd_value is in descending order
+                if index == 0:
+                    continue
+                assert FVal(result[index - 1]['usd_value']) > FVal(entry['usd_value'])
     else:
         assert_error_response(
             response=response,

@@ -2212,8 +2212,8 @@ class BalanceSnapshotSchema(Schema):
             category=data['category'],
             time=data['timestamp'],
             asset=data['asset_identifier'],
-            amount=str(data['amount']),
-            usd_value=str(data['usd_value']),
+            amount=data['amount'],
+            usd_value=data['usd_value'],
         )
 
 
