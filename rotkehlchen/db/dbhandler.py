@@ -536,7 +536,6 @@ class DBHandler:
         also update the last write timestamp
         """
         cursor = self.conn.cursor()
-        self.conn.enter_critical_section()
         try:
             yield cursor
         except Exception:
@@ -552,7 +551,6 @@ class DBHandler:
             self.conn.commit()
         finally:
             cursor.close()
-            self.conn.exit_critical_section()
 
     @contextmanager
     def transient_write(self) -> Iterator[DBCursor]:
@@ -560,7 +558,6 @@ class DBHandler:
         also commit
         """
         cursor = self.conn_transient.cursor()
-        self.conn_transient.enter_critical_section()
         try:
             yield cursor
         except Exception:
@@ -570,7 +567,6 @@ class DBHandler:
             self.conn_transient.commit()
         finally:
             cursor.close()
-            self.conn_transient.exit_critical_section()
 
     # pylint: disable=no-self-use
     def get_settings(self, cursor: 'DBCursor', have_premium: bool = False) -> DBSettings:

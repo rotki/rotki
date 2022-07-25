@@ -208,18 +208,6 @@ class DBConnection:
             self._conn = sqlcipher.connect(path, check_same_thread=False)  # pylint: disable=no-member  # noqa: E501
         self._set_progress_handler()
 
-    def enter_critical_section(self) -> None:
-        with self.in_callback:
-            if __debug__:
-                logger.trace(f'entering critical section for {self.connection_type}')
-            self._conn.set_progress_handler(None, 0)
-
-    def exit_critical_section(self) -> None:
-        with self.in_callback:  # not sure if this is actually needed
-            if __debug__:
-                logger.trace(f'exiting critical section for {self.connection_type}')
-            self._set_progress_handler()
-
     def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
         if __debug__:
             logger.trace(f'DB CONNECTION EXECUTE {statement}')
@@ -283,7 +271,6 @@ class DBConnection:
     @contextmanager
     def write_ctx(self) -> Generator['DBCursor', None, None]:
         cursor = self.cursor()
-        self.enter_critical_section()
         try:
             yield cursor
         except Exception:
@@ -293,7 +280,6 @@ class DBConnection:
             self._conn.commit()
         finally:
             cursor.close()  # lgtm [py/should-use-with]
-            self.exit_critical_section()
 
     @property
     def total_changes(self) -> int:
