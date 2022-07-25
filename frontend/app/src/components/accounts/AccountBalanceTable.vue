@@ -7,7 +7,7 @@
       :loading="accountOperation || loading"
       :loading-text="$t('account_balances.data_table.loading')"
       single-expand
-      item-key="address"
+      item-key="index"
       :expanded.sync="expanded"
       sort-by="balance.usdValue"
       :custom-group="groupBy"
@@ -92,21 +92,11 @@
       </template>
       <template #expanded-item="{ headers, item }">
         <table-expand-container visible :colspan="headers.length">
-          <template v-if="!loopring">
-            <account-asset-balances
-              :title="$t('account_balance_table.assets')"
-              :assets="get(accountAssets(item.address))"
-            />
-            <account-asset-balances
-              v-if="get(accountLiabilities(item.address)).length > 0"
-              :title="$t('account_balance_table.liabilities')"
-              :assets="get(accountLiabilities(item.address))"
-            />
-          </template>
-          <account-asset-balances
-            v-if="isEth && get(loopringBalances(item.address)).length > 0"
-            :title="loopring ? '' : $t('account_balance_table.loopring')"
-            :assets="get(loopringBalances(item.address))"
+          <account-balance-details
+            :loopring="loopring"
+            :assets="assets(item.address)"
+            :liabilities="liabilities(item.address)"
+            :loopring-balances="getLoopringBalances(item.address)"
           />
         </table-expand-container>
       </template>
@@ -145,20 +135,11 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { defineAsyncComponent } from '@vue/runtime-dom';
 import { get } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { DataTableHeader } from 'vuetify';
-import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
-import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
-import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
-import DataTable from '@/components/helper/DataTable.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import RowExpander from '@/components/helper/RowExpander.vue';
-import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
-import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
-import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { setupGeneralBalances } from '@/composables/balances';
 import { setupThemeCheck } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
@@ -180,16 +161,39 @@ import { Zero } from '@/utils/bignumbers';
 export default defineComponent({
   name: 'AccountBalanceTable',
   components: {
-    RowAppend,
-    Eth2ValidatorLimitRow,
-    DataTable,
-    TableExpandContainer,
-    LabeledAddressDisplay,
-    TagDisplay,
-    RowActions,
-    AccountGroupHeader,
-    RowExpander,
-    AccountAssetBalances
+    AccountBalanceDetails: defineAsyncComponent(
+      () => import('@/components/accounts/balances/AccountBalanceDetails.vue')
+    ),
+    RowAppend: defineAsyncComponent(
+      () => import('@/components/helper/RowAppend.vue')
+    ),
+    Eth2ValidatorLimitRow: defineAsyncComponent(
+      () =>
+        import(
+          '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue'
+        )
+    ),
+    DataTable: defineAsyncComponent(
+      () => import('@/components/helper/DataTable.vue')
+    ),
+    TableExpandContainer: defineAsyncComponent(
+      () => import('@/components/helper/table/TableExpandContainer.vue')
+    ),
+    LabeledAddressDisplay: defineAsyncComponent(
+      () => import('@/components/display/LabeledAddressDisplay.vue')
+    ),
+    TagDisplay: defineAsyncComponent(
+      () => import('@/components/tags/TagDisplay.vue')
+    ),
+    RowActions: defineAsyncComponent(
+      () => import('@/components/helper/RowActions.vue')
+    ),
+    AccountGroupHeader: defineAsyncComponent(
+      () => import('@/components/accounts/AccountGroupHeader.vue')
+    ),
+    RowExpander: defineAsyncComponent(
+      () => import('@/components/helper/RowExpander.vue')
+    )
   },
   props: {
     balances: {
@@ -255,14 +259,14 @@ export default defineComponent({
       balances: BlockchainAccountWithBalance[]
     ): BlockchainAccountWithBalance[] => {
       if (!get(isEth) || get(loopring)) {
-        return balances;
+        return balances.map((balance, index) => ({ ...balance, index }));
       }
 
-      return balances.map(value => {
+      return balances.map((value, index) => {
         const address = value.address;
         const assetBalances = get(loopringBalances(address));
         if (assetBalances.length === 0) {
-          return value;
+          return { ...value, index };
         }
         const chainBalance = value.balance;
         const loopringEth =
@@ -271,6 +275,7 @@ export default defineComponent({
 
         return {
           ...value,
+          index,
           balance: {
             usdValue: bigNumberSum(
               assetBalances.map(({ usdValue }) => usdValue)
@@ -323,13 +328,15 @@ export default defineComponent({
     });
 
     const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
-      if (get(visibleTags).length === 0) {
-        return withL2(get(nonExpandedBalances));
+      const balances = get(nonExpandedBalances);
+      const selectedTags = get(visibleTags);
+      if (selectedTags.length === 0) {
+        return withL2(balances);
       }
 
       return withL2(
-        get(nonExpandedBalances).filter(({ tags }) =>
-          get(visibleTags).every(tag => tags.includes(tag))
+        balances.filter(({ tags }) =>
+          selectedTags.every(tag => tags.includes(tag))
         )
       );
     });
@@ -532,6 +539,17 @@ export default defineComponent({
       }
     };
 
+    const assets = (address: string) => {
+      return get(accountAssets(address));
+    };
+
+    const liabilities = (address: string) => {
+      return get(accountLiabilities(address));
+    };
+    const getLoopringBalances = (address: string) => {
+      return get(loopringBalances(address));
+    };
+
     return {
       mobileClass,
       tableHeaders,
@@ -545,9 +563,9 @@ export default defineComponent({
       nonExpandedBalances,
       allSelected,
       total,
-      accountAssets,
-      accountLiabilities,
-      loopringBalances,
+      assets,
+      liabilities,
+      getLoopringBalances,
       hasDetails,
       setSelected,
       groupBy,

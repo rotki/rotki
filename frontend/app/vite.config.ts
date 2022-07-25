@@ -56,7 +56,13 @@ export default defineConfig({
     Components({
       dts: true,
       include: [/\.vue$/, /\.vue\?vue/],
-      resolvers: [VuetifyResolver()]
+      resolvers: [VuetifyResolver()],
+      types: [
+        {
+          from: 'vue-router',
+          names: ['RouterLink', 'RouterView']
+        }
+      ]
     }),
     ...(isTest
       ? [

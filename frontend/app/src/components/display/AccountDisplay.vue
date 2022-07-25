@@ -35,12 +35,12 @@
 import { GeneralAccount } from '@rotki/common/lib/account';
 import {
   computed,
+  defineAsyncComponent,
   defineComponent,
   PropType,
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { setupDisplayData } from '@/composables/session';
 import { truncateAddress } from '@/filters';
 import { useEthNamesStore } from '@/store/balances';
@@ -48,7 +48,11 @@ import { randomHex } from '@/utils/data';
 
 export default defineComponent({
   name: 'AccountDisplay',
-  components: { AssetIcon },
+  components: {
+    AssetIcon: defineAsyncComponent(
+      () => import('@/components/helper/display/icons/AssetIcon.vue')
+    )
+  },
   props: {
     account: { required: true, type: Object as PropType<GeneralAccount> }
   },

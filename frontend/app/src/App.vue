@@ -51,7 +51,7 @@
           @click="toggleDrawer()"
         />
         <div class="d-flex overflow-hidden">
-          <balance-saved-indicator />
+          <sync-indicator />
           <global-search />
           <back-button :can-navigate-back="canNavigateBack" />
         </div>
@@ -138,6 +138,7 @@
 <script lang="ts">
 import {
   computed,
+  defineAsyncComponent,
   defineComponent,
   onBeforeMount,
   ref,
@@ -147,33 +148,8 @@ import {
 import { get, set } from '@vueuse/core';
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import About from '@/components/About.vue';
-import AccountManagement from '@/components/AccountManagement.vue';
-import CurrencyDropdown from '@/components/CurrencyDropdown.vue';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import MacOsVersionUnsupported from '@/components/error/MacOsVersionUnsupported.vue';
-import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
-import GlobalSearch from '@/components/GlobalSearch.vue';
-import HelpIndicator from '@/components/help/HelpIndicator.vue';
-import HelpSidebar from '@/components/help/HelpSidebar.vue';
-import BackButton from '@/components/helper/BackButton.vue';
-import NavigationMenu from '@/components/NavigationMenu.vue';
-import PinnedIndicator from '@/components/PinnedIndicator.vue';
-import PinnedSidebar from '@/components/PinnedSidebar.vue';
-import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
-import PrivacyModeDropdown from '@/components/PrivacyModeDropdown.vue';
-import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
-import FrontendUpdateNotifier from '@/components/status/FrontendUpdateNotifier.vue';
-import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
-import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
-import NotificationSidebar from '@/components/status/notifications/NotificationSidebar.vue';
-import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
-import AppUpdatePopup from '@/components/status/update/AppUpdatePopup.vue';
-import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
-import UserDropdown from '@/components/UserDropdown.vue';
 import { setupThemeCheck, useRoute, useRouter } from '@/composables/common';
 import { getPremium, setupSession } from '@/composables/session';
-import DevApp from '@/DevApp.vue';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
 import { ThemeChecker, ThemeSwitch } from '@/premium/premium';
@@ -187,33 +163,79 @@ import 'chartjs-adapter-moment';
 export default defineComponent({
   name: 'App',
   components: {
-    GlobalSearch,
-    FrontendUpdateNotifier,
-    About,
-    ThemeSwitchLock,
-    MacOsVersionUnsupported,
-    AssetUpdate,
-    HelpIndicator,
-    HelpSidebar,
-    BackButton,
-    AppUpdatePopup,
-    StartupErrorScreen,
+    GlobalSearch: defineAsyncComponent(
+      () => import('@/components/GlobalSearch.vue')
+    ),
+    FrontendUpdateNotifier: defineAsyncComponent(
+      () => import('@/components/status/FrontendUpdateNotifier.vue')
+    ),
+    About: defineAsyncComponent(() => import('@/components/About.vue')),
+    ThemeSwitchLock: defineAsyncComponent(
+      () => import('@/components/premium/ThemeSwitchLock.vue')
+    ),
+    MacOsVersionUnsupported: defineAsyncComponent(
+      () => import('@/components/error/MacOsVersionUnsupported.vue')
+    ),
+    AssetUpdate: defineAsyncComponent(
+      () => import('@/components/status/update/AssetUpdate.vue')
+    ),
+    HelpIndicator: defineAsyncComponent(
+      () => import('@/components/help/HelpIndicator.vue')
+    ),
+    HelpSidebar: defineAsyncComponent(
+      () => import('@/components/help/HelpSidebar.vue')
+    ),
+    BackButton: defineAsyncComponent(
+      () => import('@/components/helper/BackButton.vue')
+    ),
+    AppUpdatePopup: defineAsyncComponent(
+      () => import('@/components/status/update/AppUpdatePopup.vue')
+    ),
+    StartupErrorScreen: defineAsyncComponent(
+      () => import('@/components/error/StartupErrorScreen.vue')
+    ),
     ThemeChecker,
     ThemeSwitch,
-    DevApp,
-    NotificationPopup,
-    NotificationSidebar,
-    AccountManagement,
-    AppUpdateIndicator,
-    NotificationIndicator,
-    BalanceSavedIndicator: SyncIndicator,
-    MessageDialog,
-    CurrencyDropdown,
-    NavigationMenu,
-    UserDropdown,
-    PrivacyModeDropdown,
-    PinnedIndicator,
-    PinnedSidebar
+    DevApp: defineAsyncComponent(() => import('@/DevApp.vue')),
+    NotificationPopup: defineAsyncComponent(
+      () => import('@/components/status/notifications/NotificationPopup.vue')
+    ),
+    NotificationSidebar: defineAsyncComponent(
+      () => import('@/components/status/notifications/NotificationSidebar.vue')
+    ),
+    AccountManagement: defineAsyncComponent(
+      () => import('@/components/AccountManagement.vue')
+    ),
+    AppUpdateIndicator: defineAsyncComponent(
+      () => import('@/components/status/AppUpdateIndicator.vue')
+    ),
+    NotificationIndicator: defineAsyncComponent(
+      () => import('@/components/status/NotificationIndicator.vue')
+    ),
+    SyncIndicator: defineAsyncComponent(
+      () => import('@/components/status/sync/SyncIndicator.vue')
+    ),
+    MessageDialog: defineAsyncComponent(
+      () => import('@/components/dialogs/MessageDialog.vue')
+    ),
+    CurrencyDropdown: defineAsyncComponent(
+      () => import('@/components/CurrencyDropdown.vue')
+    ),
+    NavigationMenu: defineAsyncComponent(
+      () => import('@/components/NavigationMenu.vue')
+    ),
+    UserDropdown: defineAsyncComponent(
+      () => import('@/components/UserDropdown.vue')
+    ),
+    PrivacyModeDropdown: defineAsyncComponent(
+      () => import('@/components/PrivacyModeDropdown.vue')
+    ),
+    PinnedIndicator: defineAsyncComponent(
+      () => import('@/components/PinnedIndicator.vue')
+    ),
+    PinnedSidebar: defineAsyncComponent(
+      () => import('@/components/PinnedSidebar.vue')
+    )
   },
   setup() {
     const store = useMainStore();
