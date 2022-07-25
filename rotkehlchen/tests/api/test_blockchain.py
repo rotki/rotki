@@ -444,7 +444,7 @@ def test_add_blockchain_accounts(
         setup.enter_blockchain_patches(stack)
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain='BTC',
         ), json={
             'accounts': [{'address': UNIT_BTC_ADDRESS3}],
@@ -475,7 +475,7 @@ def test_add_blockchain_accounts(
         setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "blockchainbalancesresource",
+            'blockchainbalancesresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -499,7 +499,7 @@ def test_add_blockchain_accounts(
         setup.enter_blockchain_patches(stack)
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain='ETH',
         ), json={'accounts': [{'address': ethereum_accounts[0]}]})
         assert_error_response(
@@ -511,7 +511,7 @@ def test_add_blockchain_accounts(
     # Add a BCH account
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='BCH',
     ), json={'accounts': [
         {'address': 'prettyirrelevant.eth'},
