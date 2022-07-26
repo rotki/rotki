@@ -172,7 +172,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
           api.getSettings(),
           api.getExchanges()
         ]);
-        logger.debug(settings);
       } else {
         if (!credentials.username) {
           return { success: false, message: '' };

@@ -29,34 +29,40 @@ export const mapToFrontendLogLevel = (logLevel?: LogLevel) => {
 };
 logger.setDefaultLevel(getDefaultFrontendLogLevel());
 
-const loggerDb = new IndexedDb('db', 1, 'logs');
+// We only need the indexed db in production.
+// In development the plugin messes the line number from where the logs originated
+if (!isDevelopment) {
+  const loggerDb = new IndexedDb('db', 1, 'logs');
 
-// write log in log file everytime logger called
-const originalFactory = logger.methodFactory;
-logger.methodFactory = function (
-  methodName: string,
-  logLevel: LogLevelNumbers,
-  loggerName: string | symbol
-) {
-  const rawMethod = originalFactory(methodName, logLevel, loggerName);
+  // write log in log file everytime logger called
+  const originalFactory = logger.methodFactory;
+  logger.methodFactory = function (
+    methodName: string,
+    logLevel: LogLevelNumbers,
+    loggerName: string | symbol
+  ) {
+    const rawMethod = originalFactory(methodName, logLevel, loggerName);
 
-  return (...message: any[]) => {
-    rawMethod(message.join(''));
+    return (...message: any[]) => {
+      rawMethod(...message);
 
-    if (
-      loggerName !== 'console-only' &&
-      Object.values(LogLevel).indexOf(methodName as LogLevel) >= logLevel
-    ) {
-      if (interop.isPackaged) {
-        interop.logToFile(`(${methodName}): ${message.join('')}`);
-      } else {
-        loggerDb.add({
-          message: `${new Date(Date.now()).toISOString()}: ${message.join('')}`
-        });
+      if (
+        loggerName !== 'console-only' &&
+        Object.values(LogLevel).indexOf(methodName as LogLevel) >= logLevel
+      ) {
+        if (interop.isPackaged) {
+          interop.logToFile(`(${methodName}): ${message.join('')}`);
+        } else {
+          loggerDb.add({
+            message: `${new Date(Date.now()).toISOString()}: ${message.join(
+              ''
+            )}`
+          });
+        }
       }
-    }
+    };
   };
-};
+}
 
 logger.setLevel(logger.getLevel());
 
