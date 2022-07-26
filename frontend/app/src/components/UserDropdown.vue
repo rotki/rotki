@@ -37,6 +37,28 @@
           </v-list-item-title>
         </v-list-item>
 
+        <v-list-item
+          v-if="xsOnly"
+          key="privacy-mode"
+          @click="togglePrivacyMode"
+        >
+          <v-list-item-avatar>
+            <v-icon color="primary"> {{ privacyModeIcon }}</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-title>
+            {{ $t('user_dropdown.change_privacy_mode.label') }}
+          </v-list-item-title>
+        </v-list-item>
+
+        <v-list-item v-if="xsOnly">
+          <v-list-item-avatar>
+            <theme-control :dark-mode-enabled="darkModeEnabled" menu />
+          </v-list-item-avatar>
+          <v-list-item-title>
+            {{ $t('user_dropdown.switch_theme') }}
+          </v-list-item-title>
+        </v-list-item>
+
         <v-divider class="mx-4" />
         <v-list-item
           key="logout"
@@ -63,13 +85,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get, set, useLocalStorage } from '@vueuse/core';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-
-import { useRoute, useRouter } from '@/composables/common';
-import { setupSession } from '@/composables/session';
+import ThemeControl from '@/components/premium/ThemeControl.vue';
+import { setupThemeCheck, useRoute, useRouter } from '@/composables/common';
+import { usePrivacyMode } from '@/composables/privacy';
+import { setupSession, useDarkMode } from '@/composables/session';
 import { interop } from '@/electron-interop';
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
@@ -77,6 +100,7 @@ const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 export default defineComponent({
   name: 'UserDropdown',
   components: {
+    ThemeControl,
     ConfirmDialog,
     MenuTooltipButton
   },
@@ -85,6 +109,9 @@ export default defineComponent({
     const confirmLogout = ref<boolean>(false);
     const router = useRouter();
     const route = useRoute();
+    const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
+    const { currentBreakpoint } = setupThemeCheck();
+    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
     const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 
@@ -104,7 +131,11 @@ export default defineComponent({
     return {
       confirmLogout,
       username,
-      logoutHandler
+      privacyModeIcon,
+      xsOnly,
+      togglePrivacyMode,
+      logoutHandler,
+      ...useDarkMode()
     };
   }
 });

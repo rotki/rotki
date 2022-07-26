@@ -1,4 +1,4 @@
-import { BigNumber, NumericString, Nullable } from '@rotki/common';
+import { BigNumber, Nullable, NumericString } from '@rotki/common';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { z } from 'zod';
 import {
@@ -40,6 +40,7 @@ export interface SessionState {
   timeframe: TimeFramePeriod;
   showUpdatePopup: boolean;
   animationsEnabled: boolean;
+  darkModeEnabled: boolean;
   pinned: Nullable<Pinned>;
 }
 

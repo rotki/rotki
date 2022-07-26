@@ -30,6 +30,7 @@ export const defaultState: () => SessionState = () => ({
   timeframe: TimeFramePeriod.ALL,
   showUpdatePopup: false,
   animationsEnabled: isAnimationsEnabled?.() ?? false,
+  darkModeEnabled: false,
   pinned: null
 });
 
