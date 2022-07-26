@@ -1,7 +1,9 @@
 <template>
-  <div class="action-status-indicator">
+  <div
+    v-if="status && (status.success || status.error)"
+    class="action-status-indicator"
+  >
     <v-alert
-      v-if="status"
       class="mb-0"
       dense
       :color="status.success ? 'success' : 'error'"
@@ -9,21 +11,21 @@
       outlined
       :icon="status.success ? 'mdi-check' : 'mdi-alert-circle-outline'"
     >
-      {{ status.message }}
+      {{ status.success || status.error }}
     </v-alert>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, PropType } from '@vue/composition-api';
-import { ActionStatus } from '@/store/types';
+import { BaseMessage } from '@/components/settings/utils';
 
 export default defineComponent({
   name: 'ActionStatusIndicator',
   props: {
     status: {
       required: false,
-      type: Object as PropType<ActionStatus | null>,
+      type: Object as PropType<BaseMessage | null>,
       default: null
     }
   }
@@ -33,6 +35,5 @@ export default defineComponent({
 <style scoped lang="scss">
 .action-status-indicator {
   height: 48px;
-  margin-bottom: 8px;
 }
 </style>

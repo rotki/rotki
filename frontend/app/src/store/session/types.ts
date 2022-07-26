@@ -19,7 +19,12 @@ export interface Pinned {
   props: { [key: string]: any };
 }
 
-export interface SessionState {
+export interface EditableSessionState {
+  animationsEnabled: boolean;
+  scrambleData: boolean;
+}
+
+export interface SessionState extends EditableSessionState {
   newAccount: boolean;
   logged: boolean;
   loginComplete: boolean;
@@ -29,7 +34,6 @@ export interface SessionState {
   premium: boolean;
   premiumSync: boolean;
   privacyMode: PrivacyMode;
-  scrambleData: boolean;
   nodeConnection: boolean;
   syncConflict: SyncConflict;
   tags: Tags;
@@ -39,7 +43,6 @@ export interface SessionState {
   lastDataUpload: number;
   timeframe: TimeFramePeriod;
   showUpdatePopup: boolean;
-  animationsEnabled: boolean;
   pinned: Nullable<Pinned>;
 }
 

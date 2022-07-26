@@ -690,7 +690,11 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('setShowUpdatePopup', false);
   },
 
-  setAnimationsEnabled({ commit }, enabled: boolean): void {
+  async scrambleData({ commit }, enabled: boolean): Promise<void> {
+    commit('scrambleData', enabled);
+  },
+
+  async animationsEnabled({ commit }, enabled: boolean): Promise<void> {
     commit('setAnimationsEnabled', enabled);
     setAnimationsEnabled(enabled);
   }

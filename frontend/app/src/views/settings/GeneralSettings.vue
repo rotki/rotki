@@ -1,874 +1,681 @@
 ﻿<template>
-  <div class="general-settings">
+  <div class="general-settings mt-n8">
     <date-format-help v-model="formatHelp" />
-    <v-row no-gutters>
-      <v-col>
-        <card>
-          <template #title>
-            {{ $t('general_settings.title') }}
-          </template>
+    <setting-category>
+      <template #title>
+        {{ $t('general_settings.title') }}
+      </template>
 
-          <v-switch
-            v-model="anonymousUsageAnalytics"
-            class="general-settings__fields__anonymous-usage-statistics mb-4 mt-0"
-            color="primary"
-            :label="$t('general_settings.labels.anonymous_analytics')"
-            :success-messages="
-              settingsMessages[ANONYMOUS_USAGE_ANALYTICS].success
+      <settings-option
+        #default="{ error, success, update }"
+        setting="submitUsageAnalytics"
+        :error-message="$tc('general_settings.validation.analytics.error')"
+      >
+        <v-switch
+          v-model="anonymousUsageAnalytics"
+          class="general-settings__fields__anonymous-usage-statistics mb-4 mt-0"
+          color="primary"
+          :label="$t('general_settings.labels.anonymous_analytics')"
+          :success-messages="success"
+          :error-messages="error"
+          @change="update($event)"
+        />
+      </settings-option>
+
+      <v-row>
+        <v-col class="grow">
+          <settings-option
+            #default="{ error, success, update }"
+            setting="versionUpdateCheckFrequency"
+            frontend-setting
+            :transform="value => (value ? parseInt(value) : value)"
+            :rules="versionUpdateCheckFrequencyRules"
+            :error-message="
+              $t(
+                'general_settings.validation.version_update_check_frequency.error'
+              )
             "
-            :error-messages="settingsMessages[ANONYMOUS_USAGE_ANALYTICS].error"
-            @change="onAnonymousUsageAnalyticsChange($event)"
-          />
-
-          <v-row>
-            <v-col class="grow">
-              <v-text-field
-                v-model="versionUpdateCheckFrequency"
-                outlined
-                :disabled="!versionUpdateCheckEnabled"
-                type="number"
-                min="30"
-                max="35000"
-                :label="$t('general_settings.labels.version_update_check')"
-                item-value="id"
-                item-text="label"
-                persistent-hint
-                :hint="$t('general_settings.version_update_check_hint')"
-                :success-messages="
-                  settingsMessages[VERSION_UPDATE_CHECK_FREQUENCY].success
-                "
-                :error-messages="
-                  settingsMessages[VERSION_UPDATE_CHECK_FREQUENCY].error
-                "
-                @change="onVersionUpdateCheckFrequencyChange($event)"
-              />
-            </v-col>
-            <v-col class="shrink">
-              <v-switch
-                v-model="versionUpdateCheckEnabled"
-                class="mt-3"
-                :label="
-                  $t('general_settings.labels.version_update_check_enabled')
-                "
-                @change="
-                  onVersionUpdateCheckFrequencyChange($event ? '24' : '-1')
-                "
-              />
-            </v-col>
-          </v-row>
-
-          <v-text-field
-            v-model="balanceSaveFrequency"
-            outlined
-            class="mt-2 general-settings__fields__balance-save-frequency"
-            :label="$t('general_settings.labels.balance_saving_frequency')"
-            type="number"
-            :success-messages="settingsMessages[BALANCE_SAVE_FREQUENCY].success"
-            :error-messages="settingsMessages[BALANCE_SAVE_FREQUENCY].error"
-            @change="onBalanceSaveFrequencyChange($event)"
-          />
-
-          <v-text-field
-            v-model="dateDisplayFormat"
-            outlined
-            class="general-settings__fields__date-display-format"
-            :label="$t('general_settings.labels.date_display_format')"
-            type="text"
-            :rules="dateFormatRules"
-            :success-messages="settingsMessages[DATE_DISPLAY_FORMAT].success"
-            :error-messages="settingsMessages[DATE_DISPLAY_FORMAT].error"
-            :hint="
-              $t('general_settings.date_display_format_hint', {
-                format: dateDisplayFormatExample
-              })
-            "
-            persistent-hint
-            @change="onDateDisplayFormatChange($event)"
+            @finished="resetVersionUpdateCheckFrequency"
           >
-            <template #append>
-              <v-btn small icon @click="formatHelp = true">
-                <v-icon small> mdi-information </v-icon>
-              </v-btn>
-            </template>
-            <template #append-outer>
-              <v-tooltip top open-delay="400">
-                <template #activator="{ on, attrs }">
-                  <v-btn
-                    class="general-settings__date-restore"
-                    icon
-                    v-bind="attrs"
-                    @click="resetDateFormat()"
-                    v-on="on"
-                  >
-                    <v-icon> mdi-backup-restore </v-icon>
-                  </v-btn>
-                </template>
-                <span>{{ $t('general_settings.date_display_tooltip') }}</span>
-              </v-tooltip>
-            </template>
-          </v-text-field>
-
-          <date-input-format-selector
-            v-model="dateInputFormat"
-            :label="$t('general_settings.labels.date_input_format')"
-            class="pt-4 general-settings__fields__date-input-format"
-            :rules="dateFormatRules"
-            :success-messages="settingsMessages[DATE_INPUT_FORMAT].success"
-            :error-messages="settingsMessages[DATE_INPUT_FORMAT].error"
-            @change="onDateInputFormatChange($event)"
-          />
-
-          <v-switch
-            v-model="displayDateInLocaltime"
-            class="general-settings__fields__display-date-in-localtime mb-4 mt-0"
-            color="primary"
-            :label="$t('general_settings.labels.display_date_in_localtime')"
-            :success-messages="
-              settingsMessages[DISPLAY_DATE_IN_LOCALTIME].success
-            "
-            :error-messages="settingsMessages[DISPLAY_DATE_IN_LOCALTIME].error"
-            @change="onDisplayDateInLocaltimeChange($event)"
-          />
-
-          <v-text-field
-            v-model="btcDerivationGapLimit"
-            outlined
-            class="general-settings__fields__btc-derivation-gap"
-            :label="$t('general_settings.labels.btc_derivation_gap')"
-            type="number"
-            :success-messages="
-              settingsMessages[BTC_DERIVATION_GAP_LIMIT].success
-            "
-            :error-messages="settingsMessages[BTC_DERIVATION_GAP_LIMIT].error"
-            @change="onBtcDerivationGapLimitChanged($event)"
-          />
-
-          <v-switch
-            v-model="treatEth2asEth"
-            class="general-settings__fields__treat-eth2-as-eth mb-2 mt-0"
-            color="primary"
-            :label="$t('general_settings.labels.treat_eth2_as_eth')"
-            :success-messages="settingsMessages[TREAT_ETH2_AS_ETH].success"
-            :error-messages="settingsMessages[TREAT_ETH2_AS_ETH].error"
-            @change="onTreatEth2AsEthChanged($event)"
-          />
-        </card>
-        <card class="mt-8">
-          <template #title>
-            {{ $t('general_settings.amount.title') }}
-          </template>
-          <v-text-field
-            v-model="floatingPrecision"
-            outlined
-            class="general-settings__fields__floating-precision"
-            :label="$t('general_settings.amount.labels.floating_precision')"
-            type="number"
-            :success-messages="settingsMessages[FLOATING_PRECISION].success"
-            :error-messages="settingsMessages[FLOATING_PRECISION].error"
-            @change="onFloatingPrecisionChange($event)"
-          />
-
-          <v-select
-            v-model="selectedCurrency"
-            outlined
-            class="general-settings__fields__currency-selector"
-            :label="$t('general_settings.amount.labels.main_currency')"
-            item-text="tickerSymbol"
-            return-object
-            :items="currencies"
-            :success-messages="settingsMessages[SELECTED_CURRENCY].success"
-            :error-messages="settingsMessages[SELECTED_CURRENCY].error"
-            @change="onSelectedCurrencyChange($event)"
+            <v-text-field
+              v-model="versionUpdateCheckFrequency"
+              outlined
+              :disabled="!versionUpdateCheckEnabled"
+              type="number"
+              :rules="versionUpdateCheckFrequencyRules"
+              min="1"
+              :max="maxVersionUpdateCheckFrequency"
+              :label="$t('general_settings.labels.version_update_check')"
+              persistent-hint
+              :hint="$t('general_settings.version_update_check_hint')"
+              :success-messages="success"
+              :error-messages="error"
+              @change="update"
+            />
+          </settings-option>
+        </v-col>
+        <v-col class="shrink">
+          <settings-option
+            #default="{ update }"
+            setting="versionUpdateCheckFrequency"
+            frontend-setting
+            :transform="value => (value ? 24 : -1)"
+            @finished="resetVersionUpdateCheckFrequency"
           >
-            <template #item="{ item, attrs, on }">
-              <v-list-item
-                :id="`currency__${item.tickerSymbol.toLocaleLowerCase()}`"
-                v-bind="attrs"
-                v-on="on"
-              >
-                <v-list-item-avatar
-                  class="general-settings__currency-list primary--text"
+            <v-switch
+              v-model="versionUpdateCheckEnabled"
+              class="mt-3"
+              :label="
+                $t('general_settings.labels.version_update_check_enabled')
+              "
+              @change="update"
+            />
+          </settings-option>
+        </v-col>
+      </v-row>
+
+      <settings-option
+        #default="{ error, success, update }"
+        setting="balanceSaveFrequency"
+        :rules="balanceSaveFrequencyRules"
+        :transform="value => (value ? parseInt(value) : value)"
+        :error-message="
+          $tc('general_settings.validation.balance_frequency.error')
+        "
+        :success-message="
+          frequency =>
+            $tc('general_settings.validation.balance_frequency.success', 0, {
+              frequency
+            })
+        "
+        @finished="resetBalanceSaveFrequency"
+      >
+        <v-text-field
+          v-model="balanceSaveFrequency"
+          outlined
+          min="1"
+          :max="maxBalanceSaveFrequency"
+          :rules="balanceSaveFrequencyRules"
+          class="mt-2 general-settings__fields__balance-save-frequency"
+          :label="$t('general_settings.labels.balance_saving_frequency')"
+          type="number"
+          :success-messages="success"
+          :error-messages="error"
+          @change="update"
+        />
+      </settings-option>
+
+      <settings-option
+        #default="{ error, success, update }"
+        setting="dateDisplayFormat"
+        :rules="dateFormatRules"
+        :error-message="
+          $tc('general_settings.validation.date_display_format.error')
+        "
+        :success-message="
+          dateFormat =>
+            $tc('general_settings.validation.date_display_format.success', 0, {
+              dateFormat
+            })
+        "
+        @finished="resetDateDisplayFormat"
+      >
+        <v-text-field
+          v-model="dateDisplayFormat"
+          outlined
+          class="general-settings__fields__date-display-format"
+          :label="$t('general_settings.labels.date_display_format')"
+          type="text"
+          :rules="dateFormatRules"
+          :success-messages="success"
+          :error-messages="error"
+          :hint="
+            $t('general_settings.date_display_format_hint', {
+              format: dateDisplayFormatExample
+            })
+          "
+          persistent-hint
+          @change="update"
+        >
+          <template #append>
+            <v-btn small icon @click="formatHelp = true">
+              <v-icon small> mdi-information </v-icon>
+            </v-btn>
+          </template>
+          <template #append-outer>
+            <v-tooltip top open-delay="400">
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  class="general-settings__date-restore"
+                  icon
+                  v-bind="attrs"
+                  @click="update(defaultDateDisplayFormat)"
+                  v-on="on"
                 >
-                  {{ item.unicodeSymbol }}
-                </v-list-item-avatar>
-                <v-list-item-content>
-                  <v-list-item-title>
-                    {{ item.name }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle>
-                    {{
-                      $t(
-                        'general_settings.amount.labels.main_currency_subtitle'
-                      )
-                    }}
-                  </v-list-item-subtitle>
-                </v-list-item-content>
-              </v-list-item>
-            </template>
-          </v-select>
+                  <v-icon> mdi-backup-restore </v-icon>
+                </v-btn>
+              </template>
+              <span>{{ $t('general_settings.date_display_tooltip') }}</span>
+            </v-tooltip>
+          </template>
+        </v-text-field>
+      </settings-option>
 
-          <v-text-field
-            v-model="thousandSeparator"
-            outlined
-            maxlength="1"
-            class="general-settings__fields__thousand-separator"
-            :label="$t('general_settings.amount.label.thousand_separator')"
-            type="text"
-            :rules="thousandSeparatorRules()"
-            :success-messages="settingsMessages[THOUSAND_SEPARATOR].success"
-            :error-messages="settingsMessages[THOUSAND_SEPARATOR].error"
-            @change="onThousandSeparatorChange($event)"
+      <settings-option
+        #default="{ error, success, update }"
+        setting="dateInputFormat"
+        frontend-setting
+        :rules="dateFormatRules"
+        :error-message="
+          $tc('general_settings.validation.date_input_format.error')
+        "
+        :success-message="
+          dateFormat =>
+            $tc('general_settings.validation.date_input_format.success', 0, {
+              dateFormat
+            })
+        "
+        @finished="resetDateInputFormat"
+      >
+        <date-input-format-selector
+          v-model="dateInputFormat"
+          :label="$t('general_settings.labels.date_input_format')"
+          class="pt-4 general-settings__fields__date-input-format"
+          :rules="dateFormatRules"
+          :success-messages="success"
+          :error-messages="error"
+          @change="update"
+        />
+      </settings-option>
+
+      <settings-option
+        #default="{ error, success, update }"
+        setting="displayDateInLocaltime"
+        :error-message="
+          $tc('general_settings.validation.display_date_in_localtime.error')
+        "
+      >
+        <v-switch
+          v-model="displayDateInLocaltime"
+          class="general-settings__fields__display-date-in-localtime mb-4 mt-0"
+          color="primary"
+          :label="$t('general_settings.labels.display_date_in_localtime')"
+          :success-messages="success"
+          :error-messages="error"
+          @change="update"
+        />
+      </settings-option>
+
+      <settings-option
+        #default="{ error, success, update }"
+        setting="btcDerivationGapLimit"
+        :error-message="
+          $tc('general_settings.validation.btc_derivation_gap.error')
+        "
+        :success-message="
+          limit =>
+            $tc('general_settings.validation.btc_derivation_gap.success', 0, {
+              limit
+            })
+        "
+      >
+        <v-text-field
+          v-model.number="btcDerivationGapLimit"
+          outlined
+          class="general-settings__fields__btc-derivation-gap"
+          :label="$t('general_settings.labels.btc_derivation_gap')"
+          type="number"
+          :success-messages="success"
+          :error-messages="error"
+          @change="update($event ? parseInt($event) : $event)"
+        />
+      </settings-option>
+
+      <settings-option
+        #default="{ error, success, update }"
+        setting="treatEth2AsEth"
+        :error-message="
+          $tc('general_settings.validation.treat_eth2_as_eth.error')
+        "
+      >
+        <v-switch
+          v-model="treatEth2asEth"
+          class="general-settings__fields__treat-eth2-as-eth mb-2 mt-0"
+          color="primary"
+          :label="$t('general_settings.labels.treat_eth2_as_eth')"
+          :success-messages="success"
+          :error-messages="error"
+          @change="update"
+        />
+      </settings-option>
+    </setting-category>
+
+    <setting-category>
+      <template #title>
+        {{ $t('general_settings.amount.title') }}
+      </template>
+
+      <settings-option
+        #default="{ error, success, update }"
+        setting="uiFloatingPrecision"
+        :rules="floatingPrecisionRules"
+        :transform="value => (value ? parseInt(value) : value)"
+        :error-message="
+          precision =>
+            $tc('general_settings.validation.floating_precision.error', 0, {
+              precision
+            })
+        "
+        :success-message="
+          precision =>
+            $tc('general_settings.validation.floating_precision.success', 0, {
+              precision
+            })
+        "
+        @finished="resetFloatingPrecision"
+      >
+        <v-text-field
+          v-model="floatingPrecision"
+          outlined
+          min="1"
+          :max="maxFloatingPrecision"
+          :rules="floatingPrecisionRules"
+          class="general-settings__fields__floating-precision"
+          :label="$t('general_settings.amount.labels.floating_precision')"
+          type="number"
+          :success-messages="success"
+          :error-messages="error"
+          @change="update"
+        />
+      </settings-option>
+
+      <settings-option
+        #default="{ error, success, update }"
+        setting="mainCurrency"
+        :error-message="$tc('general_settings.validation.currency.error')"
+        :success-message="
+          symbol =>
+            $tc('general_settings.validation.currency.success', 0, {
+              symbol
+            })
+        "
+      >
+        <v-select
+          v-model="selectedCurrency"
+          outlined
+          class="general-settings__fields__currency-selector"
+          :label="$t('general_settings.amount.labels.main_currency')"
+          item-text="tickerSymbol"
+          return-object
+          :items="currencies"
+          :success-messages="success"
+          :error-messages="error"
+          @change="update($event ? $event.tickerSymbol : $event)"
+        >
+          <template #item="{ item, attrs, on }">
+            <v-list-item
+              :id="`currency__${item.tickerSymbol.toLocaleLowerCase()}`"
+              v-bind="attrs"
+              v-on="on"
+            >
+              <v-list-item-avatar
+                class="general-settings__currency-list primary--text"
+              >
+                {{ item.unicodeSymbol }}
+              </v-list-item-avatar>
+              <v-list-item-content>
+                <v-list-item-title>
+                  {{ item.name }}
+                </v-list-item-title>
+                <v-list-item-subtitle>
+                  {{
+                    $t('general_settings.amount.labels.main_currency_subtitle')
+                  }}
+                </v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+          </template>
+        </v-select>
+      </settings-option>
+
+      <settings-option
+        #default="{ error, success, update }"
+        setting="thousandSeparator"
+        frontend-setting
+        :rules="thousandSeparatorRules"
+        :error-message="
+          $tc('general_settings.validation.thousand_separator.error')
+        "
+        :success-message="
+          thousandSeparator =>
+            $tc('general_settings.validation.thousand_separator.success', 0, {
+              thousandSeparator
+            })
+        "
+      >
+        <v-text-field
+          v-model="thousandSeparator"
+          outlined
+          maxlength="1"
+          class="general-settings__fields__thousand-separator"
+          :label="$t('general_settings.amount.label.thousand_separator')"
+          type="text"
+          :rules="thousandSeparatorRules"
+          :success-messages="success"
+          :error-messages="error"
+          @change="update"
+        />
+      </settings-option>
+
+      <settings-option
+        #default="{ error, success, update }"
+        setting="decimalSeparator"
+        frontend-setting
+        :rules="decimalSeparatorRules"
+        :error-message="
+          $tc('general_settings.validation.decimal_separator.error')
+        "
+        :success-message="
+          decimalSeparator =>
+            $tc('general_settings.validation.decimal_separator.success', 0, {
+              decimalSeparator
+            })
+        "
+      >
+        <v-text-field
+          v-model="decimalSeparator"
+          outlined
+          maxlength="1"
+          class="general-settings__fields__decimal-separator"
+          :label="$t('general_settings.amount.label.decimal_separator')"
+          type="text"
+          :rules="decimalSeparatorRules"
+          :success-messages="success"
+          :error-messages="error"
+          @change="update"
+        />
+      </settings-option>
+
+      <settings-option
+        #default="{ error, success, update }"
+        setting="currencyLocation"
+        frontend-setting
+        :error-message="
+          $tc('general_settings.validation.currency_location.error')
+        "
+        :success-message="
+          currencyLocation =>
+            $tc('general_settings.validation.currency_location.success', 0, {
+              currencyLocation
+            })
+        "
+      >
+        <v-radio-group
+          v-model="currencyLocation"
+          class="general-settings__fields__currency-location"
+          :label="$t('general_settings.amount.label.currency_location')"
+          row
+          :success-messages="success"
+          :error-messages="error"
+          @change="update"
+        >
+          <v-radio
+            :label="$t('general_settings.amount.label.location_before')"
+            value="before"
           />
-
-          <v-text-field
-            v-model="decimalSeparator"
-            outlined
-            maxlength="1"
-            class="general-settings__fields__decimal-separator"
-            :label="$t('general_settings.amount.label.decimal_separator')"
-            type="text"
-            :rules="decimalSeparatorRules()"
-            :success-messages="settingsMessages[DECIMAL_SEPARATOR].success"
-            :error-messages="settingsMessages[DECIMAL_SEPARATOR].error"
-            @change="onDecimalSeparatorChange($event)"
+          <v-radio
+            :label="$t('general_settings.amount.label.location_after')"
+            value="after"
           />
+        </v-radio-group>
+      </settings-option>
 
-          <v-radio-group
-            v-model="currencyLocation"
-            class="general-settings__fields__currency-location"
-            :label="$t('general_settings.amount.label.currency_location')"
-            row
-            :success-messages="settingsMessages[CURRENCY_LOCATION].success"
-            :error-messages="settingsMessages[CURRENCY_LOCATION].error"
-            @change="onCurrencyLocationChange($event)"
-          >
-            <v-radio
-              :label="$t('general_settings.amount.label.location_before')"
-              value="before"
-            />
-            <v-radio
-              :label="$t('general_settings.amount.label.location_after')"
-              value="after"
-            />
-          </v-radio-group>
+      <div>
+        <strong>
+          {{ $t('general_settings.amount.label.resulting_format') }}
+        </strong>
+        <amount-display :value="amountExample" show-currency="symbol" />
+      </div>
 
-          <strong>
-            {{ $t('general_settings.amount.label.resulting_format') }}
-          </strong>
-          <amount-display :value="amountExample" show-currency="symbol" />
-
-          <rounding-settings />
-        </card>
-        <ethereum-rpc-node-manager />
-        <rpc-settings />
-        <price-oracle-settings />
-        <frontend-settings />
-      </v-col>
-    </v-row>
+      <rounding-settings />
+    </setting-category>
+    <ethereum-rpc-node-manager />
+    <rpc-settings />
+    <price-oracle-settings />
+    <frontend-settings />
   </div>
 </template>
 
-<script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+<script setup lang="ts">
+import { computed, onMounted, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import RoundingSettings from '@/components/settings/explorers/RoundingSettings.vue';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import FrontendSettings from '@/components/settings/FrontendSettings.vue';
 import DateInputFormatSelector from '@/components/settings/general/DateInputFormatSelector.vue';
 import EthereumRpcNodeManager from '@/components/settings/general/rpc/EthereumRpcNodeManager.vue';
 import RpcSettings from '@/components/settings/general/rpc/RpcSettings.vue';
-import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
 import PriceOracleSettings from '@/components/settings/PriceOracleSettings.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
-import {
-  BaseMessage,
-  makeMessage,
-  settingsMessages
-} from '@/components/settings/utils';
+import { setupGeneralSettings } from '@/composables/session';
+import { useSettings } from '@/composables/settings';
 import { Constraints } from '@/data/constraints';
 import { currencies } from '@/data/currencies';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { Defaults } from '@/data/defaults';
-import SettingsMixin from '@/mixins/settings-mixin';
-import { monitor } from '@/services/monitoring';
-import { ActionStatus } from '@/store/types';
+import i18n from '@/i18n';
 import { Currency } from '@/types/currency';
 import { CurrencyLocation } from '@/types/currency-location';
-import { DateFormat } from '@/types/date-format';
-import {
-  CURRENCY_LOCATION,
-  DATE_INPUT_FORMAT,
-  DECIMAL_SEPARATOR,
-  FrontendSettingsPayload,
-  THOUSAND_SEPARATOR,
-  VERSION_UPDATE_CHECK_FREQUENCY
-} from '@/types/frontend-settings';
-import { SettingsUpdate } from '@/types/user';
 import { bigNumberify } from '@/utils/bignumbers';
 import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
 
-const SETTING_FLOATING_PRECISION = 'floatingPrecision';
-const SETTING_ANONYMOUS_USAGE_ANALYTICS = 'anonymousUsageAnalytics';
-const SETTING_BALANCE_SAVE_FREQUENCY = 'balanceSaveFrequency';
-const SETTING_DATE_DISPLAY_FORMAT = 'dateDisplayFormat';
-const SETTING_DATE_INPUT_FORMAT = 'dateInputFormat';
-const SETTING_THOUSAND_SEPARATOR = 'thousandSeparator';
-const SETTING_DECIMAL_SEPARATOR = 'decimalSeparator';
-const SETTING_CURRENCY_LOCATION = 'currencyLocation';
-const SETTING_SELECTED_CURRENCY = 'selectedCurrency';
-const SETTING_BTC_DERIVATION_GAP_LIMIT = 'btcDerivationGapLimit';
-const SETTING_DISPLAY_DATE_IN_LOCALTIME = 'displayDateInLocaltime';
-const SETTING_VERSION_UPDATE_CHECK_FREQUENCY = 'versionUpdateCheckFrequency';
-const SETTING_TREAT_ETH2_AS_ETH = 'treatEth2AsEth';
+const { currency } = setupGeneralSettings();
 
-const SETTINGS = [
-  SETTING_FLOATING_PRECISION,
-  SETTING_ANONYMOUS_USAGE_ANALYTICS,
-  SETTING_BALANCE_SAVE_FREQUENCY,
-  SETTING_DATE_DISPLAY_FORMAT,
-  SETTING_DATE_INPUT_FORMAT,
-  SETTING_THOUSAND_SEPARATOR,
-  SETTING_DECIMAL_SEPARATOR,
-  SETTING_CURRENCY_LOCATION,
-  SETTING_SELECTED_CURRENCY,
-  SETTING_BTC_DERIVATION_GAP_LIMIT,
-  SETTING_DISPLAY_DATE_IN_LOCALTIME,
-  SETTING_VERSION_UPDATE_CHECK_FREQUENCY,
-  SETTING_TREAT_ETH2_AS_ETH
-] as const;
+const floatingPrecision = ref<string>('0');
+const anonymousUsageAnalytics = ref<boolean>(false);
+const balanceSaveFrequency = ref<string>('0');
+const dateDisplayFormat = ref<string>('');
+const dateInputFormat = ref<string>('');
+const thousandSeparator = ref<string>('');
+const decimalSeparator = ref<string>('');
+const currencyLocation = ref<CurrencyLocation>(CurrencyLocation.AFTER);
+const selectedCurrency = ref<Currency>(currencies[0]);
+const btcDerivationGapLimit = ref<string>('20');
+const displayDateInLocaltime = ref<boolean>(true);
+const versionUpdateCheckFrequency = ref<string>('');
+const versionUpdateCheckEnabled = ref<boolean>(false);
+const treatEth2asEth = ref<boolean>(false);
 
-const MAX_BALANCE_SAVE_FREQUENCY = Constraints.MAX_HOURS_DELAY;
-const MAX_VERSION_UPDATE_CHECK_FREQUENCY = Constraints.MAX_HOURS_DELAY;
+const formatHelp = ref<boolean>(false);
 
-type SettingsEntries = typeof SETTINGS[number];
+const now = new Date();
 
-@Component({
-  components: {
-    EthereumRpcNodeManager,
-    RpcSettings,
-    DateInputFormatSelector,
-    DateFormatHelp,
-    RoundingSettings,
-    FrontendSettings,
-    PriceOracleSettings,
-    SettingCategory,
-    TimeFrameSettings,
-    AmountDisplay
-  },
-  computed: {
-    ...mapGetters('session', ['currency'])
-  }
-})
-export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
-  SettingsMixin
-) {
-  currency!: Currency;
+const amountExample = bigNumberify(123456.789);
 
-  floatingPrecision: string = '0';
-  anonymousUsageAnalytics: boolean = false;
-  balanceSaveFrequency: string = '0';
-  dateDisplayFormat: string = '';
-  dateInputFormat: string = '';
-  thousandSeparator: string = '';
-  decimalSeparator: string = '';
-  currencyLocation: CurrencyLocation = CurrencyLocation.AFTER;
-  selectedCurrency: Currency = currencies[0];
-  btcDerivationGapLimit: string = '20';
-  displayDateInLocaltime: boolean = true;
-  versionUpdateCheckFrequency: string = '';
-  versionUpdateCheckEnabled: boolean = false;
-  treatEth2asEth: boolean = false;
+const dateDisplayFormatExample = computed<string>(() => {
+  return displayDateFormatter.format(now, get(dateDisplayFormat));
+});
 
-  formatHelp: boolean = false;
-  readonly now = new Date();
-
-  readonly FLOATING_PRECISION = SETTING_FLOATING_PRECISION;
-  readonly ANONYMOUS_USAGE_ANALYTICS = SETTING_ANONYMOUS_USAGE_ANALYTICS;
-  readonly BALANCE_SAVE_FREQUENCY = SETTING_BALANCE_SAVE_FREQUENCY;
-  readonly DATE_DISPLAY_FORMAT = SETTING_DATE_DISPLAY_FORMAT;
-  readonly DATE_INPUT_FORMAT = SETTING_DATE_INPUT_FORMAT;
-  readonly THOUSAND_SEPARATOR = SETTING_THOUSAND_SEPARATOR;
-  readonly DECIMAL_SEPARATOR = SETTING_DECIMAL_SEPARATOR;
-  readonly CURRENCY_LOCATION = SETTING_CURRENCY_LOCATION;
-  readonly SELECTED_CURRENCY = SETTING_SELECTED_CURRENCY;
-  readonly BTC_DERIVATION_GAP_LIMIT = SETTING_BTC_DERIVATION_GAP_LIMIT;
-  readonly DISPLAY_DATE_IN_LOCALTIME = SETTING_DISPLAY_DATE_IN_LOCALTIME;
-  readonly VERSION_UPDATE_CHECK_FREQUENCY =
-    SETTING_VERSION_UPDATE_CHECK_FREQUENCY;
-  readonly TREAT_ETH2_AS_ETH = SETTING_TREAT_ETH2_AS_ETH;
-
-  date: string = '';
-  amountExample = bigNumberify(123456.789);
-
-  get dateDisplayFormatExample(): string {
-    return displayDateFormatter.format(this.now, this.dateDisplayFormat);
-  }
-
-  resetDateFormat() {
-    this.dateDisplayFormat = Defaults.DEFAULT_DATE_DISPLAY_FORMAT;
-    this.onDateDisplayFormatChange(this.dateDisplayFormat);
-  }
-
-  readonly dateFormatRules = [
-    (v: string) => {
-      if (!v) {
-        return this.$t('general_settings.date_display.validation.empty');
-      }
-      if (!displayDateFormatter.containsValidDirectives(v)) {
-        return this.$t(
-          'general_settings.date_display.validation.invalid'
-        ).toString();
-      }
-      return true;
+const defaultDateDisplayFormat = Defaults.DEFAULT_DATE_DISPLAY_FORMAT;
+const dateFormatRules = [
+  (v: string) => {
+    if (!v) {
+      return i18n
+        .t('general_settings.date_display.validation.empty')
+        .toString();
     }
-  ];
-
-  async onBtcDerivationGapLimitChanged(limit: string) {
-    const message = makeMessage(
-      this.$t(
-        'general_settings.validation.btc_derivation_gap.error'
-      ).toString(),
-      this.$t('general_settings.validation.btc_derivation_gap.success', {
-        limit
-      }).toString()
-    );
-
-    await this.update(
-      { btcDerivationGapLimit: parseInt(limit) },
-      SETTING_BTC_DERIVATION_GAP_LIMIT,
-      message
-    );
+    if (!displayDateFormatter.containsValidDirectives(v)) {
+      return i18n
+        .t('general_settings.date_display.validation.invalid')
+        .toString();
+    }
+    return true;
   }
+];
 
-  async onTreatEth2AsEthChanged(enabled: boolean) {
-    const message = makeMessage(
-      `${this.$t('general_settings.validation.treat_eth2_as_eth.error')}`
-    );
-
-    await this.update(
-      { treatEth2AsEth: enabled },
-      SETTING_TREAT_ETH2_AS_ETH,
-      message
-    );
-  }
-
-  async onVersionUpdateCheckFrequencyChange(frequency: string) {
-    const versionUpdateCheckFrequency = parseInt(frequency);
-    if (versionUpdateCheckFrequency > MAX_VERSION_UPDATE_CHECK_FREQUENCY) {
-      const message = `${this.$t(
+const maxVersionUpdateCheckFrequency = Constraints.MAX_HOURS_DELAY;
+const versionUpdateCheckFrequencyRules = [
+  (v: string) =>
+    !!v ||
+    !get(versionUpdateCheckEnabled) ||
+    i18n
+      .t('general_settings.validation.version_update_check_frequency.non_empty')
+      .toString(),
+  (v: string) =>
+    (v && parseInt(v) > 0 && parseInt(v) < maxVersionUpdateCheckFrequency) ||
+    !get(versionUpdateCheckEnabled) ||
+    i18n
+      .t(
         'general_settings.validation.version_update_check_frequency.invalid_frequency',
+        0,
         {
           start: 1,
-          end: MAX_VERSION_UPDATE_CHECK_FREQUENCY
+          end: maxVersionUpdateCheckFrequency
         }
-      )}`;
+      )
+      .toString()
+];
 
-      this.validateSettingChange(
-        SETTING_VERSION_UPDATE_CHECK_FREQUENCY,
-        'error',
-        message
-      );
-      this.versionUpdateCheckFrequency =
-        this.$store.state.settings![VERSION_UPDATE_CHECK_FREQUENCY].toString();
-      return;
-    }
-    const payload: FrontendSettingsPayload = {
-      [VERSION_UPDATE_CHECK_FREQUENCY]: versionUpdateCheckFrequency
-    };
-
-    const messages: BaseMessage = {
-      success:
-        versionUpdateCheckFrequency > 0
-          ? this.$t(
-              'general_settings.validation.version_update_check_frequency.success',
-              {
-                frequency
-              }
-            ).toString()
-          : this.$t(
-              'general_settings.validation.version_update_check_frequency.success_disabled'
-            ).toString(),
-      error: this.$t(
-        'general_settings.validation.version_update_check_frequency.error'
-      ).toString()
-    };
-
-    const { success } = await this.modifyFrontendSetting(
-      payload,
-      SETTING_VERSION_UPDATE_CHECK_FREQUENCY,
-      messages
-    );
-    if (success) {
-      this.versionUpdateCheckFrequency =
-        versionUpdateCheckFrequency > 0 ? frequency : '';
-      this.versionUpdateCheckEnabled = !!this.versionUpdateCheckFrequency;
-      monitor.restart();
-    }
-  }
-
-  async update(
-    update: SettingsUpdate,
-    setting: SettingsEntries,
-    baseMessage: BaseMessage
-  ): Promise<boolean> {
-    const result = await this.settingsUpdate(update);
-
-    this.validateSettingChange(
-      setting,
-      result.success ? 'success' : 'error',
-      result.success
-        ? baseMessage.success
-        : `${baseMessage.error}: ${result.message}`
-    );
-    return result.success;
-  }
-
-  async onSelectedCurrencyChange(currency: Currency) {
-    const symbol = currency.tickerSymbol;
-    const message = makeMessage(
-      `${this.$t('general_settings.validation.currency.error')}`,
-      `${this.$t('general_settings.validation.currency.success', {
-        symbol
-      })}`
-    );
-    await this.update(
-      { mainCurrency: symbol },
-      SETTING_SELECTED_CURRENCY,
-      message
-    );
-  }
-
-  async modifyFrontendSetting(
-    payload: FrontendSettingsPayload,
-    setting: SettingsEntries,
-    messages: BaseMessage
-  ): Promise<ActionStatus> {
-    const result = await this.updateSetting(payload);
-    const { success } = result;
-
-    this.validateSettingChange(
-      setting,
-      success ? 'success' : 'error',
-      success ? messages.success : messages.error
-    );
-    return result;
-  }
-
-  private thousandSeparatorRules() {
+const thousandSeparatorRules = computed<((v: string) => boolean | string)[]>(
+  () => {
     return [
       (v: string) => {
         if (!v) {
-          return this.$t(
-            'general_settings.thousand_separator.validation.empty'
-          );
+          return i18n
+            .t('general_settings.thousand_separator.validation.empty')
+            .toString();
         }
-        if (v === this.decimalSeparator) {
-          return this.$t(
-            'general_settings.thousand_separator.validation.cannot_be_the_same'
-          ).toString();
+        if (v === get(decimalSeparator)) {
+          return i18n
+            .t(
+              'general_settings.thousand_separator.validation.cannot_be_the_same'
+            )
+            .toString();
         }
         if (/[0-9]/.test(v)) {
-          return this.$t(
-            'general_settings.thousand_separator.validation.cannot_be_numeric_character'
-          ).toString();
+          return i18n
+            .t(
+              'general_settings.thousand_separator.validation.cannot_be_numeric_character'
+            )
+            .toString();
         }
         return true;
       }
     ];
   }
+);
 
-  async onThousandSeparatorChange(thousandSeparator: string) {
-    if (
-      thousandSeparator === this.decimalSeparator ||
-      /[0-9+e]/.test(thousandSeparator)
-    ) {
-      const state = this.$store.state;
-      this.thousandSeparator = state.settings![THOUSAND_SEPARATOR];
-      return;
-    }
-
-    const messages = makeMessage(
-      this.$t(
-        'general_settings.validation.thousand_separator.error'
-      ).toString(),
-      this.$t('general_settings.validation.thousand_separator.success', {
-        thousandSeparator
-      }).toString()
-    );
-
-    await this.modifyFrontendSetting(
-      { [THOUSAND_SEPARATOR]: this.thousandSeparator },
-      SETTING_THOUSAND_SEPARATOR,
-      messages
-    );
-  }
-
-  private decimalSeparatorRules() {
+const decimalSeparatorRules = computed<((v: string) => boolean | string)[]>(
+  () => {
     return [
       (v: string) => {
         if (!v) {
-          return this.$t('general_settings.decimal_separator.validation.empty');
+          return i18n
+            .t('general_settings.decimal_separator.validation.empty')
+            .toString();
         }
-        if (v === this.thousandSeparator) {
-          return this.$t(
-            'general_settings.decimal_separator.validation.cannot_be_the_same'
-          ).toString();
+        if (v === get(thousandSeparator)) {
+          return i18n
+            .t(
+              'general_settings.decimal_separator.validation.cannot_be_the_same'
+            )
+            .toString();
         }
-        if (/[0-9+e]/.test(v)) {
-          return this.$t(
-            'general_settings.decimal_separator.validation.cannot_be_numeric_character'
-          ).toString();
+        if (/[0-9]/.test(v)) {
+          return i18n
+            .t(
+              'general_settings.decimal_separator.validation.cannot_be_numeric_character'
+            )
+            .toString();
         }
         return true;
       }
     ];
   }
+);
 
-  async onDecimalSeparatorChange(decimalSeparator: string) {
-    if (
-      decimalSeparator === this.thousandSeparator ||
-      /[0-9]/.test(decimalSeparator)
-    ) {
-      const state = this.$store.state;
-      this.decimalSeparator = state.settings![DECIMAL_SEPARATOR];
-      return;
-    }
+const maxFloatingPrecision = 8;
+const floatingPrecisionRules = [
+  (v: string) =>
+    !!v ||
+    i18n
+      .t('general_settings.validation.floating_precision.non_empty')
+      .toString()
+];
 
-    const message = makeMessage(
-      `${this.$t('general_settings.validation.decimal_separator.error')}`,
-      this.$t('general_settings.validation.decimal_separator.success', {
-        decimalSeparator
-      }).toString()
-    );
+const maxBalanceSaveFrequency = Constraints.MAX_HOURS_DELAY;
+const balanceSaveFrequencyRules = [
+  (v: string) =>
+    !!v ||
+    i18n
+      .t('general_settings.validation.balance_frequency.non_empty')
+      .toString(),
+  (v: string) =>
+    (v && parseInt(v) > 0 && parseInt(v) < maxBalanceSaveFrequency) ||
+    i18n
+      .t('general_settings.validation.balance_frequency.invalid_frequency', {
+        start: 1,
+        end: maxBalanceSaveFrequency
+      })
+      .toString()
+];
 
-    await this.modifyFrontendSetting(
-      { [DECIMAL_SEPARATOR]: this.decimalSeparator },
-      SETTING_DECIMAL_SEPARATOR,
-      message
-    );
-  }
+const { generalSettings, frontendSettings } = useSettings();
 
-  async onCurrencyLocationChange(currencyLocation: CurrencyLocation) {
-    const message = makeMessage(
-      `${this.$t('general_settings.validation.currency_location.error')}`,
-      this.$t('general_settings.validation.currency_location.success', {
-        currencyLocation
-      }).toString()
-    );
+const resetBalanceSaveFrequency = () => {
+  const settings = get(generalSettings);
+  set(balanceSaveFrequency, settings.balanceSaveFrequency.toString());
+};
 
-    await this.modifyFrontendSetting(
-      { [CURRENCY_LOCATION]: this.currencyLocation },
-      SETTING_CURRENCY_LOCATION,
-      message
-    );
-  }
+const resetFloatingPrecision = () => {
+  const settings = get(generalSettings);
+  set(floatingPrecision, settings.uiFloatingPrecision.toString());
+};
 
-  async onFloatingPrecisionChange(precision: string) {
-    const previousValue = this.generalSettings.uiFloatingPrecision.toString();
+const resetDateDisplayFormat = () => {
+  const settings = get(generalSettings);
+  set(dateDisplayFormat, settings.dateDisplayFormat);
+};
 
-    if (!this.notTheSame(precision, previousValue)) {
-      return;
-    }
+const resetVersionUpdateCheckFrequency = () => {
+  const frontendSettingsVal = get(frontendSettings);
+  const frequency = frontendSettingsVal.versionUpdateCheckFrequency;
+  set(versionUpdateCheckEnabled, frequency > 0);
+  set(
+    versionUpdateCheckFrequency,
+    get(versionUpdateCheckEnabled) ? frequency.toString() : ''
+  );
+};
 
-    const params = {
-      precision
-    };
-    const message = makeMessage(
-      `${this.$t(
-        'general_settings.validation.floating_precision.error',
-        params
-      )}`,
-      `${this.$t(
-        'general_settings.validation.floating_precision.success',
-        params
-      )}`
-    );
+const resetDateInputFormat = () => {
+  const frontendSettingsVal = get(frontendSettings);
+  set(dateInputFormat, frontendSettingsVal.dateInputFormat);
+};
 
-    const success = await this.update(
-      { uiFloatingPrecision: parseInt(precision) },
-      SETTING_FLOATING_PRECISION,
-      message
-    );
+const loadFromState = () => {
+  set(selectedCurrency, get(currency));
+  const settings = get(generalSettings);
+  set(anonymousUsageAnalytics, settings.submitUsageAnalytics);
+  set(btcDerivationGapLimit, settings.btcDerivationGapLimit.toString());
+  set(treatEth2asEth, settings.treatEth2AsEth);
+  set(displayDateInLocaltime, settings.displayDateInLocaltime);
+  resetBalanceSaveFrequency();
+  resetFloatingPrecision();
+  resetDateDisplayFormat();
 
-    if (!success) {
-      this.floatingPrecision = previousValue;
-    }
-  }
+  const frontendSettingsVal = get(frontendSettings);
+  set(thousandSeparator, frontendSettingsVal.thousandSeparator);
+  set(decimalSeparator, frontendSettingsVal.decimalSeparator);
+  set(currencyLocation, frontendSettingsVal.currencyLocation);
+  resetVersionUpdateCheckFrequency();
+  resetDateInputFormat();
+};
 
-  async onAnonymousUsageAnalyticsChange(enabled: boolean) {
-    const message = makeMessage(
-      `${this.$t('general_settings.validation.analytics.error')}`
-    );
-
-    await this.update(
-      { submitUsageAnalytics: enabled },
-      SETTING_ANONYMOUS_USAGE_ANALYTICS,
-      message
-    );
-  }
-
-  async onDisplayDateInLocaltimeChange(enabled: boolean) {
-    const message = makeMessage(
-      `${this.$t(
-        'general_settings.validation.display_date_in_localtime.error'
-      )}`
-    );
-
-    await this.update(
-      { displayDateInLocaltime: enabled },
-      SETTING_DISPLAY_DATE_IN_LOCALTIME,
-      message
-    );
-  }
-
-  async onBalanceSaveFrequencyChange(queryFrequency: string) {
-    const previousValue = this.generalSettings.balanceSaveFrequency.toString();
-    const frequency = parseInt(queryFrequency);
-
-    if (frequency < 1 || frequency > MAX_BALANCE_SAVE_FREQUENCY) {
-      const message = `${this.$t(
-        'general_settings.validation.balance_frequency.invalid_frequency',
-        {
-          start: 1,
-          end: MAX_BALANCE_SAVE_FREQUENCY
-        }
-      )}`;
-
-      this.validateSettingChange(
-        SETTING_BALANCE_SAVE_FREQUENCY,
-        'error',
-        message
-      );
-      this.balanceSaveFrequency = previousValue;
-      return;
-    }
-
-    if (!this.notTheSame(queryFrequency, previousValue)) {
-      return;
-    }
-
-    const params = {
-      frequency
-    };
-
-    const message = makeMessage(
-      `${this.$t(
-        'general_settings.validation.balance_frequency.error',
-        params
-      )}`,
-      `${this.$t(
-        'general_settings.validation.balance_frequency.success',
-        params
-      )}`
-    );
-
-    const success = await this.update(
-      { balanceSaveFrequency: frequency },
-      SETTING_BALANCE_SAVE_FREQUENCY,
-      message
-    );
-
-    if (!success) {
-      this.balanceSaveFrequency = previousValue;
-    }
-  }
-
-  async onDateDisplayFormatChange(dateFormat: string) {
-    if (!displayDateFormatter.containsValidDirectives(dateFormat)) {
-      return;
-    }
-
-    const message = makeMessage(
-      `${this.$t('general_settings.validation.date_display_format.error')}`,
-      `${this.$t('general_settings.validation.date_display_format.success', {
-        dateFormat
-      })}`
-    );
-
-    await this.update(
-      { dateDisplayFormat: dateFormat },
-      SETTING_DATE_DISPLAY_FORMAT,
-      message
-    );
-  }
-
-  async onDateInputFormatChange(dateFormat: DateFormat) {
-    if (!displayDateFormatter.containsValidDirectives(dateFormat)) {
-      return;
-    }
-
-    const messages = makeMessage(
-      this.$t('general_settings.validation.date_input_format.error').toString(),
-      this.$t('general_settings.validation.date_input_format.success', {
-        dateFormat
-      }).toString()
-    );
-
-    await this.modifyFrontendSetting(
-      { [DATE_INPUT_FORMAT]: dateFormat },
-      SETTING_DATE_INPUT_FORMAT,
-      messages
-    );
-  }
-
-  formatDate(date: string) {
-    if (!date) return '';
-
-    const [year, month, day] = date.split('-');
-    return `${day}/${month}/${year}`;
-  }
-
-  parseDate(date: string) {
-    if (
-      !/^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}$/.test(
-        date
-      )
-    )
-      return null;
-
-    const [day, month, year] = date.split('/');
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  }
-
-  get currencies(): Currency[] {
-    return currencies;
-  }
-
-  created() {
-    this.settingsMessages = settingsMessages(SETTINGS);
-  }
-
-  mounted() {
-    this.loadFromState();
-  }
-
-  private loadFromState() {
-    this.selectedCurrency = this.currency;
-    const settings = this.generalSettings;
-    this.floatingPrecision = settings.uiFloatingPrecision.toString();
-    this.anonymousUsageAnalytics = settings.submitUsageAnalytics;
-    this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();
-    this.dateDisplayFormat = settings.dateDisplayFormat;
-    this.btcDerivationGapLimit = settings.btcDerivationGapLimit.toString();
-    this.treatEth2asEth = settings.treatEth2AsEth;
-
-    const state = this.$store.state;
-    this.thousandSeparator = state.settings![THOUSAND_SEPARATOR];
-    this.decimalSeparator = state.settings![DECIMAL_SEPARATOR];
-    this.currencyLocation = state.settings![CURRENCY_LOCATION];
-    this.dateInputFormat = state.settings![DATE_INPUT_FORMAT];
-    const versionUpdateCheckFrequency =
-      state.settings![VERSION_UPDATE_CHECK_FREQUENCY];
-    this.versionUpdateCheckEnabled = versionUpdateCheckFrequency > 0;
-    this.versionUpdateCheckFrequency = this.versionUpdateCheckEnabled
-      ? versionUpdateCheckFrequency.toString()
-      : '';
-  }
-
-  notTheSame<T>(value: T, oldValue: T): T | undefined {
-    return value !== oldValue ? value : undefined;
-  }
-}
+onMounted(() => {
+  loadFromState();
+});
 </script>
 <style scoped lang="scss">
 .general-settings {

@@ -31,7 +31,7 @@
               <v-chip
                 v-for="(timeframe, i) in appendedVisibleTimeframes"
                 :key="i"
-                :class="activeClass(timeframe)"
+                :class="chipClass(timeframe)"
                 class="ma-2"
                 small
                 :close="
@@ -95,138 +95,156 @@ import {
   TimeFramePersist,
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
-import { mapMutations } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import Fragment from '@/components/helper/Fragment';
-import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
-import PremiumMixin from '@/mixins/premium-mixin';
-import SettingsMixin from '@/mixins/settings-mixin';
+import { getPremium } from '@/composables/session';
+import { useSettings } from '@/composables/settings';
 import { isPeriodAllowed } from '@/store/settings/utils';
+import { useStore } from '@/store/utils';
 import { LAST_KNOWN_TIMEFRAME } from '@/types/frontend-settings';
 
 const validator = (value: any) =>
   Object.values(TimeFramePeriod).includes(value) ||
   value === TimeFramePersist.REMEMBER;
 
-@Component({
-  components: { TimeframeSelector, Fragment },
-  methods: {
-    ...mapMutations('session', ['setTimeframe'])
-  }
-})
-export default class TimeFrameSettings extends Mixins(
-  PremiumMixin,
-  SettingsMixin
-) {
-  @Prop({ required: true, type: Object })
-  message!: { error: string; success: string };
-
-  @Prop({
-    required: true,
-    type: String,
-    validator: validator
-  })
-  value!: TimeFrameSetting;
-
-  @Prop({
-    required: true,
-    type: Array
-  })
-  visibleTimeframes!: TimeFramePeriod[];
-
-  @Prop({
-    required: true,
-    type: String,
-    validator: validator
-  })
-  currentSessionTimeframe!: TimeFramePeriod;
-  setTimeframe!: (timeframe: TimeFramePeriod) => void;
-
-  get appendedVisibleTimeframes() {
-    return [TimeFramePersist.REMEMBER, ...this.visibleTimeframes] as const;
-  }
-
-  get invisibleTimeframes() {
-    return this.timeframes.filter(item => {
-      return !this.isTimeframeVisible(item);
-    });
-  }
-
-  get selectableTimeframes() {
-    return this.timeframes.filter(item => {
-      return !this.isTimeframeDisabled(item) && this.isTimeframeVisible(item);
-    });
-  }
-
-  get text(): string {
-    const { success, error } = this.message;
-    return success ? success : error;
-  }
-
-  get timeframes() {
-    return Object.values(TimeFramePeriod);
-  }
-
-  worksWithoutPremium(period: TimeFrameSetting): boolean {
-    return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
-  }
-
-  isTimeframeVisible(timeframe: TimeFramePeriod): boolean {
-    return this.visibleTimeframes.includes(timeframe);
-  }
-
-  isTimeframesToggleable(timeframe: TimeFrameSetting) {
-    return timeframe !== TimeFramePersist.REMEMBER;
-  }
-
-  isTimeframeDisabled(timeframe: TimeFrameSetting) {
-    return !this.premium && !this.worksWithoutPremium(timeframe);
-  }
-
-  activeClass(timeframePeriod: TimeFrameSetting): string {
-    return timeframePeriod === this.value ? 'timeframe-settings--active' : '';
-  }
-
-  addVisibleTimeframe(timeframe: TimeFramePeriod) {
-    this.updateVisibleTimeframes([...this.visibleTimeframes, timeframe]);
-  }
-
-  removeVisibleTimeframe(timeframe: TimeFrameSetting) {
-    if (timeframe === this.value) {
-      this.timeframeChange(TimeFramePersist.REMEMBER);
+export default defineComponent({
+  name: 'TimeFrameSettings',
+  components: { Fragment },
+  props: {
+    message: {
+      required: true,
+      type: Object as PropType<{ error: string; success: string }>
+    },
+    value: {
+      required: true,
+      type: String,
+      validator
+    },
+    visibleTimeframes: {
+      required: true,
+      type: Array as PropType<TimeFramePeriod[]>
+    },
+    currentSessionTimeframe: {
+      required: true,
+      type: String as PropType<TimeFramePeriod>,
+      validator
     }
-    this.updateVisibleTimeframes(
-      this.visibleTimeframes.filter(item => {
-        return item !== timeframe;
-      }),
-      timeframe === this.currentSessionTimeframe
-    );
-  }
+  },
+  emits: ['timeframe-change', 'visible-timeframes-change'],
+  setup(props, { emit }) {
+    const { message, visibleTimeframes, value, currentSessionTimeframe } =
+      toRefs(props);
 
-  updateVisibleTimeframes(
-    timeframes: TimeFramePeriod[],
-    replaceCurrentSessionTimeframe: boolean = false
-  ) {
-    timeframes.sort((a: TimeFramePeriod, b: TimeFramePeriod) => {
-      return this.timeframes.indexOf(a) - this.timeframes.indexOf(b);
+    const appendedVisibleTimeframes = computed(() => {
+      return [TimeFramePersist.REMEMBER, ...get(visibleTimeframes)];
     });
 
-    if (replaceCurrentSessionTimeframe) {
-      const value = timeframes[0];
+    const timeframes = Object.values(TimeFramePeriod);
 
-      this.setTimeframe(value);
-      this.updateSetting({ [LAST_KNOWN_TIMEFRAME]: value });
-    }
+    const invisibleTimeframes = computed(() => {
+      return timeframes.filter(item => {
+        return !isTimeframeVisible(item);
+      });
+    });
 
-    this.visibleTimeframesChange(timeframes);
+    const isTimeframeVisible = (timeframe: TimeFramePeriod): boolean => {
+      return get(visibleTimeframes).includes(timeframe);
+    };
+
+    const isTimeframesToggleable = (timeframe: TimeFrameSetting) => {
+      return timeframe !== TimeFramePersist.REMEMBER;
+    };
+
+    const premium = getPremium();
+
+    const worksWithoutPremium = (period: TimeFrameSetting): boolean => {
+      return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
+    };
+
+    const isTimeframeDisabled = (timeframe: TimeFrameSetting) => {
+      return !get(premium) && !worksWithoutPremium(timeframe);
+    };
+
+    const selectableTimeframes = computed(() => {
+      return timeframes.filter(item => {
+        return !isTimeframeDisabled(item) && isTimeframeVisible(item);
+      });
+    });
+
+    const text = computed<string>(() => {
+      const { success, error } = get(message);
+      return success ? success : error;
+    });
+
+    const chipClass = (timeframePeriod: TimeFrameSetting): string => {
+      return timeframePeriod === get(value) ? 'timeframe-settings--active' : '';
+    };
+
+    const visibleTimeframesChange = (_timeframes: TimeFrameSetting[]) => {
+      emit('visible-timeframes-change', _timeframes);
+    };
+
+    const store = useStore();
+
+    const updateVisibleTimeframes = (
+      newTimeFrames: TimeFramePeriod[],
+      replaceCurrentSessionTimeframe: boolean = false
+    ) => {
+      newTimeFrames.sort((a: TimeFramePeriod, b: TimeFramePeriod) => {
+        return timeframes.indexOf(a) - timeframes.indexOf(b);
+      });
+
+      if (replaceCurrentSessionTimeframe) {
+        const value = newTimeFrames[0];
+        store.commit('session/setTimeframe', value);
+        const { updateFrontendSetting } = useSettings();
+        updateFrontendSetting({ [LAST_KNOWN_TIMEFRAME]: value });
+      }
+
+      visibleTimeframesChange(newTimeFrames);
+    };
+
+    const addVisibleTimeframe = (timeframe: TimeFramePeriod) => {
+      updateVisibleTimeframes([...get(visibleTimeframes), timeframe]);
+    };
+
+    const timeframeChange = (_timeframe: TimeFrameSetting) => {
+      emit('timeframe-change', _timeframe);
+    };
+
+    const removeVisibleTimeframe = (timeframe: TimeFrameSetting) => {
+      if (timeframe === get(value)) {
+        timeframeChange(TimeFramePersist.REMEMBER);
+      }
+      updateVisibleTimeframes(
+        get(visibleTimeframes).filter(item => {
+          return item !== timeframe;
+        }),
+        timeframe === get(currentSessionTimeframe)
+      );
+    };
+
+    return {
+      premium,
+      appendedVisibleTimeframes,
+      chipClass,
+      isTimeframesToggleable,
+      isTimeframeDisabled,
+      selectableTimeframes,
+      removeVisibleTimeframe,
+      timeframeChange,
+      invisibleTimeframes,
+      addVisibleTimeframe,
+      text
+    };
   }
-
-  @Emit()
-  timeframeChange(_timeframe: TimeFrameSetting) {}
-
-  @Emit()
-  visibleTimeframesChange(_timeframes: TimeFrameSetting[]) {}
-}
+});
 </script>
 <style scoped lang="scss">
 .timeframe-settings {

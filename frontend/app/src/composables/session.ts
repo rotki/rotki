@@ -12,7 +12,7 @@ import { Module } from '@/types/modules';
 import { SettingsUpdate, Tag } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
-function getSessionState(): SessionState {
+export function getSessionState(): SessionState {
   const store = useStore();
   const sessionState = store.state.session;
   assert(sessionState);

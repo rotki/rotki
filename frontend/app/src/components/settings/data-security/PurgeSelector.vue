@@ -1,5 +1,5 @@
 <template>
-  <fragment>
+  <div>
     <v-row class="mb-0" align="center">
       <v-col>
         <v-autocomplete
@@ -34,15 +34,15 @@
     </v-row>
 
     <action-status-indicator :status="status" />
-  </fragment>
+  </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, PropType } from '@vue/composition-api';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
-import Fragment from '@/components/helper/Fragment';
 import { tradeLocations } from '@/components/history/consts';
+import { BaseMessage } from '@/components/settings/utils';
 import i18n from '@/i18n';
 import {
   ALL_CENTRALIZED_EXCHANGES,
@@ -52,18 +52,17 @@ import {
   PURGABLE
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
-import { ActionStatus } from '@/store/types';
 
 export type PurgeParams = { readonly source: Purgeable; readonly text: string };
 
 export default defineComponent({
   name: 'PurgeSelector',
-  components: { ActionStatusIndicator, Fragment },
+  components: { ActionStatusIndicator },
   props: {
     value: { required: true, type: String as PropType<Purgeable> },
     status: {
       required: false,
-      type: Object as PropType<ActionStatus>,
+      type: Object as PropType<BaseMessage>,
       default: null
     },
     pending: { required: false, type: Boolean, default: false }

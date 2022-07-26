@@ -68,94 +68,91 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Component, Mixins } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import { computed, onMounted, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { explorerUrls } from '@/components/helper/asset-urls';
-import SettingsMixin from '@/mixins/settings-mixin';
+import { useSettings } from '@/composables/settings';
 import { ExplorersSettings } from '@/types/frontend-settings';
 
 const ETC = 'ETC' as const;
 
-@Component({
-  computed: {
-    ...mapState('settings', ['explorers'])
+const supportedExplorers = [...Object.values(Blockchain), ETC];
+
+const selection = ref<Blockchain | typeof ETC>(Blockchain.ETH);
+const { frontendSettings, updateFrontendSetting } = useSettings();
+const explorers = computed<ExplorersSettings>(() => {
+  return get(frontendSettings).explorers;
+});
+
+const address = ref<string>('');
+const tx = ref<string>('');
+
+const txUrl = computed<string>(() => {
+  const setting = get(explorers)[get(selection)];
+  return setting?.transaction ?? explorerUrls[get(selection)].transaction;
+});
+
+const addressUrl = computed<string>(() => {
+  const setting = get(explorers)[get(selection)];
+  return setting?.address ?? explorerUrls[get(selection)].address;
+});
+
+const onChange = () => {
+  const setting = get(explorers)[get(selection)];
+  set(address, setting?.address ?? '');
+  set(tx, setting?.transaction ?? '');
+};
+
+onMounted(() => {
+  onChange();
+});
+
+const isValid = (entry: string | null): boolean => {
+  return !entry ? false : entry.length > 0;
+};
+
+const saveAddress = (newAddress?: string) => {
+  set(address, newAddress ?? '');
+  const setting = get(explorers)[get(selection)];
+
+  const updated = {
+    ...setting,
+    address: newAddress
+  };
+
+  if (!newAddress) {
+    delete updated.address;
   }
-})
-export default class Explorers extends Mixins(SettingsMixin) {
-  readonly supportedExplorers = [...Object.values(Blockchain), ETC];
-  selection: Blockchain | typeof ETC = Blockchain.ETH;
-  explorers!: ExplorersSettings;
 
-  address: string = '';
-  tx: string = '';
-
-  get txUrl(): string {
-    const setting = this.explorers[this.selection];
-    return setting?.transaction ?? explorerUrls[this.selection].transaction;
-  }
-
-  get addressUrl(): string {
-    const setting = this.explorers[this.selection];
-    return setting?.address ?? explorerUrls[this.selection].address;
-  }
-
-  onChange() {
-    const setting = this.explorers[this.selection];
-    this.address = setting?.address ?? '';
-    this.tx = setting?.transaction ?? '';
-  }
-
-  mounted() {
-    this.onChange();
-  }
-
-  isValid(entry: string | null): boolean {
-    return !entry ? false : entry.length > 0;
-  }
-
-  saveAddress(address?: string) {
-    this.address = address ?? '';
-    const setting = this.explorers[this.selection];
-
-    const updated = {
-      ...setting,
-      address: address
-    };
-
-    if (!address) {
-      delete updated.address;
+  updateFrontendSetting({
+    explorers: {
+      ...get(explorers),
+      [get(selection)]: updated
     }
+  });
+};
 
-    this.updateSetting({
-      explorers: {
-        ...this.explorers,
-        [this.selection]: updated
-      }
-    });
+const saveTransaction = (newTransaction?: string) => {
+  const setting = get(explorers)[get(selection)];
+
+  const updated = {
+    ...setting,
+    transaction: newTransaction
+  };
+
+  if (!newTransaction) {
+    delete updated.transaction;
   }
 
-  saveTransaction(transaction?: string) {
-    const setting = this.explorers[this.selection];
-
-    const updated = {
-      ...setting,
-      transaction: transaction
-    };
-
-    if (!transaction) {
-      delete updated.transaction;
+  updateFrontendSetting({
+    explorers: {
+      ...get(explorers),
+      [get(selection)]: updated
     }
-
-    this.updateSetting({
-      explorers: {
-        ...this.explorers,
-        [this.selection]: updated
-      }
-    });
-  }
-}
+  });
+};
 </script>
 
 <style scoped lang="scss">

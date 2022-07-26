@@ -1,15 +1,13 @@
 <template>
-  <v-card class="mt-8">
-    <v-card-title>
-      <card-title><slot name="title" /></card-title>
-    </v-card-title>
-    <v-card-subtitle v-if="$slots.subtitle">
+  <card class="mt-8">
+    <template #title><slot name="title" /></template>
+    <template v-if="$slots.subtitle" #subtitle>
       <slot name="subtitle" />
-    </v-card-subtitle>
-    <v-card-text>
+    </template>
+    <template #default>
       <slot />
-    </v-card-text>
-  </v-card>
+    </template>
+  </card>
 </template>
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api';
