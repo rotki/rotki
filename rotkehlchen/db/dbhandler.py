@@ -1320,22 +1320,20 @@ class DBHandler:
                 f'{blockchain.value} accounts that do not exist',
             )
 
-    def _get_address_details_if_time(
+    def _get_address_details(
             self,
             cursor: 'DBCursor',
             address: ChecksumEthAddress,
-            current_time: Timestamp,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[Timestamp]]:
         query = cursor.execute(
             'SELECT tokens_list, timestamp FROM ethereum_accounts_details WHERE account = ?',
             (address,),
         )
         result = query.fetchall()
         if len(result) == 0:
-            return None  # no saved entry
-        if current_time - result[0][1] > 86400:
-            return None  # saved entry is outdated
+            return None, None  # no saved entry
 
+        last_update_ts = Timestamp(result[0][1])
         try:
             json_ret = json.loads(result[0][0])
         except json.decoder.JSONDecodeError as e:
@@ -1344,38 +1342,40 @@ class DBHandler:
                 f'Found undecodeable json {result[0][0]} in the DB for {address}.'
                 f'Error: {str(e)}',
             )
-            return None
+            return None, last_update_ts
 
         if not isinstance(json_ret, dict):
             # This can happen if the DB is old and still has only a list of saved tokens
-            return None  # In that case just consider it outdated
+            return None, last_update_ts  # In that case just consider it outdated
 
-        return json_ret
+        return json_ret, last_update_ts
 
-    def get_tokens_for_address_if_time(
+    def get_tokens_for_address(
             self,
             cursor: 'DBCursor',
             address: ChecksumEthAddress,
-            current_time: Timestamp,
-    ) -> Optional[List[EthereumToken]]:
+    ) -> Tuple[Optional[List[EthereumToken]], Optional[Timestamp]]:
         """Gets the detected tokens for the given address if the given current time
         is recent enough.
 
         If not, or if there is no saved entry, return None
         """
-        json_ret = self._get_address_details_if_time(cursor, address, current_time)
+        json_ret, last_update_ts = self._get_address_details(cursor, address)
         if json_ret is None:
-            return None
+            return None, last_update_ts
         tokens_list = json_ret.get('tokens', None)
         if tokens_list is None:
-            return None
+            return None, last_update_ts
 
         if not isinstance(tokens_list, list):
             # This should never happen
             self.msg_aggregator.add_warning(
                 f'Found non-list tokens_list {json_ret} in the DB for {address}.',
             )
-            return None
+            return None, last_update_ts
+
+        if len(tokens_list) == 0:
+            return None, last_update_ts
 
         returned_list = []
         for x in tokens_list:
@@ -1392,7 +1392,7 @@ class DBHandler:
 
             returned_list.append(token)
 
-        return returned_list
+        return returned_list, last_update_ts
 
     def _get_address_details_json(self, cursor: 'DBCursor', address: ChecksumEthAddress) -> Optional[Dict[str, Any]]:  # noqa: E501
         query = cursor.execute(

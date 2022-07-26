@@ -3,10 +3,10 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.tokens import EthTokens
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.constants.assets import A_BAT, A_MKR
+from rotkehlchen.constants.assets import A_MKR, A_OMG
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import mock_etherscan_query
 from rotkehlchen.tests.utils.constants import A_GNO
@@ -31,15 +31,16 @@ def test_detect_tokens_for_addresses(ethtokens, inquirer):  # pylint: disable=un
 
 
     """
-    addr1 = ZERO_ADDRESS
-    addr2 = '0xD3A962916a19146D658de0ab62ee237ed3115873'
-    result, token_usd_prices = ethtokens.query_tokens_for_addresses([addr1, addr2], False)
-
-    assert len(result[addr1]) >= 170
-    balance = result[addr1][A_BAT]
+    addr1 = string_to_ethereum_address('0x8d89170b92b2Be2C08d57C48a7b190a2f146720f')
+    addr2 = string_to_ethereum_address('0xB756AD52f3Bf74a7d24C67471E0887436936504C')
+    with ethtokens.db.user_write() as write_cursor:
+        ethtokens.detect_tokens(write_cursor, False, [addr1, addr2])
+    result, token_usd_prices = ethtokens.query_tokens_for_addresses([addr1, addr2])
+    assert len(result[addr1]) == 3
+    balance = result[addr1][A_OMG]
     assert isinstance(balance, FVal)
-    assert balance > FVal('478763')  # BAT burned at time of test writing
-    assert len(result[addr2]) >= 20
+    assert balance == FVal('0.036108311660753218')
+    assert len(result[addr2]) >= 1
 
     assert len(token_usd_prices) == len(set(result[addr1].keys()).union(set(result[addr2].keys())))
 
@@ -66,16 +67,22 @@ def test_detected_tokens_cache(ethtokens, inquirer):  # pylint: disable=unused-a
 
     with ethtokens_max_chunks_patch, etherscan_patch as etherscan_mock:
         # Initially autodetect the tokens at the first call
-        result1, _ = ethtokens.query_tokens_for_addresses([addr1, addr2], False)
+        with ethtokens.db.user_write() as write_cursor:
+            ethtokens.detect_tokens(write_cursor, False, [addr1, addr2])
+        result1, _ = ethtokens.query_tokens_for_addresses([addr1, addr2])
         initial_call_count = etherscan_mock.call_count
 
         # Then in second call autodetect queries should not have been made, and DB cache used
-        result2, _ = ethtokens.query_tokens_for_addresses([addr1, addr2], False)
+        with ethtokens.db.user_write() as write_cursor:
+            ethtokens.detect_tokens(write_cursor, True, [addr1, addr2])
+        result2, _ = ethtokens.query_tokens_for_addresses([addr1, addr2])
         call_count = etherscan_mock.call_count
         assert call_count == initial_call_count + 2
 
         # In the third call force re-detection
-        result3, _ = ethtokens.query_tokens_for_addresses([addr1, addr2], True)
+        with ethtokens.db.user_write() as write_cursor:
+            ethtokens.detect_tokens(write_cursor, False, [addr1, addr2])
+        result3, _ = ethtokens.query_tokens_for_addresses([addr1, addr2])
         call_count = etherscan_mock.call_count
         assert call_count == initial_call_count + 2 + initial_call_count
 
@@ -107,7 +114,9 @@ def test_ignored_tokens_in_query(ethtokens, inquirer):  # pylint: disable=unused
     )
 
     with ethtokens_max_chunks_patch, etherscan_patch:
-        result, _ = ethtokens.query_tokens_for_addresses([addr1, addr2], False)
+        with ethtokens.db.user_write() as write_cursor:
+            ethtokens.detect_tokens(write_cursor, False, [addr1, addr2])
+        result, _ = ethtokens.query_tokens_for_addresses([addr1, addr2])
         assert len(result[addr1]) == 1
         assert result[addr1][A_MKR] == FVal('4E-15')
         assert len(result[addr2]) == 1

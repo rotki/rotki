@@ -11,6 +11,8 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
+from rotkehlchen.chain.ethereum.tokens import EthTokens
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.tests.utils.blockchain import mock_beaconchain, mock_etherscan_query
@@ -35,8 +37,8 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     we don't end up double counting:
     (1) the DeFi balances (2) the protocol balances such as DSR / makerdao vaults etc.
     """
-    addr1 = '0xe188c6BEBB81b96A65aa20dDB9e2aef62627fa4c'
-    addr2 = '0x78a087fCf440315b843632cFd6FDE6E5adcCc2C2'
+    addr1 = string_to_ethereum_address('0xe188c6BEBB81b96A65aa20dDB9e2aef62627fa4c')
+    addr2 = string_to_ethereum_address('0x78a087fCf440315b843632cFd6FDE6E5adcCc2C2')
     etherscan_patch = mock_etherscan_query(
         eth_map={addr1: {A_ETH: 1, A_DAI: 1 * 10**18}, addr2: {A_ETH: 2}},
         etherscan=blockchain.ethereum.etherscan,
@@ -104,11 +106,20 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
             blockchain=SupportedBlockchain.ETHEREUM,
             accounts=[addr1, addr2],
         )
+        ethtokens = EthTokens(database=blockchain.database, ethereum=blockchain.ethereum)
+        with ethtokens.db.user_write() as write_cursor:
+            ethtokens.detect_tokens(
+                write_cursor=write_cursor,
+                only_cache=False,
+                accounts=[addr1, addr2],
+            )
+
     assert addr1 in blockchain.accounts.eth
 
     with etherscan_patch, ethtokens_max_chunks_patch, defi_balances_mock, add_defi_mock, beaconchain_patch:  # noqa: E501
+        blockchain.query_ethereum_balances(ignore_cache=True)
         greenlets = [
-            gevent.spawn_later(0.01 * x, blockchain.query_ethereum_balances, False)
+            gevent.spawn_later(0.01 * x, blockchain.query_ethereum_balances)
             for x in range(5)
         ]
         gevent.joinall(greenlets)

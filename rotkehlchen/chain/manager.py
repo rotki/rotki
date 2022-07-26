@@ -604,12 +604,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def query_balances(
             self,
             blockchain: Optional[SupportedBlockchain] = None,
-            force_token_detection: bool = False,
+            beaconchain_fetch_eth1: bool = False,
             ignore_cache: bool = False,
     ) -> BlockchainBalancesUpdate:
         """Queries either all, or specific blockchain balances
 
-        If force detection is true, then the ethereum token detection is forced.
+        If querying beaconchain and beaconchain_fetch_eth1 is true then each eth1 address is also
+        checked for the validators it has deposited and the deposits are fetched.
 
         May raise:
         - RemoteError if an external service such as Etherscan or blockchain.info
@@ -627,12 +628,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         if should_query_eth:
             self.query_ethereum_balances(
-                force_token_detection=force_token_detection,
                 ignore_cache=ignore_cache,
             )
         if should_query_eth2:
             self.query_ethereum_beaconchain_balances(
-                fetch_validators_for_eth1=force_token_detection,  # document this better
+                fetch_validators_for_eth1=beaconchain_fetch_eth1,  # document this better
                 ignore_cache=ignore_cache,
             )
         if should_query_btc:
@@ -1463,7 +1463,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self,
             action: AccountAction,
             given_accounts: Optional[List[ChecksumEthAddress]] = None,
-            force_detection: bool = False,
     ) -> None:
         """Queries ethereum token balance via either etherscan or ethereum node
 
@@ -1488,7 +1487,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         try:
             balance_result, token_usd_price = ethtokens.query_tokens_for_addresses(
                 addresses=accounts,
-                force_detection=force_detection,
             )
         except BadFunctionCallOutput as e:
             log.error(
@@ -1502,7 +1500,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         self._update_balances_after_token_query(action, balance_result, token_usd_price)  # noqa: E501
 
-    def query_ethereum_tokens(self, force_detection: bool) -> None:
+    def query_ethereum_tokens(self) -> None:
         """Queries the ethereum token balances and populates the state
 
         May raise:
@@ -1517,7 +1515,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         for token in [x for x, _ in self.totals.liabilities.items() if x.is_eth_token()]:
             del self.totals.liabilities[token]
 
-        self._query_ethereum_tokens(action=AccountAction.QUERY, force_detection=force_detection)
+        self._query_ethereum_tokens(action=AccountAction.QUERY)
 
     def query_defi_balances(self) -> Dict[ChecksumEthAddress, List[DefiProtocolBalances]]:
         """Queries DeFi balances from Zerion contract and updates the state
@@ -1540,7 +1538,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     @cache_response_timewise()
     def query_ethereum_balances(
             self,  # pylint: disable=unused-argument
-            force_token_detection: bool,
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
     ) -> None:
@@ -1569,7 +1566,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.totals.assets[A_ETH] = Balance(amount=eth_total, usd_value=eth_total * eth_usd_price)
 
         self.query_defi_balances()
-        self.query_ethereum_tokens(force_token_detection)
+        self.query_ethereum_tokens()
         self._add_protocol_balances()
 
     def _add_protocol_balances(self) -> None:
@@ -1616,7 +1613,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             try:
                 balance_result, token_usd_price = ethtokens.query_tokens_for_addresses(
                     addresses=proxy_addresses,
-                    force_detection=False,
                 )
             except BadFunctionCallOutput as e:
                 log.error(

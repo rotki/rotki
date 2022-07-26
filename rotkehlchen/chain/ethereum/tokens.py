@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
@@ -8,15 +8,13 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, Price
-from rotkehlchen.utils.misc import get_chunks, ts_now
+from rotkehlchen.types import ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.drivers.gevent import DBCursor
@@ -24,9 +22,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-TokensReturn = Tuple[
+TokenBalancesType = Tuple[
     Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]],
     Dict[EthereumToken, Price],
+]
+
+DetectedTokensType = Dict[
+    ChecksumEthAddress,
+    Tuple[Optional[List[EthereumToken]], Optional[Timestamp]],
 ]
 
 # 08/08/2020
@@ -61,65 +64,112 @@ OTHER_MAX_TOKEN_CHUNK_LENGTH = 590
 
 
 class EthTokens():
-
     def __init__(self, database: DBHandler, ethereum: EthereumManager):
         self.db = database
         self.ethereum = ethereum
 
-    def detect_tokens_for_address(
+    def _get_token_balances(
             self,
-            write_cursor: 'DBCursor',
-            address: ChecksumEthAddress,
-            token_usd_price: Dict[EthereumToken, Price],
-            etherscan_chunks: List[List[EthereumToken]],
-            other_chunks: List[List[EthereumToken]],
+            account: ChecksumEthAddress,
+            tokens: List[EthereumToken],
+            call_order: Optional[Sequence[WeightedNode]],
     ) -> Dict[EthereumToken, FVal]:
-        balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
-        if self.ethereum.connected_to_any_web3():
-            # For all the chunks we use the same order of the nodes
-            call_order = self.ethereum.default_call_order()
-            for chunk in other_chunks:
-                self._get_tokens_balance_and_price(
-                    address=address,
-                    tokens=chunk,
-                    balances=balances,
-                    token_usd_price=token_usd_price,
-                    call_order=call_order,
-                )
-        else:
-            for chunk in etherscan_chunks:
-                self._get_tokens_balance_and_price(
-                    address=address,
-                    tokens=chunk,
-                    balances=balances,
-                    token_usd_price=token_usd_price,
-                    call_order=(ETHERSCAN_NODE,),
-                )
+        """Queries the balances of multiple tokens for an account
 
-        # now that detection happened we also have to save it in the DB for the address
-        self.db.save_tokens_for_address(write_cursor, address, list(balances.keys()))
-
-        return balances
-
-    def query_tokens_for_addresses(
-            self,
-            addresses: List[ChecksumEthAddress],
-            force_detection: bool,
-    ) -> TokensReturn:
-        """Queries/detects token balances for a list of addresses
-
-        If an address's tokens were recently autodetected they are not detected again but the
-        balances are simply queried. Unless force_detection is True.
-
-        Returns the token balances of each address and the usd prices of the tokens
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - BadFunctionCallOutput if a local node is used and the contract for the
+          token has no code. That means the chain is not synced
         """
         log.debug(
-            'Querying/detecting token balances for all addresses',
-            force_detection=force_detection,
+            'Querying ethereum chain for multi token account balances',
+            eth_address=account,
+            tokens_num=len(tokens),
         )
-        with self.db.user_write() as cursor:
-            ignored_assets = self.db.get_ignored_assets(cursor)
+        result = ETH_SCAN.call(
+            ethereum=self.ethereum,
+            method_name='tokensBalance',
+            arguments=[account, [x.ethereum_address for x in tokens]],
+            call_order=call_order,
+        )
+        balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
+        for token_balance, token in zip(result, tokens):
+            if token_balance == 0:
+                continue
 
+            normalized_balance = token_normalized_value(token_balance, token)
+            log.debug(
+                f'Found {token.symbol}({token.ethereum_address}) token balance for '
+                f'{account} and balance {normalized_balance}',
+            )
+            balances[token] += normalized_balance
+        return balances
+
+    def _query_chunks(
+            self,
+            account: ChecksumEthAddress,
+            chunks: Iterable[List[EthereumToken]],
+            querying_etherscan: bool,
+    ) -> Dict[EthereumToken, FVal]:
+        total_token_balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
+        for chunk in chunks:
+            if querying_etherscan is True:
+                call_order = [ETHERSCAN_NODE]
+            else:
+                call_order = self.ethereum.default_call_order()
+            new_token_balances = self._get_token_balances(
+                account=account,
+                tokens=chunk,
+                call_order=call_order,
+            )
+            total_token_balances = combine_dicts(total_token_balances, new_token_balances)
+        return total_token_balances
+
+    def detect_tokens(
+            self,
+            write_cursor: 'DBCursor',
+            only_cache: bool,
+            accounts: List[ChecksumEthAddress],
+    ) -> DetectedTokensType:
+        """
+        Detect tokens for the given accounts.
+
+        If only_cache is True, only tokens saved in the database are returned.
+        Otherwise, tokens are re-detected.
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - BadFunctionCallOutput if a local node is used and the contract for the
+          token has no code. That means the chain is not synced
+        """
+        if only_cache is False:
+            self._detect_tokens(write_cursor, accounts=accounts)
+
+        accounts_info: DetectedTokensType = {}
+        with self.db.conn.read_ctx() as cursor:
+            for account in accounts:
+                accounts_info[account] = self.db.get_tokens_for_address(
+                    cursor,
+                    address=account,
+                )
+        return accounts_info
+
+    def _detect_tokens(
+            self,
+            write_cursor: 'DBCursor',
+            accounts: List[ChecksumEthAddress],
+    ) -> None:
+        """
+        Detect tokens for the given accounts.
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - BadFunctionCallOutput if a local node is used and the contract for the
+          token has no code. That means the chain is not synced
+        """
         exceptions = [
             # Ignore the veCRV balance in token query. It's already detected by
             # defi SDK as part of locked CRV in Vote Escrowed CRV. Which is the right way
@@ -141,6 +191,7 @@ class EthTokens():
             # Old contract of Fetch.ai
             string_to_ethereum_address('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'),
         ]
+        ignored_assets = self.db.get_ignored_assets(write_cursor=write_cursor)
         for asset in ignored_assets:  # don't query for the ignored tokens
             if asset.is_eth_token():  # type ignore since we know asset is a token
                 exceptions.append(EthereumToken.from_asset(asset).ethereum_address)  # type: ignore
@@ -148,83 +199,27 @@ class EthTokens():
             exceptions=exceptions,
             except_protocols=['balancer'],
         )
-        # With etherscan with chunks > 120, we get request uri too large
-        # so the limitation is not in the gas, but in the request uri length
-        etherscan_chunks = list(get_chunks(all_tokens, n=ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH))
-        other_chunks = list(get_chunks(all_tokens, n=OTHER_MAX_TOKEN_CHUNK_LENGTH))
-        now = ts_now()
-        token_usd_price: Dict[EthereumToken, Price] = {}
-        result = {}
+        for account in accounts:
+            if self.ethereum.connected_to_any_web3():
+                querying_etherscan = False
+                tokens_batch_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
+            else:
+                querying_etherscan = True
+                tokens_batch_size = ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH
+            token_balances = self._query_chunks(
+                account=account,
+                chunks=get_chunks(all_tokens, n=tokens_batch_size),
+                querying_etherscan=querying_etherscan,
+            )
+            detected_tokens = list(token_balances.keys())
+            self.db.save_tokens_for_address(write_cursor, account, detected_tokens)
 
-        for address in addresses:
-            with self.db.user_write() as cursor:
-                saved_list = self.db.get_tokens_for_address_if_time(cursor, address=address, current_time=now)  # noqa: E501
-                if force_detection or saved_list is None:
-                    balances = self.detect_tokens_for_address(
-                        write_cursor=cursor,
-                        address=address,
-                        token_usd_price=token_usd_price,
-                        etherscan_chunks=etherscan_chunks,
-                        other_chunks=other_chunks,
-                    )
-                else:
-                    if len(saved_list) == 0:
-                        continue  # Do not query if we know the address has no tokens
-
-                    balances = defaultdict(FVal)
-                    self._get_tokens_balance_and_price(
-                        address=address,
-                        tokens=saved_list,
-                        balances=balances,
-                        token_usd_price=token_usd_price,
-                        call_order=None,  # use defaults
-                    )
-
-            result[address] = balances
-
-        return result, token_usd_price
-
-    def _get_tokens_balance_and_price(
+    def query_tokens_for_addresses(
             self,
-            address: ChecksumEthAddress,
-            tokens: List[EthereumToken],
-            balances: Dict[EthereumToken, FVal],
-            token_usd_price: Dict[EthereumToken, Price],
-            call_order: Optional[Sequence[WeightedNode]],
-    ) -> None:
-        ret = self._get_multitoken_account_balance(
-            tokens=tokens,
-            account=address,
-            call_order=call_order,
-        )
-        for token_identifier, value in ret.items():
-            token = EthereumToken.from_identifier(token_identifier)
-            if token is None:  # should not happen
-                log.warning(
-                    f'Could not initialize token with identifier {token_identifier}. '
-                    f'Should not happen. Skipping its token balance query',
-                )
-                continue
-            balances[token] += value
-            if token in token_usd_price:
-                continue
-            # else get the price
-            try:
-                usd_price = Inquirer().find_usd_price(token)
-            except RemoteError:
-                usd_price = Price(ZERO)
-            token_usd_price[token] = usd_price
-
-    def _get_multitoken_account_balance(
-            self,
-            tokens: List[EthereumToken],
-            account: ChecksumEthAddress,
-            call_order: Optional[Sequence[WeightedNode]],
-    ) -> Dict[str, FVal]:
-        """Queries balances of multiple tokens for an account
-
-        Return a dictionary with keys being tokens and value a dictionary of
-        account to balances
+            addresses: List[ChecksumEthAddress],
+    ) -> TokenBalancesType:
+        """Queries token balances for a list of addresses
+        Returns the token balances of each address and the usd prices of the tokens.
 
         May raise:
         - RemoteError if an external service such as Etherscan is queried and
@@ -232,25 +227,25 @@ class EthTokens():
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        log.debug(
-            'Querying ethereum chain for multi token account balances',
-            eth_address=account,
-            tokens_num=len(tokens),
-        )
-        balances: Dict[str, FVal] = {}
-        result = ETH_SCAN.call(
-            ethereum=self.ethereum,
-            method_name='tokensBalance',
-            arguments=[account, [x.ethereum_address for x in tokens]],
-            call_order=call_order,
-        )
-        for tk_idx, token in enumerate(tokens):
-            token_amount = result[tk_idx]
-            if token_amount != 0:
-                normalized_amount = token_normalized_value(token_amount, token)
-                log.debug(
-                    f'Found {token.symbol}({token.ethereum_address}) token balance for '
-                    f'{account} and amount {normalized_amount}',
+        address_to_balance: Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]] = {}
+        all_tokens = set()
+
+        with self.db.conn.read_ctx() as cursor:
+            for address in addresses:
+                saved_list, _ = self.db.get_tokens_for_address(cursor, address=address)
+                if saved_list is None:
+                    continue  # Do not query if we know the address has no tokens
+                all_tokens.update(saved_list)
+
+                token_balances = self._get_token_balances(
+                    account=address,
+                    tokens=saved_list,
+                    call_order=None,  # use defaults
                 )
-                balances[token.identifier] = normalized_amount
-        return balances
+                address_to_balance[address] = token_balances
+
+        token_usd_price: Dict[EthereumToken, Price] = {}
+        for token in all_tokens:
+            token_usd_price[token] = Inquirer.find_usd_price(asset=token)
+
+        return address_to_balance, token_usd_price

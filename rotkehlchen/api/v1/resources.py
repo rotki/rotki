@@ -49,6 +49,7 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainBalanceQuerySchema,
     CurrentAssetsPriceSchema,
     DataImportSchema,
+    DetectTokensSchema,
     EditSettingsSchema,
     ERC20InfoSchema,
     Eth2DailyStatsSchema,
@@ -2606,3 +2607,21 @@ class AllNamesResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(self, addresses: List[ChecksumEthAddress]) -> Response:
         return self.rest_api.search_for_names_everywhere(addresses=addresses)
+
+
+class DetectTokensResource(BaseMethodView):
+    post_schema = DetectTokensSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            async_query: bool,
+            only_cache: bool,
+            addresses: Optional[List[ChecksumEthAddress]],
+    ) -> Response:
+        return self.rest_api.detect_ethereum_tokens(
+            async_query=async_query,
+            only_cache=only_cache,
+            addresses=addresses,
+        )
