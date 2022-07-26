@@ -37,55 +37,7 @@
         />
       </settings-option>
 
-      <settings-option
-        #default="{ error, success, update }"
-        setting="taxfreeAfterPeriod"
-        :transform="getTaxFreePeriod"
-        :success-message="
-          enabled =>
-            $tc('account_settings.messages.tax_free', 0, {
-              enabled: enabled ? 'enabled' : 'disabled'
-            })
-        "
-        @finished="resetTaxFreePeriod"
-      >
-        <v-switch
-          v-model="taxFreePeriod"
-          class="accounting-settings__taxfree-period"
-          :success-messages="success"
-          :error-messages="error"
-          :label="$tc('accounting_settings.labels.tax_free')"
-          color="primary"
-          @change="update"
-        />
-      </settings-option>
-
-      <settings-option
-        #default="{ error, success, update }"
-        setting="taxfreeAfterPeriod"
-        :transform="value => (value ? convertPeriod(value, 'days') : -1)"
-        :rules="taxFreeRules"
-        :success-message="
-          period =>
-            $tc('account_settings.messages.tax_free_period', 0, {
-              period
-            })
-        "
-        @finished="resetTaxFreePeriod"
-      >
-        <v-text-field
-          v-model="taxFreeAfterPeriod"
-          outlined
-          class="accounting-settings__taxfree-period-days pt-4"
-          :success-messages="success"
-          :error-messages="error"
-          :disabled="!taxFreePeriod"
-          :rules="taxFreeRules"
-          :label="$tc('accounting_settings.labels.tax_free_period')"
-          type="number"
-          @change="update"
-        />
-      </settings-option>
+      <tax-free-setting />
 
       <settings-option
         #default="{ error, success, update }"
@@ -257,45 +209,18 @@ import UnignoreAssetSetting from '@/components/settings/controls/UnignoreAssetSe
 import UpdateIgnoredAssetsSetting from '@/components/settings/controls/UpdateIgnoredAssetsSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { useSettings } from '@/composables/settings';
-import i18n from '@/i18n';
 import { CostBasisMethod } from '@/types/user';
 
 const haveCSVSummary = ref(false);
 const exportCSVFormulas = ref(false);
 const crypto2CryptoTrades = ref(false);
 const gasCosts = ref(false);
-const taxFreeAfterPeriod = ref<number | null>(null);
-const taxFreePeriod = ref(false);
 const accountForAssetsMovements = ref(false);
 const calculatePastCostBasis = ref(false);
 const ethStakingTaxableAfterWithdrawalEnabled = ref(false);
 const costBasisMethod = ref<CostBasisMethod>(CostBasisMethod.Fifo);
 
-const taxFreeRules = [
-  (v: string) =>
-    !!v ||
-    !get(taxFreeAfterPeriod) ||
-    i18n.tc('account_settings.validation.tax_free_days'),
-  (v: string) =>
-    (v && parseInt(v) > 0) ||
-    !get(taxFreeAfterPeriod) ||
-    i18n.tc('account_settings.validation.tax_free_days_gt_zero')
-];
-
 const { accountingSettings } = useSettings();
-
-const resetTaxFreePeriod = () => {
-  const settings = get(accountingSettings);
-  const period = settings.taxfreeAfterPeriod;
-
-  if (period && period > -1) {
-    set(taxFreePeriod, true);
-    set(taxFreeAfterPeriod, convertPeriod(period, 'seconds'));
-  } else {
-    set(taxFreePeriod, false);
-    set(taxFreeAfterPeriod, null);
-  }
-};
 
 onMounted(() => {
   const settings = get(accountingSettings);
@@ -310,25 +235,5 @@ onMounted(() => {
     settings.ethStakingTaxableAfterWithdrawalEnabled
   );
   set(costBasisMethod, settings.costBasisMethod);
-
-  resetTaxFreePeriod();
 });
-
-const convertPeriod = (period: number, currentType: 'days' | 'seconds') => {
-  const dayInSeconds = 86400;
-  if (currentType === 'days') {
-    return period * dayInSeconds;
-  } else if (currentType === 'seconds') {
-    return period / dayInSeconds;
-  }
-  throw new Error(`invalid type: ${currentType}`);
-};
-
-const getTaxFreePeriod = (enabled: boolean) => {
-  if (!enabled) {
-    return -1;
-  }
-
-  return convertPeriod(365, 'days');
-};
 </script>
