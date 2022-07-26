@@ -134,6 +134,7 @@
         :loading="isAnyLoading"
         :balances="aggregatedBalances"
       />
+      <liquidity-provider-balance-table class="mt-8" />
       <dashboard-asset-table
         v-if="liabilities.length > 0"
         class="mt-8"

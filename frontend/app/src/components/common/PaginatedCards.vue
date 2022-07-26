@@ -6,7 +6,7 @@
         v-for="item in visible"
         :key="identifier(item)"
         cols="12"
-        sm="6"
+        md="6"
         lg="6"
         xl="4"
       >

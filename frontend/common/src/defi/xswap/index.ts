@@ -15,7 +15,7 @@ export const XswapBalance = z.object({
   assets: z.array(XswapAsset),
   address: z.string(),
   totalSupply: NumericString.nullable(),
-  nftId: z.string().or(z.number()).nullish(),
+  nftId: z.string().nullish(),
   priceRange: z.array(NumericString),
   userBalance: Balance,
 })

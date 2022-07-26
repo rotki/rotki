@@ -76,9 +76,21 @@ export const useTasks = defineStore('tasks', () => {
     set(locked, unlockTask(locked, taskId));
   };
 
-  const isTaskRunning = (type: TaskType) =>
+  const isTaskRunning = (type: TaskType, meta: Record<string, any> = {}) =>
     computed(() => {
-      return !!find(get(tasks), item => item.type === type);
+      return !!find(get(tasks), item => {
+        const sameType = item.type === type;
+        const keys = Object.keys(meta);
+        if (keys.length === 0) return sameType;
+
+        return (
+          sameType &&
+          keys.every(key => {
+            // @ts-ignore
+            return key in item.meta && item.meta[key] === meta[key];
+          })
+        );
+      });
     });
 
   const metadata = <T extends TaskMeta>(type: TaskType) => {

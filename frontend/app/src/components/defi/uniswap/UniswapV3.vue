@@ -49,7 +49,7 @@
       </v-col>
     </v-row>
     <paginated-cards
-      :identifier="item => item.address"
+      :identifier="item => item.nftId"
       :items="balances"
       class="mt-4"
     >
@@ -76,69 +76,67 @@
             />
           </template>
 
-          <div class="pt-4">
-            <v-row align="center">
-              <v-col cols="auto">
-                <div class="font-weight-medium text-body-1">
-                  {{ $t('uniswap.nft_id') }}
-                </div>
-              </v-col>
-              <v-col class="d-flex flex-column"> #{{ item.nftId }} </v-col>
-            </v-row>
+          <div>
+            <nft-details
+              v-if="item.nftId"
+              class="mt-4"
+              :identifier="item.nftId"
+            />
 
-            <v-row
-              v-if="item.priceRange && item.priceRange.length > 0"
-              align="center"
-            >
-              <v-col cols="auto">
-                <div class="font-weight-medium text-body-1">
+            <div class="d-flex flex-wrap">
+              <div
+                v-if="item.priceRange && item.priceRange.length > 0"
+                class="mt-6 mr-16"
+                :class="$style['price-range']"
+              >
+                <div class="text--secondary text-body-2">
                   {{ $t('uniswap.price_range') }}
                 </div>
-              </v-col>
-              <v-col class="d-flex">
-                <amount-display :value="item.priceRange[0]" />
-                <div class="px-3">-</div>
-                <amount-display :value="item.priceRange[1]" />
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col cols="auto">
-                <div class="pt-4 font-weight-medium text-body-1">
+                <div class="d-flex text-h6">
+                  <amount-display
+                    :value="item.priceRange[0]"
+                    fiat-currency="USD"
+                  />
+                  <div class="px-2">-</div>
+                  <amount-display
+                    :value="item.priceRange[1]"
+                    fiat-currency="USD"
+                  />
+                </div>
+              </div>
+              <div class="mt-6">
+                <div class="text--secondary text-body-2">
                   {{ $t('uniswap.balance') }}
                 </div>
-              </v-col>
-              <v-col class="d-flex flex-column">
-                <balance-display
-                  class="text-h5 mt-1 text"
-                  :value="item.userBalance"
-                  no-icon
-                  asset=""
-                />
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col cols="auto">
-                <div class="pt-4 font-weight-medium text-body-1">
-                  {{ $t('uniswap.assets') }}
+                <div class="d-flex text-h6">
+                  <amount-display
+                    :value="item.userBalance.usdValue"
+                    fiat-currency="USD"
+                  />
                 </div>
-              </v-col>
-              <v-col>
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <div class="text--secondary text-body-2">
+                {{ $t('uniswap.assets') }}
+              </div>
+              <div v-if="premium">
                 <v-row
                   v-for="asset in item.assets"
                   :key="`${asset.asset}-${item.address}-balances`"
-                  class="uniswap__tokens"
                   align="center"
-                  justify="end"
+                  no-gutters
+                  class="mt-2"
                 >
                   <v-col cols="auto">
                     <asset-icon :identifier="asset.asset" size="32px" />
                   </v-col>
-                  <v-col class="d-flex" cols="auto">
+                  <v-col class="d-flex ml-4" cols="auto">
                     <div class="mr-4">
                       <balance-display
                         no-icon
+                        align="start"
                         :asset="asset.asset"
                         :value="asset.userBalance"
                       />
@@ -146,8 +144,21 @@
                     <hash-link link-only :text="getTokenAddress(asset.asset)" />
                   </v-col>
                 </v-row>
-              </v-col>
-            </v-row>
+              </div>
+              <div v-else class="pt-4 d-flex align-center">
+                <v-avatar rounded :color="dark ? 'white' : 'grey lighten-3'">
+                  <v-icon>mdi-lock</v-icon>
+                </v-avatar>
+                <div class="ml-4">
+                  <i18n tag="div" path="uniswap.assets_non_premium">
+                    <base-external-link
+                      :text="$t('uniswap.premium')"
+                      :href="$interop.premiumURL"
+                    />
+                  </i18n>
+                </div>
+              </div>
+            </div>
           </div>
         </card>
       </template>
@@ -162,8 +173,7 @@ import {
   computed,
   defineComponent,
   onMounted,
-  ref,
-  watch
+  ref
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
@@ -174,9 +184,10 @@ import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue
 import UniswapPoolFilter from '@/components/defi/uniswap/UniswapPoolFilter.vue';
 import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import { setupStatusChecking } from '@/composables/common';
-import { getPremium, setupModuleEnabled } from '@/composables/session';
+import { setupStatusChecking, useTheme } from '@/composables/common';
+import { getPremium, useModules } from '@/composables/session';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import { useUniswap } from '@/store/defi/uniswap';
@@ -184,6 +195,7 @@ import { Module } from '@/types/modules';
 
 export default defineComponent({
   components: {
+    NftDetails,
     PaginatedCards,
     ActiveModules,
     UniswapPoolDetails,
@@ -203,7 +215,7 @@ export default defineComponent({
       uniswapV3Balances: uniswapBalances,
       uniswapV3PoolAssets: poolAssets
     } = useUniswap();
-    const { isModuleEnabled } = setupModuleEnabled();
+    const { isModuleEnabled } = useModules();
     const { getAssetSymbol: getSymbol, getTokenAddress } =
       useAssetInfoRetrieval();
     const { isSectionRefreshing, shouldShowLoadingScreen } =
@@ -232,10 +244,6 @@ export default defineComponent({
         : balances.filter(({ address }) => pools.includes(address));
     });
 
-    watch(balances, val => {
-      console.log('=======', val);
-    });
-
     onMounted(async () => {
       await fetchBalances(false);
     });
@@ -245,7 +253,14 @@ export default defineComponent({
     };
 
     const uniswap = Module.UNISWAP;
+
+    const premium = getPremium();
+
+    const { dark } = useTheme();
+
     return {
+      dark,
+      premium,
       selectedAccount,
       selectedPools,
       selectedAddresses,
@@ -255,7 +270,6 @@ export default defineComponent({
       loading,
       primaryRefreshing,
       secondaryRefreshing,
-      premium: getPremium(),
       chains: [Blockchain.ETH],
       modules: [uniswap],
       enabled: isModuleEnabled(uniswap),
@@ -267,15 +281,8 @@ export default defineComponent({
 });
 </script>
 
-<style scoped lang="scss">
-.uniswap {
-  &__asset-details {
-    width: 100%;
-  }
-
-  &__tokens {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-  }
+<style module lang="scss">
+.price-range {
+  min-width: 50%;
 }
 </style>

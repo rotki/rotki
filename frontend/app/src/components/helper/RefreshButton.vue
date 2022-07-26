@@ -11,7 +11,15 @@
         @click="refresh"
         v-on="on"
       >
-        <v-icon color="primary">mdi-refresh</v-icon>
+        <v-progress-circular
+          v-if="loading"
+          rounded
+          indeterminate
+          size="20"
+          width="2"
+          color="primary"
+        />
+        <v-icon v-else color="primary">mdi-refresh</v-icon>
       </v-btn>
     </template>
     <span>{{ tooltip }}</span>

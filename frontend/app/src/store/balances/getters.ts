@@ -30,6 +30,7 @@ import {
   NonFungibleBalance
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
+import { useUniswap } from '@/store/defi/uniswap';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { getStatus } from '@/store/utils';
@@ -76,7 +77,7 @@ export interface BalanceGetters {
   locationBreakdown: (location: string) => AssetBalanceWithPrice[];
   byLocation: BalanceByLocation;
   exchangeNonce: (exchange: SupportedExchange) => number;
-  nfTotalValue: BigNumber;
+  nfTotalValue: (includeLPToken: boolean) => BigNumber;
   nfBalances: NonFungibleBalance[];
 }
 
@@ -828,7 +829,13 @@ export const getters: Getters<
       if (samePrices) additional.push(...samePrices);
       return asset;
     });
-    assets.push(...liabilitiesAsset, ...additional);
+
+    const { uniswapV3AggregatedBalances } = useUniswap();
+    const uniswapV3Assets = get(uniswapV3AggregatedBalances()).map(
+      item => item.asset
+    );
+
+    assets.push(...liabilitiesAsset, ...additional, ...uniswapV3Assets);
     return assets.filter(uniqueStrings);
   },
   assetBreakdown:
@@ -1281,16 +1288,6 @@ export const getters: Getters<
         exchanges.filter(({ location }) => location === exchange).length + 1
       );
     },
-  nfTotalValue: ({ nonFungibleBalances }) => {
-    let sum = Zero;
-    for (const address in nonFungibleBalances) {
-      const addressNfts = nonFungibleBalances[address];
-      for (const nft of addressNfts) {
-        sum = sum.plus(nft.usdPrice);
-      }
-    }
-    return sum;
-  },
   nfBalances: ({ nonFungibleBalances }) => {
     const nfBalances: NonFungibleBalance[] = [];
     for (const address in nonFungibleBalances) {
@@ -1298,5 +1295,15 @@ export const getters: Getters<
       nfBalances.push(...addressNfBalance);
     }
     return nfBalances;
-  }
+  },
+
+  nfTotalValue:
+    (_, { nfBalances }) =>
+    (includeLPToken: boolean = false) => {
+      return bigNumberSum(
+        nfBalances
+          .filter(item => includeLPToken || !item.isLp)
+          .map(item => item.usdPrice)
+      );
+    }
 };

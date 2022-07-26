@@ -76,44 +76,39 @@
             />
           </template>
 
-          <div class="pt-4">
-            <v-row>
-              <v-col cols="auto">
-                <div class="pt-4 font-weight-medium text-body-1">
-                  {{ $t('uniswap.balance') }}
-                </div>
-              </v-col>
-              <v-col class="d-flex flex-column">
-                <balance-display
-                  class="text-h5 mt-1 text"
-                  :value="item.userBalance"
-                  no-icon
-                  asset=""
+          <div class="mt-4">
+            <div>
+              <div class="text--secondary text-body-2">
+                {{ $t('uniswap.balance') }}
+              </div>
+              <div class="d-flex text-h6">
+                <amount-display
+                  :value="item.userBalance.usdValue"
+                  fiat-currency="USD"
                 />
-              </v-col>
-            </v-row>
+              </div>
+            </div>
 
-            <v-row>
-              <v-col cols="auto">
-                <div class="pt-4 font-weight-medium text-body-1">
-                  {{ $t('uniswap.assets') }}
-                </div>
-              </v-col>
-              <v-col>
+            <div class="mt-6">
+              <div class="text--secondary text-body-2">
+                {{ $t('uniswap.assets') }}
+              </div>
+              <div>
                 <v-row
                   v-for="asset in item.assets"
                   :key="`${asset.asset}-${item.address}-balances`"
-                  class="uniswap__tokens"
                   align="center"
-                  justify="end"
+                  no-gutters
+                  class="mt-2"
                 >
                   <v-col cols="auto">
                     <asset-icon :identifier="asset.asset" size="32px" />
                   </v-col>
-                  <v-col class="d-flex" cols="auto">
+                  <v-col class="d-flex ml-4" cols="auto">
                     <div class="mr-4">
                       <balance-display
                         no-icon
+                        align="start"
                         :asset="asset.asset"
                         :value="asset.userBalance"
                       />
@@ -121,8 +116,8 @@
                     <hash-link link-only :text="getTokenAddress(asset.asset)" />
                   </v-col>
                 </v-row>
-              </v-col>
-            </v-row>
+              </div>
+            </div>
           </div>
         </card>
       </template>
@@ -267,16 +262,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style scoped lang="scss">
-.uniswap {
-  &__asset-details {
-    width: 100%;
-  }
-
-  &__tokens {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-  }
-}
-</style>

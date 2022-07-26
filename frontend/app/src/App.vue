@@ -160,7 +160,6 @@ import { ThemeChecker } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import { Section, Status } from '@/store/const';
 import { useUniswap } from '@/store/defi/uniswap';
-import { OverallPerformance } from '@/store/statistics/types';
 import { useStatisticsStore } from '@/store/statistics';
 import { useMainStore } from '@/store/store';
 import { getStatus, useStore } from '@/store/utils';
@@ -379,6 +378,7 @@ export default defineComponent({
     const { fetchV3Balances } = useUniswap();
 
     const defiUniswapV3Section = Section.DEFI_UNISWAP_V3_BALANCES;
+
     watch(premium, (curr, prev) => {
       const currentStatus = getStatus(defiUniswapV3Section);
       if (prev !== curr && currentStatus !== Status.NONE) {

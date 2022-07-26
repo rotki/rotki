@@ -108,7 +108,8 @@ const QueryPeriod = z
 export enum DashboardTableType {
   ASSETS = 'ASSETS',
   LIABILITIES = 'LIABILITIES',
-  NFT = 'NFT'
+  NFT = 'NFT',
+  LIQUIDITY_PROVIDER = 'LIQUIDITY_PROVIDER'
 }
 
 const DashboardTablesVisibleColumns = z.object({
@@ -119,6 +120,9 @@ const DashboardTablesVisibleColumns = z.object({
     Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
   ),
   [DashboardTableType.NFT]: TableColumnEnum.default(
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
+  ),
+  [DashboardTableType.LIQUIDITY_PROVIDER]: TableColumnEnum.default(
     Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
   )
 });

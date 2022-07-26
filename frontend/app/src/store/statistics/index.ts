@@ -68,7 +68,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const totalNetWorthUsd = computed(() => {
     const balances = get(aggregatedBalances);
     const totalLiabilities = get(liabilities);
-    const nftTotal = get(nfTotalValue);
+    const nftTotal = get(nfTotalValue(true));
 
     const assetValue = balances.reduce(
       (sum, value) => sum.plus(value.usdValue),

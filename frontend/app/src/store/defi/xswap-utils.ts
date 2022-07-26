@@ -108,8 +108,18 @@ export function getPoolProfit(
 
 export function getBalances(
   xswapBalance: XswapBalances,
-  addresses: string[]
+  addresses: string[],
+  group: boolean = true
 ): XswapBalance[] {
+  if (!group) {
+    const balances = [];
+    for (const account in xswapBalance) {
+      if (addresses.length === 0 || addresses.includes(account)) {
+        balances.push(...xswapBalance[account]);
+      }
+    }
+    return balances;
+  }
   const balances: { [poolAddress: string]: Writeable<XswapBalance> } = {};
   for (const account in xswapBalance) {
     if (addresses.length > 0 && !addresses.includes(account)) {
@@ -119,6 +129,7 @@ export function getBalances(
     if (!accountBalances || accountBalances.length === 0) {
       continue;
     }
+
     for (const {
       userBalance,
       totalSupply,

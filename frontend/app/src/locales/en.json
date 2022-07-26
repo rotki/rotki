@@ -1387,6 +1387,10 @@
     "liabilities": {
       "title": "Liabilities"
     },
+    "liquidity_provider": {
+      "short": "LP Tokens",
+      "title": "Liqudity Provider Tokens"
+    },
     "manual_balances": {
       "add": "Add a manual balance",
       "card_tooltip": "Aggregate value of manual balances entered. Fiat balances are aggregated in the banks entry.",
@@ -1483,11 +1487,7 @@
       },
       "export_database_snapshot": "Export database snapshot",
       "select_directory": "Select a directory",
-      "subtitle": "Click the button below to download snapshot for",
-      "time": "Time: "
-    },
-    "uniswap_v3": {
-      "title": "Uniswap V3"
+      "subtitle": "Click the button below to download snapshot for"
     }
   },
   "dashboard_asset_table": {
@@ -3723,10 +3723,10 @@
   },
   "uniswap": {
     "assets": "Assets",
+    "assets_non_premium": "Upgrade to {0} to see assets information",
     "balance": "Balance",
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "loading_non_premium": "Loading the liquidity pool balances might take a while... Consider upgrading to {0} for faster load times.",
-    "nft_id": "NFT ID",
     "pool_header": "UNI_v{version} {asset1}/{asset2}",
     "premium": "premium",
     "price_range": "Price Range",

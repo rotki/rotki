@@ -3,6 +3,7 @@ import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { computed, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
@@ -50,7 +51,7 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 
   const uniswapV3Balances = (addresses: string[]) =>
     computed(() => {
-      return getBalances(get(v3Balances), addresses);
+      return getBalances(get(v3Balances), addresses, false);
     });
 
   const uniswapPoolProfit = (addresses: string[]) =>
@@ -87,8 +88,7 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 
   const uniswapV3PoolAssets = computed(() => {
     const uniswapBalances = get(v3Balances);
-    const uniswapEvents = get(events);
-    return getPools(uniswapBalances, uniswapEvents);
+    return getPools(uniswapBalances, {});
   });
 
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
@@ -192,29 +192,28 @@ export const useUniswap = defineStore('defi/uniswap', () => {
       return;
     }
 
-    const section = Section.DEFI_UNISWAP_V3_BALANCES;
-    const currentStatus = getStatus(section);
+    const { awaitTask, isTaskRunning } = useTasks();
+    const taskType = TaskType.DEFI_UNISWAP_V3_BALANCES;
 
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
+    if (get(isTaskRunning(taskType, { premium: get(getPremium()) }))) {
       return;
     }
 
+    const section = Section.DEFI_UNISWAP_V3_BALANCES;
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section);
-    const { awaitTask } = useTasks();
     try {
-      const taskType = TaskType.DEFI_UNISWAP_V3_BALANCES;
       const { taskId } = await api.defi.fetchUniswapV3Balances();
+      const taskMeta = {
+        title: i18n.tc('actions.defi.uniswap.task.title'),
+        numericKeys: [],
+        premium: get(getPremium())
+      };
+
       const { result } = await awaitTask<XswapBalances, TaskMeta>(
         taskId,
         taskType,
-        {
-          title: i18n.tc('actions.defi.uniswap.task.title'),
-          numericKeys: []
-        }
+        taskMeta
       );
 
       set(v3Balances, XswapBalances.parse(result));

@@ -1,11 +1,6 @@
 <template>
-  <card outlined-body>
-    <template #title>
-      {{ title }}
-      <v-btn v-if="to" :to="to" icon class="ml-2">
-        <v-icon>mdi-chevron-right</v-icon>
-      </v-btn>
-    </template>
+  <dashboard-expandable-table>
+    <template #title>{{ title }}</template>
     <template #details>
       <v-text-field
         v-model="search"
@@ -18,7 +13,6 @@
         hide-details
       />
       <v-menu
-        v-if="tableType"
         id="dashboard-asset-table__column-filter"
         transition="slide-y-transition"
         max-width="250px"
@@ -37,6 +31,13 @@
         <visible-columns-selector :group="tableType" :group-label="title" />
       </v-menu>
     </template>
+    <template #shortDetails>
+      <amount-display
+        :fiat-currency="currencySymbol"
+        :value="total"
+        show-currency="symbol"
+      />
+    </template>
     <data-table
       class="dashboard-asset-table__balances"
       :headers="tableHeaders"
@@ -50,17 +51,6 @@
       <template #item.asset="{ item }">
         <asset-details opens-details :asset="item.asset" />
       </template>
-      <template #item.amount="{ item }">
-        <amount-display :value="item.amount" />
-      </template>
-      <template #item.usdValue="{ item }">
-        <amount-display
-          show-currency="symbol"
-          :fiat-currency="item.asset"
-          :amount="item.amount"
-          :value="item.usdValue"
-        />
-      </template>
       <template #item.usdPrice="{ item }">
         <amount-display
           v-if="item.usdPrice && item.usdPrice.gte(0)"
@@ -71,6 +61,17 @@
           :value="item.usdPrice"
         />
         <span v-else>-</span>
+      </template>
+      <template #item.amount="{ item }">
+        <amount-display :value="item.amount" />
+      </template>
+      <template #item.usdValue="{ item }">
+        <amount-display
+          show-currency="symbol"
+          :fiat-currency="item.asset"
+          :amount="item.amount"
+          :value="item.usdValue"
+        />
       </template>
       <template #item.percentageOfTotalNetValue="{ item }">
         <percentage-display :value="percentageOfTotalNetValue(item.usdValue)" />
@@ -105,7 +106,7 @@
         </row-append>
       </template>
     </data-table>
-  </card>
+  </dashboard-expandable-table>
 </template>
 
 <script lang="ts">
@@ -121,6 +122,7 @@ import {
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
+import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
@@ -140,19 +142,17 @@ import {
 import { TableColumn } from '@/types/table-column';
 import { getSortItems } from '@/utils/assets';
 import { One } from '@/utils/bignumbers';
+import { calculatePercentage } from '@/utils/calculation';
 
 const tableHeaders = (
   totalNetWorthUsd: Ref<BigNumber>,
   currencySymbol: Ref<string>,
   title: Ref<string>,
   dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>,
-  tableType: Ref<DashboardTableType | null>
+  tableType: Ref<DashboardTableType>
 ) =>
   computed<DataTableHeader[]>(() => {
-    const type = get(tableType);
-    const visibleColumns = type
-      ? get(dashboardTablesVisibleColumns)[type]
-      : null;
+    const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
 
     const headers: DataTableHeader[] = [
       {
@@ -188,45 +188,39 @@ const tableHeaders = (
       }
     ];
 
-    if (type) {
-      if (visibleColumns!.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
-        headers.push({
-          text: get(totalNetWorthUsd).gt(0)
-            ? i18n
-                .t(
-                  'dashboard_asset_table.headers.percentage_of_total_net_value'
-                )
-                .toString()
-            : i18n
-                .t('dashboard_asset_table.headers.percentage_total')
-                .toString(),
-          value: 'percentageOfTotalNetValue',
-          align: 'end',
-          cellClass: 'asset-percentage',
-          class: 'text-no-wrap',
-          sortable: false
-        });
-      }
+    if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
+      headers.push({
+        text: get(totalNetWorthUsd).gt(0)
+          ? i18n
+              .t('dashboard_asset_table.headers.percentage_of_total_net_value')
+              .toString()
+          : i18n.t('dashboard_asset_table.headers.percentage_total').toString(),
+        value: 'percentageOfTotalNetValue',
+        align: 'end',
+        cellClass: 'asset-percentage',
+        class: 'text-no-wrap',
+        sortable: false
+      });
+    }
 
-      if (
-        visibleColumns!.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)
-      ) {
-        headers.push({
-          text: i18n
-            .t(
-              'dashboard_asset_table.headers.percentage_of_total_current_group',
-              {
-                group: get(title)
-              }
-            )
-            .toString(),
-          value: 'percentageOfTotalCurrentGroup',
-          align: 'end',
-          cellClass: 'asset-percentage',
-          class: 'text-no-wrap',
-          sortable: false
-        });
-      }
+    if (
+      visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)
+    ) {
+      headers.push({
+        text: i18n
+          .t(
+            'dashboard_asset_table.headers.percentage_of_total_current_group',
+            {
+              group: get(title)
+            }
+          )
+          .toString(),
+        value: 'percentageOfTotalCurrentGroup',
+        align: 'end',
+        cellClass: 'asset-percentage',
+        class: 'text-no-wrap',
+        sortable: false
+      });
     }
 
     return headers;
@@ -234,7 +228,12 @@ const tableHeaders = (
 
 const DashboardAssetTable = defineComponent({
   name: 'DashboardAssetTable',
-  components: { RowAppend, VisibleColumnsSelector, MenuTooltipButton },
+  components: {
+    DashboardExpandableTable,
+    RowAppend,
+    VisibleColumnsSelector,
+    MenuTooltipButton
+  },
   props: {
     loading: { required: false, type: Boolean, default: false },
     title: { required: true, type: String },
@@ -242,16 +241,7 @@ const DashboardAssetTable = defineComponent({
       required: true,
       type: Array as PropType<AssetBalanceWithPrice[]>
     },
-    tableType: {
-      required: false,
-      type: String as PropType<DashboardTableType>,
-      default: null
-    },
-    to: {
-      required: false,
-      type: String,
-      default: ''
-    }
+    tableType: { required: true, type: String as PropType<DashboardTableType> }
   },
   setup(props) {
     const { balances, title, tableType } = toRefs(props);
@@ -282,13 +272,6 @@ const DashboardAssetTable = defineComponent({
       const name = getAssetName(item.asset)?.toLocaleLowerCase()?.trim();
       const symbol = getAssetSymbol(item.asset)?.toLocaleLowerCase()?.trim();
       return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
-    };
-
-    const calculatePercentage = (value: BigNumber, divider: BigNumber) => {
-      const percentage = divider.isZero()
-        ? 0
-        : value.div(divider).multipliedBy(100);
-      return percentage.toFixed(2);
     };
 
     const statisticsStore = useStatisticsStore();

@@ -26,7 +26,6 @@ import {
   HistoricPricePayload,
   LocationBalance,
   NonFungibleBalance,
-  NonFungibleBalances,
   OracleCachePayload,
   XpubPayload
 } from '@/store/balances/types';
@@ -63,10 +62,6 @@ export const setupGeneralBalances = () => {
 
   const blockchainTotals = computed<BlockchainTotal[]>(() => {
     return store.getters['balances/blockchainTotals'];
-  });
-
-  const nonFungibleBalances = computed<NonFungibleBalances>(() => {
-    return store.state.balances!.nonFungibleBalances;
   });
 
   const hasDetails = (account: string) =>
@@ -140,13 +135,15 @@ export const setupGeneralBalances = () => {
 
   const exchangeRate = (currency: string) =>
     computed<BigNumber>(() => store.getters['balances/exchangeRate'](currency));
+
   const nfBalances = computed<NonFungibleBalance[]>(() => {
     return store.getters['balances/nfBalances'];
   });
 
-  const nfTotalValue = computed<BigNumber>(() => {
-    return store.getters['balances/nfTotalValue'];
-  });
+  const nfTotalValue = (includeLPToken: boolean = false) =>
+    computed<BigNumber>(() => {
+      return store.getters['balances/nfTotalValue'](includeLPToken);
+    });
 
   return {
     aggregatedBalances,
@@ -154,7 +151,6 @@ export const setupGeneralBalances = () => {
     manualBalanceByLocation,
     liabilities,
     blockchainTotals,
-    nonFungibleBalances,
     nfBalances,
     nfTotalValue,
     hasDetails,

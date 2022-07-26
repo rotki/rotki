@@ -1,5 +1,5 @@
 <template>
-  <card v-if="mappedBalances.length > 0" outlined-body>
+  <dashboard-expandable-table>
     <template #title>
       {{ $t('nft_balance_table.title') }}
       <v-btn :to="nonFungibleRoute" icon class="ml-2">
@@ -25,9 +25,16 @@
         <visible-columns-selector group="NFT" />
       </v-menu>
     </template>
+    <template #shortDetails>
+      <amount-display
+        :value="total"
+        show-currency="symbol"
+        fiat-currency="USD"
+      />
+    </template>
     <data-table
       :headers="tableHeaders"
-      :items="mappedBalances"
+      :items="filteredBalances"
       sort-by="usdPrice"
       :loading="loading"
     >
@@ -70,7 +77,7 @@
         </row-append>
       </template>
     </data-table>
-  </card>
+  </dashboard-expandable-table>
 </template>
 
 <script lang="ts">
@@ -84,13 +91,13 @@ import {
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
+import { setupGeneralBalances } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { BalanceActions } from '@/store/balances/action-types';
-import { NonFungibleBalance } from '@/store/balances/types';
 import { Section } from '@/store/const';
 import { useStatisticsStore } from '@/store/statistics';
 import { useStore } from '@/store/utils';
@@ -99,7 +106,7 @@ import {
   DashboardTableType
 } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
-import { Zero } from '@/utils/bignumbers';
+import { calculatePercentage } from '@/utils/calculation';
 
 const tableHeaders = (
   symbol: Ref<string>,
@@ -140,7 +147,8 @@ const tableHeaders = (
         text: i18n.t('nft_balance_table.column.percentage').toString(),
         value: 'percentageOfTotalNetValue',
         align: 'end',
-        class: 'text-no-wrap'
+        class: 'text-no-wrap',
+        sortable: false
       });
     }
 
@@ -158,7 +166,8 @@ const tableHeaders = (
           .toString(),
         value: 'percentageOfTotalCurrentGroup',
         align: 'end',
-        class: 'text-no-wrap'
+        class: 'text-no-wrap',
+        sortable: false
       });
     }
 
@@ -180,26 +189,22 @@ export default defineComponent({
     ),
     MenuTooltipButton: defineAsyncComponent(
       () => import('@/components/helper/MenuTooltipButton.vue')
+    ),
+    DashboardExpandableTable: defineAsyncComponent(
+      () => import('@/components/dashboard/DashboardExpandableTable.vue')
     )
   },
   setup() {
     const store = useStore();
     const statistics = useStatisticsStore();
     const { totalNetWorthUsd } = storeToRefs(statistics);
-    const balances = computed<NonFungibleBalance[]>(
-      () => store.getters['balances/nfBalances']
-    );
+    const { nfBalances: balances, nfTotalValue } = setupGeneralBalances();
 
     const { shouldShowLoadingScreen } = setupStatusChecking();
 
     const { currencySymbol } = setupGeneralSettings();
 
-    const calculatePercentage = (value: BigNumber, divider: BigNumber) => {
-      const percentage = divider.isZero()
-        ? 0
-        : value.div(divider).multipliedBy(100);
-      return percentage.toFixed(2);
-    };
+    const total = nfTotalValue();
 
     const percentageOfTotalNetValue = (value: BigNumber) => {
       return calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);
@@ -216,26 +221,14 @@ export default defineComponent({
       );
     };
 
-    const total = computed(() => {
-      return get(balances).reduce(
-        (sum, value) => sum.plus(value.usdPrice),
-        Zero
-      );
-    });
-
     const { dashboardTablesVisibleColumns } = setupSettings();
 
-    const mappedBalances = computed(() => {
-      return get(balances).map(balance => {
-        return {
-          ...balance,
-          imageUrl: balance.imageUrl || '/assets/images/placeholder.svg'
-        };
-      });
+    const filteredBalances = computed(() => {
+      return get(balances).filter(item => !item.isLp);
     });
 
     return {
-      mappedBalances,
+      filteredBalances,
       tableHeaders: tableHeaders(currencySymbol, dashboardTablesVisibleColumns),
       currency: currencySymbol,
       refresh,
