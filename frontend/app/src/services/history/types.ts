@@ -106,10 +106,10 @@ export const TradeCollectionResponse = getCollectionResponseType(
 
 export type NewTrade = Omit<Trade, 'tradeId' | 'ignoredInAccounting'>;
 
-export type HistoryRequestPayload = {
+export type HistoryRequestPayload<T> = {
   readonly limit: number;
   readonly offset: number;
-  readonly orderByAttribute?: string;
+  readonly orderByAttribute?: keyof T;
   readonly ascending: boolean;
   readonly onlyCache?: boolean;
 };
@@ -121,7 +121,7 @@ export type TradeRequestPayload = {
   readonly baseAsset?: string;
   readonly quoteAsset?: string;
   readonly tradeType?: string;
-} & HistoryRequestPayload;
+} & HistoryRequestPayload<Trade>;
 
 // Asset Movements
 export const MovementCategory = z.enum(['deposit', 'withdrawal']);
@@ -153,7 +153,7 @@ export type AssetMovementRequestPayload = {
   readonly location?: string;
   readonly asset?: string;
   readonly action?: string;
-} & HistoryRequestPayload;
+} & HistoryRequestPayload<AssetMovement>;
 
 // ETH Transactions
 export const EthTransaction = z.object({
@@ -182,7 +182,7 @@ export type TransactionRequestPayload = {
   readonly address?: string;
   readonly asset?: string;
   readonly protocols?: string | string[];
-} & HistoryRequestPayload;
+} & HistoryRequestPayload<EthTransaction>;
 
 export type TransactionEventRequestPayload = {
   readonly txHashes?: string[] | null;
@@ -215,6 +215,6 @@ export type LedgerActionRequestPayload = {
   readonly location?: string;
   readonly asset?: string;
   readonly action?: string;
-} & HistoryRequestPayload;
+} & HistoryRequestPayload<LedgerAction>;
 
 export type NewLedgerAction = Omit<LedgerAction, 'identifier'>;
