@@ -1289,6 +1289,24 @@ def test_get_v3_balances_no_premium(rotkehlchen_api_server):
         assert isinstance(lp['price_range'], list)
         assert lp['nft_id']
         assert isinstance(lp['nft_id'], str)
-        assert len(lp['assets']) == 0
+        assert len(lp['assets']) == 2
         assert lp['user_balance']['amount']
         assert lp['user_balance']['usd_value']
+
+        # LiquidityPoolAsset attributes
+        for lp_asset in lp['assets']:
+            lp_asset_type = type(lp_asset['asset'])
+
+            assert lp_asset_type in (str, dict)
+
+            # Unknown asset, at least contains token address
+            if lp_asset_type is dict:
+                assert lp_asset['asset']['ethereum_address'].startswith('0x')
+            # Known asset, contains identifier
+            else:
+                assert not lp_asset['asset'].startswith('0x')
+            # check that the user_balances are not returned
+            assert lp_asset['total_amount'] is None
+            assert FVal(lp_asset['usd_price']) == ZERO
+            assert FVal(lp_asset['user_balance']['amount']) == ZERO
+            assert FVal(lp_asset['user_balance']['usd_value']) == ZERO

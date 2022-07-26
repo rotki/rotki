@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, List, Optional, Set
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
@@ -15,6 +16,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AssetToPrice,
     DDAddressEvents,
     EventType,
+    LiquidityPoolAsset,
     ProtocolBalance,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
@@ -598,7 +600,10 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             for lps in address_balances.values():
                 for lp in lps:
                     lp.total_supply = None
-                    lp.assets = []
+                    lp.assets = [
+                        LiquidityPoolAsset(asset=lp_asset.asset, total_amount=None, user_balance=Balance())  # noqa: E501
+                        for lp_asset in lp.assets
+                    ]
         return address_balances
 
     def get_trades_history(
