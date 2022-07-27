@@ -175,8 +175,10 @@ export default defineComponent({
       if (totalEntry) {
         const convertedFiatValue =
           get(currencySymbol) === CURRENCY_USD
-            ? totalEntry.usdValue.toFixed()
-            : totalEntry.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
+            ? totalEntry.usdValue.toFormat()
+            : totalEntry.usdValue
+                .multipliedBy(get(fiatExchangeRate))
+                .toFormat();
 
         set(total, convertedFiatValue);
       }
@@ -193,8 +195,8 @@ export default defineComponent({
     const setTotal = (number: BigNumber) => {
       const convertedFiatValue =
         get(currencySymbol) === CURRENCY_USD
-          ? number.toFixed()
-          : number.multipliedBy(get(fiatExchangeRate)).toFixed();
+          ? number.toFormat()
+          : number.multipliedBy(get(fiatExchangeRate)).toFormat();
 
       set(total, convertedFiatValue);
     };

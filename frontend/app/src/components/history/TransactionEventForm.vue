@@ -380,10 +380,10 @@ const TransactionEventForm = defineComponent({
 
       const convertedFiatValue =
         get(currencySymbol) === CURRENCY_USD
-          ? event.balance.usdValue.toFixed()
+          ? event.balance.usdValue.toFormat()
           : event.balance.usdValue
               .multipliedBy(get(fiatExchangeRate))
-              .toFixed();
+              .toFormat();
 
       set(identifier, event.identifier ?? null);
       set(eventIdentifier, event.eventIdentifier);
@@ -393,7 +393,7 @@ const TransactionEventForm = defineComponent({
       set(eventType, event.eventType);
       set(eventSubtype, event.eventSubtype || HistoryEventSubType.NONE);
       set(asset, event.asset);
-      set(amount, event.balance.amount.toFixed());
+      set(amount, event.balance.amount.toFormat());
       set(fiatValue, convertedFiatValue);
       set(locationLabel, event.locationLabel ?? '');
       set(notes, event.notes ?? '');
@@ -460,7 +460,7 @@ const TransactionEventForm = defineComponent({
           fiatValue,
           new BigNumber(get(amount))
             .multipliedBy(new BigNumber(get(rate)))
-            .toFixed()
+            .toFormat()
         );
       }
     };
@@ -481,7 +481,7 @@ const TransactionEventForm = defineComponent({
       });
 
       if (rateFromHistoricPrice.gt(0)) {
-        set(rate, rateFromHistoricPrice.toFixed());
+        set(rate, rateFromHistoricPrice.toFormat());
         updateUsdValue();
       }
     };

@@ -247,9 +247,9 @@ const LedgerActionForm = defineComponent({
       set(location, ledgerAction.location);
       set(datetime, convertFromTimestamp(ledgerAction.timestamp, true));
       set(asset, ledgerAction.asset);
-      set(amount, ledgerAction.amount.toFixed());
+      set(amount, ledgerAction.amount.toFormat());
       set(actionType, ledgerAction.actionType.toString());
-      set(rate, ledgerAction.rate?.toFixed() ?? '');
+      set(rate, ledgerAction.rate?.toFormat() ?? '');
       set(rateAsset, ledgerAction.rateAsset ?? '');
       set(link, ledgerAction.link ?? '');
       set(notes, ledgerAction.notes ?? '');

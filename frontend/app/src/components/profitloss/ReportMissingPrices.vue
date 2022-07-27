@@ -141,7 +141,7 @@ export default defineComponent({
         return {
           ...item,
           saved: !!savedHistoricalPrice?.price,
-          price: savedHistoricalPrice?.price?.toFixed() ?? ''
+          price: savedHistoricalPrice?.price?.toFormat() ?? ''
         };
       });
     });
