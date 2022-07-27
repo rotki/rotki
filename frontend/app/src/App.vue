@@ -52,12 +52,12 @@
         />
         <div class="d-flex overflow-hidden">
           <sync-indicator />
-          <global-search />
+          <global-search v-if="!xsOnly" />
           <back-button :can-navigate-back="canNavigateBack" />
         </div>
         <v-spacer />
         <div class="d-flex overflow-hidden fill-height align-center">
-          <v-btn v-if="isDevelopment" to="/playground" icon>
+          <v-btn v-if="isDevelopment && !xsOnly" to="/playground" icon>
             <v-icon>mdi-crane</v-icon>
           </v-btn>
           <app-update-indicator />
@@ -65,15 +65,14 @@
             :visible="showPinned"
             @visible:update="showPinned = $event"
           />
-          <theme-switch v-if="premium" :dark-mode-enabled="darkModeEnabled" />
-          <theme-switch-lock v-else />
+          <theme-control v-if="!xsOnly" :dark-mode-enabled="darkModeEnabled" />
           <notification-indicator
             :visible="showNotificationBar"
             class="app__app-bar__button"
             @click="showNotificationBar = !showNotificationBar"
           />
           <currency-dropdown class="app__app-bar__button" />
-          <privacy-mode-dropdown class="app__app-bar__button" />
+          <privacy-mode-dropdown v-if="!xsOnly" class="app__app-bar__button" />
           <user-dropdown class="app__app-bar__button" />
           <help-indicator
             v-if="!xsOnly"
@@ -149,10 +148,10 @@ import { get, set } from '@vueuse/core';
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { setupThemeCheck, useRoute, useRouter } from '@/composables/common';
-import { getPremium, setupSession } from '@/composables/session';
+import { getPremium, setupSession, useDarkMode } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
-import { ThemeChecker, ThemeSwitch } from '@/premium/premium';
+import { ThemeChecker } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import { OverallPerformance } from '@/store/statistics/types';
 import { useMainStore } from '@/store/store';
@@ -170,9 +169,6 @@ export default defineComponent({
       () => import('@/components/status/FrontendUpdateNotifier.vue')
     ),
     About: defineAsyncComponent(() => import('@/components/About.vue')),
-    ThemeSwitchLock: defineAsyncComponent(
-      () => import('@/components/premium/ThemeSwitchLock.vue')
-    ),
     MacOsVersionUnsupported: defineAsyncComponent(
       () => import('@/components/error/MacOsVersionUnsupported.vue')
     ),
@@ -195,7 +191,9 @@ export default defineComponent({
       () => import('@/components/error/StartupErrorScreen.vue')
     ),
     ThemeChecker,
-    ThemeSwitch,
+    ThemeControl: defineAsyncComponent(
+      () => import('@/components/premium/ThemeControl.vue')
+    ),
     DevApp: defineAsyncComponent(() => import('@/DevApp.vue')),
     NotificationPopup: defineAsyncComponent(
       () => import('@/components/status/notifications/NotificationPopup.vue')
@@ -252,12 +250,6 @@ export default defineComponent({
     const isMini = ref(false);
     const startupErrorMessage = ref('');
     const isMacOsVersionUnsupported = ref(false);
-
-    const darkModeEnabled = ref(false);
-
-    const updateDarkMode = (enabled: boolean) => {
-      set(darkModeEnabled, enabled);
-    };
 
     const { navigateToRotki, onError, onAbout, updateTray } = useInterop();
     const openSite = navigateToRotki;
@@ -392,12 +384,11 @@ export default defineComponent({
       canNavigateBack,
       isDevelopment,
       isPlayground,
-      darkModeEnabled,
       dismissMessage,
       completeLogin,
       openSite,
       toggleDrawer,
-      updateDarkMode
+      ...useDarkMode()
     };
   }
 });

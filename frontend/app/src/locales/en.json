@@ -4000,7 +4000,8 @@
       "title": "Confirmation Required"
     },
     "logout": "Logout",
-    "settings": "Settings"
+    "settings": "Settings",
+    "switch_theme": "Switch Theme"
   },
   "validator_display": {
     "validator_index": "Validator Index:"

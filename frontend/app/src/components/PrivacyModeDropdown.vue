@@ -48,10 +48,9 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
-import { get } from '@vueuse/core';
+import { defineComponent } from '@vue/composition-api';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { setupSession } from '@/composables/session';
+import { usePrivacyMode } from '@/composables/privacy';
 import i18n from '@/i18n';
 
 const tickLabels: string[] = [
@@ -82,16 +81,12 @@ export default defineComponent({
     MenuTooltipButton
   },
   setup() {
-    const { privacyMode, changePrivacyMode } = setupSession();
-
-    const privacyModeIcon = computed<string>(() => {
-      return ['mdi-eye', 'mdi-eye-minus', 'mdi-eye-off'][get(privacyMode)];
-    });
-
-    const togglePrivacyMode = () => {
-      const newPrivacyMode = (get(privacyMode) + 1) % 3;
-      changePrivacyMode(newPrivacyMode);
-    };
+    const {
+      privacyModeIcon,
+      privacyMode,
+      togglePrivacyMode,
+      changePrivacyMode
+    } = usePrivacyMode();
 
     return {
       privacyModeIcon,
