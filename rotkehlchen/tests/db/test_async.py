@@ -150,3 +150,12 @@ def test_callback_segfault_complex(database, function_scope_messages_aggregator)
         num=100,
     )
     gevent.joinall([a, b, c, d, e])
+
+
+@pytest.mark.parametrize('sql_vm_instructions_cb', [0])
+def test_can_disable_callback(database):  # pylint: disable=unused-argument
+    """Simply test that setting sql_vm_instructions_cb to 0 works
+
+    This is a regression test since setting to 0 was hitting an assertion before
+    """
+    assert True  # no need to do anything. Test would fail at fixture setup

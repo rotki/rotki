@@ -111,8 +111,8 @@ class GlobalDBHandler():
         if GlobalDBHandler.__instance is not None:
             return GlobalDBHandler.__instance
 
-        assert data_dir, 'First instantiation of GlobalDBHandler should have a data_dir'
-        assert sql_vm_instructions_cb, 'First instantiation of GlobalDBHandler should have a sql_vm_instructions_cb'  # noqa: E501
+        assert data_dir is not None, 'First instantiation of GlobalDBHandler should have a data_dir'  # noqa: E501
+        assert sql_vm_instructions_cb is not None, 'First instantiation of GlobalDBHandler should have a sql_vm_instructions_cb'  # noqa: E501
         GlobalDBHandler.__instance = object.__new__(cls)
         GlobalDBHandler.__instance._data_directory = data_dir
         GlobalDBHandler.__instance.conn = _initialize_global_db_directory(data_dir, sql_vm_instructions_cb)  # noqa: E501
