@@ -84,6 +84,7 @@ jobs:
             ~/rotki-e2e/price_history
             ~/rotki-e2e/icons
             ~/rotki-e2e/global_data
+            frontend/app/components.d.ts
           key: ${{ runner.os }}-e2e-cache-${{ hashFiles('frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-e2e-cache-

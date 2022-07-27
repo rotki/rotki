@@ -26,7 +26,6 @@ describe(
       tradeHistoryPage = new TradeHistoryPage();
 
       app.fasterLogin(username);
-      page.visit();
       cy.fixture('history/trades').then(trade => {
         externalTrades = trade;
       });
@@ -37,6 +36,7 @@ describe(
     });
 
     it('add two external trades', () => {
+      page.visit();
       tradeHistoryPage.visit();
       // add trade by input rate
       tradeHistoryPage.addTrade(externalTrades[0]);
@@ -49,6 +49,7 @@ describe(
 
     it('edit external trade', () => {
       cy.addExternalTrade(externalTrades[0]);
+      page.visit();
       tradeHistoryPage.visit();
       tradeHistoryPage.visibleEntries(1);
       tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
@@ -62,6 +63,7 @@ describe(
     it('delete external trade', () => {
       cy.addExternalTrade(externalTrades[0]);
       cy.addExternalTrade(externalTrades[1]);
+      page.visit();
       tradeHistoryPage.visit();
       tradeHistoryPage.visibleEntries(2);
       tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
