@@ -1,31 +1,35 @@
-from collections import namedtuple
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
+    DEFAULT_SLEEP_SECS,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
 )
 
-ConfigurationArgs = namedtuple('ConfigurationArgs', [
-    'sleep_secs',
-    'data_dir',
-    'ethrpc_endpoint',
-    'logfile',
-    'logtarget',
-    'loglevel',
-    'logfromothermodules',
-    'max_size_in_mb_all_logs',
-    'max_logfiles_num',
-    'sqlite_instructions',
-])
+
+class ConfigurationArgs(NamedTuple):
+    data_dir: Optional[str]
+    ethrpc_endpoint: Optional[str]
+    logfile: Optional[str]
+    logtarget: Optional[str]
+    loglevel: str
+    logfromothermodules: bool
+    sleep_secs: int = DEFAULT_SLEEP_SECS
+    max_size_in_mb_all_logs: int = DEFAULT_MAX_LOG_SIZE_IN_MB
+    max_logfiles_num: int = DEFAULT_MAX_LOG_BACKUP_FILES
+    sqlite_instructions: int = DEFAULT_SQL_VM_INSTRUCTIONS_CB
 
 
-def default_args(data_dir: Optional[str] = None, ethrpc_endpoint: Optional[str] = None):
-    args = ConfigurationArgs(
+def default_args(
+        data_dir: Optional[str] = None,
+        ethrpc_endpoint: Optional[str] = None,
+        sleep_secs: int = DEFAULT_SLEEP_SECS,
+):
+    return ConfigurationArgs(
         loglevel='debug',
         logfromothermodules=False,
-        sleep_secs=60,
+        sleep_secs=sleep_secs,
         data_dir=data_dir,
         ethrpc_endpoint=ethrpc_endpoint,
         max_size_in_mb_all_logs=DEFAULT_MAX_LOG_SIZE_IN_MB,
@@ -34,21 +38,3 @@ def default_args(data_dir: Optional[str] = None, ethrpc_endpoint: Optional[str] 
         logfile=None,
         logtarget=None,
     )
-    return args
-
-
-def custom_config_args(data_dir: Optional[str] = None, ethrpc_endpoint: Optional[str] = None):
-    """Modify the max_logfiles_num configuration to test the configuration endpoint"""
-    args = ConfigurationArgs(
-        loglevel='debug',
-        logfromothermodules=False,
-        sleep_secs=60,
-        data_dir=data_dir,
-        ethrpc_endpoint=ethrpc_endpoint,
-        max_size_in_mb_all_logs=DEFAULT_MAX_LOG_SIZE_IN_MB,
-        max_logfiles_num=30,
-        sqlite_instructions=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
-        logfile=None,
-        logtarget=None,
-    )
-    return args
