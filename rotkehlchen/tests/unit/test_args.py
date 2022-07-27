@@ -1,6 +1,7 @@
 import pytest
 
-from rotkehlchen.args import DEFAULT_SQL_VM_INSTRUCTIONS_CB, app_args
+from rotkehlchen.args import app_args
+from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 
 
 @pytest.fixture(name='argparser')

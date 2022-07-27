@@ -10,9 +10,9 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.args import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery

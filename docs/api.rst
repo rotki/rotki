@@ -703,6 +703,60 @@ Getting or modifying settings
    :statuscode 409: No user is logged in or tried to set eth rpc endpoint that could not be reached.
    :statuscode 500: Internal rotki error
 
+Getting backend arguments
+================================
+
+.. http:get:: /api/(version)/settings/configuration
+
+   By doing a GET, you can retrieve the parameters used to initialize the backend.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/settings/configuration HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+    {
+      "result":{
+        "max_size_in_mb_all_logs":{
+          "value":300,
+          "is_default":true
+        },
+        "max_logfiles_num":{
+          "value":3,
+          "is_default":true
+        },
+        "sqlite_instructions":{
+          "value":5000,
+          "is_default":true
+        },
+        "sleep_secs":{
+          "value":60,
+          "is_default":false
+        }
+      },
+      "message":""
+    }
+
+   :resjson object max_size_in_mb_all_logs: Maximum size in megabytes that will be used for all rotki logs.
+   :resjson object max_num_log_files: Maximum number of logfiles to keep.
+   :resjson object sqlite_instructions: Instructions per sqlite context switch. 0 means disabled. 
+   :resjson object sleep_secs: Seconds to sleep during the main loop.
+   :resjson int value: Value used for the configuration.
+   :resjson bool is_default: `true` if the setting was not modified and `false` if it was.
+
+   :statuscode 200: Querying of the backend configuration was successful
+   :statuscode 500: Internal rotki error
+
 Adding information for ethereum nodes
 =====================================
 

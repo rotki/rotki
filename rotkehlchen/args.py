@@ -2,11 +2,13 @@ import argparse
 import sys
 from typing import Any, List, Sequence, Union
 
+from rotkehlchen.constants.misc import (
+    DEFAULT_MAX_LOG_BACKUP_FILES,
+    DEFAULT_MAX_LOG_SIZE_IN_MB,
+    DEFAULT_SLEEP_SECS,
+    DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+)
 from rotkehlchen.utils.misc import get_system_spec
-
-DEFAULT_MAX_LOG_SIZE_IN_MB = 300
-DEFAULT_MAX_LOG_BACKUP_FILES = 3
-DEFAULT_SQL_VM_INSTRUCTIONS_CB = 5000
 
 
 class CommandAction(argparse.Action):
@@ -55,8 +57,8 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     p.add_argument(
         '--sleep-secs',
         type=int,
-        default=20,
-        help="Seconds to sleep during the main loop",
+        default=DEFAULT_SLEEP_SECS,
+        help='Seconds to sleep during the main loop',
     )
     p.add_argument(
         '--data-dir',

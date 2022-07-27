@@ -1,7 +1,7 @@
 from collections import namedtuple
 from typing import Optional
 
-from rotkehlchen.args import (
+from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,

@@ -70,7 +70,15 @@ from rotkehlchen.constants.limits import (
     FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
 )
-from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ONE, ZERO
+from rotkehlchen.constants.misc import (
+    ASSET_TYPES_EXCLUDED_FOR_USERS,
+    DEFAULT_MAX_LOG_BACKUP_FILES,
+    DEFAULT_MAX_LOG_SIZE_IN_MB,
+    DEFAULT_SLEEP_SECS,
+    DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+    ONE,
+    ZERO,
+)
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -4416,3 +4424,28 @@ class RestAPI():
             addresses=addresses,
         )
         return api_response(_wrap_in_ok_result(mappings))
+
+    def get_config_arguments(self) -> Response:
+        max_size_in_mb_all_logs = self.rotkehlchen.args.max_size_in_mb_all_logs
+        max_logfiles_num = self.rotkehlchen.args.max_logfiles_num
+        sqlite_instructions = self.rotkehlchen.args.sqlite_instructions
+        sleep_secs = self.rotkehlchen.args.sleep_secs
+        config = {
+            'max_size_in_mb_all_logs': {
+                'value': max_size_in_mb_all_logs,
+                'is_default': max_size_in_mb_all_logs == DEFAULT_MAX_LOG_SIZE_IN_MB,
+            },
+            'max_logfiles_num': {
+                'value': max_logfiles_num,
+                'is_default': max_logfiles_num == DEFAULT_MAX_LOG_BACKUP_FILES,
+            },
+            'sqlite_instructions': {
+                'value': sqlite_instructions,
+                'is_default': sqlite_instructions == DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+            },
+            'sleep_secs': {
+                'value': sleep_secs,
+                'is_default': sleep_secs == DEFAULT_SLEEP_SECS,
+            },
+        }
+        return api_response(_wrap_in_ok_result(config), status_code=HTTPStatus.OK)
