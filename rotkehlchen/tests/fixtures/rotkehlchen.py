@@ -14,7 +14,7 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import create_api_server
-from rotkehlchen.tests.utils.args import default_args
+from rotkehlchen.tests.utils.args import custom_config_args, default_args
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     add_blockchain_accounts_to_db,
@@ -74,9 +74,16 @@ def fixture_data_migration_version() -> int:
     return LAST_DATA_MIGRATION
 
 
+@pytest.fixture(name='load_default_cli_configuration', scope='session')
+def fixture_load_default_cli_configuration() -> int:
+    return True
+
+
 @pytest.fixture(name='cli_args')
-def fixture_cli_args(data_dir, ethrpc_endpoint):
-    return default_args(data_dir, ethrpc_endpoint)
+def fixture_cli_args(data_dir, ethrpc_endpoint, load_default_cli_configuration):
+    if load_default_cli_configuration:
+        return default_args(data_dir, ethrpc_endpoint)
+    return custom_config_args(data_dir, ethrpc_endpoint)
 
 
 @pytest.fixture(name='perform_migrations_at_unlock')

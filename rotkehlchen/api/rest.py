@@ -4426,26 +4426,22 @@ class RestAPI():
         return api_response(_wrap_in_ok_result(mappings))
 
     def get_config_arguments(self) -> Response:
-        max_size_in_mb_all_logs = self.rotkehlchen.args.max_size_in_mb_all_logs
-        max_logfiles_num = self.rotkehlchen.args.max_logfiles_num
-        sqlite_instructions = self.rotkehlchen.args.sqlite_instructions
-        sleep_secs = self.rotkehlchen.args.sleep_secs
         config = {
             'max_size_in_mb_all_logs': {
-                'value': max_size_in_mb_all_logs,
-                'is_default': max_size_in_mb_all_logs == DEFAULT_MAX_LOG_SIZE_IN_MB,
+                'value': self.rotkehlchen.args.max_size_in_mb_all_logs,
+                'is_default': self.rotkehlchen.args.max_size_in_mb_all_logs == DEFAULT_MAX_LOG_SIZE_IN_MB,  # noqa: E501
             },
             'max_logfiles_num': {
-                'value': max_logfiles_num,
-                'is_default': max_logfiles_num == DEFAULT_MAX_LOG_BACKUP_FILES,
+                'value': self.rotkehlchen.args.max_logfiles_num,
+                'is_default': self.rotkehlchen.args.max_logfiles_num == DEFAULT_MAX_LOG_BACKUP_FILES,  # noqa: E501
             },
             'sqlite_instructions': {
-                'value': sqlite_instructions,
-                'is_default': sqlite_instructions == DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+                'value': self.rotkehlchen.args.sqlite_instructions,
+                'is_default': self.rotkehlchen.args.sqlite_instructions == DEFAULT_SQL_VM_INSTRUCTIONS_CB,  # noqa: E501
             },
             'sleep_secs': {
-                'value': sleep_secs,
-                'is_default': sleep_secs == DEFAULT_SLEEP_SECS,
+                'value': self.rotkehlchen.args.sleep_secs,
+                'is_default': self.rotkehlchen.args.sleep_secs == DEFAULT_SLEEP_SECS,
             },
         }
         return api_response(_wrap_in_ok_result(config), status_code=HTTPStatus.OK)

@@ -2,14 +2,11 @@ from http import HTTPStatus
 from typing import Any, Dict
 from unittest.mock import patch
 
+import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
-from rotkehlchen.constants.misc import (
-    DEFAULT_MAX_LOG_BACKUP_FILES,
-    DEFAULT_MAX_LOG_SIZE_IN_MB,
-    DEFAULT_SQL_VM_INSTRUCTIONS_CB,
-)
+from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -267,14 +264,15 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     assert_proper_response_with_result(response)
 
 
+@pytest.mark.parametrize('load_default_cli_configuration', [False])
 def test_configuration(rotkehlchen_api_server):
     """Test that the configuration endpoint returns the expected information"""
     response = requests.get(api_url_for(rotkehlchen_api_server, 'configurationsresource'))
     response_json = assert_proper_response_with_result(response)
     assert response_json['max_size_in_mb_all_logs']['value'] == DEFAULT_MAX_LOG_SIZE_IN_MB
     assert response_json['max_size_in_mb_all_logs']['is_default'] is True
-    assert response_json['max_logfiles_num']['is_default'] is True
-    assert response_json['max_logfiles_num']['value'] == DEFAULT_MAX_LOG_BACKUP_FILES
+    assert response_json['max_logfiles_num']['is_default'] is False
+    assert response_json['max_logfiles_num']['value'] == 30
     assert response_json['sqlite_instructions']['is_default'] is True
     assert response_json['sqlite_instructions']['value'] == DEFAULT_SQL_VM_INSTRUCTIONS_CB
     assert response_json['sleep_secs']['is_default'] is False
