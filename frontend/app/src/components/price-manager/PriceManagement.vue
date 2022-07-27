@@ -146,7 +146,7 @@ export default defineComponent({
       if (hPrice) {
         set(priceForm, {
           ...hPrice,
-          price: hPrice.price.toFixed() ?? ''
+          price: hPrice.price.toFormat() ?? ''
         });
       } else {
         const emptyPriceObj = emptyPrice();

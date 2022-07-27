@@ -11,13 +11,18 @@ export class AmountFormatter {
     return amount.toFormat(
       precision,
       roundingMode === undefined ? BigNumber.ROUND_DOWN : roundingMode,
-      {
-        groupSize: 3,
-        groupSeparator: thousandSeparator,
-        decimalSeparator
-      }
+      getBnFormat(thousandSeparator, decimalSeparator)
     );
   }
 }
 
 export const displayAmountFormatter = new AmountFormatter();
+
+export const getBnFormat = (
+  thousandSeparator: string,
+  decimalSeparator: string
+) => ({
+  groupSize: 3,
+  groupSeparator: thousandSeparator,
+  decimalSeparator
+});

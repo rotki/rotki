@@ -431,9 +431,9 @@ const ExternalTradeForm = defineComponent({
       set(base, trade.baseAsset);
       set(quote, trade.quoteAsset);
       set(datetime, convertFromTimestamp(trade.timestamp, true));
-      set(amount, trade.amount.toFixed());
-      set(rate, trade.rate.toFixed());
-      set(fee, trade.fee?.toFixed() ?? '');
+      set(amount, trade.amount.toFormat());
+      set(rate, trade.rate.toFormat());
+      set(fee, trade.fee?.toFormat() ?? '');
       set(feeCurrency, trade.feeCurrency ?? '');
       set(link, trade.link ?? '');
       set(notes, trade.notes ?? '');
@@ -507,7 +507,7 @@ const ExternalTradeForm = defineComponent({
           quoteAmount,
           new BigNumber(get(amount))
             .multipliedBy(new BigNumber(get(rate)))
-            .toFixed()
+            .toFormat()
         );
       }
     };
@@ -532,7 +532,7 @@ const ExternalTradeForm = defineComponent({
         toAsset
       });
       if (rateFromHistoricPrice.gt(0)) {
-        set(rate, rateFromHistoricPrice.toFixed());
+        set(rate, rateFromHistoricPrice.toFormat());
         updateRate(true);
       } else if (!get(rate)) {
         set(errorMessages, {
@@ -554,7 +554,7 @@ const ExternalTradeForm = defineComponent({
           rate,
           new BigNumber(get(quoteAmount))
             .div(new BigNumber(get(amount)))
-            .toFixed()
+            .toFormat()
         );
       }
     };

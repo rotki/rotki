@@ -260,12 +260,12 @@ export default defineComponent({
 
       const convertedFiatValue =
         get(currencySymbol) === CURRENCY_USD
-          ? item.usdValue.toFixed()
-          : item.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
+          ? item.usdValue.toFormat()
+          : item.usdValue.multipliedBy(get(fiatExchangeRate)).toFormat();
 
       set(form, {
         ...item,
-        amount: item.amount.toFixed(),
+        amount: item.amount.toFormat(),
         usdValue: convertedFiatValue,
         location: ''
       });

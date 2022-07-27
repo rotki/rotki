@@ -66,7 +66,7 @@ export default defineComponent({
     };
     onMounted(() => {
       set(asset, get(value).priceAsset);
-      set(price, get(value).priceInAsset.toFixed());
+      set(price, get(value).priceInAsset.toFormat());
     });
     return {
       valid,
