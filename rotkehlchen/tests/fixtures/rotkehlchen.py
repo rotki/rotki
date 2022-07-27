@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
+from rotkehlchen.constants.misc import DEFAULT_SLEEP_SECS
 from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION, DataMigrationManager
 from rotkehlchen.data_migrations.migrations.migration_4 import read_and_write_nodes_in_database
 from rotkehlchen.db.settings import DBSettings
@@ -74,9 +75,14 @@ def fixture_data_migration_version() -> int:
     return LAST_DATA_MIGRATION
 
 
+@pytest.fixture(name='sleep_secs')
+def fixture_sleep_secs() -> int:
+    return DEFAULT_SLEEP_SECS
+
+
 @pytest.fixture(name='cli_args')
-def fixture_cli_args(data_dir, ethrpc_endpoint):
-    return default_args(data_dir, ethrpc_endpoint)
+def fixture_cli_args(data_dir, ethrpc_endpoint, sleep_secs):
+    return default_args(data_dir=data_dir, ethrpc_endpoint=ethrpc_endpoint, sleep_secs=sleep_secs)
 
 
 @pytest.fixture(name='perform_migrations_at_unlock')

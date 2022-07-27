@@ -2606,3 +2606,9 @@ class AllNamesResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(self, addresses: List[ChecksumEthAddress]) -> Response:
         return self.rest_api.search_for_names_everywhere(addresses=addresses)
+
+
+class ConfigurationsResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_config_arguments()

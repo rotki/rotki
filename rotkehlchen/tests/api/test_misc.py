@@ -2,9 +2,15 @@ from http import HTTPStatus
 from typing import Any, Dict
 from unittest.mock import patch
 
+import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.types import ETHERSCAN_NODE_NAME
+from rotkehlchen.constants.misc import (
+    DEFAULT_MAX_LOG_BACKUP_FILES,
+    DEFAULT_MAX_LOG_SIZE_IN_MB,
+    DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -81,7 +87,7 @@ def test_query_ping(rotkehlchen_api_server):
     expected_result = True
     expected_message = ''
 
-    response = requests.get(api_url_for(rotkehlchen_api_server, "pingresource"))
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'pingresource'))
     assert_proper_response(response)
     response_json = response.json()
     assert len(response_json) == 2
@@ -260,3 +266,18 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         },
     )
     assert_proper_response_with_result(response)
+
+
+@pytest.mark.parametrize('sleep_secs', [60])
+def test_configuration(rotkehlchen_api_server):
+    """Test that the configuration endpoint returns the expected information"""
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'configurationsresource'))
+    result = assert_proper_response_with_result(response)
+    assert result['max_size_in_mb_all_logs']['value'] == DEFAULT_MAX_LOG_SIZE_IN_MB
+    assert result['max_size_in_mb_all_logs']['is_default'] is True
+    assert result['max_logfiles_num']['is_default'] is True
+    assert result['max_logfiles_num']['value'] == DEFAULT_MAX_LOG_BACKUP_FILES
+    assert result['sqlite_instructions']['is_default'] is True
+    assert result['sqlite_instructions']['value'] == DEFAULT_SQL_VM_INSTRUCTIONS_CB
+    assert result['sleep_secs']['is_default'] is False
+    assert result['sleep_secs']['value'] == 60
