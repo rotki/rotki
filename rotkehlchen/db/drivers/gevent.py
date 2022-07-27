@@ -148,14 +148,26 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
     """Needs to be a static function. Cannot be a connection class method
     or sqlite breaks in funny ways. Raises random Operational errors.
     """
+    if __debug__:
+        identifier = random.random()
+        conn_type = connection.connection_type if connection else 'no connection'
+        logger.trace(f'START progress callback for {conn_type} with id {identifier}')
+
     if connection is None:
+        return 0
+
+    if connection.in_callback.ready() is False:
+        # This solves the bug described in test_callback_segfault_complex. This works
+        # since we are single threaded and if we get here and it's locked we know that
+        # we should not wait since this is an edge case that can hit us if the connection gets
+        # modified before we exit the callback. So we immediately exit the callback
+        # without any sleep that would lead to context switching
         return 0
 
     # without this rotkehlchen/tests/db/test_async.py::test_async_segfault fails
     with connection.in_callback:
         if __debug__:
-            identifier = random.random()
-            logger.trace(f'Got in the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501
+            logger.trace(f'Got in locked section of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501
         gevent.sleep(0)
         if __debug__:
             logger.trace(f'Going out of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501
@@ -236,22 +248,24 @@ class DBConnection:
         return DBCursor(connection=self, cursor=underlying_cursor)
 
     def commit(self) -> None:
-        if __debug__:
-            logger.trace('START DB CONNECTION COMMIT')
-        try:
-            self._conn.commit()
-        finally:
+        with self.in_callback:
             if __debug__:
-                logger.trace('FINISH DB CONNECTION COMMIT')
+                logger.trace('START DB CONNECTION COMMIT')
+            try:
+                self._conn.commit()
+            finally:
+                if __debug__:
+                    logger.trace('FINISH DB CONNECTION COMMIT')
 
     def rollback(self) -> None:
-        if __debug__:
-            logger.trace('START DB CONNECTION ROLLBACK')
-        try:
-            self._conn.rollback()
-        finally:
+        with self.in_callback:
             if __debug__:
-                logger.trace('FINISH DB CONNECTION ROLLBACK')
+                logger.trace('START DB CONNECTION ROLLBACK')
+            try:
+                self._conn.rollback()
+            finally:
+                if __debug__:
+                    logger.trace('FINISH DB CONNECTION ROLLBACK')
 
     def cursor(self) -> DBCursor:
         return DBCursor(connection=self, cursor=self._conn.cursor())
