@@ -148,31 +148,43 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
+import {
+  computed,
+  defineAsyncComponent,
+  defineComponent
+} from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import BlockchainBalanceCardList from '@/components/dashboard/BlockchainBalanceCardList.vue';
-import DashboardAssetTable from '@/components/dashboard/DashboardAssetTable.vue';
-import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
-import ManualBalanceCardList from '@/components/dashboard/ManualBalanceCardList.vue';
-import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
-import OverallBalances from '@/components/dashboard/OverallBalances.vue';
-import SummaryCard from '@/components/dashboard/SummaryCard.vue';
-import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { setupGeneralBalances, setupExchanges } from '@/composables/balances';
+import { setupExchanges, setupGeneralBalances } from '@/composables/balances';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
 export default defineComponent({
   name: 'Dashboard',
   components: {
-    NftBalanceTable,
-    PriceRefresh,
-    DashboardAssetTable,
-    OverallBalances,
-    SummaryCard,
-    ExchangeBox,
-    ManualBalanceCardList,
-    BlockchainBalanceCardList
+    PriceRefresh: defineAsyncComponent(
+      () => import('@/components/helper/PriceRefresh.vue')
+    ),
+    DashboardAssetTable: defineAsyncComponent(
+      () => import('@/components/dashboard/DashboardAssetTable.vue')
+    ),
+    OverallBalances: defineAsyncComponent(
+      () => import('@/components/dashboard/OverallBalances.vue')
+    ),
+    SummaryCard: defineAsyncComponent(
+      () => import('@/components/dashboard/SummaryCard.vue')
+    ),
+    ExchangeBox: defineAsyncComponent(
+      () => import('@/components/dashboard/ExchangeBox.vue')
+    ),
+    ManualBalanceCardList: defineAsyncComponent(
+      () => import('@/components/dashboard/ManualBalanceCardList.vue')
+    ),
+    BlockchainBalanceCardList: defineAsyncComponent(
+      () => import('@/components/dashboard/BlockchainBalanceCardList.vue')
+    ),
+    NftBalanceTable: defineAsyncComponent(
+      () => import('@/components/dashboard/NftBalanceTable.vue')
+    )
   },
   setup() {
     const { isTaskRunning } = useTasks();

@@ -72,6 +72,7 @@
 <script lang="ts">
 import {
   computed,
+  defineAsyncComponent,
   defineComponent,
   PropType,
   ref,
@@ -80,11 +81,6 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
-import RowActions from '@/components/helper/RowActions.vue';
-import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
-import TransactionEventAsset from '@/components/history/transactions/TransactionEventAsset.vue';
-import TransactionEventNote from '@/components/history/transactions/TransactionEventNote.vue';
-import TransactionEventType from '@/components/history/transactions/TransactionEventType.vue';
 import { useProxy } from '@/composables/common';
 import i18n from '@/i18n';
 import { EthTransactionEventWithMeta } from '@/services/history/types';
@@ -97,11 +93,22 @@ import { transformEntryWithMeta } from '@/store/history/utils';
 export default defineComponent({
   name: 'TransactionEvents',
   components: {
-    TransactionEventNote,
-    RowActions,
-    TransactionEventType,
-    TransactionEventAsset,
-    TableExpandContainer
+    TransactionEventNote: defineAsyncComponent(
+      () => import('@/components/history/transactions/TransactionEventNote.vue')
+    ),
+    RowActions: defineAsyncComponent(
+      () => import('@/components/helper/RowActions.vue')
+    ),
+    TransactionEventType: defineAsyncComponent(
+      () => import('@/components/history/transactions/TransactionEventType.vue')
+    ),
+    TransactionEventAsset: defineAsyncComponent(
+      () =>
+        import('@/components/history/transactions/TransactionEventAsset.vue')
+    ),
+    TableExpandContainer: defineAsyncComponent(
+      () => import('@/components/helper/table/TableExpandContainer.vue')
+    )
   },
   props: {
     transaction: {

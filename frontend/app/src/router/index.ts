@@ -36,11 +36,11 @@ export default new Router({
       path: Routes.DASHBOARD.route,
       alias: Routes.ROOT.route,
       name: 'dashboard',
-      component: () => import('../views/Dashboard.vue')
+      component: async () => import('../views/Dashboard.vue')
     },
     {
       path: Routes.ACCOUNTS_BALANCES.route,
-      component: () => import('../views/AccountsBalances.vue'),
+      component: async () => import('../views/AccountsBalances.vue'),
       children: [
         {
           path: '',
@@ -78,11 +78,11 @@ export default new Router({
     {
       path: Routes.NFTS.route,
       name: 'nfts',
-      component: () => import('../views/Nft.vue')
+      component: async () => import('../views/Nft.vue')
     },
     {
       path: Routes.HISTORY.route,
-      component: () => import('../views/history/History.vue'),
+      component: async () => import('../views/history/History.vue'),
       children: [
         {
           path: '',
@@ -91,7 +91,8 @@ export default new Router({
         {
           name: 'trades',
           path: Routes.HISTORY_TRADES.route,
-          component: () => import('../views/history/trades/TradeHistory.vue')
+          component: async () =>
+            import('../views/history/trades/TradeHistory.vue')
         },
         {
           name: 'deposits-withdrawals',
@@ -117,7 +118,7 @@ export default new Router({
     },
     {
       path: Routes.DEFI.route,
-      component: () => import('../views/defi/DecentralizedFinance.vue'),
+      component: async () => import('../views/defi/DecentralizedFinance.vue'),
       children: [
         {
           path: '',
@@ -125,11 +126,13 @@ export default new Router({
         },
         {
           path: Routes.DEFI_OVERVIEW.route,
-          component: () => import('../views/defi/DecentralizedOverview.vue')
+          component: async () =>
+            import('../views/defi/DecentralizedOverview.vue')
         },
         {
           path: Routes.DEFI_DEPOSITS.route,
-          component: () => import('../views/defi/DecentralizedDeposits.vue'),
+          component: async () =>
+            import('../views/defi/DecentralizedDeposits.vue'),
           children: [
             {
               path: '',
@@ -137,11 +140,13 @@ export default new Router({
             },
             {
               path: Routes.DEFI_DEPOSITS_PROTOCOLS.route,
-              component: () => import('../views/defi/deposits/Protocols.vue')
+              component: async () =>
+                import('../views/defi/deposits/Protocols.vue')
             },
             {
               path: Routes.DEFI_DEPOSITS_LIQUIDITY.route,
-              component: () => import('../views/defi/deposits/Liquidity.vue'),
+              component: async () =>
+                import('../views/defi/deposits/Liquidity.vue'),
               children: [
                 {
                   path: '',
@@ -169,47 +174,48 @@ export default new Router({
         {
           path: Routes.DEFI_LIABILITIES.route,
           name: 'defi-liabilities',
-          component: () => import('../views/defi/DecentralizedBorrowing.vue')
+          component: async () =>
+            import('../views/defi/DecentralizedBorrowing.vue')
         },
         {
           path: Routes.DEFI_DEX_TRADES.route,
-          component: () => import('../views/defi/DexTrades.vue')
+          component: async () => import('../views/defi/DexTrades.vue')
         },
         {
           path: Routes.DEFI_AIRDROPS.route,
-          component: () => import('../views/defi/Airdrops.vue')
+          component: async () => import('../views/defi/Airdrops.vue')
         }
       ]
     },
     {
       path: Routes.STATISTICS.route,
       name: 'statistics',
-      component: () => import('../views/Statistics.vue')
+      component: async () => import('../views/Statistics.vue')
     },
     {
       path: Routes.STAKING.route,
-      component: () => import('../views/staking/StakingPage.vue'),
+      component: async () => import('../views/staking/StakingPage.vue'),
       props: route => ({ location: route.params.location ?? null })
     },
     {
       path: Routes.PROFIT_LOSS_REPORTS.route,
-      component: () => import('../views/reports/ProfitLossReports.vue')
+      component: async () => import('../views/reports/ProfitLossReports.vue')
     },
     {
       path: Routes.PROFIT_LOSS_REPORT.route,
-      component: () => import('../views/reports/ProfitLossReport.vue'),
+      component: async () => import('../views/reports/ProfitLossReport.vue'),
       meta: {
         canNavigateBack: true
       }
     },
     {
       path: Routes.ASSET_MANAGER.route,
-      component: () => import('../views/AssetManager.vue'),
+      component: async () => import('../views/AssetManager.vue'),
       props: route => ({ identifier: route.query.id ?? null })
     },
     {
       path: Routes.PRICE_MANAGER.route,
-      component: () => import('../views/PriceManager.vue'),
+      component: async () => import('../views/PriceManager.vue'),
       meta: {
         canNavigateBack: true
       },
@@ -217,11 +223,11 @@ export default new Router({
     },
     {
       path: Routes.ETH_ADDRESS_BOOK_MANAGER.route,
-      component: () => import('../views/EthAddressBookManager.vue')
+      component: async () => import('../views/EthAddressBookManager.vue')
     },
     {
       path: Routes.API_KEYS.route,
-      component: () => import('../views/settings/ApiKeys.vue'),
+      component: async () => import('../views/settings/ApiKeys.vue'),
       children: [
         {
           path: '',
@@ -229,7 +235,8 @@ export default new Router({
         },
         {
           path: Routes.API_KEYS_ROTKI_PREMIUM.route,
-          component: () => import('../components/settings/PremiumSettings.vue')
+          component: async () =>
+            import('../components/settings/PremiumSettings.vue')
         },
         {
           path: Routes.API_KEYS_EXCHANGES.route,
@@ -246,11 +253,11 @@ export default new Router({
     {
       path: Routes.IMPORT.route,
       name: 'import',
-      component: () => import('../views/ImportData.vue')
+      component: async () => import('../views/ImportData.vue')
     },
     {
       path: Routes.SETTINGS.route,
-      component: () => import('../views/settings/Settings.vue'),
+      component: async () => import('../views/settings/Settings.vue'),
       children: [
         {
           path: '',
@@ -258,25 +265,27 @@ export default new Router({
         },
         {
           path: Routes.SETTINGS_GENERAL.route,
-          component: () => import('../views/settings/GeneralSettings.vue')
+          component: async () => import('../views/settings/GeneralSettings.vue')
         },
         {
           path: Routes.SETTINGS_ACCOUNTING.route,
-          component: () => import('../views/settings/AccountingSettings.vue')
+          component: async () =>
+            import('../views/settings/AccountingSettings.vue')
         },
         {
           path: Routes.SETTINGS_DATA_SECURITY.route,
-          component: () => import('../views/settings/UserSecuritySettings.vue')
+          component: async () =>
+            import('../views/settings/UserSecuritySettings.vue')
         },
         {
           path: Routes.SETTINGS_MODULES.route,
-          component: () => import('../views/settings/ModuleSettings.vue')
+          component: async () => import('../views/settings/ModuleSettings.vue')
         }
       ]
     },
     {
       path: Routes.ASSETS.route,
-      component: () => import('../views/Assets.vue'),
+      component: async () => import('../views/Assets.vue'),
       meta: {
         canNavigateBack: true
       },
@@ -284,7 +293,7 @@ export default new Router({
     },
     {
       path: Routes.LOCATIONS.route,
-      component: () => import('../views/LocationOverview.vue'),
+      component: async () => import('../views/LocationOverview.vue'),
       meta: {
         canNavigateBack: true
       },
@@ -295,7 +304,7 @@ export default new Router({
           {
             path: '/playground',
             name: 'playground',
-            component: () => import('../views/dev/Playground.vue')
+            component: async () => import('../views/dev/Playground.vue')
           }
         ]
       : [])

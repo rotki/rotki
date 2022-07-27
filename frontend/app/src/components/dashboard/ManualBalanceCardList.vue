@@ -28,14 +28,17 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent } from '@vue/composition-api';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { defineAsyncComponent, defineComponent } from '@vue/composition-api';
 import { setupGeneralSettings } from '@/composables/session';
 import { toSentenceCase } from '@/utils/text';
 
 export default defineComponent({
   name: 'ManualBalanceCardList',
-  components: { AmountDisplay },
+  components: {
+    AmountDisplay: defineAsyncComponent(
+      () => import('@/components/display/AmountDisplay.vue')
+    )
+  },
   props: {
     name: {
       required: true,

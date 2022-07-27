@@ -12,25 +12,28 @@
 
 <script lang="ts">
 import {
+  defineAsyncComponent,
   defineComponent,
   onBeforeMount,
   onUnmounted,
   watch
 } from '@vue/composition-api';
 import { get, useIntervalFn } from '@vueuse/core';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { isSectionLoading, setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useTransactions } from '@/store/history';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
-import TransactionContent from '@/views/history/transactions/TransactionContent.vue';
 
 export default defineComponent({
   name: 'Transactions',
   components: {
-    ProgressScreen,
-    TransactionContent
+    ProgressScreen: defineAsyncComponent(
+      () => import('@/components/helper/ProgressScreen.vue')
+    ),
+    TransactionContent: defineAsyncComponent(
+      () => import('@/views/history/transactions/TransactionContent.vue')
+    )
   },
   setup() {
     const { fetchTransactions } = useTransactions();

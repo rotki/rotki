@@ -53,12 +53,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
-import NavigatorLink from '@/components/helper/NavigatorLink.vue';
+import { defineAsyncComponent, defineComponent } from '@vue/composition-api';
 
 export default defineComponent({
   name: 'SummaryCard',
-  components: { NavigatorLink },
+  components: {
+    NavigatorLink: defineAsyncComponent(
+      () => import('@/components/helper/NavigatorLink.vue')
+    )
+  },
   props: {
     name: { required: true, type: String },
     isLoading: { required: false, type: Boolean, default: false },

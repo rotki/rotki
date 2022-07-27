@@ -82,13 +82,10 @@ import {
   timeframes
 } from '@rotki/common/lib/settings/graphs';
 import { NetValue } from '@rotki/common/lib/statistics';
+import { defineAsyncComponent } from '@vue/composition-api';
 import dayjs from 'dayjs';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
-import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import Loading from '@/components/helper/Loading.vue';
-import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
@@ -101,7 +98,20 @@ import {
 import { bigNumberify } from '@/utils/bignumbers';
 
 @Component({
-  components: { TimeframeSelector, Loading, AmountDisplay, NetWorthChart },
+  components: {
+    TimeframeSelector: defineAsyncComponent(
+      () => import('@/components/helper/TimeframeSelector.vue')
+    ),
+    Loading: defineAsyncComponent(
+      () => import('@/components/helper/Loading.vue')
+    ),
+    AmountDisplay: defineAsyncComponent(
+      () => import('@/components/display/AmountDisplay.vue')
+    ),
+    NetWorthChart: defineAsyncComponent(
+      () => import('@/components/dashboard/NetWorthChart.vue')
+    )
+  },
   computed: {
     ...mapGetters('session', ['currencySymbol', 'floatingPrecision']),
     ...mapGetters('statistics', ['netValue', 'totalNetWorth']),
