@@ -23,6 +23,7 @@ import { DateFormatEnum } from '@/types/date-format';
 import { TableColumnEnum } from '@/types/table-column';
 
 export const DEFI_SETUP_DONE = 'defiSetupDone' as const;
+export const LANGUAGE = 'language' as const;
 export const TIMEFRAME_SETTING = 'timeframeSetting' as const;
 export const VISIBLE_TIMEFRAMES = 'visibleTimeframes' as const;
 export const LAST_KNOWN_TIMEFRAME = 'lastKnownTimeframe' as const;
@@ -136,8 +137,16 @@ export type VersionUpdateCheckFrequency = z.infer<
   typeof VersionUpdateCheckFrequency
 >;
 
+export enum SupportedLanguage {
+  EN = 'en',
+  ES = 'es'
+}
+
+const SupportedLanguageEnum = z.nativeEnum(SupportedLanguage);
+
 export const FrontendSettings = z.object({
   [DEFI_SETUP_DONE]: z.boolean().default(false),
+  [LANGUAGE]: SupportedLanguageEnum.default(SupportedLanguage.EN),
   [TIMEFRAME_SETTING]: TimeFrameSetting.default(TimeFramePersist.REMEMBER),
   [VISIBLE_TIMEFRAMES]: z
     .array(TimeFrameSetting)

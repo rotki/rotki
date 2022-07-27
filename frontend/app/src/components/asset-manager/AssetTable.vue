@@ -122,7 +122,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref } from '@vue/composition-api';
+import { computed, defineComponent, PropType, ref } from '@vue/composition-api';
 import { get, set, useTimeoutFn } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
@@ -137,7 +137,7 @@ import { Nullable } from '@/types';
 import { compareAssets } from '@/utils/assets';
 import { toSentenceCase } from '@/utils/text';
 
-const tableHeaders: DataTableHeader[] = [
+const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     text: i18n.t('asset_table.headers.asset').toString(),
     value: 'symbol'
@@ -163,7 +163,7 @@ const tableHeaders: DataTableHeader[] = [
     width: '48px',
     value: 'expand'
   }
-];
+]);
 
 export default defineComponent({
   name: 'AssetTable',

@@ -1078,16 +1078,16 @@
     "data_directory": {
       "select": "Select where rotki will store the data"
     },
-    "errors": {
-      "min": "Minimum value for this setting is {min}",
-      "non_empty": "This setting cannot be empty"
-    },
     "log_directory": {
-      "select": "Select where rotki will store the logs"
+      "select": "bSelect where rotki will store the logs"
     },
     "log_from_other_modules": {
       "hint": "Enables logging from third party libraries (useful for debugging)",
       "label": "Log from other modules"
+    },
+    "main_loop_sleep": {
+      "hint": "The main event loop sleep duration. (Don't modify unless you know what you are doing)",
+      "label": "Main Loop Sleep"
     },
     "max_log_files": {
       "hint": "This is the maximum number of logfiles to keep",
@@ -1108,10 +1108,6 @@
       "log_level": {
         "label": "Log Level"
       }
-    },
-    "sqlite_instructions": {
-      "hint": "Specify after how many sqlite VM instructions to context switch between cooperative threads. Set to 0 to disable async DB access",
-      "label": "Instructions per SQLite context switch"
     },
     "subtitle": "Modify the backend settings",
     "title": "Backend Settings"
@@ -1645,7 +1641,7 @@
     }
   },
   "decentralized_overview": {
-    "empty_subtitle": "Please add at least one ETH account that has DeFi balances",
+    "empty_subtitle": "Please add at least one ETH account that have DeFi balances",
     "empty_title": "No DeFi overview can be shown",
     "loading": "Please wait while your defi balances are getting loaded...",
     "title": "Defi Overview"
@@ -1730,9 +1726,6 @@
     "task": {
       "title": "Querying ENS names"
     }
-  },
-  "error": {
-    "process_running": "A rotki backend process is already running. This is known to cause problems with the operation of the application. Please kill these processes pids: [{pids}] and restart the application."
   },
   "error_screen": {
     "backend_error": "There is a problem with the backend.",
@@ -2932,12 +2925,12 @@
     "transaction": "TX:"
   },
   "navigation_menu": {
-    "accounts_balances": "Accounts & Balances",
+    "accounts_balances": "Cuentas y Saldos",
     "accounts_balances_sub": {
-      "blockchain_balances": "Blockchain Balances",
-      "exchange_balances": "Exchange Balances",
-      "manual_balances": "Manual Balances",
-      "non_fungible_balances": "Non Fungible Balances"
+      "blockchain_balances": "Saldos de cadena de bloques",
+      "exchange_balances": "Saldos de cambio",
+      "manual_balances": "Balanzas manuales",
+      "non_fungible_balances": "Saldos no fungibles"
     },
     "api_keys": "API Keys",
     "api_keys_sub": {
@@ -2978,10 +2971,10 @@
     "profit_loss_report": "Profit and Loss Report",
     "settings": "Settings",
     "settings_sub": {
-      "accounting": "Accounting",
-      "data_security": "Data & Security",
+      "accounting": "Contabilidad",
+      "data_security": "Seguridad de datos",
       "general": "General",
-      "modules": "Modules"
+      "modules": "Módulos"
     },
     "staking": "Staking",
     "statistics": "Statistics"
@@ -4006,8 +3999,7 @@
       "title": "Confirmation Required"
     },
     "logout": "Logout",
-    "settings": "Settings",
-    "switch_theme": "Switch Theme"
+    "settings": "Settings"
   },
   "validator_display": {
     "validator_index": "Validator Index:"

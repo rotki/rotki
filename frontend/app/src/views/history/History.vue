@@ -9,13 +9,15 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+<script setup lang="ts">
+import { get } from '@vueuse/core';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
 import { useTheme } from '@/composables/common';
-import { Routes } from '@/router/routes';
+import { routesRef } from '@/router/routes';
+
+const Routes = get(routesRef);
 
 const tabs: TabContent[] = [
   Routes.HISTORY_TRADES,
@@ -24,14 +26,7 @@ const tabs: TabContent[] = [
   Routes.HISTORY_LEDGER_ACTIONS
 ];
 
-export default defineComponent({
-  name: 'History',
-  components: { TabNavigation },
-  setup() {
-    const { dark } = useTheme();
-    return { dark, tabs };
-  }
-});
+const { dark } = useTheme();
 </script>
 
 <style module lang="scss">

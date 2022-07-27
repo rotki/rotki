@@ -134,7 +134,7 @@ const priceDeletion = (refresh: () => Promise<void>) => {
   };
 };
 
-const headers: DataTableHeader[] = [
+const headers = computed<DataTableHeader[]>(() => [
   {
     text: i18n.t('price_table.headers.from_asset').toString(),
     value: 'fromAsset'
@@ -163,7 +163,7 @@ const headers: DataTableHeader[] = [
     text: '',
     value: 'actions'
   }
-];
+]);
 
 export default defineComponent({
   name: 'PriceTable',

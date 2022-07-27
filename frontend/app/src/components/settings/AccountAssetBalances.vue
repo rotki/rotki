@@ -55,7 +55,7 @@
 
 <script lang="ts">
 import { AssetBalance } from '@rotki/common';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { computed, defineComponent, PropType } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -64,7 +64,7 @@ import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 
-const headers: DataTableHeader[] = [
+const headers = computed<DataTableHeader[]>(() => [
   {
     text: i18n.t('account_asset_balance.headers.asset').toString(),
     class: 'text-no-wrap',
@@ -94,7 +94,7 @@ const headers: DataTableHeader[] = [
     align: 'end',
     class: 'text-no-wrap'
   }
-];
+]);
 
 export default defineComponent({
   name: 'AccountAssetBalances',

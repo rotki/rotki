@@ -13,13 +13,13 @@
   </v-row>
 </template>
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import { computed, defineComponent, PropType } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import i18n from '@/i18n';
 import { Trade } from '@/services/history/types';
 
-const headers: DataTableHeader[] = [
+const headers = computed<DataTableHeader[]>(() => [
   {
     text: i18n.t('open_trades.header.location').toString(),
     value: 'location'
@@ -53,7 +53,8 @@ const headers: DataTableHeader[] = [
     value: 'feeCurrency',
     align: 'end'
   }
-];
+]);
+
 export default defineComponent({
   name: 'OpenTrades',
 

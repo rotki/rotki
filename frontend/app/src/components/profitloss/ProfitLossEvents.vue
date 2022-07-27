@@ -149,7 +149,7 @@ import {
   SelectedReport
 } from '@/types/reports';
 
-const tableHeaders: DataTableHeader[] = [
+const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     text: '',
     value: 'group',
@@ -211,7 +211,7 @@ const tableHeaders: DataTableHeader[] = [
     value: 'notes',
     sortable: false
   }
-];
+]);
 
 type PaginationOptions = {
   page: number;

@@ -132,7 +132,7 @@ import { useTheme, useRouter } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
-import { Routes } from '@/router/routes';
+import { routesRef } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Exchange } from '@/types/exchanges';
 
@@ -157,6 +157,7 @@ export default defineComponent({
   name: 'GlobalSearch',
   components: { LocationIcon, AdaptiveWrapper, MenuTooltipButton },
   setup() {
+    const Routes = get(routesRef);
     const open = ref<boolean>(false);
     const isMac = ref<boolean>(false);
 

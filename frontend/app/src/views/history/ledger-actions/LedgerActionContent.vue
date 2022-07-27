@@ -240,54 +240,56 @@ type PaginationOptions = {
   sortDesc: boolean[];
 };
 
-const tableHeaders = (locationOverview: string): DataTableHeader[] => {
-  const headers: DataTableHeader[] = [
-    {
-      text: '',
-      value: 'ignoredInAccounting',
-      sortable: false,
-      class: 'pa-0',
-      cellClass: 'pa-0'
-    },
-    {
-      text: i18n.t('ledger_actions.headers.location').toString(),
-      value: 'location',
-      width: '120px',
-      align: 'center'
-    },
-    {
-      text: i18n.t('ledger_actions.headers.type').toString(),
-      value: 'type'
-    },
-    {
-      text: i18n.t('ledger_actions.headers.asset').toString(),
-      value: 'asset',
-      sortable: false
-    },
-    {
-      text: i18n.t('ledger_actions.headers.amount').toString(),
-      value: 'amount'
-    },
-    {
-      text: i18n.t('ledger_actions.headers.date').toString(),
-      value: 'timestamp'
-    },
-    {
-      text: i18n.t('ledger_actions.headers.actions').toString(),
-      value: 'actions',
-      align: 'center',
-      sortable: false,
-      width: '50'
-    },
-    { text: '', value: 'data-table-expand', sortable: false }
-  ];
+const tableHeaders = (locationOverview: string) => {
+  return computed<DataTableHeader[]>(() => {
+    const headers: DataTableHeader[] = [
+      {
+        text: '',
+        value: 'ignoredInAccounting',
+        sortable: false,
+        class: 'pa-0',
+        cellClass: 'pa-0'
+      },
+      {
+        text: i18n.t('ledger_actions.headers.location').toString(),
+        value: 'location',
+        width: '120px',
+        align: 'center'
+      },
+      {
+        text: i18n.t('ledger_actions.headers.type').toString(),
+        value: 'type'
+      },
+      {
+        text: i18n.t('ledger_actions.headers.asset').toString(),
+        value: 'asset',
+        sortable: false
+      },
+      {
+        text: i18n.t('ledger_actions.headers.amount').toString(),
+        value: 'amount'
+      },
+      {
+        text: i18n.t('ledger_actions.headers.date').toString(),
+        value: 'timestamp'
+      },
+      {
+        text: i18n.t('ledger_actions.headers.actions').toString(),
+        value: 'actions',
+        align: 'center',
+        sortable: false,
+        width: '50'
+      },
+      { text: '', value: 'data-table-expand', sortable: false }
+    ];
 
-  if (locationOverview) {
-    headers.splice(9, 1);
-    headers.splice(1, 1);
-  }
+    if (locationOverview) {
+      headers.splice(9, 1);
+      headers.splice(1, 1);
+    }
 
-  return headers;
+    return headers;
+  });
 };
 
 export default defineComponent({

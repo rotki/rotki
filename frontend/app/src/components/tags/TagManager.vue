@@ -78,7 +78,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -90,7 +90,7 @@ import { setupTags } from '@/composables/session';
 import i18n from '@/i18n';
 import { Tag } from '@/types/user';
 
-const headers: DataTableHeader[] = [
+const headers = computed<DataTableHeader[]>(() => [
   {
     text: i18n.t('tag_manager.headers.name').toString(),
     value: 'name',
@@ -106,7 +106,7 @@ const headers: DataTableHeader[] = [
     sortable: false,
     width: '80'
   }
-];
+]);
 
 export default defineComponent({
   name: 'TagManager',

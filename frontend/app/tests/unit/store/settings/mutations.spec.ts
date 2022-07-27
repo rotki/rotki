@@ -22,6 +22,7 @@ import {
   EXPLORERS,
   GRAPH_ZERO_BASED,
   ITEMS_PER_PAGE,
+  LANGUAGE,
   LAST_KNOWN_TIMEFRAME,
   NFTS_IN_NET_VALUE,
   PROFIT_LOSS_PERIOD,
@@ -29,6 +30,7 @@ import {
   QUERY_PERIOD,
   REFRESH_PERIOD,
   SHOW_GRAPH_RANGE_SELECTOR,
+  SupportedLanguage,
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
   VALUE_ROUNDING_MODE,
@@ -41,6 +43,7 @@ describe('settings:mutations', () => {
   test('restore', async () => {
     const state: SettingsState = {
       [DEFI_SETUP_DONE]: true,
+      [LANGUAGE]: SupportedLanguage.EN,
       [TIMEFRAME_SETTING]: TimeFramePeriod.YEAR,
       [LAST_KNOWN_TIMEFRAME]: TimeFramePeriod.TWO_WEEKS,
       [VISIBLE_TIMEFRAMES]: [
@@ -98,6 +101,7 @@ describe('settings:mutations', () => {
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
     expect(settings[DEFI_SETUP_DONE]).toBe(true);
+    expect(settings[LANGUAGE]).toBe(SupportedLanguage.EN);
     expect(settings[TIMEFRAME_SETTING]).toBe(TimeFramePeriod.YEAR);
     expect(settings[LAST_KNOWN_TIMEFRAME]).toBe(TimeFramePeriod.TWO_WEEKS);
     expect(settings[VISIBLE_TIMEFRAMES]).toStrictEqual([

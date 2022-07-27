@@ -145,7 +145,7 @@ import { TaskType } from '@/types/task-type';
 import { PriceOracle } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
-const headers: DataTableHeader[] = [
+const headers = computed<DataTableHeader[]>(() => [
   {
     text: i18n.t('oracle_cache_management.headers.from').toString(),
     value: 'fromAsset'
@@ -166,7 +166,7 @@ const headers: DataTableHeader[] = [
     text: '',
     value: 'actions'
   }
-];
+]);
 
 export default defineComponent({
   name: 'OracleCacheManagement',

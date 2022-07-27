@@ -9,15 +9,17 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from '@vue/composition-api';
-import { mapState } from 'vuex';
+<script setup lang="ts">
+import { computed } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
-import { Routes } from '@/router/routes';
-import { DEFI_SETUP_DONE } from '@/types/frontend-settings';
+import { routesRef } from '@/router/routes';
+import { useStore } from '@/store/utils';
+
+const Routes = get(routesRef);
 
 const tabs: TabContent[] = [
   Routes.DEFI_OVERVIEW,
@@ -27,15 +29,9 @@ const tabs: TabContent[] = [
   Routes.DEFI_AIRDROPS
 ];
 
-export default defineComponent({
-  name: 'DecentralizedFinance',
-  components: { DefiWizard, TabNavigation },
-  setup() {
-    return { tabs };
-  },
-  computed: {
-    ...mapState('settings', [DEFI_SETUP_DONE])
-  }
+const store = useStore();
+const defiSetupDone = computed<boolean>(() => {
+  return store.state.settings!.defiSetupDone;
 });
 </script>
 

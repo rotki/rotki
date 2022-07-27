@@ -2,12 +2,14 @@
   <tab-navigation :tab-contents="tabs" data-cy="accounts-balances-tab" />
 </template>
 
-<script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+<script setup lang="ts">
+import { get } from '@vueuse/core';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
-import { Routes } from '@/router/routes';
+import { routesRef } from '@/router/routes';
+
+const Routes = get(routesRef);
 
 const tabs: TabContent[] = [
   Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
@@ -15,13 +17,4 @@ const tabs: TabContent[] = [
   Routes.ACCOUNTS_BALANCES_MANUAL,
   Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE
 ];
-
-export default defineComponent({
-  components: {
-    TabNavigation
-  },
-  setup() {
-    return { tabs };
-  }
-});
 </script>

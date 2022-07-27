@@ -196,55 +196,57 @@ type PaginationOptions = {
   sortDesc: boolean[];
 };
 
-const tableHeaders = (locationOverview: string): DataTableHeader[] => {
-  const headers: DataTableHeader[] = [
-    {
-      text: '',
-      value: 'ignoredInAccounting',
-      sortable: false,
-      class: !locationOverview ? 'pa-0' : 'pr-0',
-      cellClass: !locationOverview ? 'pa-0' : 'pr-0'
-    },
-    {
-      text: i18n.t('deposits_withdrawals.headers.location').toString(),
-      value: 'location',
-      width: '120px',
-      align: 'center'
-    },
-    {
-      text: i18n.t('deposits_withdrawals.headers.action').toString(),
-      value: 'category',
-      align: 'center',
-      class: `text-no-wrap ${locationOverview ? 'pl-0' : ''}`,
-      cellClass: locationOverview ? 'pl-0' : ''
-    },
-    {
-      text: i18n.t('deposits_withdrawals.headers.asset').toString(),
-      value: 'asset',
-      sortable: false
-    },
-    {
-      text: i18n.t('deposits_withdrawals.headers.amount').toString(),
-      value: 'amount',
-      align: 'end'
-    },
-    {
-      text: i18n.t('deposits_withdrawals.headers.fee').toString(),
-      value: 'fee',
-      align: 'end'
-    },
-    {
-      text: i18n.t('deposits_withdrawals.headers.timestamp').toString(),
-      value: 'timestamp'
-    },
-    { text: '', value: 'data-table-expand', sortable: false }
-  ];
+const tableHeaders = (locationOverview: string) => {
+  return computed<DataTableHeader[]>(() => {
+    const headers: DataTableHeader[] = [
+      {
+        text: '',
+        value: 'ignoredInAccounting',
+        sortable: false,
+        class: !locationOverview ? 'pa-0' : 'pr-0',
+        cellClass: !locationOverview ? 'pa-0' : 'pr-0'
+      },
+      {
+        text: i18n.t('deposits_withdrawals.headers.location').toString(),
+        value: 'location',
+        width: '120px',
+        align: 'center'
+      },
+      {
+        text: i18n.t('deposits_withdrawals.headers.action').toString(),
+        value: 'category',
+        align: 'center',
+        class: `text-no-wrap ${locationOverview ? 'pl-0' : ''}`,
+        cellClass: locationOverview ? 'pl-0' : ''
+      },
+      {
+        text: i18n.t('deposits_withdrawals.headers.asset').toString(),
+        value: 'asset',
+        sortable: false
+      },
+      {
+        text: i18n.t('deposits_withdrawals.headers.amount').toString(),
+        value: 'amount',
+        align: 'end'
+      },
+      {
+        text: i18n.t('deposits_withdrawals.headers.fee').toString(),
+        value: 'fee',
+        align: 'end'
+      },
+      {
+        text: i18n.t('deposits_withdrawals.headers.timestamp').toString(),
+        value: 'timestamp'
+      },
+      { text: '', value: 'data-table-expand', sortable: false }
+    ];
 
-  if (locationOverview) {
-    headers.splice(1, 1);
-  }
+    if (locationOverview) {
+      headers.splice(1, 1);
+    }
 
-  return headers;
+    return headers;
+  });
 };
 
 export default defineComponent({

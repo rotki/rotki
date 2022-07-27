@@ -15,11 +15,14 @@ import {
   ProfitLossTimeframe,
   THOUSAND_SEPARATOR,
   DashboardTablesVisibleColumns,
-  VISIBLE_TIMEFRAMES
+  VISIBLE_TIMEFRAMES,
+  LANGUAGE,
+  SupportedLanguage
 } from '@/types/frontend-settings';
 
 type SettingsGetters = {
   [PROFIT_LOSS_PERIOD]: ProfitLossTimeframe;
+  [LANGUAGE]: SupportedLanguage;
   [THOUSAND_SEPARATOR]: string;
   [DECIMAL_SEPARATOR]: string;
   [CURRENCY_LOCATION]: CurrencyLocation;
@@ -37,6 +40,7 @@ export const getters: Getters<
   any
 > = {
   [PROFIT_LOSS_PERIOD]: state => state[PROFIT_LOSS_PERIOD],
+  [LANGUAGE]: state => state[LANGUAGE],
   [THOUSAND_SEPARATOR]: state => state[THOUSAND_SEPARATOR],
   [DECIMAL_SEPARATOR]: state => state[DECIMAL_SEPARATOR],
   [CURRENCY_LOCATION]: state => state[CURRENCY_LOCATION],

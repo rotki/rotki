@@ -278,7 +278,7 @@ type PaginationOptions = {
   sortDesc: boolean[];
 };
 
-const tableHeaders: DataTableHeader[] = [
+const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     text: '',
     value: 'ignoredInAccounting',
@@ -304,7 +304,7 @@ const tableHeaders: DataTableHeader[] = [
     align: 'end',
     sortable: false
   }
-];
+]);
 
 enum TransactionFilterKeys {
   START = 'start',

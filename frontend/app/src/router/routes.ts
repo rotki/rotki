@@ -1,6 +1,8 @@
+import { computed } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import i18n from '@/i18n';
 
-export const Routes = {
+export const routesRef = computed(() => ({
   ROOT: {
     route: '/'
   },
@@ -224,4 +226,6 @@ export const Routes = {
   LOCATIONS: {
     route: '/locations/:identifier'
   }
-};
+}));
+
+export const Routes = get(routesRef);
