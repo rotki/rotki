@@ -190,7 +190,8 @@ You need to create a ``rotki_config.json`` file and put it inside ``$HOME/.rotki
        "logfromothermodules": true,
        "sleep-secs": 22,
        "max_size_in_mb_all_logs": 550,
-       "max_logfiles_num": 3
+       "max_logfiles_num": 3,
+       "sqlite_instructions": 0,
     }
 
 The list above contains all the supported configuration options, but you can also specify only the ones
@@ -207,7 +208,7 @@ The second approach is by using environment variables during the container creat
        rotki/rotki:latest
 
 The supported environment variables are ``LOGLEVEL``, ``LOGFROMOTHERMODDULES``, ``SLEEP_SECS``,
-``MAX_SIZE_IN_MB_ALL_LOGS`` and ``MAX_LOGFILES_NUM``. Since these variables are passed during
+``MAX_SIZE_IN_MB_ALL_LOGS``, ``MAX_LOGFILES_NUM`` and ``SQLITE_INSTRUCTIONS``. Since these variables are passed during
 the container creation to change them requires re-creating the container with the new parameters.
 
 .. warning::
