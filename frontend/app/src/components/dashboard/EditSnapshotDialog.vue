@@ -138,13 +138,13 @@ export default defineComponent({
 
       payload.balancesSnapshot = data.balancesSnapshot.map(item => ({
         ...item,
-        amount: item.amount.toFormat(),
-        usdValue: item.usdValue.toFormat()
+        amount: item.amount.toFixed(),
+        usdValue: item.usdValue.toFixed()
       }));
 
       payload.locationDataSnapshot = data.locationDataSnapshot.map(item => ({
         ...item,
-        usdValue: item.usdValue.toFormat()
+        usdValue: item.usdValue.toFixed()
       }));
 
       let result: boolean = false;

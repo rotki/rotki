@@ -196,8 +196,8 @@ export default defineComponent({
 
       const convertedFiatValue =
         get(currencySymbol) === CURRENCY_USD
-          ? item.usdValue.toFormat()
-          : item.usdValue.multipliedBy(get(fiatExchangeRate)).toFormat();
+          ? item.usdValue.toFixed()
+          : item.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
 
       set(form, {
         ...item,
