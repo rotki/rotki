@@ -136,7 +136,7 @@
             :hint="
               !!fileConfig.sqliteInstructions
                 ? $t('backend_settings.config_file_disabled')
-                : ''
+                : $t('backend_settings.sqlite_instructions.hint')
             "
             :label="$t('backend_settings.sqlite_instructions.label')"
             :disabled="fileConfig.sqliteInstructions"
