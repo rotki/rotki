@@ -28,9 +28,17 @@
       "loading": "Please wait while rotki queries the blockchain..."
     },
     "delete_tooltip": "Delete selected account(s)",
+    "detect_tokens": {
+      "title": "Detected tokens ({length})",
+      "tooltip": {
+        "last_detected": "Last detected: {time}",
+        "redetect": "Re-detect tokens"
+      }
+    },
     "edit_tooltip": "Edit account",
     "headers": {
       "actions": "Actions",
+      "num_of_detected_tokens": "Num. of detected tokens",
       "ownership": "Ownership",
       "usd_value": "{symbol} value",
       "usd_value_eth": "Total {symbol} value of account's assets",
@@ -262,6 +270,12 @@
         "failed": "Failed while creating a cache entry from {fromAsset} to {toAsset} on source: {error}",
         "task": "Creating cache entry from {fromAsset} to {toAsset} on {source}"
       },
+      "detect_tokens": {
+        "task": {
+          "description": "Fetch detected tokens for {address}",
+          "title": "Fetch detected tokens"
+        }
+      },
       "exchange_balances": {
         "error": {
           "message": "Failed to query {location} balances: {error}",
@@ -312,12 +326,6 @@
       "manual_delete": {
         "error": {
           "title": "Deleting Manual Balance"
-        }
-      },
-      "net_value": {
-        "error": {
-          "message": "Failed to fetch net value data: {message}",
-          "title": "Retrieving net value data"
         }
       },
       "supported_assets": {

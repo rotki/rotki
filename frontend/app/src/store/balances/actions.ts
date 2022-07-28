@@ -23,7 +23,7 @@ import {
 } from '@/services/types-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
-import { useEthNamesStore } from '@/store/balances/index';
+import { useBalancesStore, useEthNamesStore } from '@/store/balances/index';
 import { BalanceMutations } from '@/store/balances/mutation-types';
 import {
   AccountAssetBalances,
@@ -626,15 +626,20 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           true
         );
 
-        if (modules && blockchain === Blockchain.ETH) {
-          await dispatch(
-            'session/enableModule',
-            {
-              enable: modules,
-              addresses: [address]
-            },
-            { root: true }
-          );
+        if (blockchain === Blockchain.ETH) {
+          if (modules) {
+            await dispatch(
+              'session/enableModule',
+              {
+                enable: modules,
+                addresses: [address]
+              },
+              { root: true }
+            );
+          }
+
+          const { fetchDetectedTokens } = useBalancesStore();
+          await fetchDetectedTokens(address);
         }
 
         const balances = BlockchainBalances.parse(result);
@@ -745,6 +750,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         await dispatch('fetchBlockchainBalances', {
           blockchain: Blockchain.ETH2
         });
+
+        const { fetchDetectedTokens } = useBalancesStore();
+        await fetchDetectedTokens(address);
       }
       await dispatch('refreshPrices', { ignoreCache: false });
     } catch (e: any) {
@@ -929,25 +937,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         xpubs
       });
     });
-  },
-  async fetchNetvalueData({ commit, rootState: { session, settings } }) {
-    if (!session?.premium) {
-      return;
-    }
-    try {
-      const includeNfts = settings?.nftsInNetValue ?? true;
-      const netvalueData = await api.queryNetvalueData(includeNfts);
-      commit('netvalueData', netvalueData);
-    } catch (e: any) {
-      const { notify } = useNotifications();
-      notify({
-        title: i18n.t('actions.balances.net_value.error.title').toString(),
-        message: i18n
-          .t('actions.balances.net_value.error.message', { message: e.message })
-          .toString(),
-        display: false
-      });
-    }
   },
 
   async fetchManualBalances({ commit }) {

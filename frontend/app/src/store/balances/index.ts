@@ -1,9 +1,15 @@
-import { computed, ref } from '@vue/composition-api';
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import { computed, ref, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { Module } from 'vuex';
+import { setupGeneralBalances } from '@/composables/balances';
 import i18n from '@/i18n';
+import {
+  EthDetectedTokensInfo,
+  EthDetectedTokensRecord
+} from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import {
   BalanceState,
@@ -15,6 +21,7 @@ import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
+import { useStore } from '@/store/utils';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
@@ -205,6 +212,93 @@ export const useEthNamesStore = defineStore('ethNames', () => {
   };
 });
 
+export const useBalancesStore = defineStore('balances', () => {
+  const store = useStore();
+
+  const ethAddresses = computed<string[]>(() => {
+    return store.getters['balances/ethAddresses'];
+  });
+
+  const ethDetectedTokensRecord = ref<EthDetectedTokensRecord>({});
+
+  const { fetchBlockchainBalances } = setupGeneralBalances();
+
+  const fetchDetectedTokens = async (address?: string) => {
+    try {
+      if (address) {
+        const { awaitTask } = useTasks();
+        const taskType = TaskType.FETCH_DETECTED_TOKENS;
+
+        const { taskId } = await api.balances.fetchDetectedTokensTask([
+          address
+        ]);
+
+        const taskMeta = {
+          title: i18n.t('actions.balances.detect_tokens.task.title').toString(),
+          description: i18n
+            .t('actions.balances.detect_tokens.task.description', {
+              address
+            })
+            .toString(),
+          numericKeys: [],
+          address
+        };
+
+        await awaitTask<EthDetectedTokensRecord, TaskMeta>(
+          taskId,
+          taskType,
+          taskMeta,
+          true
+        );
+
+        await fetchDetectedTokens();
+      } else {
+        set(
+          ethDetectedTokensRecord,
+          await api.balances.fetchDetectedTokens(get(ethAddresses))
+        );
+        fetchBlockchainBalances({
+          ignoreCache: true,
+          blockchain: Blockchain.ETH
+        });
+      }
+    } catch (e) {
+      logger.error(e);
+    }
+  };
+
+  const watchEthAddresses = () => {
+    watch(ethAddresses, (curr, prev) => {
+      if (!isEqual(curr, prev)) {
+        fetchDetectedTokens();
+      }
+    });
+  };
+
+  const getEthDetectedTokensInfo = (address: string): EthDetectedTokensInfo => {
+    const info = get(ethDetectedTokensRecord)?.[address] || null;
+    if (!info) {
+      return {
+        tokens: [],
+        total: 0,
+        timestamp: null
+      };
+    }
+    return {
+      tokens: info.tokens || [],
+      total: info.tokens ? info.tokens.length : 0,
+      timestamp: info.lastUpdateTimestamp || null
+    };
+  };
+
+  return {
+    ethDetectedTokensRecord,
+    watchEthAddresses,
+    getEthDetectedTokensInfo,
+    fetchDetectedTokens
+  };
+});
+
 export const balances: Module<BalanceState, RotkehlchenState> = {
   namespaced,
   mutations,
@@ -215,4 +309,5 @@ export const balances: Module<BalanceState, RotkehlchenState> = {
 
 if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useEthNamesStore, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useBalancesStore, import.meta.hot));
 }

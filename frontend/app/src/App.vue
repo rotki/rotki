@@ -157,6 +157,7 @@ import { BackendCode } from '@/electron-main/backend-code';
 import i18n from '@/i18n';
 import { ThemeChecker } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
+import { useBalancesStore } from '@/store/balances';
 import { Section, Status } from '@/store/const';
 import { useUniswap } from '@/store/defi/uniswap';
 import { useFrontendSettingsStore } from '@/store/settings';
@@ -409,6 +410,9 @@ export default defineComponent({
     watch(language, language => {
       setLanguage(language);
     });
+
+    const { watchEthAddresses } = useBalancesStore();
+    watchEthAddresses();
 
     return {
       language,
