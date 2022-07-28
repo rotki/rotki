@@ -26,140 +26,146 @@
       </template>
     </v-text-field>
 
-    <v-text-field
-      v-model="userLogDirectory"
-      :disabled="!!fileConfig.logDirectory"
-      :persistent-hint="!!fileConfig.logDirectory"
-      :hint="
-        !!fileConfig.logDirectory
-          ? $t('backend_settings.config_file_disabled')
-          : null
-      "
-      outlined
-      :label="$t('backend_settings.settings.log_directory.label')"
-      readonly
-      @click="selectLogsDirectory"
-    >
-      <template #append>
-        <v-btn icon @click="selectLogsDirectory">
-          <v-icon>mdi-folder</v-icon>
-        </v-btn>
-      </template>
-    </v-text-field>
+    <v-form v-model="formValid">
+      <v-text-field
+        v-model="userLogDirectory"
+        :disabled="!!fileConfig.logDirectory"
+        :persistent-hint="!!fileConfig.logDirectory"
+        :hint="
+          !!fileConfig.logDirectory
+            ? $t('backend_settings.config_file_disabled')
+            : null
+        "
+        outlined
+        :label="$t('backend_settings.settings.log_directory.label')"
+        readonly
+        @click="selectLogsDirectory"
+      >
+        <template #append>
+          <v-btn icon @click="selectLogsDirectory">
+            <v-icon>mdi-folder</v-icon>
+          </v-btn>
+        </template>
+      </v-text-field>
 
-    <v-select
-      v-model="loglevel"
-      :items="levels"
-      :disabled="!!fileConfig.loglevel"
-      :label="$t('backend_settings.settings.log_level.label')"
-      :persistent-hint="!!fileConfig.loglevel"
-      :hint="
-        !!fileConfig.loglevel
-          ? $t('backend_settings.config_file_disabled')
-          : null
-      "
-      outlined
-    >
-      <template #item="{ item }">
-        <v-row align="center">
-          <v-col cols="auto">
-            <v-icon>{{ icon(item) }}</v-icon>
-          </v-col>
-          <v-col>{{ item.toLocaleLowerCase() }}</v-col>
-        </v-row>
-      </template>
-      <template #selection="{ item }">
-        <v-row align="center">
-          <v-col cols="auto">
-            <v-icon>{{ icon(item) }}</v-icon>
-          </v-col>
-          <v-col>{{ item.toLocaleLowerCase() }}</v-col>
-        </v-row>
-      </template>
-    </v-select>
+      <v-select
+        v-model="loglevel"
+        :items="levels"
+        :disabled="!!fileConfig.loglevel"
+        :label="$t('backend_settings.settings.log_level.label')"
+        :persistent-hint="!!fileConfig.loglevel"
+        :hint="
+          !!fileConfig.loglevel
+            ? $t('backend_settings.config_file_disabled')
+            : null
+        "
+        outlined
+      >
+        <template #item="{ item }">
+          <v-row align="center">
+            <v-col cols="auto">
+              <v-icon>{{ icon(item) }}</v-icon>
+            </v-col>
+            <v-col>{{ item.toLocaleLowerCase() }}</v-col>
+          </v-row>
+        </template>
+        <template #selection="{ item }">
+          <v-row align="center">
+            <v-col cols="auto">
+              <v-icon>{{ icon(item) }}</v-icon>
+            </v-col>
+            <v-col>{{ item.toLocaleLowerCase() }}</v-col>
+          </v-row>
+        </template>
+      </v-select>
 
-    <v-expansion-panels flat>
-      <v-expansion-panel>
-        <v-expansion-panel-header>
-          {{ $t('backend_settings.advanced') }}
-        </v-expansion-panel-header>
-        <v-expansion-panel-content>
-          <v-text-field
-            v-model="maxLogSize"
-            outlined
-            :hint="
-              !!fileConfig.maxSizeInMbAllLogs
-                ? $t('backend_settings.config_file_disabled')
-                : $t('backend_settings.max_log_size.hint')
-            "
-            :label="$t('backend_settings.max_log_size.label')"
-            :disabled="fileConfig.maxSizeInMbAllLogs"
-            :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
-            :clearable="!isDefault(configuration?.maxSizeInMbAllLogs)"
-            :loading="!configuration"
-            type="number"
-          />
-          <v-text-field
-            v-model="maxLogFiles"
-            outlined
-            :hint="$t('backend_settings.max_log_files.hint')"
-            :label="
-              !!fileConfig.maxLogfilesNum
-                ? $t('backend_settings.config_file_disabled')
-                : $t('backend_settings.max_log_files.label')
-            "
-            :disabled="fileConfig.maxLogfilesNum"
-            :persistent-hint="!!fileConfig.maxLogfilesNum"
-            :clearable="!isDefault(configuration?.maxLogfilesNum)"
-            :loading="!configuration"
-            type="number"
-          />
-          <v-text-field
-            v-model="mainLoopSleep"
-            outlined
-            :hint="
-              !!fileConfig.sleepSeconds
-                ? $t('backend_settings.config_file_disabled')
-                : $t('backend_settings.main_loop_sleep.hint')
-            "
-            :label="$t('backend_settings.main_loop_sleep.label')"
-            :disabled="!!fileConfig.sleepSeconds"
-            :persistent-hint="!!fileConfig.sleepSeconds"
-            :clearable="!isDefault(configuration?.sleepSecs)"
-            :loading="!configuration"
-            type="number"
-          />
+      <v-expansion-panels flat>
+        <v-expansion-panel>
+          <v-expansion-panel-header>
+            {{ $t('backend_settings.advanced') }}
+          </v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <v-text-field
+              v-model="maxLogSize"
+              outlined
+              :hint="
+                !!fileConfig.maxSizeInMbAllLogs
+                  ? $t('backend_settings.config_file_disabled')
+                  : $t('backend_settings.max_log_size.hint')
+              "
+              :label="$t('backend_settings.max_log_size.label')"
+              :disabled="fileConfig.maxSizeInMbAllLogs"
+              :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
+              :clearable="!isDefault(configuration?.maxSizeInMbAllLogs)"
+              :loading="!configuration"
+              :rules="nonNegativeNumberRules"
+              type="number"
+            />
+            <v-text-field
+              v-model="maxLogFiles"
+              outlined
+              :hint="$t('backend_settings.max_log_files.hint')"
+              :label="
+                !!fileConfig.maxLogfilesNum
+                  ? $t('backend_settings.config_file_disabled')
+                  : $t('backend_settings.max_log_files.label')
+              "
+              :disabled="fileConfig.maxLogfilesNum"
+              :persistent-hint="!!fileConfig.maxLogfilesNum"
+              :clearable="!isDefault(configuration?.maxLogfilesNum)"
+              :loading="!configuration"
+              :rules="nonNegativeNumberRules"
+              type="number"
+            />
+            <v-text-field
+              v-model="mainLoopSleep"
+              outlined
+              :hint="
+                !!fileConfig.sleepSeconds
+                  ? $t('backend_settings.config_file_disabled')
+                  : $t('backend_settings.main_loop_sleep.hint')
+              "
+              :label="$t('backend_settings.main_loop_sleep.label')"
+              :disabled="!!fileConfig.sleepSeconds"
+              :persistent-hint="!!fileConfig.sleepSeconds"
+              :clearable="!isDefault(configuration?.sleepSecs)"
+              :loading="!configuration"
+              :rules="positiveNumberRules"
+              type="number"
+            />
 
-          <v-text-field
-            v-model="sqliteInstructions"
-            outlined
-            :hint="
-              !!fileConfig.sqliteInstructions
-                ? $t('backend_settings.config_file_disabled')
-                : $t('backend_settings.sqlite_instructions.hint')
-            "
-            :label="$t('backend_settings.sqlite_instructions.label')"
-            :disabled="fileConfig.sqliteInstructions"
-            :persistent-hint="!!fileConfig.sqliteInstructions"
-            :clearable="!isDefault(configuration?.sqliteInstructions)"
-            :loading="!configuration"
-            type="number"
-          />
+            <v-text-field
+              v-model="sqliteInstructions"
+              outlined
+              :hint="
+                !!fileConfig.sqliteInstructions
+                  ? $t('backend_settings.config_file_disabled')
+                  : $t('backend_settings.sqlite_instructions.hint')
+              "
+              :label="$t('backend_settings.sqlite_instructions.label')"
+              :disabled="fileConfig.sqliteInstructions"
+              :persistent-hint="!!fileConfig.sqliteInstructions"
+              :clearable="!isDefault(configuration?.sqliteInstructions)"
+              :loading="!configuration"
+              :rules="nonNegativeNumberRules"
+              type="number"
+            />
 
-          <v-checkbox
-            v-model="logFromOtherModules"
-            :label="$t('backend_settings.log_from_other_modules.label')"
-            :disabled="!!fileConfig.logFromOtherModules"
-            persistent-hint
-            :hint="
-              !!fileConfig.logFromOtherModules
-                ? $t('backend_settings.config_file_disabled')
-                : $t('backend_settings.log_from_other_modules.hint')
-            "
-          />
-        </v-expansion-panel-content>
-      </v-expansion-panel>
-    </v-expansion-panels>
+            <v-checkbox
+              v-model="logFromOtherModules"
+              :label="$t('backend_settings.log_from_other_modules.label')"
+              :disabled="!!fileConfig.logFromOtherModules"
+              persistent-hint
+              :hint="
+                !!fileConfig.logFromOtherModules
+                  ? $t('backend_settings.config_file_disabled')
+                  : $t('backend_settings.log_from_other_modules.hint')
+              "
+            />
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
+    </v-form>
 
     <template #buttons>
       <v-spacer />
@@ -169,10 +175,16 @@
       <v-btn depressed @click="confirmReset = true">
         {{ $t('backend_settings.actions.reset') }}
       </v-btn>
-      <v-btn depressed color="primary" :disabled="!valid" @click="save()">
+      <v-btn
+        depressed
+        color="primary"
+        :disabled="!valid || !formValid"
+        @click="save()"
+      >
         {{ $t('backend_settings.actions.save') }}
       </v-btn>
     </template>
+
     <confirm-dialog
       v-if="confirmReset"
       :message="$t('backend_settings.confirm.message')"
@@ -233,6 +245,7 @@ export default class BackendSettings extends Mixins(BackendMixin) {
   maxLogSize: string = '';
   sqliteInstructions: string = '';
   maxLogFiles: string = '';
+  formValid: boolean = false;
 
   readonly levels = Object.values(LogLevel);
   selecting: boolean = false;
@@ -404,6 +417,26 @@ export default class BackendSettings extends Mixins(BackendMixin) {
     this.confirmReset = false;
     this.dismiss();
     await this.resetOptions();
+  }
+
+  get positiveNumberRules() {
+    return [
+      (v: string) =>
+        !!v || this.$t('backend_settings.errors.non_empty').toString(),
+      (v: string) =>
+        parseInt(v) >= 1 ||
+        this.$t('backend_settings.errors.min', { min: 1 }).toString()
+    ];
+  }
+
+  get nonNegativeNumberRules() {
+    return [
+      (v: string) =>
+        !!v || this.$t('backend_settings.errors.non_empty').toString(),
+      (v: string) =>
+        parseInt(v) >= 0 ||
+        this.$t('backend_settings.errors.min', { min: 0 }).toString()
+    ];
   }
 }
 </script>

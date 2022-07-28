@@ -1113,6 +1113,10 @@
       "hint": "Specify after how many sqlite VM instructions to context switch between cooperative threads. Set to 0 to disable async DB access",
       "label": "Instructions per SQLite context switch"
     },
+    "errors" : {
+      "non_empty": "This setting cannot be empty",
+      "min": "Mininum value for this setting is {min}"
+    },
     "subtitle": "Modify the backend settings",
     "title": "Backend Settings"
   },
@@ -1736,7 +1740,8 @@
     "copy_tooltip": "Copy the error text to the clipboard",
     "message": "Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:",
     "start_failure": "rotki failed to start",
-    "terminate": "Terminate"
+    "terminate": "Terminate",
+    "reset_backend_setting": "Reset backend settings"
   },
   "eth2_input": {
     "ownership": {
