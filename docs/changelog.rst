@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Introduce an experimental approach to ignore uniswap v2 pool pricing for pools with single sided liquidity that is less than $5k. This is experimental and we will probably figure out a better way to filter spam assets in the future. Context: https://twitter.com/peter_szilagyi/status/1552532767790997504
 * :bug:`4599` Users will see a smaller amount of icons when accessing rotki from a mobile device.
 * :bug:`4578` Value distribution by asset now respects ETH=ETH2 setting.
 * :bug:`-` Some cases of python segfaulting under specific conditions of reading/writing to the DB should now be fixed.
