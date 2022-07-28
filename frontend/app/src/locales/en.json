@@ -1645,7 +1645,7 @@
     }
   },
   "decentralized_overview": {
-    "empty_subtitle": "Please add at least one ETH account that have DeFi balances",
+    "empty_subtitle": "Please add at least one ETH account that has DeFi balances",
     "empty_title": "No DeFi overview can be shown",
     "loading": "Please wait while your defi balances are getting loaded...",
     "title": "Defi Overview"
