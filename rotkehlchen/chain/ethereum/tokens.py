@@ -128,7 +128,6 @@ class EthTokens():
 
     def detect_tokens(
             self,
-            write_cursor: 'DBCursor',
             only_cache: bool,
             accounts: List[ChecksumEthAddress],
     ) -> DetectedTokensType:
@@ -144,21 +143,22 @@ class EthTokens():
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        if only_cache is False:
-            self._detect_tokens(write_cursor, accounts=accounts)
-
-        accounts_info: DetectedTokensType = {}
         with self.db.conn.read_ctx() as cursor:
+            if only_cache is False:
+                self._detect_tokens(cursor, accounts=accounts)
+
+            accounts_info: DetectedTokensType = {}
             for account in accounts:
                 accounts_info[account] = self.db.get_tokens_for_address(
-                    cursor,
+                    cursor=cursor,
                     address=account,
                 )
+
         return accounts_info
 
     def _detect_tokens(
             self,
-            write_cursor: 'DBCursor',
+            cursor: 'DBCursor',
             accounts: List[ChecksumEthAddress],
     ) -> None:
         """
@@ -191,7 +191,7 @@ class EthTokens():
             # Old contract of Fetch.ai
             string_to_ethereum_address('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'),
         ]
-        ignored_assets = self.db.get_ignored_assets(write_cursor=write_cursor)
+        ignored_assets = self.db.get_ignored_assets(cursor=cursor)
         for asset in ignored_assets:  # don't query for the ignored tokens
             if asset.is_eth_token():  # type ignore since we know asset is a token
                 exceptions.append(EthereumToken.from_asset(asset).ethereum_address)  # type: ignore
@@ -212,7 +212,8 @@ class EthTokens():
                 querying_etherscan=querying_etherscan,
             )
             detected_tokens = list(token_balances.keys())
-            self.db.save_tokens_for_address(write_cursor, account, detected_tokens)
+            with self.db.user_write() as write_cursor:
+                self.db.save_tokens_for_address(write_cursor, account, detected_tokens)
 
     def query_tokens_for_addresses(
             self,

@@ -4436,12 +4436,10 @@ class RestAPI():
             ethereum=self.rotkehlchen.chain_manager.ethereum,
         )
         try:
-            with self.rotkehlchen.data.db.user_write() as cursor:
-                account_tokens_info = ethtokens.detect_tokens(
-                    write_cursor=cursor,
-                    only_cache=only_cache,
-                    accounts=addresses,
-                )
+            account_tokens_info = ethtokens.detect_tokens(
+                only_cache=only_cache,
+                accounts=addresses,
+            )
         except (RemoteError, BadFunctionCallOutput) as e:
             return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.CONFLICT)
 
