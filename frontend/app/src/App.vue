@@ -147,6 +147,7 @@ import {
 import { get, set } from '@vueuse/core';
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import { setupBackendManagement } from '@/composables/backend';
 import { setupThemeCheck, useRoute, useRouter } from '@/composables/common';
 import { getPremium, setupSession, useDarkMode } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
@@ -251,7 +252,8 @@ export default defineComponent({
     const startupErrorMessage = ref('');
     const isMacOsVersionUnsupported = ref(false);
 
-    const { navigateToRotki, onError, onAbout, updateTray } = useInterop();
+    const { navigateToRotki, onError, onAbout, updateTray, onRestart } =
+      useInterop();
     const openSite = navigateToRotki;
     const dismissMessage = () => setMessage();
     const toggleDrawer = () => {
@@ -300,6 +302,8 @@ export default defineComponent({
       await commit('session/completeLogin', complete, { root: true });
     };
 
+    const { restartBackend } = setupBackendManagement();
+
     onBeforeMount(async () => {
       onError((backendOutput: string | Error, code: BackendCode) => {
         logger.error(backendOutput, code);
@@ -314,6 +318,10 @@ export default defineComponent({
         }
       });
       onAbout(() => set(showAbout, true));
+      onRestart(async () => {
+        set(startupErrorMessage, '');
+        await restartBackend();
+      });
 
       await connect();
       if (isDevelopment && get(logged)) {
