@@ -78,7 +78,7 @@
             <badge-display v-if="isMobile" color="grey">
               <v-icon small> mdi-eye-off </v-icon>
               <span class="ml-2">
-                {{ $t('transactions.headers.ignored') }}
+                {{ $t('common.ignored_in_accounting') }}
               </span>
             </badge-display>
             <v-tooltip v-else bottom>
@@ -88,7 +88,7 @@
                 </badge-display>
               </template>
               <span>
-                {{ $t('transactions.headers.ignored') }}
+                {{ $t('common.ignored_in_accounting') }}
               </span>
             </v-tooltip>
           </div>
@@ -197,7 +197,7 @@
     <big-dialog
       :display="openDialog"
       :title="dialogTitle"
-      :primary-action="$tc('transactions.events.dialog.save')"
+      :primary-action="$tc('common.actions.save')"
       :action-disabled="!valid"
       :loading="loading"
       @confirm="confirmSave()"
@@ -293,7 +293,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: i18n.t('transactions.headers.timestamp').toString(),
+    text: i18n.t('common.datetime').toString(),
     value: 'timestamp',
     cellClass: 'text-no-wrap'
   },
@@ -463,7 +463,7 @@ export default defineComponent({
         );
         set(
           confirmationPrimaryAction,
-          i18n.t('transactions.events.confirmation.delete.action').toString()
+          i18n.t('common.actions.confirm').toString()
         );
         set(eventToDelete, event);
       } else {

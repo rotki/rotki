@@ -63,7 +63,7 @@
             :disabled="!valid || !file || loading"
             @click="uploadFile"
           >
-            {{ $t('file_upload.import') }}
+            {{ $t('common.actions.import') }}
           </v-btn>
         </div>
       </v-form>

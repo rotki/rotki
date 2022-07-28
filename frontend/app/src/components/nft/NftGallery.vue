@@ -209,11 +209,11 @@ const setupNfts = (
   const sortDesc = ref(false);
   const sortProperties = [
     {
-      text: i18n.t('nft_gallery.sort.name').toString(),
+      text: i18n.t('common.name').toString(),
       value: 'name'
     },
     {
-      text: i18n.t('nft_gallery.sort.price').toString(),
+      text: i18n.t('common.price').toString(),
       value: 'priceUsd'
     },
     {

@@ -28,7 +28,7 @@
           v-model="price"
           outlined
           :rules="priceRules"
-          :label="$t('price_form.price')"
+          :label="$t('common.price')"
         />
         <div v-if="price" class="text-caption green--text mt-n6 pb-1 pl-3">
           <i18n tag="div" path="price_form.hint">
@@ -56,7 +56,7 @@
         <date-time-picker
           :value="date"
           outlined
-          :label="$t('price_form.date')"
+          :label="$t('common.datetime')"
           seconds
           :disabled="edit"
           :rules="dateRules"

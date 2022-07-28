@@ -152,6 +152,7 @@ import { storeToRefs } from 'pinia';
 import { setupBackendManagement } from '@/composables/backend';
 import { useRoute, useRouter, useTheme } from '@/composables/common';
 import { getPremium, setupSession, useDarkMode } from '@/composables/session';
+import { setupSettings } from '@/composables/settings';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
 import i18n from '@/i18n';
@@ -162,7 +163,6 @@ import { useMainStore } from '@/store/store';
 import { useStore } from '@/store/utils';
 import { logger } from '@/utils/logging';
 import 'chartjs-adapter-moment';
-import { setupSettings } from '@/composables/settings';
 
 export default defineComponent({
   name: 'App',

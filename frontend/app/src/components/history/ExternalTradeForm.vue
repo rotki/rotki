@@ -81,7 +81,7 @@
               outlined
               :rules="amountRules"
               data-cy="amount"
-              :label="$t('external_trade_form.amount.label')"
+              :label="$t('common.amount')"
               persistent-hint
               :hint="$t('external_trade_form.amount.hint')"
               :error-messages="errorMessages['amount']"

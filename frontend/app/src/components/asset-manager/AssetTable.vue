@@ -13,7 +13,7 @@
             :value="pendingSearch"
             dense
             prepend-inner-icon="mdi-magnify"
-            :label="$t('asset_table.search')"
+            :label="$t('common.actions.filter')"
             outlined
             clearable
             @input="onSearchTermChange($event)"
@@ -89,7 +89,7 @@
           <v-simple-table>
             <thead>
               <tr>
-                <th>{{ $t('underlying_token_manager.tokens.address') }}</th>
+                <th>{{ $t('common.address') }}</th>
                 <th>{{ $t('underlying_token_manager.tokens.weight') }}</th>
               </tr>
             </thead>
@@ -139,7 +139,7 @@ import { toSentenceCase } from '@/utils/text';
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('asset_table.headers.asset').toString(),
+    text: i18n.t('common.asset').toString(),
     value: 'symbol'
   },
   {
@@ -147,7 +147,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     value: 'assetType'
   },
   {
-    text: i18n.t('asset_table.headers.address').toString(),
+    text: i18n.t('common.address').toString(),
     value: 'address'
   },
   {

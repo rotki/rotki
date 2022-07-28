@@ -71,7 +71,7 @@
             <badge-display v-if="isMobile" color="grey">
               <v-icon small> mdi-eye-off </v-icon>
               <span class="ml-2">
-                {{ $t('ledger_actions.headers.ignored') }}
+                {{ $t('common.ignored_in_accounting') }}
               </span>
             </badge-display>
             <v-tooltip v-else bottom>
@@ -81,7 +81,7 @@
                 </badge-display>
               </template>
               <span>
-                {{ $t('ledger_actions.headers.ignored') }}
+                {{ $t('common.ignored_in_accounting') }}
               </span>
             </v-tooltip>
           </div>
@@ -137,7 +137,7 @@
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :primary-action="$t('ledger_actions.dialog.save')"
+      :primary-action="$t('common.actions.save')"
       :action-disabled="loading || !valid"
       @confirm="confirmSave()"
       @cancel="clearDialog()"
@@ -251,7 +251,7 @@ const tableHeaders = (locationOverview: string) => {
         cellClass: 'pa-0'
       },
       {
-        text: i18n.t('ledger_actions.headers.location').toString(),
+        text: i18n.t('common.location').toString(),
         value: 'location',
         width: '120px',
         align: 'center'
@@ -261,16 +261,16 @@ const tableHeaders = (locationOverview: string) => {
         value: 'type'
       },
       {
-        text: i18n.t('ledger_actions.headers.asset').toString(),
+        text: i18n.t('common.asset').toString(),
         value: 'asset',
         sortable: false
       },
       {
-        text: i18n.t('ledger_actions.headers.amount').toString(),
+        text: i18n.t('common.amount').toString(),
         value: 'amount'
       },
       {
-        text: i18n.t('ledger_actions.headers.date').toString(),
+        text: i18n.t('common.datetime').toString(),
         value: 'timestamp'
       },
       {

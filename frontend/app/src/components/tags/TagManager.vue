@@ -34,7 +34,7 @@
               dense
               class="mb-4"
               prepend-inner-icon="mdi-magnify"
-              :label="$t('tag_manager.search')"
+              :label="$t('common.actions.search')"
               single-line
               hide-details
             />
@@ -92,7 +92,7 @@ import { Tag } from '@/types/user';
 
 const headers = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('tag_manager.headers.name').toString(),
+    text: i18n.t('common.name').toString(),
     value: 'name',
     width: '200'
   },

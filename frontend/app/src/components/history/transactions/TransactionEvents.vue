@@ -132,7 +132,7 @@ export default defineComponent({
         cellClass: $style['row__type']
       },
       {
-        text: i18n.t('transactions.events.headers.asset').toString(),
+        text: i18n.t('common.asset').toString(),
         value: 'asset',
         sortable: false
       },

@@ -65,7 +65,7 @@
     <template #buttons>
       <v-spacer />
       <v-btn color="primary" class="px-6" @click="close">
-        {{ $t('transactions.details.close') }}
+        {{ $t('common.actions.close') }}
       </v-btn>
     </template>
   </card>

@@ -91,15 +91,11 @@ const headers = computed<DataTableHeader[]>(() => [
     value: 'toAsset'
   },
   {
-    text: i18n
-      .t('profit_loss_report.actionable.missing_prices.headers.time')
-      .toString(),
+    text: i18n.t('common.datetime').toString(),
     value: 'time'
   },
   {
-    text: i18n
-      .t('profit_loss_report.actionable.missing_prices.headers.price')
-      .toString(),
+    text: i18n.t('common.price').toString(),
     value: 'price',
     sortable: false
   }

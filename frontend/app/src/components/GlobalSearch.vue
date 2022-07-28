@@ -83,9 +83,7 @@
             </span>
             <v-spacer />
             <div v-if="item.price" class="text-right">
-              <div class="text-caption">
-                {{ $tc('global_search.hint.price') }}
-              </div>
+              <div class="text-caption">{{ $tc('common.price') }}:</div>
               <amount-display
                 class="font-weight-bold"
                 :fiat-currency="currencySymbol"
@@ -93,9 +91,7 @@
               />
             </div>
             <div v-if="item.total" class="text-right">
-              <div class="text-caption">
-                {{ $tc('global_search.hint.total') }}
-              </div>
+              <div class="text-caption">{{ $tc('common.total') }}:</div>
               <amount-display
                 class="font-weight-bold"
                 :fiat-currency="currencySymbol"
@@ -375,10 +371,7 @@ export default defineComponent({
 
           return {
             route: Routes.ASSETS.route.replace(':identifier', asset),
-            texts: [
-              i18n.t('global_search.hint.asset').toString(),
-              get(assetSymbol(asset))
-            ],
+            texts: [i18n.t('common.asset').toString(), get(assetSymbol(asset))],
             price,
             asset
           };
@@ -397,10 +390,7 @@ export default defineComponent({
             ':identifier',
             location.identifier
           ),
-          texts: [
-            i18n.t('global_search.hint.location').toString(),
-            location.name
-          ],
+          texts: [i18n.t('common.location').toString(), location.name],
           location,
           total
         };

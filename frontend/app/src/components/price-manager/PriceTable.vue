@@ -144,7 +144,7 @@ const headers = computed<DataTableHeader[]>(() => [
     value: 'wasWorth'
   },
   {
-    text: i18n.t('price_table.headers.price').toString(),
+    text: i18n.t('common.price').toString(),
     value: 'price'
   },
   {
@@ -156,7 +156,7 @@ const headers = computed<DataTableHeader[]>(() => [
     value: 'on'
   },
   {
-    text: i18n.t('price_table.headers.date').toString(),
+    text: i18n.t('common.datetime').toString(),
     value: 'timestamp'
   },
   {

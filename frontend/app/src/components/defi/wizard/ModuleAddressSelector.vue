@@ -60,14 +60,14 @@
 
         <div>
           <v-btn v-if="step > 1" class="mr-4" text @click="previousStep(n)">
-            {{ $t('module_address_selector.back') }}
+            {{ $t('common.actions.back') }}
           </v-btn>
           <v-btn
             v-if="step < modules.length"
             color="primary"
             @click="nextStep(n)"
           >
-            {{ $t('module_address_selector.next') }}
+            {{ $t('common.actions.next') }}
           </v-btn>
         </div>
       </v-stepper-content>

@@ -51,7 +51,7 @@
       <template #body.append="{ isMobile }">
         <row-append
           label-colspan="3"
-          :label="$t('database_backups.row.total')"
+          :label="$t('common.total')"
           :right-patch-colspan="1"
           :is-mobile="isMobile"
         >
@@ -96,7 +96,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   },
   {
     value: 'time',
-    text: i18n.t('database_backups.column.time').toString()
+    text: i18n.t('common.datetime').toString()
   },
   {
     value: 'size',

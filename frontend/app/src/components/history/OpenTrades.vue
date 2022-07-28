@@ -21,7 +21,7 @@ import { Trade } from '@/services/history/types';
 
 const headers = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('open_trades.header.location').toString(),
+    text: i18n.t('common.location').toString(),
     value: 'location'
   },
   {
@@ -39,7 +39,7 @@ const headers = computed<DataTableHeader[]>(() => [
     align: 'end'
   },
   {
-    text: i18n.t('open_trades.header.amount').toString(),
+    text: i18n.t('common.amount').toString(),
     value: 'amount',
     align: 'end'
   },

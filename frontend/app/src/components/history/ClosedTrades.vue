@@ -71,7 +71,7 @@
             <badge-display v-if="isMobile" color="grey">
               <v-icon small> mdi-eye-off </v-icon>
               <span class="ml-2">
-                {{ $t('closed_trades.headers.ignored') }}
+                {{ $t('common.ignored_in_accounting') }}
               </span>
             </badge-display>
             <v-tooltip v-else bottom>
@@ -81,7 +81,7 @@
                 </badge-display>
               </template>
               <span>
-                {{ $t('closed_trades.headers.ignored') }}
+                {{ $t('common.ignored_in_accounting') }}
               </span>
             </v-tooltip>
           </div>
@@ -164,7 +164,7 @@
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :primary-action="$t('closed_trades.dialog.save')"
+      :primary-action="$t('common.actions.save')"
       :action-disabled="loading || !valid"
       :loading="loading"
       @confirm="confirmSave()"
@@ -281,7 +281,7 @@ const tableHeaders = (locationOverview: string) => {
         cellClass: !locationOverview ? 'pa-0' : 'pr-0'
       },
       {
-        text: i18n.t('closed_trades.headers.location').toString(),
+        text: i18n.t('common.location').toString(),
         value: 'location',
         width: '120px',
         align: 'center'
@@ -294,7 +294,7 @@ const tableHeaders = (locationOverview: string) => {
         cellClass: locationOverview ? 'pl-0' : ''
       },
       {
-        text: i18n.t('closed_trades.headers.amount').toString(),
+        text: i18n.t('common.amount').toString(),
         value: 'amount',
         align: 'end'
       },
@@ -320,7 +320,7 @@ const tableHeaders = (locationOverview: string) => {
         align: 'end'
       },
       {
-        text: i18n.t('closed_trades.headers.timestamp').toString(),
+        text: i18n.t('common.datetime').toString(),
         value: 'timestamp'
       },
       {

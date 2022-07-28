@@ -3,7 +3,7 @@
     <v-col>
       <v-card>
         <v-card-title>
-          <card-title>{{ $t('assets.price') }}</card-title>
+          <card-title>{{ $t('common.price') }}</card-title>
         </v-card-title>
         <v-card-text class="text-end text-h5 font-weight-medium">
           <amount-display

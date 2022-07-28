@@ -8,20 +8,20 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import { computed, defineComponent, PropType } from '@vue/composition-api';
 import i18n from '@/i18n';
 import { BalanceType } from '@/services/balances/types';
 
-const balanceTypes = [
+const balanceTypes = computed(() => [
   {
     value: BalanceType.ASSET,
-    text: i18n.t('manual_balances_form.type.asset')
+    text: i18n.t('common.asset')
   },
   {
     value: BalanceType.LIABILITY,
     text: i18n.t('manual_balances_form.type.liability')
   }
-];
+]);
 
 export default defineComponent({
   name: 'BalanceTypeInput',

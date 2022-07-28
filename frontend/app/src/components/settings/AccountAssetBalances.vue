@@ -11,7 +11,7 @@
         <template #header.usdValue>
           <div class="text-no-wrap">
             {{
-              $t('account_asset_balance.headers.value', {
+              $t('common.value_in_symbol', {
                 symbol: currencySymbol
               })
             }}
@@ -20,7 +20,7 @@
         <template #header.price>
           <div class="text-no-wrap">
             {{
-              $t('account_asset_balance.headers.price', {
+              $t('common.price_in_symbol', {
                 symbol: currencySymbol
               })
             }}
@@ -66,14 +66,14 @@ import i18n from '@/i18n';
 
 const headers = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('account_asset_balance.headers.asset').toString(),
+    text: i18n.t('common.asset').toString(),
     class: 'text-no-wrap',
     value: 'asset',
     cellClass: 'asset-info'
   },
   {
     text: i18n
-      .t('account_asset_balance.headers.price', {
+      .t('common.price_in_symbol', {
         symbol: CURRENCY_USD
       })
       .toString(),
@@ -82,14 +82,14 @@ const headers = computed<DataTableHeader[]>(() => [
     value: 'price'
   },
   {
-    text: i18n.t('account_asset_balance.headers.amount').toString(),
+    text: i18n.t('common.amount').toString(),
     value: 'amount',
     class: 'text-no-wrap',
     cellClass: 'asset-divider',
     align: 'end'
   },
   {
-    text: i18n.t('account_asset_balance.headers.value').toString(),
+    text: i18n.t('common.value_in_symbol').toString(),
     value: 'usdValue',
     align: 'end',
     class: 'text-no-wrap'

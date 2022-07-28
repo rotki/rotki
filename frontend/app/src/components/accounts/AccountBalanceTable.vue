@@ -66,7 +66,7 @@
       </template>
       <template v-if="balances.length > 0" #body.append="{ isMobile }">
         <row-append
-          :label="$t('account_balances.total')"
+          :label="$t('common.total')"
           :class-name="{ 'flex-column': isMobile }"
           :left-patch-colspan="1"
           :is-mobile="isMobile"
@@ -466,7 +466,7 @@ export default defineComponent({
 
       const accountHeader = get(isEth2)
         ? i18n.t('account_balances.headers.validator')
-        : i18n.t('account_balances.headers.account');
+        : i18n.t('common.account');
 
       const headers: DataTableHeader[] = [
         { text: '', value: 'accountSelection', width: '34px', sortable: false },

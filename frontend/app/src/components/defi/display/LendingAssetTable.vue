@@ -45,11 +45,11 @@ import { DefiBalance } from '@/store/defi/types';
 
 const headers = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('lending_asset_table.headers.asset').toString(),
+    text: i18n.t('common.asset').toString(),
     value: 'asset'
   },
   {
-    text: i18n.t('lending_asset_table.headers.amount').toString(),
+    text: i18n.t('common.amount').toString(),
     value: 'balance.amount',
     align: 'end'
   },

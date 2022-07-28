@@ -35,7 +35,7 @@
     <template v-if="balances.length > 0" #body.append="{ isMobile }">
       <row-append
         label-colspan="3"
-        :label="$t('asset_balances.total')"
+        :label="$t('common.total')"
         :is-mobile="isMobile"
       >
         <amount-display
@@ -57,6 +57,7 @@ import {
   Ref,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -67,31 +68,31 @@ import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { getSortItems } from '@/utils/assets';
 
-const tableHeaders = (currency: Ref<string>) => {
+const tableHeaders = (symbol: Ref<string>) => {
   return computed<DataTableHeader[]>(() => {
     return [
       {
-        text: i18n.t('asset_balances.headers.asset').toString(),
+        text: i18n.t('common.asset').toString(),
         value: 'asset',
         class: 'text-no-wrap'
       },
       {
         text: i18n
-          .t('asset_balances.headers.price', { currency: currency.value })
+          .t('common.price_in_symbol', { symbol: get(symbol) })
           .toString(),
         value: 'usdPrice',
         align: 'end',
         class: 'text-no-wrap'
       },
       {
-        text: i18n.t('asset_balances.headers.amount').toString(),
+        text: i18n.t('common.amount').toString(),
         value: 'amount',
         align: 'end',
         width: '99%'
       },
       {
         text: i18n
-          .t('asset_balances.headers.value', { currency: currency.value })
+          .t('common.value_in_symbol', { symbol: get(symbol) })
           .toString(),
         value: 'usdValue',
         align: 'end',

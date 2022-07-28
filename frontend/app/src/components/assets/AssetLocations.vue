@@ -149,7 +149,7 @@ export default defineComponent({
         account => account?.location === Blockchain.ETH2
       ).length;
 
-      const labelAccount = i18n.t('asset_locations.header.account').toString();
+      const labelAccount = i18n.t('common.account').toString();
       const labelValidator = i18n
         .t('asset_locations.header.validator')
         .toString();
@@ -165,7 +165,7 @@ export default defineComponent({
 
       return [
         {
-          text: i18n.t('asset_locations.header.location').toString(),
+          text: i18n.t('common.location').toString(),
           value: 'location',
           align: 'center',
           width: '120px'
@@ -175,7 +175,7 @@ export default defineComponent({
           value: 'label'
         },
         {
-          text: i18n.t('asset_locations.header.amount').toString(),
+          text: i18n.t('common.amount').toString(),
           value: 'balance.amount',
           align: 'end'
         },

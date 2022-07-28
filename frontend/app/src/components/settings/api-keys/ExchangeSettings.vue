@@ -63,8 +63,8 @@
           ? $tc('exchange_settings.dialog.edit.title')
           : $tc('exchange_settings.dialog.add.title')
       "
-      :primary-action="$t('exchange_settings.button.save')"
-      :secondary-action="$t('exchange_settings.button.cancel')"
+      :primary-action="$t('common.actions.save')"
+      :secondary-action="$t('common.actions.cancel')"
       :action-disabled="!valid || pending"
       :loading="pending"
       @confirm="setup"
@@ -266,13 +266,13 @@ onMounted(() => {
 
 const headers: DataTableHeader[] = [
   {
-    text: i18n.t('exchange_settings.header.location').toString(),
+    text: i18n.t('common.location').toString(),
     value: 'location',
     width: '120px',
     align: 'center'
   },
   {
-    text: i18n.t('exchange_settings.header.name').toString(),
+    text: i18n.t('common.name').toString(),
     value: 'name'
   },
   {

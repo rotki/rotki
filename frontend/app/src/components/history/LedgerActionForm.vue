@@ -12,7 +12,7 @@
       outlined
       data-cy="location"
       :rules="locationRules"
-      :label="$t('ledger_action_form.location.label')"
+      :label="$t('common.location')"
       :error-messages="errorMessages['location']"
       @focus="delete errorMessages['location']"
     />
@@ -58,7 +58,7 @@
           :rules="amountRules"
           required
           data-cy="amount"
-          :label="$t('ledger_action_form.amount.label')"
+          :label="$t('common.amount')"
           :error-messages="errorMessages['amount']"
           @focus="delete errorMessages['amount']"
         />

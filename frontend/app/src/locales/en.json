@@ -13,14 +13,6 @@
     "release_notes": "What's new",
     "user_agent": "User Agent:"
   },
-  "account_asset_balance": {
-    "headers": {
-      "amount": "Amount",
-      "asset": "Asset",
-      "price": "Price in {symbol}",
-      "value": "{symbol} Value"
-    }
-  },
   "account_balance_table": {
     "assets": "Assets",
     "liabilities": "Liabilities",
@@ -35,19 +27,16 @@
     "data_table": {
       "loading": "Please wait while rotki queries the blockchain..."
     },
-    "delete_button": "Delete",
     "delete_tooltip": "Delete selected account(s)",
     "edit_tooltip": "Edit account",
     "headers": {
-      "account": "Account",
       "actions": "Actions",
       "ownership": "Ownership",
       "usd_value": "{symbol} value",
       "usd_value_eth": "Total {symbol} value of account's assets",
       "validator": "Validator Index | Public Key"
     },
-    "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries",
-    "total": "Total"
+    "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries"
   },
   "account_form": {
     "advanced_tooltip": "Display the advanced xpub options | Hide the advanced xpub options",
@@ -56,7 +45,6 @@
       "title": "Adding Account"
     },
     "labels": {
-      "account": "Account",
       "addresses": "Addresses",
       "addresses_entries": "no entries | {count} unique entry | {count} unique entries",
       "addresses_hint": "Insert multiple comma separated addresses",
@@ -66,7 +54,6 @@
         "derivation_path_hint": "Optional",
         "xpub": "XPUB"
       },
-      "label": "Name",
       "multiple": "Add multiple addresses"
     },
     "validation": {
@@ -90,10 +77,6 @@
   },
   "account_settings": {
     "asset_settings": {
-      "actions": {
-        "add": "Add",
-        "remove": "Remove"
-      },
       "ignore_tags_hint": "Click to see all assets and select one to ignore",
       "labels": {
         "ignore": "Select asset to ignore",
@@ -902,8 +885,6 @@
   "airdrops": {
     "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
     "headers": {
-      "address": "Address",
-      "amount": "Amount",
       "source": "Source"
     },
     "loading": "Please wait while rotki queries the airdrops for your addresses...",
@@ -918,14 +899,7 @@
     "name": "rotki"
   },
   "asset_balances": {
-    "headers": {
-      "amount": "Amount",
-      "asset": "Asset",
-      "price": "Price in {currency}",
-      "value": "{currency} Value"
-    },
-    "loading": "Please wait while rotki queries the blockchain...",
-    "total": "Total"
+    "loading": "Please wait while rotki queries the blockchain..."
   },
   "asset_form": {
     "fetch_latest_icon": {
@@ -941,7 +915,6 @@
     "identifier": "Identifier",
     "identifier_copy": "Copy the identifier",
     "labels": {
-      "address": "Address",
       "asset_type": "Asset Type",
       "coingecko": "CoinGecko",
       "coingecko_hint": "The identifier of the asset on CoinGecko. If not set rotki will not be able to retrieve prices for the asset from CoinGecko.",
@@ -949,7 +922,6 @@
       "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not given, the symbol is assumed as default. If that does not work and if not otherwise set rotki will not be able to retrieve prices for the asset from CryptoCompare",
       "decimals": "Decimals",
       "forked": "Forked",
-      "name": "Name",
       "protocol": "Protocol",
       "started": "Started",
       "swapped_for": "Swapped for",
@@ -968,9 +940,6 @@
   },
   "asset_locations": {
     "header": {
-      "account": "Account",
-      "amount": "Amount",
-      "location": "Location",
       "percentage": "Percentage",
       "validator": "Validator Index | Public Key",
       "value": "{symbol} value"
@@ -997,21 +966,14 @@
     "delete_tooltip": "Delete the asset",
     "edit_tooltip": "Edit the asset",
     "headers": {
-      "address": "Address",
-      "asset": "Asset",
       "started": "Started",
       "type": "Type"
     },
-    "search": "Filter",
     "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts",
     "underlying_tokens": "Underlying Tokens"
   },
   "asset_update": {
     "advanced": "Advanced",
-    "buttons": {
-      "skip": "Skip",
-      "update": "Update"
-    },
     "description": "Version {remote} of the asset database is available. Would you like to update from version {local}?",
     "manual": {
       "check": "Check For Update",
@@ -1057,7 +1019,6 @@
       "missing_directory": "Please select a directory"
     },
     "ignore": "Ignore Asset",
-    "price": "Price",
     "value": "Value"
   },
   "back_button": {
@@ -1065,9 +1026,7 @@
   },
   "backend_settings": {
     "actions": {
-      "cancel": "Cancel",
-      "reset": "Reset to default",
-      "save": "Save"
+      "reset": "Reset to default"
     },
     "advanced": "Advanced",
     "config_file_disabled": "This parameter is already set in the rotki_config.json",
@@ -1158,10 +1117,8 @@
     },
     "form_dialog": {
       "add_title": "Add blockchain account",
-      "cancel": "Cancel",
       "edit_subtitle": "Modify account details",
-      "edit_title": "Edit blockchain account",
-      "save": "Save"
+      "edit_title": "Edit blockchain account"
     },
     "metamask_import": {
       "error": {
@@ -1230,8 +1187,7 @@
       "edit": {
         "subtitle": "Edit an existing trade",
         "title": "Edit External Trade"
-      },
-      "save": "Save"
+      }
     },
     "edit_tooltip": "Edit trade",
     "filter": {
@@ -1246,13 +1202,9 @@
     "headers": {
       "action": "Action",
       "actions": "Actions",
-      "amount": "Amount",
       "base": "Base",
-      "ignored": "Ignored in Accounting",
-      "location": "Location",
       "quote": "Quote",
-      "rate": "Rate",
-      "timestamp": "Date"
+      "rate": "Rate"
     },
     "label": "trades",
     "refresh_tooltip": "Refresh trades",
@@ -1263,12 +1215,56 @@
     "title": "{count} pending task | {count} pending tasks"
   },
   "common": {
+    "account": "Account",
+    "actions": {
+      "add": "Add",
+      "back": "Back",
+      "cancel": "Cancel",
+      "close": "Close",
+      "confirm": "Confirm",
+      "continue": "Continue",
+      "copy": "Copy to clipboard",
+      "create": "Create",
+      "delete": "Delete",
+      "dismiss": "Dismiss",
+      "download": "Download",
+      "edit": "Edit",
+      "filter": "Filter",
+      "finish": "Finish",
+      "generate": "Generate",
+      "import": "Import",
+      "install": "Install",
+      "next": "Next",
+      "no": "No",
+      "ok": "Ok",
+      "pull": "Pull",
+      "push": "Push",
+      "remove": "Remove",
+      "save": "Save",
+      "search": "Search",
+      "skip": "Skip",
+      "update": "Update",
+      "upgrade": "Upgrade",
+      "yes": "Yes"
+    },
+    "address": "Address",
+    "amount": "Amount",
+    "asset": "Asset",
     "available_to_premium": "only available to premium users.",
+    "category": "Category",
+    "datetime": "Date/Time",
+    "ignored_in_accounting": "Ignored in Accounting",
     "loading": {
       "getting_loaded": "getting loaded...",
       "please_wait": "Please wait while your"
     },
+    "location": "Location",
+    "name": "Name",
     "no_premium": "No premium subscription detected. ",
+    "price": "Price",
+    "price_in_symbol": "Price in {symbol}",
+    "total": "Total",
+    "value_in_symbol": "{symbol} Value",
     "visit_website": "To get a premium subscription please visit our {0}"
   },
   "compound_lending": {
@@ -1277,10 +1273,7 @@
   },
   "confirmable_reset": {
     "confirm": {
-      "cancel": "Cancel",
-      "confirm": "Confirm",
-      "message": "Are you sure you want to proceed with the reset?",
-      "title": "Confirm"
+      "message": "Are you sure you want to proceed with the reset?"
     }
   },
   "conflict_dialog": {
@@ -1289,10 +1282,6 @@
       "remote": "Remote"
     },
     "all_buttons_description": "For All conflicts",
-    "buttons": {
-      "cancel": "Cancel",
-      "confirm": "Confirm"
-    },
     "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
     "keep_local": "Keep Local",
     "keep_remote": "Keep Remote",
@@ -1324,24 +1313,18 @@
       "full_amount": "Total acquired by event",
       "rate": "{currency} Rate",
       "remaining_amount": "Remaining after selling",
-      "taxable": "Taxable ?",
-      "time": "Time"
+      "taxable": "Taxable ?"
     },
     "incomplete": "(Incomplete)"
   },
   "create_account": {
     "premium": {
-      "button_cancel": "Cancel",
-      "button_continue": "Continue",
       "button_premium_approve": "Yes, enable premium",
-      "button_premium_reject": "No",
       "premium_link_text": "here.",
       "premium_question": "Are you already a rotki premium user and want to enable premium features? This is needed if you want to sync your rotki database from another device at account creation. You can buy premium {premiumLink}",
       "title": "Enable Premium"
     },
     "select_credentials": {
-      "button_back": "Back",
-      "button_continue": "Continue",
       "label_password": "Password",
       "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
       "label_password_repeat": "Repeat Password",
@@ -1358,8 +1341,6 @@
     },
     "title": "Create Account",
     "usage_analytics": {
-      "button_back": "Back",
-      "button_create": "Create",
       "description": "rotki is a local application and anonymous usage analytics is the only way for us to have an idea of how many people use our software, where they are from etc. These data are really important to us, are completely anonymous and help us create a better product for you.",
       "label_confirm": "Submit anonymous usage analytics",
       "title": "Usage analytics"
@@ -1426,40 +1407,27 @@
           "failure": "Delete snapshot failed",
           "success": "Snapshot successfully deleted",
           "title": "Delete snapshot"
-        },
-        "title": "Delete"
+        }
       },
       "download": {
         "message": {
           "failure": "Snapshot CSV export failed",
           "success": "Snapshot exported to CSV successfully",
           "title": "Snapshot CSV Export"
-        },
-        "title": "Download"
+        }
       },
       "edit": {
         "dialog": {
           "actions": {
             "add_new_entry": "Add New Entry",
-            "back": "Back",
             "delete_item": "Delete item",
-            "edit_item": "Edit item",
-            "finish": "Finish",
-            "next": "Next",
-            "save": "Save"
+            "edit_item": "Edit item"
           },
           "balances": {
             "add_title": "Add balance snapshot data",
             "delete_confirmation": "Are you sure you want to delete this balance snapshot item?",
             "delete_title": "Delete balance snapshot item",
             "edit_title": "Update balance snapshot data",
-            "headers": {
-              "amount": "Amount",
-              "asset": "Asset",
-              "category": "Category",
-              "location": "Location",
-              "value": "{currency} Value"
-            },
             "hints": {
               "location": "This is optional. If specified, the location balance data will be adjusted automatically. If not, you have to update location balance data manually."
             },
@@ -1489,10 +1457,6 @@
             "delete_confirmation": "Are you sure you want to delete this location data snapshot item?",
             "delete_title": "Delete location data snapshot item",
             "edit_title": "Update location data snapshot data",
-            "headers": {
-              "location": "Location",
-              "value": "{currency} Value"
-            },
             "rules": {
               "location": "The location field cannot be empty",
               "value": "The value field cannot be empty"
@@ -1510,35 +1474,26 @@
             "rules": {
               "total": "The value field cannot be empty"
             },
-            "title": "Total",
             "use_calculated_asset": "Use total from {length} asset(s) value: ",
             "use_calculated_location": "Use total from {length} location(s) value: ",
             "use_calculated_total": "Use calculated total value: ",
             "warning": "This is total value that includes NFTs value. If you turn off setting \"Include NFTs in graphs and total amounts\", it will show value {amount} on the chart"
           }
-        },
-        "title": "Edit"
+        }
       },
       "export_database_snapshot": "Export database snapshot",
       "select_directory": "Select a directory",
-      "subtitle": "Click the button below to download snapshot for",
-      "time": "Time: "
+      "subtitle": "Click the button below to download snapshot for"
     }
   },
   "dashboard_asset_table": {
     "headers": {
-      "amount": "Amount",
-      "asset": "Asset",
       "percentage_of_total_current_group": "% of total {group}",
       "percentage_of_total_net_value": "% of net Value",
-      "percentage_total": "% of total",
-      "price": "Price in {symbol}",
-      "value": "{symbol} value"
+      "percentage_total": "% of total"
     },
     "no_search_result": "Your search for \"{search}\" yielded no results.",
-    "search": "Search",
-    "select_visible_columns": "Select visible columns",
-    "total": "Total"
+    "select_visible_columns": "Select visible columns"
   },
   "data_management": {
     "confirm": {
@@ -1568,7 +1523,6 @@
     },
     "column": {
       "size": "Size",
-      "time": "Time",
       "version": "Version"
     },
     "confirm": {
@@ -1584,9 +1538,6 @@
     "load_error": {
       "message": "There was a problem loading the list of available backups: {message}",
       "title": "Database Backup load"
-    },
-    "row": {
-      "total": "Total"
     }
   },
   "database_info_display": {
@@ -1603,7 +1554,6 @@
     "refresh_tooltip": "Refresh the database backup list"
   },
   "date_format_help": {
-    "close": "Close",
     "directive": {
       "ampm": "morning or afternoon marker",
       "day_numeric": "Day (numeric)",
@@ -1664,21 +1614,16 @@
   "defi_wizard": {
     "steps": {
       "select_accounts": {
-        "back": "Back",
-        "continue": "Complete",
         "hint": "Select accounts for which data will be retrieved for each submodule. If no addresses are selected data will be retrieved for all available addresses",
         "subtitle": "Select accounts",
         "title": "Select accounts"
       },
       "select_modules": {
-        "back": "Back",
-        "continue": "Continue",
         "hint": "If no modules are specified, querying for the supported modules will be disabled.",
         "subtitle": "Select the modules you would like to activate.",
         "title": "Select Modules"
       },
       "setup": {
-        "continue": "Continue",
         "description_line_one": "rotki will attempt by default to retrieve information for all your accounts and available modules. The retrieval might require a lot of time based on the number of accounts you have.",
         "description_line_three": "You can use the default settings if you want to have information for all protocols fetched for all accounts automatically. (Module Settings can be changed at a later time).",
         "description_line_two": "To reduce the query time you can specify only the DeFi modules and accounts you are interested in.",
@@ -1706,12 +1651,7 @@
     },
     "headers": {
       "action": "Action",
-      "amount": "Amount",
-      "asset": "Asset",
-      "fee": "Fee",
-      "ignored": "Ignored in Accounting",
-      "location": "Location",
-      "timestamp": "Date"
+      "fee": "Fee"
     },
     "label": "asset movements",
     "loading": "Please wait while your asset movements are getting loaded...",
@@ -1806,9 +1746,7 @@
     },
     "form": {
       "labels": {
-        "address": "ETH Address",
-        "location": "Location",
-        "name": "Name"
+        "address": "ETH Address"
       },
       "no_suggestions_available": "No Suggestions Available",
       "validation": {
@@ -1834,11 +1772,6 @@
       "private_description": "address book is saved only for this account."
     },
     "table": {
-      "filter": "Filter",
-      "headers": {
-        "address": "Address",
-        "name": "Name"
-      },
       "subtitle": "Add, edit, remove name for ETH addresses. Changes in the names will be reflected across the app.",
       "title": "Address Book"
     },
@@ -1856,8 +1789,6 @@
     },
     "add_button": "Add Node",
     "add_dialog": {
-      "cancel": "Cancel",
-      "save": "Save",
       "title": "Add an Ethereum RPC Node"
     },
     "add_error": {
@@ -1905,7 +1836,6 @@
     },
     "exchange": "Exchange",
     "name": {
-      "label": "Name",
       "non_empty": "The name field cannot be empty."
     },
     "passphrase": {
@@ -1913,10 +1843,6 @@
     }
   },
   "exchange_settings": {
-    "button": {
-      "cancel": "Cancel",
-      "save": "Save"
-    },
     "confirmation": {
       "message": "Are you sure you want to delete the API key and secret for the {location} entry named {name} from rotki? This action can not be undone and you will need to obtain the key and secret again from the exchange.",
       "title": "Confirmation Required"
@@ -1937,8 +1863,6 @@
     },
     "header": {
       "actions": "Actions",
-      "location": "Location",
-      "name": "Name",
       "sync_enabled": "Sync Enabled"
     },
     "inputs": {
@@ -2040,8 +1964,7 @@
   },
   "external_trade_form": {
     "amount": {
-      "hint": "Amount bought/sold",
-      "label": "Amount"
+      "hint": "Amount bought/sold"
     },
     "base_asset": {
       "hint": "The base asset of the trade",
@@ -2110,7 +2033,6 @@
       "switch_label": "Use custom date format to parsing your file"
     },
     "drop_area": "Drop the file or",
-    "import": "Import",
     "import_complete": "Import was completed successfully.",
     "loading": "Loading",
     "many_files_selected": "One one file must be selected",
@@ -2309,13 +2231,11 @@
   },
   "generate": {
     "custom_selection": "Custom",
-    "generate": "Generate",
     "period": "Period",
     "sub_period": {
       "all": "All"
     },
     "sub_period_label": "Period Details",
-    "title": "Generate",
     "validation": {
       "empty_end_date": "End date cannot be empty",
       "empty_start_date": "Start date cannot be empty",
@@ -2323,18 +2243,11 @@
     }
   },
   "global_search": {
-    "hint": {
-      "asset": "Asset",
-      "location": "Location",
-      "price": "Price:",
-      "total": "Total:"
-    },
     "menu_tooltip": "Search ({modifier} + {key})",
     "no_actions": "No actions found",
     "search_placeholder": "Search anything..."
   },
   "hash_link": {
-    "copy": "Copy to clipboard",
     "open_link": "Open in external block explorer: {url}"
   },
   "help_sidebar": {
@@ -2506,11 +2419,7 @@
   },
   "kraken_staking_events": {
     "column": {
-      "amount": "Amount",
-      "asset": "Asset",
-      "event_type": "Event",
-      "time": "Time",
-      "value": "{symbol} Value"
+      "event_type": "Event"
     },
     "filter": {
       "asset": "filter by the staked asset",
@@ -2557,7 +2466,6 @@
   },
   "ledger_action_form": {
     "amount": {
-      "label": "Amount",
       "validation": {
         "non_empty": "The amount field cannot be empty."
       }
@@ -2576,7 +2484,6 @@
       "label": "Link"
     },
     "location": {
-      "label": "Location",
       "validation": {
         "non_empty": "The location field cannot be empty."
       }
@@ -2637,8 +2544,7 @@
       "edit": {
         "subtitle": "Edit an existing ledger action",
         "title": "Edit Ledger Action"
-      },
-      "save": "Save"
+      }
     },
     "edit_tooltip": "Edit the ledger action",
     "filter": {
@@ -2651,11 +2557,6 @@
     },
     "headers": {
       "actions": "Actions",
-      "amount": "Amount",
-      "asset": "Asset",
-      "date": "Date",
-      "ignored": "Ignored in Accounting",
-      "location": "Location",
       "type": "Type"
     },
     "label": "ledger actions",
@@ -2682,8 +2583,6 @@
   },
   "lending_asset_table": {
     "headers": {
-      "amount": "Amount",
-      "asset": "Asset",
       "effective_interest_rate": "Effective Interest Rate",
       "usd_value": "{currency} value"
     }
@@ -2772,8 +2671,6 @@
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
     "remember_username": "Remember Username",
     "sync_error": {
-      "button_no": "No",
-      "button_yes": "Yes",
       "local_modified": "Local last modified: {0}",
       "question": "Do you want to replace your local database?",
       "remote_modified": "Remote last modified: {0}",
@@ -2807,9 +2704,7 @@
       "title": "Export"
     },
     "import": {
-      "button": "Import",
-      "subtitle": "Restore custom assets from a zip archive",
-      "title": "Import"
+      "subtitle": "Restore custom assets from a zip archive"
     },
     "title": "Export/Import Custom Assets",
     "warning": "This functionality is designed to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result in errors."
@@ -2829,15 +2724,11 @@
   },
   "manual_balances_form": {
     "fields": {
-      "amount": "Amount",
-      "asset": "Asset",
       "balance_type": "Balance Type",
       "label": "Label",
-      "location": "Location",
       "tags": "Tags"
     },
     "type": {
-      "asset": "Asset",
       "liability": "Liability"
     },
     "validation": {
@@ -2850,11 +2741,7 @@
   "manual_balances_table": {
     "columns": {
       "actions": "Actions",
-      "amount": "Amount",
-      "asset": "Asset",
-      "label": "Label",
-      "location": "Location",
-      "value": "{symbol} Value"
+      "label": "Label"
     },
     "delete_dialog": {
       "message": "Are you sure you want to delete this entry?",
@@ -2864,14 +2751,9 @@
     "edit_tooltip": "Edit balance",
     "refresh": {
       "tooltip": "Refresh manual balances"
-    },
-    "rows": {
-      "total": "Total"
     }
   },
   "merge_dialog": {
-    "cancel": "Cancel",
-    "close": "Close",
     "done": "The asset merge is complete. The old asset will still appear in the frontend. To make sure the new one is shown everywhere either restart the application or manually refresh balances in each place the old asset appears.",
     "error": "Merge was not successful",
     "hint": "The source asset will be merged into the target asset and all its usages will be updated.",
@@ -2896,17 +2778,10 @@
       "title": "Success"
     }
   },
-  "message_dialog": {
-    "button": "Ok"
-  },
   "module_activator": {
     "hint": "* Modules that are activated for all addresses will not appear here",
     "subtitle": "Select which modules should be queried for this account",
     "title": "Enabled modules"
-  },
-  "module_address_selector": {
-    "back": "Back",
-    "next": "Next"
   },
   "module_not_active": {
     "at_least_one": "You need to activate at least one of them.",
@@ -2988,13 +2863,8 @@
   },
   "nft_balance_table": {
     "column": {
-      "name": "Name",
       "percentage": "% of net Value",
-      "price": "Price in {currency}",
       "price_in_asset": "Price in asset"
-    },
-    "row": {
-      "total": "Total"
     },
     "title": "NFT Balances"
   },
@@ -3008,9 +2878,7 @@
     "select_account": "Select account",
     "select_collection": "Select collection",
     "sort": {
-      "collection": "Collection",
-      "name": "Name",
-      "price": "Price"
+      "collection": "Collection"
     },
     "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
   },
@@ -3035,17 +2903,10 @@
     "column": {
       "actions": "Actions",
       "custom_price": "Custom Price",
-      "name": "Name",
-      "price": "Price in {currency}",
       "price_in_asset": "Price in Asset"
     }
   },
   "non_fungible_balance_edit": {
-    "actions": {
-      "cancel": "Cancel",
-      "save": "Save"
-    },
-    "price": "Price",
     "title": "Edit or set the price for the asset"
   },
   "non_fungible_balances": {
@@ -3060,8 +2921,7 @@
     "refresh": "Refresh the balances",
     "row": {
       "delete": "Delete the custom price",
-      "edit": "Edit or set the custom price",
-      "total": "Total"
+      "edit": "Edit or set the custom price"
     },
     "title": "Non Fungible Balances"
   },
@@ -3113,10 +2973,8 @@
   "open_trades": {
     "header": {
       "action": "Action",
-      "amount": "Amount",
       "fee": "Fee",
       "fee_currency": "Fee Currency",
-      "location": "Location",
       "pair": "Pair",
       "rate": "Rate"
     },
@@ -3188,9 +3046,6 @@
     "tooltip": "Pinned Section"
   },
   "poap_delivery_airdrops": {
-    "headers": {
-      "name": "Name"
-    },
     "title": "Claimable POAP Delivery NFTs"
   },
   "premium_credentials": {
@@ -3212,26 +3067,17 @@
     "tooltip": "Feature is only supported with a premium subscription"
   },
   "premium_reminder": {
-    "buttons": {
-      "close": "Close",
-      "upgrade": "Upgrade"
-    },
     "description": "rotki is open source software and needs your support! Please consider upgrading to premium by purchasing a premium subscription. This way you can help us further develop the software and you can also enjoy additional premium-only features.",
     "title": "Upgrade to Premium"
   },
   "premium_settings": {
     "actions": {
-      "cancel": "Cancel",
       "delete": "Delete Key",
       "replace": "Replace Key",
       "setup": "Setup",
       "sync": "Allow data sync with rotki Server"
     },
     "delete_confirmation": {
-      "actions": {
-        "cancel": "Cancel",
-        "delete": "Delete"
-      },
       "message": "Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again.",
       "title": "Delete rotki premium keys?"
     },
@@ -3252,12 +3098,10 @@
     "tooltip": "These prices are based on the current exchange rate of historical USD values"
   },
   "price_form": {
-    "date": "Date",
     "date_non_empty": "The date of the price cannot be empty",
     "from_asset": "From Asset",
     "from_non_empty": "The from asset cannot be empty",
     "hint": "1 {fromAsset} was worth {price} {toAsset}",
-    "price": "Price",
     "price_non_empty": "The price cannot be empty",
     "to_asset": "To Asset",
     "to_non_empty": "The to asset cannot be empty"
@@ -3288,7 +3132,6 @@
     "add_tooltip": "Add the oracle to the list",
     "all_added": "No missing price oracles",
     "header": {
-      "name": "Name",
       "priority": "Priority"
     },
     "hint": "* Removing all the oracles will make it impossible to query prices for assets.",
@@ -3332,9 +3175,7 @@
       }
     },
     "headers": {
-      "date": "Date",
       "from_asset": "From Asset",
-      "price": "Price",
       "to_asset": "To Asset"
     },
     "on": "on",
@@ -3363,14 +3204,11 @@
       "show": "Show Cost Basis"
     },
     "headers": {
-      "location": "Location",
       "notes": "Notes",
       "pnl_free": "Tax Free PnL",
       "pnl_taxable": "Taxable PnL",
-      "price": "Price",
       "tax_free_amount": "Tax Free Amount",
       "taxable_amount": "Taxable Amount",
-      "time": "Time",
       "type": "Type"
     },
     "same_action": "This events happen on the same action",
@@ -3382,32 +3220,21 @@
       "taxable_profit_loss": "Taxable Profit/Loss",
       "type": "Type"
     },
-    "rows": {
-      "total": "Total"
-    },
     "title": "Overview"
   },
   "profit_loss_report": {
     "actionable": {
       "actions": {
-        "back": "Back",
-        "cancel": "Cancel",
-        "close": "Close",
-        "finish": "Finish",
-        "next": "Next",
         "pin_section": "Pin Section",
         "regenerate_report": "Re-Generate Report",
-        "unpin_section": "Unpin Section",
-        "yes": "Yes"
+        "unpin_section": "Unpin Section"
       },
       "issues_found": "{total} issues found with the generated report",
       "missing_acquisitions": {
         "headers": {
-          "asset": "Asset",
           "found_amount": "Found Amount",
           "missing_acquisitions": "Missing Acquisitions",
-          "missing_amount": "Missing Amount",
-          "time": "Time"
+          "missing_amount": "Missing Amount"
         },
         "hint": "Some asset acquisitions are missing. You will need to figure out where you bought them and either import or manually create the relevant acquisition events",
         "title": "Missing Acquisitions ({total})",
@@ -3417,8 +3244,6 @@
         "all_prices_filled": "All prices are filled",
         "headers": {
           "from_asset": "From Asset",
-          "price": "Price",
-          "time": "Time",
           "to_asset": "To Asset"
         },
         "hint": "Some events are skipped because we cannot find prices for the related assets. You can help rotki by manually inputting the prices. The entries that you don't fill will keep being skipped.",
@@ -3468,8 +3293,6 @@
       },
       "import_data": "Import data",
       "import_data_dialog": {
-        "cancel": "Cancel",
-        "import": "Import",
         "title": "Import PnL report debug data"
       },
       "import_message": {
@@ -3479,9 +3302,6 @@
       },
       "select_directory": "Select a directory",
       "title": "Debug"
-    },
-    "error": {
-      "close": "Close"
     },
     "title": "Saved Historical Reports"
   },
@@ -3534,19 +3354,11 @@
     "active": "Active",
     "active_hint": "Only active nodes will be queried",
     "endpoint": "Endpoint",
-    "name": "Name",
     "owned": "Owned",
     "owned_hint": "Enable if this node is a private node owned by the user",
     "weight": "Weight",
     "weight_hint": "Node weight {weight}/100 (when adjusting a public node's weight other nodes will be adjusted accordingly)",
     "weight_per_hundred": "/100"
-  },
-  "service_key": {
-    "actions": {
-      "cancel": "Cancel",
-      "edit": "Edit",
-      "save": "Save"
-    }
   },
   "settings": {
     "not_saved": "Setting not saved",
@@ -3579,7 +3391,6 @@
     "label": "Multiplier",
     "off": "No missed snapshots will be considered as being zero.",
     "on": "If there is a period of {period} hours or more between two existing balance snapshots then the graph will consider zero balances for that period.",
-    "save": "Save",
     "subtitle": "Set after how many hours between two existing balance snapshots the graph will consider zero balances for that period.",
     "title": "Missing snapshot multiplier",
     "tooltip": "Change graph zero snapshot multiplier"
@@ -3594,19 +3405,12 @@
   },
   "sync_buttons": {
     "download_tooltip": "Pull the saved data from the server and replace your local database",
-    "pull": "Pull",
-    "push": "Push",
     "upload_tooltip": "Push your local database to the server and replace all data there"
   },
   "sync_indicator": {
     "force_save": "Force save",
     "ignore_errors": "Save the balance snapshot ignoring any errors on external APIs. This can cause the snapshot to be incomplete.",
-    "import": "Import",
     "import_snapshot": {
-      "actions": {
-        "cancel": "Cancel",
-        "import": "Import"
-      },
       "balance_snapshot_file": "Balance snapshot file",
       "balance_snapshot_file_suggested": "Suggested filename: balances_snapshot_import.csv",
       "location_data_snapshot_file": "Location data snapshot file",
@@ -3625,7 +3429,6 @@
     "snapshot_tooltip": "This will force taking a snapshot of all your balances, ignoring any cache. Use this sparingly as it may lead to you being rate-limited.",
     "upload_confirmation": {
       "action": "Push | Pull",
-      "cancel": "Cancel",
       "confirm_check": "I understand",
       "message_download": "By force pulling, your local database will be replaced with data pulled from the rotki server. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action.",
       "message_download_relogin": "After performing the pull, a manual re-login will be required.",
@@ -3634,15 +3437,10 @@
     }
   },
   "tag_creator": {
-    "buttons": {
-      "cancel": "Cancel",
-      "save": "Save"
-    },
     "labels": {
       "background": "Background",
       "description": "Description",
-      "foreground": "Foreground",
-      "name": "Name"
+      "foreground": "Foreground"
     },
     "refresh_tooltip": "Creates a random color combination",
     "validation": {
@@ -3652,9 +3450,6 @@
   "tag_filter": {
     "label": "Filter by tag(s)"
   },
-  "tag_input": {
-    "create_tag": "Create"
-  },
   "tag_manager": {
     "confirmation": {
       "message": "Are you sure you want to delete {tagToDelete}? This will also remove all mappings of this tag.",
@@ -3662,11 +3457,9 @@
     },
     "headers": {
       "actions": "Actions",
-      "description": "Description",
-      "name": "Name"
+      "description": "Description"
     },
     "my_tags": "My Tags",
-    "search": "Search",
     "subtitle": "Create new tags or modify existing",
     "title": "Tag Manager"
   },
@@ -3710,7 +3503,6 @@
       "redecode_events": "Redecode events"
     },
     "details": {
-      "close": "Close",
       "gas_fee": "Gas Fee",
       "gas_limit": "Gas Limit",
       "gas_price": "Gas Price",
@@ -3727,7 +3519,6 @@
       },
       "confirmation": {
         "delete": {
-          "action": "Confirm",
           "message": "Are you sure you want to delete the event?",
           "title": "Delete Event"
         },
@@ -3744,12 +3535,10 @@
         },
         "edit": {
           "title": "Edit Event"
-        },
-        "save": "Save"
+        }
       },
       "form": {
         "amount": {
-          "label": "Amount",
           "validation": {
             "non_empty": "The amount field cannot be empty."
           }
@@ -3779,13 +3568,11 @@
           }
         },
         "fiat_value": {
-          "label": "{currency} Value",
           "validation": {
             "non_empty": "The {currency} value field cannot be empty."
           }
         },
         "location": {
-          "label": "Location",
           "validation": {
             "non_empty": "The location field cannot be empty."
           }
@@ -3808,7 +3595,6 @@
         }
       },
       "headers": {
-        "asset": "Asset",
         "description": "Description",
         "type": "Type"
       },
@@ -3882,8 +3668,6 @@
       "start_date": "filter by the start date of the transaction period"
     },
     "headers": {
-      "ignored": "Ignored in Accounting",
-      "timestamp": "Date",
       "tx_hash": "Tx Hash"
     },
     "ignore": "Ignore Tx in Accounting",
@@ -3921,12 +3705,10 @@
     "edit_tooltip": "Edit an underlying token",
     "hint": "The percentage of an underlying asset in the token. e.g. A uniswap lp token is consisted of two underlying tokens with a 50% weight each.",
     "labels": {
-      "address": "Address",
       "tokens": "Underlying tokens",
       "weight": "Weight"
     },
     "tokens": {
-      "address": "Address",
       "weight": "Weight",
       "weight_percentage": "{weight} %"
     },
@@ -3948,7 +3730,6 @@
   "uniswap_pool_details": {
     "asset_liquidity": "Total in LP",
     "liquidity": "Liquidity",
-    "price": "Price",
     "title": "Details",
     "tooltip": "Show details about the pool assets"
   },
@@ -3956,16 +3737,9 @@
     "version": "An Updated Version ({appVersion}) of rotki is available"
   },
   "update_notifier": {
-    "update": "Update",
     "update_available": "An updated version of the frontend is available."
   },
   "update_popup": {
-    "action": {
-      "cancel": "Cancel",
-      "dismiss": "Dismiss",
-      "install": "Install",
-      "update": "Download"
-    },
     "download_failed": {
       "message": "An error occurred while downloading the application update. For more information check the application log file (rotki_electron.log)."
     },
@@ -4019,7 +3793,6 @@
     "add_error": "Error adding the watcher: {message}",
     "add_success": "Successfully added watcher.",
     "add_watcher": "Add watcher",
-    "close": "Close",
     "delete_error": "Error deleting the watcher: {message}",
     "delete_success": "Successfully deleted watcher.",
     "edit": "Edit watchers",

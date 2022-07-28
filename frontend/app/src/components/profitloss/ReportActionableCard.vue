@@ -118,9 +118,7 @@
                           text
                           @click="step = step - 1"
                         >
-                          {{
-                            $tc('profit_loss_report.actionable.actions.back')
-                          }}
+                          {{ $tc('common.actions.back') }}
                         </v-btn>
                         <v-btn
                           v-if="step < stepperContents.length"
@@ -130,9 +128,7 @@
                           elevation="1"
                           @click="step = step + 1"
                         >
-                          {{
-                            $tc('profit_loss_report.actionable.actions.next')
-                          }}
+                          {{ $tc('common.actions.next') }}
                         </v-btn>
                         <template v-if="step === stepperContents.length">
                           <v-btn
@@ -143,9 +139,7 @@
                             :small="isPinned"
                             @click="setDialog(false)"
                           >
-                            {{
-                              $tc('profit_loss_report.actionable.actions.close')
-                            }}
+                            {{ $tc('common.actions.close') }}
                           </v-btn>
                           <v-btn
                             v-else-if="content.key !== 'missingAcquisitions'"
@@ -155,11 +149,7 @@
                             elevation="1"
                             @click="submitActionableItems(items)"
                           >
-                            {{
-                              $tc(
-                                'profit_loss_report.actionable.actions.finish'
-                              )
-                            }}
+                            {{ $tc('common.actions.finish') }}
                           </v-btn>
                         </template>
                       </div>
@@ -232,7 +222,7 @@
         <template #buttons>
           <v-spacer />
           <v-btn text class="mr-2" @click="confirmationDialogOpen = false">
-            {{ $tc('profit_loss_report.actionable.actions.cancel') }}
+            {{ $tc('common.actions.cancel') }}
           </v-btn>
           <v-btn
             v-if="filledMissingPrices"
@@ -242,7 +232,7 @@
             {{ $tc('profit_loss_report.actionable.actions.regenerate_report') }}
           </v-btn>
           <v-btn v-else color="primary" @click="ignoreIssues">
-            {{ $tc('profit_loss_report.actionable.actions.yes') }}
+            {{ $tc('common.actions.yes') }}
           </v-btn>
         </template>
       </card>

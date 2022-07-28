@@ -22,7 +22,7 @@
         :disabled="assetToRemove === ''"
         @click="removeAsset()"
       >
-        {{ $tc('account_settings.asset_settings.actions.remove') }}
+        {{ $tc('common.actions.remove') }}
       </v-btn>
     </v-col>
   </v-row>

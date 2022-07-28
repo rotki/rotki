@@ -24,7 +24,7 @@
               {{ $t('dashboard.snapshot.edit.dialog.location_data.title') }}
             </v-stepper-step>
             <v-stepper-step :step="3">
-              {{ $t('dashboard.snapshot.edit.dialog.total.title') }}
+              {{ $t('common.total') }}
             </v-stepper-step>
           </v-stepper-header>
           <v-stepper-items>

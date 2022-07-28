@@ -34,7 +34,7 @@
                   @click="confirmDelete = true"
                 >
                   <v-icon> mdi-delete-outline </v-icon>
-                  <span>{{ $tc('account_balances.delete_button') }}</span>
+                  <span>{{ $tc('common.actions.delete') }}</span>
                 </v-btn>
               </span>
             </template>

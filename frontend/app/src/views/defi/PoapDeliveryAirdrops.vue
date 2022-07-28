@@ -66,7 +66,7 @@ export type EventType = typeof events[number];
 
 const headers = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('poap_delivery_airdrops.headers.name').toString(),
+    text: i18n.t('common.name').toString(),
     value: 'name'
   },
   {

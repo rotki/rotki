@@ -12,7 +12,7 @@
       outlined
       data-cy="location"
       :rules="locationRules"
-      :label="$t('transactions.events.form.location.label')"
+      :label="$t('common.location')"
       :error-messages="errorMessages['location']"
       @focus="delete errorMessages['location']"
     />
@@ -58,7 +58,7 @@
           required
           data-cy="amount"
           :rules="amountRules"
-          :label="$t('transactions.events.form.amount.label')"
+          :label="$t('common.amount')"
           :error-messages="errorMessages['amount']"
           @focus="delete errorMessages['amount']"
         />
@@ -73,8 +73,8 @@
           :rules="fiatValueRules"
           :loading="fetching"
           :label="
-            $t('transactions.events.form.fiat_value.label', {
-              currency: currencySymbol
+            $t('common.value_in_symbol', {
+              symbol: currencySymbol
             })
           "
           :error-messages="errorMessages['usdValue']"

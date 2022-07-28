@@ -52,7 +52,7 @@
         data-cy="account-label-field"
         outlined
         class="account-form__label"
-        :label="$t('account_form.labels.label')"
+        :label="$t('common.name')"
         :disabled="loading"
       />
 

@@ -4,14 +4,14 @@
       <balance-type-input
         :value="form.category"
         outlined
-        :label="$t('dashboard.snapshot.edit.dialog.balances.headers.category')"
+        :label="$t('common.category')"
         :rules="categoryRules"
         @input="updateForm({ category: $event })"
       />
     </div>
     <div class="mb-4">
       <div class="text--secondary text-caption">
-        {{ $t('dashboard.snapshot.edit.dialog.balances.headers.asset') }}
+        {{ $t('common.asset') }}
       </div>
       <div>
         <v-radio-group v-model="assetType" row class="mt-2">
@@ -31,7 +31,7 @@
         outlined
         :excludes="excludedAssets"
         :show-ignored="true"
-        :label="$t('dashboard.snapshot.edit.dialog.balances.headers.asset')"
+        :label="$t('common.asset')"
         :enable-association="false"
         :rules="assetRules"
         @input="updateForm({ assetIdentifier: $event })"
@@ -39,7 +39,7 @@
       <v-text-field
         v-if="assetType === 'nft'"
         :value="form.assetIdentifier"
-        :label="$t('dashboard.snapshot.edit.dialog.balances.headers.asset')"
+        :label="$t('common.asset')"
         outlined
         :rules="assetRules"
         :hint="$t('dashboard.snapshot.edit.dialog.balances.nft_hint')"
@@ -51,7 +51,7 @@
         :disabled="assetType === 'nft'"
         :value="form.amount"
         outlined
-        :label="$t('dashboard.snapshot.edit.dialog.balances.headers.amount')"
+        :label="$t('common.amount')"
         :rules="amountRules"
         @input="updateForm({ amount: $event })"
       />
@@ -61,8 +61,8 @@
         :value="form.usdValue"
         outlined
         :label="
-          $t('dashboard.snapshot.edit.dialog.balances.headers.value', {
-            currency: currencySymbol
+          $t('common.value_in_symbol', {
+            symbol: currencySymbol
           })
         "
         :rules="valueRules"

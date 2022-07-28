@@ -52,9 +52,7 @@
     </data-table>
     <v-sheet elevation="10" class="d-flex align-center px-4 py-2">
       <div>
-        <div class="text-caption">
-          {{ $t('dashboard.snapshot.edit.dialog.total.title') }}:
-        </div>
+        <div class="text-caption">{{ $t('common.total') }}:</div>
         <div class="font-weight-bold text-h6 mt-n1">
           <amount-display :value="total" fiat-currency="USD" />
         </div>
@@ -67,7 +65,7 @@
         </span>
       </v-btn>
       <v-btn color="primary" @click="updateStep(2)">
-        {{ $t('dashboard.snapshot.edit.dialog.actions.next') }}
+        {{ $t('common.actions.next') }}
       </v-btn>
     </v-sheet>
 
@@ -78,7 +76,7 @@
           ? $t('dashboard.snapshot.edit.dialog.balances.edit_title')
           : $t('dashboard.snapshot.edit.dialog.balances.add_title')
       "
-      :primary-action="$t('dashboard.snapshot.edit.dialog.actions.save')"
+      :primary-action="$t('common.actions.save')"
       :action-disabled="loading || !valid"
       @confirm="save"
       @cancel="clearEditDialog"
@@ -150,31 +148,25 @@ const tableHeaders = (currency: Ref<string>) =>
   computed<DataTableHeader[]>(() => {
     return [
       {
-        text: i18n
-          .t('dashboard.snapshot.edit.dialog.balances.headers.category')
-          .toString(),
+        text: i18n.t('common.category').toString(),
         value: 'category',
         cellClass: 'py-2',
         width: 150
       },
       {
-        text: i18n
-          .t('dashboard.snapshot.edit.dialog.balances.headers.asset')
-          .toString(),
+        text: i18n.t('common.asset').toString(),
         value: 'assetIdentifier'
       },
       {
-        text: i18n
-          .t('dashboard.snapshot.edit.dialog.balances.headers.amount')
-          .toString(),
+        text: i18n.t('common.amount').toString(),
         value: 'amount',
         align: 'end',
         sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b)
       },
       {
         text: i18n
-          .t('dashboard.snapshot.edit.dialog.balances.headers.value', {
-            currency: get(currency)
+          .t('common.value_in_symbol', {
+            symbol: get(currency)
           })
           .toString(),
         value: 'usdValue',

@@ -169,12 +169,12 @@
             <v-row no-gutters justify="end" class="mt-2">
               <v-col cols="3" class="shrink">
                 <v-btn color="error" depressed @click="login('no')">
-                  {{ $t('login.sync_error.button_no') }}
+                  {{ $t('common.actions.no') }}
                 </v-btn>
               </v-col>
               <v-col cols="3" class="shrink">
                 <v-btn color="success" depressed @click="login('yes')">
-                  {{ $t('login.sync_error.button_yes') }}
+                  {{ $t('common.actions.yes') }}
                 </v-btn>
               </v-col>
             </v-row>

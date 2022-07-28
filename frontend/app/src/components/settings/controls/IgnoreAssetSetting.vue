@@ -20,7 +20,7 @@
         :disabled="assetToIgnore === ''"
         @click="addAsset()"
       >
-        {{ $tc('account_settings.asset_settings.actions.add') }}
+        {{ $tc('common.actions.add') }}
       </v-btn>
     </v-col>
   </v-row>

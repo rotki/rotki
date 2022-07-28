@@ -9,9 +9,7 @@
       </template>
       <div class="mb-n2">
         <div>
-          <div>
-            {{ $t('dashboard.snapshot.time') }}
-          </div>
+          <div>{{ $t('common.datetime') }}:</div>
           <div>
             <date-display class="font-weight-bold" :timestamp="timestamp" />
           </div>
@@ -32,16 +30,16 @@
       <template #buttons>
         <v-btn color="primary" @click="editMode = true">
           <v-icon class="mr-2">mdi-pencil-outline</v-icon>
-          {{ $t('dashboard.snapshot.edit.title') }}
+          {{ $t('common.actions.edit') }}
         </v-btn>
         <v-btn color="error" @click="deleteSnapshotConfirmationDialog = true">
           <v-icon class="mr-2">mdi-delete-outline</v-icon>
-          {{ $t('dashboard.snapshot.delete.title') }}
+          {{ $t('common.actions.delete') }}
         </v-btn>
         <v-spacer />
         <v-btn color="primary" @click="exportSnapshot">
           <v-icon class="mr-2">mdi-download</v-icon>
-          {{ $t('dashboard.snapshot.download.title') }}
+          {{ $t('common.actions.download') }}
         </v-btn>
       </template>
     </card>

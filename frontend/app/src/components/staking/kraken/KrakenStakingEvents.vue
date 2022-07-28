@@ -35,7 +35,7 @@
       </template>
       <template #header.usdValue>
         {{
-          $t('kraken_staking_events.column.value', {
+          $t('common.value_in_symbol', {
             symbol: currencySymbol
           })
         }}
@@ -105,21 +105,21 @@ const useHeaders = (currencySymbol: Ref<SupportedCurrency>) => {
       value: 'type'
     },
     {
-      text: i18n.t('kraken_staking_events.column.asset').toString(),
+      text: i18n.t('common.asset').toString(),
       value: 'asset'
     },
     {
-      text: i18n.t('kraken_staking_events.column.time').toString(),
+      text: i18n.t('common.datetime').toString(),
       value: 'timestamp'
     },
     {
-      text: i18n.t('kraken_staking_events.column.amount').toString(),
+      text: i18n.t('common.amount').toString(),
       value: 'amount',
       align: 'end'
     },
     {
       text: i18n
-        .t('kraken_staking_events.column.value', {
+        .t('common.value_in_symbol', {
           symbol: get(currencySymbol)
         })
         .toString(),

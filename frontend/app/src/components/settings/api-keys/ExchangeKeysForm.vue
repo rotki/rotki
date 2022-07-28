@@ -37,7 +37,7 @@
           :value="exchange.newName"
           :rules="nameRules"
           data-cy="name"
-          :label="$t('exchange_keys_form.name.label')"
+          :label="$t('common.name')"
           @input="onUpdateExchange({ ...exchange, newName: $event })"
         />
         <v-text-field
@@ -46,7 +46,7 @@
           :value="exchange.name"
           :rules="nameRules"
           data-cy="name"
-          :label="$t('exchange_keys_form.name.label')"
+          :label="$t('common.name')"
           @input="onUpdateExchange({ ...exchange, name: $event })"
         />
       </v-col>

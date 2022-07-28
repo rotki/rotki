@@ -165,7 +165,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: i18n.t('profit_loss_events.headers.location').toString(),
+    text: i18n.t('common.location').toString(),
     value: 'location',
     width: '120px',
     align: 'center',
@@ -184,7 +184,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: i18n.t('profit_loss_events.headers.price').toString(),
+    text: i18n.t('common.price').toString(),
     align: 'end',
     value: 'price',
     sortable: false
@@ -202,7 +202,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: i18n.t('profit_loss_events.headers.time').toString(),
+    text: i18n.t('common.datetime').toString(),
     value: 'time',
     sortable: false
   },

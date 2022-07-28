@@ -5,7 +5,7 @@
         <v-select
           :value="value.location"
           outlined
-          :label="$t('eth_address_book.form.labels.location')"
+          :label="$t('common.location')"
           :items="locations"
           :disabled="edit"
           @input="input({ location: $event })"
@@ -33,7 +33,7 @@
         <v-text-field
           :value="value.name"
           outlined
-          :label="$t('eth_address_book.form.labels.name')"
+          :label="$t('common.name')"
           :rules="nameRules"
           @input="input({ name: $event })"
         />

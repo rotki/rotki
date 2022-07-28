@@ -3,7 +3,7 @@
     <div class="py-10 d-flex flex-column align-center">
       <div :class="$style.wrapper">
         <div class="text-h6 mb-4 text-center">
-          {{ $t('dashboard.snapshot.edit.dialog.total.title') }}
+          {{ $t('common.total') }}
         </div>
         <div class="mb-4">
           <v-form v-model="valid">
@@ -54,10 +54,10 @@
       <v-spacer />
       <v-btn class="mr-4" @click="updateStep(2)">
         <v-icon>mdi-chevron-left</v-icon>
-        {{ $t('dashboard.snapshot.edit.dialog.actions.back') }}
+        {{ $t('common.actions.back') }}
       </v-btn>
       <v-btn color="primary" :disabled="!valid" @click="save">
-        {{ $t('dashboard.snapshot.edit.dialog.actions.finish') }}
+        {{ $t('common.actions.finish') }}
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
     </v-sheet>

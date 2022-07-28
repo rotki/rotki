@@ -9,7 +9,7 @@
           v-model="underlyingAddress"
           :rules="addressRules"
           outlined
-          :label="$t('underlying_token_manager.labels.address')"
+          :label="$t('common.address')"
         />
       </v-col>
       <v-col cols="12" md="4">
@@ -36,7 +36,7 @@
       <v-simple-table>
         <thead>
           <tr>
-            <th>{{ $t('underlying_token_manager.tokens.address') }}</th>
+            <th>{{ $t('common.address') }}</th>
             <th>{{ $t('underlying_token_manager.tokens.weight') }}</th>
             <th />
           </tr>
