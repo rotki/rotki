@@ -28,6 +28,7 @@ import { HistoryApi } from '@/services/history/history-api';
 import { ReportsApi } from '@/services/reports/reports-api';
 import { SessionApi } from '@/services/session/session-api';
 import {
+  BackendConfiguration,
   BackendInfo,
   BtcAccountData,
   GeneralAccountData,
@@ -1403,6 +1404,16 @@ export class RotkehlchenApi {
       }
     );
     return handleResponse(response);
+  }
+
+  async backendSettings(): Promise<BackendConfiguration> {
+    const response = await this.axios.get<ActionResult<BackendConfiguration>>(
+      '/settings/configuration',
+      {
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return BackendConfiguration.parse(handleResponse(response));
   }
 }
 
