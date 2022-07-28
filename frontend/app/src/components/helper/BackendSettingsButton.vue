@@ -8,6 +8,7 @@
             text
             fab
             depressed
+            :disabled="!connected"
             color="primary"
             v-on="{ ...menu, ...tooltip }"
           >
@@ -22,15 +23,17 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+import { defineComponent, ref, toRefs } from '@vue/composition-api';
 import BackendSettings from '@/components/settings/BackendSettings.vue';
+import { useMainStore } from '@/store/store';
 
 export default defineComponent({
   name: 'BackendSettingsButton',
   components: { BackendSettings },
   setup() {
     const visible = ref<boolean>(false);
-    return { visible };
+    const { connected } = toRefs(useMainStore());
+    return { visible, connected };
   }
 });
 </script>

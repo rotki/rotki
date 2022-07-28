@@ -207,7 +207,7 @@ type Args = {
 };
 
 const updateArgument = (args: Args) => {
-  if (!(args.value === args.arg.value.toString() && args.arg.isDefault)) {
+  if (args.value !== args.arg.value.toString()) {
     const numeric = parseInt(args.value);
     if (isFinite(numeric) && !isNaN(numeric)) {
       args.options[args.key] = numeric;
@@ -267,6 +267,9 @@ export default class BackendSettings extends Mixins(BackendMixin) {
 
   get newUserOptions(): Partial<BackendOptions> {
     const options: Writeable<Partial<BackendOptions>> = {};
+    if (this.loglevel !== this.defaultLogLevel) {
+      options.loglevel = this.loglevel;
+    }
 
     if (this.userLogDirectory !== this.defaultLogDirectory) {
       options.logDirectory = this.userLogDirectory;

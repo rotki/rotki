@@ -76,7 +76,7 @@ function getBackendArguments(options: Partial<BackendOptions>): string[] {
       options.maxSizeInMbAllLogs.toString()
     );
   }
-  if (options.sqliteInstructions) {
+  if (options.sqliteInstructions !== undefined) {
     args.push('--sqlite-instructions', options.sqliteInstructions.toString());
   }
   return args;
