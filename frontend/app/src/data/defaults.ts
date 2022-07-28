@@ -19,7 +19,6 @@ export class Defaults {
   static DEFAULT_DECIMAL_SEPARATOR = '.';
   static DEFAULT_CURRENCY_LOCATION = CurrencyLocation.AFTER;
   static FLOATING_PRECISION = 2;
-  static RPC_ENDPOINT = 'http://localhost:8545';
   static KSM_RPC_ENDPOINT = 'http://localhost:9933';
   static DOT_RPC_ENDPOINT = ''; // same as Kusama, must be set by user
   static BALANCE_SAVE_FREQUENCY = 24;
@@ -76,10 +75,4 @@ export const EXTERNAL_EXCHANGES = [
   EXCHANGE_SHAPESHIFT,
   EXCHANGE_UPHOLD,
   EXCHANGE_BISQ
-];
-
-export const DECENTRALIZED_EXCHANGES = [
-  EXCHANGE_UNISWAP,
-  EXCHANGE_BALANCER,
-  EXCHANGE_SUSHISWAP
 ];

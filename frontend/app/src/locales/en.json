@@ -1078,6 +1078,10 @@
     "data_directory": {
       "select": "Select where rotki will store the data"
     },
+    "errors": {
+      "min": "Minimum value for this setting is {min}",
+      "non_empty": "This setting cannot be empty"
+    },
     "log_directory": {
       "select": "bSelect where rotki will store the logs"
     },
@@ -1108,6 +1112,10 @@
       "log_level": {
         "label": "Log Level"
       }
+    },
+    "sqlite_instructions": {
+      "hint": "Specify after how many sqlite VM instructions to context switch between cooperative threads. Set to 0 to disable async DB access",
+      "label": "Instructions per SQLite context switch"
     },
     "subtitle": "Modify the backend settings",
     "title": "Backend Settings"
@@ -1641,7 +1649,7 @@
     }
   },
   "decentralized_overview": {
-    "empty_subtitle": "Please add at least one ETH account that have DeFi balances",
+    "empty_subtitle": "Please add at least one ETH account that has DeFi balances",
     "empty_title": "No DeFi overview can be shown",
     "loading": "Please wait while your defi balances are getting loaded...",
     "title": "Defi Overview"
@@ -3995,7 +4003,8 @@
       "title": "Confirmation Required"
     },
     "logout": "Logout",
-    "settings": "Settings"
+    "settings": "Settings",
+    "switch_theme": "Switch Theme"
   },
   "validator_display": {
     "validator_index": "Validator Index:"

@@ -103,7 +103,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
     expected_ignored_assets = set(ignored_assets + [KICK_TOKEN.identifier])
     assert expected_ignored_assets <= set(result)
 
-    with rotki.data.db.user_write() as cursor:
+    with rotki.data.db.conn.read_ctx() as cursor:
         # check they are there
         assert set(rotki.data.db.get_ignored_assets(cursor)) >= expected_ignored_assets
         # Query for ignored assets and check that the response returns them
@@ -235,7 +235,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Check that assets did not get modified
-    with rotki.data.db.user_write() as cursor:
+    with rotki.data.db.conn.read_ctx() as cursor:
         expected_tokens = set(
             ignored_assets +
             [KICK_TOKEN],

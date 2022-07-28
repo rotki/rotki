@@ -2625,3 +2625,9 @@ class DetectTokensResource(BaseMethodView):
             only_cache=only_cache,
             addresses=addresses,
         )
+
+
+class ConfigurationsResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_config_arguments()

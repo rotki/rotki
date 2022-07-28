@@ -71,7 +71,15 @@ from rotkehlchen.constants.limits import (
     FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
 )
-from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ONE, ZERO
+from rotkehlchen.constants.misc import (
+    ASSET_TYPES_EXCLUDED_FOR_USERS,
+    DEFAULT_MAX_LOG_BACKUP_FILES,
+    DEFAULT_MAX_LOG_SIZE_IN_MB,
+    DEFAULT_SLEEP_SECS,
+    DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+    ONE,
+    ZERO,
+)
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -2085,7 +2093,7 @@ class RestAPI():
         )
 
     def get_ignored_assets(self) -> Response:
-        with self.rotkehlchen.data.db.user_write() as cursor:
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             result = [asset.identifier for asset in self.rotkehlchen.data.db.get_ignored_assets(cursor)]  # noqa: E501
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
@@ -4468,3 +4476,24 @@ class RestAPI():
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=status_code)
+
+    def get_config_arguments(self) -> Response:
+        config = {
+            'max_size_in_mb_all_logs': {
+                'value': self.rotkehlchen.args.max_size_in_mb_all_logs,
+                'is_default': self.rotkehlchen.args.max_size_in_mb_all_logs == DEFAULT_MAX_LOG_SIZE_IN_MB,  # noqa: E501
+            },
+            'max_logfiles_num': {
+                'value': self.rotkehlchen.args.max_logfiles_num,
+                'is_default': self.rotkehlchen.args.max_logfiles_num == DEFAULT_MAX_LOG_BACKUP_FILES,  # noqa: E501
+            },
+            'sqlite_instructions': {
+                'value': self.rotkehlchen.args.sqlite_instructions,
+                'is_default': self.rotkehlchen.args.sqlite_instructions == DEFAULT_SQL_VM_INSTRUCTIONS_CB,  # noqa: E501
+            },
+            'sleep_secs': {
+                'value': self.rotkehlchen.args.sleep_secs,
+                'is_default': self.rotkehlchen.args.sleep_secs == DEFAULT_SLEEP_SECS,
+            },
+        }
+        return api_response(_wrap_in_ok_result(config), status_code=HTTPStatus.OK)

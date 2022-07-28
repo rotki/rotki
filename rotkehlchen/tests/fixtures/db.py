@@ -7,6 +7,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_migrations.migrations.migration_4 import read_and_write_nodes_in_database
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -105,6 +106,16 @@ def fixture_session_manually_tracked_balances() -> List[ManuallyTrackedBalance]:
     return []
 
 
+@pytest.fixture(name='sql_vm_instructions_cb')
+def fixture_sql_vm_instructions_cb() -> int:
+    return DEFAULT_SQL_VM_INSTRUCTIONS_CB
+
+
+@pytest.fixture(scope='session', name='session_sql_vm_instructions_cb')
+def fixture_session_sql_vm_instructions_cb() -> int:
+    return DEFAULT_SQL_VM_INSTRUCTIONS_CB
+
+
 def _init_database(
         data_dir: Path,
         password: str,
@@ -118,6 +129,7 @@ def _init_database(
         manually_tracked_balances: List[ManuallyTrackedBalance],
         data_migration_version: int,
         use_custom_database: Optional[str],
+        sql_vm_instructions_cb: int,
 ) -> DBHandler:
     if use_custom_database is not None:
         _use_prepared_db(data_dir, use_custom_database)
@@ -127,6 +139,7 @@ def _init_database(
         password=password,
         msg_aggregator=msg_aggregator,
         initial_settings=None,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
     # Make sure that the fixture provided data are included in the DB
     add_settings_to_test_db(db, db_settings, ignored_assets, data_migration_version)
@@ -155,6 +168,7 @@ def database(
         data_migration_version,
         use_custom_database,
         perform_nodes_insertion,
+        sql_vm_instructions_cb,
 ) -> Optional[DBHandler]:
     if not start_with_logged_in_user:
         return None
@@ -172,6 +186,7 @@ def database(
         manually_tracked_balances=manually_tracked_balances,
         data_migration_version=data_migration_version,
         use_custom_database=use_custom_database,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
     if perform_nodes_insertion:
         with db_handler.user_write() as cursor:
@@ -193,6 +208,7 @@ def session_database(
         session_manually_tracked_balances,
         data_migration_version,
         session_use_custom_database,
+        session_sql_vm_instructions_cb,
 ) -> Optional[DBHandler]:
     if not session_start_with_logged_in_user:
         return None
@@ -212,6 +228,7 @@ def session_database(
         manually_tracked_balances=session_manually_tracked_balances,
         data_migration_version=data_migration_version,
         use_custom_database=session_use_custom_database,
+        sql_vm_instructions_cb=session_sql_vm_instructions_cb,
     )
 
 

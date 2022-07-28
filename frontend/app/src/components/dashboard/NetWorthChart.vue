@@ -100,6 +100,7 @@ import {
 import { NetValue } from '@rotki/common/lib/statistics';
 import {
   computed,
+  defineAsyncComponent,
   defineComponent,
   nextTick,
   onBeforeUnmount,
@@ -117,8 +118,6 @@ import {
   TooltipOptions
 } from 'chart.js';
 import dayjs from 'dayjs';
-import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
-import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
 import { setupThemeCheck } from '@/composables/common';
 import { useGraph, useTooltip } from '@/composables/graphs';
 import { setupGeneralSettings } from '@/composables/session';
@@ -133,7 +132,14 @@ export interface ValueOverTime {
 
 export default defineComponent({
   name: 'NetWorthChart',
-  components: { GraphTooltipWrapper, ExportSnapshotDialog },
+  components: {
+    GraphTooltipWrapper: defineAsyncComponent(
+      () => import('@/components/graphs/GraphTooltipWrapper.vue')
+    ),
+    ExportSnapshotDialog: defineAsyncComponent(
+      () => import('@/components/dashboard/ExportSnapshotDialog.vue')
+    )
+  },
   props: {
     timeframe: {
       required: true,

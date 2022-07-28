@@ -147,32 +147,64 @@ class BlockchainAccounts(NamedTuple):
         raise AssertionError(f'Unsupported blockchain: {blockchain}')
 
 
-class DBAssetBalance(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBAssetBalance:
     category: BalanceType
     time: Timestamp
     asset: Asset
-    amount: str
-    usd_value: str
+    amount: FVal
+    usd_value: FVal
 
     def serialize(
             self,
             export_data: Optional[Tuple[Asset, Price]] = None,
     ) -> Dict[str, Union[str, int]]:
+        """Serializes a `DBAssetBalance` to dict.
+        It accepts an `export_data` tuple of the user's local currency and the value of the
+        currency in USD e.g (EUR, 1.01). If provided, the data is serialized for human consumption.
+        """
         if export_data:
             return {
                 'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
                 'category': self.category.serialize(),
                 'asset': str(self.asset),
-                'amount': self.amount,
-                f'{export_data[0].symbol.lower()}_value': str(FVal(self.usd_value) * export_data[1]),  # noqa: 501
+                'amount': str(self.amount),
+                f'{export_data[0].symbol.lower()}_value': str(self.usd_value * export_data[1]),  # noqa: E501
             }
         return {
             'timestamp': int(self.time),
             'category': self.category.serialize(),
             'asset_identifier': str(self.asset.identifier),
-            'amount': self.amount,
-            'usd_value': self.usd_value,
+            'amount': str(self.amount),
+            'usd_value': str(self.usd_value),
         }
+
+    def serialize_for_db(self) -> Tuple[str, int, str, str, str]:
+        """Serializes a `DBAssetBalance` to be written into the DB.
+        (category, time, currency, amount, usd_value)
+        """
+        return (
+            self.category.serialize_for_db(),
+            self.time,
+            self.asset.identifier,
+            str(self.amount),
+            str(self.usd_value),
+        )
+
+    @classmethod
+    def deserialize_from_db(cls, entry: Tuple[str, int, str, str, str]) -> 'DBAssetBalance':
+        """Takes a timed balance from the DB and turns it into a `DBAssetBalance` object.
+        May raise:
+        - DeserializationError if the category from the db is invalid.
+        - UnknownAsset if the asset identifier is malformed.
+        """
+        return cls(
+            category=BalanceType.deserialize_from_db(entry[0]),
+            time=Timestamp(entry[1]),
+            asset=Asset(entry[2]),
+            amount=FVal(entry[3]),
+            usd_value=FVal(entry[4]),
+        )
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

@@ -26,13 +26,18 @@ BUFFERSIZE = 64 * 1024
 
 class DataHandler():
 
-    def __init__(self, data_directory: Path, msg_aggregator: MessagesAggregator):
-
+    def __init__(
+            self,
+            data_directory: Path,
+            msg_aggregator: MessagesAggregator,
+            sql_vm_instructions_cb: int,
+    ):
         self.logged_in = False
         self.data_directory = data_directory
         self.username = 'no_user'
         self.password = ''
         self.msg_aggregator = msg_aggregator
+        self.sql_vm_instructions_cb = sql_vm_instructions_cb
 
     def logout(self) -> None:
         if self.logged_in:
@@ -115,6 +120,7 @@ class DataHandler():
             password=password,
             msg_aggregator=self.msg_aggregator,
             initial_settings=initial_settings,
+            sql_vm_instructions_cb=self.sql_vm_instructions_cb,
         )
         self.user_data_dir = user_data_dir
         self.logged_in = True
@@ -128,15 +134,16 @@ class DataHandler():
         If any of the given assets is already in the DB the function does nothing
         and returns an error message.
         """
-        with self.db.user_write() as cursor:
+        with self.db.conn.read_ctx() as cursor:
             ignored_assets = self.db.get_ignored_assets(cursor)
             for asset in assets:
                 if asset in ignored_assets:
                     msg = f'{asset.identifier} is already in ignored assets'
                     return None, msg
 
-            for asset in assets:
-                self.db.add_to_ignored_assets(write_cursor=cursor, asset=asset)
+            with self.db.user_write() as write_cursor:
+                for asset in assets:
+                    self.db.add_to_ignored_assets(write_cursor=write_cursor, asset=asset)
 
             return self.db.get_ignored_assets(cursor), ''
 
@@ -146,15 +153,16 @@ class DataHandler():
         If any of the given assets is not in the DB the call function does nothing
         and returns an error message.
         """
-        with self.db.user_write() as cursor:
+        with self.db.conn.read_ctx() as cursor:
             ignored_assets = self.db.get_ignored_assets(cursor)
             for asset in assets:
                 if asset not in ignored_assets:
                     msg = f'{asset.identifier} is not in ignored assets'
                     return None, msg
 
-            for asset in assets:
-                self.db.remove_from_ignored_assets(write_cursor=cursor, asset=asset)
+            with self.db.user_write() as write_cursor:
+                for asset in assets:
+                    self.db.remove_from_ignored_assets(write_cursor=write_cursor, asset=asset)
 
             return self.db.get_ignored_assets(cursor), ''
 

@@ -26,121 +26,146 @@
       </template>
     </v-text-field>
 
-    <v-text-field
-      v-model="userLogDirectory"
-      :disabled="!!fileConfig.logDirectory"
-      :persistent-hint="!!fileConfig.logDirectory"
-      :hint="
-        !!fileConfig.logDirectory
-          ? $t('backend_settings.config_file_disabled')
-          : null
-      "
-      outlined
-      :label="$t('backend_settings.settings.log_directory.label')"
-      readonly
-      @click="selectLogsDirectory"
-    >
-      <template #append>
-        <v-btn icon @click="selectLogsDirectory">
-          <v-icon>mdi-folder</v-icon>
-        </v-btn>
-      </template>
-    </v-text-field>
+    <v-form v-model="formValid">
+      <v-text-field
+        v-model="userLogDirectory"
+        :disabled="!!fileConfig.logDirectory"
+        :persistent-hint="!!fileConfig.logDirectory"
+        :hint="
+          !!fileConfig.logDirectory
+            ? $t('backend_settings.config_file_disabled')
+            : null
+        "
+        outlined
+        :label="$t('backend_settings.settings.log_directory.label')"
+        readonly
+        @click="selectLogsDirectory"
+      >
+        <template #append>
+          <v-btn icon @click="selectLogsDirectory">
+            <v-icon>mdi-folder</v-icon>
+          </v-btn>
+        </template>
+      </v-text-field>
 
-    <v-select
-      v-model="loglevel"
-      :items="levels"
-      :disabled="!!fileConfig.loglevel"
-      :label="$t('backend_settings.settings.log_level.label')"
-      :persistent-hint="!!fileConfig.loglevel"
-      :hint="
-        !!fileConfig.loglevel
-          ? $t('backend_settings.config_file_disabled')
-          : null
-      "
-      outlined
-    >
-      <template #item="{ item }">
-        <v-row align="center">
-          <v-col cols="auto">
-            <v-icon>{{ icon(item) }}</v-icon>
-          </v-col>
-          <v-col>{{ item.toLocaleLowerCase() }}</v-col>
-        </v-row>
-      </template>
-      <template #selection="{ item }">
-        <v-row align="center">
-          <v-col cols="auto">
-            <v-icon>{{ icon(item) }}</v-icon>
-          </v-col>
-          <v-col>{{ item.toLocaleLowerCase() }}</v-col>
-        </v-row>
-      </template>
-    </v-select>
+      <v-select
+        v-model="loglevel"
+        :items="levels"
+        :disabled="!!fileConfig.loglevel"
+        :label="$t('backend_settings.settings.log_level.label')"
+        :persistent-hint="!!fileConfig.loglevel"
+        :hint="
+          !!fileConfig.loglevel
+            ? $t('backend_settings.config_file_disabled')
+            : null
+        "
+        outlined
+      >
+        <template #item="{ item }">
+          <v-row align="center">
+            <v-col cols="auto">
+              <v-icon>{{ icon(item) }}</v-icon>
+            </v-col>
+            <v-col>{{ item.toLocaleLowerCase() }}</v-col>
+          </v-row>
+        </template>
+        <template #selection="{ item }">
+          <v-row align="center">
+            <v-col cols="auto">
+              <v-icon>{{ icon(item) }}</v-icon>
+            </v-col>
+            <v-col>{{ item.toLocaleLowerCase() }}</v-col>
+          </v-row>
+        </template>
+      </v-select>
 
-    <v-expansion-panels flat>
-      <v-expansion-panel>
-        <v-expansion-panel-header>
-          {{ $t('backend_settings.advanced') }}
-        </v-expansion-panel-header>
-        <v-expansion-panel-content>
-          <v-text-field
-            v-model="maxLogSize"
-            outlined
-            :hint="
-              !!fileConfig.maxSizeInMbAllLogs
-                ? $t('backend_settings.config_file_disabled')
-                : $t('backend_settings.max_log_size.hint')
-            "
-            :label="$t('backend_settings.max_log_size.label')"
-            :disabled="fileConfig.maxSizeInMbAllLogs"
-            :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
-            clearable
-            type="number"
-          />
-          <v-text-field
-            v-model="maxLogFiles"
-            outlined
-            :hint="$t('backend_settings.max_log_files.hint')"
-            :label="
-              !!fileConfig.maxSizeInMbAllLogs
-                ? $t('backend_settings.config_file_disabled')
-                : $t('backend_settings.max_log_files.label')
-            "
-            :disabled="fileConfig.maxSizeInMbAllLogs"
-            :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
-            clearable
-            type="number"
-          />
-          <v-text-field
-            v-model="mainLoopSleep"
-            outlined
-            :hint="
-              !!fileConfig.sleepSeconds
-                ? $t('backend_settings.config_file_disabled')
-                : $t('backend_settings.main_loop_sleep.hint')
-            "
-            :label="$t('backend_settings.main_loop_sleep.label')"
-            :disabled="!!fileConfig.sleepSeconds"
-            :persistent-hint="!!fileConfig.sleepSeconds"
-            clearable
-            type="number"
-          />
+      <v-expansion-panels flat>
+        <v-expansion-panel>
+          <v-expansion-panel-header>
+            {{ $t('backend_settings.advanced') }}
+          </v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <v-text-field
+              v-model="maxLogSize"
+              outlined
+              :hint="
+                !!fileConfig.maxSizeInMbAllLogs
+                  ? $t('backend_settings.config_file_disabled')
+                  : $t('backend_settings.max_log_size.hint')
+              "
+              :label="$t('backend_settings.max_log_size.label')"
+              :disabled="fileConfig.maxSizeInMbAllLogs"
+              :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
+              :clearable="!isDefault(configuration?.maxSizeInMbAllLogs)"
+              :loading="!configuration"
+              :rules="nonNegativeNumberRules"
+              type="number"
+            />
+            <v-text-field
+              v-model="maxLogFiles"
+              outlined
+              :hint="$t('backend_settings.max_log_files.hint')"
+              :label="
+                !!fileConfig.maxLogfilesNum
+                  ? $t('backend_settings.config_file_disabled')
+                  : $t('backend_settings.max_log_files.label')
+              "
+              :disabled="fileConfig.maxLogfilesNum"
+              :persistent-hint="!!fileConfig.maxLogfilesNum"
+              :clearable="!isDefault(configuration?.maxLogfilesNum)"
+              :loading="!configuration"
+              :rules="nonNegativeNumberRules"
+              type="number"
+            />
+            <v-text-field
+              v-model="mainLoopSleep"
+              outlined
+              :hint="
+                !!fileConfig.sleepSeconds
+                  ? $t('backend_settings.config_file_disabled')
+                  : $t('backend_settings.main_loop_sleep.hint')
+              "
+              :label="$t('backend_settings.main_loop_sleep.label')"
+              :disabled="!!fileConfig.sleepSeconds"
+              :persistent-hint="!!fileConfig.sleepSeconds"
+              :clearable="!isDefault(configuration?.sleepSecs)"
+              :loading="!configuration"
+              :rules="positiveNumberRules"
+              type="number"
+            />
 
-          <v-checkbox
-            v-model="logFromOtherModules"
-            :label="$t('backend_settings.log_from_other_modules.label')"
-            :disabled="!!fileConfig.logFromOtherModules"
-            persistent-hint
-            :hint="
-              !!fileConfig.logFromOtherModules
-                ? $t('backend_settings.config_file_disabled')
-                : $t('backend_settings.log_from_other_modules.hint')
-            "
-          />
-        </v-expansion-panel-content>
-      </v-expansion-panel>
-    </v-expansion-panels>
+            <v-text-field
+              v-model="sqliteInstructions"
+              outlined
+              :hint="
+                !!fileConfig.sqliteInstructions
+                  ? $t('backend_settings.config_file_disabled')
+                  : $t('backend_settings.sqlite_instructions.hint')
+              "
+              :label="$t('backend_settings.sqlite_instructions.label')"
+              :disabled="fileConfig.sqliteInstructions"
+              :persistent-hint="!!fileConfig.sqliteInstructions"
+              :clearable="!isDefault(configuration?.sqliteInstructions)"
+              :loading="!configuration"
+              :rules="nonNegativeNumberRules"
+              type="number"
+            />
+
+            <v-checkbox
+              v-model="logFromOtherModules"
+              :label="$t('backend_settings.log_from_other_modules.label')"
+              :disabled="!!fileConfig.logFromOtherModules"
+              persistent-hint
+              :hint="
+                !!fileConfig.logFromOtherModules
+                  ? $t('backend_settings.config_file_disabled')
+                  : $t('backend_settings.log_from_other_modules.hint')
+              "
+            />
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
+    </v-form>
 
     <template #buttons>
       <v-spacer />
@@ -150,10 +175,16 @@
       <v-btn depressed @click="confirmReset = true">
         {{ $t('backend_settings.actions.reset') }}
       </v-btn>
-      <v-btn depressed color="primary" :disabled="!valid" @click="save()">
+      <v-btn
+        depressed
+        color="primary"
+        :disabled="!valid || !formValid"
+        @click="save()"
+      >
         {{ $t('backend_settings.actions.save') }}
       </v-btn>
     </template>
+
     <confirm-dialog
       v-if="confirmReset"
       :message="$t('backend_settings.confirm.message')"
@@ -171,9 +202,32 @@ import { Component, Emit, Mixins, Watch } from 'vue-property-decorator';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { BackendOptions } from '@/electron-main/ipc';
 import BackendMixin from '@/mixins/backend-mixin';
+import { api } from '@/services/rotkehlchen-api';
+import {
+  BackendConfiguration,
+  NumericBackendArgument
+} from '@/services/types-api';
 import { useMainStore } from '@/store/store';
-import { Writeable } from '@/types';
+import { Properties, Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
+
+type Args = {
+  value: string;
+  arg: NumericBackendArgument;
+  options: Writeable<Partial<BackendOptions>>;
+  key: Properties<BackendOptions, number>;
+};
+
+const updateArgument = (args: Args) => {
+  if (args.value !== args.arg.value.toString()) {
+    const numeric = parseInt(args.value);
+    if (isFinite(numeric) && !isNaN(numeric)) {
+      args.options[args.key] = numeric;
+    } else {
+      delete args.options[args.key];
+    }
+  }
+};
 
 @Component({
   name: 'BackendSettings',
@@ -189,14 +243,31 @@ export default class BackendSettings extends Mixins(BackendMixin) {
   logFromOtherModules: boolean = false;
   mainLoopSleep: string = '';
   maxLogSize: string = '';
+  sqliteInstructions: string = '';
   maxLogFiles: string = '';
+  formValid: boolean = false;
 
   readonly levels = Object.values(LogLevel);
   selecting: boolean = false;
   confirmReset: boolean = false;
+  configuration: BackendConfiguration | null = null;
+
+  beforeMount() {
+    this.getConfig();
+  }
 
   @Emit()
   dismiss() {}
+
+  private async getConfig(): Promise<BackendConfiguration> {
+    let config = this.configuration;
+    if (!config) {
+      config = await api.backendSettings();
+      this.configuration = config;
+    }
+
+    return config;
+  }
 
   get valid() {
     const newOptions = this.newUserOptions;
@@ -217,13 +288,6 @@ export default class BackendSettings extends Mixins(BackendMixin) {
       options.logDirectory = this.userLogDirectory;
     }
 
-    if (this.mainLoopSleep) {
-      const seconds = parseInt(this.mainLoopSleep);
-      if (isFinite(seconds) && !isNaN(seconds)) {
-        options.sleepSeconds = seconds;
-      }
-    }
-
     if (this.logFromOtherModules) {
       options.logFromOtherModules = true;
     }
@@ -232,18 +296,32 @@ export default class BackendSettings extends Mixins(BackendMixin) {
       options.dataDirectory = this.userDataDirectory;
     }
 
-    if (this.maxLogFiles) {
-      const files = parseInt(this.maxLogFiles);
-      if (isFinite(files) && !isNaN(files)) {
-        options.maxLogfilesNum = files;
-      }
-    }
-
-    if (this.maxLogSize) {
-      const mb = parseInt(this.maxLogSize);
-      if (isFinite(mb) && !isNaN(mb)) {
-        options.maxSizeInMbAllLogs = mb;
-      }
+    const config = this.configuration;
+    if (config) {
+      updateArgument({
+        value: this.mainLoopSleep,
+        arg: config.sleepSecs,
+        options,
+        key: 'sleepSeconds'
+      });
+      updateArgument({
+        value: this.maxLogFiles,
+        arg: config.maxLogfilesNum,
+        options,
+        key: 'maxLogfilesNum'
+      });
+      updateArgument({
+        value: this.maxLogSize,
+        arg: config.maxSizeInMbAllLogs,
+        options,
+        key: 'maxSizeInMbAllLogs'
+      });
+      updateArgument({
+        value: this.sqliteInstructions,
+        arg: config.sqliteInstructions,
+        options,
+        key: 'sqliteInstructions'
+      });
     }
 
     return options;
@@ -266,20 +344,34 @@ export default class BackendSettings extends Mixins(BackendMixin) {
     throw new Error(`Invalid option: ${level}`);
   }
 
+  isDefault(prop?: NumericBackendArgument) {
+    return prop?.isDefault;
+  }
+
   @Watch('dataDirectory')
   onDataDirectoryChange() {
     this.userDataDirectory = this.options.dataDirectory ?? this.dataDirectory;
   }
 
-  loaded() {
-    this.userDataDirectory = this.options.dataDirectory ?? this.dataDirectory;
-    this.userLogDirectory =
-      this.options.logDirectory ?? this.defaultLogDirectory;
-    this.loglevel = this.options.loglevel ?? this.defaultLogLevel;
-    this.mainLoopSleep = this.options.sleepSeconds?.toString() ?? '';
-    this.logFromOtherModules = this.options.logFromOtherModules ?? false;
-    this.maxLogFiles = this.options.maxLogfilesNum?.toString() ?? '';
-    this.maxLogSize = this.options.maxSizeInMbAllLogs?.toString() ?? '';
+  async loaded() {
+    const config = await this.getConfig();
+    const options = this.options;
+    this.userDataDirectory = options.dataDirectory ?? this.dataDirectory;
+    this.userLogDirectory = options.logDirectory ?? this.defaultLogDirectory;
+    this.loglevel = options.loglevel ?? this.defaultLogLevel;
+    this.mainLoopSleep = (
+      options.sleepSeconds ?? config.sleepSecs.value
+    ).toString();
+    this.logFromOtherModules = options.logFromOtherModules ?? false;
+    this.maxLogFiles = (
+      options.maxLogfilesNum ?? config.maxLogfilesNum.value
+    ).toString();
+    this.maxLogSize = (
+      options.maxSizeInMbAllLogs ?? config.maxSizeInMbAllLogs.value
+    ).toString();
+    this.sqliteInstructions = (
+      options.sqliteInstructions ?? config.sqliteInstructions.value
+    ).toString();
   }
 
   async save() {
@@ -325,6 +417,26 @@ export default class BackendSettings extends Mixins(BackendMixin) {
     this.confirmReset = false;
     this.dismiss();
     await this.resetOptions();
+  }
+
+  get positiveNumberRules() {
+    return [
+      (v: string) =>
+        !!v || this.$t('backend_settings.errors.non_empty').toString(),
+      (v: string) =>
+        parseInt(v) >= 1 ||
+        this.$t('backend_settings.errors.min', { min: 1 }).toString()
+    ];
+  }
+
+  get nonNegativeNumberRules() {
+    return [
+      (v: string) =>
+        !!v || this.$t('backend_settings.errors.non_empty').toString(),
+      (v: string) =>
+        parseInt(v) >= 0 ||
+        this.$t('backend_settings.errors.min', { min: 0 }).toString()
+    ];
   }
 }
 </script>

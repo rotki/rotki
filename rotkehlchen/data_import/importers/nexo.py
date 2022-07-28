@@ -42,6 +42,7 @@ class NexoImporter(BaseExchangeImporter):
         ignored_entries = (
             'ExchangeToWithdraw',
             'DepositToExchange',
+            'Repayment',  # informational loan operation
             'UnlockingTermDeposit',  # Move between nexo wallets
             'LockingTermDeposit',  # Move between nexo wallets
             'TransferIn',  # Transfer between nexo wallets
@@ -58,15 +59,15 @@ class NexoImporter(BaseExchangeImporter):
             log.debug(f'Ignoring rejected nexo entry {csv_row}')
             return
 
-        asset = asset_from_nexo(csv_row['Currency'])
-        amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
+        asset = asset_from_nexo(csv_row['Output Currency'])
+        amount = deserialize_asset_amount_force_positive(csv_row['Output Amount'])
         entry_type = csv_row['Type']
         transaction = csv_row['Transaction']
 
-        if entry_type == 'Exchange':
+        if entry_type in ('Exchange', 'CreditCardStatus'):
             self.db.msg_aggregator.add_warning(
-                'Found exchange transaction in nexo csv import but the entry will be ignored '
-                'since not enough information is provided about the trade.',
+                'Found exchange/credit card status transaction in nexo csv import but the entry '
+                'will be ignored since not enough information is provided about the trade.',
             )
             return
         if entry_type in ('Deposit', 'ExchangeDepositedOn'):
@@ -111,13 +112,13 @@ class NexoImporter(BaseExchangeImporter):
                 notes=f'{entry_type} from Nexo',
             )
             self.add_ledger_action(cursor, action)
-        elif entry_type in ('Interest', 'Bonus', 'Dividend', 'FixedTermInterest'):
+        elif entry_type in ('Interest', 'Bonus', 'Dividend', 'FixedTermInterest', 'Cashback', 'ReferralBonus'):  # noqa: E501
             # A user shared a CSV file where some entries marked as interest had negative amounts.
             # we couldn't find information about this since they seem internal transactions made
             # by nexo but they appear like a trade from asset -> nexo in order to gain interest
             # in nexo. There seems to always be another entry with the amount that the user
             # received so we'll ignore interest rows with negative amounts.
-            if deserialize_asset_amount(csv_row['Amount']) < 0:
+            if deserialize_asset_amount(csv_row['Output Amount']) < 0:
                 log.debug(f'Ignoring nexo entry {csv_row} with negative interest')
                 return
             action = LedgerAction(
@@ -127,6 +128,22 @@ class NexoImporter(BaseExchangeImporter):
                 location=Location.NEXO,
                 amount=amount,
                 asset=asset,
+                rate=None,
+                rate_asset=None,
+                link=transaction,
+                notes=f'{entry_type} from Nexo',
+            )
+            self.add_ledger_action(cursor, action)
+        elif entry_type == 'Liquidation':
+            input_asset = asset_from_nexo(csv_row['Input Currency'])
+            input_amount = deserialize_asset_amount_force_positive(csv_row['Input Amount'])
+            action = LedgerAction(
+                identifier=0,
+                timestamp=timestamp,
+                action_type=LedgerActionType.LOSS,
+                location=Location.NEXO,
+                asset=input_asset,
+                amount=input_amount,
                 rate=None,
                 rate_asset=None,
                 link=transaction,

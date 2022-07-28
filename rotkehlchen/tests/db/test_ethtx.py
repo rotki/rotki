@@ -20,13 +20,13 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 
 
-def test_add_get_ethereum_transactions(data_dir, username):
+def test_add_get_ethereum_transactions(data_dir, username, sql_vm_instructions_cb):
     """Test that adding and retrieving ethereum transactions from the DB works fine.
 
     Also duplicates should be ignored and an error returned
     """
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
     tx2_hash = make_evm_tx_hash(b'.h\xdd\x82\x85\x94\xeaq\xfe\n\xfc\xcf\xadwH\xc9\x0f\xfc\xd0\xf1\xad\xd4M\r$\x9b\xf7\x98\x87\xda\x93\x18')  # noqa: E501
     with data.db.user_write() as cursor:
@@ -117,12 +117,12 @@ def test_add_get_ethereum_transactions(data_dir, username):
         assert result == [tx1, tx3]
 
 
-def test_query_also_internal_ethereum_transactions(data_dir, username):
+def test_query_also_internal_ethereum_transactions(data_dir, username, sql_vm_instructions_cb):
     """Test that querying transactions for an address also returns the parent
     transaction of any internal transactions the address was involved in.
     """
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
     address_4 = make_ethereum_address()
 

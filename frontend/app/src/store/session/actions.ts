@@ -1,9 +1,11 @@
+import { BigNumber } from '@rotki/common';
 import { ActionResult } from '@rotki/common/lib/data';
 import { Severity } from '@rotki/common/lib/messages';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { get } from '@vueuse/core';
 import { ActionTree } from 'vuex';
 import { lastLogin } from '@/components/account-management/utils';
+import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
@@ -118,6 +120,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         } else {
           commit('setTimeframe', rootState.settings![LAST_KNOWN_TIMEFRAME]);
         }
+        BigNumber.config({
+          FORMAT: getBnFormat(
+            other.frontendSettings.thousandSeparator,
+            other.frontendSettings.decimalSeparator
+          )
+        });
       }
 
       commit('premium', other.havePremium);
@@ -172,7 +180,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
           api.getSettings(),
           api.getExchanges()
         ]);
-        logger.debug(settings);
       } else {
         if (!credentials.username) {
           return { success: false, message: '' };

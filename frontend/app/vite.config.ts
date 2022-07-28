@@ -4,7 +4,7 @@ import { join, resolve } from 'path';
 import { VuetifyResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
 import ScriptSetup from 'unplugin-vue2-script-setup/vite';
-import { splitVendorChunkPlugin, defineConfig } from 'vite';
+import { defineConfig, splitVendorChunkPlugin } from 'vite';
 // @ts-ignore
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -56,7 +56,13 @@ export default defineConfig({
     Components({
       dts: true,
       include: [/\.vue$/, /\.vue\?vue/],
-      resolvers: [VuetifyResolver()]
+      resolvers: [VuetifyResolver()],
+      types: [
+        {
+          from: 'vue-router',
+          names: ['RouterLink', 'RouterView']
+        }
+      ]
     }),
     ...(isTest
       ? [
@@ -74,10 +80,11 @@ export default defineConfig({
     })
   ],
   server: {
-    port: 8080
+    port: 8080,
+    hmr: isDevelopment && !process.env.CI
   },
   build: {
-    sourcemap: isDevelopment,
+    sourcemap: isDevelopment || isTest,
     outDir: 'dist',
     assetsDir: '.',
     minify: true,

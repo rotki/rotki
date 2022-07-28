@@ -71,6 +71,7 @@ def load_config_from_env() -> Dict[str, Any]:
     sleep_secs = os.environ.get('SLEEP_SECS')
     max_size_in_mb_all_logs = os.environ.get('MAX_SIZE_IN_MB_ALL_LOGS')
     max_logfiles_num = os.environ.get('MAX_LOGFILES_NUM')
+    sqlite_instructions = os.environ.get('SQLITE_INSTRUCTIONS')
 
     return {
         'loglevel': loglevel,
@@ -78,6 +79,7 @@ def load_config_from_env() -> Dict[str, Any]:
         'sleep_secs': sleep_secs,
         'max_logfiles_num': max_logfiles_num,
         'max_size_in_mb_all_logs': max_size_in_mb_all_logs,
+        'sqlite_instructions': sqlite_instructions
     }
 
 
@@ -92,6 +94,7 @@ def load_config() -> List[str]:
     sleep_secs = env_config.get('sleep_secs')
     max_logfiles_num = env_config.get('max_logfiles_num')
     max_size_in_mb_all_logs = env_config.get('max_size_in_mb_all_logs')
+    sqlite_instructions = env_config.get('sqlite_instructions')
 
     if file_config is not None:
         logger.info('loading config from file')
@@ -111,6 +114,9 @@ def load_config() -> List[str]:
         if file_config.get('max_size_in_mb_all_logs') is not None:
             max_size_in_mb_all_logs = file_config.get('max_size_in_mb_all_logs')
 
+        if file_config.get('sqlite_instructions') is not None:
+            sqlite_instructions = file_config.get('sqlite_instructions')
+
     args = [
         '--data-dir',
         '/data',
@@ -125,16 +131,19 @@ def load_config() -> List[str]:
 
     if sleep_secs is not None:
         args.append('--sleep-secs')
-        args.append(str(sleep_secs))
+        args.append(int(sleep_secs))
 
     if max_logfiles_num is not None:
         args.append('--max-logfiles-num')
-        args.append(str(max_logfiles_num))
+        args.append(int(max_logfiles_num))
 
     if max_size_in_mb_all_logs is not None:
         args.append('--max-size-in-mb-all-logs')
-        args.append(str(max_size_in_mb_all_logs))
+        args.append(int(max_size_in_mb_all_logs))
 
+    if sqlite_instructions is not None:
+        args.append('--sqlite-instructions')
+        args.append(int(sqlite_instructions))
     return args
 
 

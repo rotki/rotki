@@ -75,13 +75,14 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { computed, defineComponent, Ref } from '@vue/composition-api';
+import {
+  computed,
+  defineAsyncComponent,
+  defineComponent,
+  Ref
+} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
-import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
@@ -166,10 +167,18 @@ const tableHeaders = (
 export default defineComponent({
   name: 'NftBalanceTable',
   components: {
-    NftDetails,
-    RowAppend,
-    VisibleColumnsSelector,
-    MenuTooltipButton
+    NftDetails: defineAsyncComponent(
+      () => import('@/components/helper/NftDetails.vue')
+    ),
+    RowAppend: defineAsyncComponent(
+      () => import('@/components/helper/RowAppend.vue')
+    ),
+    VisibleColumnsSelector: defineAsyncComponent(
+      () => import('@/components/dashboard/VisibleColumnsSelector.vue')
+    ),
+    MenuTooltipButton: defineAsyncComponent(
+      () => import('@/components/helper/MenuTooltipButton.vue')
+    )
   },
   setup() {
     const store = useStore();

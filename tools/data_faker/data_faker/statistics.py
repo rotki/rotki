@@ -39,6 +39,7 @@ class StatisticsFaker():
             password=args.user_password,
             msg_aggregator=MessagesAggregator(),
             initial_settings=None,
+            sql_vm_instructions_cb=5000,
         )
 
     def _clean_tables(self) -> None:
@@ -120,8 +121,8 @@ class StatisticsFaker():
                 category=BalanceType.ASSET,
                 time=from_ts,
                 asset=assets[idx],
-                amount=str(random.randint(1, 20)),
-                usd_value=str(value),
+                amount=FVal(random.randint(1, 20)),
+                usd_value=FVal(value),
             ))
         self.db.add_multiple_balances(cursor, assets_data)
 
@@ -176,8 +177,8 @@ class StatisticsFaker():
                     category=BalanceType.ASSET,
                     time=from_ts,
                     asset=assets[idx],
-                    amount=str(new_amount),
-                    usd_value=str(action(FVal(assets_data[idx].usd_value), value)),
+                    amount=new_amount,
+                    usd_value=action(assets_data[idx].usd_value, value),
                 ))
             self.db.add_multiple_balances(cursor, new_assets_data)
 

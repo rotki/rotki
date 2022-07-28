@@ -16,5 +16,5 @@ export default defineConfig({
   },
   defaultCommandTimeout: 60000,
   responseTimeout: 60000,
-  pageLoadTimeout: 120000
+  pageLoadTimeout: 300000
 });

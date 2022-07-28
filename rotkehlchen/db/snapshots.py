@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.export.csv import CSVWriteError, _dict_to_csv_file
-from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.dbhandler import DBHandler
@@ -44,24 +43,16 @@ class DBSnapshot:
         """Retrieves the timed_balances from the db for a given timestamp."""
         balances_data = []
         cursor.execute(
-            'SELECT category, timestamp, amount, currency, usd_value FROM timed_balances '
+            'SELECT category, timestamp, currency, amount, usd_value FROM timed_balances '
             'WHERE timestamp=?', (timestamp,),
         )
 
         for data in cursor:
             try:
-                balances_data.append(
-                    DBAssetBalance(
-                        category=BalanceType.deserialize_from_db(data[0]),
-                        time=data[1],
-                        amount=data[2],
-                        asset=Asset(data[3]),
-                        usd_value=str(FVal(data[4])),
-                    ),
-                )
+                balances_data.append(DBAssetBalance.deserialize_from_db(data))
             except UnknownAsset as e:
                 self.msg_aggregator.add_error(
-                    f'Failed to include balance for asset {data[3]}. Verify that the '
+                    f'Failed to include balance for asset {data[2]}. Verify that the '
                     f'asset is in your list of known assets. Skipping this entry. {str(e)}',
                 )
             except DeserializationError as e:

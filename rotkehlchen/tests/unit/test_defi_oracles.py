@@ -1,8 +1,13 @@
+from copy import deepcopy
+from unittest.mock import patch
+
 import pytest
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DOGE, A_ETH, A_LINK, A_WETH
+from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DOGE, A_ETH, A_LINK, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import CurrentPriceOracle
@@ -55,3 +60,32 @@ def test_uniswap_oracles_special_cases(inquirer_defi):
             inquirer_defi._uniswapv2.query_current_price(A_BTC, A_DOGE)
         # Same asset
         assert inquirer_defi._uniswapv2.query_current_price(A_ETH, A_WETH) == Price(ONE)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_uniswap_no_decimals(inquirer_defi):
+    """Test that if a token has no information about the number of decimals a proper error
+    is raised"""
+    asset_resolver = AssetResolver()
+    original_getter = asset_resolver.get_asset_data
+
+    def fake_weth_token():
+        """Make sure that the weth token has no decimals fields and any other token
+        is loaded properly
+        """
+        def mocked_asset_getter(asset_identifier: str, form_with_incomplete_data: bool = False):
+            if asset_identifier == A_WETH.identifier:
+                fake_weth = deepcopy(A_WETH)
+                object.__setattr__(fake_weth, 'decimals', None)
+                return fake_weth
+            return original_getter(asset_identifier, form_with_incomplete_data)
+        return patch.object(asset_resolver, 'get_asset_data', wraps=mocked_asset_getter)
+
+    with fake_weth_token():
+        weth = EthereumToken(A_WETH.ethereum_address)
+        assert weth.decimals is None
+        with pytest.raises(DefiPoolError):
+            inquirer_defi._uniswapv2.query_current_price(weth, A_USDC)
+        with pytest.raises(DefiPoolError):
+            inquirer_defi._uniswapv3.query_current_price(weth, A_USDC)

@@ -41,6 +41,9 @@ def request_get(
         timeout=timeout,
     )
 
+    if response.status_code != HTTPStatus.OK:
+        raise RemoteError(f'{url} returned status: {response.status_code}')
+
     try:
         result = json.loads(response.text)
     except json.decoder.JSONDecodeError as e:

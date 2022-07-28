@@ -2,10 +2,13 @@ import argparse
 import sys
 from typing import Any, List, Sequence, Union
 
+from rotkehlchen.constants.misc import (
+    DEFAULT_MAX_LOG_BACKUP_FILES,
+    DEFAULT_MAX_LOG_SIZE_IN_MB,
+    DEFAULT_SLEEP_SECS,
+    DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+)
 from rotkehlchen.utils.misc import get_system_spec
-
-DEFAULT_MAX_LOG_SIZE_IN_MB = 300
-DEFAULT_MAX_LOG_BACKUP_FILES = 3
 
 
 class CommandAction(argparse.Action):
@@ -35,6 +38,15 @@ class CommandAction(argparse.Action):
         sys.exit(0)
 
 
+def _positive_int_or_zero(value: str) -> int:
+    """Force positive int or zero https://docs.python.org/3/library/argparse.html#type"""
+    int_val = int(value)  # ValueError is caught and shown to user
+    if int_val < 0:
+        raise ValueError('Int value should be positive or zero')
+
+    return int_val
+
+
 def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     """Add the rotki arguments to the argument parser and return it"""
     p = argparse.ArgumentParser(
@@ -45,8 +57,8 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     p.add_argument(
         '--sleep-secs',
         type=int,
-        default=20,
-        help="Seconds to sleep during the main loop",
+        default=DEFAULT_SLEEP_SECS,
+        help='Seconds to sleep during the main loop',
     )
     p.add_argument(
         '--data-dir',
@@ -118,6 +130,12 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         help='This is the maximum number of logfiles to keep',
         default=DEFAULT_MAX_LOG_BACKUP_FILES,
         type=int,
+    )
+    p.add_argument(
+        '--sqlite-instructions',
+        help='Instructions per sqlite context switch. Should be a positive integer or zero to disable.',  # noqa: E501
+        default=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+        type=_positive_int_or_zero,
     )
     p.add_argument(
         'version',

@@ -90,5 +90,8 @@ export const mutations: MutationTree<SessionState> = {
   },
   setPinned(state: SessionState, pinned: Nullable<Pinned>) {
     state.pinned = pinned ? { ...pinned } : pinned;
+  },
+  setDarkModeEnabled(state: SessionState, darkModeEnabled: boolean) {
+    state.darkModeEnabled = darkModeEnabled;
   }
 };

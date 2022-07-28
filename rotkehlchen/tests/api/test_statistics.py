@@ -8,7 +8,7 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -218,11 +218,13 @@ def test_query_statistics_asset_balance_errors(rotkehlchen_api_server, rest_api_
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
+@pytest.mark.parametrize('db_settings', [{'treat_eth2_as_eth': True}, {'treat_eth2_as_eth': False}])  # noqa: E501
 def test_query_statistics_value_distribution(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
         btc_accounts,
         start_with_valid_premium,
+        db_settings,
 ):
     """Test that using the statistics value distribution endpoint works"""
     start_time = ts_now()
@@ -243,6 +245,14 @@ def test_query_statistics_value_distribution(
             location=Location.BANKS,
             tags=None,
             balance_type=BalanceType.ASSET,
+        ), ManuallyTrackedBalance(
+            id=2,
+            asset=A_ETH2,
+            label='John Doe',
+            amount=FVal('2.6'),
+            location=Location.KRAKEN,
+            tags=None,
+            balance_type=BalanceType.ASSET,
         )],
     )
 
@@ -261,8 +271,8 @@ def test_query_statistics_value_distribution(
         """Helper function to run next query and its assertion twice"""
         if start_with_valid_premium:
             result = assert_proper_response_with_result(response)
-            assert len(result) == 5
-            locations = {'poloniex', 'binance', 'banks', 'blockchain', 'total'}
+            assert len(result) == 6
+            locations = {'poloniex', 'binance', 'banks', 'blockchain', 'total', 'kraken'}
             for entry in result:
                 assert len(entry) == 3
                 assert entry['time'] >= start_time
@@ -303,19 +313,43 @@ def test_query_statistics_value_distribution(
     )
     if start_with_valid_premium:
         result = assert_proper_response_with_result(response)
-        assert len(result) == 4
-        totals = {
-            'ETH': get_asset_balance_total(A_ETH, setup),
-            'BTC': get_asset_balance_total(A_BTC, setup),
-            'EUR': get_asset_balance_total(A_EUR, setup),
-            A_RDN.identifier: get_asset_balance_total(A_RDN, setup),
-        }
-        for entry in result:
-            assert len(entry) == 5
-            assert entry['time'] >= start_time
-            assert entry['category'] == 'asset'
-            assert entry['usd_value'] is not None
-            assert FVal(entry['amount']) == totals[entry['asset']]
+        if db_settings['treat_eth2_as_eth'] is True:
+            assert len(result) == 4
+            totals = {
+                'ETH': get_asset_balance_total(A_ETH, setup) + get_asset_balance_total(A_ETH2, setup),  # noqa: E501
+                'BTC': get_asset_balance_total(A_BTC, setup),
+                'EUR': get_asset_balance_total(A_EUR, setup),
+                A_RDN.identifier: get_asset_balance_total(A_RDN, setup),
+            }
+            for index, entry in enumerate(result):
+                assert len(entry) == 5
+                assert entry['time'] >= start_time
+                assert entry['category'] == 'asset'
+                assert entry['usd_value'] is not None
+                assert FVal(entry['amount']) == totals[entry['asset']]
+                # check that the usd_value is in descending order
+                if index == 0:
+                    continue
+                assert FVal(result[index - 1]['usd_value']) > FVal(entry['usd_value'])
+        else:
+            assert len(result) == 5
+            totals = {
+                'ETH': get_asset_balance_total(A_ETH, setup),
+                'ETH2': get_asset_balance_total(A_ETH2, setup),
+                'BTC': get_asset_balance_total(A_BTC, setup),
+                'EUR': get_asset_balance_total(A_EUR, setup),
+                A_RDN.identifier: get_asset_balance_total(A_RDN, setup),
+            }
+            for index, entry in enumerate(result):
+                assert len(entry) == 5
+                assert entry['time'] >= start_time
+                assert entry['category'] == 'asset'
+                assert entry['usd_value'] is not None
+                assert FVal(entry['amount']) == totals[entry['asset']]
+                # check that the usd_value is in descending order
+                if index == 0:
+                    continue
+                assert FVal(result[index - 1]['usd_value']) > FVal(entry['usd_value'])
     else:
         assert_error_response(
             response=response,

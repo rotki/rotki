@@ -22,10 +22,10 @@ from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 
 
-def test_add_and_get_aave_events(data_dir, username):
+def test_add_and_get_aave_events(data_dir, username, sql_vm_instructions_cb):
     """Test that get aave events works fine and returns only events for what we need"""
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
 
     addr1 = make_ethereum_address()
@@ -168,10 +168,10 @@ def test_add_and_get_aave_events(data_dir, username):
     assert len(test_set) == len(addr3_events)
 
 
-def test_add_and_get_yearn_vault_events(data_dir, username):
+def test_add_and_get_yearn_vault_events(data_dir, username, sql_vm_instructions_cb):
     """Test that get yearn vault events works fine and returns only events for what we need"""
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
 
     addr1 = make_ethereum_address()

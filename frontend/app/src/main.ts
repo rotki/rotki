@@ -21,6 +21,8 @@ import store from './store/store';
 import './utils/logging';
 
 Vue.config.productionTip = false;
+Vue.config.devtools =
+  process.env.NODE_ENV === 'development' && !process.env.VITE_TEST;
 
 Vue.use(Api);
 Vue.use(Interop);

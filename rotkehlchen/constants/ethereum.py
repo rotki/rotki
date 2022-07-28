@@ -185,3 +185,5 @@ UNISWAP_V3_NFT_MANAGER = EthereumConstants.contract('UNISWAP_V3_NFT_POSITIONS_MA
 SADDLE_ALETH_POOL = EthereumConstants().contract('SADDLE_ALETH_POOL')
 
 RAY_DIGITS = 27
+# If an on-chain pool single-side asset liquidity is less than this, ignore the pool
+SINGLE_SIDE_USD_POOL_LIMIT = 5000

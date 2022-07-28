@@ -27,14 +27,21 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent, PropType } from '@vue/composition-api';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import {
+  defineAsyncComponent,
+  defineComponent,
+  PropType
+} from '@vue/composition-api';
 import { exchangeName } from '@/components/history/consts';
 import { TradeLocation } from '@/services/history/types';
 
 export default defineComponent({
   name: 'ExchangeBox',
-  components: { AmountDisplay },
+  components: {
+    AmountDisplay: defineAsyncComponent(
+      () => import('@/components/display/AmountDisplay.vue')
+    )
+  },
   props: {
     location: { required: true, type: String as PropType<TradeLocation> },
     amount: { required: true, type: BigNumber }

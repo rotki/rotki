@@ -63,6 +63,7 @@ export class TradeHistoryPage {
     cy.get('.big-dialog__buttons__confirm').click();
     fetchTradesAssertion();
     cy.get('[data-cy=trade-form]').should('not.exist');
+    cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
   }
 
   visibleEntries(visible: number) {

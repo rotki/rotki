@@ -546,6 +546,7 @@ In the advanced section of the backend settings you can also modify the followin
 - **Main Loop sleep**: This is the amount of seconds that the main loop of rotki sleeps for. It is set to 20 seconds by default.
 - **Max log size**: This is the maximum size in megabytes all logs of a single run can have.
 - **Max num of log files**: This is the maximum number of backup (rotated) logs a single run can have.
+- **Instructions per SQLite context switch**: This is the setting to specify after how many sqlite VM instructions to context switch between cooperative threads. Set to 0 to disable async DB access.
 
 Disabling the tray icon
 ====================================

@@ -84,12 +84,16 @@ def parse_import_snapshot_data(
                     category=BalanceType.deserialize(entry['category']),
                     time=Timestamp(int(entry['timestamp'])),
                     asset=Asset(identifier=entry['asset_identifier']),
-                    amount=entry['amount'],
-                    usd_value=str(deserialize_fval(
+                    amount=deserialize_fval(
+                        value=entry['amount'],
+                        name='amount',
+                        location='snapshot import',
+                    ),
+                    usd_value=deserialize_fval(
                         value=entry['usd_value'],
                         name='usd_value',
                         location='snapshot import',
-                    )),
+                    ),
                 ),
             )
     except UnknownAsset as err:

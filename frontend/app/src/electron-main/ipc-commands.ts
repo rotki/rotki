@@ -1,4 +1,5 @@
 export const IPC_RESTART_BACKEND = 'RESTART_BACKEND' as const;
+export const IPC_REQUEST_RESTART = 'REQUEST_RESTART' as const;
 export const IPC_CHECK_FOR_UPDATES = 'CHECK_FOR_UPDATES' as const;
 export const IPC_DOWNLOAD_UPDATE = 'DOWNLOAD_UPDATE' as const;
 export const IPC_DOWNLOAD_PROGRESS = 'DOWNLOAD_PROGRESS' as const;

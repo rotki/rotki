@@ -221,21 +221,16 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: 'frontend/package-lock.json'
-      - name: Cache Cypress
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/Cypress
-          key: ${{ runner.os }}-node--e2e-${{ hashFiles('frontend/package-lock.json') }}
       - name: Store frontend cache
         uses: actions/cache@v3
         with:
           path: |
+            ~/.cache/Cypress
+            frontend/app/components.d.ts
             ~/rotki-e2e/price_history
             ~/rotki-e2e/icons
             ~/rotki-e2e/global_data
           key: ${{ runner.os }}-e2e-cache-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-e2e-cache-
       - name: Setup backend
         run: |
           pip install --upgrade pip==${{ env.PIP_VERSION }}

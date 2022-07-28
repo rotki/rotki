@@ -32,6 +32,7 @@ export const BackendOptions = z.object({
   sleepSeconds: z.number().nonnegative().optional(),
   logFromOtherModules: z.boolean().optional(),
   maxSizeInMbAllLogs: z.number().optional(),
+  sqliteInstructions: z.number().optional(),
   maxLogfilesNum: z.number().optional()
 });
 
@@ -65,6 +66,7 @@ export interface Interop {
   downloadUpdate(progress: (percentage: number) => void): Promise<boolean>;
   installUpdate(): Promise<boolean | Error>;
   restartBackend(options: Partial<BackendOptions>): Promise<boolean>;
+  listenForRestart(callback: () => void): void;
   setSelectedTheme(selectedTheme: number): Promise<boolean>;
   version(): Promise<SystemVersion>;
   isMac(): Promise<boolean>;

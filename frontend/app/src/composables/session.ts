@@ -188,3 +188,16 @@ export const setupDisplayData = () => {
     scrambleData
   };
 };
+
+export const useDarkMode = () => {
+  const store = useStore();
+  const sessionState = getSessionState();
+  const darkModeEnabled = computed(() => sessionState.darkModeEnabled);
+  const updateDarkMode = (enabled: boolean) => {
+    store.commit('session/setDarkModeEnabled', enabled);
+  };
+  return {
+    darkModeEnabled,
+    updateDarkMode
+  };
+};

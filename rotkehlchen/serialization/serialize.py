@@ -114,8 +114,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'time': entry.time,
             'category': str(entry.category),
             'asset': entry.asset.identifier,
-            'amount': entry.amount,
-            'usd_value': entry.usd_value,
+            'amount': str(entry.amount),
+            'usd_value': str(entry.usd_value),
         }
     if isinstance(entry, (
             DefiProtocol,

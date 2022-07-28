@@ -116,11 +116,12 @@ class Rotkehlchen():
         self.premium: Optional[Premium] = None
         self.user_is_logged_in: bool = False
 
-        self.sleep_secs = args.sleep_secs
-        if args.data_dir is None:
+        self.args = args
+        self.sleep_secs = self.args.sleep_secs
+        if self.args.data_dir is None:
             self.data_dir = default_data_directory()
         else:
-            self.data_dir = Path(args.data_dir)
+            self.data_dir = Path(self.args.data_dir)
             self.data_dir.mkdir(parents=True, exist_ok=True)
 
         if not os.access(self.data_dir, os.W_OK | os.R_OK):
@@ -128,7 +129,6 @@ class Rotkehlchen():
                 f'The given data directory {self.data_dir} is not readable or writable',
             )
         self.main_loop_spawned = False
-        self.args = args
         self.api_task_greenlets: List[gevent.Greenlet] = []
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
@@ -136,8 +136,15 @@ class Rotkehlchen():
         self.msg_aggregator.rotki_notifier = self.rotki_notifier
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         # Initialize the GlobalDBHandler singleton. Has to be initialized BEFORE asset resolver
-        GlobalDBHandler(data_dir=self.data_dir)
-        self.data = DataHandler(self.data_dir, self.msg_aggregator)
+        GlobalDBHandler(
+            data_dir=self.data_dir,
+            sql_vm_instructions_cb=self.args.sqlite_instructions,
+        )
+        self.data = DataHandler(
+            self.data_dir,
+            self.msg_aggregator,
+            sql_vm_instructions_cb=args.sqlite_instructions,
+        )
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
         self.coingecko = Coingecko()
         self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)

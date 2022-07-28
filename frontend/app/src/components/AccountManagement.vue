@@ -111,6 +111,7 @@
 <script lang="ts">
 import {
   computed,
+  defineAsyncComponent,
   defineComponent,
   onMounted,
   ref,
@@ -120,9 +121,6 @@ import {
 import { get, set, useLocalStorage } from '@vueuse/core';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
-import CreateAccount from '@/components/account-management/CreateAccount.vue';
-import Login from '@/components/account-management/Login.vue';
-import PremiumReminder from '@/components/account-management/PremiumReminder.vue';
 import {
   deleteBackendUrl,
   getBackendUrl,
@@ -145,9 +143,15 @@ export default defineComponent({
     ConnectionFailure,
     PrivacyNotice,
     ConnectionLoading,
-    PremiumReminder,
-    Login,
-    CreateAccount
+    PremiumReminder: defineAsyncComponent(
+      () => import('@/components/account-management/PremiumReminder.vue')
+    ),
+    Login: defineAsyncComponent(
+      () => import('@/components/account-management/Login.vue')
+    ),
+    CreateAccount: defineAsyncComponent(
+      () => import('@/components/account-management/CreateAccount.vue')
+    )
   },
   props: {
     logged: {

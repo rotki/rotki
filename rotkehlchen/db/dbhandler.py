@@ -59,7 +59,7 @@ from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
@@ -245,6 +245,7 @@ class DBHandler:
             password: str,
             msg_aggregator: MessagesAggregator,
             initial_settings: Optional[ModifiableDBSettings],
+            sql_vm_instructions_cb: int,
     ):
         """Database constructor
 
@@ -256,6 +257,7 @@ class DBHandler:
         """
         self.msg_aggregator = msg_aggregator
         self.user_data_dir = user_data_dir
+        self.sql_vm_instructions_cb = sql_vm_instructions_cb
         self.sqlcipher_version = detect_sqlcipher_version()
         self.last_write_ts: Optional[Timestamp] = None
         self.conn: DBConnection = None  # type: ignore
@@ -405,7 +407,11 @@ class DBHandler:
             fullpath = self.user_data_dir / TRANSIENT_DB_NAME
             connection_type = DBConnectionType.TRANSIENT
         try:
-            conn = DBConnection(path=str(fullpath), connection_type=connection_type)
+            conn = DBConnection(
+                path=str(fullpath),
+                connection_type=connection_type,
+                sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+            )
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             raise SystemPermissionError(
                 f'Could not open database file: {fullpath}. Permission errors?',
@@ -501,7 +507,11 @@ class DBHandler:
                 f.write(unencrypted_db_data)
 
             # Now attach to the unencrypted DB and copy it to our DB and encrypt it
-            self.conn = DBConnection(path=tempdbpath, connection_type=DBConnectionType.USER)
+            self.conn = DBConnection(
+                path=tempdbpath,
+                connection_type=DBConnectionType.USER,
+                sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+            )
             password_for_sqlcipher = _protect_password_sqlcipher(password)
             script = f'ATTACH DATABASE "{rdbpath}" AS encrypted KEY "{password_for_sqlcipher}";'
             if self.sqlcipher_version == 3:
@@ -526,7 +536,6 @@ class DBHandler:
         also update the last write timestamp
         """
         cursor = self.conn.cursor()
-        self.conn.enter_critical_section()
         try:
             yield cursor
         except Exception:
@@ -542,7 +551,6 @@ class DBHandler:
             self.conn.commit()
         finally:
             cursor.close()
-            self.conn.exit_critical_section()
 
     @contextmanager
     def transient_write(self) -> Iterator[DBCursor]:
@@ -550,7 +558,6 @@ class DBHandler:
         also commit
         """
         cursor = self.conn_transient.cursor()
-        self.conn_transient.enter_critical_section()
         try:
             yield cursor
         except Exception:
@@ -560,7 +567,6 @@ class DBHandler:
             self.conn_transient.commit()
         finally:
             cursor.close()
-            self.conn_transient.exit_critical_section()
 
     # pylint: disable=no-self-use
     def get_settings(self, cursor: 'DBCursor', have_premium: bool = False) -> DBSettings:
@@ -652,13 +658,12 @@ class DBHandler:
             (asset.identifier,),
         )
 
-    # pylint: disable=no-self-use
-    def get_ignored_assets(self, write_cursor: 'DBCursor') -> List[Asset]:
-        write_cursor.execute(
+    def get_ignored_assets(self, cursor: 'DBCursor') -> List[Asset]:
+        cursor.execute(
             'SELECT value FROM multisettings WHERE name="ignored_asset";',
         )
         assets = []
-        for asset_setting in write_cursor:
+        for asset_setting in cursor:
             try:
                 asset = Asset(asset_setting[0])
             except UnknownAsset:
@@ -666,10 +671,11 @@ class DBHandler:
                     f'Found unknown asset {asset_setting[0]} in the list of ignored '
                     f'assets. Removing it.'
                 )
-                write_cursor.execute(
-                    'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
-                    (asset_setting[0],),
-                )
+                with self.user_write() as write_cursor:
+                    write_cursor.execute(
+                        'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
+                        (asset_setting[0],),
+                    )
                 self.msg_aggregator.add_warning(msg)
                 continue
 
@@ -743,15 +749,11 @@ class DBHandler:
     # pylint: disable=no-self-use
     def add_multiple_balances(self, write_cursor: 'DBCursor', balances: List[DBAssetBalance]) -> None:  # noqa: E501
         """Execute addition of multiple balances in the DB"""
-        serialized_balances = [
-            (x.time, x.asset.identifier, x.amount, x.usd_value, x.category.serialize_for_db())
-            for x in balances
-        ]
+        serialized_balances = [balance.serialize_for_db() for balance in balances]
         try:
             write_cursor.executemany(
-                'INSERT INTO timed_balances('
-                '    timestamp, currency, amount, usd_value, category) '
-                ' VALUES(?, ?, ?, ?, ?)',
+                'INSERT INTO timed_balances(category, timestamp, currency, amount, usd_value) '
+                'VALUES(?, ?, ?, ?, ?)',
                 serialized_balances,
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -1644,8 +1646,8 @@ class DBHandler:
                 category=BalanceType.ASSET,
                 time=timestamp,
                 asset=key,
-                amount=str(val['amount']),
-                usd_value=str(val['usd_value']),
+                amount=val['amount'],
+                usd_value=val['usd_value'],
             ))
 
         for key, val in data['liabilities'].items():
@@ -1655,8 +1657,8 @@ class DBHandler:
                 category=BalanceType.LIABILITY,
                 time=timestamp,
                 asset=key,
-                amount=str(val['amount']),
-                usd_value=str(val['usd_value']),
+                amount=val['amount'],
+                usd_value=val['usd_value'],
             ))
 
         for key2, val2 in data['location'].items():
@@ -2764,10 +2766,9 @@ class DBHandler:
 
         The list is sorted by usd value going from higher to lower
         """
-        with self.user_write() as write_cursor:
-            ignored_assets = self.get_ignored_assets(write_cursor)
-
         with self.conn.read_ctx() as cursor:
+            ignored_assets = self.get_ignored_assets(cursor)
+            treat_eth2_as_eth = self.get_settings(cursor).treat_eth2_as_eth
             cursor.execute(
                 'SELECT timestamp, currency, amount, usd_value, category FROM timed_balances '
                 'WHERE timestamp=(SELECT MAX(timestamp) from timed_balances) AND category = ? '
@@ -2775,20 +2776,44 @@ class DBHandler:
                 (BalanceType.ASSET.serialize_for_db(),),  # pylint: disable=no-member
             )
             asset_balances = []
+            eth_balance = DBAssetBalance(
+                time=Timestamp(0),
+                category=BalanceType.ASSET,
+                asset=A_ETH,
+                amount=ZERO,
+                usd_value=ZERO,
+            )
             for result in cursor:
                 asset = Asset(result[1])
+                time = Timestamp(result[0])
+                amount = FVal(result[2])
+                usd_value = FVal(result[3])
                 if asset in ignored_assets:
                     continue
-                asset_balances.append(
-                    DBAssetBalance(
-                        time=result[0],
-                        asset=asset,
-                        amount=result[2],
-                        usd_value=result[3],
-                        category=BalanceType.deserialize_from_db(result[4]),
-                    ),
-                )
-
+                # show eth & eth2 as eth in value distribution by asset
+                if treat_eth2_as_eth is True and asset in (A_ETH, A_ETH2):
+                    eth_balance.time = time
+                    eth_balance.amount = eth_balance.amount + amount
+                    eth_balance.usd_value = eth_balance.usd_value + usd_value
+                else:
+                    asset_balances.append(
+                        DBAssetBalance(
+                            time=time,
+                            asset=asset,
+                            amount=amount,
+                            usd_value=usd_value,
+                            category=BalanceType.deserialize_from_db(result[4]),
+                        ),
+                    )
+            # only add the eth_balance if it contains a balance > 0
+            if eth_balance.amount > ZERO:
+                # respect descending order `usd_value`
+                for index, balance in enumerate(asset_balances):
+                    if eth_balance.usd_value > balance.usd_value:
+                        asset_balances.insert(index, eth_balance)
+                        break
+                else:
+                    asset_balances.append(eth_balance)
         return asset_balances
 
     def get_tags(self, cursor: 'DBCursor') -> Dict[str, Tag]:
@@ -3157,14 +3182,14 @@ class DBHandler:
 
     def _ensure_data_integrity(
             self,
-            write_cursor: 'DBCursor',
+            cursor: 'DBCursor',
             table_name: str,
             klass: Union[Type[Trade], Type[AssetMovement], Type[MarginPosition]],
     ) -> None:
         updates: List[Tuple[str, str]] = []
         log.debug(f'db integrity: start {table_name}')
-        write_cursor.execute(f'SELECT * from {table_name};')
-        for result in write_cursor:
+        cursor.execute(f'SELECT * from {table_name};')
+        for result in cursor:
             try:
                 obj = klass.deserialize_from_db(result)
             except (DeserializationError, UnknownAsset):
@@ -3181,7 +3206,8 @@ class DBHandler:
                 f'Found {len(updates)} identifier discrepancies in the DB '
                 f'for {table_name}. Correcting...',
             )
-            write_cursor.executemany(f'UPDATE {table_name} SET id = ? WHERE id =?;', updates)
+            with self.user_write() as write_cursor:
+                write_cursor.executemany(f'UPDATE {table_name} SET id = ? WHERE id =?;', updates)
         log.debug(f'db integrity: end {table_name}')
 
     def ensure_data_integrity(self) -> None:
@@ -3193,7 +3219,7 @@ class DBHandler:
         """
         start_time = ts_now()
         log.debug('Starting DB data integrity check')
-        with self.user_write() as cursor:
+        with self.conn.read_ctx() as cursor:
             self._ensure_data_integrity(cursor, 'trades', Trade)
             self._ensure_data_integrity(cursor, 'asset_movements', AssetMovement)
             self._ensure_data_integrity(cursor, 'margin_positions', MarginPosition)

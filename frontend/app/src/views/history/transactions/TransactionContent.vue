@@ -230,6 +230,7 @@
 import { GeneralAccount } from '@rotki/common/lib/account';
 import {
   computed,
+  defineAsyncComponent,
   defineComponent,
   Ref,
   ref,
@@ -239,21 +240,11 @@ import {
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import Fragment from '@/components/helper/Fragment';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import {
   MatchedKeyword,
   SearchMatcher
 } from '@/components/history/filtering/types';
-import TransactionEventForm, {
-  TransactionEventFormInstance
-} from '@/components/history/TransactionEventForm.vue';
-import TransactionDetail from '@/components/history/transactions/TransactionDetail.vue';
-import TransactionEvents from '@/components/history/transactions/TransactionEvents.vue';
-import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import { TransactionEventFormInstance } from '@/components/history/TransactionEventForm.vue';
 import { isSectionLoading } from '@/composables/common';
 import {
   getCollectionData,
@@ -279,7 +270,6 @@ import { useTasks } from '@/store/tasks';
 import { Collection } from '@/types/collection';
 import { TaskType } from '@/types/task-type';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
-import TransactionQueryStatus from '@/views/history/transactions/TransactionQueryStatus.vue';
 
 type PaginationOptions = {
   page: number;
@@ -333,16 +323,36 @@ enum TransactionFilterValueKeys {
 export default defineComponent({
   name: 'TransactionContent',
   components: {
-    TransactionQueryStatus,
-    Fragment,
-    TransactionEventForm,
-    BigDialog,
-    TransactionDetail,
-    BadgeDisplay,
-    UpgradeRow,
-    TransactionEvents,
-    BlockchainAccountSelector,
-    RefreshButton
+    TransactionQueryStatus: defineAsyncComponent(
+      () => import('@/views/history/transactions/TransactionQueryStatus.vue')
+    ),
+    Fragment: defineAsyncComponent(
+      () => import('@/components/helper/Fragment')
+    ),
+    TransactionEventForm: defineAsyncComponent(
+      () => import('@/components/history/TransactionEventForm.vue')
+    ),
+    BigDialog: defineAsyncComponent(
+      () => import('@/components/dialogs/BigDialog.vue')
+    ),
+    TransactionDetail: defineAsyncComponent(
+      () => import('@/components/history/transactions/TransactionDetail.vue')
+    ),
+    BadgeDisplay: defineAsyncComponent(
+      () => import('@/components/history/BadgeDisplay.vue')
+    ),
+    UpgradeRow: defineAsyncComponent(
+      () => import('@/components/history/UpgradeRow.vue')
+    ),
+    TransactionEvents: defineAsyncComponent(
+      () => import('@/components/history/transactions/TransactionEvents.vue')
+    ),
+    BlockchainAccountSelector: defineAsyncComponent(
+      () => import('@/components/helper/BlockchainAccountSelector.vue')
+    ),
+    RefreshButton: defineAsyncComponent(
+      () => import('@/components/helper/RefreshButton.vue')
+    )
   },
   emits: ['fetch'],
   setup(_, { emit }) {

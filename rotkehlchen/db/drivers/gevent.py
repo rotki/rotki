@@ -2,6 +2,7 @@
  https://github.com/gilesbrown/gsqlite3/blob/fef400f1c5bcbc546772c827d3992e578ea5f905/gsqlite3.py
 but heavily modified"""
 
+import random
 import sqlite3
 from contextlib import contextmanager
 from enum import Enum, auto
@@ -22,7 +23,6 @@ UnderlyingConnection = Union[sqlite3.Connection, sqlcipher.Connection]  # pylint
 import logging
 
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
-SQL_VM_INSTRUCTIONS_CB = 5000  # maybe make this configurable
 
 
 class DBCursor:
@@ -38,7 +38,6 @@ class DBCursor:
 
     def __next__(self) -> Any:
         """
-
         We type this and other function returning Any since anything else has
         too many false positives. Same as typeshed:
         https://github.com/python/typeshed/blob/a750a42c65b77963ff097b6cbb6d36cef5912eb7/stdlib/sqlite3/dbapi2.pyi#L397
@@ -47,6 +46,8 @@ class DBCursor:
             logger.trace(f'Get next item for cursor {self._cursor}')
         result = next(self._cursor, None)
         if result is None:
+            if __debug__:
+                logger.trace(f'Stopping iteration for cursor {self._cursor}')
             raise StopIteration()
 
         if __debug__:
@@ -147,15 +148,29 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
     """Needs to be a static function. Cannot be a connection class method
     or sqlite breaks in funny ways. Raises random Operational errors.
     """
+    if __debug__:
+        identifier = random.random()
+        conn_type = connection.connection_type if connection else 'no connection'
+        logger.trace(f'START progress callback for {conn_type} with id {identifier}')
+
     if connection is None:
         return 0
 
+    if connection.in_callback.ready() is False:
+        # This solves the bug described in test_callback_segfault_complex. This works
+        # since we are single threaded and if we get here and it's locked we know that
+        # we should not wait since this is an edge case that can hit us if the connection gets
+        # modified before we exit the callback. So we immediately exit the callback
+        # without any sleep that would lead to context switching
+        return 0
+
+    # without this rotkehlchen/tests/db/test_async.py::test_async_segfault fails
     with connection.in_callback:
         if __debug__:
-            logger.trace('Got in the progress callback')
+            logger.trace(f'Got in locked section of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501
         gevent.sleep(0)
         if __debug__:
-            logger.trace('Going out of the progress callback')
+            logger.trace(f'Going out of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501
         return 0
 
 
@@ -186,31 +201,23 @@ class DBConnection:
     def _set_progress_handler(self) -> None:
         callback = CALLBACK_MAP.get(self.connection_type)
         # https://github.com/python/typeshed/issues/8105
-        self._conn.set_progress_handler(callback, SQL_VM_INSTRUCTIONS_CB)  # type: ignore
+        self._conn.set_progress_handler(callback, self.sql_vm_instructions_cb)  # type: ignore
 
-    def __init__(self, path: Union[str, Path], connection_type: DBConnectionType) -> None:
+    def __init__(
+            self,
+            path: Union[str, Path],
+            connection_type: DBConnectionType,
+            sql_vm_instructions_cb: int,
+    ) -> None:
+        CONNECTION_MAP[connection_type] = self
         self._conn: UnderlyingConnection
-        self._in_critical_section = False
         self.in_callback = gevent.lock.Semaphore()
         self.connection_type = connection_type
+        self.sql_vm_instructions_cb = sql_vm_instructions_cb
         if connection_type == DBConnectionType.GLOBAL:
             self._conn = sqlite3.connect(path, check_same_thread=False)
         else:
             self._conn = sqlcipher.connect(path, check_same_thread=False)  # pylint: disable=no-member  # noqa: E501
-        self._set_progress_handler()
-        CONNECTION_MAP[connection_type] = self
-
-    def enter_critical_section(self) -> None:
-        with self.in_callback:
-            if __debug__:
-                logger.trace('entering critical section')
-            self._in_critical_section = True
-            self._conn.set_progress_handler(None, 0)
-
-    def exit_critical_section(self) -> None:
-        if __debug__:
-            logger.trace('exiting critical section')
-        self._in_critical_section = False
         self._set_progress_handler()
 
     def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
@@ -241,24 +248,24 @@ class DBConnection:
         return DBCursor(connection=self, cursor=underlying_cursor)
 
     def commit(self) -> None:
-        if __debug__:
-            logger.trace('START DB CONNECTION COMMIT')
-        try:
-            self._conn.commit()
-        finally:
-            self.exit_critical_section()
+        with self.in_callback:
             if __debug__:
-                logger.trace('FINISH DB CONNECTION COMMIT')
+                logger.trace('START DB CONNECTION COMMIT')
+            try:
+                self._conn.commit()
+            finally:
+                if __debug__:
+                    logger.trace('FINISH DB CONNECTION COMMIT')
 
     def rollback(self) -> None:
-        if __debug__:
-            logger.trace('START DB CONNECTION ROLLBACK')
-        try:
-            self._conn.rollback()
-        finally:
-            self.exit_critical_section()
+        with self.in_callback:
             if __debug__:
-                logger.trace('FINISH DB CONNECTION ROLLBACK')
+                logger.trace('START DB CONNECTION ROLLBACK')
+            try:
+                self._conn.rollback()
+            finally:
+                if __debug__:
+                    logger.trace('FINISH DB CONNECTION ROLLBACK')
 
     def cursor(self) -> DBCursor:
         return DBCursor(connection=self, cursor=self._conn.cursor())
@@ -278,7 +285,6 @@ class DBConnection:
     @contextmanager
     def write_ctx(self) -> Generator['DBCursor', None, None]:
         cursor = self.cursor()
-        self.enter_critical_section()
         try:
             yield cursor
         except Exception:
@@ -288,7 +294,6 @@ class DBConnection:
             self._conn.commit()
         finally:
             cursor.close()  # lgtm [py/should-use-with]
-            self.exit_critical_section()
 
     @property
     def total_changes(self) -> int:

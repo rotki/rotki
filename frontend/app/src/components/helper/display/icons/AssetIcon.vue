@@ -32,21 +32,27 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
   computed,
+  defineAsyncComponent,
   defineComponent,
   ref,
   toRefs,
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import { currencies } from '@/data/currencies';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
 
 export default defineComponent({
   name: 'AssetIcon',
-  components: { AdaptiveWrapper, GeneratedIcon },
+  components: {
+    AdaptiveWrapper: defineAsyncComponent(
+      () => import('@/components/display/AdaptiveWrapper.vue')
+    ),
+    GeneratedIcon: defineAsyncComponent(
+      () => import('@/components/helper/display/icons/GeneratedIcon.vue')
+    )
+  },
   props: {
     identifier: { required: true, type: String },
     symbol: { required: false, type: String, default: '' },

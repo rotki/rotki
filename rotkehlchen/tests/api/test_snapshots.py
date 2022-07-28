@@ -18,6 +18,7 @@ from rotkehlchen.db.snapshots import (
     LOCATION_DATA_IMPORT_FILENAME,
 )
 from rotkehlchen.db.utils import BalanceType, DBAssetBalance, LocationData
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -48,15 +49,15 @@ def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Ti
                 category=BalanceType.ASSET,
                 time=ts,
                 asset=A_BTC,
-                amount='1.00',
-                usd_value='178.44',
+                amount=FVal('1.00'),
+                usd_value=FVal('178.44'),
             ),
             DBAssetBalance(
                 category=BalanceType.ASSET,
                 time=ts,
                 asset=A_AVAX,
-                amount='1.00',
-                usd_value='87',
+                amount=FVal('1.00'),
+                usd_value=FVal('87'),
             ),
         ])
 

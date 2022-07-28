@@ -10,9 +10,10 @@ from web3.types import BlockIdentifier
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.chain.ethereum.utils import multicall, multicall_specific
+from rotkehlchen.chain.ethereum.utils import multicall, multicall_specific, token_normalized_value
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USD, A_USDC, A_USDT, A_WETH
 from rotkehlchen.constants.ethereum import (
+    SINGLE_SIDE_USD_POOL_LIMIT,
     UNISWAP_V2_FACTORY,
     UNISWAP_V2_LP_ABI,
     UNISWAP_V3_FACTORY,
@@ -22,6 +23,7 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, Price
@@ -191,6 +193,7 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
 
         Can raise:
         - PriceQueryUnsupportedAsset
+        - DefiPoolError
         - RemoteError
         """
         log.debug(
@@ -330,6 +333,9 @@ class UniswapV3Oracle(UniswapOracle):
     ) -> PoolPrice:
         """
         Returns the units of token1 that one token0 can buy
+
+        May raise:
+        - DefiPoolError
         """
         pool_contract = EthereumContract(
             address=pool_addr,
@@ -360,7 +366,12 @@ class UniswapV3Oracle(UniswapOracle):
         token_1 = EthereumToken(
             to_checksum_address(pool_contract.decode(output[2], 'token1')[0]),  # noqa: E501 pylint:disable=unsubscriptable-object
         )
+
         sqrt_price_x96, _, _, _, _, _, _ = pool_contract.decode(output[0], 'slot0')
+        if token_0.decimals is None:
+            raise DefiPoolError(f'Token {token_0} has None as decimals')
+        if token_1.decimals is None:
+            raise DefiPoolError(f'Token {token_1} has None as decimals')
         decimals_constant = 10 ** (token_0.decimals - token_1.decimals)
 
         price = FVal((sqrt_price_x96 * sqrt_price_x96) / 2 ** (192) * decimals_constant)
@@ -399,6 +410,9 @@ class UniswapV2Oracle(UniswapOracle):
     ) -> PoolPrice:
         """
         Returns the units of token1 that one token0 can buy
+
+        May raise:
+        - DefiPoolError
         """
         pool_contract = EthereumContract(
             address=pool_addr,
@@ -429,11 +443,25 @@ class UniswapV2Oracle(UniswapOracle):
         token_1 = EthereumToken(
             to_checksum_address(pool_contract.decode(output[2], 'token1')[0]),  # noqa: E501 pylint:disable=unsubscriptable-object
         )
+
+        if token_0.decimals is None:
+            raise DefiPoolError(f'Token {token_0} has None as decimals')
+        if token_1.decimals is None:
+            raise DefiPoolError(f'Token {token_1} has None as decimals')
         reserve_0, reserve_1, _ = pool_contract.decode(output[0], 'getReserves')
         decimals_constant = 10**(token_0.decimals - token_1.decimals)
 
         if ZERO in (reserve_0, reserve_1):
             raise DefiPoolError(f'Uniswap pool for {token_0}/{token_1} has asset with no reserves')
+
+        # Ignore pools with too low single side-liquidity. Imperfect approach to avoid spam
+        # pylint: disable=unexpected-keyword-arg  # no idea why pylint sees this here
+        price_0 = Inquirer().find_usd_price(token_0, skip_onchain=True)
+        price_1 = Inquirer().find_usd_price(token_1, skip_onchain=True)
+        if price_0 != ZERO and price_0 * token_normalized_value(token_amount=reserve_0, token=token_0) < SINGLE_SIDE_USD_POOL_LIMIT:  # noqa: E501
+            raise DefiPoolError(f'Uniswap pool for {token_0}/{token_1} has too low reserves')
+        if price_1 != ZERO and price_1 * token_normalized_value(token_amount=reserve_1, token=token_1) < SINGLE_SIDE_USD_POOL_LIMIT:  # noqa: E501
+            raise DefiPoolError(f'Uniswap pool for {token_0}/{token_1} has too low reserves')
 
         price = FVal((reserve_1 / reserve_0) * decimals_constant)
         return PoolPrice(price=price, token_0=token_0, token_1=token_1)

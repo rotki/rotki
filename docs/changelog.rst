@@ -2,6 +2,16 @@
 Changelog
 =========
 
+* :release:`1.25.1 <2022-07-28>`
+* :bug:`-` Introduce an experimental approach to ignore uniswap v2 pool pricing for pools with single sided liquidity that is less than $5k. This is experimental and we will probably figure out a better way to filter spam assets in the future. Context: https://twitter.com/peter_szilagyi/status/1552532767790997504
+* :bug:`4599` Users will see a smaller amount of icons when accessing rotki from a mobile device.
+* :bug:`4578` Value distribution by asset now respects ETH=ETH2 setting.
+* :bug:`-` Some cases of python segfaulting under specific conditions of reading/writing to the DB should now be fixed.
+* :bug:`4586` DB yielding instructions is now an argument and can be configured by the user. It can be set to any positive integer or zero to disable it. There is a class of bugs that can lead to crash of the backend when this is enabled, so disabling is now an easy way to avoid them. With this enabled DB access parallelization is achieved for long running queries.
+* :bug:`4606` Fixes missing decimals when editing a manual balance while having custom decimal and thousand separators.
+* :bug:`4597` Tokens with no information about decimals won't make the price query stop if the uniswap oracles are used.
+* :bug:`4502` Nexo importer now supports updated format.
+
 * :release:`1.25.0 <2022-07-15>`
 * :feature:`3325` Users will now be able to manage all ethereum nodes queried, their querying priority and add any arbitrary number of nodes to query.
 * :bug:`4438` Filtering of ethereum transactions is now enabled.

@@ -41,6 +41,10 @@ export class ElectronInterop {
     window.interop?.listenForErrors(callback);
   }
 
+  onRestart(callback: () => void) {
+    window.interop?.listenForRestart(callback);
+  }
+
   async openDirectory(title: string): Promise<string | undefined> {
     return (await window.interop?.openDirectory(title)) ?? undefined;
   }

@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
@@ -125,6 +126,7 @@ def _init_db_with_target_version(
             password='123',
             msg_aggregator=msg_aggregator,
             initial_settings=None,
+            sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
         )
     return db
 
@@ -345,11 +347,11 @@ def populate_db_and_check_for_asset_renaming(
         new_db.logout()  # logout the db so update_owned_assets still runs mocked
 
 
-def test_upgrade_db_1_to_2(data_dir, username):
+def test_upgrade_db_1_to_2(data_dir, username, sql_vm_instructions_cb):
     """Test upgrading the DB from version 1 to version 2, which means that
     ethereum accounts are now checksummed"""
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     with creation_patch, target_patch(1), mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         data.unlock(username, '123', create_new=True)
     # Manually input a non checksummed account
@@ -364,7 +366,7 @@ def test_upgrade_db_1_to_2(data_dir, username):
     # now relogin and check that the account has been re-saved as checksummed
     with creation_patch, target_patch(1), mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         del data
-        data = DataHandler(data_dir, msg_aggregator)
+        data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
         with target_patch(target_version=2):
             data.unlock(username, '123', create_new=False)
 
@@ -399,11 +401,11 @@ def test_upgrade_db_2_to_3(user_data_dir):
         )
 
 
-def test_upgrade_db_3_to_4(data_dir, username):
+def test_upgrade_db_3_to_4(data_dir, username, sql_vm_instructions_cb):
     """Test upgrading the DB from version 3 to version 4, which means that
     the eth_rpc_port setting is changed to eth_rpc_endpoint"""
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     with creation_patch, target_patch(3), mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         data.unlock(username, '123', create_new=True)
     # Manually set version and input the old rpcport setting
@@ -421,7 +423,7 @@ def test_upgrade_db_3_to_4(data_dir, username):
     # now relogin and check that the setting has been changed and the version bumped
     with mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         del data
-        data = DataHandler(data_dir, msg_aggregator)
+        data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
         with target_patch(target_version=4):
             data.unlock(username, '123', create_new=False)
     cursor = data.db.conn.cursor()
@@ -2872,13 +2874,13 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     assert new_tables == {'address_book', 'web3_nodes'}
 
 
-def test_db_newer_than_software_raises_error(data_dir, username):
+def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb):
     """
     If the DB version is greater than the current known version in the
     software warn the user to use the latest version of the software
     """
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True)
     # Manually set a bigger version than the current known one
     cursor = data.db.conn.cursor()
@@ -2890,7 +2892,7 @@ def test_db_newer_than_software_raises_error(data_dir, username):
 
     # now relogin and check that an error is thrown
     del data
-    data = DataHandler(data_dir, msg_aggregator)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     with pytest.raises(DBUpgradeError):
         data.unlock(username, '123', create_new=False)
 
