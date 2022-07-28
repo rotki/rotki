@@ -20,15 +20,15 @@
 
 <script lang="ts">
 import {
-  computed,
   defineComponent,
   onMounted,
   ref,
-  toRefs
+  toRefs,
+  watch
 } from '@vue/composition-api';
-import { debouncedWatch, get, set } from '@vueuse/core';
+import { get, set } from '@vueuse/core';
 import Cleave from 'cleave.js';
-import { useStore } from '@/store/utils';
+import { setupSettings } from '@/composables/settings';
 
 /**
  * When this component is used, prop [type] shouldn't be passed,
@@ -46,20 +46,15 @@ export default defineComponent({
   setup(props, { emit }) {
     const { integer, value } = toRefs(props);
 
+    const { thousandSeparator, decimalSeparator } = setupSettings();
+
+    const formattedValue = get(value).replace('.', get(decimalSeparator));
+
     const textInput = ref(null);
 
-    const currentValue = ref(get(value));
+    const currentValue = ref(get(formattedValue));
 
     const cleave = ref<Cleave | null>(null);
-
-    const store = useStore();
-    const thousandSeparator = computed<string>(
-      () => store.getters['settings/thousandSeparator']
-    );
-
-    const decimalSeparator = computed<string>(
-      () => store.getters['settings/decimalSeparator']
-    );
 
     const onValueChanged = ({
       target
@@ -87,14 +82,15 @@ export default defineComponent({
       );
     });
 
-    debouncedWatch(
-      value,
-      value => {
-        set(currentValue, value);
-        get(cleave)?.setRawValue(value);
-      },
-      { debounce: 400 }
-    );
+    watch(value, value => {
+      const rawValue = get(cleave)?.getRawValue();
+      const formattedValue = value.replace('.', get(decimalSeparator));
+
+      if (rawValue !== value) {
+        set(currentValue, formattedValue);
+        get(cleave)?.setRawValue(formattedValue);
+      }
+    });
 
     const focus = () => {
       const inputWrapper = get(textInput) as any;
