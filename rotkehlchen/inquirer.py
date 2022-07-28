@@ -248,6 +248,8 @@ class Inquirer():
     _ethereum: Optional['EthereumManager'] = None
     _oracles: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
+    _oracles_not_onchain: Optional[List[CurrentPriceOracle]] = None
+    _oracle_instances_not_onchain: Optional[List[CurrentPriceOracleInstance]] = None
     special_tokens: List[EthereumToken]
 
     def __new__(
@@ -333,6 +335,12 @@ class Inquirer():
         instance = Inquirer()
         instance._oracles = oracles
         instance._oracle_instances = [getattr(instance, f'_{str(oracle)}') for oracle in oracles]
+        instance._oracles_not_onchain = []
+        instance._oracle_instances_not_onchain = []
+        for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances):
+            if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3, CurrentPriceOracle.SADDLE):  # noqa: E501
+                instance._oracles_not_onchain.append(oracle)
+                instance._oracle_instances_not_onchain.append(oracle_instance)
 
     @staticmethod
     def _query_oracle_instances(
@@ -342,19 +350,20 @@ class Inquirer():
     ) -> Price:
         instance = Inquirer()
         cache_key = (from_asset, to_asset)
-        assert isinstance(instance._oracles, list) and isinstance(instance._oracle_instances, list), (  # noqa: E501
+        assert (
+            isinstance(instance._oracles, list) and
+            isinstance(instance._oracle_instances, list) and
+            isinstance(instance._oracles_not_onchain, list) and
+            isinstance(instance._oracle_instances_not_onchain, list)
+        ), (
             'Inquirer should never be called before the setting the oracles'
         )
         oracles = instance._oracles
         oracle_instances = instance._oracle_instances
 
         if skip_onchain:
-            oracles = []
-            oracle_instances = []
-            for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances):
-                if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3, CurrentPriceOracle.SADDLE):  # noqa: E501
-                    oracles.append(oracle)
-                    oracle_instances.append(oracle_instance)
+            oracles = instance._oracles_not_onchain
+            oracle_instances = instance._oracle_instances_not_onchain
 
         price = Price(ZERO)
         for oracle, oracle_instance in zip(oracles, oracle_instances):
