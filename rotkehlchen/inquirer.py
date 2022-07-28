@@ -338,14 +338,24 @@ class Inquirer():
     def _query_oracle_instances(
             from_asset: Asset,
             to_asset: Asset,
+            skip_onchain: bool = False,
     ) -> Price:
         instance = Inquirer()
         cache_key = (from_asset, to_asset)
-        oracles = instance._oracles
-        oracle_instances = instance._oracle_instances
-        assert isinstance(oracles, list) and isinstance(oracle_instances, list), (
+        assert isinstance(instance._oracles, list) and isinstance(instance._oracle_instances, list), (  # noqa: E501
             'Inquirer should never be called before the setting the oracles'
         )
+        oracles = instance._oracles
+        oracle_instances = instance._oracle_instances
+
+        if skip_onchain:
+            oracles = []
+            oracle_instances = []
+            for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances):
+                if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3, CurrentPriceOracle.SADDLE):  # noqa: E501
+                    oracles.append(oracle)
+                    oracle_instances.append(oracle_instance)
+
         price = Price(ZERO)
         for oracle, oracle_instance in zip(oracles, oracle_instances):
             if (
@@ -383,6 +393,7 @@ class Inquirer():
             from_asset: Asset,
             to_asset: Asset,
             ignore_cache: bool = False,
+            skip_onchain: bool = False,
     ) -> Price:
         """Returns the current price of 'from_asset' in 'to_asset' valuation.
         NB: prices for special symbols in any currency but USD are not supported.
@@ -401,13 +412,14 @@ class Inquirer():
             if cache is not None:
                 return cache.price
 
-        oracle_price = instance._query_oracle_instances(from_asset=from_asset, to_asset=to_asset)
+        oracle_price = instance._query_oracle_instances(from_asset=from_asset, to_asset=to_asset, skip_onchain=skip_onchain)  # noqa: E501
         return oracle_price
 
     @staticmethod
     def find_usd_price(
             asset: Asset,
             ignore_cache: bool = False,
+            skip_onchain: bool = False,
     ) -> Price:
         """Returns the current USD price of the asset
 
@@ -500,7 +512,7 @@ class Inquirer():
             # KFEE is a kraken special asset where 1000 KFEE = 10 USD
             return Price(FVal(0.01))
 
-        return instance._query_oracle_instances(from_asset=asset, to_asset=A_USD)
+        return instance._query_oracle_instances(from_asset=asset, to_asset=A_USD, skip_onchain=skip_onchain)  # noqa: E501
 
     def find_uniswap_v2_lp_price(
             self,
