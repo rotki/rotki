@@ -1078,6 +1078,10 @@
     "data_directory": {
       "select": "Select where rotki will store the data"
     },
+    "errors": {
+      "min": "Minimum value for this setting is {min}",
+      "non_empty": "This setting cannot be empty"
+    },
     "log_directory": {
       "select": "bSelect where rotki will store the logs"
     },

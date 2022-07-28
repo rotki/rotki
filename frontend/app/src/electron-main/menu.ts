@@ -1,6 +1,10 @@
 import { app, BrowserWindow, MenuItem, shell } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
-import { IPC_ABOUT, IPC_DEBUG_SETTINGS } from '@/electron-main/ipc-commands';
+import {
+  IPC_ABOUT,
+  IPC_DEBUG_SETTINGS,
+  IPC_REQUEST_RESTART
+} from '@/electron-main/ipc-commands';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const isMac = process.platform === 'darwin';
@@ -77,6 +81,13 @@ const helpMenu = {
       label: 'Clear Cache',
       click: async (_item: MenuItem, browserWindow: BrowserWindow) => {
         await browserWindow.webContents.session.clearCache();
+      }
+    },
+    {
+      label: 'Reset Settings / Restart Backend',
+      click: async (_item: MenuItem, browserWindow: BrowserWindow) => {
+        await browserWindow.webContents.session.clearStorageData();
+        browserWindow.webContents.send(IPC_REQUEST_RESTART);
       }
     },
     separator,
