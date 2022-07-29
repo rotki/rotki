@@ -83,13 +83,19 @@ import {
 } from '@rotki/common/lib/settings/graphs';
 import { NetValue } from '@rotki/common/lib/statistics';
 import { defineAsyncComponent } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import dayjs from 'dayjs';
+import {
+  mapActions as mapPiniaActions,
+  mapState as mapPiniaState
+} from 'pinia';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
 import { isPeriodAllowed } from '@/store/settings/utils';
+import { useStatisticsStore } from '@/store/statistics';
 import { ActionStatus } from '@/store/types';
 import {
   FrontendSettingsPayload,
@@ -114,19 +120,19 @@ import { bigNumberify } from '@/utils/bignumbers';
   },
   computed: {
     ...mapGetters('session', ['currencySymbol', 'floatingPrecision']),
-    ...mapGetters('statistics', ['netValue', 'totalNetWorth']),
+    ...mapPiniaState(useStatisticsStore, ['totalNetWorth']),
     ...mapState('session', ['timeframe']),
     ...mapGetters('settings', ['visibleTimeframes'])
   },
   methods: {
-    ...mapActions('statistics', ['fetchNetValue']),
+    ...mapPiniaActions(useStatisticsStore, ['fetchNetValue', 'getNetValue']),
     ...mapMutations('session', ['setTimeframe']),
     ...mapActions('settings', ['updateSetting'])
   }
 })
 export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   currencySymbol!: string;
-  netValue!: (startingDate: number) => NetValue;
+  getNetValue!: (startingDate: number) => NetValue;
   totalNetWorth!: BigNumber;
   fetchNetValue!: () => Promise<void>;
   timeframe!: TimeFramePeriod;
@@ -212,7 +218,7 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
 
   get timeframeData(): NetValue {
     const startingDate = this.timeframes[this.selection].startingDate();
-    return this.netValue(startingDate);
+    return get(this.getNetValue(startingDate));
   }
 
   @Watch('premium')

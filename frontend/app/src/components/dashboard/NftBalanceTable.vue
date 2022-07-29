@@ -82,6 +82,7 @@ import {
   Ref
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import { setupStatusChecking } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
@@ -91,6 +92,7 @@ import { Routes } from '@/router/routes';
 import { BalanceActions } from '@/store/balances/action-types';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { Section } from '@/store/const';
+import { useStatisticsStore } from '@/store/statistics';
 import { useStore } from '@/store/utils';
 import {
   DashboardTablesVisibleColumns,
@@ -182,15 +184,13 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const statistics = useStatisticsStore();
+    const { totalNetWorthUsd } = storeToRefs(statistics);
     const balances = computed<NonFungibleBalance[]>(
       () => store.getters['balances/nfBalances']
     );
 
     const { shouldShowLoadingScreen } = setupStatusChecking();
-
-    const totalNetWorthUsd = computed<BigNumber>(
-      () => store.getters['statistics/totalNetWorthUsd']
-    );
 
     const { currencySymbol } = setupGeneralSettings();
 
@@ -202,7 +202,7 @@ export default defineComponent({
     };
 
     const percentageOfTotalNetValue = (value: BigNumber) => {
-      return calculatePercentage(value, get(totalNetWorthUsd));
+      return calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);
     };
 
     const percentageOfCurrentGroup = (value: BigNumber) => {

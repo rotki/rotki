@@ -12,7 +12,6 @@ import { defi } from '@/store/defi';
 import { session } from '@/store/session';
 import { settings } from '@/store/settings';
 import { staking } from '@/store/staking';
-import { statistics } from '@/store/statistics';
 import { RotkehlchenState, StatusPayload, Version } from '@/store/types';
 import { isLoading } from '@/store/utils';
 import { Nullable } from '@/types';
@@ -215,7 +214,6 @@ const store: StoreOptions<RotkehlchenState> = {
     defi,
     session,
     settings,
-    statistics,
     staking
   },
   plugins: storeVuexPlugins()

@@ -1,20 +1,15 @@
-import { computed } from '@vue/composition-api';
-import { BigNumber } from 'bignumber.js';
-import { useStore } from '@/store/utils';
+import { BigNumber } from '@rotki/common';
+import { Ref } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
+import { useStatisticsStore } from '@/store/statistics';
 
 export const setupGeneralStatistics = () => {
-  const store = useStore();
-
-  const totalNetWorthUsd = computed(() => {
-    return store.getters['statistics/totalNetWorthUsd'] as BigNumber;
-  });
-
-  const fetchNetValue = async () => {
-    await store.dispatch('statistics/fetchNetValue');
-  };
+  const store = useStatisticsStore();
+  const { totalNetWorthUsd } = storeToRefs(store);
+  const { fetchNetValue } = store;
 
   return {
-    totalNetWorthUsd,
+    totalNetWorthUsd: totalNetWorthUsd as Ref<BigNumber>,
     fetchNetValue
   };
 };
