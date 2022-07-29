@@ -69,10 +69,10 @@ import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import EditSnapshotDialog from '@/components/dashboard/EditSnapshotDialog.vue';
 import { setupGeneralSettings } from '@/composables/session';
-import { setupGeneralStatistics } from '@/composables/statistics';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useStatisticsStore } from '@/store/statistics';
 import { useMainStore } from '@/store/store';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { downloadFileByUrl } from '@/utils/download';
@@ -176,7 +176,7 @@ export default defineComponent({
       }
     };
 
-    const { fetchNetValue } = setupGeneralStatistics();
+    const { fetchNetValue } = useStatisticsStore();
 
     const deleteSnapshot = async () => {
       let message: Message | null;
