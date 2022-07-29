@@ -55,7 +55,7 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
 import { truncateAddress, truncationPoints } from '@/filters';
 import { useEthNamesStore } from '@/store/balances';
@@ -68,7 +68,7 @@ export default defineComponent({
   },
   setup(props) {
     const { account } = toRefs(props);
-    const { currentBreakpoint } = setupThemeCheck();
+    const { currentBreakpoint } = useTheme();
     const { scrambleData, shouldShowAmount } = setupDisplayData();
 
     const { ethNameSelector } = useEthNamesStore();

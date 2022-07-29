@@ -14,7 +14,7 @@ import { defineComponent } from '@vue/composition-api';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { Routes } from '@/router/routes';
 
 const tabs: TabContent[] = [
@@ -28,7 +28,7 @@ export default defineComponent({
   name: 'History',
   components: { TabNavigation },
   setup() {
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
     return { dark, tabs };
   }
 });

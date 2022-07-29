@@ -106,7 +106,6 @@ import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import StatusMixin from '@/mixins/status-mixin';
-import ThemeMixin from '@/mixins/theme-mixin';
 import { Section } from '@/store/const';
 import {
   AIRDROP_1INCH,
@@ -153,7 +152,7 @@ type AirdropSources = {
     ...mapActions('defi', ['fetchAirdrops'])
   }
 })
-export default class Airdrops extends Mixins(StatusMixin, ThemeMixin) {
+export default class Airdrops extends Mixins(StatusMixin) {
   readonly section = Section.DEFI_AIRDROPS;
   readonly ETH = Blockchain.ETH;
   readonly headers: DataTableHeader[] = [

@@ -108,7 +108,7 @@ import { get, set } from '@vueuse/core';
 import { IVueI18n } from 'vue-i18n';
 import { DataTableHeader } from 'vuetify';
 import ConflictRow from '@/components/status/update/ConflictRow.vue';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import i18n from '@/i18n';
 import {
   ConflictResolution,
@@ -224,7 +224,7 @@ const ConflictDialog = defineComponent({
       emit('cancel');
     };
 
-    const { isMobile } = setupThemeCheck();
+    const { isMobile } = useTheme();
 
     return {
       isDiff,

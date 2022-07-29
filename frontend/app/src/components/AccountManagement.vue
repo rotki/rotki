@@ -129,7 +129,7 @@ import {
 import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue';
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import { setupBackendManagement } from '@/composables/backend';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { getPremium, setupSession } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import i18n from '@/i18n';
@@ -195,7 +195,7 @@ export default defineComponent({
       emit('login-complete');
     };
 
-    const { currentBreakpoint } = setupThemeCheck();
+    const { currentBreakpoint } = useTheme();
     const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
     const premium = getPremium();
 

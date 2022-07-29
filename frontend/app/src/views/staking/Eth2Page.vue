@@ -73,7 +73,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { setupBlockchainAccounts } from '@/composables/balances';
 import { isSectionLoading, setupStatusChecking } from '@/composables/common';
-import { getPremium, setupModuleEnabled } from '@/composables/session';
+import { getPremium, useModules } from '@/composables/session';
 import { Eth2Staking } from '@/premium/premium';
 import { Section } from '@/store/const';
 import { useEth2StakingStore } from '@/store/staking';
@@ -94,7 +94,7 @@ const Eth2Page = defineComponent({
   setup() {
     const selection = ref<string[]>([]);
     const filterType = ref<'address' | 'key'>('key');
-    const { isModuleEnabled } = setupModuleEnabled();
+    const { isModuleEnabled } = useModules();
 
     const enabled = isModuleEnabled(Module.ETH2);
 

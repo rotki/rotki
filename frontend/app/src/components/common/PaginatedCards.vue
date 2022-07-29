@@ -26,7 +26,7 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 
 type GetKey = (item: any) => string;
 
@@ -44,7 +44,7 @@ export default defineComponent({
   },
   setup(props) {
     const { items } = toRefs(props);
-    const { breakpoint } = setupThemeCheck();
+    const { breakpoint } = useTheme();
     const page = ref(1);
     const itemsPerPage = computed(() => {
       if (get(breakpoint) === 'xs') {

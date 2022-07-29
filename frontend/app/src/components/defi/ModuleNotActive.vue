@@ -48,37 +48,55 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {
+  defineComponent,
+  getCurrentInstance,
+  onMounted,
+  PropType,
+  ref
+} from '@vue/composition-api';
+import { set } from '@vueuse/core';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import { Module } from '@/types/modules';
+import { assert } from '@/utils/assertions';
 
-@Component({})
-export default class ModuleNotActive extends Vue {
-  @Prop({
-    required: true,
-    type: Array,
-    validator: (value: Module[]) =>
-      value.every(module => Object.values(Module).includes(module))
-  })
-  modules!: Module;
+export default defineComponent({
+  props: {
+    modules: {
+      required: true,
+      type: Array as PropType<Module[]>,
+      validator: (value: Module[]) =>
+        value.every(module => Object.values(Module).includes(module))
+    }
+  },
+  setup() {
+    const top = ref(0);
 
-  name(module: string): string {
-    const data = SUPPORTED_MODULES.find(value => value.identifier === module);
-    return data?.name ?? '';
+    const name = (module: string): string => {
+      const data = SUPPORTED_MODULES.find(value => value.identifier === module);
+      return data?.name ?? '';
+    };
+
+    const icon = (module: Module): string => {
+      const data = SUPPORTED_MODULES.find(value => value.identifier === module);
+      return data?.icon ?? '';
+    };
+
+    onMounted(() => {
+      const currentInstance = getCurrentInstance();
+      assert(currentInstance);
+      const $el = currentInstance.proxy.$el;
+      const { top: topPoint } = $el.getBoundingClientRect();
+      set(top, topPoint);
+    });
+
+    return {
+      top,
+      name,
+      icon
+    };
   }
-
-  icon(module: Module): string {
-    const data = SUPPORTED_MODULES.find(value => value.identifier === module);
-    return data?.icon ?? '';
-  }
-
-  top: number = 0;
-
-  mounted() {
-    const { top } = this.$el.getBoundingClientRect();
-    this.top = top;
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

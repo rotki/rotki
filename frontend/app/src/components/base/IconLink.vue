@@ -25,12 +25,11 @@
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { useTheme } from '@/composables/common';
 import { interop } from '@/electron-interop';
-import ThemeMixin from '@/mixins/theme-mixin';
 
 export default defineComponent({
   name: 'IconLink',
-  mixins: [ThemeMixin],
   props: {
     text: {
       type: String,
@@ -57,10 +56,13 @@ export default defineComponent({
       return get(url);
     });
 
+    const { dark } = useTheme();
+
     return {
       openLink,
       target,
-      href
+      href,
+      dark
     };
   }
 });

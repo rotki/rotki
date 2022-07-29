@@ -60,7 +60,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { EthTransactionEventEntry } from '@/store/history/types';
 import { ActionDataEntry } from '@/store/types';
 import { getEventCounterpartyData, getEventTypeData } from '@/utils/history';
@@ -76,7 +76,7 @@ export default defineComponent({
   setup(props) {
     const { event } = toRefs(props);
 
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
 
     const attrs = computed<ActionDataEntry>(() => {
       return getEventTypeData(get(event));

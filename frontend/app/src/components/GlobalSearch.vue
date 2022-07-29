@@ -128,7 +128,7 @@ import {
   setupLocationInfo,
   setupExchanges
 } from '@/composables/balances';
-import { setupThemeCheck, useRouter } from '@/composables/common';
+import { useTheme, useRouter } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
@@ -174,7 +174,7 @@ export default defineComponent({
     const { connectedExchanges } = setupExchanges();
     const { aggregatedBalances, balancesByLocation } = setupGeneralBalances();
     const { getLocation } = setupLocationInfo();
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
 
     const items = computed<SearchItem[]>(() => {
       const routeItems: SearchItemWithoutValue[] = [

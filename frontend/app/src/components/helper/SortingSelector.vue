@@ -43,7 +43,7 @@
 <script lang="ts">
 import { defineComponent, PropType, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 
 export default defineComponent({
   name: 'SortingSelector',
@@ -70,7 +70,7 @@ export default defineComponent({
     const updateSortDesc = () => {
       emit('update:sort-desc', !get(sortDesc));
     };
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
     return {
       dark,
       updateSortBy,

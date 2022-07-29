@@ -26,7 +26,7 @@ import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { setupStatusChecking } from '@/composables/common';
-import { getPremium, setupModuleEnabled } from '@/composables/session';
+import { getPremium, useModules } from '@/composables/session';
 import { Sushi } from '@/premium/premium';
 import { Section } from '@/store/const';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
@@ -47,7 +47,7 @@ export default defineComponent({
     const modules: Module[] = [Module.SUSHISWAP];
 
     const { fetchBalances, fetchEvents } = useSushiswapStore();
-    const { isModuleEnabled } = setupModuleEnabled();
+    const { isModuleEnabled } = useModules();
     const { shouldShowLoadingScreen, isSectionRefreshing } =
       setupStatusChecking();
     const premium = getPremium();

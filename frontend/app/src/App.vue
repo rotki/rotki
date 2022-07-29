@@ -148,7 +148,7 @@ import { get, set } from '@vueuse/core';
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { setupBackendManagement } from '@/composables/backend';
-import { setupThemeCheck, useRoute, useRouter } from '@/composables/common';
+import { useTheme, useRoute, useRouter } from '@/composables/common';
 import { getPremium, setupSession, useDarkMode } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
@@ -265,7 +265,7 @@ export default defineComponent({
       }
     };
 
-    const { isMobile, dark, currentBreakpoint } = setupThemeCheck();
+    const { isMobile, dark, currentBreakpoint } = useTheme();
     const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
     const route = useRoute();

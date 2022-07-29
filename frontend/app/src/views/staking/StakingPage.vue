@@ -132,7 +132,7 @@ import {
 import { get, set, useLocalStorage } from '@vueuse/core';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { setupThemeCheck, useRouter } from '@/composables/common';
+import { useTheme, useRouter } from '@/composables/common';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets';
@@ -191,7 +191,7 @@ export default defineComponent({
   },
   setup(props) {
     const { location } = toRefs(props);
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
     const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
 
     const lastLocation = useLocalStorage('rotki.staking.last_location', '');

@@ -47,7 +47,7 @@ import { get, set } from '@vueuse/core';
 import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { MakerDAOVaultModel } from '@/store/defi/types';
@@ -97,7 +97,7 @@ export default defineComponent({
       );
     };
 
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
 
     return {
       showWatcherDialog,

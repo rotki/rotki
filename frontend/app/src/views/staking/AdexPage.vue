@@ -24,7 +24,7 @@ import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
-import { setupModuleEnabled } from '@/composables/session';
+import { useModules } from '@/composables/session';
 import { AdexStaking } from '@/premium/premium';
 import { Section } from '@/store/const';
 import { useStore } from '@/store/utils';
@@ -34,7 +34,7 @@ export default defineComponent({
   name: 'AdexPage',
   components: { ActiveModules, ModuleNotActive, AdexStaking, ProgressScreen },
   setup() {
-    const { isModuleEnabled } = setupModuleEnabled();
+    const { isModuleEnabled } = useModules();
     const enabled = isModuleEnabled(Module.ADEX);
 
     const { dispatch } = useStore();

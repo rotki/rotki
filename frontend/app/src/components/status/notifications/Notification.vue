@@ -56,7 +56,7 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import dayjs from 'dayjs';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 
 const Notification = defineComponent({
   name: 'Notification',
@@ -106,7 +106,7 @@ const Notification = defineComponent({
       navigator.clipboard.writeText(get(notification).message);
     };
 
-    const { fontStyle } = setupThemeCheck();
+    const { fontStyle } = useTheme();
 
     return {
       icon,

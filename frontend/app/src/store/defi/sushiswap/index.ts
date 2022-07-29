@@ -2,7 +2,7 @@ import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import { getPremium, setupModuleEnabled } from '@/composables/session';
+import { getPremium, useModules } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
@@ -32,7 +32,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   const trades = ref<DexTrades>({});
 
   const isPremium = getPremium();
-  const { activeModules } = setupModuleEnabled();
+  const { activeModules } = useModules();
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
 
   const balanceList = (addresses: string[]) =>

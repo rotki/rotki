@@ -9,7 +9,7 @@
 import { defineComponent } from '@vue/composition-api';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import NftGallery from '@/components/nft/NftGallery.vue';
-import { setupModuleEnabled } from '@/composables/session';
+import { useModules } from '@/composables/session';
 import { Module } from '@/types/modules';
 
 export default defineComponent({
@@ -17,7 +17,7 @@ export default defineComponent({
   components: { ModuleNotActive, NftGallery },
   setup() {
     const module = Module.NFTS;
-    const { isModuleEnabled } = setupModuleEnabled();
+    const { isModuleEnabled } = useModules();
     return {
       isEnabled: isModuleEnabled(module),
       modules: [module]

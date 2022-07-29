@@ -82,7 +82,7 @@ import {
   ExplorerUrls,
   explorerUrls
 } from '@/components/helper/asset-urls';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import { interop } from '@/electron-interop';
@@ -114,7 +114,7 @@ export default defineComponent({
 
     const { scrambleData, shouldShowAmount } = setupDisplayData();
     const { explorers } = setupSettings();
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
 
     const { ethNameSelector } = useEthNamesStore();
 

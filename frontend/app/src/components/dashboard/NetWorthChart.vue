@@ -118,7 +118,7 @@ import {
   TooltipOptions
 } from 'chart.js';
 import dayjs from 'dayjs';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { useGraph, useTooltip } from '@/composables/graphs';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
@@ -154,7 +154,7 @@ export default defineComponent({
     const { chartData } = toRefs(props);
     const { graphZeroBased, showGraphRangeSelector } = setupSettings();
     const { currencySymbol } = setupGeneralSettings();
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
 
     const selectedTimestamp = ref<number>(0);
     const selectedBalance = ref<number>(0);

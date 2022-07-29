@@ -3,7 +3,7 @@ import { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
 import { computed, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { TooltipModel } from 'chart.js';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -19,7 +19,7 @@ export const useGraph = (canvasId: string) => {
     return context;
   };
 
-  const { theme, dark } = setupThemeCheck();
+  const { theme, dark } = useTheme();
 
   const white = '#ffffff';
   const secondaryBlack = '#3f1300';

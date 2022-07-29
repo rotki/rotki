@@ -24,7 +24,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { computed, defineComponent, PropType } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
-import { setupModuleEnabled } from '@/composables/session';
+import { useModules } from '@/composables/session';
 import { Module } from '@/types/modules';
 
 type SupportedChain = {
@@ -82,7 +82,7 @@ export default defineComponent({
       emit('update:blockchain', blockchain);
     };
 
-    const { isModuleEnabled } = setupModuleEnabled();
+    const { isModuleEnabled } = useModules();
 
     const items = computed(() => {
       const isEth2Enabled = get(isModuleEnabled(Module.ETH2));

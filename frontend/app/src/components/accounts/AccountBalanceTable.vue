@@ -141,7 +141,7 @@ import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { DataTableHeader } from 'vuetify';
 import { setupGeneralBalances } from '@/composables/balances';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
@@ -230,7 +230,7 @@ export default defineComponent({
       emit('addresses-selected', selected);
     };
 
-    const { currentBreakpoint } = setupThemeCheck();
+    const { currentBreakpoint } = useTheme();
     const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
     const mobileClass = computed<string | null>(() => {
       return get(xsOnly) ? 'v-data-table__mobile-row' : null;

@@ -21,7 +21,7 @@ export const useRoute = () => {
   return computed(() => proxy.$route);
 };
 
-export const setupThemeCheck = () => {
+export const useTheme = () => {
   const { $vuetify } = useProxy();
   const isMobile = computed(() => $vuetify.breakpoint.mobile);
   const theme = computed(() => $vuetify.theme);

@@ -70,8 +70,8 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
+import { useTheme } from '@/composables/common';
 import { getPremium } from '@/composables/session';
-import ThemeMixin from '@/mixins/theme-mixin';
 import { MakerDAOVaultModel } from '@/store/defi/types';
 
 export default defineComponent({
@@ -83,7 +83,6 @@ export default defineComponent({
     PremiumLock,
     StatCard
   },
-  mixins: [ThemeMixin],
   props: {
     vault: {
       required: true,
@@ -92,9 +91,11 @@ export default defineComponent({
   },
   setup() {
     const premium = getPremium();
+    const { fontStyle } = useTheme();
     return {
       premium,
-      assetPadding: 3
+      assetPadding: 3,
+      fontStyle
     };
   }
 });
