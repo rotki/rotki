@@ -89,7 +89,7 @@ import { get } from '@vueuse/core';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { setupBlockchainAccounts } from '@/composables/balances';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import i18n from '@/i18n';
 
 export default defineComponent({
@@ -174,7 +174,7 @@ export default defineComponent({
 
     const input = (value: string | null) => emit('input', value);
 
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
 
     return {
       search,

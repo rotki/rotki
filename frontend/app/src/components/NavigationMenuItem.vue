@@ -64,7 +64,7 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { VueConstructor } from 'vue';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { useAssetInfoRetrieval } from '@/store/assets';
 
 export default defineComponent({
@@ -90,7 +90,7 @@ export default defineComponent({
       return get(assetIdentifierForSymbol(get(cryptoIcon))) ?? get(cryptoIcon);
     });
 
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
 
     return {
       dark,

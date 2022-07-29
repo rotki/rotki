@@ -20,7 +20,7 @@
 <script lang="ts">
 import { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
 import { defineComponent, PropType } from '@vue/composition-api';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 export default defineComponent({
   name: 'GraphTooltipWrapper',
   props: {
@@ -31,7 +31,7 @@ export default defineComponent({
     }
   },
   setup() {
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
 
     return { dark };
   }

@@ -133,7 +133,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import SortingSelector from '@/components/helper/SortingSelector.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { AssetPriceArray } from '@/services/assets/types';
@@ -360,7 +360,7 @@ export default defineComponent({
     }
   },
   setup() {
-    const { isMobile, breakpoint, width } = setupThemeCheck();
+    const { isMobile, breakpoint, width } = useTheme();
     const { dispatch } = useStore();
 
     const page = ref(1);

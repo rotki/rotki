@@ -59,13 +59,11 @@ import { get, set, useTimeoutFn } from '@vueuse/core';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { setupGeneralSettings, setupSession } from '@/composables/session';
 import { currencies } from '@/data/currencies';
-import ThemeMixin from '@/mixins/theme-mixin';
 import { Currency } from '@/types/currency';
 
 export default defineComponent({
   name: 'CurrencyDropdown',
   components: { MenuTooltipButton },
-  mixins: [ThemeMixin],
   setup() {
     const { updateSettings } = setupSession();
     const { currency } = setupGeneralSettings();

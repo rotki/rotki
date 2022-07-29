@@ -52,7 +52,7 @@ import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get, toRefs } from '@vueuse/core';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
-import { isSectionLoading, setupThemeCheck } from '@/composables/common';
+import { isSectionLoading, useTheme } from '@/composables/common';
 import { LiquityStakeEvents } from '@/premium/premium';
 import { Section } from '@/store/const';
 import { useLiquityStore } from '@/store/defi/liquity';
@@ -113,7 +113,7 @@ export default defineComponent({
       return [...Object.keys(get(staking)), ...Object.keys(get(stakingEvents))];
     });
 
-    const { isMobile } = setupThemeCheck();
+    const { isMobile } = useTheme();
 
     const refresh = async () => {
       await fetchStaking(true);

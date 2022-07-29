@@ -12,11 +12,11 @@
 
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 
 export default defineComponent({
   setup() {
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
     return {
       dark
     };

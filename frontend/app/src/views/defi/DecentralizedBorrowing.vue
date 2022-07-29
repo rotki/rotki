@@ -4,25 +4,28 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import Liabilities from '@/components/defi/Liabilities.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import ModuleMixin from '@/mixins/module-mixin';
+import { useModules } from '@/composables/session';
 import { Module } from '@/types/modules';
 
-@Component({
-  components: { ModuleNotActive, Liabilities }
-})
-export default class DecentralizedBorrowing extends Mixins(ModuleMixin) {
-  readonly modules: Module[] = [
-    Module.AAVE,
-    Module.COMPOUND,
-    Module.MAKERDAO_VAULTS,
-    Module.LIQUITY
-  ];
+export default defineComponent({
+  components: { ModuleNotActive, Liabilities },
+  setup() {
+    const modules: Module[] = [
+      Module.AAVE,
+      Module.COMPOUND,
+      Module.MAKERDAO_VAULTS,
+      Module.LIQUITY
+    ];
 
-  get anyModuleEnabled(): boolean {
-    return this.isAnyModuleEnabled(this.modules);
+    const { isAnyModuleEnabled } = useModules();
+
+    return {
+      modules,
+      anyModuleEnabled: isAnyModuleEnabled(modules)
+    };
   }
-}
+});
 </script>

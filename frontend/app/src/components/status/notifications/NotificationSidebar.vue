@@ -86,7 +86,7 @@ import orderBy from 'lodash/orderBy';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Notification from '@/components/status/notifications/Notification.vue';
 import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { setupNotifications } from '@/composables/notifications';
 import { setupTaskStatus } from '@/composables/tasks';
 
@@ -121,7 +121,7 @@ const NotificationSidebar = defineComponent({
       return orderBy(data.value, 'id', 'desc');
     });
 
-    const { isMobile } = setupThemeCheck();
+    const { isMobile } = useTheme();
     const { hasRunningTasks } = setupTaskStatus();
 
     return {

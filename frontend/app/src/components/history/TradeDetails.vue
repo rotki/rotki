@@ -56,14 +56,13 @@
 import { defineComponent, PropType } from '@vue/composition-api';
 import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
+import { useTheme } from '@/composables/common';
 import { interop } from '@/electron-interop';
-import ThemeMixin from '@/mixins/theme-mixin';
 import { TradeEntry } from '@/store/history/types';
 
 export default defineComponent({
   name: 'TradeDetails',
   components: { NotesDisplay, TableExpandContainer },
-  mixins: [ThemeMixin],
   props: {
     span: {
       type: Number,
@@ -76,6 +75,7 @@ export default defineComponent({
     }
   },
   setup() {
+    const { dark } = useTheme();
     const hasLink = (trade: TradeEntry) => {
       return trade.link && trade.link.startsWith('http');
     };
@@ -96,7 +96,8 @@ export default defineComponent({
       hasLink,
       openLink,
       target,
-      href
+      href,
+      dark
     };
   }
 });

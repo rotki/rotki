@@ -224,7 +224,7 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import { setupGeneralBalances } from '@/composables/balances';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { getPremium, setupSession } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
@@ -250,7 +250,7 @@ export default defineComponent({
     const { lastBalanceSave, lastDataUpload, forceSync } = setupSession();
 
     const { fetchBalances } = setupGeneralBalances();
-    const { currentBreakpoint } = setupThemeCheck();
+    const { currentBreakpoint } = useTheme();
     const premium = getPremium();
 
     const pending = ref<boolean>(false);

@@ -19,16 +19,27 @@ export function getSessionState(): SessionState {
   return sessionState;
 }
 
-export const setupModuleEnabled = () => {
+export const useModules = () => {
   const sessionState = getSessionState();
+
+  const activeModules = computed(
+    () => sessionState.generalSettings.activeModules
+  );
+
+  const isAnyModuleEnabled = (modules: Module[]) =>
+    get(activeModules).filter(module => modules.includes(module)).length > 0;
+
+  const isModuleEnabled = (module: Module) => {
+    return computed(() => {
+      const active = get(activeModules);
+      return active.includes(module);
+    });
+  };
+
   return {
-    isModuleEnabled: (module: Module) => {
-      return computed(() => {
-        const { activeModules } = sessionState.generalSettings;
-        return activeModules.includes(module);
-      });
-    },
-    activeModules: computed(() => sessionState.generalSettings.activeModules)
+    isAnyModuleEnabled,
+    isModuleEnabled,
+    activeModules
   };
 };
 

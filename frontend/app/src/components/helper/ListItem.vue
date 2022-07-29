@@ -34,7 +34,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 
 export default defineComponent({
   name: 'ListItem',
@@ -59,7 +59,7 @@ export default defineComponent({
   emits: ['click'],
   setup(props, { emit }) {
     const { subtitle } = toRefs(props);
-    const { currentBreakpoint } = setupThemeCheck();
+    const { currentBreakpoint } = useTheme();
     const large = computed(() => get(currentBreakpoint).lgAndUp);
     const visibleSubtitle = computed(() => {
       const sub = get(subtitle);

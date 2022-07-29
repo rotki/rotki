@@ -111,7 +111,7 @@ import { get } from '@vueuse/core';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
 import { bigNumberSum, truncateAddress, truncationPoints } from '@/filters';
 import { XpubAccountWithBalance } from '@/store/balances/types';
@@ -132,7 +132,7 @@ export default defineComponent({
   emits: ['delete-clicked', 'expand-clicked', 'edit-clicked'],
   setup(props, { emit }) {
     const { items } = toRefs(props);
-    const { breakpoint, currentBreakpoint } = setupThemeCheck();
+    const { breakpoint, currentBreakpoint } = useTheme();
     const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
     const { shouldShowAmount } = setupDisplayData();
 

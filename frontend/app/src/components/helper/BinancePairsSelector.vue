@@ -60,7 +60,7 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
@@ -77,7 +77,7 @@ export default defineComponent({
   emits: ['input'],
   setup(props, { emit }) {
     const { name, location } = toRefs(props);
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
 
     const input = (_value: string[]) => emit('input', _value);
 

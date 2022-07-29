@@ -28,7 +28,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
 import { setupStatusChecking } from '@/composables/common';
-import { getPremium, setupModuleEnabled } from '@/composables/session';
+import { getPremium, useModules } from '@/composables/session';
 import { Section } from '@/store/const';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { Module } from '@/types/modules';
@@ -43,7 +43,7 @@ export default defineComponent({
     ModuleNotActive
   },
   setup() {
-    const { isModuleEnabled } = setupModuleEnabled();
+    const { isModuleEnabled } = useModules();
     const { fetchStaking, fetchStakingEvents } = useLiquityStore();
 
     async function load() {

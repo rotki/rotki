@@ -90,7 +90,7 @@ import { get, set, useLocalStorage } from '@vueuse/core';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import ThemeControl from '@/components/premium/ThemeControl.vue';
-import { setupThemeCheck, useRoute, useRouter } from '@/composables/common';
+import { useTheme, useRoute, useRouter } from '@/composables/common';
 import { usePrivacyMode } from '@/composables/privacy';
 import { setupSession, useDarkMode } from '@/composables/session';
 import { interop } from '@/electron-interop';
@@ -110,7 +110,7 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
     const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
-    const { currentBreakpoint } = setupThemeCheck();
+    const { currentBreakpoint } = useTheme();
     const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
     const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);

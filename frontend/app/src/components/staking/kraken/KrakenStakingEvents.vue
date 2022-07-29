@@ -83,7 +83,7 @@ import {
   SearchMatcher
 } from '@/components/history/filtering/types';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import { SupportedCurrency } from '@/data/currencies';
@@ -247,7 +247,7 @@ export default defineComponent({
     const filters: Ref<MatchedKeyword<KrakenStakingValueKeys>> = ref({});
 
     const { itemsPerPage } = setupSettings();
-    const { isMobile } = setupThemeCheck();
+    const { isMobile } = useTheme();
 
     const { currencySymbol } = setupGeneralSettings();
 

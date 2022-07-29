@@ -48,7 +48,7 @@ import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 import { defineComponent, PropType, ref, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import ValidatorDisplay from '@/components/helper/display/icons/ValidatorDisplay.vue';
-import { setupThemeCheck } from '@/composables/common';
+import { useTheme } from '@/composables/common';
 
 export default defineComponent({
   name: 'ValidatorFilterInput',
@@ -98,7 +98,7 @@ export default defineComponent({
       input(selection);
     };
 
-    const { dark } = setupThemeCheck();
+    const { dark } = useTheme();
 
     return {
       input,
