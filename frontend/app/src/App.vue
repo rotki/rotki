@@ -147,14 +147,15 @@ import {
 import { get, set } from '@vueuse/core';
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import { storeToRefs } from 'pinia';
 import { setupBackendManagement } from '@/composables/backend';
-import { useTheme, useRoute, useRouter } from '@/composables/common';
+import { useRoute, useRouter, useTheme } from '@/composables/common';
 import { getPremium, setupSession, useDarkMode } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
 import { ThemeChecker } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
-import { OverallPerformance } from '@/store/statistics/types';
+import { useStatisticsStore } from '@/store/statistics';
 import { useMainStore } from '@/store/store';
 import { useStore } from '@/store/utils';
 import { logger } from '@/utils/logging';
@@ -288,15 +289,13 @@ export default defineComponent({
       return null;
     });
 
-    const { commit, state, getters } = useStore();
+    const { commit, state } = useStore();
+    const { overall } = storeToRefs(useStatisticsStore());
 
     const logged = computed(() => state.session?.logged ?? false);
     const username = computed(() => state.session?.username ?? '');
     const loginComplete = computed(() => state.session?.loginComplete ?? false);
     const loginIn = computed(() => get(logged) && get(loginComplete));
-    const overall = computed<OverallPerformance>(
-      () => getters['statistics/overall']
-    );
 
     const completeLogin = async (complete: boolean) => {
       await commit('session/completeLogin', complete, { root: true });

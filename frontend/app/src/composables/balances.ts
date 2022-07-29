@@ -24,6 +24,7 @@ import {
   FetchPricePayload,
   HistoricPricePayload,
   LocationBalance,
+  NonFungibleBalance,
   NonFungibleBalances,
   OracleCachePayload,
   XpubPayload
@@ -136,6 +137,16 @@ export const setupGeneralBalances = () => {
     return await store.dispatch('balances/fetchTokenDetails', address);
   };
 
+  const exchangeRate = (currency: string) =>
+    computed<BigNumber>(() => store.getters['balances/exchangeRate'](currency));
+  const nfBalances = computed<NonFungibleBalance[]>(() => {
+    return store.getters['balances/nfBalances'];
+  });
+
+  const nfTotalValue = computed<BigNumber>(() => {
+    return store.getters['balances/nfTotalValue'];
+  });
+
   return {
     aggregatedBalances,
     balancesByLocation,
@@ -143,6 +154,8 @@ export const setupGeneralBalances = () => {
     liabilities,
     blockchainTotals,
     nonFungibleBalances,
+    nfBalances,
+    nfTotalValue,
     hasDetails,
     accountAssets,
     accountLiabilities,
@@ -155,7 +168,8 @@ export const setupGeneralBalances = () => {
     fetchLoopringBalances,
     fetchManualBalances,
     fetchHistoricPrice,
-    refreshPrices
+    refreshPrices,
+    exchangeRate
   };
 };
 

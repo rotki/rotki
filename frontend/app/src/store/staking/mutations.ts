@@ -1,7 +1,7 @@
 import { AdexBalances, AdexHistory } from '@rotki/common/lib/staking/adex';
 import { ADEX_BALANCES, ADEX_HISTORY, RESET } from '@/store/staking/consts';
+import { defaultState } from '@/store/staking/state';
 import { StakingState } from '@/store/staking/types';
-import { defaultState } from '@/store/statistics/state';
 import { Writeable } from '@/types';
 
 type Mutations<S = StakingState> = {

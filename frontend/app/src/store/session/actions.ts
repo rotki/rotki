@@ -43,6 +43,7 @@ import {
   SessionState
 } from '@/store/session/types';
 import { ACTION_PURGE_DATA } from '@/store/staking/consts';
+import { useStatisticsStore } from '@/store/statistics';
 import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus, RotkehlchenState } from '@/store/types';
@@ -89,12 +90,13 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
     const { fetchIgnored } = useHistory();
     const { fetchIgnoredAssets } = useIgnoredAssetsStore();
+    const { fetchNetValue } = useStatisticsStore();
     const async = [
       fetchIgnored(),
       fetchIgnoredAssets(),
       dispatch('session/fetchWatchers', null, options),
       dispatch('balances/fetchManualBalances', null, options),
-      dispatch('statistics/fetchNetValue', null, options),
+      fetchNetValue(),
       dispatch('balances/fetch', exchanges, options),
       dispatch('balances/fetchLoopringBalances', false, options)
     ];
@@ -299,8 +301,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('balances/reset', payload, opts);
     commit('defi/reset', payload, opts);
     commit('settings/reset', payload, opts);
-    commit('statistics/reset', payload, opts);
     commit('staking/reset', payload, opts);
+    useStatisticsStore().reset();
     useHistory().reset();
     useTxQueryStatus().reset();
     useNotifications().reset();

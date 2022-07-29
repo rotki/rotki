@@ -3,7 +3,6 @@ import { Section, Status } from '@/store/const';
 import { DefiState } from '@/store/defi/types';
 import { SessionState } from '@/store/session/types';
 import { SettingsState } from '@/store/settings/state';
-import { StatisticsState } from '@/store/statistics/types';
 
 type ActionFailure = {
   readonly message: string;
@@ -15,11 +14,6 @@ type ActionSuccess = {
 };
 
 export type ActionStatus = ActionFailure | ActionSuccess;
-
-export type SuccessMessage = {
-  readonly success: boolean;
-  readonly message: string;
-};
 
 export interface StatusPayload {
   readonly status: Status;
@@ -40,7 +34,6 @@ export interface RotkehlchenState {
   balances?: BalanceState;
   settings?: SettingsState;
   defi?: DefiState;
-  statistics?: StatisticsState;
 }
 
 export type ActionDataEntry<T = string> = {

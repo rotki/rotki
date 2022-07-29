@@ -33,6 +33,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswap } from '@/store/defi/uniswap';
+import { useStatisticsStore } from '@/store/statistics';
 import { useStore } from '@/store/utils';
 
 export const assetsApi = (): AssetsApi => {
@@ -46,8 +47,8 @@ export const assetsApi = (): AssetsApi => {
 };
 
 export const statisticsApi = (): StatisticsApi => {
-  const store = useStore();
   const { isAssetIgnored } = useIgnoredAssetsStore();
+  const { fetchNetValue, getNetValue } = useStatisticsStore();
   return {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
       return api.queryLatestAssetValueDistribution();
@@ -67,10 +68,9 @@ export const statisticsApi = (): StatisticsApi => {
       return api.queryTimedBalancesData(asset, start, end);
     },
     async fetchNetValue(): Promise<void> {
-      await store.dispatch('statistics/fetchNetValue');
+      await fetchNetValue();
     },
-    netValue: startingDate =>
-      computed(() => store.getters['statistics/netValue'](startingDate))
+    netValue: startingDate => getNetValue(startingDate)
   };
 };
 
