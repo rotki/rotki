@@ -75,7 +75,6 @@ from rotkehlchen.constants.misc import (
     ASSET_TYPES_EXCLUDED_FOR_USERS,
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
-    DEFAULT_SLEEP_SECS,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
     ONE,
     ZERO,
@@ -4488,10 +4487,6 @@ class RestAPI():
             'sqlite_instructions': {
                 'value': self.rotkehlchen.args.sqlite_instructions,
                 'is_default': self.rotkehlchen.args.sqlite_instructions == DEFAULT_SQL_VM_INSTRUCTIONS_CB,  # noqa: E501
-            },
-            'sleep_secs': {
-                'value': self.rotkehlchen.args.sleep_secs,
-                'is_default': self.rotkehlchen.args.sleep_secs == DEFAULT_SLEEP_SECS,
             },
         }
         return api_response(_wrap_in_ok_result(config), status_code=HTTPStatus.OK)

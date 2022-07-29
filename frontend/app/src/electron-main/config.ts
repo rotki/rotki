@@ -7,7 +7,6 @@ const CONFIG_FILE = 'rotki_config.json';
 
 const LOGLEVEL = 'loglevel';
 const LOGDIR = 'log-dir';
-const SLEEP_SECS = 'sleep-secs';
 const DATA_DIR = 'data-dir';
 const LOG_FROM_OTHER_MODULES = 'logfromothermodules';
 const MAX_LOG_SIZE = 'max_size_in_mb_all_logs';
@@ -42,10 +41,6 @@ export function loadConfig(): Partial<BackendOptions> {
 
     if (DATA_DIR in config) {
       options.dataDirectory = config[DATA_DIR];
-    }
-
-    if (SLEEP_SECS in config) {
-      options.sleepSeconds = parseInt(config[SLEEP_SECS]);
     }
 
     if (MAX_LOG_SIZE in config) {

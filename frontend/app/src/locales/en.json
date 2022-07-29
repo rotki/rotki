@@ -1089,10 +1089,6 @@
       "hint": "Enables logging from third party libraries (useful for debugging)",
       "label": "Log from other modules"
     },
-    "main_loop_sleep": {
-      "hint": "The main event loop sleep duration. (Don't modify unless you know what you are doing)",
-      "label": "Main Loop Sleep"
-    },
     "max_log_files": {
       "hint": "This is the maximum number of logfiles to keep",
       "label": "Max num of log files"

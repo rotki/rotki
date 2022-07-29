@@ -117,7 +117,6 @@ class Rotkehlchen():
         self.user_is_logged_in: bool = False
 
         self.args = args
-        self.sleep_secs = self.args.sleep_secs
         if self.args.data_dir is None:
             self.data_dir = default_data_directory()
         else:

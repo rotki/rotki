@@ -5,7 +5,6 @@ from typing import Any, List, Sequence, Union
 from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
-    DEFAULT_SLEEP_SECS,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
 )
 from rotkehlchen.utils.misc import get_system_spec
@@ -54,12 +53,6 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         description=description,
     )
 
-    p.add_argument(
-        '--sleep-secs',
-        type=int,
-        default=DEFAULT_SLEEP_SECS,
-        help='Seconds to sleep during the main loop',
-    )
     p.add_argument(
         '--data-dir',
         help='The directory where all data and configs are placed',
