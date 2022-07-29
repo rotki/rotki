@@ -42,7 +42,7 @@ import {
   PremiumCredentialsPayload,
   SessionState
 } from '@/store/session/types';
-import { ACTION_PURGE_DATA } from '@/store/staking/consts';
+import { useStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
 import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
@@ -301,7 +301,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('balances/reset', payload, opts);
     commit('defi/reset', payload, opts);
     commit('settings/reset', payload, opts);
-    commit('staking/reset', payload, opts);
+    useStakingStore().reset();
     useStatisticsStore().reset();
     useHistory().reset();
     useTxQueryStatus().reset();
@@ -634,6 +634,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   async [ACTION_PURGE_CACHED_DATA]({ dispatch }, purgeable: Purgeable) {
     const opts = { root: true };
     const { purgeExchange } = useHistory();
+    const { reset } = useStakingStore();
 
     if (purgeable === ALL_CENTRALIZED_EXCHANGES) {
       await purgeExchange(ALL_CENTRALIZED_EXCHANGES);
@@ -641,7 +642,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.UNISWAP, opts);
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.BALANCER, opts);
     } else if (purgeable === ALL_MODULES) {
-      await dispatch(`staking/${ACTION_PURGE_DATA}`, ALL_MODULES, opts);
+      reset();
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, ALL_MODULES, opts);
     } else if (
       SUPPORTED_EXCHANGES.includes(purgeable as SupportedExchange) ||
@@ -650,7 +651,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       await purgeExchange(purgeable as SupportedExchange);
     } else if (Object.values(Module).includes(purgeable as Module)) {
       if ([Module.ETH2, Module.ADEX].includes(purgeable as Module)) {
-        await dispatch(`staking/${ACTION_PURGE_DATA}`, purgeable, opts);
+        reset(purgeable as Module);
       } else {
         await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, purgeable, opts);
       }

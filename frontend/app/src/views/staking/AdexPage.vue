@@ -27,7 +27,7 @@ import { setupStatusChecking } from '@/composables/common';
 import { useModules } from '@/composables/session';
 import { AdexStaking } from '@/premium/premium';
 import { Section } from '@/store/const';
-import { useStore } from '@/store/utils';
+import { useAdexStakingStore } from '@/store/staking';
 import { Module } from '@/types/modules';
 
 export default defineComponent({
@@ -37,12 +37,12 @@ export default defineComponent({
     const { isModuleEnabled } = useModules();
     const enabled = isModuleEnabled(Module.ADEX);
 
-    const { dispatch } = useStore();
-    onBeforeMount(() => {
+    const { fetchAdex } = useAdexStakingStore();
+    onBeforeMount(async () => {
       if (!get(enabled)) {
         return;
       }
-      dispatch('staking/fetchAdex', false);
+      await fetchAdex(false);
     });
 
     const { isSectionRefreshing, shouldShowLoadingScreen } =
