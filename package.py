@@ -204,16 +204,16 @@ class Checksum:
         checksum_filename = f'{path.name}.sha512'
         cmd = None
         if env.is_mac():
-            cmd = f'shasum -a 512 {path} > {checksum_filename}'
+            cmd = f'shasum -a 512 {path.name} > {checksum_filename}'
         elif env.is_linux():
-            cmd = f'sha512sum {path} > {checksum_filename}'
+            cmd = f'sha512sum {path.name} > {checksum_filename}'
         elif env.is_windows():
-            cmd = f'powershell.exe -command "Get-FileHash {path} -Algorithm SHA512 | Select-Object Hash | foreach {{$_.Hash}} | Out-File -FilePath {checksum_filename}"'  # noqa E501
+            cmd = f'powershell.exe -command "Get-FileHash {path.name} -Algorithm SHA512 | Select-Object Hash | foreach {{$_.Hash}} | Out-File -FilePath {checksum_filename}"'  # noqa E501
         else:
             logger.error('unsupported system')
             exit(1)
 
-        ret_code = subprocess.call(cmd, shell=True)
+        ret_code = subprocess.call(cmd, cwd=path.parent, shell=True)
         if ret_code != 0:
             logger.error(f'could not generate sha512 sum for {path}')
             exit(1)
