@@ -53,11 +53,6 @@ export default defineComponent({
       required: false,
       type: [String, Function] as PropType<((value: any) => string) | string>,
       default: ''
-    },
-    rules: {
-      required: false,
-      type: Array as PropType<((value: any) => boolean | string)[]>,
-      default: () => []
     }
   },
   emits: ['updated', 'finished'],
@@ -68,8 +63,7 @@ export default defineComponent({
       sessionSetting,
       successMessage,
       errorMessage,
-      transform,
-      rules
+      transform
     } = toRefs(props);
     const { error, success, clear, wait, stop, setSuccess, setError } =
       useClearableMessages();
@@ -112,23 +106,6 @@ export default defineComponent({
       const func = get(transform);
       const settingKey = get(setting);
       const settingValue = func ? func(newValue) : newValue;
-      const validators = get(rules);
-
-      let failed: boolean = false;
-
-      validators.forEach(validator => {
-        const validate = validator(settingValue);
-        if (validate !== true) {
-          setError(validate as string, false);
-          failed = true;
-          return;
-        }
-      });
-
-      if (failed) {
-        emit('finished');
-        return;
-      }
 
       const location = get(sessionSetting)
         ? SettingLocation.SESSION

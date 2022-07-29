@@ -1,0 +1,34 @@
+<template>
+  <settings-option
+    #default="{ error, success, update }"
+    setting="pnlCsvWithFormulas"
+    :error-message="$tc('account_settings.messages.export_csv_formulas')"
+  >
+    <v-switch
+      v-model="exportCSVFormulas"
+      class="csv_export_settings__exportCSVFormulas"
+      :label="
+        $tc('account_settings.csv_export_settings.labels.export_csv_formulas')
+      "
+      color="primary"
+      :success-messages="success"
+      :error-messages="error"
+      @change="update"
+    />
+  </settings-option>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useSettings } from '@/composables/settings';
+
+const exportCSVFormulas = ref(false);
+const { accountingSettings } = useSettings();
+
+onMounted(() => {
+  const settings = get(accountingSettings);
+  set(exportCSVFormulas, settings.pnlCsvWithFormulas);
+});
+</script>
