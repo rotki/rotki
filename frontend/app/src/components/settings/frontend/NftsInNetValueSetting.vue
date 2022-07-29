@@ -22,10 +22,10 @@
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { useSettings } from '@/composables/settings';
-import { setupGeneralStatistics } from '@/composables/statistics';
+import { useStatisticsStore } from '@/store/statistics';
 
 const includeNfts = ref<boolean>(true);
-const { fetchNetValue } = setupGeneralStatistics();
+const { fetchNetValue } = useStatisticsStore();
 const { frontendSettings } = useSettings();
 
 onMounted(() => {

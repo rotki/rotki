@@ -77,11 +77,11 @@ import { get, set } from '@vueuse/core';
 import EditBalancesSnapshotTable from '@/components/dashboard/EditBalancesSnapshotTable.vue';
 import EditLocationDataSnapshotTable from '@/components/dashboard/EditLocationDataSnapshotTable.vue';
 import EditSnapshotTotal from '@/components/dashboard/EditSnapshotTotal.vue';
-import { setupGeneralStatistics } from '@/composables/statistics';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { Snapshot, SnapshotPayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
+import { useStatisticsStore } from '@/store/statistics';
 import { showMessage } from '@/store/utils';
 import { sortDesc } from '@/utils/bignumbers';
 
@@ -104,7 +104,7 @@ export default defineComponent({
 
     const snapshotData = ref<Snapshot | null>(null);
     const step = ref<number>(1);
-    const { fetchNetValue } = setupGeneralStatistics();
+    const { fetchNetValue } = useStatisticsStore();
 
     const fetchSnapshotData = async () => {
       const result = await api.getSnapshotData(get(timestamp));

@@ -113,6 +113,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
@@ -120,11 +121,11 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
-import { setupGeneralStatistics } from '@/composables/statistics';
 import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useStatisticsStore } from '@/store/statistics';
 import { Nullable } from '@/types';
 import {
   DashboardTablesVisibleColumns,
@@ -266,9 +267,10 @@ const DashboardAssetTable = defineComponent({
       return percentage.toFixed(2);
     };
 
-    const { totalNetWorthUsd } = setupGeneralStatistics();
+    const statisticsStore = useStatisticsStore();
+    const { totalNetWorthUsd } = storeToRefs(statisticsStore);
     const percentageOfTotalNetValue = (value: BigNumber) => {
-      const netWorth = get(totalNetWorthUsd);
+      const netWorth = get(totalNetWorthUsd) as BigNumber;
       const total = netWorth.lt(0) ? get(totalInUsd) : netWorth;
       return calculatePercentage(value, total);
     };
@@ -285,7 +287,7 @@ const DashboardAssetTable = defineComponent({
       search,
       total,
       tableHeaders: tableHeaders(
-        totalNetWorthUsd,
+        totalNetWorthUsd as Ref<BigNumber>,
         currencySymbol,
         title,
         dashboardTablesVisibleColumns,
