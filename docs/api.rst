@@ -738,10 +738,6 @@ Getting backend arguments
         "sqlite_instructions":{
           "value":5000,
           "is_default":true
-        },
-        "sleep_secs":{
-          "value":60,
-          "is_default":false
         }
       },
       "message":""
@@ -750,7 +746,6 @@ Getting backend arguments
    :resjson object max_size_in_mb_all_logs: Maximum size in megabytes that will be used for all rotki logs.
    :resjson object max_num_log_files: Maximum number of logfiles to keep.
    :resjson object sqlite_instructions: Instructions per sqlite context switch. 0 means disabled. 
-   :resjson object sleep_secs: Seconds to sleep during the main loop.
    :resjson int value: Value used for the configuration.
    :resjson bool is_default: `true` if the setting was not modified and `false` if it was.
 

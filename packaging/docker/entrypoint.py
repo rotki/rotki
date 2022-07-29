@@ -68,7 +68,6 @@ def load_config_from_file() -> Optional[Dict[str, Any]]:
 def load_config_from_env() -> Dict[str, Any]:
     loglevel = os.environ.get('LOGLEVEL')
     logfromothermodules = os.environ.get('LOGFROMOTHERMODDULES')
-    sleep_secs = os.environ.get('SLEEP_SECS')
     max_size_in_mb_all_logs = os.environ.get('MAX_SIZE_IN_MB_ALL_LOGS')
     max_logfiles_num = os.environ.get('MAX_LOGFILES_NUM')
     sqlite_instructions = os.environ.get('SQLITE_INSTRUCTIONS')
@@ -76,10 +75,9 @@ def load_config_from_env() -> Dict[str, Any]:
     return {
         'loglevel': loglevel,
         'logfromothermodules': logfromothermodules,
-        'sleep_secs': sleep_secs,
         'max_logfiles_num': max_logfiles_num,
         'max_size_in_mb_all_logs': max_size_in_mb_all_logs,
-        'sqlite_instructions': sqlite_instructions
+        'sqlite_instructions': sqlite_instructions,
     }
 
 
@@ -91,7 +89,6 @@ def load_config() -> List[str]:
 
     loglevel = env_config.get('loglevel')
     log_from_other_modules = env_config.get('logfromothermodules')
-    sleep_secs = env_config.get('sleep_secs')
     max_logfiles_num = env_config.get('max_logfiles_num')
     max_size_in_mb_all_logs = env_config.get('max_size_in_mb_all_logs')
     sqlite_instructions = env_config.get('sqlite_instructions')
@@ -104,9 +101,6 @@ def load_config() -> List[str]:
 
         if file_config.get('logfromothermodules') is not None:
             log_from_other_modules = file_config.get('logfromothermodules')
-
-        if file_config.get('sleep-secs') is not None:
-            sleep_secs = file_config.get('sleep-secs')
 
         if file_config.get('max_logfiles_num') is not None:
             max_logfiles_num = file_config.get('max_logfiles_num')
@@ -128,10 +122,6 @@ def load_config() -> List[str]:
 
     if log_from_other_modules is True:
         args.append('--logfromothermodules')
-
-    if sleep_secs is not None:
-        args.append('--sleep-secs')
-        args.append(int(sleep_secs))
 
     if max_logfiles_num is not None:
         args.append('--max-logfiles-num')

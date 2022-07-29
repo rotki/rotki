@@ -117,22 +117,6 @@
               :rules="nonNegativeNumberRules"
               type="number"
             />
-            <v-text-field
-              v-model="mainLoopSleep"
-              outlined
-              :hint="
-                !!fileConfig.sleepSeconds
-                  ? $t('backend_settings.config_file_disabled')
-                  : $t('backend_settings.main_loop_sleep.hint')
-              "
-              :label="$t('backend_settings.main_loop_sleep.label')"
-              :disabled="!!fileConfig.sleepSeconds"
-              :persistent-hint="!!fileConfig.sleepSeconds"
-              :clearable="!isDefault(configuration?.sleepSecs)"
-              :loading="!configuration"
-              :rules="positiveNumberRules"
-              type="number"
-            />
 
             <v-text-field
               v-model="sqliteInstructions"
@@ -241,7 +225,6 @@ export default class BackendSettings extends Mixins(BackendMixin) {
   userDataDirectory: string = '';
   userLogDirectory: string = '';
   logFromOtherModules: boolean = false;
-  mainLoopSleep: string = '';
   maxLogSize: string = '';
   sqliteInstructions: string = '';
   maxLogFiles: string = '';
@@ -299,12 +282,6 @@ export default class BackendSettings extends Mixins(BackendMixin) {
     const config = this.configuration;
     if (config) {
       updateArgument({
-        value: this.mainLoopSleep,
-        arg: config.sleepSecs,
-        options,
-        key: 'sleepSeconds'
-      });
-      updateArgument({
         value: this.maxLogFiles,
         arg: config.maxLogfilesNum,
         options,
@@ -359,9 +336,6 @@ export default class BackendSettings extends Mixins(BackendMixin) {
     this.userDataDirectory = options.dataDirectory ?? this.dataDirectory;
     this.userLogDirectory = options.logDirectory ?? this.defaultLogDirectory;
     this.loglevel = options.loglevel ?? this.defaultLogLevel;
-    this.mainLoopSleep = (
-      options.sleepSeconds ?? config.sleepSecs.value
-    ).toString();
     this.logFromOtherModules = options.logFromOtherModules ?? false;
     this.maxLogFiles = (
       options.maxLogfilesNum ?? config.maxLogfilesNum.value

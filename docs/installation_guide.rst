@@ -207,9 +207,7 @@ The second approach is by using environment variables during the container creat
        -e LOGLEVEL=debug
        rotki/rotki:latest
 
-The supported environment variables are ``LOGLEVEL``, ``LOGFROMOTHERMODDULES``, ``SLEEP_SECS``,
-``MAX_SIZE_IN_MB_ALL_LOGS``, ``MAX_LOGFILES_NUM`` and ``SQLITE_INSTRUCTIONS``. Since these variables are passed during
-the container creation to change them requires re-creating the container with the new parameters.
+The supported environment variables are ``LOGLEVEL``, ``LOGFROMOTHERMODDULES``, ``MAX_SIZE_IN_MB_ALL_LOGS``, ``MAX_LOGFILES_NUM`` and ``SQLITE_INSTRUCTIONS``. Since these variables are passed during the container creation to change them requires re-creating the container with the new parameters.
 
 .. warning::
 
