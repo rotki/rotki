@@ -26,13 +26,15 @@ import {
   TimedAssetBalances,
   TimedBalances
 } from '@rotki/common/lib/statistics';
-import { computed } from '@vue/composition-api';
+import { computed, Ref } from '@vue/composition-api';
 import { get, toRefs } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswap } from '@/store/defi/uniswap';
+import { useAdexStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
 import { useStore } from '@/store/utils';
 
@@ -117,17 +119,15 @@ export const userSettings = (): UserSettingsApi => {
 };
 
 export const adexApi = (): AdexApi => {
-  const store = useStore();
+  const store = useAdexStakingStore();
+  const { adexBalances, adexHistory } = storeToRefs(store);
+  const { fetchAdex } = store;
   return {
     async fetchAdex(refresh: boolean) {
-      await store.dispatch('staking/fetchAdex', refresh);
+      await fetchAdex(refresh);
     },
-    adexHistory: computed<AdexHistory>(() => {
-      return (store.state as any).staking.adexHistory;
-    }),
-    adexBalances: computed<AdexBalances>(() => {
-      return (store.state as any).staking.adexBalances;
-    })
+    adexHistory: adexHistory as Ref<AdexHistory>,
+    adexBalances: adexBalances as Ref<AdexBalances>
   };
 };
 

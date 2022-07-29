@@ -1,3 +1,4 @@
+import { AdexBalances, AdexHistory } from '@rotki/common/lib/staking/adex';
 import {
   Eth2DailyStats,
   Eth2DailyStatsPayload,
@@ -9,25 +10,25 @@ import { get, set } from '@vueuse/core';
 import { omitBy } from 'lodash';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import { Module } from 'vuex';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
+import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
-import { StakingState } from '@/store/staking/types';
 import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
-import { RotkehlchenState } from '@/store/types';
-import { getStatusUpdater } from '@/store/utils';
+import {
+  getStatus,
+  getStatusUpdater,
+  isLoading,
+  setStatus
+} from '@/store/utils';
+import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
-import { actions } from './actions';
-import { getters } from './getters';
-import { mutations } from './mutations';
-import { state } from './state';
 
 const defaultStats = () => ({
   entries: [],
@@ -267,16 +268,117 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   };
 });
 
-const namespaced: boolean = true;
+export const useAdexStakingStore = defineStore('staking/adex', () => {
+  const adexBalances = ref<AdexBalances>({});
+  const adexHistory = ref<AdexHistory>({});
 
-export const staking: Module<StakingState, RotkehlchenState> = {
-  namespaced,
-  mutations,
-  actions,
-  state,
-  getters
-};
+  const premium = getPremium();
+  const { notify } = useNotifications();
+  const { awaitTask } = useTasks();
+
+  const fetchAdex = async (refresh: boolean) => {
+    if (!get(premium)) {
+      return;
+    }
+
+    const section = Section.STAKING_ADEX;
+    const currentStatus = getStatus(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section);
+
+    try {
+      const taskType = TaskType.STAKING_ADEX;
+      const { taskId } = await api.adexBalances();
+      const { result } = await awaitTask<AdexBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: `${i18n.t('actions.staking.adex_balances.task.title')}`,
+          numericKeys: balanceKeys
+        }
+      );
+      set(adexBalances, result);
+    } catch (e: any) {
+      notify({
+        title: `${i18n.t('actions.staking.adex_balances.error.title')}`,
+        message: `${i18n.t('actions.staking.adex_balances.error.description', {
+          error: e.message
+        })}`,
+        display: true
+      });
+    }
+    setStatus(Status.LOADED, section);
+
+    const secondarySection = Section.STAKING_ADEX_HISTORY;
+    setStatus(newStatus, secondarySection);
+
+    try {
+      const taskType = TaskType.STAKING_ADEX_HISTORY;
+      const { taskId } = await api.adexHistory();
+      const { result } = await awaitTask<AdexHistory, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: `${i18n.t('actions.staking.adex_history.task.title')}`,
+          numericKeys: [...balanceKeys, 'total_staked_amount']
+        }
+      );
+
+      set(adexHistory, result);
+    } catch (e: any) {
+      notify({
+        title: `${i18n.t('actions.staking.adex_history.error.title')}`,
+        message: `${i18n.t('actions.staking.adex_history.error.description', {
+          error: e.message
+        })}`,
+        display: true
+      });
+    }
+    setStatus(Status.LOADED, secondarySection);
+  };
+
+  const reset = () => {
+    set(adexBalances, {});
+    set(adexHistory, {});
+    setStatus(Status.NONE, Section.STAKING_ADEX);
+    setStatus(Status.NONE, Section.STAKING_ADEX_HISTORY);
+  };
+
+  return {
+    adexBalances,
+    adexHistory,
+    fetchAdex,
+    reset
+  };
+});
+
+export const useStakingStore = defineStore('staking', () => {
+  const { reset: resetEth2 } = useEth2StakingStore();
+  const { reset: resetAdex } = useAdexStakingStore();
+
+  const reset = (module?: Module) => {
+    if (!module || module === Module.ETH2) {
+      resetEth2();
+    }
+    if (!module || module === Module.ADEX) {
+      resetAdex();
+    }
+  };
+
+  return {
+    reset
+  };
+});
 
 if (import.meta.hot) {
   import.meta.hot.accept(acceptHMRUpdate(useEth2StakingStore, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useAdexStakingStore, import.meta.hot));
 }
