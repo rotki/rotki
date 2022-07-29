@@ -49,13 +49,18 @@ export type TrayUpdate = {
   readonly period?: string;
 };
 
+export interface Listeners {
+  onError(backendOutput: string, code: BackendCode): void;
+  onAbout(): void;
+  onRestart(): void;
+  onProcessDetected(pids: string[]): void;
+}
+
 export interface Interop {
   openUrl(url: string): Promise<void>;
   openPath(path: string): Promise<void>;
   closeApp(): void;
-  listenForErrors(
-    callback: (backendOutput: string, code: BackendCode) => void
-  ): void;
+  setListeners(listeners: Listeners): void;
   openDirectory(title: string): Promise<undefined | string>;
   premiumUserLoggedIn(premiumUser: boolean): Promise<undefined | boolean>;
   monitorDebugSettings(): void;
@@ -66,11 +71,9 @@ export interface Interop {
   downloadUpdate(progress: (percentage: number) => void): Promise<boolean>;
   installUpdate(): Promise<boolean | Error>;
   restartBackend(options: Partial<BackendOptions>): Promise<boolean>;
-  listenForRestart(callback: () => void): void;
   setSelectedTheme(selectedTheme: number): Promise<boolean>;
   version(): Promise<SystemVersion>;
   isMac(): Promise<boolean>;
-  onAbout(callback: () => void): void;
   config(defaults: boolean): Promise<Partial<BackendOptions>>;
   updateTray(trayUpdate: TrayUpdate): Promise<void>;
   logToFile(message: string): void;

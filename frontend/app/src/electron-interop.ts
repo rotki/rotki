@@ -1,6 +1,10 @@
 import { getBackendUrl } from '@/components/account-management/utils';
-import { BackendCode } from '@/electron-main/backend-code';
-import { BackendOptions, SystemVersion, TrayUpdate } from '@/electron-main/ipc';
+import {
+  BackendOptions,
+  Listeners,
+  SystemVersion,
+  TrayUpdate
+} from '@/electron-main/ipc';
 import { WebVersion } from '@/types';
 import { assert } from '@/utils/assertions';
 
@@ -37,12 +41,8 @@ export class ElectronInterop {
     window.interop?.openUrl(this.baseUrl);
   }
 
-  onError(callback: (backendOutput: string, code: BackendCode) => void) {
-    window.interop?.listenForErrors(callback);
-  }
-
-  onRestart(callback: () => void) {
-    window.interop?.listenForRestart(callback);
+  setupListeners(listeners: Listeners) {
+    window.interop?.setListeners(listeners);
   }
 
   async openDirectory(title: string): Promise<string | undefined> {
@@ -99,10 +99,6 @@ export class ElectronInterop {
 
   async isMac(): Promise<boolean> {
     return window.interop?.isMac() || navigator.platform?.startsWith?.('Mac');
-  }
-
-  onAbout(cb: () => void) {
-    window.interop?.onAbout(cb);
   }
 
   resetTray() {

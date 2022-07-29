@@ -14,6 +14,7 @@ import { loadConfig } from '@/electron-main/config';
 import { startHttp, stopHttp } from '@/electron-main/http';
 import { BackendOptions, SystemVersion, TrayUpdate } from '@/electron-main/ipc';
 import {
+  IPC_BACKEND_PROCESS_DETECTED,
   IPC_CHECK_FOR_UPDATES,
   IPC_CLEAR_PASSWORD,
   IPC_CLOSE_APP,
@@ -85,10 +86,19 @@ function setupMetamaskImport() {
   });
 }
 
+let firstStart = true;
+
 function setupBackendRestart(getWindow: WindowProvider, pyHandler: PyHandler) {
   ipcMain.on(
     IPC_RESTART_BACKEND,
     async (event, options: Partial<BackendOptions>) => {
+      if (firstStart) {
+        firstStart = false;
+        const pids = await pyHandler.checkForBackendProcess();
+        if (pids.length > 0) {
+          event.sender.send(IPC_BACKEND_PROCESS_DETECTED, pids);
+        }
+      }
       let success = false;
       try {
         const win = getWindow();

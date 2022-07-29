@@ -1731,6 +1731,9 @@
       "title": "Querying ENS names"
     }
   },
+  "error": {
+    "process_running": "A rotki backend process is already running. This is know to cause problems with the application operation. Please kill these processes pids: [{pids}] and restart the application."
+  },
   "error_screen": {
     "backend_error": "There is a problem with the backend.",
     "copy_tooltip": "Copy the error text to the clipboard",
