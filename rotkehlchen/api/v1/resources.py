@@ -119,6 +119,8 @@ from rotkehlchen.api.v1.schemas import (
     TradesQuerySchema,
     UserActionLoginSchema,
     UserActionSchema,
+    UserNotesPatchSchema,
+    UserNotesPutSchema,
     UserPasswordChangeSchema,
     UserPremiumSyncSchema,
     WatchersAddSchema,
@@ -166,6 +168,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     TradeType,
+    UserNote,
 )
 
 if TYPE_CHECKING:
@@ -2631,3 +2634,28 @@ class ConfigurationsResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_config_arguments()
+
+
+class UserNotesResource(BaseMethodView):
+    put_schema = UserNotesPutSchema()
+    patch_schema = UserNotesPatchSchema()
+    delete_schema = IntegerIdentifierSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_user_notes()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json')
+    def put(self, title: str, content: str, location: str) -> Response:
+        return self.rest_api.add_user_note(title=title, content=content, location=location)
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json')
+    def patch(self, user_note: UserNote) -> Response:
+        return self.rest_api.edit_user_note(user_note=user_note)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, identifier: int) -> Response:
+        return self.rest_api.delete_user_note(identifier=identifier)

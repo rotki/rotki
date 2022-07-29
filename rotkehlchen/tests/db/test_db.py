@@ -137,6 +137,7 @@ TABLES_AT_INIT = [
     'ens_mappings',
     'address_book',
     'web3_nodes',
+    'user_notes',
 ]
 
 

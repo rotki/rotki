@@ -123,6 +123,7 @@ from rotkehlchen.api.v1.resources import (
     UniswapTradesHistoryResource,
     UniswapV3BalancesResource,
     UserAssetsResource,
+    UserNotesResource,
     UserPasswordChangeResource,
     UserPremiumKeyResource,
     UserPremiumSyncResource,
@@ -297,6 +298,7 @@ URLS_V1: URLS = [
         DBSnapshotsResource,
         'per_timestamp_db_snapshots_resource',
     ),
+    ('/notes', UserNotesResource),
 ]
 
 logger = logging.getLogger(__name__)

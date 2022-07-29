@@ -83,6 +83,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     TradeType,
+    UserNote,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash, ts_now
@@ -2333,3 +2334,17 @@ class DetectTokensSchema(
     OptionalAddressesListSchema,
 ):
     ...
+
+
+class UserNotesPutSchema(Schema):
+    title = fields.String(required=True)
+    content = fields.String(required=True)
+    location = fields.String(required=True)
+
+
+class UserNotesPatchSchema(UserNotesPutSchema, IntegerIdentifierSchema):
+    last_update_timestamp = TimestampField(required=True)
+
+    @post_load
+    def make_user_note(self, data: Dict[str, Any], **_kwargs: Any) -> Dict[str, UserNote]:
+        return {'user_note': UserNote.deserialize(data)}

@@ -2843,7 +2843,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v32_rotkehlchen.db')
     last_db = _init_db_with_target_version(
-        target_version=32,
+        target_version=33,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
@@ -2854,7 +2854,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     last_db.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=33,
+        target_version=34,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
@@ -2871,7 +2871,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     assert missing_tables == removed_tables
     assert tables_after_creation - tables_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'address_book', 'web3_nodes'}
+    assert new_tables == {'user_notes'}
 
 
 def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb):

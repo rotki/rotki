@@ -131,6 +131,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     TradeType,
+    UserNote,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
@@ -3416,3 +3417,41 @@ class DBHandler:
                 proportion_to_share=ONE,
                 exclude_identifier=None,
             )
+
+    def get_all_user_notes(self) -> List[UserNote]:
+        """Returns all the notes created by a user."""
+        with self.conn.read_ctx() as cursor:
+            cursor.execute('SELECT identifier, title, content, location, last_update_timestamp FROM user_notes')  # noqa: E501
+            return [UserNote.deserialize_from_db(entry) for entry in cursor]
+
+    def add_user_note(self, title: str, content: str, location: str) -> int:
+        """Add a user_note entry to the DB"""
+        with self.user_write() as write_cursor:
+            write_cursor.execute(
+                'INSERT INTO user_notes(title, content, location, last_update_timestamp) VALUES(?, ?, ?, ?)',  # noqa: E501
+                (title, content, location, ts_now()),
+            )
+            return write_cursor.lastrowid
+
+    def edit_user_note(self, user_note: UserNote) -> None:
+        """Edit an already existing user_note entry's content.
+        May raise:
+        - InputError if editing a user note that does not exist.
+        """
+        with self.user_write() as write_cursor:
+            write_cursor.execute(
+                'UPDATE user_notes SET content=?, last_update_timestamp=? WHERE identifier=?',
+                (user_note.content, ts_now(), user_note.identifier),
+            )
+            if write_cursor.rowcount == 0:
+                raise InputError(f'User note with identifier {user_note.identifier} does not exist')  # noqa: E501
+
+    def delete_user_note(self, identifier: int) -> None:
+        """Delete user note entry from the DB.
+        May raise:
+        - InputError if identifier not present in DB.
+        """
+        with self.user_write() as write_cursor:
+            write_cursor.execute('DELETE FROM user_notes WHERE identifier=?', (identifier,))
+            if write_cursor.rowcount == 0:
+                raise InputError(f'User note with identifier {identifier} not found in database')
