@@ -153,6 +153,7 @@ import { useRoute, useRouter, useTheme } from '@/composables/common';
 import { getPremium, setupSession, useDarkMode } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
+import i18n from '@/i18n';
 import { ThemeChecker } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import { useStatisticsStore } from '@/store/statistics';
@@ -253,8 +254,7 @@ export default defineComponent({
     const startupErrorMessage = ref('');
     const isMacOsVersionUnsupported = ref(false);
 
-    const { navigateToRotki, onError, onAbout, updateTray, onRestart } =
-      useInterop();
+    const { navigateToRotki, setupListeners, updateTray } = useInterop();
     const openSite = navigateToRotki;
     const dismissMessage = () => setMessage();
     const toggleDrawer = () => {
@@ -304,22 +304,34 @@ export default defineComponent({
     const { restartBackend } = setupBackendManagement();
 
     onBeforeMount(async () => {
-      onError((backendOutput: string | Error, code: BackendCode) => {
-        logger.error(backendOutput, code);
-        if (code === BackendCode.TERMINATED) {
-          const message =
-            typeof backendOutput === 'string'
-              ? backendOutput
-              : backendOutput.message;
-          set(startupErrorMessage, message);
-        } else if (code === BackendCode.MACOS_VERSION) {
-          set(isMacOsVersionUnsupported, true);
+      setupListeners({
+        onError: (backendOutput: string | Error, code: BackendCode) => {
+          logger.error(backendOutput, code);
+          if (code === BackendCode.TERMINATED) {
+            const message =
+              typeof backendOutput === 'string'
+                ? backendOutput
+                : backendOutput.message;
+            set(startupErrorMessage, message);
+          } else if (code === BackendCode.MACOS_VERSION) {
+            set(isMacOsVersionUnsupported, true);
+          }
+        },
+        onAbout: () => set(showAbout, true),
+        onRestart: async () => {
+          set(startupErrorMessage, '');
+          await restartBackend();
+        },
+        onProcessDetected: pids => {
+          set(
+            startupErrorMessage,
+            i18n
+              .t('error.process_running', {
+                pids: pids.join(', ')
+              })
+              .toString()
+          );
         }
-      });
-      onAbout(() => set(showAbout, true));
-      onRestart(async () => {
-        set(startupErrorMessage, '');
-        await restartBackend();
       });
 
       await connect();

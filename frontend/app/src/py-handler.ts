@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import stream from 'stream';
 import { app, App, BrowserWindow, ipcMain } from 'electron';
+import psList from 'ps-list';
 import { Task, tasklist } from 'tasklist';
 import { BackendCode } from '@/electron-main/backend-code';
 import { BackendOptions } from '@/electron-main/ipc';
@@ -186,6 +187,16 @@ export default class PyHandler {
   logAndQuit(msg: string) {
     console.log(msg);
     this.app.quit();
+  }
+
+  async checkForBackendProcess(): Promise<number[]> {
+    const runningProcesses = await psList({ all: true });
+    const matches = runningProcesses.filter(
+      process =>
+        process.cmd?.includes('-m rotkehlchen') ||
+        process.cmd?.includes('rotki-core')
+    );
+    return matches.map(p => p.pid);
   }
 
   async createPyProc(window: BrowserWindow, options: Partial<BackendOptions>) {

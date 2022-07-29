@@ -1083,7 +1083,7 @@
       "non_empty": "This setting cannot be empty"
     },
     "log_directory": {
-      "select": "bSelect where rotki will store the logs"
+      "select": "Select where rotki will store the logs"
     },
     "log_from_other_modules": {
       "hint": "Enables logging from third party libraries (useful for debugging)",
@@ -1730,6 +1730,9 @@
     "task": {
       "title": "Querying ENS names"
     }
+  },
+  "error": {
+    "process_running": "A rotki backend process is already running. This is known to cause problems with the operation of the application. Please kill these processes pids: [{pids}] and restart the application."
   },
   "error_screen": {
     "backend_error": "There is a problem with the backend.",

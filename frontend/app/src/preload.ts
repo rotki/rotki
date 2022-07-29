@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { BackendCode } from '@/electron-main/backend-code';
-import { Interop, TrayUpdate } from '@/electron-main/ipc';
+import { Interop, Listeners, TrayUpdate } from '@/electron-main/ipc';
 import {
   IPC_ABOUT,
+  IPC_BACKEND_PROCESS_DETECTED,
   IPC_CHECK_FOR_UPDATES,
   IPC_CLEAR_PASSWORD,
   IPC_CLOSE_APP,
@@ -57,12 +57,22 @@ contextBridge.exposeInMainWorld('interop', {
   openDirectory: (title: string) => ipcAction(IPC_OPEN_DIRECTORY, title),
   premiumUserLoggedIn: (premiumUser: boolean) =>
     ipcRenderer.send(IPC_PREMIUM_LOGIN, premiumUser),
-  listenForErrors: (
-    callback: (backendOutput: string, code: BackendCode) => void
-  ) => {
+  setListeners(listeners: Listeners): void {
     ipcRenderer.on('failed', (event, error, code) => {
-      callback(error, code);
+      listeners.onError(error, code);
       ipcRenderer.send('ack', 1);
+    });
+
+    ipcRenderer.on(IPC_REQUEST_RESTART, () => {
+      listeners.onRestart();
+    });
+
+    ipcRenderer.on(IPC_ABOUT, () => {
+      listeners.onAbout();
+    });
+
+    ipcRenderer.on(IPC_BACKEND_PROCESS_DETECTED, (_event, pids) => {
+      listeners.onProcessDetected(pids);
     });
   },
   debugSettings: isDevelopment
@@ -73,11 +83,6 @@ contextBridge.exposeInMainWorld('interop', {
   serverUrl: (): string => ipcRenderer.sendSync(IPC_SERVER_URL),
   metamaskImport: () => ipcAction(IPC_METAMASK_IMPORT),
   restartBackend: options => ipcAction(IPC_RESTART_BACKEND, options),
-  listenForRestart: callback => {
-    ipcRenderer.on(IPC_REQUEST_RESTART, () => {
-      callback();
-    });
-  },
   checkForUpdates: () => ipcAction(IPC_CHECK_FOR_UPDATES),
   downloadUpdate: progress => {
     ipcRenderer.on(IPC_DOWNLOAD_PROGRESS, (event, args) => {
@@ -89,11 +94,6 @@ contextBridge.exposeInMainWorld('interop', {
   setSelectedTheme: selectedTheme => ipcAction(IPC_THEME, selectedTheme),
   version: () => ipcAction(IPC_VERSION),
   isMac: () => ipcAction(IPC_IS_MAC),
-  onAbout: (callback: () => void) => {
-    ipcRenderer.on(IPC_ABOUT, () => {
-      callback();
-    });
-  },
   openPath: (path: string) => ipcRenderer.send(IPC_OPEN_PATH, path),
   config: (defaults: boolean) => ipcAction(IPC_CONFIG, defaults),
   updateTray: (trayUpdate: TrayUpdate) =>

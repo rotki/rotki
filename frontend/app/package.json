@@ -45,6 +45,7 @@
     "lodash": "4.17.21",
     "loglevel": "1.8.0",
     "pinia": "2.0.17",
+    "ps-list": "8.1.0",
     "register-service-worker": "1.7.2",
     "roboto-fontface": "*",
     "tasklist": "5.0.0",
