@@ -8,10 +8,6 @@ import {
   AaveHistoryEvents,
   AaveHistoryTotal
 } from '@rotki/common/lib/defi/aave';
-import {
-  BalancerBalances,
-  BalancerEvents
-} from '@rotki/common/lib/defi/balancer';
 import { DexTrade } from '@rotki/common/lib/defi/dex';
 import {
   CollateralAssetType,
@@ -31,9 +27,6 @@ import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
 export interface DefiState {
-  balancerEvents: BalancerEvents;
-  balancerTrades: DexTrades;
-  balancerBalances: BalancerBalances;
   dsrHistory: DSRHistory;
   dsrBalances: DSRBalances;
   makerDAOVaults: MakerDAOVault[];

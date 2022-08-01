@@ -11,12 +11,6 @@ import {
   AaveLendingEventType,
   isAaveLiquidationEvent
 } from '@rotki/common/lib/defi/aave';
-import {
-  BalancerBalanceWithOwner,
-  BalancerEvent,
-  BalancerProfitLoss,
-  Pool
-} from '@rotki/common/lib/defi/balancer';
 import { DexTrade } from '@rotki/common/lib/defi/dex';
 import { get } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
@@ -28,12 +22,12 @@ import { CompoundLoan } from '@/services/defi/types/compound';
 import { YearnVaultsHistory } from '@/services/defi/types/yearn';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section, Status } from '@/store/const';
+import { useBalancerStore } from '@/store/defi/balancer';
 import {
   AAVE,
   AIRDROP_POAP,
   COMPOUND,
   getProtocolIcon,
-  GETTER_BALANCER_BALANCES,
   LIQUITY,
   MAKERDAO_DSR,
   MAKERDAO_VAULTS,
@@ -67,7 +61,7 @@ import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
 import { useYearnStore } from '@/store/defi/yearn';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
-import { filterAddresses, getStatus } from '@/store/utils';
+import { getStatus } from '@/store/utils';
 import { Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
@@ -116,11 +110,6 @@ interface DefiGetters {
   dexTrades: (addresses: string[]) => DexTrade[];
   airdrops: (addresses: string[]) => Airdrop[];
   airdropAddresses: string[];
-  [GETTER_BALANCER_BALANCES]: BalancerBalanceWithOwner[];
-  balancerAddresses: string[];
-  balancerEvents: (addresses: string[]) => BalancerEvent[];
-  balancerPools: Pool[];
-  balancerProfitLoss: (addresses: string[]) => BalancerProfitLoss[];
 }
 
 export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
@@ -1346,10 +1335,11 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       return earned;
     },
   dexTrades:
-    ({ balancerTrades }) =>
+    () =>
     (addresses): DexTrade[] => {
       const { trades: uniswapTrades } = useUniswap();
       const { trades: sushiswapTrades } = useSushiswapStore();
+      const { trades: balancerTrades } = useBalancerStore();
       const trades: DexTrade[] = [];
       const addTrades = (
         dexTrades: DexTrades,
@@ -1364,7 +1354,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         }
       };
       addTrades(uniswapTrades as DexTrades, addresses, trades);
-      addTrades(balancerTrades, addresses, trades);
+      addTrades(balancerTrades as DexTrades, addresses, trades);
       if (sushiswapTrades) {
         addTrades(sushiswapTrades as DexTrades, addresses, trades);
       }
@@ -1408,95 +1398,5 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
       return data;
     },
-  airdropAddresses: ({ airdrops }) => Object.keys(airdrops),
-  [GETTER_BALANCER_BALANCES]: ({ balancerBalances }) => {
-    const balances: BalancerBalanceWithOwner[] = [];
-    for (const address in balancerBalances) {
-      for (const balance of balancerBalances[address]) {
-        balances.push({
-          ...balance,
-          owner: address
-        });
-      }
-    }
-    return balances;
-  },
-  balancerAddresses: ({ balancerBalances }) => Object.keys(balancerBalances),
-  balancerEvents:
-    ({ balancerEvents }) =>
-    (addresses): BalancerEvent[] => {
-      const { assetSymbol } = useAssetInfoRetrieval();
-      const events: BalancerEvent[] = [];
-      filterAddresses(balancerEvents, addresses, item => {
-        for (let i = 0; i < item.length; i++) {
-          const poolDetail = item[i];
-          events.push(
-            ...poolDetail.events.map(value => ({
-              ...value,
-              pool: {
-                name: poolDetail.poolTokens
-                  .map(pool => get(assetSymbol(pool.token)))
-                  .join('/'),
-                address: poolDetail.poolAddress
-              }
-            }))
-          );
-        }
-      });
-      return events;
-    },
-  balancerPools: (_, { balancerBalances, balancerEvents }, _rs) => {
-    const { assetSymbol } = useAssetInfoRetrieval();
-    const pools: { [address: string]: Pool } = {};
-    const events = balancerEvents([]);
-
-    for (const balance of balancerBalances) {
-      if (pools[balance.address]) {
-        continue;
-      }
-      pools[balance.address] = {
-        name: balance.tokens
-          .map(token => get(assetSymbol(token.token)))
-          .join('/'),
-        address: balance.address
-      };
-    }
-
-    for (const event of events) {
-      const pool = event.pool;
-      if (!pool || pools[pool.address]) {
-        continue;
-      }
-      pools[pool.address] = {
-        name: pool.name,
-        address: pool.address
-      };
-    }
-    return Object.values(pools);
-  },
-  balancerProfitLoss:
-    ({ balancerEvents }) =>
-    addresses => {
-      const { assetSymbol } = useAssetInfoRetrieval();
-      const balancerProfitLoss: { [pool: string]: BalancerProfitLoss } = {};
-      filterAddresses(balancerEvents, addresses, item => {
-        for (let i = 0; i < item.length; i++) {
-          const entry = item[i];
-          if (!balancerProfitLoss[entry.poolAddress]) {
-            balancerProfitLoss[entry.poolAddress] = {
-              pool: {
-                address: entry.poolAddress,
-                name: entry.poolTokens
-                  .map(token => get(assetSymbol(token.token)))
-                  .join('/')
-              },
-              tokens: entry.poolTokens.map(token => token.token),
-              profitLossAmount: entry.profitLossAmounts,
-              usdProfitLoss: entry.usdProfitLoss
-            };
-          }
-        }
-      });
-      return Object.values(balancerProfitLoss);
-    }
+  airdropAddresses: ({ airdrops }) => Object.keys(airdrops)
 };

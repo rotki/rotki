@@ -1,6 +1,6 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
-import { ActionContext, ActionTree } from 'vuex';
+import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import {
@@ -17,9 +17,9 @@ import {
 } from '@/services/defi/types/compound';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_MODULES } from '@/services/session/consts';
-import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section, Status } from '@/store/const';
-import { ACTION_PURGE_PROTOCOL, dexTradeNumericKeys } from '@/store/defi/const';
+import { useBalancerStore } from '@/store/defi/balancer';
+import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { defaultCompoundHistory } from '@/store/defi/state';
@@ -36,7 +36,6 @@ import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
 import {
-  fetchAsync,
   getStatus,
   getStatusUpdater,
   isLoading,
@@ -776,113 +775,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
     setStatus(Status.LOADED, section);
   },
-  async fetchBalancerBalances(
-    context: ActionContext<DefiState, RotkehlchenState>,
-    refresh: boolean = false
-  ) {
-    const meta: TaskMeta = {
-      title: i18n.t('actions.defi.balancer_balances.task.title').toString(),
-      numericKeys: [...balanceKeys, 'total_amount', 'usd_price']
-    };
 
-    await fetchAsync(context, {
-      query: async () => await api.defi.fetchBalancerBalances(),
-      mutation: 'balancerBalances',
-      taskType: TaskType.BALANCER_BALANCES,
-      section: Section.DEFI_BALANCER_BALANCES,
-      module: Module.BALANCER,
-      meta: meta,
-      refresh,
-      checkPremium: true,
-      onError: {
-        title: i18n.t('actions.defi.balancer_balances.error.title').toString(),
-        error: message =>
-          i18n
-            .t('actions.defi.balancer_balances.error.description', {
-              message
-            })
-            .toString()
-      }
-    });
-
-    const { fetchSupportedAssets } = useAssetInfoRetrieval();
-    await fetchSupportedAssets(true);
-  },
-  async fetchBalancerTrades(
-    context: ActionContext<DefiState, RotkehlchenState>,
-    refresh: boolean = false
-  ) {
-    const meta: TaskMeta = {
-      title: i18n.t('actions.defi.balancer_trades.task.title').toString(),
-      numericKeys: dexTradeNumericKeys
-    };
-
-    await fetchAsync(context, {
-      query: async () => await api.defi.fetchBalancerTrades(),
-      mutation: 'balancerTrades',
-      taskType: TaskType.BALANCER_TRADES,
-      section: Section.DEFI_BALANCER_TRADES,
-      module: Module.BALANCER,
-      meta: meta,
-      checkPremium: true,
-      refresh,
-      onError: {
-        title: i18n.t('actions.defi.balancer_trades.error.title').toString(),
-        error: message =>
-          i18n
-            .t('actions.defi.balancer_trades.error.description', {
-              message
-            })
-            .toString()
-      }
-    });
-
-    const { fetchSupportedAssets } = useAssetInfoRetrieval();
-    await fetchSupportedAssets(true);
-  },
-  async fetchBalancerEvents(
-    context: ActionContext<DefiState, RotkehlchenState>,
-    refresh: boolean = false
-  ) {
-    const meta: TaskMeta = {
-      title: i18n.t('actions.defi.balancer_events.task.title').toString(),
-      numericKeys: [
-        ...balanceKeys,
-        'amounts',
-        'profit_loss_amounts',
-        'usd_profit_loss'
-      ]
-    };
-
-    await fetchAsync(context, {
-      query: async () => await api.defi.fetchBalancerEvents(),
-      mutation: 'balancerEvents',
-      taskType: TaskType.BALANCER_EVENT,
-      section: Section.DEFI_BALANCER_EVENTS,
-      module: Module.BALANCER,
-      meta: meta,
-      checkPremium: true,
-      refresh,
-      onError: {
-        title: i18n.t('actions.defi.balancer_events.error.title').toString(),
-        error: message =>
-          i18n
-            .t('actions.defi.balancer_events.error.description', {
-              message
-            })
-            .toString()
-      }
-    });
-
-    const { fetchSupportedAssets } = useAssetInfoRetrieval();
-    await fetchSupportedAssets(true);
-  },
   async [ACTION_PURGE_PROTOCOL](
     { commit, dispatch },
     module: Module | typeof ALL_MODULES
   ) {
     const { resetStatus } = getStatusUpdater(Section.DEFI_DSR_BALANCES);
     const { reset: resetYearn } = useYearnStore();
+    const { reset: resetBalancer } = useBalancerStore();
 
     function clearDSRState() {
       commit('dsrBalances', {
@@ -925,16 +825,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       resetStatus(Section.DEFI_UNISWAP_EVENTS);
     }
 
-    function clearBalancerState() {
-      commit('balancerBalances', {});
-      commit('balancerTrades', {});
-      commit('balancerEvents', {});
-
-      resetStatus(Section.DEFI_BALANCER_BALANCES);
-      resetStatus(Section.DEFI_BALANCER_TRADES);
-      resetStatus(Section.DEFI_BALANCER_EVENTS);
-    }
-
     if (module === Module.MAKERDAO_DSR) {
       clearDSRState();
     } else if (module === Module.MAKERDAO_VAULTS) {
@@ -950,7 +840,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     } else if (module === Module.UNISWAP) {
       clearUniswapState();
     } else if (module === Module.BALANCER) {
-      clearBalancerState();
+      resetBalancer();
     } else if (Module.SUSHISWAP) {
       dispatch('sushiswap/purge');
     } else if (Module.LIQUITY) {
@@ -962,7 +852,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       clearCompoundState();
       resetYearn();
       clearUniswapState();
-      clearBalancerState();
+      resetBalancer();
     }
   }
 };

@@ -1,8 +1,4 @@
 import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
-import {
-  BalancerBalances,
-  BalancerEvents
-} from '@rotki/common/lib/defi/balancer';
 import { MutationTree } from 'vuex';
 import {
   CompoundBalances,
@@ -13,7 +9,6 @@ import {
   Airdrops,
   AllDefiProtocols,
   DefiState,
-  DexTrades,
   DSRBalances,
   DSRHistory,
   MakerDAOVault,
@@ -53,15 +48,6 @@ export const mutations: MutationTree<DefiState> = {
   },
   airdrops(state: DefiState, airdrops: Airdrops) {
     state.airdrops = airdrops;
-  },
-  balancerBalances(state: DefiState, balances: BalancerBalances) {
-    state.balancerBalances = balances;
-  },
-  balancerTrades(state: DefiState, trades: DexTrades) {
-    state.balancerTrades = trades;
-  },
-  balancerEvents(state: DefiState, events: BalancerEvents) {
-    state.balancerEvents = events;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

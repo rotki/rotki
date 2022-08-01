@@ -23,10 +23,7 @@ export const defaultState = (): DefiState => ({
   allProtocols: {},
   compoundBalances: {},
   compoundHistory: defaultCompoundHistory(),
-  airdrops: {},
-  balancerBalances: {},
-  balancerTrades: {},
-  balancerEvents: {}
+  airdrops: {}
 });
 
 export const state: DefiState = defaultState();

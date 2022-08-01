@@ -1,11 +1,6 @@
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { ProfitLossModel } from '@rotki/common/lib/defi';
-import {
-  BalancerBalanceWithOwner,
-  BalancerEvent,
-  BalancerProfitLoss,
-  Pool
-} from '@rotki/common/lib/defi/balancer';
+import { BalancerBalanceWithOwner } from '@rotki/common/lib/defi/balancer';
 import {
   AdexApi,
   AssetsApi,
@@ -32,6 +27,7 @@ import { storeToRefs } from 'pinia';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useBalancerStore } from '@/store/defi/balancer';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswap } from '@/store/defi/uniswap';
 import { useAdexStakingStore } from '@/store/staking';
@@ -146,28 +142,19 @@ export const balancesApi = (): BalancesApi => {
 };
 
 export const balancerApi = (): BalancerApi => {
-  const store = useStore();
+  const store = useBalancerStore();
+  const { balanceList, pools, addresses } = storeToRefs(store);
   return {
-    balancerProfitLoss: (addresses: string[]) =>
-      computed<BalancerProfitLoss[]>(() =>
-        store.getters['defi/balancerProfitLoss'](addresses)
-      ),
-    balancerEvents: (addresses: string[]) =>
-      computed<BalancerEvent[]>(() =>
-        store.getters['defi/balancerEvents'](addresses)
-      ),
-    balancerBalances: computed<BalancerBalanceWithOwner[]>(
-      () => store.getters['defi/balancerBalances']
-    ),
-    balancerPools: computed<Pool[]>(() => store.getters['defi/balancerPools']),
-    balancerAddresses: computed<string[]>(
-      () => store.getters['defi/balancerAddresses']
-    ),
+    balancerProfitLoss: (addresses: string[]) => store.profitLoss(addresses),
+    balancerEvents: (addresses: string[]) => store.eventList(addresses),
+    balancerBalances: balanceList as Ref<BalancerBalanceWithOwner[]>,
+    balancerPools: pools,
+    balancerAddresses: addresses,
     fetchBalancerBalances: async (refresh: boolean) => {
-      return await store.dispatch('defi/fetchBalancerBalances', refresh);
+      return await store.fetchBalances(refresh);
     },
     fetchBalancerEvents: async (refresh: boolean) => {
-      return await store.dispatch('defi/fetchBalancerEvents', refresh);
+      return await store.fetchEvents(refresh);
     }
   };
 };
@@ -194,11 +181,11 @@ export const dexTradeApi = (): DexTradesApi => {
   const store = useStore();
   const { fetchTrades: fetchUniswapTrades } = useUniswap();
   const { fetchTrades: fetchSushiswapTrades } = useSushiswapStore();
+  const { fetchTrades: fetchBalancerTrades } = useBalancerStore();
   return {
     dexTrades: addresses =>
       computed(() => store.getters['defi/dexTrades'](addresses)),
-    fetchBalancerTrades: refresh =>
-      store.dispatch('defi/fetchBalancerTrades', refresh),
+    fetchBalancerTrades,
     fetchSushiswapTrades,
     fetchUniswapTrades
   };
