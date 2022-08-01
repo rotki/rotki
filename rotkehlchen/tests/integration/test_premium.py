@@ -10,7 +10,7 @@ from rotkehlchen.errors.api import (
     PremiumAuthenticationError,
     RotkehlchenPermissionError,
 )
-from rotkehlchen.premium.premium import PremiumCredentials
+from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
@@ -420,3 +420,20 @@ def test_premium_credentials():
     assert credentials.api_key == api_key
     assert isinstance(credentials.api_secret, bytes)
     assert credentials.api_secret == b64decode(secret)
+
+
+@pytest.mark.parametrize('ethereum_modules', [['uniswap', 'sushiswap', 'compound']])
+@pytest.mark.parametrize('start_with_valid_premium', [False])
+def test_premium_toggle_chain_manager(blockchain, rotki_premium_credentials):
+    """Tests that modules receive correctly the premium status when it's toggled"""
+    for _, module in blockchain.iterate_modules():
+        assert module.premium is None
+
+    premium_obj = Premium(rotki_premium_credentials)
+    blockchain.activate_premium_status(premium_obj)
+    for _, module in blockchain.iterate_modules():
+        assert module.premium == premium_obj
+
+    blockchain.deactivate_premium_status()
+    for _, module in blockchain.iterate_modules():
+        assert module.premium is None
