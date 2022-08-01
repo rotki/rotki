@@ -3847,6 +3847,7 @@
         "approval": "Approval",
         "borrow": "Borrow",
         "bridge": "Bridge",
+        "claim_reward": "Claim Reward",
         "deploy": "Deploy",
         "deposit": "Deposit",
         "donate": "Donate",
