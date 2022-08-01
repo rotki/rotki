@@ -25,11 +25,7 @@ import {
   CompoundEventType,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import {
-  YearnEventType,
-  YearnVaultsBalances,
-  YearnVaultsHistory
-} from '@/services/defi/types/yearn';
+import { YearnEventType } from '@/services/defi/types/yearn';
 import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
 
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
@@ -47,10 +43,6 @@ export interface DefiState {
   allProtocols: AllDefiProtocols;
   compoundBalances: CompoundBalances;
   compoundHistory: CompoundHistory;
-  yearnVaultsBalances: YearnVaultsBalances;
-  yearnVaultsHistory: YearnVaultsHistory;
-  yearnVaultsV2Balances: YearnVaultsBalances;
-  yearnVaultsV2History: YearnVaultsHistory;
   airdrops: Airdrops;
 }
 

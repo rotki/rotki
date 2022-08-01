@@ -177,6 +177,9 @@ import { BigNumber } from '@rotki/common';
 import { Account, DefiAccount } from '@rotki/common/lib/account';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { ProfitLossModel } from '@rotki/common/lib/defi';
+import { ComputedRef } from '@vue/composition-api';
+import { get } from '@vueuse/core';
+import { mapActions as mapPiniaActions } from 'pinia';
 import Component from 'vue-class-component';
 import { Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
@@ -205,8 +208,8 @@ import {
 import { ProtocolVersion } from '@/services/defi/consts';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import { Section } from '@/store/const';
-import { DefiGetterTypes } from '@/store/defi/getters';
 import { BaseDefiBalance } from '@/store/defi/types';
+import { useYearnStore } from '@/store/defi/yearn';
 import { Nullable } from '@/types';
 import { Module } from '@/types/modules';
 
@@ -242,12 +245,12 @@ import { Module } from '@/types/modules';
       'effectiveInterestRate',
       'aggregatedLendingBalances',
       'lendingHistory',
-      'yearnVaultsProfit',
       'aaveTotalEarned'
     ])
   },
   methods: {
-    ...mapActions('defi', ['fetchLending', 'resetDB'])
+    ...mapActions('defi', ['fetchLending', 'resetDB']),
+    ...mapPiniaActions(useYearnStore, ['yearnVaultsProfit'])
   }
 })
 export default class Deposits extends Mixins(StatusMixin) {
@@ -274,7 +277,10 @@ export default class Deposits extends Mixins(StatusMixin) {
     protocols: DefiProtocol[],
     addresses: string[]
   ) => BigNumber;
-  yearnVaultsProfit!: DefiGetterTypes.YearnVaultProfitType;
+  yearnVaultsProfit!: (
+    addresses: string[],
+    version: ProtocolVersion
+  ) => ComputedRef<YearnVaultProfitLoss[]>;
   aaveTotalEarned!: (addresses: string[]) => ProfitLossModel[];
 
   section = Section.DEFI_LENDING;
@@ -298,12 +304,12 @@ export default class Deposits extends Mixins(StatusMixin) {
     const addresses = this.selectedAddresses;
     let v1Profit: YearnVaultProfitLoss[] = [];
     if (this.isYearnVaults || allSelected) {
-      v1Profit = this.yearnVaultsProfit(addresses, ProtocolVersion.V1);
+      v1Profit = get(this.yearnVaultsProfit(addresses, ProtocolVersion.V1));
     }
 
     let v2Profit: YearnVaultProfitLoss[] = [];
     if (this.isYearnVaultsV2 || allSelected) {
-      v2Profit = this.yearnVaultsProfit(addresses, ProtocolVersion.V2);
+      v2Profit = get(this.yearnVaultsProfit(addresses, ProtocolVersion.V2));
     }
     return [...v1Profit, ...v2Profit];
   }

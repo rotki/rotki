@@ -15,10 +15,6 @@ import {
   CompoundBalances,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import {
-  YearnVaultsBalances,
-  YearnVaultsHistory
-} from '@/services/defi/types/yearn';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_MODULES } from '@/services/session/consts';
 import { useAssetInfoRetrieval } from '@/store/assets';
@@ -26,7 +22,6 @@ import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL, dexTradeNumericKeys } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
 import { useLiquityStore } from '@/store/defi/liquity';
-import { DefiMutations } from '@/store/defi/mutation-types';
 import { defaultCompoundHistory } from '@/store/defi/state';
 import {
   Airdrops,
@@ -36,6 +31,7 @@ import {
   DSRHistory,
   MakerDAOVaultDetails
 } from '@/store/defi/types';
+import { useYearnStore } from '@/store/defi/yearn';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
@@ -437,16 +433,17 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     setStatus(Status.PARTIALLY_LOADED, section);
 
     const { fetchBalances: fetchLiquityBalances } = useLiquityStore();
+    const { fetchBalances: fetchYearnBalances } = useYearnStore();
     await Promise.all([
       dispatch('fetchAaveBalances', refresh),
       dispatch('fetchDSRBalances', refresh),
       dispatch('fetchMakerDAOVaults', refresh),
       dispatch('fetchCompoundBalances', refresh),
-      dispatch('fetchYearnVaultBalances', {
+      fetchYearnBalances({
         refresh,
         version: ProtocolVersion.V1
       }),
-      dispatch('fetchYearnVaultBalances', {
+      fetchYearnBalances({
         refresh,
         version: ProtocolVersion.V2
       }),
@@ -463,6 +460,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const currentStatus = getStatus(section);
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    const { fetchBalances: fetchYearnBalances } = useYearnStore();
 
     if (
       !isLoading(currentStatus) ||
@@ -480,14 +478,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         dispatch('fetchCompoundBalances', refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
-        dispatch('fetchYearnVaultBalances', {
-          refresh,
+        fetchYearnBalances({
+          refresh: refresh ?? false,
           version: ProtocolVersion.V1
         }).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
-        dispatch('fetchYearnVaultBalances', {
-          refresh,
+        fetchYearnBalances({
+          refresh: refresh ?? false,
           version: ProtocolVersion.V2
         }).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
@@ -509,16 +507,18 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     setStatus(newStatus, premiumSection);
 
+    const { fetchHistory: fetchYearnHistory } = useYearnStore();
+
     await Promise.all([
       dispatch('fetchDSRHistory', refresh),
       dispatch('fetchAaveHistory', { refresh }),
       dispatch('fetchCompoundHistory', refresh),
-      dispatch('fetchYearnVaultsHistory', {
-        refresh,
+      fetchYearnHistory({
+        refresh: refresh ?? false,
         version: ProtocolVersion.V1
       }),
-      dispatch('fetchYearnVaultsHistory', {
-        refresh,
+      fetchYearnHistory({
+        refresh: refresh ?? false,
         version: ProtocolVersion.V2
       })
     ]);
@@ -541,9 +541,10 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     setStatus(Status.REFRESHING, premiumSection);
 
     const toReset: Promise<void>[] = [];
+    const { fetchHistory: fetchYearnVaultsHistory } = useYearnStore();
     if (protocols.includes(DefiProtocol.YEARN_VAULTS)) {
       toReset.push(
-        dispatch('fetchYearnVaultsHistory', {
+        fetchYearnVaultsHistory({
           refresh: true,
           reset: true,
           version: ProtocolVersion.V1
@@ -553,7 +554,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     if (protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
       toReset.push(
-        dispatch('fetchYearnVaultsHistory', {
+        fetchYearnVaultsHistory({
           refresh: true,
           reset: true,
           version: ProtocolVersion.V2
@@ -734,159 +735,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     setStatus(Status.LOADED, section);
   },
 
-  async fetchYearnVaultBalances(
-    { commit, rootState: { session } },
-    { refresh, version }: { refresh: boolean; version: ProtocolVersion } = {
-      refresh: false,
-      version: ProtocolVersion.V1
-    }
-  ) {
-    const { activeModules } = session!.generalSettings;
-    const isV1 = version === ProtocolVersion.V1;
-    const isV2 = version === ProtocolVersion.V2;
-    const isYearnV1AndActive = activeModules.includes(Module.YEARN) && isV1;
-    const isYearnV2AndActive = activeModules.includes(Module.YEARN_V2) && isV2;
-    const isModuleActive = isYearnV1AndActive || isYearnV2AndActive;
-
-    if (!isModuleActive) {
-      return;
-    }
-
-    const section = isV1
-      ? Section.DEFI_YEARN_VAULTS_BALANCES
-      : Section.DEFI_YEARN_VAULTS_V2_BALANCES;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-    const { awaitTask } = useTasks();
-    try {
-      const taskType = isV1
-        ? TaskType.DEFI_YEARN_VAULT_BALANCES
-        : TaskType.DEFI_YEARN_VAULT_V2_BALANCES;
-      const { taskId } = await api.defi.fetchYearnVaultsBalances(version);
-      const { result } = await awaitTask<YearnVaultsBalances, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n
-            .t('actions.defi.yearn_vaults.task.title', { version })
-            .toString(),
-          numericKeys: balanceKeys
-        }
-      );
-
-      commit(
-        isV1
-          ? DefiMutations.YEARN_VAULTS_BALANCES
-          : DefiMutations.YEARN_VAULTS_V2_BALANCES,
-        result
-      );
-    } catch (e: any) {
-      const { notify } = useNotifications();
-      notify({
-        title: i18n
-          .t('actions.defi.yearn_vaults.error.title', { version })
-          .toString(),
-        message: i18n
-          .t('actions.defi.yearn_vaults.error.description', {
-            error: e.message,
-            version
-          })
-          .toString(),
-        display: true
-      });
-    }
-    setStatus(Status.LOADED, section);
-  },
-
-  async fetchYearnVaultsHistory(
-    { commit, rootState: { session } },
-    payload: { refresh?: boolean; reset?: boolean; version: ProtocolVersion }
-  ) {
-    const refresh = payload?.refresh;
-    const reset = payload?.reset;
-    const { activeModules } = session!.generalSettings;
-
-    const isV1 = payload.version === ProtocolVersion.V1;
-    const isV2 = payload.version === ProtocolVersion.V2;
-    const isYearnV1AndActive = activeModules.includes(Module.YEARN) && isV1;
-    const isYearnV2AndActive = activeModules.includes(Module.YEARN_V2) && isV2;
-    const isModuleActive = isYearnV1AndActive || isYearnV2AndActive;
-
-    if (!isModuleActive || !session?.premium) {
-      return;
-    }
-
-    const section = isV1
-      ? Section.DEFI_YEARN_VAULTS_HISTORY
-      : Section.DEFI_YEARN_VAULTS_V2_HISTORY;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-    const { awaitTask } = useTasks();
-    try {
-      const taskType = isV1
-        ? TaskType.DEFI_YEARN_VAULT_HISTORY
-        : TaskType.DEFI_YEARN_VAULT_V2_HISTORY;
-      const { taskId } = await api.defi.fetchYearnVaultsHistory(
-        payload.version,
-        reset
-      );
-      const { result } = await awaitTask<YearnVaultsHistory, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n
-            .t('actions.defi.yearn_vaults_history.task.title', {
-              version: payload.version
-            })
-            .toString(),
-          numericKeys: balanceKeys
-        }
-      );
-
-      commit(
-        isV1
-          ? DefiMutations.YEARN_VAULTS_HISTORY
-          : DefiMutations.YEARN_VAULTS_V2_HISTORY,
-        result
-      );
-    } catch (e: any) {
-      const { notify } = useNotifications();
-      notify({
-        title: i18n
-          .t('actions.defi.yearn_vaults_history.error.title', {
-            version: payload.version
-          })
-          .toString(),
-        message: i18n
-          .t('actions.defi.yearn_vaults_history.error.description', {
-            error: e.message,
-            version: payload.version
-          })
-          .toString(),
-        display: true
-      });
-    }
-    setStatus(Status.LOADED, section);
-  },
-
   async fetchAirdrops({ commit }, refresh: boolean = false) {
     const section = Section.DEFI_AIRDROPS;
     const currentStatus = getStatus(section);
@@ -1034,6 +882,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     module: Module | typeof ALL_MODULES
   ) {
     const { resetStatus } = getStatusUpdater(Section.DEFI_DSR_BALANCES);
+    const { reset: resetYearn } = useYearnStore();
 
     function clearDSRState() {
       commit('dsrBalances', {
@@ -1066,22 +915,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       resetStatus(Section.DEFI_COMPOUND_HISTORY);
     }
 
-    function clearYearnVaultsState() {
-      commit(DefiMutations.YEARN_VAULTS_BALANCES, {});
-      commit(DefiMutations.YEARN_VAULTS_HISTORY, {});
-
-      resetStatus(Section.DEFI_YEARN_VAULTS_BALANCES);
-      resetStatus(Section.DEFI_YEARN_VAULTS_HISTORY);
-    }
-
-    function clearYearnVaultsV2State() {
-      commit(DefiMutations.YEARN_VAULTS_V2_BALANCES, {});
-      commit(DefiMutations.YEARN_VAULTS_V2_HISTORY, {});
-
-      resetStatus(Section.DEFI_YEARN_VAULTS_V2_BALANCES);
-      resetStatus(Section.DEFI_YEARN_VAULTS_V2_HISTORY);
-    }
-
     function clearUniswapState() {
       commit('uniswapBalances', {});
       commit('uniswapTrades', {});
@@ -1111,9 +944,9 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     } else if (module === Module.COMPOUND) {
       clearCompoundState();
     } else if (module === Module.YEARN) {
-      clearYearnVaultsState();
+      resetYearn(ProtocolVersion.V1);
     } else if (module === Module.YEARN_V2) {
-      clearYearnVaultsV2State();
+      resetYearn(ProtocolVersion.V2);
     } else if (module === Module.UNISWAP) {
       clearUniswapState();
     } else if (module === Module.BALANCER) {
@@ -1127,8 +960,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       clearMakerDAOVaultState();
       clearAaveState();
       clearCompoundState();
-      clearYearnVaultsState();
-      clearYearnVaultsV2State();
+      resetYearn();
       clearUniswapState();
       clearBalancerState();
     }

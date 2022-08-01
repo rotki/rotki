@@ -8,11 +8,6 @@ import {
   CompoundBalances,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import {
-  YearnVaultsBalances,
-  YearnVaultsHistory
-} from '@/services/defi/types/yearn';
-import { DefiMutations } from '@/store/defi/mutation-types';
 import { defaultState } from '@/store/defi/state';
 import {
   Airdrops,
@@ -55,30 +50,6 @@ export const mutations: MutationTree<DefiState> = {
   },
   compoundHistory(state: DefiState, history: CompoundHistory) {
     state.compoundHistory = history;
-  },
-  [DefiMutations.YEARN_VAULTS_BALANCES](
-    state: DefiState,
-    balances: YearnVaultsBalances
-  ) {
-    state.yearnVaultsBalances = balances;
-  },
-  [DefiMutations.YEARN_VAULTS_HISTORY](
-    state: DefiState,
-    history: YearnVaultsHistory
-  ) {
-    state.yearnVaultsHistory = history;
-  },
-  [DefiMutations.YEARN_VAULTS_V2_BALANCES](
-    state: DefiState,
-    balances: YearnVaultsBalances
-  ) {
-    state.yearnVaultsV2Balances = balances;
-  },
-  [DefiMutations.YEARN_VAULTS_V2_HISTORY](
-    state: DefiState,
-    history: YearnVaultsHistory
-  ) {
-    state.yearnVaultsV2History = history;
   },
   airdrops(state: DefiState, airdrops: Airdrops) {
     state.airdrops = airdrops;

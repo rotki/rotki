@@ -20,17 +20,12 @@ import {
 import { DexTrade } from '@rotki/common/lib/defi/dex';
 import { get } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
+import { storeToRefs } from 'pinia';
 import { truncateAddress } from '@/filters';
 import i18n from '@/i18n';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { CompoundLoan } from '@/services/defi/types/compound';
-import { DEPOSIT } from '@/services/defi/types/consts';
-import {
-  YearnVaultAsset,
-  YearnVaultBalance,
-  YearnVaultProfitLoss,
-  YearnVaultsHistory
-} from '@/services/defi/types/yearn';
+import { YearnVaultsHistory } from '@/services/defi/types/yearn';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section, Status } from '@/store/const';
 import {
@@ -69,6 +64,7 @@ import {
 } from '@/store/defi/types';
 import { useUniswap } from '@/store/defi/uniswap';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
+import { useYearnStore } from '@/store/defi/yearn';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { filterAddresses, getStatus } from '@/store/utils';
@@ -81,18 +77,6 @@ import { uniqueStrings } from '@/utils/data';
 function isLendingEvent(value: AaveHistoryEvents): value is AaveEvent {
   const lending: string[] = Object.keys(AaveLendingEventType);
   return lending.indexOf(value.eventType) !== -1;
-}
-
-export namespace DefiGetterTypes {
-  export type YearnVaultProfitType = (
-    addresses: string[],
-    version: ProtocolVersion
-  ) => YearnVaultProfitLoss[];
-
-  export type YearnVaultAssetType = (
-    addresses: string[],
-    version: ProtocolVersion
-  ) => YearnVaultAsset[];
 }
 
 interface DefiGetters {
@@ -128,8 +112,6 @@ interface DefiGetters {
   compoundInterestProfit: ProfitLossModel[];
   compoundLiquidationProfit: ProfitLossModel[];
   compoundDebtLoss: ProfitLossModel[];
-  yearnVaultsProfit: DefiGetterTypes.YearnVaultProfitType;
-  yearnVaultsAssets: DefiGetterTypes.YearnVaultAssetType;
   aaveTotalEarned: (addresses: string[]) => ProfitLossModel[];
   dexTrades: (addresses: string[]) => DexTrade[];
   airdrops: (addresses: string[]) => Airdrop[];
@@ -143,14 +125,10 @@ interface DefiGetters {
 
 export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   totalUsdEarned:
-    ({
-      dsrHistory,
-      aaveHistory,
-      compoundHistory,
-      yearnVaultsHistory,
-      yearnVaultsV2History
-    }: DefiState) =>
+    ({ dsrHistory, aaveHistory, compoundHistory }: DefiState) =>
     (protocols: DefiProtocol[], addresses: string[]): BigNumber => {
+      const { vaultsHistory: yearnV1History, vaultsV2History: yearnV2History } =
+        storeToRefs(useYearnStore());
       let total = Zero;
       const showAll = protocols.length === 0;
       const allAddresses = addresses.length === 0;
@@ -209,11 +187,15 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS)) {
-        total = total.plus(yearnTotalEarned(yearnVaultsHistory));
+        total = total.plus(
+          yearnTotalEarned(get(yearnV1History) as YearnVaultsHistory)
+        );
       }
 
       if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
-        total = total.plus(yearnTotalEarned(yearnVaultsV2History));
+        total = total.plus(
+          yearnTotalEarned(get(yearnV2History) as YearnVaultsHistory)
+        );
       }
       return total;
     },
@@ -225,13 +207,15 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       dsrBalances,
       dsrHistory,
       compoundBalances,
-      compoundHistory,
-      yearnVaultsBalances,
-      yearnVaultsHistory,
-      yearnVaultsV2Balances,
-      yearnVaultsV2History
+      compoundHistory
     }: DefiState) =>
     (protocols: DefiProtocol[]): DefiAccount[] => {
+      const {
+        vaultsBalances: yearnV1Balances,
+        vaultsHistory: yearnV1History,
+        vaultsV2Balances: yearnV2Balances,
+        vaultsV2History: yearnV2History
+      } = storeToRefs(useYearnStore());
       const getProtocolAddresses = (
         protocol: DefiProtocol,
         balances: AddressIndexed<any>,
@@ -277,14 +261,14 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
       addresses[DefiProtocol.YEARN_VAULTS] = getProtocolAddresses(
         DefiProtocol.YEARN_VAULTS,
-        yearnVaultsBalances,
-        yearnVaultsHistory
+        get(yearnV1Balances),
+        get(yearnV1History)
       );
 
       addresses[DefiProtocol.YEARN_VAULTS_V2] = getProtocolAddresses(
         DefiProtocol.YEARN_VAULTS_V2,
-        yearnVaultsV2Balances,
-        yearnVaultsV2History
+        get(yearnV2Balances),
+        get(yearnV2History)
       );
 
       addresses[DefiProtocol.MAKERDAO_DSR] = getProtocolAddresses(
@@ -705,8 +689,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   effectiveInterestRate:
-    (_, { lendingBalances, yearnVaultsAssets }) =>
+    (_, { lendingBalances }) =>
     (protocols: DefiProtocol[], addresses: string[]): string => {
+      const { yearnVaultsAssets } = useYearnStore();
       let { usdValue, weight } = lendingBalances(protocols, addresses)
         .filter(({ balance }) => balance.usdValue.gt(0))
         .map(({ effectiveInterestRate, balance: { usdValue } }) => {
@@ -731,7 +716,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         weight: BigNumber;
         usdValue: BigNumber;
       } {
-        return yearnVaultsAssets([], version)
+        return get(yearnVaultsAssets([], version))
           .filter(({ underlyingValue }) => underlyingValue.usdValue.gt(Zero))
           .map(({ underlyingValue: { usdValue }, roi }) => ({
             usdValue: usdValue,
@@ -771,14 +756,15 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   totalLendingDeposit:
-    (_: DefiState, { lendingBalances, yearnVaultsAssets }) =>
+    (_: DefiState, { lendingBalances }) =>
     (protocols: DefiProtocol[], addresses: string[]): BigNumber => {
+      const { yearnVaultsAssets } = useYearnStore();
       let lendingDeposit = lendingBalances(protocols, addresses)
         .map(value => value.balance.usdValue)
         .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
 
       function getYearnDeposit(version: ProtocolVersion = ProtocolVersion.V1) {
-        return yearnVaultsAssets(addresses, version)
+        return get(yearnVaultsAssets(addresses, version))
           .map(value => value.underlyingValue.usdValue)
           .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
       }
@@ -931,17 +917,13 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   lendingHistory:
-    ({
-      dsrHistory,
-      aaveHistory,
-      compoundHistory,
-      yearnVaultsHistory,
-      yearnVaultsV2History
-    }: DefiState) =>
+    ({ dsrHistory, aaveHistory, compoundHistory }: DefiState) =>
     (
       protocols: DefiProtocol[],
       addresses: string[]
     ): DefiLendingHistory<DefiProtocol>[] => {
+      const { vaultsHistory: yearnV1History, vaultsV2History: yearnV2History } =
+        storeToRefs(useYearnStore());
       const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
 
       const defiLendingHistory: DefiLendingHistory<DefiProtocol>[] = [];
@@ -1041,7 +1023,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
       function yearnHistory(version: ProtocolVersion = ProtocolVersion.V1) {
         const isV1 = version === ProtocolVersion.V1;
-        const vaultsHistory = isV1 ? yearnVaultsHistory : yearnVaultsV2History;
+        const vaultsHistory = get(isV1 ? yearnV1History : yearnV2History);
         for (const address in vaultsHistory) {
           if (!allAddresses && !addresses.includes(address)) {
             continue;
@@ -1334,129 +1316,6 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   compoundLiquidationProfit: ({ compoundHistory }): ProfitLossModel[] => {
     return toProfitLossModel(compoundHistory.liquidationProfit);
   },
-
-  yearnVaultsProfit:
-    ({ yearnVaultsHistory, yearnVaultsV2History }) =>
-    (
-      addresses: string[],
-      version: ProtocolVersion = ProtocolVersion.V1
-    ): YearnVaultProfitLoss[] => {
-      const { assetSymbol } = useAssetInfoRetrieval();
-
-      const vaultsHistory =
-        version === ProtocolVersion.V1
-          ? yearnVaultsHistory
-          : yearnVaultsV2History;
-      const yearnVaultsProfit: { [vault: string]: YearnVaultProfitLoss } = {};
-      const allAddresses = addresses.length === 0;
-      for (const address in vaultsHistory) {
-        if (!allAddresses && !addresses.includes(address)) {
-          continue;
-        }
-        const history = vaultsHistory[address];
-        for (const vault in history) {
-          const data = history[vault];
-          if (!data) {
-            continue;
-          }
-
-          const events = data.events.filter(
-            event => event.eventType === DEPOSIT
-          );
-          const asset = events && events.length > 0 ? events[0].fromAsset : '';
-
-          if (!yearnVaultsProfit[vault]) {
-            let vaultName = vault;
-            if (vault.startsWith('_ceth_')) {
-              vaultName = `${get(assetSymbol(vault))} Vault`;
-            }
-
-            yearnVaultsProfit[vault] = {
-              value: data.profitLoss,
-              vault: vaultName,
-              asset
-            };
-          } else {
-            yearnVaultsProfit[vault] = {
-              ...yearnVaultsProfit[vault],
-              value: balanceSum(yearnVaultsProfit[vault].value, data.profitLoss)
-            };
-          }
-        }
-      }
-      return Object.values(yearnVaultsProfit);
-    },
-
-  yearnVaultsAssets:
-    ({ yearnVaultsBalances, yearnVaultsV2Balances }) =>
-    (
-      addresses: string[],
-      version: ProtocolVersion = ProtocolVersion.V1
-    ): YearnVaultAsset[] => {
-      const { assetSymbol } = useAssetInfoRetrieval();
-      const vaultsBalances =
-        version === ProtocolVersion.V1
-          ? yearnVaultsBalances
-          : yearnVaultsV2Balances;
-      const balances: { [vault: string]: YearnVaultBalance[] } = {};
-      const allAddresses = addresses.length === 0;
-      for (const address in vaultsBalances) {
-        if (!allAddresses && !addresses.includes(address)) {
-          continue;
-        }
-
-        const vaults = vaultsBalances[address];
-        for (const vault in vaults) {
-          let vaultName = vault;
-
-          if (vault.startsWith('0x')) {
-            const tokenSymbol = get(assetSymbol(vaults[vault].vaultToken));
-            vaultName = `${tokenSymbol} Vault`;
-          }
-
-          const balance = vaults[vault];
-          if (!balance) {
-            continue;
-          }
-
-          if (!balances[vaultName]) {
-            balances[vaultName] = [balance];
-          } else {
-            balances[vaultName].push(balance);
-          }
-        }
-      }
-
-      const vaultBalances: YearnVaultAsset[] = [];
-      for (const key in balances) {
-        const allBalances = balances[key];
-        const { underlyingToken, vaultToken, roi } = allBalances[0];
-
-        const underlyingValue = { amount: Zero, usdValue: Zero };
-        const vaultValue = { amount: Zero, usdValue: Zero };
-        const values = { underlyingValue, vaultValue };
-        const summary = allBalances.reduce((sum, current) => {
-          return {
-            vaultValue: balanceSum(sum.vaultValue, current.vaultValue),
-            underlyingValue: balanceSum(
-              sum.underlyingValue,
-              current.underlyingValue
-            )
-          };
-        }, values);
-        vaultBalances.push({
-          vault: key,
-          version,
-          underlyingToken,
-          underlyingValue: summary.underlyingValue,
-          vaultToken,
-          vaultValue: summary.vaultValue,
-          roi
-        });
-      }
-
-      return vaultBalances;
-    },
 
   aaveTotalEarned:
     ({ aaveHistory }) =>
