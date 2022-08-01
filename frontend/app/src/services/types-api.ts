@@ -87,8 +87,7 @@ export type NumericBackendArgument = z.infer<typeof NumericBackendArgument>;
 export const BackendConfiguration = z.object({
   maxSizeInMbAllLogs: NumericBackendArgument,
   maxLogfilesNum: NumericBackendArgument,
-  sqliteInstructions: NumericBackendArgument,
-  sleepSecs: NumericBackendArgument
+  sqliteInstructions: NumericBackendArgument
 });
 
 export type BackendConfiguration = z.infer<typeof BackendConfiguration>;
