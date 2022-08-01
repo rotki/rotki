@@ -430,13 +430,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def activate_premium_status(self, premium: Premium) -> None:
         self.premium = premium
         for _, module in self.iterate_modules():
-            if getattr(module, 'premium', None):
+            if hasattr(module, 'premium') is True:
                 module.premium = premium  # type: ignore
 
     def deactivate_premium_status(self) -> None:
         self.premium = None
         for _, module in self.iterate_modules():
-            if getattr(module, 'premium', None):
+            if hasattr(module, 'premium') is True and module.premium is not None:  # type: ignore  # noqa: E501
                 module.premium = None  # type: ignore
 
     def process_new_modules_list(self, module_names: List[ModuleName]) -> None:
