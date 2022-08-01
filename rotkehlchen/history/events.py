@@ -16,7 +16,6 @@ from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
-from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EXTERNAL_LOCATION, Location, Timestamp
@@ -319,15 +318,7 @@ class EventsHistorian:
             history.extend(result_asset_movements)
 
             if exchange_specific_data:
-                # This can only be poloniex at the moment
-                polo_loans_data = exchange_specific_data
-                history.extend(process_polo_loans(
-                    msg_aggregator=self.msg_aggregator,
-                    data=polo_loans_data,
-                    # We need to have history of loans since before the range
-                    start_ts=Timestamp(0),
-                    end_ts=end_ts,
-                ))
+                pass  # this used to be only for polo loans -- removed now. TODO: Think if needed
 
         def fail_history_cb(error_msg: str) -> None:
             """This callback will run for failure in exchange history query"""

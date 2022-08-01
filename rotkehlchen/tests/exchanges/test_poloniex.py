@@ -8,10 +8,10 @@ from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_fro
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Loan, Trade, TradeType
-from rotkehlchen.exchanges.poloniex import Poloniex, process_polo_loans, trade_from_poloniex
+from rotkehlchen.exchanges.data_structures import Trade, TradeType
+from rotkehlchen.exchanges.poloniex import Poloniex, trade_from_poloniex
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_AIR2, A_DASH
+from rotkehlchen.tests.utils.constants import A_AIR2
 from rotkehlchen.tests.utils.exchanges import (
     POLONIEX_BALANCES_RESPONSE,
     POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE,
@@ -19,8 +19,7 @@ from rotkehlchen.tests.utils.exchanges import (
 )
 from rotkehlchen.tests.utils.history import assert_poloniex_asset_movements
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetMovementCategory, Location, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.types import AssetMovementCategory, Location
 
 TEST_RATE_STR = '0.00022999'
 TEST_AMOUNT_STR = '613.79427133'
@@ -121,87 +120,6 @@ def test_poloniex_trade_deserialization_errors():
         trade_from_poloniex(test_trade, 'BTC_ETH')
 
 
-def test_process_polo_loans():
-    raw_data = [TEST_POLO_LOAN_1, TEST_POLO_LOAN_2]
-    msg_aggregator = MessagesAggregator()
-    loans = process_polo_loans(msg_aggregator, raw_data, 0, 1564262858)
-
-    assert len(loans) == 2
-    assert isinstance(loans[0], Loan)
-    assert loans[0].open_time == Timestamp(1485237904)
-    assert loans[0].close_time == Timestamp(1485252304)
-    assert isinstance(loans[0].currency, Asset)
-    assert loans[0].currency == A_DASH
-    assert loans[0].fee == FVal('0.00015')
-    assert loans[0].earned == FVal('0.003')
-    assert loans[0].amount_lent == FVal('2')
-
-    assert isinstance(loans[1], Loan)
-    assert loans[1].open_time == Timestamp(1487012821)
-    assert loans[1].close_time == Timestamp(1487027104)
-    assert isinstance(loans[1].currency, Asset)
-    assert loans[1].currency == A_DASH
-    assert loans[1].fee == FVal('0.00011')
-    assert loans[1].earned == FVal('0.0035')
-    assert loans[1].amount_lent == FVal('2')
-
-    # Test different start/end timestamps
-    loans = process_polo_loans(msg_aggregator, raw_data, 1485252305, 1564262858)
-    assert len(loans) == 1
-    assert loans[0].close_time == Timestamp(1487027104)
-
-    loans = process_polo_loans(msg_aggregator, raw_data, 0, 1487012820)
-    assert len(loans) == 1
-    assert loans[0].close_time == Timestamp(1485252304)
-
-
-def test_process_polo_loans_unexpected_data():
-    """Test that with unexpected data the offending loan is skipped and an error generated"""
-    msg_aggregator = MessagesAggregator()
-    broken_loan = TEST_POLO_LOAN_1.copy()
-    broken_loan['close'] = 'xx2017-xxs07-22 21:18:37'
-    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
-    assert len(loans) == 1
-    assert loans[0].close_time == Timestamp(1487027104)
-    assert len(msg_aggregator.consume_errors()) == 1
-
-    broken_loan = TEST_POLO_LOAN_1.copy()
-    broken_loan['open'] = 'xx2017-xxs07-22 21:18:37'
-    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
-    assert len(loans) == 1
-    assert loans[0].close_time == Timestamp(1487027104)
-    assert len(msg_aggregator.consume_errors()) == 1
-
-    broken_loan = TEST_POLO_LOAN_1.copy()
-    broken_loan['fee'] = 'sdad'
-    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
-    assert len(loans) == 1
-    assert loans[0].close_time == Timestamp(1487027104)
-    assert len(msg_aggregator.consume_errors()) == 1
-
-    broken_loan = TEST_POLO_LOAN_1.copy()
-    broken_loan['earned'] = None
-    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
-    assert len(loans) == 1
-    assert loans[0].close_time == Timestamp(1487027104)
-    assert len(msg_aggregator.consume_errors()) == 1
-
-    broken_loan = TEST_POLO_LOAN_1.copy()
-    broken_loan['amount'] = ['something']
-    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
-    assert len(loans) == 1
-    assert loans[0].close_time == Timestamp(1487027104)
-    assert len(msg_aggregator.consume_errors()) == 1
-
-    # And finally test that missing an expected entry is also handled
-    broken_loan = TEST_POLO_LOAN_1.copy()
-    del broken_loan['amount']
-    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
-    assert len(loans) == 1
-    assert loans[0].close_time == Timestamp(1487027104)
-    assert len(msg_aggregator.consume_errors()) == 1
-
-
 def test_poloniex_trade_with_asset_needing_conversion():
     amount = FVal(613.79427133)
     rate = FVal(0.00022999)
@@ -224,6 +142,7 @@ def test_poloniex_trade_with_asset_needing_conversion():
     assert trade.location == Location.POLONIEX
 
 
+@pytest.mark.skip('https://github.com/rotki/rotki/issues/4645')
 def test_query_trade_history(function_scope_poloniex):
     """Happy path test for poloniex trade history querying"""
     poloniex = function_scope_poloniex
@@ -262,6 +181,7 @@ def test_query_trade_history(function_scope_poloniex):
     assert trades[1].fee_currency == A_BTC
 
 
+@pytest.mark.skip('https://github.com/rotki/rotki/issues/4645')
 def test_query_trade_history_unexpected_data(function_scope_poloniex):
     """Test that poloniex trade history querying returning unexpected data is handled gracefully"""
     poloniex = function_scope_poloniex
@@ -360,6 +280,7 @@ def test_poloniex_assets_are_known(poloniex):
             ))
 
 
+@pytest.mark.skip('https://github.com/rotki/rotki/issues/4645')
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_poloniex_query_balances_unknown_asset(function_scope_poloniex):
     """Test that if a poloniex balance query returns unknown asset no exception
@@ -386,6 +307,7 @@ def test_poloniex_query_balances_unknown_asset(function_scope_poloniex):
     assert 'unsupported poloniex asset CNOTE' in warnings[1]
 
 
+@pytest.mark.skip('https://github.com/rotki/rotki/issues/4645')
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_poloniex_deposits_withdrawal_unknown_asset(function_scope_poloniex):
     """Test that if a poloniex asset movement query returns unknown asset no exception
@@ -415,6 +337,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(function_scope_poloniex):
     assert 'Found deposit of unsupported poloniex asset EBT' in warnings[3]
 
 
+@pytest.mark.skip('https://github.com/rotki/rotki/issues/4645')
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_poloniex_deposits_withdrawal_null_fee(function_scope_poloniex):
     """
@@ -448,6 +371,7 @@ def test_poloniex_deposits_withdrawal_null_fee(function_scope_poloniex):
     assert len(warnings) == 0
 
 
+@pytest.mark.skip('https://github.com/rotki/rotki/issues/4645')
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_poloniex_deposits_withdrawal_unexpected_data(function_scope_poloniex):
     """

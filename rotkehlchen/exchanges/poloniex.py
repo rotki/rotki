@@ -1,8 +1,6 @@
-import csv
 import hashlib
 import hmac
 import logging
-import os
 from collections import defaultdict
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union
@@ -21,13 +19,7 @@ from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIME
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    Loan,
-    MarginPosition,
-    Trade,
-    TradeType,
-)
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade, TradeType
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.history.deserialization import deserialize_price
@@ -128,69 +120,6 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
         fee_currency=fee_currency,
         link=str(poloniex_trade['globalTradeID']),
     )
-
-
-def process_polo_loans(
-        msg_aggregator: MessagesAggregator,
-        data: List[Dict],
-        start_ts: Timestamp,
-        end_ts: Timestamp,
-) -> List[Loan]:
-    """Takes in the list of loans from poloniex as returned by the return_lending_history
-    api call, processes it and returns it into our loan format
-    """
-    new_data = []
-
-    for loan in reversed(data):
-        log.debug('processing poloniex loan', **loan)
-        try:
-            close_time = deserialize_timestamp_from_poloniex_date(loan['close'])
-            open_time = deserialize_timestamp_from_poloniex_date(loan['open'])
-            if open_time < start_ts:
-                continue
-            if close_time > end_ts:
-                continue
-
-            our_loan = Loan(
-                location=Location.POLONIEX,
-                open_time=open_time,
-                close_time=close_time,
-                currency=asset_from_poloniex(loan['currency']),
-                fee=deserialize_fee(loan['fee']),
-                earned=deserialize_asset_amount(loan['earned']),
-                amount_lent=deserialize_asset_amount(loan['amount']),
-            )
-        except UnsupportedAsset as e:
-            msg_aggregator.add_warning(
-                f'Found poloniex loan with unsupported asset'
-                f' {e.asset_name}. Ignoring it.',
-            )
-            continue
-        except UnknownAsset as e:
-            msg_aggregator.add_warning(
-                f'Found poloniex loan with unknown asset'
-                f' {e.asset_name}. Ignoring it.',
-            )
-            continue
-        except (DeserializationError, KeyError) as e:
-            msg = str(e)
-            if isinstance(e, KeyError):
-                msg = f'Missing key entry for {msg}.'
-            msg_aggregator.add_error(
-                'Deserialization error while reading a poloniex loan. Check '
-                'logs for more details. Ignoring it.',
-            )
-            log.error(
-                'Deserialization error while reading a poloniex loan',
-                loan=loan,
-                error=msg,
-            )
-            continue
-
-        new_data.append(our_loan)
-
-    new_data.sort(key=lambda loan: loan.open_time)
-    return new_data
 
 
 def _post_process(before: Dict) -> Dict:
@@ -387,29 +316,6 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         response = self.api_query_dict('returnFeeInfo')
         return response
 
-    def return_lending_history(
-            self,
-            start_ts: Optional[Timestamp] = None,
-            end_ts: Optional[Timestamp] = None,
-            limit: Optional[int] = None,
-    ) -> List:
-        """Default limit for this endpoint seems to be 500 when I tried.
-        So to be sure all your loans are included put a very high limit per call
-        and also check if the limit was reached after each call.
-
-        Also maximum limit seems to be 12660
-        """
-        req: Dict[str, Union[int, Timestamp]] = {}
-        if start_ts is not None:
-            req['start'] = start_ts
-        if end_ts is not None:
-            req['end'] = end_ts
-        if limit is not None:
-            req['limit'] = limit
-
-        response = self.api_query_list('returnLendingHistory', req)
-        return response
-
     def return_trade_history(
             self,
             start: Timestamp,
@@ -484,7 +390,10 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> ExchangeQueryBalances:
-        try:
+        # skip all until https://github.com/rotki/rotki/issues/4645
+        return {}, ''
+
+        try:  # type: ignore # pylint: disable=unreachable
             resp = self.api_query_dict('returnCompleteBalances', {'account': 'all'})
         except RemoteError as e:
             msg = (
@@ -564,7 +473,10 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
-        raw_data = self.return_trade_history(
+        # skip all until https://github.com/rotki/rotki/issues/4645
+        return [], (start_ts, end_ts)
+
+        raw_data = self.return_trade_history(  # type: ignore  # noqa: E501 # pylint: disable=unreachable
             start=start_ts,
             end=end_ts,
         )
@@ -618,109 +530,6 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     continue
 
         return our_trades, (start_ts, end_ts)
-
-    def parse_loan_csv(self) -> List:
-        """Parses (if existing) the lendingHistory.csv and returns the history in a list
-
-        It can throw OSError, IOError if the file does not exist and csv.Error if
-        the file is not proper CSV"""
-        # the default filename, and should be (if at all) inside the data directory
-        path = os.path.join(self.db.user_data_dir, "lendingHistory.csv")
-        lending_history = []
-        with open(path, 'r') as csvfile:
-            history = csv.reader(csvfile, delimiter=',', quotechar='|')
-            next(history)  # skip header row
-            for row in history:
-                try:
-                    lending_history.append({
-                        'currency': asset_from_poloniex(row[0]),
-                        'earned': deserialize_asset_amount(row[6]),
-                        'amount': deserialize_asset_amount(row[2]),
-                        'fee': deserialize_asset_amount(row[5]),
-                        'open': row[7],
-                        'close': row[8],
-                    })
-                except UnsupportedAsset as e:
-                    self.msg_aggregator.add_warning(
-                        f'Found loan with asset {e.asset_name}. Ignoring it.',
-                    )
-                    continue
-                except DeserializationError as e:
-                    self.msg_aggregator.add_warning(
-                        f'Failed to deserialize amount from loan due to {str(e)}. Ignoring it.',
-                    )
-                    continue
-
-        return lending_history
-
-    def query_loan_history(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            from_csv: Optional[bool] = False,
-    ) -> List:
-        """
-        WARNING: Querying from returnLendingHistory endpoint instead of reading from
-        the CSV file can potentially return unexpected/wrong results.
-
-        That is because the `returnLendingHistory` endpoint has a hidden limit
-        of 12660 results. In our code we use the limit of 12000 but poloniex may change
-        the endpoint to have a lower limit at which case this code will break.
-
-        To be safe compare results of both CSV and endpoint to make sure they agree!
-        """
-        try:
-            if from_csv:
-                return self.parse_loan_csv()
-        except (OSError, csv.Error):
-            pass
-
-        loans_query_return_limit = 12000
-        result = self.return_lending_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            limit=loans_query_return_limit,
-        )
-        data = list(result)
-        log.debug('Poloniex loan history query', results_num=len(data))
-
-        # since I don't think we have any guarantees about order of results
-        # using a set of loan ids is one way to make sure we get no duplicates
-        # if poloniex can guarantee me that the order is going to be ascending/descending
-        # per open/close time then this can be improved
-        id_set = set()
-
-        while len(result) == loans_query_return_limit:
-            # Find earliest timestamp to re-query the next batch
-            min_ts = end_ts
-            for loan in result:
-                ts = deserialize_timestamp_from_poloniex_date(loan['close'])
-                min_ts = min(min_ts, ts)
-                id_set.add(loan['id'])
-
-            result = self.return_lending_history(
-                start_ts=start_ts,
-                end_ts=min_ts,
-                limit=loans_query_return_limit,
-            )
-            log.debug('Poloniex loan history query', results_num=len(result))
-            for loan in result:
-                if loan['id'] not in id_set:
-                    data.append(loan)
-
-        return data
-
-    def query_exchange_specific_history(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> Optional[Any]:
-        """The exchange specific history for poloniex is its loans"""
-        return self.query_loan_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            from_csv=True,  # TODO: Change this and make them queriable
-        )
 
     def _deserialize_asset_movement(
             self,
@@ -790,7 +599,10 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
-        result = self.return_deposits_withdrawals(start_ts, end_ts)
+        # skip all until https://github.com/rotki/rotki/issues/4645
+        return []
+
+        result = self.return_deposits_withdrawals(start_ts, end_ts)  # type: ignore  # noqa: E501 # pylint: disable=unreachable
         log.debug(
             'Poloniex deposits/withdrawal query',
             results_num=len(result['withdrawals']) + len(result['deposits']),
