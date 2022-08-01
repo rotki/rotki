@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Tuple
 
 import gevent
 from gevent.lock import Semaphore
+from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.chain.ethereum.constants import (
@@ -442,7 +443,11 @@ class EthTransactions:
 
         # not in the DB, so we need to query the chain for it
         tx_receipt_data = self.ethereum.get_transaction_receipt(tx_hash=tx_hash)
-        dbethtx.add_receipt_data(write_cursor, tx_receipt_data)
+        try:
+            dbethtx.add_receipt_data(write_cursor, tx_receipt_data)
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            if 'UNIQUE constraint failed: ethtx_receipts.tx_hash' not in str(e):
+                raise  # otherwise something else added the receipt before so we just continue
         tx_receipt = dbethtx.get_receipt(write_cursor, tx_hash)
 
         return tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there  # noqa: E501

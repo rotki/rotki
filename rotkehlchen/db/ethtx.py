@@ -287,8 +287,10 @@ class DBEthTx():
         May raise:
         - Key Error if any of the expected fields are missing
         - DeserializationError if there is a problem deserializing a value
-        - sqlcipher.DatabaseError if the transaction hash is not in the DB
-          or if the receipt already exists in the DB. TODO: Differentiate?
+        - pysqlcipher3.dbapi2.IntegrityError if the transaction hash is not in the DB:
+        pysqlcipher3.dbapi2.IntegrityError: FOREIGN KEY constraint failed
+        If the receipt already exists in the DB:
+        pysqlcipher3.dbapi2.IntegrityError: UNIQUE constraint failed: ethtx_receipts.tx_hash
         """
         tx_hash_b = hexstring_to_bytes(data['transactionHash'])
         # some nodes miss the type field for older non EIP1559 transactions. So assume legacy (0)
