@@ -67,17 +67,17 @@ class DBTimestampFilter(DBFilter):
     def prepare(self) -> Tuple[List[str], List[Any]]:
         filters = []
         bindings = []
-        timesatmp_field = 'timestamp'
+        timestamp_field = 'timestamp'
         if self.timestamp_field is not None:
-            timesatmp_field = self.timestamp_field
+            timestamp_field = self.timestamp_field
         if self.from_ts is not None:
-            filters.append(f'{timesatmp_field} >= ?')
+            filters.append(f'{timestamp_field} >= ?')
             from_ts = self.from_ts
             if self.scaling_factor is not None:
                 from_ts = Timestamp((from_ts * self.scaling_factor).to_int(exact=False))
             bindings.append(from_ts)
         if self.to_ts is not None:
-            filters.append(f'{timesatmp_field} <= ?')
+            filters.append(f'{timestamp_field} <= ?')
             to_ts = self.to_ts
             if self.scaling_factor is not None:
                 to_ts = Timestamp((to_ts * self.scaling_factor).to_int(exact=False))

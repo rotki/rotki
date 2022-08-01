@@ -1,7 +1,7 @@
 import base64
 import random
 import string
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from eth_utils.address import to_checksum_address
 
@@ -144,22 +144,25 @@ def make_addressbook_entries() -> List[AddressbookEntry]:
     ]
 
 
-def make_user_notes_entries() -> List[Dict[str, str]]:
+def make_user_notes_entries() -> List[Dict[str, Any]]:
     return [
         {
             'title': 'TODO List',
             'content': '*Sleep*  *Wake Up!*',
             'location': 'manual balances',
+            'is_pinned': False,
         },
         {
             'title': 'Coins Watchlist #1',
             'content': '$NEAR $SCRT $ETH $BTC $AVAX',
             'location': 'ledger actions',
+            'is_pinned': False,
         },
         {
             'title': 'Programming Languages',
             'content': '-Python -GoLang -Haskell -OCaml -Dart -Rust',
             'location': 'manual balances',
+            'is_pinned': False,
         },
     ]
 

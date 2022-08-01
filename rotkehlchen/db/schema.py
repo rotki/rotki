@@ -833,7 +833,8 @@ CREATE TABLE IF NOT EXISTS user_notes(
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     location TEXT NOT NULL,
-    last_update_timestamp INTEGER NOT NULL
+    last_update_timestamp INTEGER NOT NULL,
+    is_pinned INTEGER NOT NULL CHECK (is_pinned IN (0, 1))
 );
 """
 

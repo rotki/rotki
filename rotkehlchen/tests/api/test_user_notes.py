@@ -23,6 +23,7 @@ def test_add_get_user_notes(rotkehlchen_api_server):
             'title': '#1',
             'content': 'Romero Uno',
             'location': 'manual balances',
+            'is_pinned': False,
         },
     )
     result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
@@ -38,6 +39,7 @@ def test_add_get_user_notes(rotkehlchen_api_server):
             'title': '#2',
             'content': 'ETH/MOON TP@GOBLIN',
             'location': 'ledger actions',
+            'is_pinned': False,
         },
     )
     result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
@@ -51,6 +53,7 @@ def test_add_get_user_notes(rotkehlchen_api_server):
             'title': '#3',
             'content': 'Let us try a new approach',
             'location': 'trades',
+            'is_pinned': True,
         },
     )
     result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
@@ -85,6 +88,7 @@ def test_edit_user_notes(rotkehlchen_api_server):
             title=entry['title'],
             content=entry['content'],
             location=entry['location'],
+            is_pinned=entry['is_pinned'],
         )
 
     # check that editing a user note works as expected.
@@ -98,6 +102,7 @@ def test_edit_user_notes(rotkehlchen_api_server):
             'content': 'Dont sleep, wake up!!!!!',
             'location': 'manual balances',
             'last_update_timestamp': 12345678,
+            'is_pinned': True,
         },
     )
     assert_simple_ok_response(response)
@@ -107,6 +112,7 @@ def test_edit_user_notes(rotkehlchen_api_server):
     for note in user_notes:
         if note.identifier == 1:
             assert note.content == 'Dont sleep, wake up!!!!!'
+            assert note.is_pinned is True
 
     # check that editing a user note with an invalid identifier fails
     response = requests.patch(
@@ -119,6 +125,7 @@ def test_edit_user_notes(rotkehlchen_api_server):
             'content': 'Dont sleep, wake up!!!!!',
             'location': 'manual balances',
             'last_update_timestamp': 12345678,
+            'is_pinned': False,
         },
     )
     assert_error_response(
@@ -135,6 +142,7 @@ def test_delete_user_notes(rotkehlchen_api_server):
             title=entry['title'],
             content=entry['content'],
             location=entry['location'],
+            is_pinned=entry['is_pinned'],
         )
 
     # check that deleting a user note works as expected

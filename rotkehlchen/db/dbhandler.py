@@ -3426,16 +3426,16 @@ class DBHandler:
         """Returns all the notes created by a user."""
         query, bindings = filter_query.prepare()
         with self.conn.read_ctx() as cursor:
-            query = 'SELECT identifier, title, content, location, last_update_timestamp FROM user_notes ' + query  # noqa: E501
+            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM user_notes ' + query  # noqa: E501
             cursor.execute(query, bindings)
             return [UserNote.deserialize_from_db(entry) for entry in cursor]
 
-    def add_user_note(self, title: str, content: str, location: str) -> int:
+    def add_user_note(self, title: str, content: str, location: str, is_pinned: bool) -> int:
         """Add a user_note entry to the DB"""
         with self.user_write() as write_cursor:
             write_cursor.execute(
-                'INSERT INTO user_notes(title, content, location, last_update_timestamp) VALUES(?, ?, ?, ?)',  # noqa: E501
-                (title, content, location, ts_now()),
+                'INSERT INTO user_notes(title, content, location, last_update_timestamp, is_pinned) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
+                (title, content, location, ts_now(), is_pinned),
             )
             return write_cursor.lastrowid
 
@@ -3446,8 +3446,8 @@ class DBHandler:
         """
         with self.user_write() as write_cursor:
             write_cursor.execute(
-                'UPDATE user_notes SET content=?, last_update_timestamp=? WHERE identifier=?',
-                (user_note.content, ts_now(), user_note.identifier),
+                'UPDATE user_notes SET content=?, last_update_timestamp=?, is_pinned=? WHERE identifier=?',  # noqa: E501
+                (user_note.content, ts_now(), user_note.is_pinned, user_note.identifier),
             )
             if write_cursor.rowcount == 0:
                 raise InputError(f'User note with identifier {user_note.identifier} does not exist')  # noqa: E501

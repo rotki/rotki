@@ -2651,8 +2651,13 @@ class UserNotesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
-    def put(self, title: str, content: str, location: str) -> Response:
-        return self.rest_api.add_user_note(title=title, content=content, location=location)
+    def put(self, title: str, content: str, location: str, is_pinned: bool) -> Response:
+        return self.rest_api.add_user_note(
+            title=title,
+            content=content,
+            location=location,
+            is_pinned=is_pinned,
+        )
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json')

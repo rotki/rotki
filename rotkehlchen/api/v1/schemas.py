@@ -2341,6 +2341,7 @@ class UserNotesPutSchema(Schema):
     title = fields.String(required=True)
     content = fields.String(required=True)
     location = fields.String(required=True)
+    is_pinned = fields.Boolean(required=True)
 
 
 class UserNotesPatchSchema(UserNotesPutSchema, IntegerIdentifierSchema):

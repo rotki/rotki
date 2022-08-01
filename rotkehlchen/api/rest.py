@@ -4503,11 +4503,18 @@ class RestAPI():
         result_dict = _wrap_in_ok_result([entry.serialize() for entry in user_notes])
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def add_user_note(self, title: str, content: str, location: str) -> Response:
+    def add_user_note(
+            self,
+            title: str,
+            content: str,
+            location: str,
+            is_pinned: bool,
+    ) -> Response:
         note_id = self.rotkehlchen.data.db.add_user_note(
             title=title,
             content=content,
             location=location,
+            is_pinned=is_pinned,
         )
         return api_response(result={'result': note_id, 'message': ''}, status_code=HTTPStatus.OK)
 
