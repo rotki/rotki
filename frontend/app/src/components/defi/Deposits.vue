@@ -155,7 +155,7 @@
     <aave-earned-details
       v-if="premium && (isAave || selectedProtocols.length === 0)"
       class="mt-8"
-      :profit="aaveTotalEarned(selectedAddresses)"
+      :profit="totalEarnedInAave"
     />
     <v-row class="loans__history mt-8" no-gutters>
       <v-col cols="12">
@@ -208,6 +208,7 @@ import {
 import { ProtocolVersion } from '@/services/defi/consts';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import { Section } from '@/store/const';
+import { useAaveStore } from '@/store/defi/aave';
 import { BaseDefiBalance } from '@/store/defi/types';
 import { useYearnStore } from '@/store/defi/yearn';
 import { Nullable } from '@/types';
@@ -244,13 +245,13 @@ import { Module } from '@/types/modules';
       'defiAccounts',
       'effectiveInterestRate',
       'aggregatedLendingBalances',
-      'lendingHistory',
-      'aaveTotalEarned'
+      'lendingHistory'
     ])
   },
   methods: {
     ...mapActions('defi', ['fetchLending', 'resetDB']),
-    ...mapPiniaActions(useYearnStore, ['yearnVaultsProfit'])
+    ...mapPiniaActions(useYearnStore, ['yearnVaultsProfit']),
+    ...mapPiniaActions(useAaveStore, ['aaveTotalEarned'])
   }
 })
 export default class Deposits extends Mixins(StatusMixin) {
@@ -281,7 +282,7 @@ export default class Deposits extends Mixins(StatusMixin) {
     addresses: string[],
     version: ProtocolVersion
   ) => ComputedRef<YearnVaultProfitLoss[]>;
-  aaveTotalEarned!: (addresses: string[]) => ProfitLossModel[];
+  aaveTotalEarned!: (addresses: string[]) => ComputedRef<ProfitLossModel[]>;
 
   section = Section.DEFI_LENDING;
   secondSection = Section.DEFI_LENDING_HISTORY;
@@ -298,6 +299,10 @@ export default class Deposits extends Mixins(StatusMixin) {
     Module.YEARN_V2,
     Module.MAKERDAO_DSR
   ];
+
+  get totalEarnedInAave(): ProfitLossModel[] {
+    return get(this.aaveTotalEarned(this.selectedAddresses));
+  }
 
   yearnProfit(): YearnVaultProfitLoss[] {
     const allSelected = this.selectedProtocols.length === 0;

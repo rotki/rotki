@@ -2,9 +2,7 @@ import { Balance, BigNumber } from '@rotki/common';
 import { HasBalance } from '@rotki/common/lib';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
-  AaveBalances,
   AaveBorrowingRates,
-  AaveHistory,
   AaveHistoryEvents,
   AaveHistoryTotal
 } from '@rotki/common/lib/defi/aave';
@@ -31,8 +29,6 @@ export interface DefiState {
   dsrBalances: DSRBalances;
   makerDAOVaults: MakerDAOVault[];
   makerDAOVaultDetails: MakerDAOVaultDetails[];
-  aaveBalances: AaveBalances;
-  aaveHistory: AaveHistory;
   allProtocols: AllDefiProtocols;
   compoundBalances: CompoundBalances;
   compoundHistory: CompoundHistory;

@@ -1,10 +1,10 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
+import { get } from '@vueuse/core';
 import { ActionTree } from 'vuex';
+import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import {
-  aaveHistoryKeys,
   dsrKeys,
   ProtocolVersion,
   vaultDetailsKeys,
@@ -18,6 +18,7 @@ import {
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_MODULES } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
+import { useAaveStore } from '@/store/defi/aave';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
@@ -262,116 +263,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     setStatus(Status.LOADED, section);
   },
 
-  async fetchAaveBalances(
-    { commit, rootState: { session } },
-    refresh: boolean = false
-  ) {
-    const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(Module.AAVE)) {
-      return;
-    }
-    const section = Section.DEFI_AAVE_BALANCES;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-    const { awaitTask } = useTasks();
-
-    try {
-      const taskType = TaskType.AAVE_BALANCES;
-      const { taskId } = await api.defi.fetchAaveBalances();
-      const { result } = await awaitTask<AaveBalances, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n.tc('actions.defi.aave_balances.task.title'),
-          numericKeys: balanceKeys
-        }
-      );
-
-      commit('aaveBalances', result);
-    } catch (e: any) {
-      const message = i18n.tc(
-        'actions.defi.aave_balances.error.description',
-        undefined,
-        {
-          error: e.message
-        }
-      );
-      const title = i18n.tc('actions.defi.aave_balances.error.title');
-      const { notify } = useNotifications();
-      notify({
-        title,
-        message,
-        display: true
-      });
-    }
-
-    setStatus(Status.LOADED, section);
-  },
-
-  async fetchAaveHistory(
-    { commit, rootState: { session } },
-    payload: { refresh?: boolean; reset?: boolean }
-  ) {
-    const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(Module.AAVE) || !session?.premium) {
-      return;
-    }
-    const section = Section.DEFI_AAVE_HISTORY;
-    const currentStatus = getStatus(section);
-    const refresh = payload?.refresh;
-    const reset = payload?.reset;
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-    const { awaitTask } = useTasks();
-
-    try {
-      const taskType = TaskType.AAVE_HISTORY;
-      const { taskId } = await api.defi.fetchAaveHistory(reset);
-      const { result } = await awaitTask<AaveHistory, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n.tc('actions.defi.aave_history.task.title'),
-          numericKeys: aaveHistoryKeys
-        }
-      );
-
-      commit('aaveHistory', result);
-    } catch (e: any) {
-      const message = i18n.tc(
-        'actions.defi.aave_history.error.description',
-        undefined,
-        { error: e.message }
-      );
-      const title = i18n.tc('actions.defi.aave_history.error.title');
-      const { notify } = useNotifications();
-      notify({
-        title,
-        message,
-        display: true
-      });
-    }
-
-    setStatus(Status.LOADED, section);
-  },
-
   async fetchDefiBalances({ commit }, refresh: boolean) {
     const section = Section.DEFI_BALANCES;
     const currentStatus = getStatus(section);
@@ -433,8 +324,10 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const { fetchBalances: fetchLiquityBalances } = useLiquityStore();
     const { fetchBalances: fetchYearnBalances } = useYearnStore();
+    const { fetchBalances: fetchAaveBalances } = useAaveStore();
+
     await Promise.all([
-      dispatch('fetchAaveBalances', refresh),
+      fetchAaveBalances(refresh),
       dispatch('fetchDSRBalances', refresh),
       dispatch('fetchMakerDAOVaults', refresh),
       dispatch('fetchCompoundBalances', refresh),
@@ -460,6 +353,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     const { fetchBalances: fetchYearnBalances } = useYearnStore();
+    const { fetchBalances: fetchAaveBalances } = useAaveStore();
 
     if (
       !isLoading(currentStatus) ||
@@ -471,7 +365,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         dispatch('fetchDSRBalances', refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
-        dispatch('fetchAaveBalances', refresh).then(() => {
+        fetchAaveBalances(refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
         dispatch('fetchCompoundBalances', refresh).then(() => {
@@ -507,10 +401,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     setStatus(newStatus, premiumSection);
 
     const { fetchHistory: fetchYearnHistory } = useYearnStore();
+    const { fetchHistory: fetchAaveHistory } = useAaveStore();
 
     await Promise.all([
       dispatch('fetchDSRHistory', refresh),
-      dispatch('fetchAaveHistory', { refresh }),
+      fetchAaveHistory({ refresh }),
       dispatch('fetchCompoundHistory', refresh),
       fetchYearnHistory({
         refresh: refresh ?? false,
@@ -525,15 +420,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     setStatus(Status.LOADED, premiumSection);
   },
 
-  async resetDB(
-    { dispatch, rootState: { session } },
-    protocols: DefiProtocol[]
-  ) {
+  async resetDB(_, protocols: DefiProtocol[]) {
     const premiumSection = Section.DEFI_LENDING_HISTORY;
     const currentPremiumStatus = getStatus(premiumSection);
-    const premium = session!.premium;
+    const premium = getPremium();
 
-    if (!premium || isLoading(currentPremiumStatus)) {
+    if (!get(premium) || isLoading(currentPremiumStatus)) {
       return;
     }
 
@@ -562,9 +454,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     if (protocols.includes(DefiProtocol.AAVE)) {
-      toReset.push(
-        dispatch('fetchAaveHistory', { refresh: true, reset: true })
-      );
+      const { fetchHistory: fetchAaveHistory } = useAaveStore();
+      toReset.push(fetchAaveHistory({ refresh: true, reset: true }));
     }
 
     await Promise.all(toReset);
@@ -582,6 +473,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const currentStatus = getStatus(section);
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
 
+    const { fetchBalances: fetchAaveBalances, fetchHistory: fetchAaveHistory } =
+      useAaveStore();
     const {
       fetchBalances: fetchLiquityBalances,
       fetchEvents: fetchLiquityEvents
@@ -599,7 +492,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         dispatch('fetchCompoundBalances', refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
-        dispatch('fetchAaveBalances', refresh).then(() => {
+        fetchAaveBalances(refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
         fetchLiquityBalances(refresh).then(() => {
@@ -625,7 +518,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     await Promise.all([
       dispatch('fetchMakerDAOVaultDetails', refresh),
       dispatch('fetchCompoundHistory', refresh),
-      dispatch('fetchAaveHistory', refresh),
+      fetchAaveHistory({ refresh }),
       fetchLiquityEvents(refresh)
     ]);
 
@@ -783,6 +676,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const { resetStatus } = getStatusUpdater(Section.DEFI_DSR_BALANCES);
     const { reset: resetYearn } = useYearnStore();
     const { reset: resetBalancer } = useBalancerStore();
+    const { reset: resetAave } = useAaveStore();
 
     function clearDSRState() {
       commit('dsrBalances', {
@@ -799,13 +693,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       commit('makerDAOVaultDetails', []);
       resetStatus(Section.DEFI_MAKERDAO_VAULTS);
       resetStatus(Section.DEFI_MAKERDAO_VAULT_DETAILS);
-    }
-
-    function clearAaveState() {
-      commit('aaveBalances', {});
-      commit('aaveHistory', {});
-      resetStatus(Section.DEFI_AAVE_BALANCES);
-      resetStatus(Section.DEFI_AAVE_HISTORY);
     }
 
     function clearCompoundState() {
@@ -830,7 +717,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     } else if (module === Module.MAKERDAO_VAULTS) {
       clearMakerDAOVaultState();
     } else if (module === Module.AAVE) {
-      clearAaveState();
+      resetAave();
     } else if (module === Module.COMPOUND) {
       clearCompoundState();
     } else if (module === Module.YEARN) {
@@ -848,7 +735,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     } else if (module === ALL_MODULES) {
       clearDSRState();
       clearMakerDAOVaultState();
-      clearAaveState();
+      resetAave();
       clearCompoundState();
       resetYearn();
       clearUniswapState();

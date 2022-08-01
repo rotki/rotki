@@ -18,8 +18,6 @@ export const defaultState = (): DefiState => ({
   },
   makerDAOVaults: [],
   makerDAOVaultDetails: [],
-  aaveBalances: {},
-  aaveHistory: {},
   allProtocols: {},
   compoundBalances: {},
   compoundHistory: defaultCompoundHistory(),

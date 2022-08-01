@@ -3,8 +3,10 @@ import { DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import { ProfitLossModel } from '@rotki/common/lib/defi';
 import {
+  AaveBalances,
   AaveBorrowingEventType,
   AaveEvent,
+  AaveHistory,
   AaveHistoryEvents,
   AaveHistoryTotal,
   AaveLending,
@@ -22,6 +24,7 @@ import { CompoundLoan } from '@/services/defi/types/compound';
 import { YearnVaultsHistory } from '@/services/defi/types/yearn';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section, Status } from '@/store/const';
+import { useAaveStore } from '@/store/defi/aave';
 import { useBalancerStore } from '@/store/defi/balancer';
 import {
   AAVE,
@@ -65,7 +68,6 @@ import { getStatus } from '@/store/utils';
 import { Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
-import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 
 function isLendingEvent(value: AaveHistoryEvents): value is AaveEvent {
@@ -106,7 +108,6 @@ interface DefiGetters {
   compoundInterestProfit: ProfitLossModel[];
   compoundLiquidationProfit: ProfitLossModel[];
   compoundDebtLoss: ProfitLossModel[];
-  aaveTotalEarned: (addresses: string[]) => ProfitLossModel[];
   dexTrades: (addresses: string[]) => DexTrade[];
   airdrops: (addresses: string[]) => Airdrop[];
   airdropAddresses: string[];
@@ -114,10 +115,12 @@ interface DefiGetters {
 
 export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   totalUsdEarned:
-    ({ dsrHistory, aaveHistory, compoundHistory }: DefiState) =>
+    ({ dsrHistory, compoundHistory }: DefiState) =>
     (protocols: DefiProtocol[], addresses: string[]): BigNumber => {
       const { vaultsHistory: yearnV1History, vaultsV2History: yearnV2History } =
         storeToRefs(useYearnStore());
+      const { history } = storeToRefs(useAaveStore());
+      const aaveHistory = get(history);
       let total = Zero;
       const showAll = protocols.length === 0;
       const allAddresses = addresses.length === 0;
@@ -191,8 +194,6 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
   defiAccounts:
     ({
-      aaveBalances,
-      aaveHistory,
       dsrBalances,
       dsrHistory,
       compoundBalances,
@@ -205,6 +206,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         vaultsV2Balances: yearnV2Balances,
         vaultsV2History: yearnV2History
       } = storeToRefs(useYearnStore());
+      const { history: aaveHistory, balances: aaveBalances } = storeToRefs(
+        useAaveStore()
+      );
       const getProtocolAddresses = (
         protocol: DefiProtocol,
         balances: AddressIndexed<any>,
@@ -238,8 +242,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
       addresses[DefiProtocol.AAVE] = getProtocolAddresses(
         DefiProtocol.AAVE,
-        aaveBalances,
-        aaveHistory
+        get(aaveBalances),
+        get(aaveHistory)
       );
 
       addresses[DefiProtocol.COMPOUND] = getProtocolAddresses(
@@ -293,14 +297,15 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
   loans:
     ({
-      aaveBalances,
-      aaveHistory,
       makerDAOVaults,
       compoundBalances,
       compoundHistory: { events }
     }: DefiState) =>
     (protocols: DefiProtocol[]): DefiLoan[] => {
       const { assetInfo } = useAssetInfoRetrieval();
+      const { history: aaveHistory, balances: aaveBalances } = storeToRefs(
+        useAaveStore()
+      );
 
       const loans: DefiLoan[] = [];
       const showAll = protocols.length === 0;
@@ -319,8 +324,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
       if (showAll || protocols.includes(DefiProtocol.AAVE)) {
         const knownAssets: string[] = [];
-        for (const address of Object.keys(aaveBalances)) {
-          const { borrowing } = aaveBalances[address];
+        const perAddressAaveBalances = get(aaveBalances);
+        for (const address of Object.keys(perAddressAaveBalances)) {
+          const { borrowing } = perAddressAaveBalances[address];
           const assets = Object.keys(borrowing);
           if (assets.length === 0) {
             continue;
@@ -338,8 +344,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           }
         }
 
-        for (const address in aaveHistory) {
-          const { events } = aaveHistory[address];
+        const perAddressAaveHistory = get(aaveHistory) as AaveHistory;
+        for (const address in perAddressAaveHistory) {
+          const { events } = perAddressAaveHistory[address];
           const borrowEvents: string[] = Object.values(AaveBorrowingEventType);
           const historyAssets = events
             .filter(e => borrowEvents.includes(e.eventType))
@@ -429,8 +436,6 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       {
         makerDAOVaults,
         makerDAOVaultDetails,
-        aaveBalances,
-        aaveHistory,
         compoundBalances,
         compoundHistory: { events }
       }: DefiState,
@@ -439,6 +444,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     (
       identifier?: string
     ): MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan | null => {
+      const { history: aaveHistory, balances: aaveBalances } = storeToRefs(
+        useAaveStore()
+      );
       const id = identifier?.toLocaleLowerCase();
       const loan = loans([]).find(
         loan => loan.identifier.toLocaleLowerCase() === id
@@ -465,6 +473,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (loan.protocol === DefiProtocol.AAVE) {
+        const perAddressAaveBalances = get(aaveBalances) as AaveBalances;
+        const perAddressAaveHistory = get(aaveHistory) as AaveHistory;
         const owner = loan.owner ?? '';
         const asset = loan.asset ?? '';
 
@@ -473,9 +483,10 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           variableApr: '-',
           balance: { amount: Zero, usdValue: Zero }
         };
+
         let lending: AaveLending = {};
-        if (aaveBalances[owner]) {
-          const balances = aaveBalances[owner];
+        if (perAddressAaveBalances[owner]) {
+          const balances = perAddressAaveBalances[owner];
           selectedLoan = balances.borrowing[asset] ?? selectedLoan;
           lending = balances.lending ?? lending;
         }
@@ -483,12 +494,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         const lost: Writeable<AaveHistoryTotal> = {};
         const liquidationEarned: Writeable<AaveHistoryTotal> = {};
         const events: AaveHistoryEvents[] = [];
-        if (aaveHistory[owner]) {
+        if (perAddressAaveHistory[owner]) {
           const {
             totalLost,
             events: allEvents,
             totalEarnedLiquidations
-          } = aaveHistory[owner];
+          } = perAddressAaveHistory[owner];
 
           for (const event of allEvents) {
             if (!isAaveLiquidationEvent(event)) {
@@ -617,8 +628,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   loanSummary:
-    ({ makerDAOVaults, aaveBalances, compoundBalances }: DefiState) =>
+    ({ makerDAOVaults, compoundBalances }: DefiState) =>
     (protocols: DefiProtocol[]): LoanSummary => {
+      const { balances: aaveBalances } = storeToRefs(useAaveStore());
       let totalCollateralUsd = Zero;
       let totalDebt = Zero;
 
@@ -639,8 +651,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (showAll || protocols.includes(DefiProtocol.AAVE)) {
-        for (const address of Object.keys(aaveBalances)) {
-          const { borrowing, lending } = aaveBalances[address];
+        const perAddressAaveBalances = get(aaveBalances) as AaveBalances;
+        for (const address of Object.keys(perAddressAaveBalances)) {
+          const { borrowing, lending } = perAddressAaveBalances[address];
           totalCollateralUsd = balanceUsdValueSum(Object.values(lending)).plus(
             totalCollateralUsd
           );
@@ -835,9 +848,10 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   lendingBalances:
-    ({ dsrBalances, aaveBalances, compoundBalances }: DefiState) =>
+    ({ dsrBalances, compoundBalances }: DefiState) =>
     (protocols: DefiProtocol[], addresses: string[]): DefiBalance[] => {
       const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
+      const { balances: aaveBalances } = storeToRefs(useAaveStore());
 
       const balances: DefiBalance[] = [];
       const showAll = protocols.length === 0;
@@ -864,11 +878,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (showAll || protocols.includes(DefiProtocol.AAVE)) {
-        for (const address of Object.keys(aaveBalances)) {
+        const perAddressAaveBalances = get(aaveBalances) as AaveBalances;
+        for (const address of Object.keys(perAddressAaveBalances)) {
           if (!allAddresses && !addresses.includes(address)) {
             continue;
           }
-          const { lending } = aaveBalances[address];
+          const { lending } = perAddressAaveBalances[address];
 
           for (const asset of Object.keys(lending)) {
             const aaveAsset = lending[asset];
@@ -906,13 +921,14 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   lendingHistory:
-    ({ dsrHistory, aaveHistory, compoundHistory }: DefiState) =>
+    ({ dsrHistory, compoundHistory }: DefiState) =>
     (
       protocols: DefiProtocol[],
       addresses: string[]
     ): DefiLendingHistory<DefiProtocol>[] => {
       const { vaultsHistory: yearnV1History, vaultsV2History: yearnV2History } =
         storeToRefs(useYearnStore());
+      const { history: aaveHistory } = storeToRefs(useAaveStore());
       const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
 
       const defiLendingHistory: DefiLendingHistory<DefiProtocol>[] = [];
@@ -948,12 +964,13 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (showAll || protocols.includes(DefiProtocol.AAVE)) {
-        for (const address of Object.keys(aaveHistory)) {
+        const perAddressAaveHistory = get(aaveHistory) as AaveHistory;
+        for (const address of Object.keys(perAddressAaveHistory)) {
           if (!allAddresses && !addresses.includes(address)) {
             continue;
           }
 
-          const history = aaveHistory[address];
+          const history = perAddressAaveHistory[address];
 
           for (const event of history.events) {
             if (!isLendingEvent(event)) {
@@ -1305,35 +1322,6 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   compoundLiquidationProfit: ({ compoundHistory }): ProfitLossModel[] => {
     return toProfitLossModel(compoundHistory.liquidationProfit);
   },
-
-  aaveTotalEarned:
-    ({ aaveHistory }) =>
-    (addresses: string[]): ProfitLossModel[] => {
-      const earned: ProfitLossModel[] = [];
-
-      for (const address in aaveHistory) {
-        if (addresses.length > 0 && !addresses.includes(address)) {
-          continue;
-        }
-        const totalEarned = aaveHistory[address].totalEarnedInterest;
-        for (const asset in totalEarned) {
-          const index = earned.findIndex(e => e.asset === asset);
-          if (index < 0) {
-            earned.push({
-              address: '',
-              asset,
-              value: totalEarned[asset]
-            });
-          } else {
-            earned[index] = {
-              ...earned[index],
-              value: balanceSum(earned[index].value, totalEarned[asset])
-            };
-          }
-        }
-      }
-      return earned;
-    },
   dexTrades:
     () =>
     (addresses): DexTrade[] => {

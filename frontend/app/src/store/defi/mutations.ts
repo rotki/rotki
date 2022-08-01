@@ -1,4 +1,3 @@
-import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
 import { MutationTree } from 'vuex';
 import {
   CompoundBalances,
@@ -30,12 +29,6 @@ export const mutations: MutationTree<DefiState> = {
     makerDAOVaultDetails: MakerDAOVaultDetails[]
   ) {
     state.makerDAOVaultDetails = makerDAOVaultDetails;
-  },
-  aaveBalances(state: DefiState, aaveBalances: AaveBalances) {
-    state.aaveBalances = aaveBalances;
-  },
-  aaveHistory(state: DefiState, aaveHistory: AaveHistory) {
-    state.aaveHistory = aaveHistory;
   },
   allDefiProtocols(state: DefiState, allProtocols: AllDefiProtocols) {
     state.allProtocols = allProtocols;
