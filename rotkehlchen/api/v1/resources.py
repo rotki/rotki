@@ -119,6 +119,7 @@ from rotkehlchen.api.v1.schemas import (
     TradesQuerySchema,
     UserActionLoginSchema,
     UserActionSchema,
+    UserNotesGetSchema,
     UserNotesPatchSchema,
     UserNotesPutSchema,
     UserPasswordChangeSchema,
@@ -142,6 +143,7 @@ from rotkehlchen.db.filtering import (
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
+    UserNotesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
@@ -2637,13 +2639,15 @@ class ConfigurationsResource(BaseMethodView):
 
 
 class UserNotesResource(BaseMethodView):
+    get_schema = UserNotesGetSchema()
     put_schema = UserNotesPutSchema()
     patch_schema = UserNotesPatchSchema()
     delete_schema = IntegerIdentifierSchema()
 
     @require_loggedin_user()
-    def get(self) -> Response:
-        return self.rest_api.get_user_notes()
+    @use_kwargs(get_schema, location='json')
+    def get(self, filter_query: UserNotesFilterQuery) -> Response:
+        return self.rest_api.get_user_notes(filter_query=filter_query)
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')

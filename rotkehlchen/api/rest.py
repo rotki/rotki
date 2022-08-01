@@ -94,6 +94,7 @@ from rotkehlchen.db.filtering import (
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
+    UserNotesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -4497,8 +4498,8 @@ class RestAPI():
         }
         return api_response(_wrap_in_ok_result(config), status_code=HTTPStatus.OK)
 
-    def get_user_notes(self) -> Response:
-        user_notes = self.rotkehlchen.data.db.get_all_user_notes()
+    def get_user_notes(self, filter_query: UserNotesFilterQuery) -> Response:
+        user_notes = self.rotkehlchen.data.db.get_user_notes(filter_query=filter_query)
         result_dict = _wrap_in_ok_result([entry.serialize() for entry in user_notes])
         return api_response(result_dict, status_code=HTTPStatus.OK)
 

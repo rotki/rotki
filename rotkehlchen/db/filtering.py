@@ -62,18 +62,22 @@ class DBTimestampFilter(DBFilter):
     from_ts: Optional[Timestamp] = None
     to_ts: Optional[Timestamp] = None
     scaling_factor: Optional[FVal] = None
+    timestamp_field: Optional[str] = None
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
         filters = []
         bindings = []
+        timesatmp_field = 'timestamp'
+        if self.timestamp_field is not None:
+            timesatmp_field = self.timestamp_field
         if self.from_ts is not None:
-            filters.append('timestamp >= ?')
+            filters.append(f'{timesatmp_field} >= ?')
             from_ts = self.from_ts
             if self.scaling_factor is not None:
                 from_ts = Timestamp((from_ts * self.scaling_factor).to_int(exact=False))
             bindings.append(from_ts)
         if self.to_ts is not None:
-            filters.append('timestamp <= ?')
+            filters.append(f'{timesatmp_field} <= ?')
             to_ts = self.to_ts
             if self.scaling_factor is not None:
                 to_ts = Timestamp((to_ts * self.scaling_factor).to_int(exact=False))
@@ -176,6 +180,15 @@ class DBLocationFilter(DBFilter):
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
         return ['location=?'], [self.location.serialize_for_db()]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBSubStringFilter(DBFilter):
+    field: str
+    search_string: str
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        return [f'{self.field} LIKE ?'], [f'%{self.search_string}%']
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -847,3 +860,48 @@ class DBIgnoredAssetsFilter(DBFilter):
     def prepare(self) -> Tuple[List[str], List[Any]]:
         filters = [f'{self.asset_key} IS NULL OR {self.asset_key} NOT IN (SELECT value FROM multisettings WHERE name="ignored_asset")']  # noqa: E501
         return filters, []
+
+
+class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
+
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            location: Optional[Location] = None,
+            substring_search: Optional[str] = None,
+    ) -> 'UserNotesFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('last_update_timestamp', True)]
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+            order_by_rules=order_by_rules,
+        )
+        filter_query = cast('UserNotesFilterQuery', filter_query)
+        filters: List[DBFilter] = []
+        if location is not None:
+            filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
+            filters.append(filter_query.location_filter)
+
+        filter_query.timestamp_filter = DBTimestampFilter(
+            and_op=True,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            timestamp_field='last_update_timestamp',
+        )
+        if substring_search is not None:
+            filters.append(DBSubStringFilter(
+                and_op=True,
+                field='title',
+                search_string=substring_search,
+            ))
+        filters.append(filter_query.timestamp_filter)
+        filter_query.filters = filters
+        return filter_query

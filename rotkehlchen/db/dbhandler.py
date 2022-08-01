@@ -72,7 +72,11 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
+from rotkehlchen.db.filtering import (
+    AssetMovementsFilterQuery,
+    TradesFilterQuery,
+    UserNotesFilterQuery,
+)
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -3418,10 +3422,12 @@ class DBHandler:
                 exclude_identifier=None,
             )
 
-    def get_all_user_notes(self) -> List[UserNote]:
+    def get_user_notes(self, filter_query: UserNotesFilterQuery) -> List[UserNote]:
         """Returns all the notes created by a user."""
+        query, bindings = filter_query.prepare()
         with self.conn.read_ctx() as cursor:
-            cursor.execute('SELECT identifier, title, content, location, last_update_timestamp FROM user_notes')  # noqa: E501
+            query = 'SELECT identifier, title, content, location, last_update_timestamp FROM user_notes ' + query  # noqa: E501
+            cursor.execute(query, bindings)
             return [UserNote.deserialize_from_db(entry) for entry in cursor]
 
     def add_user_note(self, title: str, content: str, location: str) -> int:

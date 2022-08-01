@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 import requests
+from rotkehlchen.db.filtering import UserNotesFilterQuery
 
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -65,6 +66,17 @@ def test_add_get_user_notes(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
     assert len(result) == 3
 
+    # check that filtering by title substring works
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'usernotesresource',
+        ),
+        json={'title_substring': '3'},
+    )
+    result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
+    assert len(result) == 1
+
 
 def test_edit_user_notes(rotkehlchen_api_server):
     generated_entries = make_user_notes_entries()
@@ -90,7 +102,8 @@ def test_edit_user_notes(rotkehlchen_api_server):
     )
     assert_simple_ok_response(response)
     # confirm that the note was actually edited in the db
-    user_notes = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.get_all_user_notes()
+    filter_query = UserNotesFilterQuery.make()
+    user_notes = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.get_user_notes(filter_query=filter_query)  # noqa: E501
     for note in user_notes:
         if note.identifier == 1:
             assert note.content == 'Dont sleep, wake up!!!!!'
