@@ -18,6 +18,8 @@
         multiple
         class="mt-6"
         hint
+        dense
+        outlined
         :chains="[ETH]"
         :usable-addresses="airdropAddresses"
       >
@@ -28,7 +30,7 @@
           <v-sheet outlined rounded>
             <data-table
               :items="entries"
-              :headers="headers"
+              :headers="tableHeaders"
               single-expand
               :expanded.sync="expanded"
               item-key="index"
@@ -64,13 +66,9 @@
                   v-if="!hasDetails(item.source)"
                   icon
                   color="primary"
-                  :target="$interop.isPackaged ? undefined : '_blank'"
-                  :href="$interop.isPackaged ? undefined : item.link"
-                  @click="
-                    $interop.isPackaged
-                      ? $interop.navigate(item.link)
-                      : undefined
-                  "
+                  :target="isPackaged ? undefined : '_blank'"
+                  :href="isPackaged ? undefined : item.link"
+                  @click="isPackaged ? navigate(item.link) : undefined"
                 >
                   <v-icon>mdi-link</v-icon>
                 </v-btn>
@@ -95,18 +93,22 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Component, Mixins } from 'vue-property-decorator';
+import { computed, onMounted, ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
-import { mapActions, mapGetters } from 'vuex';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
-import StatusMixin from '@/mixins/status-mixin';
+import { setupStatusChecking } from '@/composables/common';
+import { useInterop } from '@/electron-interop';
+import i18n from '@/i18n';
 import { Section } from '@/store/const';
+import { useDefiStore } from '@/store/defi';
 import {
   AIRDROP_1INCH,
   AIRDROP_CONVEX,
@@ -125,7 +127,7 @@ import {
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP
 } from '@/store/defi/const';
-import { Airdrop, AirdropType } from '@/store/defi/types';
+import { AirdropType } from '@/store/defi/types';
 import PoapDeliveryAirdrops from '@/views/defi/PoapDeliveryAirdrops.vue';
 
 type AirdropSource = {
@@ -137,147 +139,131 @@ type AirdropSources = {
   readonly [source in AirdropType]: AirdropSource;
 };
 
-@Component({
-  components: {
-    AdaptiveWrapper,
-    DataTable,
-    PoapDeliveryAirdrops,
-    RowExpander,
-    ProgressScreen
+const expanded = ref([]);
+const selectedAccounts = ref<GeneralAccount[]>([]);
+const section = Section.DEFI_AIRDROPS;
+const ETH = Blockchain.ETH;
+const sources: AirdropSources = {
+  [AIRDROP_UNISWAP]: {
+    icon: '/assets/images/defi/uniswap.svg',
+    name: 'Uniswap'
   },
-  computed: {
-    ...mapGetters('defi', ['airdrops', 'airdropAddresses'])
+  [AIRDROP_1INCH]: {
+    icon: '/assets/images/1inch.svg',
+    name: '1inch'
   },
-  methods: {
-    ...mapActions('defi', ['fetchAirdrops'])
+  [AIRDROP_TORNADO]: {
+    icon: '/assets/images/airdrops/tornado.svg',
+    name: 'Tornado Cash'
+  },
+  [AIRDROP_CORNICHON]: {
+    icon: '/assets/images/airdrops/cornichon.svg',
+    name: 'Cornichon'
+  },
+  [AIRDROP_GRAIN]: {
+    icon: '/assets/images/airdrops/grain.png',
+    name: 'Grain'
+  },
+  [AIRDROP_LIDO]: {
+    icon: '/assets/images/airdrops/lido.svg',
+    name: 'Lido'
+  },
+  [AIRDROP_FURUCOMBO]: {
+    icon: '/assets/images/airdrops/furucombo.png',
+    name: 'Furucombo'
+  },
+  [AIRDROP_CURVE]: {
+    icon: '/assets/images/defi/curve.svg',
+    name: 'Curve Finance'
+  },
+  [AIRDROP_POAP]: {
+    icon: '/assets/images/airdrops/poap.svg',
+    name: 'POAP Delivery'
+  },
+  [AIRDROP_CONVEX]: {
+    icon: '/assets/images/airdrops/convex.jpeg',
+    name: 'Convex'
+  },
+  [AIRDROP_FOX]: {
+    icon: '/assets/images/shapeshift.svg',
+    name: 'ShapeShift'
+  },
+  [AIRDROP_ENS]: {
+    icon: '/assets/images/airdrops/ens.svg',
+    name: 'ENS'
+  },
+  [AIRDROP_PARASWAP]: {
+    icon: '/assets/images/airdrops/paraswap.svg',
+    name: 'ParaSwap'
+  },
+  [AIRDROP_SADDLE]: {
+    icon: '/assets/images/airdrops/saddle-finance.svg',
+    name: 'SaddleFinance'
+  },
+  [AIRDROP_COW_MAINNET]: {
+    icon: '/assets/images/airdrops/cow.svg',
+    name: 'COW (ethereum)'
+  },
+  [AIRDROP_COW_GNOSIS]: {
+    icon: '/assets/images/airdrops/cow.svg',
+    name: 'COW (gnosis chain)'
   }
-})
-export default class Airdrops extends Mixins(StatusMixin) {
-  readonly section = Section.DEFI_AIRDROPS;
-  readonly ETH = Blockchain.ETH;
-  readonly headers: DataTableHeader[] = [
-    {
-      text: this.$t('airdrops.headers.source').toString(),
-      value: 'source',
-      width: '200px'
-    },
-    {
-      text: this.$t('common.address').toString(),
-      value: 'address'
-    },
-    {
-      text: this.$t('common.amount').toString(),
-      value: 'amount',
-      align: 'end'
-    },
-    {
-      text: '',
-      value: 'link',
-      align: 'end',
-      width: '50px'
-    }
-  ];
-  airdrops!: (addresses: string[]) => Airdrop[];
-  fetchAirdrops!: (refresh: boolean) => Promise<void>;
-  selectedAccounts: GeneralAccount[] = [];
-  airdropAddresses!: string[];
-  expanded = [];
+};
 
-  hasDetails(source: AirdropType): boolean {
-    return [AIRDROP_POAP].includes(source);
+const defiStore = useDefiStore();
+const { airdropAddresses } = storeToRefs(defiStore);
+const { isPackaged, navigate } = useInterop();
+const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
+
+const loading = shouldShowLoadingScreen(section);
+const refreshing = isSectionRefreshing(section);
+
+const entries = computed(() => {
+  const addresses = get(selectedAccounts).map(({ address }) => address);
+  let airdrops = get(defiStore.airdropList(addresses));
+  return airdrops.map((value, index) => ({
+    ...value,
+    index
+  }));
+});
+
+const tableHeaders = computed<DataTableHeader[]>(() => [
+  {
+    text: i18n.t('airdrops.headers.source').toString(),
+    value: 'source',
+    width: '200px'
+  },
+  {
+    text: i18n.t('common.address').toString(),
+    value: 'address'
+  },
+  {
+    text: i18n.t('common.amount').toString(),
+    value: 'amount',
+    align: 'end'
+  },
+  {
+    text: '',
+    value: 'link',
+    align: 'end',
+    width: '50px'
   }
+]);
 
-  async mounted() {
-    await this.fetchAirdrops(false);
-  }
+const refresh = async () => {
+  await defiStore.fetchAirdrops(true);
+};
 
-  get entries(): Airdrop[] {
-    const addresses = this.selectedAccounts.map(({ address }) => address);
-    return this.airdrops(addresses).map((value, index) => ({
-      ...value,
-      index
-    }));
-  }
+const getIcon = (source: AirdropType) => sources[source]?.icon ?? '';
 
-  async refresh() {
-    await this.fetchAirdrops(true);
-  }
+const getLabel = (source: AirdropType) => sources[source]?.name ?? '';
 
-  readonly sources: AirdropSources = {
-    [AIRDROP_UNISWAP]: {
-      icon: '/assets/images/defi/uniswap.svg',
-      name: 'Uniswap'
-    },
-    [AIRDROP_1INCH]: {
-      icon: '/assets/images/1inch.svg',
-      name: '1inch'
-    },
-    [AIRDROP_TORNADO]: {
-      icon: '/assets/images/airdrops/tornado.svg',
-      name: 'Tornado Cash'
-    },
-    [AIRDROP_CORNICHON]: {
-      icon: '/assets/images/airdrops/cornichon.svg',
-      name: 'Cornichon'
-    },
-    [AIRDROP_GRAIN]: {
-      icon: '/assets/images/airdrops/grain.png',
-      name: 'Grain'
-    },
-    [AIRDROP_LIDO]: {
-      icon: '/assets/images/airdrops/lido.svg',
-      name: 'Lido'
-    },
-    [AIRDROP_FURUCOMBO]: {
-      icon: '/assets/images/airdrops/furucombo.png',
-      name: 'Furucombo'
-    },
-    [AIRDROP_CURVE]: {
-      icon: '/assets/images/defi/curve.svg',
-      name: 'Curve Finance'
-    },
-    [AIRDROP_POAP]: {
-      icon: '/assets/images/airdrops/poap.svg',
-      name: 'POAP Delivery'
-    },
-    [AIRDROP_CONVEX]: {
-      icon: '/assets/images/airdrops/convex.jpeg',
-      name: 'Convex'
-    },
-    [AIRDROP_FOX]: {
-      icon: '/assets/images/shapeshift.svg',
-      name: 'ShapeShift'
-    },
-    [AIRDROP_ENS]: {
-      icon: '/assets/images/airdrops/ens.svg',
-      name: 'ENS'
-    },
-    [AIRDROP_PARASWAP]: {
-      icon: '/assets/images/airdrops/paraswap.svg',
-      name: 'ParaSwap'
-    },
-    [AIRDROP_SADDLE]: {
-      icon: '/assets/images/airdrops/saddle-finance.svg',
-      name: 'SaddleFinance'
-    },
-    [AIRDROP_COW_MAINNET]: {
-      icon: '/assets/images/airdrops/cow.svg',
-      name: 'COW (ethereum)'
-    },
-    [AIRDROP_COW_GNOSIS]: {
-      icon: '/assets/images/airdrops/cow.svg',
-      name: 'COW (gnosis chain)'
-    }
-  };
+const hasDetails = (source: AirdropType): boolean =>
+  [AIRDROP_POAP].includes(source);
 
-  getIcon(source: AirdropType) {
-    return this.sources[source]?.icon ?? '';
-  }
-
-  getLabel(source: AirdropType) {
-    return this.sources[source]?.name ?? '';
-  }
-}
+onMounted(async () => {
+  await defiStore.fetchAirdrops();
+});
 </script>
 
 <style scoped lang="scss">

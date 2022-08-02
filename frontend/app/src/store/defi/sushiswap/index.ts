@@ -174,7 +174,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     await fetchSupportedAssets(true);
   }
 
-  async function purge() {
+  async function reset() {
     const { resetStatus } = getStatusUpdater(Section.DEFI_SUSHISWAP_BALANCES);
     set(balances, {});
     set(events, {});
@@ -194,7 +194,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     fetchBalances,
     fetchTrades,
     fetchEvents,
-    purge
+    reset
   };
 });
 

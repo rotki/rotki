@@ -48,6 +48,7 @@ import {
   XpubPayload
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
+import { useDefiStore } from '@/store/defi';
 import { useHistory } from '@/store/history';
 import { useNotifications } from '@/store/notifications';
 import { useMainStore } from '@/store/store';
@@ -471,10 +472,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async removeAccount(
-    { commit, dispatch },
-    payload: BasicBlockchainAccountPayload
-  ) {
+  async removeAccount({ dispatch }, payload: BasicBlockchainAccountPayload) {
     const { accounts, blockchain } = payload;
     assert(accounts, 'Accounts was empty');
     const { taskId } = await api.removeBlockchainAccount(blockchain, accounts);
@@ -503,7 +501,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       const balances = BlockchainBalances.parse(result);
 
-      commit('defi/reset', undefined, { root: true });
+      useDefiStore().reset();
       dispatch(BalanceActions.FETCH_NF_BALANCES);
       await dispatch('updateBalances', { chain: blockchain, balances });
       useMainStore().resetDefiStatus();
@@ -532,7 +530,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async addAccounts(
-    { state, commit, dispatch },
+    { state, dispatch },
     { blockchain, payload, modules }: AddAccountsPayload
   ): Promise<void> {
     const { awaitTask, isTaskRunning } = useTasks();
@@ -642,13 +640,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     try {
       await Promise.allSettled(requests);
-      const options = { root: true };
       if (blockchain === Blockchain.ETH) {
         await dispatch('fetchBlockchainBalances', {
           blockchain: Blockchain.ETH2
         });
       }
-      commit('defi/reset', undefined, options);
+      useDefiStore().reset();
       dispatch(BalanceActions.FETCH_NF_BALANCES);
       useMainStore().resetDefiStatus();
       await dispatch('refreshPrices', { ignoreCache: false });
@@ -677,7 +674,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async addAccount({ commit, dispatch }, payload: BlockchainAccountPayload) {
+  async addAccount({ dispatch }, payload: BlockchainAccountPayload) {
     const { awaitTask } = useTasks();
     const { address, blockchain } = payload;
     const taskType = TaskType.ADD_ACCOUNT;
@@ -727,7 +724,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           blockchain: Blockchain.ETH2
         });
       }
-      commit('defi/reset', undefined, { root: true });
+      useDefiStore().reset();
       dispatch(BalanceActions.FETCH_NF_BALANCES);
       useMainStore().resetDefiStatus();
       await dispatch('refreshPrices', { ignoreCache: false });

@@ -20,7 +20,13 @@ import {
 } from '@/store/defi/xswap-utils';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { getStatus, isLoading, setStatus, useStore } from '@/store/utils';
+import {
+  getStatus,
+  getStatusUpdater,
+  isLoading,
+  setStatus,
+  useStore
+} from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -216,6 +222,17 @@ export const useUniswap = defineStore('defi/uniswap', () => {
     await fetchSupportedAssets(true);
   };
 
+  const reset = () => {
+    const { resetStatus } = getStatusUpdater(Section.DEFI_UNISWAP_BALANCES);
+    set(balances, {});
+    set(trades, {});
+    set(events, {});
+
+    resetStatus(Section.DEFI_UNISWAP_BALANCES);
+    resetStatus(Section.DEFI_UNISWAP_TRADES);
+    resetStatus(Section.DEFI_UNISWAP_EVENTS);
+  };
+
   return {
     balances,
     trades,
@@ -227,7 +244,8 @@ export const useUniswap = defineStore('defi/uniswap', () => {
     uniswapPoolProfit,
     fetchBalances,
     fetchTrades,
-    fetchEvents
+    fetchEvents,
+    reset
   };
 });
 

@@ -110,16 +110,6 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     );
   }
 
-  async function purge() {
-    const { resetStatus } = getStatusUpdater(Section.DEFI_LIQUITY_BALANCES);
-
-    set(balances, {});
-    set(events, {});
-
-    resetStatus();
-    resetStatus(Section.DEFI_LIQUITY_EVENTS);
-  }
-
   async function fetchStaking(refresh: boolean = false) {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.liquity_staking.task.title').toString(),
@@ -204,19 +194,18 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     );
   }
 
-  async function clearStaking() {
-    const { resetStatus } = getStatusUpdater(Section.DEFI_LIQUITY_STAKING);
-    set(staking, {});
-    set(stakingEvents, {});
-    resetStatus();
-    resetStatus(Section.DEFI_LIQUITY_STAKING_EVENTS);
-  }
-
   const reset = () => {
+    const { resetStatus } = getStatusUpdater(Section.DEFI_LIQUITY_BALANCES);
+
     set(balances, {});
     set(events, {});
     set(staking, {});
     set(stakingEvents, {});
+
+    resetStatus(Section.DEFI_LIQUITY_BALANCES);
+    resetStatus(Section.DEFI_LIQUITY_EVENTS);
+    resetStatus(Section.DEFI_LIQUITY_STAKING);
+    resetStatus(Section.DEFI_LIQUITY_STAKING_EVENTS);
   };
 
   return {
@@ -228,8 +217,6 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     fetchEvents,
     fetchStaking,
     fetchStakingEvents,
-    clearStaking,
-    purge,
     reset
   };
 });

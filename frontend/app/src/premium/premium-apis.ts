@@ -30,6 +30,7 @@ import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useCompoundStore } from '@/store/defi/compound';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
+import { useDexTradesStore } from '@/store/defi/trades';
 import { useUniswap } from '@/store/defi/uniswap';
 import { useAdexStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
@@ -176,13 +177,12 @@ export const compoundApi = (): CompoundApi => {
 };
 
 export const dexTradeApi = (): DexTradesApi => {
-  const store = useStore();
+  const store = useDexTradesStore();
   const { fetchTrades: fetchUniswapTrades } = useUniswap();
   const { fetchTrades: fetchSushiswapTrades } = useSushiswapStore();
   const { fetchTrades: fetchBalancerTrades } = useBalancerStore();
   return {
-    dexTrades: addresses =>
-      computed(() => store.getters['defi/dexTrades'](addresses)),
+    dexTrades: addresses => store.dexTrades(addresses),
     fetchBalancerTrades,
     fetchSushiswapTrades,
     fetchUniswapTrades

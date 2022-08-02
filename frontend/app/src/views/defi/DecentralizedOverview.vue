@@ -13,7 +13,7 @@
       <template #message>{{ $t('decentralized_overview.loading') }}</template>
     </progress-screen>
     <no-data-screen
-      v-else-if="defiOverview.length === 0"
+      v-else-if="overview.length === 0"
       :full="false"
       class="mt-16"
     >
@@ -26,7 +26,7 @@
     </no-data-screen>
     <v-row class="mt-4">
       <v-col
-        v-for="summary in defiOverview"
+        v-for="summary in overview"
         :key="summary.protocol.name"
         lg="6"
         xl="3"
@@ -39,13 +39,14 @@
 
 <script lang="ts">
 import { defineComponent, onMounted } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import Overview from '@/components/defi/Overview.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { setupStatusChecking } from '@/composables/common';
-import { useDefi } from '@/composables/defi';
 import { Section } from '@/store/const';
+import { useDefiStore } from '@/store/defi';
 
 export default defineComponent({
   name: 'DecentralizedOverview',
@@ -56,22 +57,23 @@ export default defineComponent({
     RefreshHeader
   },
   setup() {
-    const { defiOverview, fetchAll } = useDefi();
+    const store = useDefiStore();
+    const { overview } = storeToRefs(store);
     const section = Section.DEFI_OVERVIEW;
 
     const refresh = async () => {
-      await fetchAll(true);
+      await store.fetchAllDefi(true);
     };
 
     onMounted(async () => {
-      await fetchAll(false);
+      await store.fetchAllDefi(false);
     });
 
     const { shouldShowLoadingScreen, isSectionRefreshing } =
       setupStatusChecking();
 
     return {
-      defiOverview,
+      overview,
       loading: shouldShowLoadingScreen(section),
       refreshing: isSectionRefreshing(section),
       refresh

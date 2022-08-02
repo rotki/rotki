@@ -6,114 +6,35 @@
     <v-row no-gutters align="center">
       <v-col>
         <refresh-header
-          :loading="anyRefreshing"
+          :loading="refreshing"
           :title="$t('lending.title')"
           @refresh="refresh()"
         >
-          <confirmable-reset
-            v-if="premium"
-            :loading="anyRefreshing"
-            :tooltip="$t('lending.reset_tooltip')"
-            :disabled="resetSelection.length === 0"
-            @reset="reset()"
-          >
-            {{ $t('lending.reset_confirm') }}
-            <div />
-            <v-row>
-              <v-col class="text-center font-weight-medium">
-                {{ $t('lending.reset.protocol_selection') }}
-              </v-col>
-            </v-row>
-            <v-row align="center" justify="center">
-              <v-col cols="auto">
-                <v-btn-toggle v-model="resetSelection" multiple>
-                  <v-btn icon :value="AAVE">
-                    <defi-protocol-icon mode="icon" :protocol="AAVE" />
-                  </v-btn>
-                  <v-btn icon :value="YEARN_VAULTS">
-                    <defi-protocol-icon mode="icon" :protocol="YEARN_VAULTS" />
-                  </v-btn>
-                  <v-btn icon :value="YEARN_VAULTS_V2">
-                    <defi-protocol-icon
-                      mode="icon"
-                      :protocol="YEARN_VAULTS_V2"
-                    />
-                  </v-btn>
-                </v-btn-toggle>
-              </v-col>
-            </v-row>
-          </confirmable-reset>
+          <deposit-protocol-reset
+            :loading="refreshing"
+            @reset="reset($event)"
+          />
           <template #actions>
             <active-modules :modules="modules" />
           </template>
         </refresh-header>
       </v-col>
     </v-row>
-    <v-row class="mt-8" no-gutters>
-      <v-col cols="12">
-        <stat-card-wide :cols="3">
-          <template #first-col>
-            <stat-card-column>
-              <template #title>
-                {{ $t('lending.currently_deposited') }}
-              </template>
-              <amount-display
-                :value="
-                  totalLendingDeposit(selectedProtocols, selectedAddresses)
-                "
-                fiat-currency="USD"
-                show-currency="symbol"
-              />
-            </stat-card-column>
-          </template>
-          <template #second-col>
-            <stat-card-column>
-              <template #title>
-                {{ $t('lending.effective_interest_rate') }}
-                <v-tooltip bottom max-width="300px">
-                  <template #activator="{ on }">
-                    <v-icon small class="mb-3 ml-1" v-on="on">
-                      mdi-information
-                    </v-icon>
-                  </template>
-                  <div>{{ $t('lending.effective_interest_rate_tooltip') }}</div>
-                </v-tooltip>
-              </template>
-              <percentage-display
-                justify="start"
-                :value="
-                  effectiveInterestRate(selectedProtocols, selectedAddresses)
-                "
-              />
-            </stat-card-column>
-          </template>
-          <template #third-col>
-            <stat-card-column lock>
-              <template #title>
-                {{ $t('lending.profit_earned') }}
-                <premium-lock v-if="!premium" class="d-inline" />
-              </template>
-              <amount-display
-                v-if="premium"
-                :loading="secondaryLoading"
-                :value="totalUsdEarned(selectedProtocols, selectedAddresses)"
-                show-currency="symbol"
-                fiat-currency="USD"
-              />
-            </stat-card-column>
-          </template>
-        </stat-card-wide>
-      </v-col>
-    </v-row>
+    <deposit-totals
+      :loading="historyLoading"
+      :effective-interest-rate="effectiveInterestRate"
+      :total-lending-deposit="totalLendingDeposit"
+      :total-usd-earned="totalUsdEarned"
+    />
     <v-row class="mt-8" no-gutters>
       <v-col cols="12" sm="6" class="pe-sm-4">
         <blockchain-account-selector
           v-model="selectedAccount"
           hint
+          outlined
+          dense
           :chains="['ETH']"
-          :usable-addresses="
-            defiAccounts(selectedProtocols).map(({ address }) => address)
-          "
+          :usable-addresses="defiAddresses"
         />
       </v-col>
       <v-col cols="12" sm="6" class="ps-sm-4 pt-4 pt-sm-0">
@@ -125,9 +46,7 @@
         <stat-card :title="$t('lending.assets')">
           <lending-asset-table
             :loading="refreshing"
-            :assets="
-              aggregatedLendingBalances(selectedProtocols, selectedAddresses)
-            "
+            :assets="lendingBalances"
           />
         </stat-card>
       </v-col>
@@ -150,7 +69,7 @@
         (isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0)
       "
       class="mt-8"
-      :profit="yearnProfit()"
+      :profit="yearnProfit"
     />
     <aave-earned-details
       v-if="premium && (isAave || selectedProtocols.length === 0)"
@@ -162,230 +81,185 @@
         <premium-card v-if="!premium" :title="$t('lending.history')" />
         <lending-history
           v-else
-          :loading="secondaryRefreshing"
-          :history="lendingHistory(selectedProtocols, selectedAddresses)"
+          :loading="historyRefreshing"
+          :history="lendingHistory"
           :floating-precision="floatingPrecision"
-          @open-link="openLink($event)"
+          @open-link="openUrl($event)"
         />
       </v-col>
     </v-row>
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { Account, DefiAccount } from '@rotki/common/lib/account';
+import { GeneralAccount } from '@rotki/common/lib/account';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { ProfitLossModel } from '@rotki/common/lib/defi';
-import { ComputedRef } from '@vue/composition-api';
-import { get } from '@vueuse/core';
-import { mapActions as mapPiniaActions } from 'pinia';
-import Component from 'vue-class-component';
-import { Mixins } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapState } from 'vuex';
+import { computed, onMounted, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
+import DepositProtocolReset from '@/components/defi/DepositProtocolReset.vue';
+import DepositTotals from '@/components/defi/DepositTotals.vue';
 import LendingAssetTable from '@/components/defi/display/LendingAssetTable.vue';
 import YearnAssetsTable from '@/components/defi/yearn/YearnAssetsTable.vue';
-import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import StatCardColumn from '@/components/display/StatCardColumn.vue';
-import StatCardWide from '@/components/display/StatCardWide.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import ConfirmableReset from '@/components/helper/ConfirmableReset.vue';
 import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import PremiumLock from '@/components/premium/PremiumLock.vue';
-import StatusMixin from '@/mixins/status-mixin';
+import { setupStatusChecking, useRoute } from '@/composables/common';
+import { getPremium, setupGeneralSettings } from '@/composables/session';
+import { useInterop } from '@/electron-interop';
 import {
   AaveEarnedDetails,
   CompoundLendingDetails,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   LendingHistory,
   YearnVaultsProfitDetails
 } from '@/premium/premium';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import { Section } from '@/store/const';
+import { useDefiStore } from '@/store/defi';
 import { useAaveStore } from '@/store/defi/aave';
-import { BaseDefiBalance } from '@/store/defi/types';
+import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
 import { useYearnStore } from '@/store/defi/yearn';
-import { Nullable } from '@/types';
 import { Module } from '@/types/modules';
 
-@Component({
-  components: {
-    ActiveModules,
-    YearnAssetsTable,
-    PercentageDisplay,
-    CompoundLendingDetails,
-    YearnVaultsProfitDetails,
-    ConfirmableReset,
-    RefreshHeader,
-    LendingAssetTable,
-    DefiProtocolSelector,
-    StatCardColumn,
-    AmountDisplay,
-    PremiumCard,
-    BlockchainAccountSelector,
-    StatCard,
-    StatCardWide,
-    ProgressScreen,
-    PremiumLock,
-    AaveEarnedDetails,
-    LendingHistory
-  },
-  computed: {
-    ...mapState('session', ['premium']),
-    ...mapGetters('session', ['floatingPrecision']),
-    ...mapGetters('defi', [
-      'totalUsdEarned',
-      'totalLendingDeposit',
-      'defiAccounts',
-      'effectiveInterestRate',
-      'aggregatedLendingBalances',
-      'lendingHistory'
-    ])
-  },
-  methods: {
-    ...mapActions('defi', ['fetchLending', 'resetDB']),
-    ...mapPiniaActions(useYearnStore, ['yearnVaultsProfit']),
-    ...mapPiniaActions(useAaveStore, ['aaveTotalEarned'])
+const section = Section.DEFI_LENDING;
+const historySection = Section.DEFI_LENDING_HISTORY;
+const modules: Module[] = [
+  Module.AAVE,
+  Module.COMPOUND,
+  Module.YEARN,
+  Module.YEARN_V2,
+  Module.MAKERDAO_DSR
+];
+
+const selectedAccount = ref<GeneralAccount | null>(null);
+const protocol = ref<DefiProtocol | null>(null);
+const premium = getPremium();
+const route = useRoute();
+const { openUrl } = useInterop();
+const { shouldShowLoadingScreen, isSectionRefreshing } = setupStatusChecking();
+const { floatingPrecision } = setupGeneralSettings();
+
+const defiStore = useDefiStore();
+const store = useDefiSupportedProtocolsStore();
+const yearnStore = useYearnStore();
+const aaveStore = useAaveStore();
+
+const isProtocol = (protocol: DefiProtocol) =>
+  computed(() => {
+    let protocols = get(selectedProtocols);
+    return protocols.length > 0 && protocols.includes(protocol);
+  });
+
+const selectedAddresses = computed(() => {
+  let account = get(selectedAccount);
+  return account ? [account.address] : [];
+});
+
+const selectedProtocols = computed(() => {
+  let selected = get(protocol);
+  return selected ? [selected] : [];
+});
+
+const defiAddresses = computed(() => {
+  let protocols = get(selectedProtocols);
+  return get(defiStore.defiAccounts(protocols)).map(({ address }) => address);
+});
+
+const lendingBalances = computed(() => {
+  let protocols = get(selectedProtocols);
+  let addresses = get(selectedAddresses);
+  return get(store.aggregatedLendingBalances(protocols, addresses));
+});
+
+const lendingHistory = computed(() => {
+  let protocols = get(selectedProtocols);
+  let addresses = get(selectedAddresses);
+  return get(store.lendingHistory(protocols, addresses));
+});
+
+const totalEarnedInAave = computed(() => {
+  return get(aaveStore.aaveTotalEarned(get(selectedAddresses)));
+});
+
+const effectiveInterestRate = computed<string>(() => {
+  let protocols = get(selectedProtocols);
+  let addresses = get(selectedAddresses);
+  return get(store.effectiveInterestRate(protocols, addresses));
+});
+
+const totalLendingDeposit = computed<BigNumber>(() => {
+  let protocols = get(selectedProtocols);
+  let addresses = get(selectedAddresses);
+  return get(store.totalLendingDeposit(protocols, addresses));
+});
+
+const totalUsdEarned = computed<BigNumber>(() => {
+  let protocols = get(selectedProtocols);
+  let addresses = get(selectedAddresses);
+  return get(store.totalUsdEarned(protocols, addresses));
+});
+
+const isCompound = isProtocol(DefiProtocol.COMPOUND);
+const isAave = isProtocol(DefiProtocol.AAVE);
+const isYearnVaults = isProtocol(DefiProtocol.YEARN_VAULTS);
+const isYearnVaultsV2 = isProtocol(DefiProtocol.YEARN_VAULTS_V2);
+
+const yearnVersion = computed(() => {
+  if (get(isYearnVaults)) {
+    return ProtocolVersion.V1;
+  } else if (get(isYearnVaultsV2)) {
+    return ProtocolVersion.V2;
   }
-})
-export default class Deposits extends Mixins(StatusMixin) {
-  premium!: boolean;
-  floatingPrecision!: number;
-  selectedAccount: Account | null = null;
-  totalLendingDeposit!: (
-    protocols: DefiProtocol[],
-    addresses: string[]
-  ) => BigNumber;
-  defiAccounts!: (protocols: DefiProtocol[]) => DefiAccount[];
-  aggregatedLendingBalances!: (
-    protocols: DefiProtocol[],
-    addresses: string[]
-  ) => BaseDefiBalance[];
-  effectiveInterestRate!: (
-    protocols: DefiProtocol[],
-    addresses: string[]
-  ) => string;
-  protocol: DefiProtocol | null = null;
-  fetchLending!: (refresh?: boolean) => Promise<void>;
-  resetDB!: (protocols: DefiProtocol[]) => Promise<void>;
-  totalUsdEarned!: (
-    protocols: DefiProtocol[],
-    addresses: string[]
-  ) => BigNumber;
-  yearnVaultsProfit!: (
-    addresses: string[],
-    version: ProtocolVersion
-  ) => ComputedRef<YearnVaultProfitLoss[]>;
-  aaveTotalEarned!: (addresses: string[]) => ComputedRef<ProfitLossModel[]>;
+  return null;
+});
 
-  section = Section.DEFI_LENDING;
-  secondSection = Section.DEFI_LENDING_HISTORY;
-
-  resetSelection: DefiProtocol[] = [];
-
-  readonly AAVE = DefiProtocol.AAVE;
-  readonly YEARN_VAULTS = DefiProtocol.YEARN_VAULTS;
-  readonly YEARN_VAULTS_V2 = DefiProtocol.YEARN_VAULTS_V2;
-  readonly modules: Module[] = [
-    Module.AAVE,
-    Module.COMPOUND,
-    Module.YEARN,
-    Module.YEARN_V2,
-    Module.MAKERDAO_DSR
-  ];
-
-  get totalEarnedInAave(): ProfitLossModel[] {
-    return get(this.aaveTotalEarned(this.selectedAddresses));
-  }
-
-  yearnProfit(): YearnVaultProfitLoss[] {
-    const allSelected = this.selectedProtocols.length === 0;
-    const addresses = this.selectedAddresses;
-    let v1Profit: YearnVaultProfitLoss[] = [];
-    if (this.isYearnVaults || allSelected) {
-      v1Profit = get(this.yearnVaultsProfit(addresses, ProtocolVersion.V1));
-    }
-
-    let v2Profit: YearnVaultProfitLoss[] = [];
-    if (this.isYearnVaultsV2 || allSelected) {
-      v2Profit = get(this.yearnVaultsProfit(addresses, ProtocolVersion.V2));
-    }
-    return [...v1Profit, ...v2Profit];
+const yearnProfit = computed(() => {
+  const protocols = get(selectedProtocols);
+  const allSelected = protocols.length === 0;
+  const addresses = get(selectedAddresses);
+  let v1Profit: YearnVaultProfitLoss[] = [];
+  if (get(isYearnVaults) || allSelected) {
+    v1Profit = get(yearnStore.yearnVaultsProfit(addresses, ProtocolVersion.V1));
   }
 
-  get selectedAddresses(): string[] {
-    return this.selectedAccount ? [this.selectedAccount.address] : [];
+  let v2Profit: YearnVaultProfitLoss[] = [];
+  if (get(isYearnVaultsV2) || allSelected) {
+    v2Profit = get(yearnStore.yearnVaultsProfit(addresses, ProtocolVersion.V2));
   }
+  return [...v1Profit, ...v2Profit];
+});
 
-  get isCompound(): boolean {
-    return (
-      this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DefiProtocol.COMPOUND)
-    );
-  }
+const loading = shouldShowLoadingScreen(section);
+const historyLoading = shouldShowLoadingScreen(historySection);
+const historyRefreshing = isSectionRefreshing(historySection);
+const refreshing = computed(
+  () => get(isSectionRefreshing(section)) || get(historyRefreshing)
+);
 
-  get yearnVersion(): Nullable<ProtocolVersion> {
-    if (this.isYearnVaults) {
-      return ProtocolVersion.V1;
-    } else if (this.isYearnVaultsV2) {
-      return ProtocolVersion.V2;
-    }
-    return null;
-  }
+const refresh = async () => {
+  await store.fetchLending(true);
+};
 
-  get isYearnVaults(): boolean {
-    return (
-      this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DefiProtocol.YEARN_VAULTS)
-    );
-  }
+const reset = async (protocols: DefiProtocol[]) => {
+  await defiStore.resetDB(protocols);
+};
 
-  get isYearnVaultsV2(): boolean {
-    return (
-      this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DefiProtocol.YEARN_VAULTS_V2)
-    );
+onMounted(async () => {
+  const currentRoute = get(route);
+  const queryElement = currentRoute.query['protocol'];
+  const protocols = Object.values(DefiProtocol);
+  const protocolIndex = protocols.findIndex(
+    protocol => protocol === queryElement
+  );
+  if (protocolIndex >= 0) {
+    set(protocol, protocols[protocolIndex]);
   }
-
-  get isAave(): boolean {
-    return (
-      this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DefiProtocol.AAVE)
-    );
-  }
-
-  async refresh() {
-    await this.fetchLending(true);
-  }
-
-  async reset() {
-    await this.resetDB(this.resetSelection);
-  }
-
-  async created() {
-    const queryElement = this.$route.query['protocol'];
-    const protocols = Object.values(DefiProtocol);
-    const protocolIndex = protocols.findIndex(
-      protocol => protocol === queryElement
-    );
-    if (protocolIndex >= 0) {
-      this.protocol = protocols[protocolIndex];
-    }
-    await this.fetchLending();
-  }
-
-  get selectedProtocols(): DefiProtocol[] {
-    return this.protocol ? [this.protocol] : [];
-  }
-
-  openLink(url: string) {
-    this.$interop.openUrl(url);
-  }
-}
+  await store.fetchLending();
+});
 </script>

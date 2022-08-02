@@ -8,7 +8,6 @@ import { api } from '@/services/rotkehlchen-api';
 import { balances } from '@/store/balances';
 import { defiSections, Section, Status } from '@/store/const';
 import { storeVuexPlugins } from '@/store/debug';
-import { defi } from '@/store/defi';
 import { session } from '@/store/session';
 import { settings } from '@/store/settings';
 import { RotkehlchenState, StatusPayload, Version } from '@/store/types';
@@ -210,7 +209,6 @@ const defaultVersion = () =>
 const store: StoreOptions<RotkehlchenState> = {
   modules: {
     balances,
-    defi,
     session,
     settings
   },
