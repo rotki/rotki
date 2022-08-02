@@ -39,6 +39,7 @@ import {
 } from '@/store/defi/const';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { LiquityLoan } from '@/store/defi/liquity/types';
+import { useMakerDaoStore } from '@/store/defi/makerdao';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import {
   AaveLoan,
@@ -53,7 +54,10 @@ import {
   DefiProtocolSummary,
   DefiState,
   DexTrades,
+  DSRBalances,
+  DSRHistory,
   LoanSummary,
+  MakerDAOVaultDetails,
   MakerDAOVaultModel,
   OverviewDefiProtocol,
   PoapDelivery,
@@ -111,12 +115,13 @@ interface DefiGetters {
 
 export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   totalUsdEarned:
-    ({ dsrHistory }: DefiState) =>
+    _ =>
     (protocols: DefiProtocol[], addresses: string[]): BigNumber => {
       const { vaultsHistory: yearnV1History, vaultsV2History: yearnV2History } =
         storeToRefs(useYearnStore());
       const { history } = storeToRefs(useAaveStore());
       const { history: compHistory } = storeToRefs(useCompoundStore());
+      const { dsrHistory: dsrHistoryRef } = storeToRefs(useMakerDaoStore());
       const aaveHistory = get(history);
       const compoundHistory = get(compHistory);
 
@@ -125,6 +130,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       const allAddresses = addresses.length === 0;
 
       if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
+        const dsrHistory = get(dsrHistoryRef) as DSRHistory;
         for (const address of Object.keys(dsrHistory)) {
           if (!allAddresses && !addresses.includes(address)) {
             continue;
@@ -192,7 +198,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   defiAccounts:
-    ({ dsrBalances, dsrHistory }: DefiState) =>
+    _ =>
     (protocols: DefiProtocol[]): DefiAccount[] => {
       const {
         vaultsBalances: yearnV1Balances,
@@ -205,6 +211,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       );
       const { history: compoundHistory, balances: compoundBalances } =
         storeToRefs(useCompoundStore());
+
+      const { dsrHistory, dsrBalances } = storeToRefs(useMakerDaoStore());
 
       const getProtocolAddresses = (
         protocol: DefiProtocol,
@@ -263,8 +271,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
       addresses[DefiProtocol.MAKERDAO_DSR] = getProtocolAddresses(
         DefiProtocol.MAKERDAO_DSR,
-        dsrBalances.balances,
-        dsrHistory
+        get(dsrBalances).balances,
+        get(dsrHistory)
       );
 
       const accounts: { [address: string]: DefiAccount } = {};
@@ -293,7 +301,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   loans:
-    ({ makerDAOVaults }: DefiState) =>
+    _ =>
     (protocols: DefiProtocol[]): DefiLoan[] => {
       const { assetInfo } = useAssetInfoRetrieval();
       const { history: aaveHistory, balances: aaveBalances } = storeToRefs(
@@ -301,13 +309,14 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       );
       const { history: compoundHistory, balances: compoundBalances } =
         storeToRefs(useCompoundStore());
+      const { makerDAOVaults } = storeToRefs(useMakerDaoStore());
 
       const loans: DefiLoan[] = [];
       const showAll = protocols.length === 0;
 
       if (showAll || protocols.includes(DefiProtocol.MAKERDAO_VAULTS)) {
         loans.push(
-          ...makerDAOVaults.map(
+          ...get(makerDAOVaults).map(
             value =>
               ({
                 identifier: `${value.identifier}`,
@@ -428,7 +437,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   loan:
-    ({ makerDAOVaults, makerDAOVaultDetails }: DefiState, { loans }) =>
+    (_, { loans }) =>
     (
       identifier?: string
     ): MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan | null => {
@@ -437,6 +446,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       );
       const { history: compoundHistory, balances: compoundBalances } =
         storeToRefs(useCompoundStore());
+      const { makerDAOVaults, makerDAOVaultDetails } = storeToRefs(
+        useMakerDaoStore()
+      );
       const id = identifier?.toLocaleLowerCase();
       const loan = loans([]).find(
         loan => loan.identifier.toLocaleLowerCase() === id
@@ -447,7 +459,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (loan.protocol === DefiProtocol.MAKERDAO_VAULTS) {
-        const vault = makerDAOVaults.find(
+        const makerVaults = get(makerDAOVaults) as MakerDAOVaultModel[];
+        const vault = makerVaults.find(
           vault => vault.identifier.toString().toLocaleLowerCase() === id
         );
 
@@ -455,7 +468,10 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           return null;
         }
 
-        const details = makerDAOVaultDetails.find(
+        const makerVaultDetails = get(
+          makerDAOVaultDetails
+        ) as MakerDAOVaultDetails[];
+        const details = makerVaultDetails.find(
           details => details.identifier.toString().toLocaleLowerCase() === id
         );
 
@@ -619,16 +635,18 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   loanSummary:
-    ({ makerDAOVaults }: DefiState) =>
+    _ =>
     (protocols: DefiProtocol[]): LoanSummary => {
       const { balances: aaveBalances } = storeToRefs(useAaveStore());
       const { balances: compoundBalances } = storeToRefs(useCompoundStore());
+      const { makerDAOVaults } = storeToRefs(useMakerDaoStore());
       let totalCollateralUsd = Zero;
       let totalDebt = Zero;
 
       const showAll = protocols.length === 0;
       if (showAll || protocols.includes(DefiProtocol.MAKERDAO_VAULTS)) {
-        totalCollateralUsd = makerDAOVaults
+        const makerVaults = get(makerDAOVaults);
+        totalCollateralUsd = makerVaults
           .map(({ collateral: { usdValue } }) => usdValue)
           .reduce(
             (sum, collateralUsdValue) => sum.plus(collateralUsdValue),
@@ -636,7 +654,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           )
           .plus(totalCollateralUsd);
 
-        totalDebt = makerDAOVaults
+        totalDebt = makerVaults
           .map(({ debt: { usdValue } }) => usdValue)
           .reduce((sum, debt) => sum.plus(debt), Zero)
           .plus(totalDebt);
@@ -841,23 +859,25 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   lendingBalances:
-    ({ dsrBalances }: DefiState) =>
+    _ =>
     (protocols: DefiProtocol[], addresses: string[]): DefiBalance[] => {
       const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
       const { balances: aaveBalances } = storeToRefs(useAaveStore());
       const { balances: compoundBalances } = storeToRefs(useCompoundStore());
+      const { dsrBalances } = storeToRefs(useMakerDaoStore());
 
       const balances: DefiBalance[] = [];
       const showAll = protocols.length === 0;
       const allAddresses = addresses.length === 0;
 
       if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
-        for (const address of Object.keys(dsrBalances.balances)) {
+        const makerDsrBalances = get(dsrBalances) as DSRBalances;
+        for (const address of Object.keys(makerDsrBalances.balances)) {
           if (!allAddresses && !addresses.includes(address)) {
             continue;
           }
-          const balance = dsrBalances.balances[address];
-          const currentDsr = dsrBalances.currentDsr;
+          const balance = makerDsrBalances.balances[address];
+          const currentDsr = makerDsrBalances.currentDsr;
           // noinspection SuspiciousTypeOfGuard
           const isBigNumber = currentDsr instanceof BigNumber;
           const format = isBigNumber ? currentDsr.toFormat(2) : 0;
@@ -916,7 +936,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   lendingHistory:
-    ({ dsrHistory }: DefiState) =>
+    _ =>
     (
       protocols: DefiProtocol[],
       addresses: string[]
@@ -925,6 +945,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         storeToRefs(useYearnStore());
       const { history: aaveHistory } = storeToRefs(useAaveStore());
       const { history: compoundHistory } = storeToRefs(useCompoundStore());
+      const { dsrHistory } = storeToRefs(useMakerDaoStore());
       const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
 
       const defiLendingHistory: DefiLendingHistory<DefiProtocol>[] = [];
@@ -933,12 +954,13 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       let id = 1;
 
       if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
-        for (const address of Object.keys(dsrHistory)) {
+        const makerDsrHistory = get(dsrHistory) as DSRHistory;
+        for (const address of Object.keys(makerDsrHistory)) {
           if (!allAddresses && !addresses.includes(address)) {
             continue;
           }
 
-          const history = dsrHistory[address];
+          const history = makerDsrHistory[address];
 
           for (const movement of history.movements) {
             defiLendingHistory.push({

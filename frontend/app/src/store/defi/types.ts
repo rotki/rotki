@@ -21,10 +21,6 @@ import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
 export interface DefiState {
-  dsrHistory: DSRHistory;
-  dsrBalances: DSRBalances;
-  makerDAOVaults: MakerDAOVault[];
-  makerDAOVaultDetails: MakerDAOVaultDetails[];
   allProtocols: AllDefiProtocols;
   airdrops: Airdrops;
 }
