@@ -3446,8 +3446,14 @@ class DBHandler:
         """
         with self.user_write() as write_cursor:
             write_cursor.execute(
-                'UPDATE user_notes SET content=?, last_update_timestamp=?, is_pinned=? WHERE identifier=?',  # noqa: E501
-                (user_note.content, ts_now(), user_note.is_pinned, user_note.identifier),
+                'UPDATE user_notes SET title=?, content=?, last_update_timestamp=?, is_pinned=? WHERE identifier=?',  # noqa: E501
+                (
+                    user_note.title,
+                    user_note.content,
+                    ts_now(),
+                    user_note.is_pinned,
+                    user_note.identifier,
+                ),
             )
             if write_cursor.rowcount == 0:
                 raise InputError(f'User note with identifier {user_note.identifier} does not exist')  # noqa: E501
