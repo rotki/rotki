@@ -11590,3 +11590,182 @@ Search for all known names of an address
     :statuscode 400: Provided JSON is in some way malformed.
     :statuscode 409: No user is currently logged in or addresses have incorrect format.
     :statuscode 500: Internal rotki error.
+
+
+Handling user notes
+================================
+
+.. http:get:: /api/(version)/notes
+
+   Doing a GET on this endpoint will return all the user notes present in the database.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/notes HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"from_timestamp": 12345677, "to_timestamp": 12345679, "title_substring": "#"}
+
+   :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson string order_by_attribute: This is the attribute of the note by which to order the results. By default we sort using ``last_update_timestamp``.
+   :reqjson bool ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
+   :reqjson int from_timestamp: The timestamp after which to return transactions. If not given zero is considered as the start.
+   :reqjson int to_timestamp: The timestamp until which to return transactions. If not given all transactions from ``from_timestamp`` until now are returned.
+   :reqjson string title_substring: The substring to use as filter for the title of the notes.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+                {
+                    "identifier": 1,
+                    "title": "#1",
+                    "content": "Hello, World!",
+                    "location": "manual balances",
+                    "last_update_timestamp": 12345678,
+                    "is_pinned": true
+                },
+                {
+                    "identifier": 2,
+                    "title": "#2",
+                    "content": "Hi",
+                    "location": "manual balances",
+                    "last_update_timestamp": 12345699,
+                    "is_pinned": false
+                }
+            ],
+          "message": ""
+      }
+
+   :resjson object result: An array of objects representing user note entries.
+   :resjson int identifier: The unique identifier of the user note.
+   :resjson str title: The title of the note.
+   :resjson str content: The content of the note.
+   :resjson str location: The location inside the application the note was taken.
+   :resjson int last_update_timestamp: The timestamp the note was last updated.
+   :resjson bool is_pinned: Whether the note has been pinned by the user or not.
+
+   :statuscode 200: User notes were retrieved successfully.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+.. http:delete:: /api/(version)/notes
+
+   Doing a DELETE on this endpoint will delete a user note for the specified identifier.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/notes HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"identifier": 149095883}
+
+   :reqjson int identifier: The identifier of the user note you're trying to delete.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/zip
+
+      {"result": true, "message": ""}
+
+   :statuscode 200: User note was deleted successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. No user note found. Check error message.
+   :statuscode 500: Internal rotki error.
+
+
+.. http:patch:: /api/(version)/notes
+
+   Doing a PATCH on this endpoint will update the content of an already existing user note.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/notes HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+        {
+            "identifier": 2,
+            "title": "#2",
+            "content": "Go to bed",
+            "location": "manual balances",
+            "last_update_timestamp": 12345699,
+            "is_pinned": false
+        }
+
+   :reqjson int identifier: The unique identifier of the user note.
+   :reqjson str title: The title of the note.
+   :reqjson str content: The content of the note.
+   :reqjson str location: The location inside the application the note was taken.
+   :reqjson int last_update_timestamp: The timestamp the note was last updated.
+   :resjson bool is_pinned: Whether the note has been pinned by the user or not.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/zip
+
+      {"result": true, "message": ""}
+
+   :statuscode 200: User note was updated successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. User note does not exist.
+   :statuscode 500: Internal rotki error.
+
+
+.. http:put:: /api/(version)/notes
+
+   Doing a PUT on this endpoint will add a new user note to the DB.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/notes HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+            "title": "#5",
+            "content": "Go to bed now",
+            "location": "ledger actions"
+      }
+
+   :reqjson str title: The title of the note to be created.
+   :reqjson str content: The content of the note to be created.
+   :reqjson str location: The location inside the application the note was taken.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 201 OK
+      Content-Type: application/zip
+
+      {"result": 1, "message": ""}
+
+   :resjson int result: The unique identifier of the note created.
+
+   :statuscode 200: User note was added successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. User note with the given title already exists. Check error message.
+   :statuscode 500: Internal rotki error.

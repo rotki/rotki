@@ -57,6 +57,7 @@ from rotkehlchen.db.filtering import (
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
+    UserNotesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
@@ -83,6 +84,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     TradeType,
+    UserNote,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash, ts_now
@@ -2333,3 +2335,43 @@ class DetectTokensSchema(
     OptionalAddressesListSchema,
 ):
     ...
+
+
+class UserNotesPutSchema(Schema):
+    title = fields.String(required=True)
+    content = fields.String(required=True)
+    location = fields.String(required=True)
+    is_pinned = fields.Boolean(required=True)
+
+
+class UserNotesPatchSchema(UserNotesPutSchema, IntegerIdentifierSchema):
+    last_update_timestamp = TimestampField(required=True)
+
+    @post_load
+    def make_user_note(self, data: Dict[str, Any], **_kwargs: Any) -> Dict[str, UserNote]:
+        return {'user_note': UserNote.deserialize(data)}
+
+
+class UserNotesGetSchema(DBPaginationSchema, DBOrderBySchema):
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+    title_substring = fields.String(load_default=None)
+
+    @post_load
+    def make_ethereum_transaction_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'last_update_timestamp'  # noqa: E501
+        filter_query = UserNotesFilterQuery.make(
+            order_by_rules=[(order_by_attribute, data['ascending'])],
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            substring_search=data['title_substring'],
+        )
+        return {
+            'filter_query': filter_query,
+        }

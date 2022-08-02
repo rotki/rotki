@@ -119,6 +119,9 @@ from rotkehlchen.api.v1.schemas import (
     TradesQuerySchema,
     UserActionLoginSchema,
     UserActionSchema,
+    UserNotesGetSchema,
+    UserNotesPatchSchema,
+    UserNotesPutSchema,
     UserPasswordChangeSchema,
     UserPremiumSyncSchema,
     WatchersAddSchema,
@@ -140,6 +143,7 @@ from rotkehlchen.db.filtering import (
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
+    UserNotesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
@@ -166,6 +170,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     TradeType,
+    UserNote,
 )
 
 if TYPE_CHECKING:
@@ -2631,3 +2636,35 @@ class ConfigurationsResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_config_arguments()
+
+
+class UserNotesResource(BaseMethodView):
+    get_schema = UserNotesGetSchema()
+    put_schema = UserNotesPutSchema()
+    patch_schema = UserNotesPatchSchema()
+    delete_schema = IntegerIdentifierSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json')
+    def get(self, filter_query: UserNotesFilterQuery) -> Response:
+        return self.rest_api.get_user_notes(filter_query=filter_query)
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json')
+    def put(self, title: str, content: str, location: str, is_pinned: bool) -> Response:
+        return self.rest_api.add_user_note(
+            title=title,
+            content=content,
+            location=location,
+            is_pinned=is_pinned,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json')
+    def patch(self, user_note: UserNote) -> Response:
+        return self.rest_api.edit_user_note(user_note=user_note)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, identifier: int) -> Response:
+        return self.rest_api.delete_user_note(identifier=identifier)

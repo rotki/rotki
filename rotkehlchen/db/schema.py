@@ -825,7 +825,18 @@ CREATE TABLE IF NOT EXISTS web3_nodes(
     active INTEGER NOT NULL CHECK (active IN (0, 1)),
     weight INTEGER NOT NULL
 );
-"""  # noqa: E501
+"""
+
+DB_CREATE_USER_NOTES = """
+CREATE TABLE IF NOT EXISTS user_notes(
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    location TEXT NOT NULL,
+    last_update_timestamp INTEGER NOT NULL,
+    is_pinned INTEGER NOT NULL CHECK (is_pinned IN (0, 1))
+);
+"""
 
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
@@ -880,6 +891,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_ENS_MAPPINGS}
 {DB_CREATE_ADDRESS_BOOK}
 {DB_CREATE_WEB3_NODES}
+{DB_CREATE_USER_NOTES}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

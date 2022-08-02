@@ -510,3 +510,53 @@ class AddressbookEntry(NamedTuple):
 class AddressbookType(SerializableEnumMixin):
     GLOBAL = 1
     PRIVATE = 2
+
+
+class UserNote(NamedTuple):
+    identifier: int
+    title: str
+    content: str
+    location: str
+    last_update_timestamp: Timestamp
+    is_pinned: bool
+
+    def serialize(self) -> Dict[str, Union[str, int]]:
+        """Serialize a `UserNote` object into a dict."""
+        return {
+            'identifier': self.identifier,
+            'title': self.title,
+            'content': self.content,
+            'location': self.location,
+            'last_update_timestamp': self.last_update_timestamp,
+            'is_pinned': self.is_pinned,
+        }
+
+    @classmethod
+    def deserialize(cls, entry: Dict[str, Any]) -> 'UserNote':
+        """Turns a dict into a `UserNote` object.
+        May raise:
+        - DeserializationError if required keys are missing.
+        """
+        try:
+            return cls(
+                identifier=entry['identifier'],
+                title=entry['title'],
+                content=entry['content'],
+                location=entry['location'],
+                last_update_timestamp=entry['last_update_timestamp'],
+                is_pinned=entry['is_pinned'],
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Failed to deserialize dict due to missing key: {str(e)}') from e  # noqa: E501
+
+    @classmethod
+    def deserialize_from_db(cls, entry: Tuple[int, str, str, str, int, int]) -> 'UserNote':
+        """Turns a `user_note` db entry into a `UserNote` object."""
+        return cls(
+            identifier=entry[0],
+            title=entry[1],
+            content=entry[2],
+            location=entry[3],
+            last_update_timestamp=Timestamp(entry[4]),
+            is_pinned=bool(entry[5]),
+        )

@@ -93,6 +93,7 @@ from rotkehlchen.db.filtering import (
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
+    UserNotesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -159,6 +160,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     TradeType,
+    UserNote,
 )
 from rotkehlchen.utils.misc import combine_dicts
 from rotkehlchen.utils.snapshots import parse_import_snapshot_data
@@ -4490,3 +4492,37 @@ class RestAPI():
             },
         }
         return api_response(_wrap_in_ok_result(config), status_code=HTTPStatus.OK)
+
+    def get_user_notes(self, filter_query: UserNotesFilterQuery) -> Response:
+        user_notes = self.rotkehlchen.data.db.get_user_notes(filter_query=filter_query)
+        result_dict = _wrap_in_ok_result([entry.serialize() for entry in user_notes])
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def add_user_note(
+            self,
+            title: str,
+            content: str,
+            location: str,
+            is_pinned: bool,
+    ) -> Response:
+        note_id = self.rotkehlchen.data.db.add_user_note(
+            title=title,
+            content=content,
+            location=location,
+            is_pinned=is_pinned,
+        )
+        return api_response(result={'result': note_id, 'message': ''}, status_code=HTTPStatus.OK)
+
+    def edit_user_note(self, user_note: UserNote) -> Response:
+        try:
+            self.rotkehlchen.data.db.edit_user_note(user_note=user_note)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def delete_user_note(self, identifier: int) -> Response:
+        try:
+            self.rotkehlchen.data.db.delete_user_note(identifier=identifier)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
