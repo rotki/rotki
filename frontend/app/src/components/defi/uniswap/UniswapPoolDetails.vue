@@ -36,7 +36,7 @@
           </v-row>
           <v-row no-gutters>
             <v-col class="font-weight-medium">
-              {{ $t('uniswap_pool_details.price') }}
+              {{ $t('common.price') }}
             </v-col>
             <v-col cols="auto">
               <amount-display

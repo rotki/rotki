@@ -39,11 +39,14 @@ import {
   VISIBLE_TIMEFRAMES,
   VERSION_UPDATE_CHECK_FREQUENCY,
   ENABLE_ETH_NAMES,
-  SHOW_GRAPH_RANGE_SELECTOR
+  SHOW_GRAPH_RANGE_SELECTOR,
+  LANGUAGE,
+  SupportedLanguage
 } from '@/types/frontend-settings';
 
 type Mutations<S = SettingsState> = {
   [DEFI_SETUP_DONE](state: S, done: boolean): void;
+  [LANGUAGE](state: S, done: SupportedLanguage): void;
   [TIMEFRAME_SETTING](state: S, timeframe: TimeFrameSetting): void;
   [VISIBLE_TIMEFRAMES](state: S, timeframes: TimeFrameSetting[]): void;
   [LAST_KNOWN_TIMEFRAME](state: S, timeframe: TimeFramePeriod): void;
@@ -77,6 +80,9 @@ type Mutations<S = SettingsState> = {
 export const mutations: Mutations = {
   [DEFI_SETUP_DONE](state: Writeable<SettingsState>, done: boolean) {
     state[DEFI_SETUP_DONE] = done;
+  },
+  [LANGUAGE](state: Writeable<SettingsState>, language: SupportedLanguage) {
+    state[LANGUAGE] = language;
   },
   [TIMEFRAME_SETTING](
     state: Writeable<SettingsState>,

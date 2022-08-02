@@ -26,7 +26,7 @@
             <v-text-field
               outlined
               class="tag_creator__name"
-              :label="$t('tag_creator.labels.name')"
+              :label="$t('common.name')"
               :rules="rules"
               :value="tag.name"
               :disabled="editMode"
@@ -105,10 +105,10 @@
           :disabled="!valid"
           @click="save"
         >
-          {{ $t('tag_creator.buttons.save') }}
+          {{ $t('common.actions.save') }}
         </v-btn>
         <v-btn v-if="editMode" width="100" depressed @click="cancel">
-          {{ $t('tag_creator.buttons.cancel') }}
+          {{ $t('common.actions.cancel') }}
         </v-btn>
       </v-col>
     </v-row>

@@ -20,7 +20,7 @@
               :value="pendingSearch"
               dense
               prepend-inner-icon="mdi-magnify"
-              :label="$t('eth_address_book.table.filter')"
+              :label="$t('common.actions.filter')"
               outlined
               clearable
               @input="onSearchTermChange($event)"

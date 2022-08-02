@@ -7,9 +7,9 @@
       <template #buttons>
         <v-spacer />
         <v-btn depressed @click="input(false)">
-          <span v-if="done">{{ $t('merge_dialog.close') }}</span>
+          <span v-if="done">{{ $t('common.actions.close') }}</span>
           <span v-else>
-            {{ $t('merge_dialog.cancel') }}
+            {{ $t('common.actions.cancel') }}
           </span>
         </v-btn>
         <v-btn

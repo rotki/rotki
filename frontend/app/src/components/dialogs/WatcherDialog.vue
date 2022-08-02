@@ -146,7 +146,7 @@
           color="primary"
           class="watcher-dialog__buttons__close"
           @click="cancel()"
-          v-text="$t('watcher_dialog.close')"
+          v-text="$t('common.actions.close')"
         />
       </v-card-actions>
     </v-card>

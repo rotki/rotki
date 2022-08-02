@@ -51,7 +51,7 @@
                   >
                     <v-icon small class="mr-2">mdi-close</v-icon>
                     <span>
-                      {{ $t('create_account.premium.button_premium_reject') }}
+                      {{ $t('common.actions.no') }}
                     </span>
                   </v-btn>
                   <v-btn
@@ -93,7 +93,7 @@
               :disabled="loading || newUser"
               @click="cancel()"
             >
-              {{ $t('create_account.premium.button_cancel') }}
+              {{ $t('common.actions.cancel') }}
             </v-btn>
             <v-btn
               class="create-account__premium__button__continue"
@@ -104,7 +104,7 @@
               data-cy="create-account__premium__button__continue"
               @click="step = 2"
             >
-              {{ $t('create_account.premium.button_continue') }}
+              {{ $t('common.actions.continue') }}
             </v-btn>
           </v-card-actions>
         </v-stepper-content>
@@ -181,7 +181,7 @@
               outlined
               @click="back"
             >
-              {{ $t('create_account.select_credentials.button_back') }}
+              {{ $t('common.actions.back') }}
             </v-btn>
             <v-btn
               class="create-account__credentials__button__continue"
@@ -191,7 +191,7 @@
               :loading="loading"
               @click="step = 3"
             >
-              {{ $t('create_account.select_credentials.button_continue') }}
+              {{ $t('common.actions.continue') }}
             </v-btn>
           </v-card-actions>
         </v-stepper-content>
@@ -228,7 +228,7 @@
               outlined
               @click="back"
             >
-              {{ $t('create_account.usage_analytics.button_back') }}
+              {{ $t('common.actions.back') }}
             </v-btn>
             <v-btn
               color="primary"
@@ -238,7 +238,7 @@
               class="create-account__analytics__button__confirm"
               @click="confirm()"
             >
-              {{ $t('create_account.usage_analytics.button_create') }}
+              {{ $t('common.actions.create') }}
             </v-btn>
           </v-card-actions>
         </v-stepper-content>

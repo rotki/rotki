@@ -71,12 +71,12 @@
 
     <template v-if="error" #action="{ attrs }">
       <v-btn text v-bind="attrs" @click="dismiss">
-        {{ $t('update_popup.action.dismiss') }}
+        {{ $t('common.actions.dismiss') }}
       </v-btn>
     </template>
     <template v-else-if="!downloading && !restarting" #action="{ attrs }">
       <v-btn text v-bind="attrs" @click="dismiss">
-        {{ $t('update_popup.action.cancel') }}
+        {{ $t('common.actions.cancel') }}
       </v-btn>
       <v-btn
         v-if="!downloadReady"
@@ -85,10 +85,10 @@
         v-bind="attrs"
         @click="update()"
       >
-        {{ $t('update_popup.action.update') }}
+        {{ $t('common.actions.update') }}
       </v-btn>
       <v-btn v-else color="primary" text v-bind="attrs" @click="install()">
-        {{ $t('update_popup.action.install') }}
+        {{ $t('common.actions.install') }}
       </v-btn>
     </template>
   </v-snackbar>

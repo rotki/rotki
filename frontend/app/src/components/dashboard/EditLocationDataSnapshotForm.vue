@@ -5,9 +5,7 @@
         :value="form.location"
         :excludes="excludedLocations"
         outlined
-        :label="
-          $t('dashboard.snapshot.edit.dialog.location_data.headers.location')
-        "
+        :label="$t('common.location')"
         :rules="locationRules"
         @input="updateForm({ location: $event })"
       />
@@ -17,8 +15,8 @@
         :value="form.usdValue"
         outlined
         :label="
-          $t('dashboard.snapshot.edit.dialog.location_data.headers.value', {
-            currency: currencySymbol
+          $t('common.value_in_symbol', {
+            symbol: currencySymbol
           })
         "
         :rules="valueRules"

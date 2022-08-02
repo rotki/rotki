@@ -52,7 +52,7 @@
       <template #body.append="{ isMobile }">
         <row-append
           label-colspan="2"
-          :label="$t('non_fungible_balances.row.total')"
+          :label="$t('common.total')"
           :right-patch-colspan="1"
           :is-mobile="isMobile"
         >
@@ -115,11 +115,11 @@ import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 import { isVideo } from '@/utils/nft';
 
-const tableHeaders = (currency: Ref<string>) => {
+const tableHeaders = (symbol: Ref<string>) => {
   return computed<DataTableHeader[]>(() => {
     return [
       {
-        text: i18n.t('non_fungible_balance.column.name').toString(),
+        text: i18n.t('common.name').toString(),
         value: 'name',
         cellClass: 'text-no-wrap'
       },
@@ -132,7 +132,7 @@ const tableHeaders = (currency: Ref<string>) => {
       },
       {
         text: i18n
-          .t('non_fungible_balance.column.price', { currency: get(currency) })
+          .t('common.price_in_symbol', { symbol: get(symbol) })
           .toString(),
         value: 'usdPrice',
         align: 'end',

@@ -34,7 +34,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import { computed, defineComponent, PropType } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
@@ -64,9 +64,9 @@ const events = [
 
 export type EventType = typeof events[number];
 
-const headers: DataTableHeader[] = [
+const headers = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('poap_delivery_airdrops.headers.name').toString(),
+    text: i18n.t('common.name').toString(),
     value: 'name'
   },
   {
@@ -75,7 +75,7 @@ const headers: DataTableHeader[] = [
     align: 'end',
     width: '50px'
   }
-];
+]);
 
 export default defineComponent({
   name: 'PoapDeliveryAirdrops',

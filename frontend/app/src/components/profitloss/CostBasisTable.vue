@@ -128,7 +128,7 @@ const getHeaders = (currency: Ref<string>) =>
         align: 'end'
       },
       {
-        text: i18n.t('cost_basis_table.headers.time').toString(),
+        text: i18n.t('common.datetime').toString(),
         value: 'time'
       },
       {

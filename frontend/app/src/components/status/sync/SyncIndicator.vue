@@ -99,7 +99,7 @@
                   <template #activator="{ on }">
                     <v-btn color="primary" outlined v-on="on">
                       <v-icon left>mdi-import</v-icon>
-                      {{ $t('sync_indicator.import') }}
+                      {{ $t('common.actions.import') }}
                     </v-btn>
                   </template>
                   <card>
@@ -163,9 +163,7 @@
                         text
                         @click="importSnapshotDialog = false"
                       >
-                        {{
-                          $t('sync_indicator.import_snapshot.actions.cancel')
-                        }}
+                        {{ $t('common.actions.cancel') }}
                       </v-btn>
                       <v-btn
                         color="primary"
@@ -173,9 +171,7 @@
                         :loading="importSnapshotLoading"
                         @click="importSnapshot"
                       >
-                        {{
-                          $t('sync_indicator.import_snapshot.actions.import')
-                        }}
+                        {{ $t('common.actions.import') }}
                       </v-btn>
                     </template>
                   </card>
@@ -196,7 +192,7 @@
         $tc('sync_indicator.upload_confirmation.action', textChoice)
       "
       :loading="isSyncing"
-      :secondary-action="$tc('sync_indicator.upload_confirmation.cancel')"
+      :secondary-action="$tc('common.actions.cancel')"
       @cancel="cancel"
       @confirm="performSync"
     >

@@ -34,7 +34,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import { computed, defineComponent, PropType } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
@@ -43,13 +43,13 @@ import { setupGeneralSettings } from '@/composables/session';
 import i18n from '@/i18n';
 import { DefiBalance } from '@/store/defi/types';
 
-const headers: DataTableHeader[] = [
+const headers = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('lending_asset_table.headers.asset').toString(),
+    text: i18n.t('common.asset').toString(),
     value: 'asset'
   },
   {
-    text: i18n.t('lending_asset_table.headers.amount').toString(),
+    text: i18n.t('common.amount').toString(),
     value: 'balance.amount',
     align: 'end'
   },
@@ -61,7 +61,8 @@ const headers: DataTableHeader[] = [
     value: 'effectiveInterestRate',
     align: 'end'
   }
-];
+]);
+
 export default defineComponent({
   name: 'LendingAssetTable',
   components: { DataTable, PercentageDisplay, AmountDisplay },

@@ -80,8 +80,8 @@
     <big-dialog
       :display="showForm"
       :title="$tc('ethereum_rpc_node_manager.add_dialog.title')"
-      :primary-action="$tc('ethereum_rpc_node_manager.add_dialog.save')"
-      :secondary-action="$tc('ethereum_rpc_node_manager.add_dialog.cancel')"
+      :primary-action="$tc('common.actions.save')"
+      :secondary-action="$tc('common.actions.cancel')"
       :action-disabled="!valid || loading"
       :loading="loading"
       @confirm="save()"

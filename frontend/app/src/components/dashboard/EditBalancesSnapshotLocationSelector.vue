@@ -12,7 +12,7 @@
         :persistent-hint="!value"
         :hide-details="!!value"
         :hint="$t('dashboard.snapshot.edit.dialog.balances.hints.location')"
-        :label="$t('dashboard.snapshot.edit.dialog.balances.headers.location')"
+        :label="$t('common.location')"
         @input="input"
       />
     </div>

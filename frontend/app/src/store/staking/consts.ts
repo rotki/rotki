@@ -1,8 +1,9 @@
+import { computed } from '@vue/composition-api';
 import i18n from '@/i18n';
 import { ActionDataEntry } from '@/store/types';
 import { KrakenStakingEventType } from '@/types/staking';
 
-export const krakenStakingEventTypeData: ActionDataEntry[] = [
+export const krakenStakingEventTypeData = computed<ActionDataEntry[]>(() => [
   {
     identifier: KrakenStakingEventType.REWARD,
     label: i18n.t('kraken_staking_events.types.staking_reward').toString()
@@ -19,4 +20,4 @@ export const krakenStakingEventTypeData: ActionDataEntry[] = [
     identifier: KrakenStakingEventType.REMOVE_ASSET,
     label: i18n.t('kraken_staking_events.types.unstake_asset').toString()
   }
-];
+]);

@@ -47,7 +47,7 @@
         </tr>
         <tr>
           <td class="font-weight-medium text-subtitle-1">
-            {{ $t('profit_loss_overview.rows.total') }}
+            {{ $t('common.total') }}
           </td>
           <td class="text-right font-weight-medium text-subtitle-1">
             <amount-display

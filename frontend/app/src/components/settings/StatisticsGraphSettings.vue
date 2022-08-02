@@ -38,7 +38,7 @@
           :disabled="invalid"
           @click="updateSetting"
         >
-          {{ $t('statistics_graph_settings.save') }}
+          {{ $t('common.actions.save') }}
         </v-btn>
       </template>
     </card>

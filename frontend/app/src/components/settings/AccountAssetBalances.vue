@@ -11,7 +11,7 @@
         <template #header.usdValue>
           <div class="text-no-wrap">
             {{
-              $t('account_asset_balance.headers.value', {
+              $t('common.value_in_symbol', {
                 symbol: currencySymbol
               })
             }}
@@ -20,7 +20,7 @@
         <template #header.price>
           <div class="text-no-wrap">
             {{
-              $t('account_asset_balance.headers.price', {
+              $t('common.price_in_symbol', {
                 symbol: currencySymbol
               })
             }}
@@ -55,7 +55,7 @@
 
 <script lang="ts">
 import { AssetBalance } from '@rotki/common';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { computed, defineComponent, PropType } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -64,16 +64,16 @@ import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 
-const headers: DataTableHeader[] = [
+const headers = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('account_asset_balance.headers.asset').toString(),
+    text: i18n.t('common.asset').toString(),
     class: 'text-no-wrap',
     value: 'asset',
     cellClass: 'asset-info'
   },
   {
     text: i18n
-      .t('account_asset_balance.headers.price', {
+      .t('common.price_in_symbol', {
         symbol: CURRENCY_USD
       })
       .toString(),
@@ -82,19 +82,19 @@ const headers: DataTableHeader[] = [
     value: 'price'
   },
   {
-    text: i18n.t('account_asset_balance.headers.amount').toString(),
+    text: i18n.t('common.amount').toString(),
     value: 'amount',
     class: 'text-no-wrap',
     cellClass: 'asset-divider',
     align: 'end'
   },
   {
-    text: i18n.t('account_asset_balance.headers.value').toString(),
+    text: i18n.t('common.value_in_symbol').toString(),
     value: 'usdValue',
     align: 'end',
     class: 'text-no-wrap'
   }
-];
+]);
 
 export default defineComponent({
   name: 'AccountAssetBalances',

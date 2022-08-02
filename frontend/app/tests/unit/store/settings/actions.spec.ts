@@ -28,6 +28,7 @@ import {
   FrontendSettingsPayload,
   GRAPH_ZERO_BASED,
   ITEMS_PER_PAGE,
+  LANGUAGE,
   LAST_KNOWN_TIMEFRAME,
   NFTS_IN_NET_VALUE,
   PROFIT_LOSS_PERIOD,
@@ -35,6 +36,7 @@ import {
   QUERY_PERIOD,
   REFRESH_PERIOD,
   SHOW_GRAPH_RANGE_SELECTOR,
+  SupportedLanguage,
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
   VALUE_ROUNDING_MODE,
@@ -59,6 +61,7 @@ describe('settings:actions', () => {
         frontendSettings: JSON.stringify(
           axiosSnakeCaseTransformer({
             [DEFI_SETUP_DONE]: true,
+            [LANGUAGE]: SupportedLanguage.EN,
             [TIMEFRAME_SETTING]: TimeFramePersist.REMEMBER,
             [VISIBLE_TIMEFRAMES]: Defaults.DEFAULT_VISIBLE_TIMEFRAMES,
             [LAST_KNOWN_TIMEFRAME]: TimeFramePeriod.ALL,

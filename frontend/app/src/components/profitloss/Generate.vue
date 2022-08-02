@@ -2,7 +2,7 @@
   <v-form v-model="valid">
     <card>
       <template #title>
-        {{ $t('generate.title') }}
+        {{ $t('common.actions.generate') }}
       </template>
       <template #details>
         <v-tooltip top>
@@ -35,7 +35,7 @@
               @click="generate()"
             >
               <v-icon class="mr-2">mdi-file-chart</v-icon>
-              {{ $t('generate.generate') }}
+              {{ $t('common.actions.generate') }}
             </v-btn>
           </v-col>
           <v-col cols="auto">

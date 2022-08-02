@@ -2,6 +2,7 @@
   <v-app
     v-if="!isPlayground"
     id="rotki"
+    :key="language"
     class="app"
     :class="{ ['app--animations-disabled']: !animationsEnabled }"
   >
@@ -151,6 +152,7 @@ import { storeToRefs } from 'pinia';
 import { setupBackendManagement } from '@/composables/backend';
 import { useRoute, useRouter, useTheme } from '@/composables/common';
 import { getPremium, setupSession, useDarkMode } from '@/composables/session';
+import { setupSettings } from '@/composables/settings';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
 import i18n from '@/i18n';
@@ -238,7 +240,7 @@ export default defineComponent({
       () => import('@/components/PinnedSidebar.vue')
     )
   },
-  setup() {
+  setup(_, { root }) {
     const store = useMainStore();
     const { appVersion, message } = toRefs(store);
     const { setMessage, connect } = store;
@@ -380,7 +382,24 @@ export default defineComponent({
       }
     });
 
+    const { language } = setupSettings();
+
+    onBeforeMount(() => {
+      if (get(language) !== root.$i18n.locale) {
+        setLanguage(get(language));
+      }
+    });
+
+    const setLanguage = (language: string) => {
+      root.$i18n.locale = language;
+    };
+
+    watch(language, language => {
+      setLanguage(language);
+    });
+
     return {
+      language,
       animationsEnabled,
       username,
       premium,

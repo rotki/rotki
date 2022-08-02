@@ -7,7 +7,7 @@
         outlined
         dense
         prepend-inner-icon="mdi-magnify"
-        :label="$t('dashboard_asset_table.search')"
+        :label="$t('common.actions.search')"
         class="pa-0 ma-0 dashboard-asset-table__search"
         single-line
         hide-details
@@ -87,7 +87,7 @@
       >
         <row-append
           label-colspan="3"
-          :label="$t('dashboard_asset_table.total')"
+          :label="$t('common.total')"
           :right-patch-colspan="tableHeaders.length - 4"
           :is-mobile="isMobile"
         >
@@ -147,13 +147,13 @@ const tableHeaders = (
 
     const headers: DataTableHeader[] = [
       {
-        text: i18n.t('dashboard_asset_table.headers.asset').toString(),
+        text: i18n.t('common.asset').toString(),
         value: 'asset',
         class: 'text-no-wrap'
       },
       {
         text: i18n
-          .t('dashboard_asset_table.headers.price', {
+          .t('common.price_in_symbol', {
             symbol: get(currencySymbol)
           })
           .toString(),
@@ -162,14 +162,14 @@ const tableHeaders = (
         class: 'text-no-wrap'
       },
       {
-        text: i18n.t('dashboard_asset_table.headers.amount').toString(),
+        text: i18n.t('common.amount').toString(),
         value: 'amount',
         align: 'end',
         width: '99%'
       },
       {
         text: i18n
-          .t('dashboard_asset_table.headers.value', {
+          .t('common.value_in_symbol', {
             symbol: get(currencySymbol)
           })
           .toString(),

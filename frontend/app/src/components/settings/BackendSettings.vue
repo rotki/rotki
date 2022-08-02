@@ -154,7 +154,7 @@
     <template #buttons>
       <v-spacer />
       <v-btn depressed @click="dismiss()">
-        {{ $t('backend_settings.actions.cancel') }}
+        {{ $t('common.actions.cancel') }}
       </v-btn>
       <v-btn depressed @click="confirmReset = true">
         {{ $t('backend_settings.actions.reset') }}
@@ -165,7 +165,7 @@
         :disabled="!valid || !formValid"
         @click="save()"
       >
-        {{ $t('backend_settings.actions.save') }}
+        {{ $t('common.actions.save') }}
       </v-btn>
     </template>
 

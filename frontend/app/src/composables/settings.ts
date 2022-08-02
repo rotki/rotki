@@ -11,7 +11,8 @@ import {
   ExplorersSettings,
   FrontendSettings,
   FrontendSettingsPayload,
-  RoundingMode
+  RoundingMode,
+  SupportedLanguage
 } from '@/types/frontend-settings';
 import {
   AccountingSettings,
@@ -26,6 +27,10 @@ export const setupSettings = () => {
 
   const dashboardTablesVisibleColumns = computed<DashboardTablesVisibleColumns>(
     () => store.getters['settings/dashboardTablesVisibleColumns']
+  );
+
+  const language = computed<SupportedLanguage>(
+    () => store.getters['settings/language']
   );
 
   const dateInputFormat = computed<DateFormat>(
@@ -83,6 +88,7 @@ export const setupSettings = () => {
   };
 
   return {
+    language,
     dateInputFormat,
     dashboardTablesVisibleColumns,
     itemsPerPage,

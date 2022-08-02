@@ -28,7 +28,7 @@
     </v-sheet>
 
     <v-sheet outlined class="pa-4 mt-4" rounded>
-      <div class="text-h6">{{ $t('manage_custom_assets.import.title') }}</div>
+      <div class="text-h6">{{ $t('common.actions.import') }}</div>
       <div class="text-subtitle-1">
         {{ $t('manage_custom_assets.import.subtitle') }}
       </div>
@@ -48,7 +48,7 @@
         :loading="uploading"
         @click="importZip"
       >
-        {{ $t('manage_custom_assets.import.button') }}
+        {{ $t('common.actions.import') }}
       </v-btn>
     </v-sheet>
   </card>

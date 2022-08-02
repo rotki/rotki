@@ -48,20 +48,20 @@ import {
 import { useNotifications } from '@/store/notifications';
 import { Nullable } from '@/types';
 
-const tableHeaders: DataTableHeader[] = [
+const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('eth_address_book.table.headers.address').toString(),
+    text: i18n.t('common.address').toString(),
     value: 'address'
   },
   {
-    text: i18n.t('eth_address_book.table.headers.name').toString(),
+    text: i18n.t('common.name').toString(),
     value: 'name'
   },
   {
     text: '',
     value: 'actions'
   }
-];
+]);
 
 const addressBookDeletion = (location: Ref<EthAddressBookLocation>) => {
   const pending = ref<Nullable<EthNamesEntry>>(null);

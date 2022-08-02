@@ -2,12 +2,14 @@
   <tab-navigation :tab-contents="tabs" class="settings" />
 </template>
 
-<script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+<script setup lang="ts">
+import { get } from '@vueuse/core';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
-import { Routes } from '@/router/routes';
+import { routesRef } from '@/router/routes';
+
+const Routes = get(routesRef);
 
 const tabs: TabContent[] = [
   Routes.SETTINGS_GENERAL,
@@ -15,12 +17,4 @@ const tabs: TabContent[] = [
   Routes.SETTINGS_DATA_SECURITY,
   Routes.SETTINGS_MODULES
 ];
-
-export default defineComponent({
-  name: 'Settings',
-  components: { TabNavigation },
-  setup() {
-    return { tabs };
-  }
-});
 </script>

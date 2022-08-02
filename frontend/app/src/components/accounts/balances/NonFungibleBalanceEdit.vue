@@ -11,7 +11,7 @@
       <asset-select v-model="asset" outlined />
       <amount-input
         v-model="price"
-        :label="$t('non_fungible_balance_edit.price')"
+        :label="$t('common.price')"
         outlined
         single-line
         @keypress.enter="save"
@@ -19,10 +19,10 @@
       <template #buttons>
         <v-spacer />
         <v-btn depressed @click="close">
-          {{ $t('non_fungible_balance_edit.actions.cancel') }}
+          {{ $t('common.actions.cancel') }}
         </v-btn>
         <v-btn depressed color="primary" :disabled="!valid" @click="save">
-          {{ $t('non_fungible_balance_edit.actions.save') }}
+          {{ $t('common.actions.save') }}
         </v-btn>
       </template>
     </card>

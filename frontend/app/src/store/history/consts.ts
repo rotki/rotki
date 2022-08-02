@@ -1,3 +1,4 @@
+import { computed } from '@vue/composition-api';
 import i18n from '@/i18n';
 import { ActionDataEntry } from '@/store/types';
 import { LedgerActionType } from '@/types/ledger-actions';
@@ -8,7 +9,7 @@ import {
   TransactionEventType
 } from '@/types/transaction';
 
-export const ledgerActionsData: ActionDataEntry[] = [
+export const ledgerActionsData = computed(() => [
   {
     identifier: LedgerActionType.ACTION_INCOME,
     label: i18n.t('ledger_actions.actions.income').toString()
@@ -41,9 +42,9 @@ export const ledgerActionsData: ActionDataEntry[] = [
     identifier: LedgerActionType.ACTION_GRANT,
     label: i18n.t('ledger_actions.actions.grant').toString()
   }
-];
+]);
 
-export const historyEventTypeData: ActionDataEntry[] = [
+export const historyEventTypeData = computed<ActionDataEntry[]>(() => [
   {
     identifier: HistoryEventType.TRADE,
     label: i18n.t('transactions.events.history_event_type.trade').toString()
@@ -98,9 +99,9 @@ export const historyEventTypeData: ActionDataEntry[] = [
     identifier: HistoryEventType.RENEW,
     label: i18n.t('transactions.events.history_event_type.renew').toString()
   }
-];
+]);
 
-export const historyEventSubTypeData: ActionDataEntry[] = [
+export const historyEventSubTypeData = computed<ActionDataEntry[]>(() => [
   {
     identifier: HistoryEventSubType.NONE,
     label: i18n.t('transactions.events.history_event_subtype.none').toString()
@@ -193,9 +194,9 @@ export const historyEventSubTypeData: ActionDataEntry[] = [
     identifier: HistoryEventSubType.NFT,
     label: i18n.t('transactions.events.history_event_subtype.nft').toString()
   }
-];
+]);
 
-export const transactionEventTypeData: ActionDataEntry[] = [
+export const transactionEventTypeData = computed<ActionDataEntry[]>(() => [
   {
     identifier: TransactionEventType.GAS,
     label: i18n.t('transactions.events.type.gas_fee').toString(),
@@ -294,7 +295,7 @@ export const transactionEventTypeData: ActionDataEntry[] = [
     label: i18n.t('transactions.events.type.transfer').toString(),
     icon: 'mdi-swap-horizontal'
   }
-];
+]);
 
 export const transactionEventTypeMapping: {
   [type: string]: { [subType: string]: TransactionEventType };
@@ -350,7 +351,7 @@ export const transactionEventTypeMapping: {
   }
 };
 
-export const transactionEventProtocolData: ActionDataEntry[] = [
+export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
   {
     identifier: TransactionEventProtocol.COMPOUND,
     label: 'Compound',
@@ -465,4 +466,4 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     label: 'Hop Protocol',
     image: '/assets/images/hop_protocol.png'
   }
-];
+]);

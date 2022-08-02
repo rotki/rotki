@@ -75,7 +75,7 @@
         <v-row no-gutters justify="end">
           <v-col cols="auto">
             <v-btn text @click="cancel">
-              {{ $t('conflict_dialog.buttons.cancel') }}
+              {{ $t('common.actions.cancel') }}
             </v-btn>
           </v-col>
           <v-col cols="auto">
@@ -85,7 +85,7 @@
               :disabled="!valid"
               @click="resolve(resolution)"
             >
-              {{ $t('conflict_dialog.buttons.confirm') }}
+              {{ $t('common.actions.confirm') }}
             </v-btn>
           </v-col>
         </v-row>

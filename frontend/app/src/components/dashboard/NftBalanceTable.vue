@@ -58,7 +58,7 @@
       <template #body.append="{ isMobile }">
         <row-append
           label-colspan="2"
-          :label="$t('nft_balance_table.row.total')"
+          :label="$t('common.total')"
           :right-patch-colspan="tableHeaders.length - 3"
           :is-mobile="isMobile"
         >
@@ -102,7 +102,7 @@ import { TableColumn } from '@/types/table-column';
 import { Zero } from '@/utils/bignumbers';
 
 const tableHeaders = (
-  currency: Ref<string>,
+  symbol: Ref<string>,
   dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>
 ) => {
   return computed<DataTableHeader[]>(() => {
@@ -112,7 +112,7 @@ const tableHeaders = (
 
     const headers: DataTableHeader[] = [
       {
-        text: i18n.t('nft_balance_table.column.name').toString(),
+        text: i18n.t('common.name').toString(),
         value: 'name',
         cellClass: 'text-no-wrap'
       },
@@ -125,8 +125,8 @@ const tableHeaders = (
       },
       {
         text: i18n
-          .t('nft_balance_table.column.price', {
-            currency: get(currency)
+          .t('common.price_in_symbol', {
+            symbol: get(symbol)
           })
           .toString(),
         value: 'usdPrice',

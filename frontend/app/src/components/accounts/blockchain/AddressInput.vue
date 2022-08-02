@@ -16,7 +16,7 @@
         data-cy="account-address-field"
         outlined
         class="account-form__address"
-        :label="$t('account_form.labels.account')"
+        :label="$t('common.account')"
         :rules="rules"
         :error-messages="errors"
         autocomplete="off"

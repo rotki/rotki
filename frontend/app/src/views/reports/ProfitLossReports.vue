@@ -16,7 +16,7 @@
     >
       <template #bottom>
         <v-btn text class="mt-2" @click="clearError()">
-          {{ $t('profit_loss_reports.error.close') }}
+          {{ $t('common.actions.close') }}
         </v-btn>
       </template>
     </error-screen>
@@ -46,7 +46,7 @@
           </div>
           <div class="mt-2 d-flex justify-end">
             <v-btn class="mr-4" @click="importDataDialog = false">
-              {{ $t('profit_loss_reports.debug.import_data_dialog.cancel') }}
+              {{ $t('common.actions.cancel') }}
             </v-btn>
             <v-btn
               color="primary"
@@ -54,7 +54,7 @@
               :loading="importDataLoading"
               @click="importData"
             >
-              {{ $t('profit_loss_reports.debug.import_data_dialog.import') }}
+              {{ $t('common.actions.import') }}
             </v-btn>
           </div>
         </div>

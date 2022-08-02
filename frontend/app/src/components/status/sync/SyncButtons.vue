@@ -12,7 +12,7 @@
           @click="action(UPLOAD)"
         >
           <v-icon>mdi-cloud-upload</v-icon>
-          <span class="ml-2">{{ $t('sync_buttons.push') }}</span>
+          <span class="ml-2">{{ $t('common.actions.push') }}</span>
         </v-btn>
       </template>
       <span>{{ $t('sync_buttons.upload_tooltip') }}</span>
@@ -31,7 +31,7 @@
           @click="action(DOWNLOAD)"
         >
           <v-icon>mdi-cloud-download</v-icon>
-          <span class="ml-2">{{ $t('sync_buttons.pull') }}</span>
+          <span class="ml-2">{{ $t('common.actions.pull') }}</span>
         </v-btn>
       </template>
       <span>{{ $t('sync_buttons.download_tooltip') }}</span>

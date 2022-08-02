@@ -51,7 +51,7 @@
             <th class="price-oracle-selection__priority text-center">
               {{ $t('price_oracle_selection.header.priority') }}
             </th>
-            <th class="ps-6">{{ $t('price_oracle_selection.header.name') }}</th>
+            <th class="ps-6">{{ $t('common.name') }}</th>
             <th />
           </tr>
         </thead>

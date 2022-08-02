@@ -51,7 +51,7 @@
       <template #body.append="{ isMobile }">
         <row-append
           label-colspan="3"
-          :label="$t('database_backups.row.total')"
+          :label="$t('common.total')"
           :right-patch-colspan="1"
           :is-mobile="isMobile"
         >
@@ -89,14 +89,14 @@ import { UserDbBackup } from '@/services/backup/types';
 import { api } from '@/services/rotkehlchen-api';
 import { size } from '@/utils/data';
 
-const tableHeaders: DataTableHeader[] = [
+const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     value: 'version',
     text: i18n.t('database_backups.column.version').toString()
   },
   {
     value: 'time',
-    text: i18n.t('database_backups.column.time').toString()
+    text: i18n.t('common.datetime').toString()
   },
   {
     value: 'size',
@@ -104,7 +104,7 @@ const tableHeaders: DataTableHeader[] = [
     text: i18n.t('database_backups.column.size').toString()
   },
   { value: 'actions', align: 'end', sortable: false, text: '' }
-];
+]);
 
 export default defineComponent({
   name: 'DatabaseBackups',

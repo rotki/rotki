@@ -162,11 +162,11 @@ export default class Airdrops extends Mixins(StatusMixin) {
       width: '200px'
     },
     {
-      text: this.$t('airdrops.headers.address').toString(),
+      text: this.$t('common.address').toString(),
       value: 'address'
     },
     {
-      text: this.$t('airdrops.headers.amount').toString(),
+      text: this.$t('common.amount').toString(),
       value: 'amount',
       align: 'end'
     },

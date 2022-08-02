@@ -29,7 +29,7 @@
               class="defi-wizard__select-modules ml-4"
               @click="step = 2"
             >
-              {{ $t('defi_wizard.steps.setup.continue') }}
+              {{ $t('common.actions.continue') }}
             </v-btn>
           </div>
         </v-stepper-content>
@@ -52,14 +52,14 @@
           </card>
           <div class="pb-4">
             <v-btn text @click="step = 1">
-              {{ $t('defi_wizard.steps.select_modules.back') }}
+              {{ $t('common.actions.back') }}
             </v-btn>
             <v-btn
               color="primary"
               class="defi-wizard__select-accounts ml-4"
               @click="step = 3"
             >
-              {{ $t('defi_wizard.steps.select_modules.continue') }}
+              {{ $t('common.actions.continue') }}
             </v-btn>
           </div>
         </v-stepper-content>
@@ -78,14 +78,14 @@
           </card>
           <div class="pb-4">
             <v-btn text @click="step = 2">
-              {{ $t('defi_wizard.steps.select_accounts.back') }}
+              {{ $t('common.actions.back') }}
             </v-btn>
             <v-btn
               color="primary"
               class="defi-wizard__done ml-4"
               @click="done()"
             >
-              {{ $t('defi_wizard.steps.select_accounts.continue') }}
+              {{ $t('common.actions.continue') }}
             </v-btn>
           </div>
         </v-stepper-content>

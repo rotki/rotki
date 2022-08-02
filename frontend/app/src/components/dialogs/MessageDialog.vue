@@ -31,7 +31,7 @@
           text
           class="message-dialog__buttons__confirm"
           @click="dismiss()"
-          v-text="$t('message_dialog.button')"
+          v-text="$t('common.actions.ok')"
         />
       </v-card-actions>
     </v-card>

@@ -148,7 +148,7 @@ type StakingInfo = {
   img?: boolean;
 };
 
-const staking: StakingInfo[] = [
+const staking = computed<StakingInfo[]>(() => [
   {
     id: 'eth2',
     icon: 'ETH',
@@ -170,7 +170,7 @@ const staking: StakingInfo[] = [
     name: i18n.t('staking.kraken').toString(),
     img: true
   }
-];
+]);
 
 const pages = {
   eth2: Eth2Page,

@@ -67,7 +67,12 @@ export default defineComponent({
     } = toRefs(props);
     const { error, success, clear, wait, stop, setSuccess, setError } =
       useClearableMessages();
-    const { frontendSettings, generalSettings, updateSetting } = useSettings();
+    const {
+      frontendSettings,
+      generalSettings,
+      accountingSettings,
+      updateSetting
+    } = useSettings();
 
     const sessionState = getSessionState();
 
@@ -81,7 +86,8 @@ export default defineComponent({
             !Object.keys(get(frontendSettings)).includes(setting as string)) ||
           (!session &&
             !frontend &&
-            !Object.keys(get(generalSettings)).includes(setting as string))
+            !Object.keys(get(generalSettings)).includes(setting as string) &&
+            !Object.keys(get(accountingSettings)).includes(setting as string))
         ) {
           logger.error(`Invalid setting options for setting: ${setting}`);
         }

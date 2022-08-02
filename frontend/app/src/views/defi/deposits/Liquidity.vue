@@ -27,30 +27,23 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+<script setup lang="ts">
+import { onMounted, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { Routes } from '@/router/routes';
+import { useRoute } from '@/composables/common';
+import { routesRef } from '@/router/routes';
 
+const Routes = get(routesRef);
 const providers = [
   Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP,
   Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
   Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP
 ];
-export default defineComponent({
-  name: 'Liquidity',
-  components: { AdaptiveWrapper },
-  setup() {
-    const path = ref('');
-
-    return {
-      providers,
-      path
-    };
-  },
-  mounted() {
-    this.path = this.$route.path;
-  }
+const route = useRoute();
+const path = ref('');
+onMounted(() => {
+  set(path, get(route).path);
 });
 </script>
 

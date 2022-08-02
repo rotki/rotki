@@ -21,6 +21,7 @@ import {
   FrontendSettings,
   GRAPH_ZERO_BASED,
   ITEMS_PER_PAGE,
+  LANGUAGE,
   LAST_KNOWN_TIMEFRAME,
   NFTS_IN_NET_VALUE,
   PROFIT_LOSS_PERIOD,
@@ -28,6 +29,7 @@ import {
   QUERY_PERIOD,
   REFRESH_PERIOD,
   SHOW_GRAPH_RANGE_SELECTOR,
+  SupportedLanguage,
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
   VALUE_ROUNDING_MODE
@@ -53,6 +55,7 @@ describe('settings:utils', () => {
     expect(frontendSettings).toMatchObject({
       [TIMEFRAME_SETTING]: TimeFramePersist.REMEMBER,
       [DEFI_SETUP_DONE]: true,
+      [LANGUAGE]: SupportedLanguage.EN,
       [LAST_KNOWN_TIMEFRAME]: TimeFramePeriod.ALL,
       [QUERY_PERIOD]: 5,
       [PROFIT_LOSS_PERIOD]: {

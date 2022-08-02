@@ -90,16 +90,12 @@ const headers = (isPinned: Ref<boolean>) => {
 
     return [
       {
-        text: i18n
-          .t('profit_loss_report.actionable.missing_acquisitions.headers.asset')
-          .toString(),
+        text: i18n.t('common.asset').toString(),
         value: 'asset',
         ...pinnedClass
       },
       {
-        text: i18n
-          .t('profit_loss_report.actionable.missing_acquisitions.headers.time')
-          .toString(),
+        text: i18n.t('common.datetime').toString(),
         value: 'time',
         ...pinnedClass
       },
@@ -132,9 +128,7 @@ const childHeaders = (isPinned: Ref<boolean>) => {
 
     return [
       {
-        text: i18n
-          .t('profit_loss_report.actionable.missing_acquisitions.headers.time')
-          .toString(),
+        text: i18n.t('common.datetime').toString(),
         value: 'time',
         ...pinnedClass
       },

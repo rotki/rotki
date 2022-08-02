@@ -6,7 +6,7 @@
       <template #buttons>
         <v-spacer />
         <v-btn depressed color="primary" @click="input(false)">
-          {{ $t('date_format_help.close') }}
+          {{ $t('common.actions.close') }}
         </v-btn>
       </template>
       <div class="date-format-help__content">

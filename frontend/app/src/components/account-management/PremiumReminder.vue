@@ -20,7 +20,7 @@
         outlined
         @click="loginComplete"
       >
-        {{ $t('premium_reminder.buttons.close') }}
+        {{ $t('common.actions.close') }}
       </v-btn>
       <v-btn
         color="primary"
@@ -30,7 +30,7 @@
         class="premium-reminder__buttons__confirm"
         @click="upgrade"
       >
-        {{ $t('premium_reminder.buttons.upgrade') }}
+        {{ $t('common.actions.upgrade') }}
       </v-btn>
     </v-card-actions>
   </v-card>

@@ -40,7 +40,7 @@
           <v-icon :x-small="!small" :small="small"> mdi-content-copy </v-icon>
         </v-btn>
       </template>
-      <span>{{ $t('hash_link.copy') }}</span>
+      <span>{{ $t('common.actions.copy') }}</span>
     </v-tooltip>
     <v-tooltip v-if="!noLink || buttons" top open-delay="600" max-width="550">
       <template #activator="{ on, attrs }">

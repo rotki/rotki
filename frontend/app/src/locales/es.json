@@ -1,0 +1,10 @@
+{
+  "navigation_menu": {
+    "settings_sub": {
+      "accounting": "Contabilidad",
+      "data_security": "Seguridad de datos",
+      "general": "General",
+      "modules": "Módulos"
+    }
+  }
+}

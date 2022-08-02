@@ -55,9 +55,7 @@
         :disabled="(editMode && currentValue === '') || loading"
         @click="saveHandler()"
         v-text="
-          editMode
-            ? $t('service_key.actions.save')
-            : $t('service_key.actions.edit')
+          editMode ? $t('common.actions.save') : $t('common.actions.edit')
         "
       />
       <v-btn
@@ -66,7 +64,7 @@
         depressed
         color="primary"
         @click="cancel()"
-        v-text="$t('service_key.actions.cancel')"
+        v-text="$t('common.actions.cancel')"
       />
     </v-card-actions>
   </v-card>

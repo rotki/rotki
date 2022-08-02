@@ -25,7 +25,7 @@
 
     <asset-select
       v-model="asset"
-      :label="$t('manual_balances_form.fields.asset')"
+      :label="$t('common.asset')"
       :error-messages="errors['asset']"
       class="manual-balances-form__asset"
       outlined
@@ -35,7 +35,7 @@
     />
     <amount-input
       v-model="amount"
-      :label="$t('manual_balances_form.fields.amount')"
+      :label="$t('common.amount')"
       :error-messages="errors['amount']"
       class="manual-balances-form__amount"
       outlined
@@ -57,7 +57,7 @@
       outlined
       :error-messages="errors['location']"
       :disabled="pending"
-      :label="$t('manual_balances_form.fields.location')"
+      :label="$t('common.location')"
       @focus="delete errors['location']"
     />
   </v-form>

@@ -13,7 +13,7 @@
             :value="pendingSearch"
             dense
             prepend-inner-icon="mdi-magnify"
-            :label="$t('asset_table.search')"
+            :label="$t('common.actions.filter')"
             outlined
             clearable
             @input="onSearchTermChange($event)"
@@ -89,7 +89,7 @@
           <v-simple-table>
             <thead>
               <tr>
-                <th>{{ $t('underlying_token_manager.tokens.address') }}</th>
+                <th>{{ $t('common.address') }}</th>
                 <th>{{ $t('underlying_token_manager.tokens.weight') }}</th>
               </tr>
             </thead>
@@ -122,7 +122,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref } from '@vue/composition-api';
+import { computed, defineComponent, PropType, ref } from '@vue/composition-api';
 import { get, set, useTimeoutFn } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
@@ -137,9 +137,9 @@ import { Nullable } from '@/types';
 import { compareAssets } from '@/utils/assets';
 import { toSentenceCase } from '@/utils/text';
 
-const tableHeaders: DataTableHeader[] = [
+const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('asset_table.headers.asset').toString(),
+    text: i18n.t('common.asset').toString(),
     value: 'symbol'
   },
   {
@@ -147,7 +147,7 @@ const tableHeaders: DataTableHeader[] = [
     value: 'assetType'
   },
   {
-    text: i18n.t('asset_table.headers.address').toString(),
+    text: i18n.t('common.address').toString(),
     value: 'address'
   },
   {
@@ -163,7 +163,7 @@ const tableHeaders: DataTableHeader[] = [
     width: '48px',
     value: 'expand'
   }
-];
+]);
 
 export default defineComponent({
   name: 'AssetTable',

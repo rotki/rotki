@@ -5,7 +5,7 @@
       outlined
       data-cy="node-name"
       :disabled="isEtherscan"
-      :label="$tc('rpc_node_form.name')"
+      :label="$tc('common.name')"
       :error-messages="v$.name.$errors.map(e => e.$message)"
       @blur="v$.name.$touch()"
     />

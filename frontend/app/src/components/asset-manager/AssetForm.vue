@@ -35,7 +35,7 @@
             outlined
             :loading="fetching"
             :error-messages="errors['address']"
-            :label="$t('asset_form.labels.address')"
+            :label="$t('common.address')"
             :disabled="saving || fetching"
             @keydown.space.prevent
             @focus="delete errors['address']"
@@ -49,7 +49,7 @@
             v-model="name"
             outlined
             :error-messages="errors['name']"
-            :label="$t('asset_form.labels.name')"
+            :label="$t('common.name')"
             :disabled="saving || fetching"
             @focus="delete errors['name']"
           />

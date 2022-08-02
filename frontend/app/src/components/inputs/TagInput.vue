@@ -19,7 +19,7 @@
     >
       <template #no-data>
         <v-list-item>
-          <span class="subheading">{{ $t('tag_input.create_tag') }}</span>
+          <span class="subheading">{{ $t('common.actions.create') }}</span>
           <v-chip
             class="ml-2"
             :color="newTagBackground"

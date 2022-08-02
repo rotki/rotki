@@ -73,8 +73,9 @@
 
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
-import { Routes } from '@/router/routes';
+import { routesRef } from '@/router/routes';
 
 type NavItemDetails = {
   readonly text: string;
@@ -100,6 +101,7 @@ export default defineComponent({
     isMini: { required: false, type: Boolean, default: false }
   },
   setup() {
+    const Routes = get(routesRef);
     const navItems: MenuItem[] = [
       {
         type: 'item',

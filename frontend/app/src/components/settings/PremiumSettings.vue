@@ -71,7 +71,7 @@
                 color="primary"
                 @click="cancelEdit()"
               >
-                {{ $t('premium_settings.actions.cancel') }}
+                {{ $t('common.actions.cancel') }}
               </v-btn>
             </v-col>
             <v-col v-if="premium && !edit" cols="auto">
@@ -90,12 +90,8 @@
     <confirm-dialog
       :display="confirmDeletePremium"
       confirm-type="warning"
-      :primary-action="
-        $tc('premium_settings.delete_confirmation.actions.delete')
-      "
-      :secondary-action="
-        $tc('premium_settings.delete_confirmation.actions.cancel')
-      "
+      :primary-action="$tc('common.actions.delete')"
+      :secondary-action="$tc('common.actions.cancel')"
       :title="$tc('premium_settings.delete_confirmation.title')"
       :message="$tc('premium_settings.delete_confirmation.message')"
       @confirm="remove"

@@ -35,7 +35,7 @@
       </template>
       <template #header.usdValue>
         {{
-          $t('kraken_staking_events.column.value', {
+          $t('common.value_in_symbol', {
             symbol: currencySymbol
           })
         }}
@@ -105,21 +105,21 @@ const useHeaders = (currencySymbol: Ref<SupportedCurrency>) => {
       value: 'type'
     },
     {
-      text: i18n.t('kraken_staking_events.column.asset').toString(),
+      text: i18n.t('common.asset').toString(),
       value: 'asset'
     },
     {
-      text: i18n.t('kraken_staking_events.column.time').toString(),
+      text: i18n.t('common.datetime').toString(),
       value: 'timestamp'
     },
     {
-      text: i18n.t('kraken_staking_events.column.amount').toString(),
+      text: i18n.t('common.amount').toString(),
       value: 'amount',
       align: 'end'
     },
     {
       text: i18n
-        .t('kraken_staking_events.column.value', {
+        .t('common.value_in_symbol', {
           symbol: get(currencySymbol)
         })
         .toString(),
@@ -143,14 +143,10 @@ enum KrakenStakingValueKeys {
   END = 'toTimestamp'
 }
 
-const krakenStakingEventTypeValues = krakenStakingEventTypeData.map(
-  data => data.label
-);
-
 const getEventTypeIdentifier = (label: string) => {
   return (
-    krakenStakingEventTypeData.find(data => data.label === label)?.identifier ??
-    label
+    get(krakenStakingEventTypeData).find(data => data.label === label)
+      ?.identifier ?? label
   );
 };
 
@@ -158,66 +154,74 @@ const useMatchers = (events: Ref<KrakenStakingEvents>) => {
   const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
   const { dateInputFormat } = setupSettings();
   return computed<SearchMatcher<KrakenStakingKeys, KrakenStakingValueKeys>[]>(
-    () => [
-      {
-        key: KrakenStakingKeys.ASSET,
-        keyValue: KrakenStakingValueKeys.ASSET,
-        description: i18n.t('kraken_staking_events.filter.asset').toString(),
-        suggestions: () => get(events).assets,
-        validate: (asset: string) => get(events).assets.includes(asset),
-        transformer: (asset: string) =>
-          getAssetIdentifierForSymbol(asset) ?? asset
-      },
-      {
-        key: KrakenStakingKeys.TYPE,
-        keyValue: KrakenStakingValueKeys.TYPE,
-        description: i18n.t('kraken_staking_events.filter.type').toString(),
-        suggestions: () => krakenStakingEventTypeValues,
-        validate: (option: string) =>
-          krakenStakingEventTypeValues.includes(option as any),
-        transformer: (type: string) => getEventTypeIdentifier(type)
-      },
-      {
-        key: KrakenStakingKeys.START,
-        keyValue: KrakenStakingValueKeys.START,
-        description: i18n
-          .t('kraken_staking_events.filter.start_date')
-          .toString(),
-        suggestions: () => [],
-        hint: i18n
-          .t('kraken_staking_events.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
-          })
-          .toString(),
-        validate: value => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
+    () => {
+      const krakenStakingEventTypeValues = get(krakenStakingEventTypeData).map(
+        data => data.label
+      );
+
+      return [
+        {
+          key: KrakenStakingKeys.ASSET,
+          keyValue: KrakenStakingValueKeys.ASSET,
+          description: i18n.t('kraken_staking_events.filter.asset').toString(),
+          suggestions: () => get(events).assets,
+          validate: (asset: string) => get(events).assets.includes(asset),
+          transformer: (asset: string) =>
+            getAssetIdentifierForSymbol(asset) ?? asset
         },
-        transformer: (date: string) =>
-          convertToTimestamp(date, get(dateInputFormat)).toString()
-      },
-      {
-        key: KrakenStakingKeys.END,
-        keyValue: KrakenStakingValueKeys.END,
-        description: i18n.t('kraken_staking_events.filter.end_date').toString(),
-        suggestions: () => [],
-        hint: i18n
-          .t('kraken_staking_events.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
-          })
-          .toString(),
-        validate: value => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
+        {
+          key: KrakenStakingKeys.TYPE,
+          keyValue: KrakenStakingValueKeys.TYPE,
+          description: i18n.t('kraken_staking_events.filter.type').toString(),
+          suggestions: () => krakenStakingEventTypeValues,
+          validate: (option: string) =>
+            krakenStakingEventTypeValues.includes(option as any),
+          transformer: (type: string) => getEventTypeIdentifier(type)
         },
-        transformer: (date: string) =>
-          convertToTimestamp(date, get(dateInputFormat)).toString()
-      }
-    ]
+        {
+          key: KrakenStakingKeys.START,
+          keyValue: KrakenStakingValueKeys.START,
+          description: i18n
+            .t('kraken_staking_events.filter.start_date')
+            .toString(),
+          suggestions: () => [],
+          hint: i18n
+            .t('kraken_staking_events.filter.date_hint', {
+              format: getDateInputISOFormat(get(dateInputFormat))
+            })
+            .toString(),
+          validate: value => {
+            return (
+              value.length > 0 &&
+              !isNaN(convertToTimestamp(value, get(dateInputFormat)))
+            );
+          },
+          transformer: (date: string) =>
+            convertToTimestamp(date, get(dateInputFormat)).toString()
+        },
+        {
+          key: KrakenStakingKeys.END,
+          keyValue: KrakenStakingValueKeys.END,
+          description: i18n
+            .t('kraken_staking_events.filter.end_date')
+            .toString(),
+          suggestions: () => [],
+          hint: i18n
+            .t('kraken_staking_events.filter.date_hint', {
+              format: getDateInputISOFormat(get(dateInputFormat))
+            })
+            .toString(),
+          validate: value => {
+            return (
+              value.length > 0 &&
+              !isNaN(convertToTimestamp(value, get(dateInputFormat)))
+            );
+          },
+          transformer: (date: string) =>
+            convertToTimestamp(date, get(dateInputFormat)).toString()
+        }
+      ];
+    }
   );
 };
 
@@ -294,8 +298,9 @@ export default defineComponent({
 
     const getEventTypeLabel = (eventType: KrakenStakingEventType) => {
       return (
-        krakenStakingEventTypeData.find(data => data.identifier === eventType)
-          ?.label ?? eventType
+        get(krakenStakingEventTypeData).find(
+          data => data.identifier === eventType
+        )?.label ?? eventType
       );
     };
 

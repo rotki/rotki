@@ -4,7 +4,7 @@
       {{ $t('update_notifier.update_available') }}
       <template #action>
         <v-btn text :loading="updating" @click="update">
-          {{ $t('update_notifier.update') }}
+          {{ $t('common.actions.update') }}
         </v-btn>
       </template>
     </v-snackbar>

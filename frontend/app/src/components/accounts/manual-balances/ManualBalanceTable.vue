@@ -75,7 +75,7 @@
       <template v-if="visibleBalances.length > 0" #body.append="{ isMobile }">
         <row-append
           label-colspan="4"
-          :label="$t('manual_balances_table.rows.total')"
+          :label="$t('common.total')"
           :is-mobile="isMobile"
           :right-patch-colspan="1"
         >
@@ -134,7 +134,7 @@ const setupHeaders: (
 ) => Ref<DataTableHeader[]> = (i18n, currency) =>
   computed(() => [
     {
-      text: i18n.t('manual_balances_table.columns.location').toString(),
+      text: i18n.t('common.location').toString(),
       value: 'location',
       align: 'center',
       width: '120px'
@@ -144,18 +144,18 @@ const setupHeaders: (
       value: 'label'
     },
     {
-      text: i18n.t('manual_balances_table.columns.asset').toString(),
+      text: i18n.t('common.asset').toString(),
       value: 'asset',
       width: '200'
     },
     {
-      text: i18n.t('manual_balances_table.columns.amount').toString(),
+      text: i18n.t('common.amount').toString(),
       value: 'amount',
       align: 'end'
     },
     {
       text: i18n
-        .t('manual_balances_table.columns.value', {
+        .t('common.value_in_symbol', {
           symbol: get(currency)
         })
         .toString(),

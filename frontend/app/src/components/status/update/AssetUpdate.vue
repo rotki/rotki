@@ -70,12 +70,12 @@
           <v-row justify="end" no-gutters>
             <v-col cols="auto">
               <v-btn text @click="skip">
-                {{ $t('asset_update.buttons.skip') }}
+                {{ $t('common.actions.skip') }}
               </v-btn>
             </v-col>
             <v-col cols="auto">
               <v-btn text color="primary" @click="updateAssets()">
-                {{ $t('asset_update.buttons.update') }}
+                {{ $t('common.actions.update') }}
               </v-btn>
             </v-col>
           </v-row>

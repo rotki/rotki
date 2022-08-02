@@ -1,3 +1,4 @@
+import { get } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
 import i18n from '@/i18n';
 import {
@@ -36,7 +37,7 @@ export const getEventTypeData = (
   const type = getEventType(event);
 
   if (type) {
-    return transactionEventTypeData.find((data: ActionDataEntry) => {
+    return get(transactionEventTypeData).find((data: ActionDataEntry) => {
       return data.identifier.toLowerCase() === type.toLowerCase();
     })!;
   }
@@ -69,12 +70,14 @@ export const getEventCounterpartyData = (
   }
 
   if (!isValidEthAddress(counterparty)) {
-    const data = transactionEventProtocolData.find((data: ActionDataEntry) => {
-      if (data.matcher) {
-        return data.matcher(counterparty);
+    const data = get(transactionEventProtocolData).find(
+      (data: ActionDataEntry) => {
+        if (data.matcher) {
+          return data.matcher(counterparty);
+        }
+        return data.identifier.toLowerCase() === counterparty.toLowerCase();
       }
-      return data.identifier.toLowerCase() === counterparty.toLowerCase();
-    });
+    );
 
     if (data) {
       return {
