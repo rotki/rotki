@@ -1,4 +1,5 @@
 from base64 import b64decode
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -14,7 +15,6 @@ from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
-    REMOTE_DATA_OLDER_DB,
     VALID_PREMIUM_KEY,
     VALID_PREMIUM_SECRET,
     assert_db_got_replaced,
@@ -218,6 +218,9 @@ def test_try_premium_at_start_new_account_pull_old_data(
 
     For a new account
     """
+    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_old_encrypted_db.txt', 'rb') as f:  # noqa: E501
+        remote_data = f.read()
+
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
@@ -227,7 +230,7 @@ def test_try_premium_at_start_new_account_pull_old_data(
         same_hash_with_remote=False,
         newer_remote_db=True,
         db_can_sync_setting=False,
-        remote_data=REMOTE_DATA_OLDER_DB,
+        remote_data=remote_data,
     )
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
@@ -264,6 +267,8 @@ def test_try_premium_at_start_old_account_can_pull_old_data(
 
     For an old account
     """
+    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.txt', 'rb') as f:  # noqa: E501
+        remote_data = f.read()
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
@@ -273,7 +278,7 @@ def test_try_premium_at_start_old_account_can_pull_old_data(
         same_hash_with_remote=False,
         newer_remote_db=True,
         db_can_sync_setting=True,
-        remote_data=REMOTE_DATA_OLDER_DB,
+        remote_data=remote_data,
     )
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
