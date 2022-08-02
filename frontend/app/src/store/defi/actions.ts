@@ -11,19 +11,15 @@ import {
   vaultKeys
 } from '@/services/defi/consts';
 import { ApiMakerDAOVault } from '@/services/defi/types';
-import {
-  CompoundBalances,
-  CompoundHistory
-} from '@/services/defi/types/compound';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_MODULES } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import { useAaveStore } from '@/store/defi/aave';
 import { useBalancerStore } from '@/store/defi/balancer';
+import { useCompoundStore } from '@/store/defi/compound';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
 import { useLiquityStore } from '@/store/defi/liquity';
-import { defaultCompoundHistory } from '@/store/defi/state';
 import {
   Airdrops,
   AllDefiProtocols,
@@ -325,12 +321,13 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const { fetchBalances: fetchLiquityBalances } = useLiquityStore();
     const { fetchBalances: fetchYearnBalances } = useYearnStore();
     const { fetchBalances: fetchAaveBalances } = useAaveStore();
+    const { fetchBalances: fetchCompoundBalances } = useCompoundStore();
 
     await Promise.all([
       fetchAaveBalances(refresh),
       dispatch('fetchDSRBalances', refresh),
       dispatch('fetchMakerDAOVaults', refresh),
-      dispatch('fetchCompoundBalances', refresh),
+      fetchCompoundBalances(refresh),
       fetchYearnBalances({
         refresh,
         version: ProtocolVersion.V1
@@ -354,6 +351,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     const { fetchBalances: fetchYearnBalances } = useYearnStore();
     const { fetchBalances: fetchAaveBalances } = useAaveStore();
+    const { fetchBalances: fetchCompoundBalances } = useCompoundStore();
 
     if (
       !isLoading(currentStatus) ||
@@ -361,14 +359,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     ) {
       setStatus(newStatus, section);
 
-      await Promise.all([
+      await Promise.allSettled([
         dispatch('fetchDSRBalances', refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
         fetchAaveBalances(refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
-        dispatch('fetchCompoundBalances', refresh).then(() => {
+        fetchCompoundBalances(refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
         fetchYearnBalances({
@@ -402,11 +400,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const { fetchHistory: fetchYearnHistory } = useYearnStore();
     const { fetchHistory: fetchAaveHistory } = useAaveStore();
+    const { fetchHistory: fetchCompoundHistory } = useCompoundStore();
 
     await Promise.all([
       dispatch('fetchDSRHistory', refresh),
       fetchAaveHistory({ refresh }),
-      dispatch('fetchCompoundHistory', refresh),
+      fetchCompoundHistory(refresh),
       fetchYearnHistory({
         refresh: refresh ?? false,
         version: ProtocolVersion.V1
@@ -479,6 +478,10 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       fetchBalances: fetchLiquityBalances,
       fetchEvents: fetchLiquityEvents
     } = useLiquityStore();
+    const {
+      fetchBalances: fetchCompoundBalances,
+      fetchHistory: fetchCompoundHistory
+    } = useCompoundStore();
 
     if (
       !isLoading(currentStatus) ||
@@ -489,7 +492,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         dispatch('fetchMakerDAOVaults', refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
-        dispatch('fetchCompoundBalances', refresh).then(() => {
+        fetchCompoundBalances(refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
         fetchAaveBalances(refresh).then(() => {
@@ -517,114 +520,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     await Promise.all([
       dispatch('fetchMakerDAOVaultDetails', refresh),
-      dispatch('fetchCompoundHistory', refresh),
+      fetchCompoundHistory(refresh),
       fetchAaveHistory({ refresh }),
       fetchLiquityEvents(refresh)
     ]);
 
     setStatus(Status.LOADED, premiumSection);
-  },
-
-  async fetchCompoundBalances(
-    { commit, rootState: { session } },
-    refresh: boolean = false
-  ) {
-    const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(Module.COMPOUND)) {
-      return;
-    }
-
-    const section = Section.DEFI_COMPOUND_BALANCES;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-
-    const { awaitTask } = useTasks();
-    try {
-      const taskType = TaskType.DEFI_COMPOUND_BALANCES;
-      const { taskId } = await api.defi.fetchCompoundBalances();
-      const { result } = await awaitTask<CompoundBalances, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n.tc('actions.defi.compound.task.title'),
-          numericKeys: balanceKeys
-        }
-      );
-      commit('compoundBalances', result);
-    } catch (e: any) {
-      const { notify } = useNotifications();
-      notify({
-        title: i18n.tc('actions.defi.compound.error.title'),
-        message: i18n.tc('actions.defi.compound.error.description', undefined, {
-          error: e.message
-        }),
-        display: true
-      });
-    }
-    setStatus(Status.LOADED, section);
-  },
-
-  async fetchCompoundHistory(
-    { commit, rootState: { session } },
-    refresh: boolean = false
-  ) {
-    const { activeModules } = session!.generalSettings;
-
-    if (!activeModules.includes(Module.COMPOUND) || !session?.premium) {
-      return;
-    }
-
-    const section = Section.DEFI_COMPOUND_HISTORY;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-
-    const { awaitTask } = useTasks();
-    try {
-      const taskType = TaskType.DEFI_COMPOUND_HISTORY;
-      const { taskId } = await api.defi.fetchCompoundHistory();
-      const { result } = await awaitTask<CompoundHistory, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n.tc('actions.defi.compound_history.task.title'),
-          numericKeys: balanceKeys
-        }
-      );
-
-      commit('compoundHistory', result);
-    } catch (e: any) {
-      const { notify } = useNotifications();
-      notify({
-        title: i18n.tc('actions.defi.compound_history.error.title'),
-        message: i18n.tc(
-          'actions.defi.compound_history.error.description',
-          undefined,
-          {
-            error: e.message
-          }
-        ),
-        display: true
-      });
-    }
-    setStatus(Status.LOADED, section);
   },
 
   async fetchAirdrops({ commit }, refresh: boolean = false) {
@@ -677,6 +578,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const { reset: resetYearn } = useYearnStore();
     const { reset: resetBalancer } = useBalancerStore();
     const { reset: resetAave } = useAaveStore();
+    const { reset: resetCompound } = useCompoundStore();
 
     function clearDSRState() {
       commit('dsrBalances', {
@@ -693,13 +595,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       commit('makerDAOVaultDetails', []);
       resetStatus(Section.DEFI_MAKERDAO_VAULTS);
       resetStatus(Section.DEFI_MAKERDAO_VAULT_DETAILS);
-    }
-
-    function clearCompoundState() {
-      commit('compoundBalances', {});
-      commit('compoundHistory', defaultCompoundHistory());
-      resetStatus(Section.DEFI_COMPOUND_BALANCES);
-      resetStatus(Section.DEFI_COMPOUND_HISTORY);
     }
 
     function clearUniswapState() {
@@ -719,7 +614,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     } else if (module === Module.AAVE) {
       resetAave();
     } else if (module === Module.COMPOUND) {
-      clearCompoundState();
+      resetCompound();
     } else if (module === Module.YEARN) {
       resetYearn(ProtocolVersion.V1);
     } else if (module === Module.YEARN_V2) {
@@ -736,7 +631,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       clearDSRState();
       clearMakerDAOVaultState();
       resetAave();
-      clearCompoundState();
+      resetCompound();
       resetYearn();
       clearUniswapState();
       resetBalancer();

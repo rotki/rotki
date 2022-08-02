@@ -21,13 +21,14 @@ import {
   TimedAssetBalances,
   TimedBalances
 } from '@rotki/common/lib/statistics';
-import { computed, Ref } from '@vue/composition-api';
+import { computed, ComputedRef, Ref } from '@vue/composition-api';
 import { get, toRefs } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { useBalancerStore } from '@/store/defi/balancer';
+import { useCompoundStore } from '@/store/defi/compound';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswap } from '@/store/defi/uniswap';
 import { useAdexStakingStore } from '@/store/staking';
@@ -159,21 +160,18 @@ export const balancerApi = (): BalancerApi => {
   };
 };
 
+type ProfitLossRef = ComputedRef<ProfitLossModel[]>;
+
 export const compoundApi = (): CompoundApi => {
-  const store = useStore();
+  const { rewards, debtLoss, interestProfit, liquidationProfit } = storeToRefs(
+    useCompoundStore()
+  );
+
   return {
-    compoundRewards: computed<ProfitLossModel[]>(
-      () => store.getters['defi/compoundRewards']
-    ),
-    compoundDebtLoss: computed<ProfitLossModel[]>(
-      () => store.getters['defi/compoundDebtLoss']
-    ),
-    compoundLiquidationProfit: computed<ProfitLossModel[]>(
-      () => store.getters['defi/compoundLiquidationProfit']
-    ),
-    compoundInterestProfit: computed<ProfitLossModel[]>(
-      () => store.getters['defi/compoundInterestProfit']
-    )
+    compoundRewards: rewards as ProfitLossRef,
+    compoundDebtLoss: debtLoss as ProfitLossRef,
+    compoundLiquidationProfit: liquidationProfit as ProfitLossRef,
+    compoundInterestProfit: interestProfit as ProfitLossRef
   };
 };
 

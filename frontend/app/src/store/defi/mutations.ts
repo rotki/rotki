@@ -1,8 +1,4 @@
 import { MutationTree } from 'vuex';
-import {
-  CompoundBalances,
-  CompoundHistory
-} from '@/services/defi/types/compound';
 import { defaultState } from '@/store/defi/state';
 import {
   Airdrops,
@@ -32,12 +28,6 @@ export const mutations: MutationTree<DefiState> = {
   },
   allDefiProtocols(state: DefiState, allProtocols: AllDefiProtocols) {
     state.allProtocols = allProtocols;
-  },
-  compoundBalances(state: DefiState, balances: CompoundBalances) {
-    state.compoundBalances = balances;
-  },
-  compoundHistory(state: DefiState, history: CompoundHistory) {
-    state.compoundHistory = history;
   },
   airdrops(state: DefiState, airdrops: Airdrops) {
     state.airdrops = airdrops;

@@ -1,7 +1,6 @@
 import { AddressIndexed, Balance, BigNumber } from '@rotki/common';
 import { DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
-import { ProfitLossModel } from '@rotki/common/lib/defi';
 import {
   AaveBalances,
   AaveBorrowingEventType,
@@ -20,12 +19,13 @@ import { storeToRefs } from 'pinia';
 import { truncateAddress } from '@/filters';
 import i18n from '@/i18n';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { CompoundLoan } from '@/services/defi/types/compound';
+import { CompoundBalances, CompoundLoan } from '@/services/defi/types/compound';
 import { YearnVaultsHistory } from '@/services/defi/types/yearn';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section, Status } from '@/store/const';
 import { useAaveStore } from '@/store/defi/aave';
 import { useBalancerStore } from '@/store/defi/balancer';
+import { useCompoundStore } from '@/store/defi/compound';
 import {
   AAVE,
   AIRDROP_POAP,
@@ -60,7 +60,7 @@ import {
   TokenInfo
 } from '@/store/defi/types';
 import { useUniswap } from '@/store/defi/uniswap';
-import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
+import { balanceUsdValueSum } from '@/store/defi/utils';
 import { useYearnStore } from '@/store/defi/yearn';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
@@ -104,10 +104,6 @@ interface DefiGetters {
     addresses: string[]
   ) => DefiLendingHistory<DefiProtocol>[];
   defiOverview: DefiProtocolSummary[];
-  compoundRewards: ProfitLossModel[];
-  compoundInterestProfit: ProfitLossModel[];
-  compoundLiquidationProfit: ProfitLossModel[];
-  compoundDebtLoss: ProfitLossModel[];
   dexTrades: (addresses: string[]) => DexTrade[];
   airdrops: (addresses: string[]) => Airdrop[];
   airdropAddresses: string[];
@@ -115,12 +111,15 @@ interface DefiGetters {
 
 export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   totalUsdEarned:
-    ({ dsrHistory, compoundHistory }: DefiState) =>
+    ({ dsrHistory }: DefiState) =>
     (protocols: DefiProtocol[], addresses: string[]): BigNumber => {
       const { vaultsHistory: yearnV1History, vaultsV2History: yearnV2History } =
         storeToRefs(useYearnStore());
       const { history } = storeToRefs(useAaveStore());
+      const { history: compHistory } = storeToRefs(useCompoundStore());
       const aaveHistory = get(history);
+      const compoundHistory = get(compHistory);
+
       let total = Zero;
       const showAll = protocols.length === 0;
       const allAddresses = addresses.length === 0;
@@ -193,12 +192,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   defiAccounts:
-    ({
-      dsrBalances,
-      dsrHistory,
-      compoundBalances,
-      compoundHistory
-    }: DefiState) =>
+    ({ dsrBalances, dsrHistory }: DefiState) =>
     (protocols: DefiProtocol[]): DefiAccount[] => {
       const {
         vaultsBalances: yearnV1Balances,
@@ -209,6 +203,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       const { history: aaveHistory, balances: aaveBalances } = storeToRefs(
         useAaveStore()
       );
+      const { history: compoundHistory, balances: compoundBalances } =
+        storeToRefs(useCompoundStore());
+
       const getProtocolAddresses = (
         protocol: DefiProtocol,
         balances: AddressIndexed<any>,
@@ -248,8 +245,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
       addresses[DefiProtocol.COMPOUND] = getProtocolAddresses(
         DefiProtocol.COMPOUND,
-        compoundBalances,
-        compoundHistory.events.map(({ address }) => address)
+        get(compoundBalances),
+        get(compoundHistory).events.map(({ address }) => address)
       );
 
       addresses[DefiProtocol.YEARN_VAULTS] = getProtocolAddresses(
@@ -296,16 +293,14 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   loans:
-    ({
-      makerDAOVaults,
-      compoundBalances,
-      compoundHistory: { events }
-    }: DefiState) =>
+    ({ makerDAOVaults }: DefiState) =>
     (protocols: DefiProtocol[]): DefiLoan[] => {
       const { assetInfo } = useAssetInfoRetrieval();
       const { history: aaveHistory, balances: aaveBalances } = storeToRefs(
         useAaveStore()
       );
+      const { history: compoundHistory, balances: compoundBalances } =
+        storeToRefs(useCompoundStore());
 
       const loans: DefiLoan[] = [];
       const showAll = protocols.length === 0;
@@ -369,14 +364,15 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
-        const assetAddressPair = events
-          .filter(
+        const assetAddressPair = get(compoundHistory)
+          .events.filter(
             ({ eventType }) => !['mint', 'redeem', 'comp'].includes(eventType)
           )
           .map(({ asset, address }) => ({ asset, address }));
 
-        for (const address of Object.keys(compoundBalances)) {
-          const { borrowing } = compoundBalances[address];
+        const compBalances = get(compoundBalances);
+        for (const address of Object.keys(compBalances)) {
+          const { borrowing } = compBalances[address];
           const assets = Object.keys(borrowing);
 
           if (assets.length === 0) {
@@ -432,21 +428,15 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   loan:
-    (
-      {
-        makerDAOVaults,
-        makerDAOVaultDetails,
-        compoundBalances,
-        compoundHistory: { events }
-      }: DefiState,
-      { loans }
-    ) =>
+    ({ makerDAOVaults, makerDAOVaultDetails }: DefiState, { loans }) =>
     (
       identifier?: string
     ): MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan | null => {
       const { history: aaveHistory, balances: aaveBalances } = storeToRefs(
         useAaveStore()
       );
+      const { history: compoundHistory, balances: compoundBalances } =
+        storeToRefs(useCompoundStore());
       const id = identifier?.toLocaleLowerCase();
       const loan = loans([]).find(
         loan => loan.identifier.toLocaleLowerCase() === id
@@ -576,8 +566,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         let debt: Balance = { amount: Zero, usdValue: Zero };
         let collateral: Collateral<string>[] = [];
 
-        if (compoundBalances[owner]) {
-          const { borrowing, lending } = compoundBalances[owner];
+        const compBalances = get(compoundBalances) as CompoundBalances;
+        if (compBalances[owner]) {
+          const { borrowing, lending } = compBalances[owner];
           const selectedLoan = borrowing[asset];
 
           if (selectedLoan) {
@@ -598,8 +589,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           apy,
           debt,
           collateral,
-          events: events
-            .filter(
+          events: get(compoundHistory)
+            .events.filter(
               event => event.asset === asset || event.eventType === 'comp'
             )
             .filter(({ address }) => address === owner)
@@ -628,9 +619,10 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   loanSummary:
-    ({ makerDAOVaults, compoundBalances }: DefiState) =>
+    ({ makerDAOVaults }: DefiState) =>
     (protocols: DefiProtocol[]): LoanSummary => {
       const { balances: aaveBalances } = storeToRefs(useAaveStore());
+      const { balances: compoundBalances } = storeToRefs(useCompoundStore());
       let totalCollateralUsd = Zero;
       let totalDebt = Zero;
 
@@ -665,8 +657,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
-        for (const address of Object.keys(compoundBalances)) {
-          const { borrowing, lending } = compoundBalances[address];
+        const compBalances = get(compoundBalances) as CompoundBalances;
+        for (const address of Object.keys(compBalances)) {
+          const { borrowing, lending } = compBalances[address];
           totalCollateralUsd = balanceUsdValueSum(Object.values(lending)).plus(
             totalCollateralUsd
           );
@@ -848,10 +841,11 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   lendingBalances:
-    ({ dsrBalances, compoundBalances }: DefiState) =>
+    ({ dsrBalances }: DefiState) =>
     (protocols: DefiProtocol[], addresses: string[]): DefiBalance[] => {
       const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
       const { balances: aaveBalances } = storeToRefs(useAaveStore());
+      const { balances: compoundBalances } = storeToRefs(useCompoundStore());
 
       const balances: DefiBalance[] = [];
       const showAll = protocols.length === 0;
@@ -899,11 +893,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
-        for (const address of Object.keys(compoundBalances)) {
+        const compBalances = get(compoundBalances) as CompoundBalances;
+        for (const address of Object.keys(compBalances)) {
           if (!allAddresses && !addresses.includes(address)) {
             continue;
           }
-          const { lending } = compoundBalances[address];
+          const { lending } = compBalances[address];
           for (const asset of Object.keys(lending)) {
             const assetDetails = lending[asset];
             balances.push({
@@ -921,7 +916,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   lendingHistory:
-    ({ dsrHistory, compoundHistory }: DefiState) =>
+    ({ dsrHistory }: DefiState) =>
     (
       protocols: DefiProtocol[],
       addresses: string[]
@@ -929,6 +924,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       const { vaultsHistory: yearnV1History, vaultsV2History: yearnV2History } =
         storeToRefs(useYearnStore());
       const { history: aaveHistory } = storeToRefs(useAaveStore());
+      const { history: compoundHistory } = storeToRefs(useCompoundStore());
       const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
 
       const defiLendingHistory: DefiLendingHistory<DefiProtocol>[] = [];
@@ -996,7 +992,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
-        for (const event of compoundHistory.events) {
+        for (const event of get(compoundHistory).events) {
           if (!allAddresses && !addresses.includes(event.address)) {
             continue;
           }
@@ -1307,21 +1303,6 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     );
   },
 
-  compoundRewards: ({ compoundHistory }): ProfitLossModel[] => {
-    return toProfitLossModel(compoundHistory.rewards);
-  },
-
-  compoundInterestProfit: ({ compoundHistory }): ProfitLossModel[] => {
-    return toProfitLossModel(compoundHistory.interestProfit);
-  },
-
-  compoundDebtLoss: ({ compoundHistory }): ProfitLossModel[] => {
-    return toProfitLossModel(compoundHistory.debtLoss);
-  },
-
-  compoundLiquidationProfit: ({ compoundHistory }): ProfitLossModel[] => {
-    return toProfitLossModel(compoundHistory.liquidationProfit);
-  },
   dexTrades:
     () =>
     (addresses): DexTrade[] => {

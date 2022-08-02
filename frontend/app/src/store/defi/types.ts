@@ -14,11 +14,7 @@ import {
   EventType,
   MakerDAOVaultEventType
 } from '@/services/defi/types';
-import {
-  CompoundBalances,
-  CompoundEventType,
-  CompoundHistory
-} from '@/services/defi/types/compound';
+import { CompoundEventType } from '@/services/defi/types/compound';
 import { YearnEventType } from '@/services/defi/types/yearn';
 import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
 
@@ -30,8 +26,6 @@ export interface DefiState {
   makerDAOVaults: MakerDAOVault[];
   makerDAOVaultDetails: MakerDAOVaultDetails[];
   allProtocols: AllDefiProtocols;
-  compoundBalances: CompoundBalances;
-  compoundHistory: CompoundHistory;
   airdrops: Airdrops;
 }
 
