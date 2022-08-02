@@ -98,9 +98,9 @@ def test_edit_user_notes(rotkehlchen_api_server):
             'usernotesresource',
         ), json={
             'identifier': 1,
-            'title': 'TODO List',
+            'title': 'My TODO List',
             'content': 'Dont sleep, wake up!!!!!',
-            'location': 'manual balances',
+            'location': 'ledger actions',
             'last_update_timestamp': 12345678,
             'is_pinned': True,
         },
@@ -111,8 +111,10 @@ def test_edit_user_notes(rotkehlchen_api_server):
     user_notes = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.get_user_notes(filter_query=filter_query)  # noqa: E501
     for note in user_notes:
         if note.identifier == 1:
+            assert note.title == 'My TODO List'
             assert note.content == 'Dont sleep, wake up!!!!!'
             assert note.is_pinned is True
+            assert note.last_update_timestamp > 12345678
 
     # check that editing a user note with an invalid identifier fails
     response = requests.patch(
