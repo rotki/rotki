@@ -93,7 +93,7 @@ import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vu
 import { setupExchanges } from '@/composables/balances';
 import { useRouter } from '@/composables/common';
 import { useSettings } from '@/composables/settings';
-import i18n from '@/i18n';
+import { default as i18nFn } from '@/i18n';
 import { ExchangePayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { Nullable, Writeable } from '@/types';
@@ -125,7 +125,7 @@ const edit = ref<boolean>(false);
 const valid = ref<boolean>(false);
 const pending = ref<boolean>(false);
 
-const { generalSettings, updateSetting } = useSettings();
+const { generalSettings, updateGeneralSetting } = useSettings();
 
 const findNonSyncExchangeIndex = (exchange: Exchange) => {
   return get(nonSyncingExchanges).findIndex((item: Exchange) => {
@@ -155,19 +155,19 @@ const toggleSync = async (exchange: Exchange) => {
     data.push({ location: exchange.location, name: exchange.name });
   }
 
-  const status = await updateSetting({
+  const status = await updateGeneralSetting({
     nonSyncingExchanges: data
   });
 
   if ('error' in status) {
     const { notify } = useNotifications();
     notify({
-      title: i18n.t('exchange_settings.sync.messages.title').toString(),
-      message: i18n
+      title: i18nFn.t('exchange_settings.sync.messages.title').toString(),
+      message: i18nFn
         .t('exchange_settings.sync.messages.description', {
           action: enable
-            ? i18n.t('exchange_settings.sync.messages.enable')
-            : i18n.t('exchange_settings.sync.messages.disable'),
+            ? i18nFn.t('exchange_settings.sync.messages.enable')
+            : i18nFn.t('exchange_settings.sync.messages.disable'),
           location: exchange.location,
           name: exchange.name,
           message: status.error
@@ -266,21 +266,21 @@ onMounted(() => {
 
 const headers: DataTableHeader[] = [
   {
-    text: i18n.t('common.location').toString(),
+    text: i18nFn.t('common.location').toString(),
     value: 'location',
     width: '120px',
     align: 'center'
   },
   {
-    text: i18n.t('common.name').toString(),
+    text: i18nFn.t('common.name').toString(),
     value: 'name'
   },
   {
-    text: i18n.t('exchange_settings.header.sync_enabled').toString(),
+    text: i18nFn.t('exchange_settings.header.sync_enabled').toString(),
     value: 'syncEnabled'
   },
   {
-    text: i18n.t('exchange_settings.header.actions').toString(),
+    text: i18nFn.t('exchange_settings.header.actions').toString(),
     value: 'actions',
     width: '105px',
     align: 'center',
