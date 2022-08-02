@@ -23,8 +23,8 @@ import { logger } from '@/utils/logging';
 const defaultPagination = (): KrakenStakingPagination => ({
   offset: 0,
   limit: useFrontendSettingsStore().itemsPerPage,
-  orderByAttribute: 'timestamp',
-  ascending: false
+  orderByAttributes: ['timestamp'],
+  ascending: [false]
 });
 
 const defaultEventState = (): KrakenStakingEvents => ({

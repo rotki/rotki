@@ -2821,6 +2821,7 @@
       "external_services": "External Services",
       "premium": "rotki Premium"
     },
+    "assets": "Assets",
     "dashboard": "Dashboard",
     "defi": "DeFi",
     "defi_sub": {
@@ -2848,6 +2849,7 @@
       "trades": "Trades"
     },
     "import_data": "Import Data",
+    "locations": "Locations",
     "manage_assets": "Manage Assets",
     "manage_eth_address_book": "Manage ETH Address Book",
     "manage_prices": "Manage Prices",
@@ -2930,6 +2932,31 @@
   "notes_display": {
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
+  },
+  "notes_menu": {
+    "delete_confirmation": "Are you sure you want to delete this note?",
+    "dialog": {
+      "add_title": "Add note",
+      "edit_title": "Edit note"
+    },
+    "empty_notes": "No notes found/saved",
+    "labels": {
+      "content": "Take a note...",
+      "title": "Title"
+    },
+    "last_updated": "Last updated: {datetime}",
+    "limit_warning": "The limit of {limit} user notes has been reached in the free plan. To get more notes you can upgrade to {link}",
+    "rules": {
+      "content": {
+        "non_empty": "Please fill the note"
+      }
+    },
+    "search": "Search",
+    "tabs": {
+      "general": "General",
+      "in_this_page": "In \"{page}\" "
+    },
+    "tooltip": "Notes"
   },
   "notification": {
     "copy_tooltip": "Copy the message to clipboard",

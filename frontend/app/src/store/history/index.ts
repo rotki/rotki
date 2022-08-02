@@ -27,7 +27,6 @@ import {
 } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
-import { mapCollectionResponse } from '@/services/utils';
 import { useEthNamesStore } from '@/store/balances';
 import { Section, Status } from '@/store/const';
 import {
@@ -51,14 +50,11 @@ import { Collection, CollectionResponse } from '@/types/collection';
 import { SupportedExchange } from '@/types/exchanges';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import {
+  defaultCollectionState,
+  mapCollectionResponse
+} from '@/utils/collection';
 import { logger } from '@/utils/logging';
-
-const defaultHistoricState = <T>(): Collection<T> => ({
-  found: 0,
-  limit: 0,
-  data: [],
-  total: 0
-});
 
 const defaultHistoricPayloadState = <
   T extends Object
@@ -68,8 +64,8 @@ const defaultHistoricPayloadState = <
   return {
     limit: store.itemsPerPage,
     offset: 0,
-    orderByAttribute: 'timestamp' as keyof T,
-    ascending: false
+    orderByAttributes: ['timestamp' as keyof T],
+    ascending: [false]
   };
 };
 
@@ -212,7 +208,7 @@ export const useTrades = defineStore('history/trades', () => {
   const { associatedLocations } = storeToRefs(history);
   const { fetchAssociatedLocations } = history;
 
-  const trades = ref(defaultHistoricState<TradeEntry>()) as Ref<
+  const trades = ref(defaultCollectionState<TradeEntry>()) as Ref<
     Collection<TradeEntry>
   >;
 
@@ -238,8 +234,8 @@ export const useTrades = defineStore('history/trades', () => {
       const defaults: TradeRequestPayload = {
         limit: 0,
         offset: 0,
-        ascending: false,
-        orderByAttribute: 'timestamp',
+        ascending: [false],
+        orderByAttributes: ['timestamp'],
         onlyCache
       };
 
@@ -399,7 +395,7 @@ export const useTrades = defineStore('history/trades', () => {
   };
 
   const reset = () => {
-    set(trades, defaultHistoricState<TradeEntry>());
+    set(trades, defaultCollectionState<TradeEntry>());
     set(tradesPayload, defaultHistoricPayloadState<Trade>());
   };
 
@@ -420,9 +416,9 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
   const { associatedLocations } = storeToRefs(history);
   const { fetchAssociatedLocations } = history;
 
-  const assetMovements = ref(defaultHistoricState<AssetMovementEntry>()) as Ref<
-    Collection<AssetMovementEntry>
-  >;
+  const assetMovements = ref(
+    defaultCollectionState<AssetMovementEntry>()
+  ) as Ref<Collection<AssetMovementEntry>>;
 
   const assetMovementsPayload = ref<Partial<AssetMovementRequestPayload>>(
     defaultHistoricPayloadState<AssetMovement>()
@@ -446,8 +442,8 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
       const defaults: AssetMovementRequestPayload = {
         limit: 0,
         offset: 0,
-        ascending: false,
-        orderByAttribute: 'timestamp',
+        ascending: [false],
+        orderByAttributes: ['timestamp'],
         onlyCache
       };
 
@@ -596,7 +592,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
   };
 
   const reset = () => {
-    set(assetMovements, defaultHistoricState<AssetMovementEntry>());
+    set(assetMovements, defaultCollectionState<AssetMovementEntry>());
     set(assetMovementsPayload, defaultHistoricPayloadState<AssetMovement>());
   };
 
@@ -611,9 +607,9 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
 
 export const useTransactions = defineStore('history/transactions', () => {
   // ETH Transactions
-  const transactions = ref(defaultHistoricState<EthTransactionEntry>()) as Ref<
-    Collection<EthTransactionEntry>
-  >;
+  const transactions = ref(
+    defaultCollectionState<EthTransactionEntry>()
+  ) as Ref<Collection<EthTransactionEntry>>;
 
   const fetchedTxHashesEvents = ref<{ [txHash: string]: boolean } | null>({});
 
@@ -641,8 +637,8 @@ export const useTransactions = defineStore('history/transactions', () => {
       const defaults: TradeRequestPayload = {
         limit: 0,
         offset: 0,
-        ascending: false,
-        orderByAttribute: 'timestamp',
+        ascending: [false],
+        orderByAttributes: ['timestamp'],
         onlyCache
       };
 
@@ -888,7 +884,7 @@ export const useTransactions = defineStore('history/transactions', () => {
     filterAddressesFromWords(getTransactionsNotesWords(transactions));
 
   const reset = () => {
-    set(transactions, defaultHistoricState<EthTransactionEntry>());
+    set(transactions, defaultCollectionState<EthTransactionEntry>());
     set(fetchedTxHashesEvents, {});
     set(transactionsPayload, defaultHistoricPayloadState<EthTransaction>());
     set(counterparties, []);
@@ -918,7 +914,7 @@ export const useTransactions = defineStore('history/transactions', () => {
 export const useLedgerActions = defineStore('history/ledgerActions', () => {
   const { fetchAssociatedLocations } = useHistory();
 
-  const ledgerActions = ref(defaultHistoricState<LedgerActionEntry>()) as Ref<
+  const ledgerActions = ref(defaultCollectionState<LedgerActionEntry>()) as Ref<
     Collection<LedgerActionEntry>
   >;
 
@@ -944,8 +940,8 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
       const defaults: LedgerActionRequestPayload = {
         limit: 1,
         offset: 0,
-        ascending: false,
-        orderByAttribute: 'timestamp',
+        ascending: [false],
+        orderByAttributes: ['timestamp'],
         onlyCache
       };
 
@@ -1109,7 +1105,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
   };
 
   const reset = () => {
-    set(ledgerActions, defaultHistoricState<LedgerActionEntry>());
+    set(ledgerActions, defaultCollectionState<LedgerActionEntry>());
     set(ledgerActionsPayload, defaultHistoricPayloadState<LedgerAction>());
   };
 

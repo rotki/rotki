@@ -24,6 +24,8 @@
       :options.sync="options"
       :server-items-length="events.entriesFound"
       sort-by="timestamp"
+      multi-sort
+      :must-sort="false"
     >
       <template v-if="showUpgradeRow" #body.prepend="{ headers }">
         <upgrade-row
@@ -259,8 +261,8 @@ export default defineComponent({
     const options = ref<KrakenStakingPaginationOptions>({
       page: 1,
       itemsPerPage: get(itemsPerPage),
-      sortBy: ['timestamp'],
-      sortDesc: [true]
+      sortBy: [],
+      sortDesc: []
     });
 
     const showUpgradeRow = computed(() => {
@@ -276,8 +278,8 @@ export default defineComponent({
     }: KrakenStakingPaginationOptions) => {
       const { asset, eventSubtypes, fromTimestamp, toTimestamp } = get(filters);
       const pagination: KrakenStakingPagination = {
-        ascending: sortDesc[0],
-        orderByAttribute: sortBy[0],
+        orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
+        ascending: sortDesc.length > 0 ? sortDesc.map(bool => !bool) : [false],
         limit: itemsPerPage,
         offset: (page - 1) * itemsPerPage,
         fromTimestamp: fromTimestamp as string,

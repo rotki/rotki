@@ -11,7 +11,7 @@
     hide-overlay
     @input="visibleUpdate($event)"
   >
-    <v-row justify="space-between" class="mt-2 pa-4">
+    <v-row justify="space-between" class="mt-0 pa-4">
       <v-col class="text-h5">{{ $t('help_sidebar.title') }}</v-col>
       <v-col cols="auto">
         <v-btn icon @click="visibleUpdate(false)">
@@ -19,7 +19,7 @@
         </v-btn>
       </v-col>
     </v-row>
-    <v-list class="mt-4">
+    <v-list class="mt-2">
       <v-list-item
         v-for="(item, index) in entries"
         :key="index"

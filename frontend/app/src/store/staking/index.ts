@@ -45,8 +45,8 @@ const defaultPagination = (): Eth2DailyStatsPayload => {
   return {
     limit: itemsPerPage,
     offset: 0,
-    orderByAttribute: 'timestamp',
-    ascending: false
+    orderByAttributes: ['timestamp'],
+    ascending: [false]
   };
 };
 
@@ -157,8 +157,8 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       const defaults: Eth2DailyStatsPayload = {
         limit: 0,
         offset: 0,
-        ascending: false,
-        orderByAttribute: 'timestamp',
+        ascending: [false],
+        orderByAttributes: ['timestamp'],
         onlyCache
       };
 

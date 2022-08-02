@@ -51,6 +51,8 @@
       item-key="identifier"
       show-expand
       single-expand
+      multi-sort
+      :must-sort="false"
       :item-class="item => (item.ignoredInAccounting ? 'darken-row' : '')"
       @update:options="updatePaginationHandler($event)"
     >
@@ -130,6 +132,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { dropRight } from 'lodash';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -147,11 +150,7 @@ import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { isSectionLoading } from '@/composables/common';
-import {
-  getCollectionData,
-  setupEntryLimit,
-  setupIgnore
-} from '@/composables/history';
+import { setupIgnore } from '@/composables/history';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import {
@@ -170,6 +169,7 @@ import {
 } from '@/store/history/types';
 import { useFrontendSettingsStore } from '@/store/settings';
 import { Collection } from '@/types/collection';
+import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 import DepositWithdrawalDetails from '@/views/history/deposits-withdrawals/DepositWithdrawalDetails.vue';
 
@@ -370,21 +370,17 @@ export default defineComponent({
       let paginationOptions = {};
       const optionsVal = get(options);
       if (optionsVal) {
-        set(options, {
-          ...optionsVal,
-          sortBy: optionsVal.sortBy.length > 0 ? [optionsVal.sortBy[0]] : [],
-          sortDesc:
-            optionsVal.sortDesc.length > 0 ? [optionsVal.sortDesc[0]] : []
-        });
-
         const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
         const offset = (page - 1) * itemsPerPage;
 
         paginationOptions = {
           limit: itemsPerPage,
           offset,
-          orderByAttribute: sortBy.length > 0 ? sortBy[0] : 'timestamp',
-          ascending: !sortDesc[0]
+          orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
+          ascending:
+            sortDesc.length > 1
+              ? dropRight(sortDesc).map(bool => !bool)
+              : [false]
         };
       }
 
