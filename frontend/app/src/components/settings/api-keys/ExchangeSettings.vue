@@ -93,7 +93,7 @@ import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vu
 import { setupExchanges } from '@/composables/balances';
 import { useRouter } from '@/composables/common';
 import { useSettings } from '@/composables/settings';
-import { default as i18nFn } from '@/i18n';
+import i18nFn from '@/i18n';
 import { ExchangePayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { Nullable, Writeable } from '@/types';

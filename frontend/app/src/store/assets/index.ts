@@ -227,7 +227,6 @@ export const useAssetInfoRetrieval = defineStore(
     });
 
     const fetchSupportedAssets = async (refresh: boolean = false) => {
-      set(supportedAssetsMap, {});
       if (get(supportedAssets).length > 0 && !refresh) {
         return;
       }

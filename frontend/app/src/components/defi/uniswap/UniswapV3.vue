@@ -15,7 +15,7 @@
   </progress-screen>
   <div v-else class="uniswap">
     <refresh-header
-      :title="$t('uniswap.title')"
+      :title="$t('uniswap.title', { v: 3 })"
       class="mt-4"
       :loading="primaryRefreshing || secondaryRefreshing"
       @refresh="refresh()"
@@ -84,9 +84,20 @@
             />
 
             <div class="d-flex flex-wrap">
+              <div class="mt-6 mr-16">
+                <div class="text--secondary text-body-2">
+                  {{ $t('uniswap.balance') }}
+                </div>
+                <div class="d-flex text-h6">
+                  <amount-display
+                    :value="item.userBalance.usdValue"
+                    fiat-currency="USD"
+                  />
+                </div>
+              </div>
               <div
                 v-if="item.priceRange && item.priceRange.length > 0"
-                class="mt-6 mr-16"
+                class="mt-6"
                 :class="$style['price-range']"
               >
                 <div class="text--secondary text-body-2">
@@ -100,17 +111,6 @@
                   <div class="px-2">-</div>
                   <amount-display
                     :value="item.priceRange[1]"
-                    fiat-currency="USD"
-                  />
-                </div>
-              </div>
-              <div class="mt-6">
-                <div class="text--secondary text-body-2">
-                  {{ $t('uniswap.balance') }}
-                </div>
-                <div class="d-flex text-h6">
-                  <amount-display
-                    :value="item.userBalance.usdValue"
                     fiat-currency="USD"
                   />
                 </div>

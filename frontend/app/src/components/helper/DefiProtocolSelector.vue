@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <div class="mx-4 pt-2">
+    <div class="mx-4 pt-4">
       <v-autocomplete
         :value="value"
         :search-input.sync="search"

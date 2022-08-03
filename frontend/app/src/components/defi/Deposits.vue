@@ -30,6 +30,7 @@
       <v-col cols="12" sm="6" class="pe-sm-4">
         <blockchain-account-selector
           v-model="selectedAccount"
+          class="pt-2"
           hint
           outlined
           dense

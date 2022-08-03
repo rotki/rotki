@@ -46,7 +46,7 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 
   const uniswapV2Balances = (addresses: string[]) =>
     computed(() => {
-      return getBalances(get(v2Balances), addresses);
+      return getBalances(get(v2Balances), addresses, false);
     });
 
   const uniswapV3Balances = (addresses: string[]) =>
@@ -165,18 +165,22 @@ export const useUniswap = defineStore('defi/uniswap', () => {
         taskId,
         taskType,
         {
-          title: i18n.tc('actions.defi.uniswap.task.title')
+          title: i18n.t('actions.defi.uniswap.task.title', { v: 2 }).toString(),
+          numericKeys: []
         }
       );
 
-      set(v2Balances, result);
+      set(v2Balances, XswapBalances.parse(result));
     } catch (e: any) {
       const { notify } = useNotifications();
       notify({
-        title: i18n.tc('actions.defi.uniswap.error.title'),
-        message: i18n.tc('actions.defi.uniswap.error.description', undefined, {
-          error: e.message
-        }),
+        title: i18n.t('actions.defi.uniswap.error.title', { v: 2 }).toString(),
+        message: i18n
+          .t('actions.defi.uniswap.error.description', {
+            error: e.message,
+            v: 2
+          })
+          .toString(),
         display: true
       });
     }
@@ -195,17 +199,22 @@ export const useUniswap = defineStore('defi/uniswap', () => {
     const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.DEFI_UNISWAP_V3_BALANCES;
 
-    if (get(isTaskRunning(taskType, { premium: get(getPremium()) }))) {
+    const section = Section.DEFI_UNISWAP_V3_BALANCES;
+    const currentStatus = getStatus(section);
+
+    if (
+      get(isTaskRunning(taskType, { premium: get(getPremium()) })) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
       return;
     }
 
-    const section = Section.DEFI_UNISWAP_V3_BALANCES;
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section);
     try {
       const { taskId } = await api.defi.fetchUniswapV3Balances();
       const taskMeta = {
-        title: i18n.tc('actions.defi.uniswap.task.title'),
+        title: i18n.t('actions.defi.uniswap.task.title', { v: 3 }).toString(),
         numericKeys: [],
         premium: get(getPremium())
       };
@@ -220,10 +229,13 @@ export const useUniswap = defineStore('defi/uniswap', () => {
     } catch (e: any) {
       const { notify } = useNotifications();
       notify({
-        title: i18n.tc('actions.defi.uniswap.error.title'),
-        message: i18n.tc('actions.defi.uniswap.error.description', undefined, {
-          error: e.message
-        }),
+        title: i18n.t('actions.defi.uniswap.error.title', { v: 3 }).toString(),
+        message: i18n
+          .t('actions.defi.uniswap.error.description', {
+            error: e.message,
+            v: 3
+          })
+          .toString(),
         display: true
       });
     }

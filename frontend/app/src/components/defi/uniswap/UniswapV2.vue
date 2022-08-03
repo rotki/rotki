@@ -15,7 +15,7 @@
   </progress-screen>
   <div v-else class="uniswap">
     <refresh-header
-      :title="$t('uniswap.title')"
+      :title="$t('uniswap.title', { v: 2 })"
       class="mt-4"
       :loading="primaryRefreshing || secondaryRefreshing"
       @refresh="refresh()"
@@ -82,9 +82,11 @@
                 {{ $t('uniswap.balance') }}
               </div>
               <div class="d-flex text-h6">
-                <amount-display
-                  :value="item.userBalance.usdValue"
-                  fiat-currency="USD"
+                <balance-display
+                  :value="item.userBalance"
+                  align="start"
+                  no-icon
+                  asset=""
                 />
               </div>
             </div>

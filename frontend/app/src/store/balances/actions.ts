@@ -508,10 +508,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       useDefiStore().reset();
       useMainStore().resetDefiStatus();
 
-      const { fetchV3Balances } = useUniswap();
-      fetchV3Balances();
-
       dispatch(BalanceActions.FETCH_NF_BALANCES);
+
+      if (blockchain === Blockchain.ETH) {
+        const { fetchV3Balances } = useUniswap();
+        fetchV3Balances();
+      }
+
       await dispatch('updateBalances', { chain: blockchain, balances });
       await dispatch('refreshPrices', { ignoreCache: false });
     } catch (e: any) {
@@ -650,6 +653,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       await Promise.allSettled(requests);
       useDefiStore().reset();
       useMainStore().resetDefiStatus();
+      dispatch(BalanceActions.FETCH_NF_BALANCES);
 
       if (blockchain === Blockchain.ETH) {
         await dispatch('fetchBlockchainBalances', {
@@ -659,7 +663,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         const { fetchV3Balances } = useUniswap();
         fetchV3Balances();
       }
-      dispatch(BalanceActions.FETCH_NF_BALANCES);
       await dispatch('refreshPrices', { ignoreCache: false });
     } catch (e: any) {
       logger.error(e);
@@ -722,6 +725,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       useDefiStore().reset();
       useMainStore().resetDefiStatus();
+      dispatch(BalanceActions.FETCH_NF_BALANCES);
 
       if (blockchain === Blockchain.ETH) {
         if (payload.modules) {
@@ -738,7 +742,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           fetchV3Balances();
         }
 
-        dispatch(BalanceActions.FETCH_NF_BALANCES);
         await dispatch('fetchBlockchainBalances', {
           blockchain: Blockchain.ETH2
         });

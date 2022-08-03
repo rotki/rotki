@@ -49,7 +49,7 @@
     <v-row no-gutters class="mt-8">
       <v-col cols="12" md="6" class="pe-md-4">
         <v-card>
-          <div class="mx-4 pt-2">
+          <div class="mx-4 pt-4">
             <v-autocomplete
               v-model="selection"
               class="borrowing__vault-selection"

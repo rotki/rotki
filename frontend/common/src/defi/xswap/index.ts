@@ -4,7 +4,7 @@ import { Balance, NumericString } from "../../index";
 
 export const XswapAsset = z.object({
   asset: z.string(),
-  totalAmount: NumericString.nullable(),
+  totalAmount: NumericString.nullish(),
   usdPrice: NumericString,
   userBalance: Balance,
 })
@@ -14,9 +14,9 @@ export const XswapBalance = z.object({
   account: z.string().nullish(),
   assets: z.array(XswapAsset),
   address: z.string(),
-  totalSupply: NumericString.nullable(),
+  totalSupply: NumericString.nullish(),
   nftId: z.string().nullish(),
-  priceRange: z.array(NumericString),
+  priceRange: z.array(NumericString).nullish(),
   userBalance: Balance,
 })
 export type XswapBalance = z.infer<typeof XswapBalance>;

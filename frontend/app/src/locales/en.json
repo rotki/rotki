@@ -522,11 +522,11 @@
       },
       "uniswap": {
         "error": {
-          "description": "Failed to retrieve Uniswap balances: {error}",
-          "title": "Uniswap balances"
+          "description": "Failed to retrieve Uniswap V{v} balances: {error}",
+          "title": "Uniswap V{v} balances"
         },
         "task": {
-          "title": "Querying Uniswap balances"
+          "title": "Querying Uniswap V{v} balances"
         }
       },
       "uniswap_events": {
@@ -3730,13 +3730,14 @@
     "pool_header": "UNI_v{version} {asset1}/{asset2}",
     "premium": "premium",
     "price_range": "Price Range",
-    "title": "Uniswap Pools"
+    "title": "Uniswap v{v} Pools"
   },
   "uniswap_pool_details": {
-    "asset_liquidity": "Total in LP",
     "liquidity": "Liquidity",
-    "title": "Details",
-    "tooltip": "Show details about the pool assets"
+    "title": "Total in pools",
+    "tooltip": "Show details about the pool assets",
+    "total_amount": "Total amount",
+    "total_value_in_symbol": "Total {symbol} value"
   },
   "update_indicator": {
     "version": "An Updated Version ({appVersion}) of rotki is available"

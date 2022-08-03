@@ -165,7 +165,7 @@ const AccountForm = defineComponent({
     const errorMessages = ref(validationErrors());
     const pending = ref(false);
     const selectedModules = ref<Module[]>([]);
-    const valid = ref<boolean>(false);
+    const valid = ref<boolean>(true);
 
     const setErrors = (field: keyof ValidationErrors, messages: string[]) => {
       const errors = { ...get(errorMessages) };
