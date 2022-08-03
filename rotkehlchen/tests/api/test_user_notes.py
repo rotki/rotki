@@ -23,7 +23,7 @@ def test_add_get_user_notes(rotkehlchen_api_server):
             'title': '#1',
             'content': 'Romero Uno',
             'location': 'manual balances',
-            'is_pinned': False,
+            'is_pinned': True,
         },
     )
     result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
@@ -79,6 +79,23 @@ def test_add_get_user_notes(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
     assert len(result) == 1
+
+    # test sorting by multiple fields
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'usernotesresource',
+        ),
+        json={
+            'order_by_attributes': ['is_pinned', 'last_update_timestamp'],
+            'ascending': [False, True],
+        },
+    )
+    result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
+    assert len(result) == 3
+    assert result[0]['title'] == '#1'
+    assert result[1]['title'] == '#3'
+    assert result[2]['title'] == '#2'
 
 
 def test_edit_user_notes(rotkehlchen_api_server):

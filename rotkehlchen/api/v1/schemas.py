@@ -87,7 +87,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash, ts_now
+from rotkehlchen.utils.misc import create_order_by_rules_list, is_valid_ethereum_tx_hash, ts_now
 
 from .fields import (
     AmountField,
@@ -173,9 +173,28 @@ class DBPaginationSchema(Schema):
 
 
 class DBOrderBySchema(Schema):
-    # TODO: DBFilters already allow ordering by multiple attributes. Make the API do that too
-    order_by_attribute = fields.String(load_default=None)
-    ascending = fields.Boolean(load_default=False)  # most recent first by default
+    order_by_attributes = fields.List(fields.String(), load_default=None)
+    ascending = fields.List(fields.Boolean(), load_default=None)  # most recent first by default
+
+    @validates_schema
+    def validate_order_by_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if (data['order_by_attributes'] is None) ^ (data['ascending'] is None):
+            raise ValidationError(
+                message='order_by_attributes and ascending have to be both null or have a value',
+                field_name='order_by_attributes',
+            )
+        if (
+            data['order_by_attributes'] is not None and
+            len(data['order_by_attributes']) != len(data['ascending'])
+        ):
+            raise ValidationError(
+                message="order_by_attributes and ascending don't have the same length",
+                field_name='order_by_attributes',
+            )
 
 
 class EthereumTransactionQuerySchema(
@@ -197,11 +216,18 @@ class EthereumTransactionQuerySchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        value = data['order_by_attribute']
-        if data['order_by_attribute'] not in (None, 'timestamp'):
+        valid_ordering_attr = {None, 'timestamp'}
+        if (
+            data['order_by_attributes'] is not None and
+            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
+        ):
+            error_msg = (
+                f'order_by_attributes for transactions can not be '
+                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
+            )
             raise ValidationError(
-                message=f'order_by_attribute for transactions can not be {value}',
-                field_name='order_by_attribute',
+                message=error_msg,
+                field_name='order_by_attributes',
             )
         protocols = data['protocols']
         if protocols is not None and len(protocols) == 0:
@@ -217,11 +243,10 @@ class EthereumTransactionQuerySchema(
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         address = data.get('address')
-        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         protocols, asset = data['protocols'], data['asset']
         exclude_ignored_assets = data['exclude_ignored_assets']
         filter_query = ETHTransactionsFilterQuery.make(
-            order_by_rules=[(order_by_attribute, data['ascending'])],
+            order_by_rules=create_order_by_rules_list(data),
             limit=data['limit'],
             offset=data['offset'],
             addresses=[address] if address is not None else None,
@@ -285,19 +310,26 @@ class TradesQuerySchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        value = data['order_by_attribute']
-        if data['order_by_attribute'] not in (
-                None,
-                'timestamp',
-                'location',
-                'type',
-                'amount',
-                'rate',
-                'fee',
+        valid_ordering_attr = {
+            None,
+            'timestamp',
+            'location',
+            'type',
+            'amount',
+            'rate',
+            'fee',
+        }
+        if (
+            data['order_by_attributes'] is not None and
+            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
         ):
+            error_msg = (
+                f'order_by_attributes for trades can not be '
+                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
+            )
             raise ValidationError(
-                message=f'order_by_attribute for trades can not be {value}',
-                field_name='order_by_attribute',
+                message=error_msg,
+                field_name='order_by_attributes',
             )
 
     @post_load
@@ -306,7 +338,6 @@ class TradesQuerySchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         base_assets: Optional[Tuple['Asset', ...]] = None
         quote_assets: Optional[Tuple['Asset', ...]] = None
         if data['base_asset'] is not None:
@@ -320,7 +351,7 @@ class TradesQuerySchema(
             quote_assets = (A_ETH, A_ETH2)
 
         filter_query = TradesFilterQuery.make(
-            order_by_rules=[(order_by_attribute, data['ascending'])],
+            order_by_rules=create_order_by_rules_list(data),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -365,9 +396,14 @@ class StakingQuerySchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
-        if order_by_attribute == 'event_type':
-            order_by_attribute = 'subtype'
+        if data['order_by_attributes'] is not None:
+            attributes = []
+            for order_by_attribute in data['order_by_attributes']:
+                if order_by_attribute == 'event_type':
+                    attributes.append('subtype')
+                else:
+                    attributes.append(order_by_attribute)
+            data['order_by_attributes'] = attributes
         asset_list: Optional[Tuple['Asset', ...]] = None
         if data['asset'] is not None:
             asset_list = (data['asset'],)
@@ -375,7 +411,7 @@ class StakingQuerySchema(
             asset_list = (A_ETH, A_ETH2)
 
         query_filter = HistoryEventFilterQuery.make(
-            order_by_rules=[(order_by_attribute, data['ascending'])],
+            order_by_rules=create_order_by_rules_list(data),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -492,18 +528,25 @@ class AssetMovementsQuerySchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        value = data['order_by_attribute']
-        if data['order_by_attribute'] not in (
-                None,
-                'timestamp',
-                'location',
-                'category',
-                'amount',
-                'fee',
+        valid_ordering_attr = {
+            None,
+            'timestamp',
+            'location',
+            'category',
+            'amount',
+            'fee',
+        }
+        if (
+            data['order_by_attributes'] is not None and
+            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
         ):
+            error_msg = (
+                f'order_by_attributes for asset movements can not be '
+                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
+            )
             raise ValidationError(
-                message=f'order_by_attribute for asset movements can not be {value}',
-                field_name='order_by_attribute',
+                message=error_msg,
+                field_name='order_by_attributes',
             )
 
     @post_load
@@ -512,7 +555,6 @@ class AssetMovementsQuerySchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         asset_list: Optional[Tuple['Asset', ...]] = None
         if data['asset'] is not None:
             asset_list = (data['asset'],)
@@ -520,7 +562,7 @@ class AssetMovementsQuerySchema(
             asset_list = (A_ETH, A_ETH2)
 
         filter_query = AssetMovementsFilterQuery.make(
-            order_by_rules=[(order_by_attribute, data['ascending'])],
+            order_by_rules=create_order_by_rules_list(data),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -561,18 +603,25 @@ class LedgerActionsQuerySchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        value = data['order_by_attribute']
-        if data['order_by_attribute'] not in (
-                None,
-                'timestamp',
-                'type',
-                'location',
-                'amount',
-                'rate',
+        valid_ordering_attr = {
+            None,
+            'timestamp',
+            'type',
+            'location',
+            'amount',
+            'rate',
+        }
+        if (
+            data['order_by_attributes'] is not None and
+            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
         ):
+            error_msg = (
+                f'order_by_attributes for ledger actions can not be '
+                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
+            )
             raise ValidationError(
-                message=f'order_by_attribute for ledger actions can not be {value}',
-                field_name='order_by_attribute',
+                message=error_msg,
+                field_name='order_by_attributes',
             )
 
     @post_load
@@ -581,7 +630,6 @@ class LedgerActionsQuerySchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         asset_list: Optional[Tuple['Asset', ...]] = None
         if data['asset'] is not None:
             asset_list = (data['asset'],)
@@ -589,7 +637,7 @@ class LedgerActionsQuerySchema(
             asset_list = (A_ETH, A_ETH2)
 
         filter_query = LedgerActionsFilterQuery.make(
-            order_by_rules=[(order_by_attribute, data['ascending'])],
+            order_by_rules=create_order_by_rules_list(data),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -1123,11 +1171,18 @@ class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        value = data['order_by_attribute']
-        if data['order_by_attribute'] not in (None, 'timestamp'):
+        valid_ordering_attr = {None, 'timestamp'}
+        if (
+            data['order_by_attributes'] is not None and
+            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
+        ):
+            error_msg = (
+                f'order_by_attributes for accounting report data can not be '
+                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
+            )
             raise ValidationError(
-                message=f'order_by_attribute for accounting report data can not be {value}',
-                field_name='order_by_attribute',
+                message=error_msg,
+                field_name='order_by_attributes',
             )
 
     @post_load
@@ -1138,9 +1193,8 @@ class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
     ) -> Dict[str, Any]:
         report_id = data.get('report_id')
         event_type = data.get('event_type')
-        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         filter_query = ReportDataFilterQuery.make(
-            order_by_rules=[(order_by_attribute, data['ascending'])],
+            order_by_rules=create_order_by_rules_list(data),
             limit=data['limit'],
             offset=data['offset'],
             report_id=report_id,
@@ -2048,29 +2102,36 @@ class Eth2DailyStatsSchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        value = data['order_by_attribute']
-        if data['order_by_attribute'] not in (
-                None,
-                'timestamp',
-                'validator_index',
-                'start_usd_price',
-                'end_usd_price',
-                'pnl',
-                'start_amount',
-                'end_amount',
-                'missed_attestations',
-                'orphaned_attestations',
-                'proposed_blocks',
-                'missed_blocks',
-                'orphaned_blocks',
-                'included_attester_slashings',
-                'proposer_attester_slashings',
-                'deposits_number',
-                'amount_deposited',
+        valid_ordering_attr = {
+            None,
+            'timestamp',
+            'validator_index',
+            'start_usd_price',
+            'end_usd_price',
+            'pnl',
+            'start_amount',
+            'end_amount',
+            'missed_attestations',
+            'orphaned_attestations',
+            'proposed_blocks',
+            'missed_blocks',
+            'orphaned_blocks',
+            'included_attester_slashings',
+            'proposer_attester_slashings',
+            'deposits_number',
+            'amount_deposited',
+        }
+        if (
+            data['order_by_attributes'] is not None and
+            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
         ):
+            error_msg = (
+                f'order_by_attributes for eth2 daily stats can not be '
+                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
+            )
             raise ValidationError(
-                message=f'order_by_attribute for eth2 daily stats can not be {value}',
-                field_name='order_by_attribute',
+                message=error_msg,
+                field_name='order_by_attributes',
             )
 
     @post_load
@@ -2079,9 +2140,8 @@ class Eth2DailyStatsSchema(
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         filter_query = Eth2DailyStatsFilterQuery.make(
-            order_by_rules=[(order_by_attribute, data['ascending'])],
+            order_by_rules=create_order_by_rules_list(data),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -2363,9 +2423,8 @@ class UserNotesGetSchema(DBPaginationSchema, DBOrderBySchema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'last_update_timestamp'  # noqa: E501
         filter_query = UserNotesFilterQuery.make(
-            order_by_rules=[(order_by_attribute, data['ascending'])],
+            order_by_rules=create_order_by_rules_list(data, 'last_update_timestamp'),
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],

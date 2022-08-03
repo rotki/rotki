@@ -2138,8 +2138,8 @@ Querying ethereum transactions
 
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson string order_by_attribute: This is the attribute of the transaction by which to order the results.
-   :reqjson bool ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
+   :reqjson list[string] order_by_attributes: This is the list of attributes of the transaction by which to order the results.
+   :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
    :reqjson int from_timestamp: The timestamp after which to return transactions. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return transactions. If not given all transactions from ``from_timestamp`` until now are returned.
    :reqjson bool only_cache: If true then only the ethereum transactions in the DB are queried.
@@ -3899,8 +3899,8 @@ Dealing with trades
 
    :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson string order_by_attribute: Optional. This is the attribute of the trade table by which to order the results. If none is given 'time' is assumed. Valid values are: ['time', 'location', 'type', 'amount', 'rate', 'fee'].
-   :reqjson bool ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
+   :reqjson list[string] order_by_attributes: Optional. This is the list of attributes of the trade table by which to order the results. If none is given 'time' is assumed. Valid values are: ['time', 'location', 'type', 'amount', 'rate', 'fee'].
+   :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson string location: Optionally filter trades by location. A valid location name has to be provided. If missing location filtering does not happen.
@@ -4161,8 +4161,8 @@ Querying asset movements
 
    :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson string order_by_attribute: Optional. This is the attribute of the asset movements table by which to order the results. If none is given 'time' is assumed. Valid values are: ['time', 'location', 'category', 'amount', 'fee'].
-   :reqjson bool ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
+   :reqjson list[string] order_by_attributes: Optional. This is the list of attributes of the asset movements table by which to order the results. If none is given 'time' is assumed. Valid values are: ['time', 'location', 'category', 'amount', 'fee'].
+   :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson string location: Optionally filter asset movements by location. A valid location name has to be provided. Valid locations are for now only exchanges for deposits/withdrawals.
@@ -4249,8 +4249,8 @@ Dealing with ledger actions
 
    :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson string order_by_attribute: Optional. This is the attribute of the ledger actions table by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'location', 'type', 'amount', 'rate'].
-   :reqjson bool ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
+   :reqjson list[string] order_by_attributes: Optional. This is the list of attributes of the ledger actions table by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'location', 'type', 'amount', 'rate'].
+   :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson string asset: Optionally filter by action asset. A valid asset has to be provided. If missing asset filtering does not happen.
@@ -5218,8 +5218,8 @@ Get saved events of a PnL Report
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson str from_timestamp: Optional. A filter for the from_timestamp of the range of events to query.
    :reqjson str to_timestamp: Optional. A filter for the to_timestamp of the range of events to query.
-   :reqjson str order_by_attribute: Optional. Default is "timestamp". The name of the attribute to order results by.
-   :reqjson bool ascending: Optional. Default is false. The order in which to return results depending on the order by attribute.
+   :reqjson list[string] order_by_attributes: Optional. Default is ["timestamp"]. The list of the attributes to order results by.
+   :reqjson list[bool] ascending: Optional. Default is [false]. The order in which to return results depending on the order by attribute.
    :reqjson str event_type: Optional. Not used yet. In the future will be a filter for the type of event to query.
 
    **Example Response**:
@@ -8481,8 +8481,8 @@ Getting Eth2 Staking daily stats
    :reqjson bool only_cache: If true then only the daily stats in the DB are queried.
    :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson string order_by_attribute: Optional. This is the attribute of the eth2_daily_staking_details table by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'validator_index', 'start_usd_price', 'end_usd_price', 'pnl', 'start_amount', 'end_amount', 'missed_attestations', 'orphaned_attestations', 'proposed_blocks', 'missed_blocks', 'orphaned_blocks', 'included_attester_slashings', 'proposer_attester_slashings', 'deposits_number', 'amount_deposited'].
-   :reqjson bool ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
+   :reqjson list[string] order_by_attributes: Optional. This is the list of attributes of the eth2_daily_staking_details table by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'validator_index', 'start_usd_price', 'end_usd_price', 'pnl', 'start_amount', 'end_amount', 'missed_attestations', 'orphaned_attestations', 'proposed_blocks', 'missed_blocks', 'orphaned_blocks', 'included_attester_slashings', 'proposer_attester_slashings', 'deposits_number', 'amount_deposited'].
+   :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson list(string) validators: Optionally filter entries validator indices. If missing data for all validators are returned.
@@ -10918,8 +10918,8 @@ Staking events
 
    :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson string order_by_attribute: Optional. This is the attribute of the history by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'location', 'amount'].
-   :reqjson bool ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
+   :reqjson list[string] order_by_attributes: Optional. This is the list of attributes of the history by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'location', 'amount'].
+   :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson bool only_cache: Optional.If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
@@ -11611,8 +11611,8 @@ Handling user notes
 
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson string order_by_attribute: This is the attribute of the note by which to order the results. By default we sort using ``last_update_timestamp``.
-   :reqjson bool ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
+   :reqjson list[string] order_by_attributes: This is the list of attributes of the note by which to order the results. By default we sort using ``last_update_timestamp``.
+   :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
    :reqjson int from_timestamp: The timestamp after which to return transactions. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return transactions. If not given all transactions from ``from_timestamp`` until now are returned.
    :reqjson string title_substring: The substring to use as filter for the title of the notes.

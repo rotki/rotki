@@ -279,7 +279,8 @@ def test_query_pnl_report_events_pagination_filtering(
             json={
                 'offset': offset,
                 'limit': 10,
-                'ascending': ascending_timestamp,
+                'order_by_attributes': ['timestamp'],
+                'ascending': [ascending_timestamp],
             },
         )
         events_result = assert_proper_response_with_result(response)
