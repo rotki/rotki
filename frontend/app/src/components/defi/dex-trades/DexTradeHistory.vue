@@ -5,11 +5,11 @@
       v-else-if="!premium"
       :text="$t('dex_trade.title')"
     />
-    <progress-screen v-else-if="dexLoading">
+    <progress-screen v-else-if="loading">
       <template #message>{{ $t('dex_trades.loading') }}</template>
     </progress-screen>
     <div v-else>
-      <dex-trades-table :refreshing="anyRefreshing">
+      <dex-trades-table :refreshing="refreshing">
         <template #modules>
           <active-modules :modules="modules" />
         </template>
@@ -18,76 +18,61 @@
   </div>
 </template>
 
-<script lang="ts">
-import { mapActions as mapPiniaActions } from 'pinia';
-import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
+<script setup lang="ts">
+import { computed, onMounted } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
-import ModuleMixin from '@/mixins/module-mixin';
-import PremiumMixin from '@/mixins/premium-mixin';
-import StatusMixin from '@/mixins/status-mixin';
+import { setupStatusChecking } from '@/composables/common';
+import { getPremium, useModules } from '@/composables/session';
 import { DexTradesTable } from '@/premium/premium';
 import { Section } from '@/store/const';
+import { useBalancerStore } from '@/store/defi/balancer';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswap } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';
 
-@Component({
-  components: {
-    ActiveModules,
-    ModuleNotActive,
-    NoPremiumPlaceholder,
-    ProgressScreen,
-    DexTradesTable
-  },
-  methods: {
-    ...mapPiniaActions(useUniswap, { fetchUniswapTrades: 'fetchTrades' }),
-    ...mapActions('defi', ['fetchBalancerTrades']),
-    ...mapPiniaActions(useSushiswapStore, {
-      fetchSushiswapTrades: 'fetchTrades'
-    })
-  }
-})
-export default class DexTradeHistory extends Mixins(
-  StatusMixin,
-  PremiumMixin,
-  ModuleMixin
-) {
-  section = Section.DEFI_UNISWAP_TRADES;
-  secondSection = Section.DEFI_BALANCER_TRADES;
+const modules: Module[] = [Module.UNISWAP, Module.BALANCER, Module.SUSHISWAP];
 
-  fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
-  fetchBalancerTrades!: (refresh: boolean) => Promise<void>;
-  fetchSushiswapTrades!: (refresh: boolean) => Promise<void>;
+const { fetchTrades: fetchBalancerTrades } = useBalancerStore();
+const { fetchTrades: fetchUniswapTrades } = useUniswap();
+const { fetchTrades: fetchSushiswapTrades } = useSushiswapStore();
+const { isAnyModuleEnabled, isModuleEnabled } = useModules();
+const {
+  shouldShowLoadingScreen: showLoading,
+  isSectionRefreshing: showRefreshing
+} = setupStatusChecking();
+const premium = getPremium();
 
-  readonly modules: Module[] = [
-    Module.UNISWAP,
-    Module.BALANCER,
-    Module.SUSHISWAP
-  ];
+const loading = computed(() => {
+  const isLoading = (module: Module, section: Section) =>
+    get(isModuleEnabled(module)) && get(showLoading(section));
+  return (
+    isLoading(Module.UNISWAP, Section.DEFI_UNISWAP_TRADES) &&
+    isLoading(Module.BALANCER, Section.DEFI_BALANCER_TRADES) &&
+    isLoading(Module.SUSHISWAP, Section.DEFI_SUSHISWAP_TRADES)
+  );
+});
 
-  get isEnabled(): boolean {
-    return this.isAnyModuleEnabled(this.modules);
-  }
+const refreshing = computed(() => {
+  const isRefreshing = (module: Module, section: Section) =>
+    get(isModuleEnabled(module)) && get(showRefreshing(section));
+  return (
+    isRefreshing(Module.UNISWAP, Section.DEFI_UNISWAP_TRADES) ||
+    isRefreshing(Module.BALANCER, Section.DEFI_BALANCER_TRADES) ||
+    isRefreshing(Module.SUSHISWAP, Section.DEFI_SUSHISWAP_TRADES)
+  );
+});
 
-  get dexLoading(): boolean {
-    return (
-      (this.isModuleEnabled(Module.UNISWAP) && this.loading) ||
-      (this.isModuleEnabled(Module.BALANCER) && this.secondaryLoading) ||
-      (this.isModuleEnabled(Module.SUSHISWAP) &&
-        this.isLoading(Section.DEFI_SUSHISWAP_TRADES))
-    );
-  }
+const isEnabled = isAnyModuleEnabled(modules);
 
-  async mounted() {
-    await Promise.all([
-      this.fetchUniswapTrades(false),
-      this.fetchBalancerTrades(false),
-      this.fetchSushiswapTrades(false)
-    ]);
-  }
-}
+onMounted(async () => {
+  await Promise.allSettled([
+    fetchUniswapTrades(false),
+    fetchBalancerTrades(false),
+    fetchSushiswapTrades(false)
+  ]);
+});
 </script>

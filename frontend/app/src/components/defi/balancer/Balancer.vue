@@ -7,7 +7,7 @@
     </template>
   </progress-screen>
   <div v-else>
-    <balancer-balances class="mt-4" :refreshing="anyRefreshing">
+    <balancer-balances class="mt-4" :refreshing="refreshing">
       <template #modules>
         <active-modules :modules="modules" />
       </template>
@@ -15,55 +15,38 @@
   </div>
 </template>
 
-<script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
-import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+<script setup lang="ts">
+import { computed, onMounted } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
-import ModuleMixin from '@/mixins/module-mixin';
-import PremiumMixin from '@/mixins/premium-mixin';
-import StatusMixin from '@/mixins/status-mixin';
+import { setupStatusChecking } from '@/composables/common';
+import { getPremium, useModules } from '@/composables/session';
 import { BalancerBalances } from '@/premium/premium';
 import { Section } from '@/store/const';
+import { useBalancerStore } from '@/store/defi/balancer';
 import { Module } from '@/types/modules';
 
-@Component({
-  components: {
-    ActiveModules,
-    BalancerBalances,
-    NoPremiumPlaceholder,
-    BaseExternalLink,
-    ProgressScreen,
-    ModuleNotActive
-  },
-  computed: {},
-  methods: {
-    ...mapActions('defi', ['fetchBalancerBalances', 'fetchBalancerEvents'])
-  }
-})
-export default class Balancer extends Mixins(
-  StatusMixin,
-  ModuleMixin,
-  PremiumMixin
-) {
-  readonly section = Section.DEFI_BALANCER_BALANCES;
-  readonly secondSection = Section.DEFI_BALANCER_EVENTS;
-  fetchBalancerBalances!: (refresh: boolean) => Promise<void>;
-  fetchBalancerEvents!: (refresh: boolean) => Promise<void>;
-  readonly modules: Module[] = [Module.BALANCER];
+const modules: Module[] = [Module.BALANCER];
 
-  get isEnabled(): boolean {
-    return this.isModuleEnabled(Module.BALANCER);
-  }
+const { fetchBalances, fetchEvents } = useBalancerStore();
+const { isModuleEnabled } = useModules();
+const { shouldShowLoadingScreen, isSectionRefreshing } = setupStatusChecking();
 
-  async mounted() {
-    await Promise.all([
-      this.fetchBalancerBalances(false),
-      this.fetchBalancerEvents(false)
-    ]);
-  }
-}
+const premium = getPremium();
+const isEnabled = computed(() => isModuleEnabled(modules[0]));
+const balancesLoading = shouldShowLoadingScreen(Section.DEFI_BALANCER_BALANCES);
+const eventsLoading = shouldShowLoadingScreen(Section.DEFI_BALANCER_EVENTS);
+const loading = computed(() => get(balancesLoading) && get(eventsLoading));
+const balancesRefreshing = isSectionRefreshing(Section.DEFI_BALANCER_BALANCES);
+const eventsRefreshing = isSectionRefreshing(Section.DEFI_BALANCER_EVENTS);
+const refreshing = computed(
+  () => get(balancesRefreshing) || get(eventsRefreshing)
+);
+
+onMounted(async () => {
+  await Promise.allSettled([fetchBalances(false), fetchEvents(false)]);
+});
 </script>

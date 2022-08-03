@@ -27,7 +27,7 @@ import {
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { Section, Status } from '@/store/const';
-import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
+import { useDefiStore } from '@/store/defi';
 import { useHistory, useTransactions } from '@/store/history';
 import { useTxQueryStatus } from '@/store/history/query-status';
 import { useNotifications } from '@/store/notifications';
@@ -299,7 +299,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     const payload = {};
     commit('session/reset', payload, opts);
     commit('balances/reset', payload, opts);
-    commit('defi/reset', payload, opts);
+    useDefiStore().reset();
     commit('settings/reset', payload, opts);
     useStakingStore().reset();
     useStatisticsStore().reset();
@@ -631,19 +631,18 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       });
     }
   },
-  async [ACTION_PURGE_CACHED_DATA]({ dispatch }, purgeable: Purgeable) {
-    const opts = { root: true };
+  async [ACTION_PURGE_CACHED_DATA](_, purgeable: Purgeable) {
     const { purgeExchange } = useHistory();
+    const { resetState } = useDefiStore();
     const { reset } = useStakingStore();
 
     if (purgeable === ALL_CENTRALIZED_EXCHANGES) {
       await purgeExchange(ALL_CENTRALIZED_EXCHANGES);
     } else if (purgeable === ALL_DECENTRALIZED_EXCHANGES) {
-      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.UNISWAP, opts);
-      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.BALANCER, opts);
+      resetState(ALL_DECENTRALIZED_EXCHANGES);
     } else if (purgeable === ALL_MODULES) {
       reset();
-      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, ALL_MODULES, opts);
+      resetState(ALL_MODULES);
     } else if (
       SUPPORTED_EXCHANGES.includes(purgeable as SupportedExchange) ||
       EXTERNAL_EXCHANGES.includes(purgeable as SupportedExternalExchanges)
@@ -653,7 +652,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       if ([Module.ETH2, Module.ADEX].includes(purgeable as Module)) {
         reset(purgeable as Module);
       } else {
-        await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, purgeable, opts);
+        resetState(purgeable as Module);
       }
     }
   },

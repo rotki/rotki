@@ -10,6 +10,8 @@
         hide-no-data
         clearable
         chips
+        dense
+        outlined
         :open-on-clear="false"
         :label="$t('defi_protocol_selector.label')"
         item-text="name"

@@ -1,11 +1,6 @@
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { ProfitLossModel } from '@rotki/common/lib/defi';
-import {
-  BalancerBalanceWithOwner,
-  BalancerEvent,
-  BalancerProfitLoss,
-  Pool
-} from '@rotki/common/lib/defi/balancer';
+import { BalancerBalanceWithOwner } from '@rotki/common/lib/defi/balancer';
 import {
   AdexApi,
   AssetsApi,
@@ -26,13 +21,16 @@ import {
   TimedAssetBalances,
   TimedBalances
 } from '@rotki/common/lib/statistics';
-import { computed, Ref } from '@vue/composition-api';
+import { computed, ComputedRef, Ref } from '@vue/composition-api';
 import { get, toRefs } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useBalancerStore } from '@/store/defi/balancer';
+import { useCompoundStore } from '@/store/defi/compound';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
+import { useDexTradesStore } from '@/store/defi/trades';
 import { useUniswap } from '@/store/defi/uniswap';
 import { useAdexStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
@@ -146,59 +144,46 @@ export const balancesApi = (): BalancesApi => {
 };
 
 export const balancerApi = (): BalancerApi => {
-  const store = useStore();
+  const store = useBalancerStore();
+  const { balanceList, pools, addresses } = storeToRefs(store);
   return {
-    balancerProfitLoss: (addresses: string[]) =>
-      computed<BalancerProfitLoss[]>(() =>
-        store.getters['defi/balancerProfitLoss'](addresses)
-      ),
-    balancerEvents: (addresses: string[]) =>
-      computed<BalancerEvent[]>(() =>
-        store.getters['defi/balancerEvents'](addresses)
-      ),
-    balancerBalances: computed<BalancerBalanceWithOwner[]>(
-      () => store.getters['defi/balancerBalances']
-    ),
-    balancerPools: computed<Pool[]>(() => store.getters['defi/balancerPools']),
-    balancerAddresses: computed<string[]>(
-      () => store.getters['defi/balancerAddresses']
-    ),
+    balancerProfitLoss: (addresses: string[]) => store.profitLoss(addresses),
+    balancerEvents: (addresses: string[]) => store.eventList(addresses),
+    balancerBalances: balanceList as Ref<BalancerBalanceWithOwner[]>,
+    balancerPools: pools,
+    balancerAddresses: addresses,
     fetchBalancerBalances: async (refresh: boolean) => {
-      return await store.dispatch('defi/fetchBalancerBalances', refresh);
+      return await store.fetchBalances(refresh);
     },
     fetchBalancerEvents: async (refresh: boolean) => {
-      return await store.dispatch('defi/fetchBalancerEvents', refresh);
+      return await store.fetchEvents(refresh);
     }
   };
 };
 
+type ProfitLossRef = ComputedRef<ProfitLossModel[]>;
+
 export const compoundApi = (): CompoundApi => {
-  const store = useStore();
+  const { rewards, debtLoss, interestProfit, liquidationProfit } = storeToRefs(
+    useCompoundStore()
+  );
+
   return {
-    compoundRewards: computed<ProfitLossModel[]>(
-      () => store.getters['defi/compoundRewards']
-    ),
-    compoundDebtLoss: computed<ProfitLossModel[]>(
-      () => store.getters['defi/compoundDebtLoss']
-    ),
-    compoundLiquidationProfit: computed<ProfitLossModel[]>(
-      () => store.getters['defi/compoundLiquidationProfit']
-    ),
-    compoundInterestProfit: computed<ProfitLossModel[]>(
-      () => store.getters['defi/compoundInterestProfit']
-    )
+    compoundRewards: rewards as ProfitLossRef,
+    compoundDebtLoss: debtLoss as ProfitLossRef,
+    compoundLiquidationProfit: liquidationProfit as ProfitLossRef,
+    compoundInterestProfit: interestProfit as ProfitLossRef
   };
 };
 
 export const dexTradeApi = (): DexTradesApi => {
-  const store = useStore();
+  const store = useDexTradesStore();
   const { fetchTrades: fetchUniswapTrades } = useUniswap();
   const { fetchTrades: fetchSushiswapTrades } = useSushiswapStore();
+  const { fetchTrades: fetchBalancerTrades } = useBalancerStore();
   return {
-    dexTrades: addresses =>
-      computed(() => store.getters['defi/dexTrades'](addresses)),
-    fetchBalancerTrades: refresh =>
-      store.dispatch('defi/fetchBalancerTrades', refresh),
+    dexTrades: addresses => store.dexTrades(addresses),
+    fetchBalancerTrades,
     fetchSushiswapTrades,
     fetchUniswapTrades
   };

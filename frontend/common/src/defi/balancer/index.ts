@@ -1,65 +1,72 @@
-import { default as BigNumber } from "bignumber.js";
-import { Balance } from "../../index";
+import {default as BigNumber} from "bignumber.js";
+import {z} from "zod";
+import {Balance, NumericString} from "../../index";
 
 
-export interface BalancerUnderlyingToken {
-  readonly token: string;
-  readonly totalAmount: BigNumber;
-  readonly userBalance: Balance;
-  readonly usdPrice: BigNumber;
-  readonly weight: string;
-}
+const BalancerUnderlyingToken = z.object({
+  token: z.string(),
+  totalAmount: NumericString,
+  userBalance: Balance,
+  usdPrice: NumericString,
+  weight: z.string()
+})
 
-interface BalancerBalance {
-  readonly address: string;
-  readonly tokens: BalancerUnderlyingToken[];
-  readonly totalAmount: BigNumber;
-  readonly userBalance: Balance;
-}
+export type BalancerUnderlyingToken =z.infer<typeof BalancerUnderlyingToken>
+
+const BalancerBalance = z.object({
+  address: z.string(),
+  tokens: z.array(BalancerUnderlyingToken),
+  totalAmount: NumericString,
+  userBalance: Balance
+})
+
+type BalancerBalance = z.infer<typeof BalancerBalance>
 
 export interface BalancerBalanceWithOwner extends BalancerBalance {
   readonly owner: string;
 }
 
-export interface BalancerBalances {
-  readonly [address: string]: BalancerBalance[];
-}
+export const BalancerBalances = z.record(z.array(BalancerBalance))
+export type BalancerBalances = z.infer<typeof BalancerBalances>
 
-interface PoolToken {
-  readonly token: string;
-  readonly weight: string;
-}
+const PoolToken = z.object({
+  token: z.string(),
+  weight: z.string()
+})
 
-export interface PoolAmounts {
-  readonly [asset: string]: BigNumber;
-}
+const PoolAmounts = z.record(NumericString)
 
-export type Pool = {
-  readonly name: string;
-  readonly address: string;
-};
+export type PoolAmounts = z.infer<typeof PoolAmounts>
 
-export interface BalancerEvent {
-  readonly txHash: string;
-  readonly logIndex: number;
-  readonly timestamp: number;
-  readonly eventType: 'mint' | 'burn';
-  readonly lpBalance: Balance;
-  readonly amounts: PoolAmounts;
-  readonly pool?: Pool;
-}
+const Pool = z.object({
+  name: z.string(),
+  address: z.string()
+})
 
-interface BalancerPoolDetails {
-  readonly poolAddress: string;
-  readonly poolTokens: PoolToken[];
-  readonly events: BalancerEvent[];
-  readonly profitLossAmounts: PoolAmounts;
-  readonly usdProfitLoss: BigNumber;
-}
+export type Pool = z.infer<typeof Pool>
 
-export interface BalancerEvents {
-  readonly [address: string]: BalancerPoolDetails[];
-}
+const BalancerEvent =z.object({
+  txHash: z.string(),
+  logIndex: z.number(),
+  timestamp: z.string(),
+  eventType: z.enum(['mint', 'burn']),
+  lpBalance: Balance,
+  amounts: PoolAmounts,
+  pool: Pool.optional()
+})
+
+export type BalancerEvent = z.infer<typeof BalancerEvent>
+
+const BalancerPoolDetails = z.object({
+  poolAddress: z.string(),
+  poolTokens: z.array(PoolToken),
+  events: z.array(BalancerEvent),
+  profitLossAmounts: PoolAmounts,
+  usdProfitLoss: NumericString
+})
+
+export const BalancerEvents = z.record(z.array(BalancerPoolDetails))
+export type BalancerEvents = z.infer<typeof BalancerEvents>
 
 export interface BalancerProfitLoss {
   readonly pool: Pool;

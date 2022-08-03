@@ -29,67 +29,80 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
-import { mapGetters } from 'vuex';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
+import i18n from '@/i18n';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { YearnVaultBalance } from '@/services/defi/types/yearn';
-import { DefiGetterTypes } from '@/store/defi/getters';
-import { Nullable } from '@/types';
+import { YearnVaultAsset } from '@/services/defi/types/yearn';
+import { useYearnStore } from '@/store/defi/yearn';
 
-@Component({
+export default defineComponent({
+  name: 'YearnAssetsTable',
   components: { DataTable, PercentageDisplay },
-  computed: {
-    ...mapGetters('defi', ['yearnVaultsAssets'])
+  props: {
+    loading: { required: true, type: Boolean },
+    selectedAddresses: { required: true, type: Array as PropType<string[]> },
+    version: {
+      required: false,
+      default: () => null,
+      type: String as PropType<ProtocolVersion | null>
+    }
+  },
+  setup(props) {
+    const { selectedAddresses, version } = toRefs(props);
+    const { yearnVaultsAssets } = useYearnStore();
+
+    const headers: DataTableHeader[] = [
+      { text: i18n.tc('yearn_asset_table.headers.vault'), value: 'vault' },
+      {
+        text: i18n.t('yearn_asset_table.headers.version').toString(),
+        value: 'version'
+      },
+      {
+        text: i18n.tc('yearn_asset_table.headers.underlying_asset'),
+        value: 'underlyingValue.usdValue',
+        align: 'end'
+      },
+      {
+        text: i18n.tc('yearn_asset_table.headers.vault_asset'),
+        value: 'vaultValue.usdValue',
+        align: 'end'
+      },
+      {
+        text: i18n.tc('yearn_asset_table.headers.roi'),
+        value: 'roi',
+        align: 'end'
+      }
+    ];
+
+    const vaults = computed(() => {
+      const protocolVersion = get(version);
+      let v1Assets: YearnVaultAsset[] = [];
+
+      const addresses = get(selectedAddresses);
+      if (protocolVersion === ProtocolVersion.V1 || !protocolVersion) {
+        v1Assets = get(yearnVaultsAssets(addresses, ProtocolVersion.V1));
+      }
+
+      let v2Assets: YearnVaultAsset[] = [];
+      if (protocolVersion === ProtocolVersion.V2 || !protocolVersion) {
+        v2Assets = get(yearnVaultsAssets(addresses, ProtocolVersion.V2));
+      }
+      return [...v1Assets, ...v2Assets];
+    });
+
+    return {
+      vaults,
+      headers
+    };
   }
-})
-export default class YearnAssetsTable extends Vue {
-  yearnVaultsAssets!: DefiGetterTypes.YearnVaultAssetType;
-
-  @Prop({ required: true, type: Boolean })
-  loading!: boolean;
-  @Prop({ required: true, type: Array })
-  selectedAddresses!: string[];
-  @Prop({ required: false, default: () => null })
-  version!: Nullable<ProtocolVersion>;
-
-  get vaults(): YearnVaultBalance[] {
-    let v1Assets: YearnVaultBalance[] = [];
-    const addresses = this.selectedAddresses;
-    if (this.version === ProtocolVersion.V1 || !this.version) {
-      v1Assets = this.yearnVaultsAssets(addresses, ProtocolVersion.V1);
-    }
-
-    let v2Assets: YearnVaultBalance[] = [];
-    if (this.version === ProtocolVersion.V2 || !this.version) {
-      v2Assets = this.yearnVaultsAssets(addresses, ProtocolVersion.V2);
-    }
-    return [...v1Assets, ...v2Assets];
-  }
-
-  readonly headers: DataTableHeader[] = [
-    { text: this.$tc('yearn_asset_table.headers.vault'), value: 'vault' },
-    {
-      text: this.$t('yearn_asset_table.headers.version').toString(),
-      value: 'version'
-    },
-    {
-      text: this.$tc('yearn_asset_table.headers.underlying_asset'),
-      value: 'underlyingValue.usdValue',
-      align: 'end'
-    },
-    {
-      text: this.$tc('yearn_asset_table.headers.vault_asset'),
-      value: 'vaultValue.usdValue',
-      align: 'end'
-    },
-    {
-      text: this.$tc('yearn_asset_table.headers.roi'),
-      value: 'roi',
-      align: 'end'
-    }
-  ];
-}
+});
 </script>

@@ -2,16 +2,10 @@ import { Balance, BigNumber } from '@rotki/common';
 import { HasBalance } from '@rotki/common/lib';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
-  AaveBalances,
   AaveBorrowingRates,
-  AaveHistory,
   AaveHistoryEvents,
   AaveHistoryTotal
 } from '@rotki/common/lib/defi/aave';
-import {
-  BalancerBalances,
-  BalancerEvents
-} from '@rotki/common/lib/defi/balancer';
 import { DexTrade } from '@rotki/common/lib/defi/dex';
 import {
   CollateralAssetType,
@@ -20,37 +14,14 @@ import {
   EventType,
   MakerDAOVaultEventType
 } from '@/services/defi/types';
-import {
-  CompoundBalances,
-  CompoundEventType,
-  CompoundHistory
-} from '@/services/defi/types/compound';
-import {
-  YearnEventType,
-  YearnVaultsBalances,
-  YearnVaultsHistory
-} from '@/services/defi/types/yearn';
+import { CompoundEventType } from '@/services/defi/types/compound';
+import { YearnEventType } from '@/services/defi/types/yearn';
 import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
 
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
 export interface DefiState {
-  balancerEvents: BalancerEvents;
-  balancerTrades: DexTrades;
-  balancerBalances: BalancerBalances;
-  dsrHistory: DSRHistory;
-  dsrBalances: DSRBalances;
-  makerDAOVaults: MakerDAOVault[];
-  makerDAOVaultDetails: MakerDAOVaultDetails[];
-  aaveBalances: AaveBalances;
-  aaveHistory: AaveHistory;
   allProtocols: AllDefiProtocols;
-  compoundBalances: CompoundBalances;
-  compoundHistory: CompoundHistory;
-  yearnVaultsBalances: YearnVaultsBalances;
-  yearnVaultsHistory: YearnVaultsHistory;
-  yearnVaultsV2Balances: YearnVaultsBalances;
-  yearnVaultsV2History: YearnVaultsHistory;
   airdrops: Airdrops;
 }
 

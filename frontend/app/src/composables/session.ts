@@ -26,8 +26,12 @@ export const useModules = () => {
     () => sessionState.generalSettings.activeModules
   );
 
-  const isAnyModuleEnabled = (modules: Module[]) =>
-    get(activeModules).filter(module => modules.includes(module)).length > 0;
+  const isAnyModuleEnabled = (modules: Module[]) => {
+    return computed(
+      () =>
+        get(activeModules).filter(module => modules.includes(module)).length > 0
+    );
+  };
 
   const isModuleEnabled = (module: Module) => {
     return computed(() => {
