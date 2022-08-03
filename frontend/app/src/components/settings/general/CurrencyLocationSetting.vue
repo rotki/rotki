@@ -35,14 +35,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { CurrencyLocation } from '@/types/currency-location';
 
 const currencyLocation = ref<CurrencyLocation>(CurrencyLocation.AFTER);
-const { frontendSettings } = useSettings();
+const { currencyLocation: location } = storeToRefs(useFrontendSettingsStore());
 
 onMounted(() => {
-  const frontendSettingsVal = get(frontendSettings);
-  set(currencyLocation, frontendSettingsVal.currencyLocation);
+  set(currencyLocation, get(location));
 });
 </script>

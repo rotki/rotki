@@ -25,6 +25,6 @@ export default new VueI18n({
   fallbackLocale:
     (import.meta.env.VITE_I18N_FALLBACK_LOCALE as string | undefined) || 'en',
   messages: loadLocaleMessages(),
-  silentTranslationWarn: process.env.ROTKEHLCHEN_ENVIRONMENT === 'test',
+  silentTranslationWarn: process.env.VITE_TEST === 'test',
   silentFallbackWarn: true
 });

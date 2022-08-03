@@ -18,13 +18,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 const showGraphRangeSelector = ref<boolean>(true);
-const { frontendSettings } = useSettings();
+const { showGraphRangeSelector: enabled } = storeToRefs(
+  useFrontendSettingsStore()
+);
 
 onMounted(() => {
-  const frontendSettingsVal = get(frontendSettings);
-  set(showGraphRangeSelector, frontendSettingsVal.showGraphRangeSelector);
+  set(showGraphRangeSelector, get(enabled));
 });
 </script>

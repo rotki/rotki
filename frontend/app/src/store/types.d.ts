@@ -1,8 +1,6 @@
 import { BalanceState } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
-import { DefiState } from '@/store/defi/types';
 import { SessionState } from '@/store/session/types';
-import { SettingsState } from '@/store/settings/state';
 
 type ActionFailure = {
   readonly message: string;
@@ -32,8 +30,6 @@ export interface RotkehlchenState {
   status: SectionStatus;
   session?: SessionState;
   balances?: BalanceState;
-  settings?: SettingsState;
-  defi?: DefiState;
 }
 
 export type ActionDataEntry<T = string> = {

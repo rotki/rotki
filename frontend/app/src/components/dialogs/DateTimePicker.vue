@@ -74,9 +74,10 @@ import {
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
-import { setupSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
 import { timezones } from '@/data/timezones';
 import i18n from '@/i18n';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { DateFormat } from '@/types/date-format';
 import {
   changeDateFormat,
@@ -175,7 +176,7 @@ export default defineComponent({
   },
   emits: ['input'],
   setup(props, { emit }) {
-    const { dateInputFormat } = setupSettings();
+    const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
     const { seconds, rules, limitNow, value, allowEmpty } = toRefs(props);
     const timeFormat = computed(() => {

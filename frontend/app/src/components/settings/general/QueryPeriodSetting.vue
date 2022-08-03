@@ -35,10 +35,11 @@ import { onMounted, ref } from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
 import { useValidation } from '@/composables/validation';
 import i18n from '@/i18n';
 import { monitor } from '@/services/monitoring';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;
@@ -64,10 +65,10 @@ const rules = {
   }
 };
 
-const { frontendSettings } = useSettings();
+const { queryPeriod: currentPeriod } = storeToRefs(useFrontendSettingsStore());
+
 const resetQueryPeriod = () => {
-  const frontendSettingsVal = get(frontendSettings);
-  set(queryPeriod, frontendSettingsVal.queryPeriod.toString());
+  set(queryPeriod, get(currentPeriod).toString());
 };
 
 const v$ = useVuelidate(rules, { queryPeriod }, { $autoDirty: true });

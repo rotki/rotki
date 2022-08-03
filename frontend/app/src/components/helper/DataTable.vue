@@ -44,10 +44,10 @@
 <script lang="ts">
 import { defineComponent, PropType, ref, toRefs } from '@vue/composition-api';
 import { get, useElementBounding } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
-import { setupSettings } from '@/composables/settings';
 import { footerProps } from '@/config/datatable.common';
-import { ITEMS_PER_PAGE } from '@/types/frontend-settings';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 export default defineComponent({
   name: 'DataTable',
@@ -61,7 +61,8 @@ export default defineComponent({
     container: { required: false, type: HTMLDivElement, default: () => null }
   },
   setup(props) {
-    const { itemsPerPage, updateSetting } = setupSettings();
+    let frontendSettingsStore = useFrontendSettingsStore();
+    const { itemsPerPage } = storeToRefs(frontendSettingsStore);
     const { container } = toRefs(props);
 
     const tableRef = ref<any>(null);
@@ -69,8 +70,8 @@ export default defineComponent({
     const onItemsPerPageChange = async (newValue: number) => {
       if (get(itemsPerPage) === newValue) return;
 
-      await updateSetting({
-        [ITEMS_PER_PAGE]: newValue
+      await frontendSettingsStore.updateSetting({
+        itemsPerPage: newValue
       });
     };
 

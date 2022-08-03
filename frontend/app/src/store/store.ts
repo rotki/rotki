@@ -9,7 +9,6 @@ import { balances } from '@/store/balances';
 import { defiSections, Section, Status } from '@/store/const';
 import { storeVuexPlugins } from '@/store/debug';
 import { session } from '@/store/session';
-import { settings } from '@/store/settings';
 import { RotkehlchenState, StatusPayload, Version } from '@/store/types';
 import { isLoading } from '@/store/utils';
 import { Nullable } from '@/types';
@@ -209,8 +208,7 @@ const defaultVersion = () =>
 const store: StoreOptions<RotkehlchenState> = {
   modules: {
     balances,
-    session,
-    settings
+    session
   },
   plugins: storeVuexPlugins()
 };

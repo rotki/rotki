@@ -21,15 +21,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useStatisticsStore } from '@/store/statistics';
 
 const includeNfts = ref<boolean>(true);
 const { fetchNetValue } = useStatisticsStore();
-const { frontendSettings } = useSettings();
+const { nftsInNetValue: enabled } = storeToRefs(useFrontendSettingsStore());
 
 onMounted(() => {
-  const frontendSettingsVal = get(frontendSettings);
-  set(includeNfts, frontendSettingsVal.nftsInNetValue);
+  set(includeNfts, get(enabled));
 });
 </script>

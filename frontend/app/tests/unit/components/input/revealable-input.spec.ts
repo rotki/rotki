@@ -1,12 +1,13 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import store from '@/store/store';
 
 Vue.use(Vuetify);
+Vue.use(PiniaVuePlugin);
 
 describe('RevealableInput.vue', () => {
   let wrapper: Wrapper<any>;

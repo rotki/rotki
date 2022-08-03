@@ -19,13 +19,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 const enableEthNames = ref<boolean>(true);
-const { frontendSettings } = useSettings();
+const { enableEthNames: enabled } = storeToRefs(useFrontendSettingsStore());
 
 onMounted(() => {
-  const frontendSettingsVal = get(frontendSettings);
-  set(enableEthNames, frontendSettingsVal.enableEthNames);
+  set(enableEthNames, get(enabled));
 });
 </script>

@@ -53,15 +53,18 @@ import { onMounted, ref } from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
 import { useValidation } from '@/composables/validation';
 import { Constraints } from '@/data/constraints';
 import i18n from '@/i18n';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 const versionUpdateCheckFrequency = ref<string>('');
 const versionUpdateCheckEnabled = ref<boolean>(false);
 
-const { frontendSettings } = useSettings();
+const { versionUpdateCheckFrequency: existingFrequency } = storeToRefs(
+  useFrontendSettingsStore()
+);
 
 const maxVersionUpdateCheckFrequency = Constraints.MAX_HOURS_DELAY;
 
@@ -98,8 +101,7 @@ const v$ = useVuelidate(
 const { callIfValid } = useValidation(v$);
 
 const resetVersionUpdateCheckFrequency = () => {
-  const frontendSettingsVal = get(frontendSettings);
-  const frequency = frontendSettingsVal.versionUpdateCheckFrequency;
+  const frequency = get(existingFrequency);
   set(versionUpdateCheckEnabled, frequency > 0);
   set(
     versionUpdateCheckFrequency,

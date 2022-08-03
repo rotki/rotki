@@ -1,6 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { VTooltip } from 'vuetify/lib/components';
@@ -12,6 +12,7 @@ import '@/filters';
 import '../../i18n';
 
 Vue.use(Vuetify);
+Vue.use(PiniaVuePlugin);
 
 // This is workaround used because stubs is somehow not working,
 // Eager prop will render the <slot /> immediately
@@ -45,6 +46,7 @@ describe('AmountDisplay.vue', () => {
   let wrapper: Wrapper<any>;
 
   beforeEach(async () => {
+    document.body.setAttribute('data-app', 'true');
     store.commit('session/generalSettings', {
       mainCurrency: currencies[1]
     });

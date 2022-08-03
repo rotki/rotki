@@ -36,12 +36,14 @@
 
 <script lang="ts">
 import { computed, defineComponent } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import dayjs from 'dayjs';
+import { storeToRefs } from 'pinia';
 import ReportPeriodSelector, {
   PeriodChangedEvent,
   SelectionChangedEvent
 } from '@/components/profitloss/ReportPeriodSelector.vue';
-import { useStore } from '@/store/utils';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { convertToTimestamp } from '@/utils/date';
 
 export default defineComponent({
@@ -55,7 +57,8 @@ export default defineComponent({
   },
   emits: ['input'],
   setup(_props, { emit }) {
-    const store = useStore();
+    const store = useFrontendSettingsStore();
+    const { profitLossReportPeriod } = storeToRefs(store);
     const custom = computed(({ year }) => year === 'custom');
     const invalidRange = computed(
       ({ value }) =>
@@ -65,28 +68,24 @@ export default defineComponent({
         convertToTimestamp(value.start) > convertToTimestamp(value.end)
     );
 
-    const year = computed(
-      () => store.state.settings?.profitLossReportPeriod.year
-    );
-    const quarter = computed(
-      () => store.state.settings?.profitLossReportPeriod.quarter
-    );
+    const year = computed(() => get(profitLossReportPeriod).year);
+    const quarter = computed(() => get(profitLossReportPeriod).quarter);
 
     return {
       custom,
       year,
       quarter,
       invalidRange,
-      onChanged: function (event: SelectionChangedEvent) {
+      onChanged: async (event: SelectionChangedEvent) => {
         if (event.year === 'custom') {
           emit('input', { start: '', end: '' });
         }
 
-        store.dispatch('settings/updateSetting', {
+        await store.updateSetting({
           profitLossReportPeriod: event
         });
       },
-      onPeriodChange: function (period: PeriodChangedEvent | null) {
+      onPeriodChange: (period: PeriodChangedEvent | null) => {
         if (period === null) {
           emit('input', { start: '', end: '' });
           return;

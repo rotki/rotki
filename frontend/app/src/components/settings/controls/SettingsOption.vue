@@ -14,6 +14,7 @@ import {
   useSettings
 } from '@/composables/settings';
 import { EditableSessionState } from '@/store/session/types';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { FrontendSettingsPayload } from '@/types/frontend-settings';
 import { SettingsUpdate } from '@/types/user';
 import { logger } from '@/utils/logging';
@@ -67,13 +68,10 @@ export default defineComponent({
     } = toRefs(props);
     const { error, success, clear, wait, stop, setSuccess, setError } =
       useClearableMessages();
-    const {
-      frontendSettings,
-      generalSettings,
-      accountingSettings,
-      updateSetting
-    } = useSettings();
+    const { generalSettings, accountingSettings, updateSetting } =
+      useSettings();
 
+    const store = useFrontendSettingsStore();
     const sessionState = getSessionState();
 
     watch(
@@ -83,7 +81,7 @@ export default defineComponent({
           (session &&
             !Object.keys(get(sessionState)).includes(setting as string)) ||
           (frontend &&
-            !Object.keys(get(frontendSettings)).includes(setting as string)) ||
+            !Object.keys(get(store.$state)).includes(setting as string)) ||
           (!session &&
             !frontend &&
             !Object.keys(get(generalSettings)).includes(setting as string) &&

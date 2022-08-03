@@ -1,5 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
@@ -12,6 +12,7 @@ import '../../../i18n';
 vi.mock('@/services/rotkehlchen-api');
 
 Vue.use(Vuetify);
+Vue.use(PiniaVuePlugin);
 
 describe('ModuleSelector.vue', () => {
   let wrapper: Wrapper<ModuleSelector>;

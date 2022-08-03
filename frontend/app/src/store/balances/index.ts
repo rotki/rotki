@@ -1,7 +1,7 @@
 import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
-import { acceptHMRUpdate, defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { Module } from 'vuex';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
@@ -12,9 +12,9 @@ import {
   EthAddressBookLocation
 } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
-import { useStore } from '@/store/utils';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
@@ -28,7 +28,7 @@ import { state } from './state';
 const namespaced: boolean = true;
 
 export const useEthNamesStore = defineStore('ethNames', () => {
-  const store = useStore();
+  const { enableEthNames } = storeToRefs(useFrontendSettingsStore());
   const ensAddresses = ref<string[]>([]);
   const ethNames = ref<EthNames>({});
 
@@ -115,13 +115,9 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     }
   };
 
-  const isEnsEnabled = computed<boolean>(() => {
-    return store.state.settings!!.enableEthNames;
-  });
-
   const ethNameSelector = (address: string) => {
     return computed<string | null>(() => {
-      if (!get(isEnsEnabled)) return null;
+      if (!get(enableEthNames)) return null;
       return get(ethNames)[address] ?? null;
     });
   };

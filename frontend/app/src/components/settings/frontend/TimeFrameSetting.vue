@@ -38,23 +38,24 @@ import {
 } from '@rotki/common/lib/settings/graphs';
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { getSessionState } from '@/composables/session';
-import { useSettings } from '@/composables/settings';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
 const visibleTimeframes = ref<TimeFrameSetting[]>([]);
 const currentSessionTimeframe = ref<TimeFramePeriod>(TimeFramePeriod.ALL);
 
-const { frontendSettings } = useSettings();
+const { timeframeSetting, visibleTimeframes: visible } = storeToRefs(
+  useFrontendSettingsStore()
+);
 
 const resetTimeframeSetting = () => {
-  const frontendSettingsVal = get(frontendSettings);
-  set(defaultGraphTimeframe, frontendSettingsVal.timeframeSetting);
+  set(defaultGraphTimeframe, get(timeframeSetting));
 };
 
 const resetVisibleTimeframes = () => {
-  const frontendSettingsVal = get(frontendSettings);
-  set(visibleTimeframes, frontendSettingsVal.visibleTimeframes);
+  set(visibleTimeframes, get(visible));
 };
 
 onMounted(() => {

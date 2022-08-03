@@ -118,10 +118,11 @@ import {
   TooltipOptions
 } from 'chart.js';
 import dayjs from 'dayjs';
+import { storeToRefs } from 'pinia';
 import { useTheme } from '@/composables/common';
 import { useGraph, useTooltip } from '@/composables/graphs';
 import { setupGeneralSettings } from '@/composables/session';
-import { setupSettings } from '@/composables/settings';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -152,7 +153,9 @@ export default defineComponent({
   },
   setup(props) {
     const { chartData } = toRefs(props);
-    const { graphZeroBased, showGraphRangeSelector } = setupSettings();
+    const { graphZeroBased, showGraphRangeSelector } = storeToRefs(
+      useFrontendSettingsStore()
+    );
     const { currencySymbol } = setupGeneralSettings();
     const { dark } = useTheme();
 

@@ -152,7 +152,6 @@ import { storeToRefs } from 'pinia';
 import { setupBackendManagement } from '@/composables/backend';
 import { useRoute, useRouter, useTheme } from '@/composables/common';
 import { getPremium, setupSession, useDarkMode } from '@/composables/session';
-import { setupSettings } from '@/composables/settings';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
 import i18n from '@/i18n';
@@ -160,6 +159,7 @@ import { ThemeChecker } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import { Section, Status } from '@/store/const';
 import { useUniswap } from '@/store/defi/uniswap';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useStatisticsStore } from '@/store/statistics';
 import { useMainStore } from '@/store/store';
 import { getStatus, useStore } from '@/store/utils';
@@ -394,7 +394,7 @@ export default defineComponent({
       }
     });
 
-    const { language } = setupSettings();
+    const { language } = storeToRefs(useFrontendSettingsStore());
 
     onBeforeMount(() => {
       if (get(language) !== root.$i18n.locale) {

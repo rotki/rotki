@@ -94,11 +94,11 @@ import { DataTableHeader } from 'vuetify';
 import { setupGeneralBalances } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
-import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { BalanceActions } from '@/store/balances/action-types';
 import { Section } from '@/store/const';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useStatisticsStore } from '@/store/statistics';
 import { useStore } from '@/store/utils';
 import {
@@ -221,7 +221,9 @@ export default defineComponent({
       );
     };
 
-    const { dashboardTablesVisibleColumns } = setupSettings();
+    const { dashboardTablesVisibleColumns } = storeToRefs(
+      useFrontendSettingsStore()
+    );
 
     const filteredBalances = computed(() => {
       return get(balances).filter(item => !item.isLp);

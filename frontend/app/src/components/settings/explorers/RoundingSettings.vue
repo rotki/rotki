@@ -38,33 +38,32 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { defineComponent } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import RoundingSelector from '@/components/settings/explorers/RoundingSelector.vue';
-import { setupSettings } from '@/composables/settings';
-import {
-  AMOUNT_ROUNDING_MODE,
-  RoundingMode,
-  VALUE_ROUNDING_MODE
-} from '@/types/frontend-settings';
+import { useFrontendSettingsStore } from '@/store/settings';
+import { RoundingMode } from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
 
 export default defineComponent({
   name: 'RoundingSettings',
   components: { RoundingSelector },
   setup() {
-    const { amountRoundingMode, valueRoundingMode, updateSetting } =
-      setupSettings();
+    const frontendSettingsStore = useFrontendSettingsStore();
+    const { amountRoundingMode, valueRoundingMode } = storeToRefs(
+      frontendSettingsStore
+    );
 
     const numberExample: BigNumber = bigNumberify(0.0815);
 
     const setAmountRoundingMode = async (mode: RoundingMode) => {
-      await updateSetting({
-        [AMOUNT_ROUNDING_MODE]: mode
+      await frontendSettingsStore.updateSetting({
+        amountRoundingMode: mode
       });
     };
 
     const setValueRoundingMode = async (mode: RoundingMode) => {
-      await updateSetting({
-        [VALUE_ROUNDING_MODE]: mode
+      await frontendSettingsStore.updateSetting({
+        valueRoundingMode: mode
       });
     };
 

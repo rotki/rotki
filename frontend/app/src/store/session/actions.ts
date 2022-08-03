@@ -3,6 +3,7 @@ import { ActionResult } from '@rotki/common/lib/data';
 import { Severity } from '@rotki/common/lib/messages';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { ActionTree } from 'vuex';
 import { lastLogin } from '@/components/account-management/utils';
 import { getBnFormat } from '@/data/amount_formatter';
@@ -42,6 +43,7 @@ import {
   PremiumCredentialsPayload,
   SessionState
 } from '@/store/session/types';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
 import { useMainStore } from '@/store/store';
@@ -59,10 +61,6 @@ import {
   SUPPORTED_EXCHANGES,
   SupportedExchange
 } from '@/types/exchanges';
-import {
-  LAST_KNOWN_TIMEFRAME,
-  TIMEFRAME_SETTING
-} from '@/types/frontend-settings';
 import {
   CreateAccountPayload,
   LoginCredentials,
@@ -107,20 +105,22 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   },
 
   async unlock(
-    { commit, dispatch, rootState },
+    { commit, dispatch },
     { settings, exchanges, newAccount, sync, username }: UnlockPayload
   ): Promise<ActionStatus> {
     try {
       const other = settings.other;
       if (other.frontendSettings) {
-        commit('settings/restore', other.frontendSettings, {
-          root: true
-        });
-        const timeframeSetting = rootState.settings![TIMEFRAME_SETTING];
-        if (timeframeSetting !== TimeFramePersist.REMEMBER) {
-          commit('setTimeframe', timeframeSetting);
+        const frontendSettingsStore = useFrontendSettingsStore();
+        const { timeframeSetting, lastKnownTimeframe } = storeToRefs(
+          frontendSettingsStore
+        );
+        const timeframe = get(timeframeSetting);
+        const lastKnown = get(lastKnownTimeframe);
+        if (timeframe !== TimeFramePersist.REMEMBER) {
+          commit('setTimeframe', timeframe);
         } else {
-          commit('setTimeframe', rootState.settings![LAST_KNOWN_TIMEFRAME]);
+          commit('setTimeframe', lastKnown);
         }
         BigNumber.config({
           FORMAT: getBnFormat(
@@ -300,7 +300,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('session/reset', payload, opts);
     commit('balances/reset', payload, opts);
     useDefiStore().reset();
-    commit('settings/reset', payload, opts);
+    useFrontendSettingsStore().reset();
     useStakingStore().reset();
     useStatisticsStore().reset();
     useHistory().reset();

@@ -5,7 +5,7 @@ import { NetValue } from '@rotki/common/lib/statistics';
 import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
-import { acceptHMRUpdate, defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { setupGeneralBalances } from '@/composables/balances';
 import { getSessionState } from '@/composables/session';
 import { useSettings } from '@/composables/settings';
@@ -14,6 +14,7 @@ import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 export interface OverallPerformance {
@@ -33,8 +34,10 @@ const defaultNetValue = () => ({
 export const useStatisticsStore = defineStore('statistics', () => {
   const netValue = ref<NetValue>(defaultNetValue());
 
+  const settingsStore = useFrontendSettingsStore();
+  const { nftsInNetValue } = storeToRefs(settingsStore);
   const { notify } = useNotifications();
-  const { frontendSettings, generalSettings } = useSettings();
+  const { generalSettings } = useSettings();
   const {
     aggregatedBalances,
     liabilities,
@@ -45,7 +48,6 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const totalNetWorth = computed(() => {
     const mainCurrency = get(generalSettings).mainCurrency.tickerSymbol;
-    const nftsInNetValue = get(frontendSettings).nftsInNetValue;
     const balances = get(aggregatedBalances);
     const totalLiabilities = get(liabilities);
     const nfbs = get(nfBalances);
@@ -135,8 +137,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const fetchNetValue = async () => {
     try {
-      const { nftsInNetValue } = get(frontendSettings);
-      set(netValue, await api.queryNetvalueData(nftsInNetValue));
+      set(netValue, await api.queryNetvalueData(get(nftsInNetValue)));
     } catch (e: any) {
       notify({
         title: i18n.t('actions.statistics.net_value.error.title').toString(),

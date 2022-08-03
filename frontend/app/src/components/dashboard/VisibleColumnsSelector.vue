@@ -30,11 +30,11 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { setupSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
 import i18n from '@/i18n';
+import { useFrontendSettingsStore } from '@/store/settings';
 import {
   DashboardTableType,
-  DASHBOARD_TABLES_VISIBLE_COLUMNS,
   FrontendSettingsPayload
 } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
@@ -71,7 +71,8 @@ export default defineComponent({
   setup(props) {
     const { group, groupLabel } = toRefs(props);
 
-    const { dashboardTablesVisibleColumns, updateSetting } = setupSettings();
+    const store = useFrontendSettingsStore();
+    const { dashboardTablesVisibleColumns } = storeToRefs(store);
 
     const currentVisibleColumns = computed(() => {
       return get(dashboardTablesVisibleColumns)[get(group)];
@@ -79,13 +80,13 @@ export default defineComponent({
 
     const onVisibleColumnsChange = async (visibleColumns: TableColumn[]) => {
       const payload: FrontendSettingsPayload = {
-        [DASHBOARD_TABLES_VISIBLE_COLUMNS]: {
+        dashboardTablesVisibleColumns: {
           ...get(dashboardTablesVisibleColumns),
           [get(group)]: visibleColumns
         }
       };
 
-      await updateSetting(payload);
+      await store.updateSetting(payload);
     };
 
     return {

@@ -128,11 +128,11 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
-import { setupSettings } from '@/composables/settings';
 import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useStatisticsStore } from '@/store/statistics';
 import { Nullable } from '@/types';
 import {
@@ -288,7 +288,9 @@ const DashboardAssetTable = defineComponent({
 
     const { getAssetInfo } = useAssetInfoRetrieval();
 
-    const { dashboardTablesVisibleColumns } = setupSettings();
+    const { dashboardTablesVisibleColumns } = storeToRefs(
+      useFrontendSettingsStore()
+    );
 
     return {
       search,

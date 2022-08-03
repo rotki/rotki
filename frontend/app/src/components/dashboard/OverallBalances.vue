@@ -90,17 +90,15 @@ import {
   mapState as mapPiniaState
 } from 'pinia';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
+import { mapGetters, mapMutations, mapState } from 'vuex';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { isPeriodAllowed } from '@/store/settings/utils';
 import { useStatisticsStore } from '@/store/statistics';
 import { ActionStatus } from '@/store/types';
-import {
-  FrontendSettingsPayload,
-  LAST_KNOWN_TIMEFRAME
-} from '@/types/frontend-settings';
+import { FrontendSettingsPayload } from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
 
 @Component({
@@ -122,12 +120,12 @@ import { bigNumberify } from '@/utils/bignumbers';
     ...mapGetters('session', ['currencySymbol', 'floatingPrecision']),
     ...mapPiniaState(useStatisticsStore, ['totalNetWorth']),
     ...mapState('session', ['timeframe']),
-    ...mapGetters('settings', ['visibleTimeframes'])
+    ...mapPiniaState(useFrontendSettingsStore, ['visibleTimeframes'])
   },
   methods: {
     ...mapPiniaActions(useStatisticsStore, ['fetchNetValue', 'getNetValue']),
     ...mapMutations('session', ['setTimeframe']),
-    ...mapActions('settings', ['updateSetting'])
+    ...mapPiniaActions(useFrontendSettingsStore, ['updateSetting'])
   }
 })
 export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
@@ -147,7 +145,7 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
 
   set activeTimeframe(value: TimeFramePeriod) {
     this.setTimeframe(value);
-    this.updateSetting({ [LAST_KNOWN_TIMEFRAME]: value });
+    this.updateSetting({ lastKnownTimeframe: value });
   }
 
   section = Section.BLOCKCHAIN_ETH;
