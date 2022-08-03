@@ -11597,15 +11597,15 @@ Search for all known names of an address
 Handling user notes
 ================================
 
-.. http:get:: /api/(version)/notes
+.. http:post:: /api/(version)/notes
 
-   Doing a GET on this endpoint will return all the user notes present in the database.
+   Doing a POST on this endpoint will return all the user notes present in the database.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/notes HTTP/1.1
+      POST /api/1/notes HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -11627,24 +11627,27 @@ Handling user notes
       Content-Type: application/json
 
       {
-          "result": [
-                {
-                    "identifier": 1,
-                    "title": "#1",
-                    "content": "Hello, World!",
-                    "location": "manual balances",
-                    "last_update_timestamp": 12345678,
-                    "is_pinned": true
-                },
-                {
-                    "identifier": 2,
-                    "title": "#2",
-                    "content": "Hi",
-                    "location": "manual balances",
-                    "last_update_timestamp": 12345699,
-                    "is_pinned": false
-                }
-            ],
+          "result": {
+                "entries": [{
+                        "identifier": 1,
+                        "title": "#1",
+                        "content": "Hello, World!",
+                        "location": "manual balances",
+                        "last_update_timestamp": 12345678,
+                        "is_pinned": true
+                    },
+                    {
+                        "identifier": 2,
+                        "title": "#2",
+                        "content": "Hi",
+                        "location": "manual balances",
+                        "last_update_timestamp": 12345699,
+                        "is_pinned": false
+                }],
+                "entries_found": 2,
+                "entries_total": 2,
+                "entries_limit": -1
+            },
           "message": ""
       }
 
@@ -11655,6 +11658,9 @@ Handling user notes
    :resjson str location: The location inside the application the note was taken.
    :resjson int last_update_timestamp: The timestamp the note was last updated.
    :resjson bool is_pinned: Whether the note has been pinned by the user or not.
+   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :resjson int entries_limit: The limit of entries if free version. -1 for premium.
+   :resjson int entries_total: The number of total entries ignoring all filters.
 
    :statuscode 200: User notes were retrieved successfully.
    :statuscode 409: No user is currently logged in.

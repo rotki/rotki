@@ -2646,7 +2646,7 @@ class UserNotesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json')
-    def get(self, filter_query: UserNotesFilterQuery) -> Response:
+    def post(self, filter_query: UserNotesFilterQuery) -> Response:
         return self.rest_api.get_user_notes(filter_query=filter_query)
 
     @require_loggedin_user()

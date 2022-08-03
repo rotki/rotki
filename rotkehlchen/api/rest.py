@@ -4512,9 +4512,23 @@ class RestAPI():
         return api_response(_wrap_in_ok_result(config), status_code=HTTPStatus.OK)
 
     def get_user_notes(self, filter_query: UserNotesFilterQuery) -> Response:
-        user_notes = self.rotkehlchen.data.db.get_user_notes(filter_query=filter_query)
-        result_dict = _wrap_in_ok_result([entry.serialize() for entry in user_notes])
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            user_notes, entries_found = self.rotkehlchen.data.db.get_user_notes(
+                filter_query=filter_query,
+                cursor=cursor,
+            )
+            user_notes_total = self.rotkehlchen.data.db.get_entries_count(
+                cursor=cursor,
+                entries_table='user_notes',
+            )
+        entries = [entry.serialize() for entry in user_notes]
+        result = {
+            'entries': entries,
+            'entries_found': entries_found,
+            'entries_total': user_notes_total,
+            'entries_limit': -1,
+        }
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     def add_user_note(
             self,

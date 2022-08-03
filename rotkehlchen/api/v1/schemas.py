@@ -2416,6 +2416,7 @@ class UserNotesGetSchema(DBPaginationSchema, DBOrderBySchema):
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
     title_substring = fields.String(load_default=None)
+    location = fields.String(load_default=None)
 
     @post_load
     def make_ethereum_transaction_query(  # pylint: disable=no-self-use
@@ -2429,6 +2430,7 @@ class UserNotesGetSchema(DBPaginationSchema, DBOrderBySchema):
             offset=data['offset'],
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
+            location=data['location'],
             substring_search=data['title_substring'],
         )
         return {

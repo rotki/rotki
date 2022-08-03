@@ -2191,6 +2191,8 @@ class DBHandler:
                 'combined_trades_view',
                 'ledger_actions',
                 'eth2_daily_staking_details',
+                'entries_notes',
+                'user_notes',
             ],
             op: Literal['OR', 'AND'] = 'OR',
             **kwargs: Any,
@@ -3422,13 +3424,20 @@ class DBHandler:
                 exclude_identifier=None,
             )
 
-    def get_user_notes(self, filter_query: UserNotesFilterQuery) -> List[UserNote]:
-        """Returns all the notes created by a user."""
+    def get_user_notes(
+            self,
+            filter_query: UserNotesFilterQuery,
+            cursor: 'DBCursor',
+    ) -> Tuple[List[UserNote], int]:
+        """Returns all the notes created by a user and the total amount without pagination"""
         query, bindings = filter_query.prepare()
-        with self.conn.read_ctx() as cursor:
-            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM user_notes ' + query  # noqa: E501
-            cursor.execute(query, bindings)
-            return [UserNote.deserialize_from_db(entry) for entry in cursor]
+        query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM user_notes ' + query  # noqa: E501
+        cursor.execute(query, bindings)
+        user_notes = [UserNote.deserialize_from_db(entry) for entry in cursor]
+        query, bindings = filter_query.prepare(with_pagination=False)
+        query = 'SELECT COUNT(*) from user_notes ' + query
+        total_found_result = cursor.execute(query, bindings)
+        return user_notes, total_found_result.fetchone()[0]
 
     def add_user_note(self, title: str, content: str, location: str, is_pinned: bool) -> int:
         """Add a user_note entry to the DB"""

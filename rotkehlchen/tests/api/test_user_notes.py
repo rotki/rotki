@@ -60,17 +60,17 @@ def test_add_get_user_notes(rotkehlchen_api_server):
     assert result == 3
 
     # check that a total of user notes are in the db.
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'usernotesresource',
         ),
     )
     result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
-    assert len(result) == 3
+    assert len(result['entries']) == 3
 
     # check that filtering by title substring works
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'usernotesresource',
@@ -78,7 +78,21 @@ def test_add_get_user_notes(rotkehlchen_api_server):
         json={'title_substring': '3'},
     )
     result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
-    assert len(result) == 1
+    assert result['entries_found'] == 1
+    assert len(result['entries']) == 1
+
+    # check that filtering by location works
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'usernotesresource',
+        ),
+        json={'location': 'trades'},
+    )
+    result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
+    assert result['entries_found'] == 1
+    assert result['entries_total'] == 3
+    assert result['entries'][0]['location'] == 'trades'
 
     # test sorting by multiple fields
     response = requests.get(
@@ -125,7 +139,9 @@ def test_edit_user_notes(rotkehlchen_api_server):
     assert_simple_ok_response(response)
     # confirm that the note was actually edited in the db
     filter_query = UserNotesFilterQuery.make()
-    user_notes = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.get_user_notes(filter_query=filter_query)  # noqa: E501
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.conn.read_ctx() as cursor:
+        user_notes, _ = db.get_user_notes(filter_query=filter_query, cursor=cursor)
     for note in user_notes:
         if note.identifier == 1:
             assert note.title == 'My TODO List'
@@ -176,14 +192,14 @@ def test_delete_user_notes(rotkehlchen_api_server):
     assert_proper_response(response, status_code=HTTPStatus.OK)
 
     # check that the user notes count reduced in db
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'usernotesresource',
         ),
     )
     result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
-    assert len(result) == 2
+    assert result['entries_found'] == 2
 
     # check that deleting a user note that is deleted already fails.
     response = requests.delete(
