@@ -18,6 +18,7 @@ def test_decoders_initialization(evm_transaction_decoder):
         'Votium',
         'Zksync',
         'Hop',
+        'Convex',
     }
 
     assert evm_transaction_decoder.all_counterparties == {
@@ -48,4 +49,5 @@ def test_decoders_initialization(evm_transaction_decoder):
         'compound',
         'dxdaomesa',
         '1inch-v1',
+        'convex',
     }
