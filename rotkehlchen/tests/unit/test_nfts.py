@@ -14,6 +14,7 @@ def test_addresses_queried_for_nfts(blockchain):
     nft_module = blockchain.get_module('nfts')
     balances = nft_module.get_balances(
         addresses=[TEST_ACC1, TEST_ACC2],
+        uniswap_nfts=None,
         return_zero_values=False,
         ignore_cache=True,
     )
