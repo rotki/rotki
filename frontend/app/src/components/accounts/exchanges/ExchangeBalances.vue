@@ -6,14 +6,18 @@
     <v-btn
       v-blur
       fixed
-      fab
       bottom
       right
-      dark
+      :fab="!$vuetify.breakpoint.xl"
+      :rounded="$vuetify.breakpoint.xl"
+      :x-large="$vuetify.breakpoint.xl"
       color="primary"
       to="/settings/api-keys/exchanges?add=true"
     >
       <v-icon> mdi-plus </v-icon>
+      <div v-if="$vuetify.breakpoint.xl" class="ml-2">
+        {{ $tc('exchange_balances.add_exchange') }}
+      </div>
     </v-btn>
     <v-row
       v-if="usedExchanges.length > 0"

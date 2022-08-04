@@ -3,15 +3,19 @@
     <v-btn
       v-blur
       fixed
-      fab
       bottom
       right
-      dark
+      :fab="!$vuetify.breakpoint.xl"
+      :rounded="$vuetify.breakpoint.xl"
+      :x-large="$vuetify.breakpoint.xl"
       color="primary"
       class="manual-balances__add-balance"
       @click="add()"
     >
       <v-icon> mdi-plus </v-icon>
+      <div v-if="$vuetify.breakpoint.xl" class="ml-2">
+        {{ $tc('manual_balances.add_manual_balance') }}
+      </div>
     </v-btn>
     <manual-balance-table
       v-intersect="{
