@@ -92,7 +92,10 @@ describe('settings:mutations', () => {
         [DashboardTableType.LIABILITIES]: [
           TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
         ],
-        [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE]
+        [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
+        [DashboardTableType.LIQUIDITY_PROVIDER]: [
+          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
+        ]
       },
       [DATE_INPUT_FORMAT]: DateFormat.DateMonthYearHourMinuteSecond,
       [VERSION_UPDATE_CHECK_FREQUENCY]: 24,
@@ -148,7 +151,10 @@ describe('settings:mutations', () => {
       [DashboardTableType.LIABILITIES]: [
         TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
       ],
-      [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE]
+      [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
+      [DashboardTableType.LIQUIDITY_PROVIDER]: [
+        TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
+      ]
     });
     expect(settings[DATE_INPUT_FORMAT]).toBe(
       DateFormat.DateMonthYearHourMinuteSecond

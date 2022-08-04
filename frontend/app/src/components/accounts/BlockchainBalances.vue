@@ -346,10 +346,18 @@ const BlockchainBalances = defineComponent({
     };
 
     const { isTaskRunning } = useTasks();
-    const balancesLoading = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+
+    const isQueryingBlockchain = isTaskRunning(
+      TaskType.QUERY_BLOCKCHAIN_BALANCES
+    );
+    const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
+
+    const isBlockchainLoading = computed<boolean>(() => {
+      return get(isQueryingBlockchain) || get(isLoopringLoading);
+    });
 
     return {
-      balancesLoading,
+      balancesLoading: isBlockchainLoading,
       form,
       context,
       accountToEdit,

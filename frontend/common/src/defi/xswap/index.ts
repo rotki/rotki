@@ -1,24 +1,28 @@
 import { default as BigNumber } from "bignumber.js";
-import { Balance } from "../../index";
+import { z } from 'zod';
+import { Balance, NumericString } from "../../index";
 
-interface XswapAsset {
-  readonly asset: string;
-  readonly totalAmount: BigNumber | null;
-  readonly usdPrice: BigNumber;
-  readonly userBalance: Balance;
-}
+export const XswapAsset = z.object({
+  asset: z.string(),
+  totalAmount: NumericString.nullish(),
+  usdPrice: NumericString,
+  userBalance: Balance,
+})
+export type XswapAsset = z.infer<typeof XswapAsset>;
 
-export interface XswapBalances {
-  readonly [address: string]: XswapBalance[];
-}
+export const XswapBalance = z.object({
+  account: z.string().nullish(),
+  assets: z.array(XswapAsset),
+  address: z.string(),
+  totalSupply: NumericString.nullish(),
+  nftId: z.string().nullish(),
+  priceRange: z.array(NumericString).nullish(),
+  userBalance: Balance,
+})
+export type XswapBalance = z.infer<typeof XswapBalance>;
 
-export interface XswapBalance {
-  readonly account: string;
-  readonly assets: XswapAsset[];
-  readonly address: string;
-  readonly totalSupply: BigNumber | null;
-  readonly userBalance: Balance;
-}
+export const XswapBalances = z.record(z.array(XswapBalance));
+export type XswapBalances = z.infer<typeof XswapBalances>;
 
 enum XswapEventType {
   MINT = 'mint',

@@ -1,3 +1,5 @@
 export const L2_LOOPRING = 'LRC';
-export const L2_PROTOCOLS = [L2_LOOPRING] as const;
-export type SupportedL2Protocol = typeof L2_PROTOCOLS[number];
+export const SUPPORTED_SUB_BLOCKCHAIN_PROTOCOL = [L2_LOOPRING] as const;
+
+export type SupportedSubBlockchainProtocol =
+  typeof SUPPORTED_SUB_BLOCKCHAIN_PROTOCOL[number];

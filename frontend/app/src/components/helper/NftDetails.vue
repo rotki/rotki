@@ -48,7 +48,7 @@ export default defineComponent({
     });
 
     const imageUrl = computed<string | null>(() => {
-      return get(balanceData)?.imageUrl ?? null;
+      return get(balanceData)?.imageUrl ?? '/assets/images/placeholder.svg';
     });
 
     const name = computed<string>(() => {
@@ -78,9 +78,6 @@ export default defineComponent({
 }
 
 .name {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
   flex: 1;
 }
 </style>

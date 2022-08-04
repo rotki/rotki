@@ -479,7 +479,7 @@ export default defineComponent({
             },
             zoom: {
               drag: {
-                enabled: true
+                enabled: get(dataTimeRange).range > oneDayTimestamp
               },
               mode: 'x',
               onZoomComplete: () => {

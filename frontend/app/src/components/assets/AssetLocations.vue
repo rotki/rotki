@@ -19,7 +19,7 @@
       <template #item.location="{ item }">
         <location-display
           :identifier="item.location"
-          :is-account="!!item.address"
+          :detail-path="item.detailPath"
         />
       </template>
       <template #item.label="{ item }">

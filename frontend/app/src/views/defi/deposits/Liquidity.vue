@@ -36,7 +36,8 @@ import { routesRef } from '@/router/routes';
 
 const Routes = get(routesRef);
 const providers = [
-  Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP,
+  Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2,
+  Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3,
   Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
   Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP
 ];

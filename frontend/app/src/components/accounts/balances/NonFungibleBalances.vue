@@ -101,6 +101,7 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
+import { setupGeneralBalances } from '@/composables/balances';
 import { isSectionLoading } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import i18n from '@/i18n';
@@ -112,7 +113,6 @@ import { useNotifications } from '@/store/notifications';
 import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { assert } from '@/utils/assertions';
-import { Zero } from '@/utils/bignumbers';
 import { isVideo } from '@/utils/nft';
 
 const tableHeaders = (symbol: Ref<string>) => {
@@ -225,9 +225,9 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
-    const balances = computed<NonFungibleBalance[]>(() => {
-      return store.getters['balances/nfBalances'];
-    });
+    const { nfBalances: balances, nfTotalValue } = setupGeneralBalances();
+
+    const total = nfTotalValue();
 
     const { currencySymbol } = setupGeneralSettings();
 
@@ -242,13 +242,6 @@ export default defineComponent({
 
     const refresh = setupRefresh(true);
     const refreshBalances = setupRefresh();
-
-    const total = computed(() => {
-      return get(balances).reduce(
-        (sum, value) => sum.plus(value.usdPrice),
-        Zero
-      );
-    });
 
     const mappedBalances = computed(() => {
       return get(balances).map(balance => {

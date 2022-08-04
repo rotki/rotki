@@ -36,6 +36,7 @@
             <span class="font-weight-medium">
               {{
                 $t('uniswap.pool_header', {
+                  version,
                   asset1: getSymbol(data.item.assets[0]),
                   asset2: getSymbol(data.item.assets[1])
                 })
@@ -51,6 +52,7 @@
             <v-list-item-title>
               {{
                 $t('uniswap.pool_header', {
+                  version,
                   asset1: getSymbol(item.assets[0]),
                   asset2: getSymbol(item.assets[1])
                 })
@@ -68,7 +70,6 @@ import { XswapPool } from '@rotki/common/lib/defi/xswap';
 import { defineComponent, PropType, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { useAssetInfoRetrieval } from '@/store/assets';
-import { useUniswap } from '@/store/defi/uniswap';
 
 export default defineComponent({
   name: 'UniswapPoolFilter',
@@ -76,12 +77,17 @@ export default defineComponent({
     value: { required: true, type: Array as PropType<string[]> },
     outlined: { required: false, type: Boolean, default: false },
     dense: { required: false, type: Boolean, default: false },
-    noPadding: { required: false, type: Boolean, default: false }
+    noPadding: { required: false, type: Boolean, default: false },
+    poolAssets: { required: true, type: Array as PropType<XswapPool[]> },
+    version: {
+      required: false,
+      type: String as PropType<'2' | '3'>,
+      default: '2'
+    }
   },
   emits: ['input'],
   setup(props, { emit }) {
     const { value } = toRefs(props);
-    const { poolAssets } = useUniswap();
     const { getAssetSymbol: getSymbol } = useAssetInfoRetrieval();
 
     const input = (value: string[]) => {
@@ -104,7 +110,6 @@ export default defineComponent({
     };
 
     return {
-      poolAssets,
       getSymbol,
       input,
       filter,

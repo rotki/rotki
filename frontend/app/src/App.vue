@@ -158,9 +158,11 @@ import { BackendCode } from '@/electron-main/backend-code';
 import i18n from '@/i18n';
 import { ThemeChecker } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
+import { Section, Status } from '@/store/const';
+import { useUniswap } from '@/store/defi/uniswap';
 import { useStatisticsStore } from '@/store/statistics';
 import { useMainStore } from '@/store/store';
-import { useStore } from '@/store/utils';
+import { getStatus, useStore } from '@/store/utils';
 import { logger } from '@/utils/logging';
 import 'chartjs-adapter-moment';
 
@@ -373,6 +375,16 @@ export default defineComponent({
     });
 
     const premium = getPremium();
+    const { fetchV3Balances } = useUniswap();
+
+    const defiUniswapV3Section = Section.DEFI_UNISWAP_V3_BALANCES;
+
+    watch(premium, (curr, prev) => {
+      const currentStatus = getStatus(defiUniswapV3Section);
+      if (prev !== curr && currentStatus !== Status.NONE) {
+        fetchV3Balances(true);
+      }
+    });
 
     const { pinned } = setupSession();
 

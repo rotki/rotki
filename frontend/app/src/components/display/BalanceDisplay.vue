@@ -7,7 +7,7 @@
       [$style.loss]: mode === 'loss'
     }"
   >
-    <div class="d-flex flex-column align-end">
+    <div :class="`d-flex flex-column align-${align}`">
       <amount-display
         :loading-="!!!value"
         :asset="symbol"
@@ -55,6 +55,7 @@ export default defineComponent({
     },
     noIcon: { required: false, type: Boolean, default: false },
     noJustify: { required: false, type: Boolean, default: false },
+    align: { required: false, type: String, default: 'end' },
     mode: {
       required: false,
       type: String as PropType<'gain' | 'loss' | ''>,

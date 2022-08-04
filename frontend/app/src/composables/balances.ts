@@ -4,6 +4,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { computed, Ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { tradeLocations } from '@/components/history/consts';
+import { Routes } from '@/router/routes';
 import { ManualBalance } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
@@ -25,7 +26,6 @@ import {
   HistoricPricePayload,
   LocationBalance,
   NonFungibleBalance,
-  NonFungibleBalances,
   OracleCachePayload,
   XpubPayload
 } from '@/store/balances/types';
@@ -62,10 +62,6 @@ export const setupGeneralBalances = () => {
 
   const blockchainTotals = computed<BlockchainTotal[]>(() => {
     return store.getters['balances/blockchainTotals'];
-  });
-
-  const nonFungibleBalances = computed<NonFungibleBalances>(() => {
-    return store.state.balances!.nonFungibleBalances;
   });
 
   const hasDetails = (account: string) =>
@@ -139,13 +135,15 @@ export const setupGeneralBalances = () => {
 
   const exchangeRate = (currency: string) =>
     computed<BigNumber>(() => store.getters['balances/exchangeRate'](currency));
+
   const nfBalances = computed<NonFungibleBalance[]>(() => {
     return store.getters['balances/nfBalances'];
   });
 
-  const nfTotalValue = computed<BigNumber>(() => {
-    return store.getters['balances/nfTotalValue'];
-  });
+  const nfTotalValue = (includeLPToken: boolean = false) =>
+    computed<BigNumber>(() => {
+      return store.getters['balances/nfTotalValue'](includeLPToken);
+    });
 
   return {
     aggregatedBalances,
@@ -153,7 +151,6 @@ export const setupGeneralBalances = () => {
     manualBalanceByLocation,
     liabilities,
     blockchainTotals,
-    nonFungibleBalances,
     nfBalances,
     nfTotalValue,
     hasDetails,
@@ -243,7 +240,8 @@ export const setupLocationInfo = () => {
         identifier: identifier,
         exchange: false,
         imageIcon: true,
-        icon: `${api.serverUrl}/api/1/assets/${identifier}/icon`
+        icon: `${api.serverUrl}/api/1/assets/${identifier}/icon`,
+        detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}#blockchain-balances-${identifier}`
       };
     }
 

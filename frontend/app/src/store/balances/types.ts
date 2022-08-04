@@ -20,7 +20,7 @@ import {
   SupportedExchange
 } from '@/types/exchanges';
 import { Module } from '@/types/modules';
-import { SupportedL2Protocol } from '@/types/protocols';
+import { SupportedSubBlockchainProtocol } from '@/types/protocols';
 import { ExchangeRates, PriceOracle } from '@/types/user';
 
 export interface LocationBalance {
@@ -159,15 +159,15 @@ export type AddAccountsPayload = {
   readonly modules?: Module[];
 };
 
-export interface L2Totals {
-  readonly protocol: SupportedL2Protocol;
+export interface SubBlockchainTotal {
+  readonly protocol: SupportedSubBlockchainProtocol;
   readonly usdValue: BigNumber;
   readonly loading: boolean;
 }
 
 export interface BlockchainTotal {
   readonly chain: Blockchain;
-  readonly l2: L2Totals[];
+  readonly children: SubBlockchainTotal[];
   readonly usdValue: BigNumber;
   readonly loading: boolean;
 }
@@ -216,6 +216,7 @@ export interface AssetBreakdown {
   readonly balance: Balance;
   readonly address: string;
   readonly tags: string[] | null;
+  readonly detailPath?: string;
 }
 
 export interface ERC20Token {
@@ -236,7 +237,8 @@ export const NonFungibleBalance = PriceInformation.merge(
   z.object({
     name: z.string().nullable(),
     id: z.string().nonempty(),
-    imageUrl: z.string().nullable()
+    imageUrl: z.string().nullable(),
+    isLp: z.boolean().nullish()
   })
 );
 

@@ -6,7 +6,9 @@ import {
   XswapPool,
   XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
+import cloneDeep from 'lodash/cloneDeep';
 import { Writeable } from '@/types';
+import { balanceSum } from '@/utils/calculation';
 
 export function getPools(
   balances: XswapBalances,
@@ -106,41 +108,72 @@ export function getPoolProfit(
 
 export function getBalances(
   xswapBalance: XswapBalances,
-  addresses: string[]
+  addresses: string[],
+  group: boolean = true
 ): XswapBalance[] {
+  if (!group) {
+    const balances = [];
+    for (const account in xswapBalance) {
+      if (addresses.length === 0 || addresses.includes(account)) {
+        balances.push(...xswapBalance[account]);
+      }
+    }
+    return balances;
+  }
   const balances: { [poolAddress: string]: Writeable<XswapBalance> } = {};
   for (const account in xswapBalance) {
     if (addresses.length > 0 && !addresses.includes(account)) {
       continue;
     }
-    const accountBalances = xswapBalance[account];
+    const accountBalances = cloneDeep(xswapBalance)[account];
     if (!accountBalances || accountBalances.length === 0) {
       continue;
     }
+
     for (const {
       userBalance,
       totalSupply,
       assets,
-      address
+      address,
+      nftId,
+      priceRange
     } of accountBalances) {
       const balance = balances[address];
       if (balance) {
         const oldBalance = balance.userBalance;
-        balance.userBalance = {
-          amount: oldBalance.amount.plus(userBalance.amount),
-          usdValue: oldBalance.usdValue.plus(userBalance.usdValue)
-        };
+        balance.userBalance = balanceSum(oldBalance, userBalance);
 
         if (balance.totalSupply !== null && totalSupply !== null) {
           balance.totalSupply = balance.totalSupply.plus(totalSupply);
         }
+
+        assets.forEach(asset => {
+          const index = balance.assets.findIndex(
+            item => item.asset === asset.asset
+          );
+          if (index > -1) {
+            const existingAssetData = balance.assets[index];
+            const userBalance = balanceSum(
+              existingAssetData.userBalance,
+              asset.userBalance
+            );
+            balance.assets[index] = {
+              ...existingAssetData,
+              userBalance
+            };
+          } else {
+            balance.assets.push(asset);
+          }
+        });
       } else {
         balances[address] = {
           account,
           userBalance,
           totalSupply,
           assets,
-          address
+          address,
+          nftId,
+          priceRange
         };
       }
     }

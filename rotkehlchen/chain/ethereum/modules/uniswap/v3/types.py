@@ -9,7 +9,7 @@ from rotkehlchen.types import ChecksumEthAddress
 
 @dataclass(init=True, repr=True)
 class NFTLiquidityPool(LiquidityPool):
-    nft_id: int
+    nft_id: str
     price_range: Tuple[FVal, FVal]
 
     def serialize(self) -> Dict[str, Any]:

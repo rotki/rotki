@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Opti
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset
@@ -118,11 +119,12 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
     def get_balances(
             self,
             addresses: List[ChecksumEthAddress],
+            uniswap_nfts: Optional[AddressToUniswapV3LPBalances],
             return_zero_values: bool,
             ignore_cache: bool,
     ) -> Dict[ChecksumEthAddress, List[Dict[str, Any]]]:
         """Gets all NFT balances. The actual opensea querying part is protected by a lock.
-
+        If `uniswap_nfts` is not None then the worth of the LPs are used as the value of the NFTs.
         If `return_zero_values` is False then zero value NFTs are not returned in the result.
 
         May raise:
@@ -137,10 +139,27 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         cached_db_result = self.get_nfts_with_price()
         cached_db_prices = {x['asset']: x for x in cached_db_result}
         db_data: List[Tuple[str, str, Optional[str], Optional[str], int, ChecksumEthAddress]] = []
+        # get uniswap v3 lp balances and update nfts that are LPs with their worths.
         for address, nfts in nft_results.items():
             for nft in nfts:
                 cached_price_data = cached_db_prices.get(nft.token_identifier)
-                if cached_price_data is not None and cached_price_data['manually_input']:
+                # get the lps for the address and check if the nft is a LP,
+                # then replace the worth with LP value.
+                uniswap_v3_lps = uniswap_nfts.get(address) if uniswap_nfts is not None else None
+                uniswap_v3_lp = next((entry for entry in uniswap_v3_lps if entry.nft_id == nft.token_identifier), None) if uniswap_v3_lps is not None else None  # noqa:E501
+                if uniswap_v3_lp is not None:
+                    result[address].append({
+                        'id': nft.token_identifier,
+                        'name': nft.name,
+                        'manually_input': False,
+                        'price_asset': 'USD',
+                        'price_in_asset': uniswap_v3_lp.user_balance.usd_value,
+                        'usd_price': uniswap_v3_lp.user_balance.usd_value,
+                        'image_url': nft.image_url,
+                        'is_lp': True,
+                    })
+                    db_data.append((nft.token_identifier, nft.name, str(uniswap_v3_lp.user_balance.usd_value), 'USD', 0, address))  # noqa: E501
+                elif cached_price_data is not None and cached_price_data['manually_input']:
                     result[address].append({
                         'id': nft.token_identifier,
                         'name': nft.name,
@@ -149,6 +168,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                         'price_in_asset': FVal(cached_price_data['price_in_asset']),
                         'usd_price': FVal(cached_price_data['usd_price']),
                         'image_url': nft.image_url,
+                        'is_lp': False,
                     })
                 elif nft.price_usd != ZERO:
                     result[address].append({
@@ -159,6 +179,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                         'price_in_asset': nft.price_eth,
                         'usd_price': nft.price_usd,
                         'image_url': nft.image_url,
+                        'is_lp': False,
                     })
                     db_data.append((nft.token_identifier, nft.name, str(nft.price_eth), 'ETH', 0, address))  # noqa: E501
                 else:
@@ -171,6 +192,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                             'price_in_asset': ZERO,
                             'usd_price': ZERO,
                             'image_url': nft.image_url,
+                            'is_lp': False,
                         })
                     # Always write detected nfts in the DB to have name and address associated
                     db_data.append((nft.token_identifier, nft.name, None, None, 0, address))  # noqa: E501

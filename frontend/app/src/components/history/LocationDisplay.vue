@@ -42,10 +42,10 @@ export default defineComponent({
     icon: { required: false, type: Boolean, default: false },
     size: { required: false, type: String, default: '24px' },
     opensDetails: { required: false, type: Boolean, default: true },
-    isAccount: { required: false, type: Boolean, default: false }
+    detailPath: { required: false, type: String, default: '' }
   },
   setup(props) {
-    const { identifier, isAccount } = toRefs(props);
+    const { identifier, detailPath } = toRefs(props);
 
     const { getLocation } = setupLocationInfo();
 
@@ -54,16 +54,17 @@ export default defineComponent({
     );
 
     const route = computed<{ path: string }>(() => {
-      const path = get(isAccount)
-        ? `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}#blockchain-balances-${
-            get(location).identifier
-          }`
-        : Routes.LOCATIONS.route.replace(
-            ':identifier',
-            get(location).identifier
-          );
+      if (get(detailPath)) return { path: get(detailPath) };
 
-      return { path };
+      const path = get(location).detailPath;
+      if (path) return { path };
+
+      return {
+        path: Routes.LOCATIONS.route.replace(
+          ':identifier',
+          get(location).identifier
+        )
+      };
     });
 
     return {

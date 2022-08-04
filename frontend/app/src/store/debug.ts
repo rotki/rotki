@@ -13,14 +13,14 @@ function convert(data: any): any {
     return data;
   }
 
+  if (data instanceof BigNumber) {
+    return `bn::${data.toString()}`;
+  }
+
   const converted: { [key: string]: any } = {};
   Object.keys(data).map(key => {
-    let datum = data[key];
-    if (datum instanceof BigNumber) {
-      datum = `bn::${datum.toString()}`;
-    }
-
-    converted[key] = isObject(datum) ? convert(datum) : datum;
+    const datum = data[key];
+    converted[key] = convert(datum);
   });
 
   return converted;

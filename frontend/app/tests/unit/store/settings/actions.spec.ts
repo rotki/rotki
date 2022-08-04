@@ -90,6 +90,8 @@ describe('settings:actions', () => {
               [DashboardTableType.LIABILITIES]:
                 Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
               [DashboardTableType.NFT]:
+                Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+              [DashboardTableType.LIQUIDITY_PROVIDER]:
                 Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
             },
             [DATE_INPUT_FORMAT]: DateFormat.DateMonthYearHourMinuteSecond,

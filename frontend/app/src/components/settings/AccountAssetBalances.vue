@@ -8,35 +8,19 @@
         class="account-asset-balances__table"
         sort-by="usdValue"
       >
-        <template #header.usdValue>
-          <div class="text-no-wrap">
-            {{
-              $t('common.value_in_symbol', {
-                symbol: currencySymbol
-              })
-            }}
-          </div>
-        </template>
-        <template #header.price>
-          <div class="text-no-wrap">
-            {{
-              $t('common.price_in_symbol', {
-                symbol: currencySymbol
-              })
-            }}
-          </div>
-        </template>
         <template #item.asset="{ item }">
           <asset-details opens-details :asset="item.asset" />
         </template>
         <template #item.price="{ item }">
           <amount-display
+            v-if="prices[item.asset]"
             tooltip
             show-currency="symbol"
             fiat-currency="USD"
             :price-asset="item.asset"
-            :value="prices[item.asset] ? prices[item.asset] : '-'"
+            :value="prices[item.asset]"
           />
+          <div v-else>-</div>
         </template>
         <template #item.amount="{ item }">
           <amount-display :value="item.amount" />
@@ -56,45 +40,13 @@
 <script lang="ts">
 import { AssetBalance } from '@rotki/common';
 import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import { usePrices } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
-import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
-
-const headers = computed<DataTableHeader[]>(() => [
-  {
-    text: i18n.t('common.asset').toString(),
-    class: 'text-no-wrap',
-    value: 'asset',
-    cellClass: 'asset-info'
-  },
-  {
-    text: i18n
-      .t('common.price_in_symbol', {
-        symbol: CURRENCY_USD
-      })
-      .toString(),
-    class: 'text-no-wrap',
-    align: 'end',
-    value: 'price'
-  },
-  {
-    text: i18n.t('common.amount').toString(),
-    value: 'amount',
-    class: 'text-no-wrap',
-    cellClass: 'asset-divider',
-    align: 'end'
-  },
-  {
-    text: i18n.t('common.value_in_symbol').toString(),
-    value: 'usdValue',
-    align: 'end',
-    class: 'text-no-wrap'
-  }
-]);
 
 export default defineComponent({
   name: 'AccountAssetBalances',
@@ -106,6 +58,42 @@ export default defineComponent({
   setup() {
     const { prices } = usePrices();
     const { currencySymbol } = setupGeneralSettings();
+
+    const headers = computed<DataTableHeader[]>(() => [
+      {
+        text: i18n.t('common.asset').toString(),
+        class: 'text-no-wrap',
+        value: 'asset',
+        cellClass: 'asset-info'
+      },
+      {
+        text: i18n
+          .t('common.price_in_symbol', {
+            symbol: get(currencySymbol)
+          })
+          .toString(),
+        class: 'text-no-wrap',
+        align: 'end',
+        value: 'price'
+      },
+      {
+        text: i18n.t('common.amount').toString(),
+        value: 'amount',
+        class: 'text-no-wrap',
+        cellClass: 'asset-divider',
+        align: 'end'
+      },
+      {
+        text: i18n
+          .t('common.value_in_symbol', {
+            symbol: get(currencySymbol)
+          })
+          .toString(),
+        value: 'usdValue',
+        align: 'end',
+        class: 'text-no-wrap'
+      }
+    ]);
 
     return {
       currencySymbol,

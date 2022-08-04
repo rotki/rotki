@@ -104,11 +104,18 @@ export const routesRef = computed(() => ({
     icon: 'mdi-bank-transfer-out',
     text: i18n.t('navigation_menu.defi_sub.deposits_sub.liquidity').toString()
   },
-  DEFI_DEPOSITS_LIQUIDITY_UNISWAP: {
-    route: '/defi/deposits/liquidity/uniswap',
+  DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2: {
+    route: '/defi/deposits/liquidity/uniswap_v2',
     image: '/assets/images/defi/uniswap.svg',
     text: i18n
-      .t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap')
+      .t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2')
+      .toString()
+  },
+  DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3: {
+    route: '/defi/deposits/liquidity/uniswap_v3',
+    image: '/assets/images/defi/uniswap.svg',
+    text: i18n
+      .t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3')
       .toString()
   },
   DEFI_DEPOSITS_LIQUIDITY_BALANCER: {

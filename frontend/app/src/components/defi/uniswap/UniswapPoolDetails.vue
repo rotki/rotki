@@ -17,46 +17,52 @@
     </template>
     <card>
       <template #title>{{ $t('uniswap_pool_details.title') }}</template>
-      <v-row v-for="token in balance.assets" :key="token.asset" align="center">
-        <v-col cols="auto">
-          <asset-icon :identifier="token.asset" size="24px" class="mr-1" />
-        </v-col>
-        <v-col>
-          <v-row no-gutters>
-            <v-col class="font-weight-medium">
-              {{ $t('uniswap_pool_details.asset_liquidity') }}
-            </v-col>
-            <v-col cols="auto">
-              <amount-display
-                class="ps-4"
-                :asset="token.asset"
-                :value="token.totalAmount"
-              />
-            </v-col>
-          </v-row>
-          <v-row no-gutters>
-            <v-col class="font-weight-medium">
-              {{ $t('common.price') }}
-            </v-col>
-            <v-col cols="auto">
-              <amount-display
-                class="ps-4"
-                show-currency="symbol"
-                fiat-currency="USD"
-                :value="token.usdPrice"
-              />
-            </v-col>
-          </v-row>
-        </v-col>
-      </v-row>
-      <v-row v-if="balance.totalSupply">
-        <v-col class="font-weight-medium">
-          {{ $t('uniswap_pool_details.liquidity') }}
-        </v-col>
-        <v-col cols="auto">
+      <template v-for="(token, key) in balance.assets">
+        <v-divider v-if="key > 0" :key="token.asset + 'divider'" class="my-3" />
+        <v-row :key="token.asset" align="center">
+          <v-col cols="auto" class="pr-2">
+            <asset-icon :identifier="token.asset" size="24px" />
+          </v-col>
+          <v-col>
+            <v-row>
+              <v-col md="6">
+                <div class="text--secondary text-body-2">
+                  {{ $t('uniswap_pool_details.total_amount') }}
+                </div>
+                <div class="d-flex font-weight-bold">
+                  <amount-display
+                    :asset="token.asset"
+                    :value="token.totalAmount"
+                  />
+                </div>
+              </v-col>
+              <v-col md="6">
+                <div class="text--secondary text-body-2">
+                  {{
+                    $t('uniswap_pool_details.total_value_in_symbol', {
+                      symbol: currencySymbol
+                    })
+                  }}
+                </div>
+                <div class="d-flex font-weight-bold">
+                  <amount-display
+                    fiat-currency="USD"
+                    :value="token.usdPrice.multipliedBy(token.totalAmount)"
+                  />
+                </div>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
+      </template>
+      <div v-if="balance.totalSupply" class="d-flex pt-6">
+        <div class="text--secondary text-body-2">
+          {{ $t('uniswap_pool_details.liquidity') }}:
+        </div>
+        <div class="pl-2 font-weight-bold">
           <amount-display :value="balance.totalSupply" />
-        </v-col>
-      </v-row>
+        </div>
+      </div>
     </card>
   </v-dialog>
 </template>
@@ -64,6 +70,7 @@
 <script lang="ts">
 import { XswapBalance } from '@rotki/common/lib/defi/xswap';
 import { defineComponent, PropType, ref } from '@vue/composition-api';
+import { setupGeneralSettings } from '@/composables/session';
 
 export default defineComponent({
   name: 'UniswapPoolDetails',
@@ -72,7 +79,11 @@ export default defineComponent({
   },
   setup() {
     const details = ref<boolean>(false);
+
+    const { currencySymbol } = setupGeneralSettings();
+
     return {
+      currencySymbol,
       details
     };
   }

@@ -48,7 +48,7 @@ export type Pool = z.infer<typeof Pool>
 const BalancerEvent =z.object({
   txHash: z.string(),
   logIndex: z.number(),
-  timestamp: z.string(),
+  timestamp: z.number(),
   eventType: z.enum(['mint', 'burn']),
   lpBalance: Balance,
   amounts: PoolAmounts,
