@@ -1150,6 +1150,7 @@
     "no_data": "No more usable addresses"
   },
   "blockchain_balances": {
+    "add_account": "Add Account",
     "balances": {
       "avax": "Avalanche balances",
       "bch": "Bitcoin Cash balances",
@@ -1887,6 +1888,7 @@
     "weight": "Node weight {weight}%"
   },
   "exchange_balances": {
+    "add_exchange": "Add exchange",
     "click_here": "Click here",
     "no_connected_exchanges": "You do not have any connected exchanges. {0} to set up an Exchange Connection.",
     "select_exchange": "Select Exchange",
@@ -2814,6 +2816,7 @@
     "warning": "This functionality is designed to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result in errors."
   },
   "manual_balances": {
+    "add_manual_balance": "Add Manual Balance",
     "balances": "Manually Tracked Balances",
     "dialog": {
       "add": {
