@@ -10,14 +10,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
 import { routesRef } from '@/router/routes';
-import { useStore } from '@/store/utils';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 const Routes = get(routesRef);
 
@@ -29,10 +29,7 @@ const tabs: TabContent[] = [
   Routes.DEFI_AIRDROPS
 ];
 
-const store = useStore();
-const defiSetupDone = computed<boolean>(() => {
-  return store.state.settings!.defiSetupDone;
-});
+const { defiSetupDone } = storeToRefs(useFrontendSettingsStore());
 </script>
 
 <style scoped lang="scss">

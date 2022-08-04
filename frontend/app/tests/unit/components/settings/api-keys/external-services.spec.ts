@@ -1,14 +1,17 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { createPinia, Pinia, setActivePinia } from 'pinia';
+import { createPinia, Pinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
+import i18n from '@/i18n';
 import store, { useMainStore } from '@/store/store';
-import '../../../i18n';
+
 import { ExternalServiceKeys } from '@/types/user';
+import '../../../i18n';
 
 Vue.use(Vuetify);
+Vue.use(PiniaVuePlugin);
 
 describe('ExternalServices.vue', () => {
   let wrapper: Wrapper<ExternalServices>;
@@ -36,6 +39,7 @@ describe('ExternalServices.vue', () => {
       propsData: {
         value: ''
       },
+      i18n,
       mocks: {
         $api: {
           queryExternalServices,
@@ -47,6 +51,7 @@ describe('ExternalServices.vue', () => {
   }
 
   beforeEach(() => {
+    document.body.setAttribute('data-app', 'true');
     pinia = createPinia();
     setActivePinia(pinia);
     queryExternalServices = vi.fn();

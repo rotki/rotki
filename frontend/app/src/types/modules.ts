@@ -15,8 +15,7 @@ export enum Module {
   SUSHISWAP = 'sushiswap',
   NFTS = 'nfts',
   PICKLE = 'pickle_finance',
-  LIQUITY = 'liquity',
-  CONVEX = 'convex'
+  LIQUITY = 'liquity'
 }
 
 export const ModuleEnum = z.nativeEnum(Module);

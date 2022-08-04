@@ -107,7 +107,6 @@ import { getPremium } from '@/composables/session';
 import { useSettings } from '@/composables/settings';
 import { isPeriodAllowed } from '@/store/settings/utils';
 import { useStore } from '@/store/utils';
-import { LAST_KNOWN_TIMEFRAME } from '@/types/frontend-settings';
 
 const validator = (value: any) =>
   Object.values(TimeFramePeriod).includes(value) ||
@@ -204,7 +203,7 @@ export default defineComponent({
         const value = newTimeFrames[0];
         store.commit('session/setTimeframe', value);
         const { updateFrontendSetting } = useSettings();
-        updateFrontendSetting({ [LAST_KNOWN_TIMEFRAME]: value });
+        updateFrontendSetting({ lastKnownTimeframe: value });
       }
 
       visibleTimeframesChange(newTimeFrames);

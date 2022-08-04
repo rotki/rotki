@@ -83,14 +83,20 @@ export default class ChangePassword extends Vue {
   premiumSync!: string;
   changePassword!: (payload: ChangePasswordPayload) => Promise<ActionStatus>;
 
-  readonly passwordRules = [
-    (v: string) =>
-      !!v || this.$t('change_password.validation.empty_password').toString()
-  ];
-  readonly passwordConfirmRules = [
-    (v: string) =>
-      !!v || this.$t('change_password.validation.empty_confirmation').toString()
-  ];
+  get passwordRules() {
+    return [
+      (v: string) =>
+        !!v || this.$t('change_password.validation.empty_password').toString()
+    ];
+  }
+
+  get passwordConfirmRules() {
+    return [
+      (v: string) =>
+        !!v ||
+        this.$t('change_password.validation.empty_confirmation').toString()
+    ];
+  }
 
   private updateConfirmationError() {
     if (this.errorMessages.length > 0) {

@@ -1,7 +1,7 @@
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
@@ -9,6 +9,7 @@ import store from '@/store/store';
 import '../../i18n';
 
 Vue.use(Vuetify);
+Vue.use(PiniaVuePlugin);
 
 describe('AccountDisplay.vue', () => {
   let wrapper: Wrapper<any>;

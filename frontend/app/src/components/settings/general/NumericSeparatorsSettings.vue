@@ -65,14 +65,16 @@ import { onMounted, ref } from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
 import { useValidation } from '@/composables/validation';
 import i18n from '@/i18n';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');
 
-const { frontendSettings } = useSettings();
+const { thousandSeparator: thousands, decimalSeparator: decimals } =
+  storeToRefs(useFrontendSettingsStore());
 
 const rules = {
   thousandSeparator: {
@@ -142,8 +144,7 @@ const callIfDecimalsValid = (
 };
 
 onMounted(() => {
-  const settings = get(frontendSettings);
-  set(thousandSeparator, settings.thousandSeparator);
-  set(decimalSeparator, settings.decimalSeparator);
+  set(thousandSeparator, get(thousands));
+  set(decimalSeparator, get(decimals));
 });
 </script>

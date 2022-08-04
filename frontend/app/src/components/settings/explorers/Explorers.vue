@@ -72,19 +72,17 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { computed, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { explorerUrls } from '@/components/helper/asset-urls';
-import { useSettings } from '@/composables/settings';
-import { ExplorersSettings } from '@/types/frontend-settings';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 const ETC = 'ETC' as const;
 
 const supportedExplorers = [...Object.values(Blockchain), ETC];
 
 const selection = ref<Blockchain | typeof ETC>(Blockchain.ETH);
-const { frontendSettings, updateFrontendSetting } = useSettings();
-const explorers = computed<ExplorersSettings>(() => {
-  return get(frontendSettings).explorers;
-});
+const store = useFrontendSettingsStore();
+const { explorers } = storeToRefs(store);
 
 const address = ref<string>('');
 const tx = ref<string>('');
@@ -126,7 +124,7 @@ const saveAddress = (newAddress?: string) => {
     delete updated.address;
   }
 
-  updateFrontendSetting({
+  store.updateSetting({
     explorers: {
       ...get(explorers),
       [get(selection)]: updated
@@ -146,7 +144,7 @@ const saveTransaction = (newTransaction?: string) => {
     delete updated.transaction;
   }
 
-  updateFrontendSetting({
+  store.updateSetting({
     explorers: {
       ...get(explorers),
       [get(selection)]: updated

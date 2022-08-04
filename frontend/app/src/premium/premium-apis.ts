@@ -13,7 +13,6 @@ import {
   UserSettingsApi,
   UtilsApi
 } from '@rotki/common/lib/premium';
-import { Theme } from '@rotki/common/lib/settings';
 import { AdexBalances, AdexHistory } from '@rotki/common/lib/staking/adex';
 import {
   LocationData,
@@ -32,6 +31,7 @@ import { useCompoundStore } from '@/store/defi/compound';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useDexTradesStore } from '@/store/defi/trades';
 import { useUniswap } from '@/store/defi/uniswap';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useAdexStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
 import { useStore } from '@/store/utils';
@@ -76,6 +76,13 @@ export const statisticsApi = (): StatisticsApi => {
 
 export const userSettings = (): UserSettingsApi => {
   const store = useStore();
+  const frontendSettingsStore = useFrontendSettingsStore();
+  const {
+    selectedTheme,
+    dateInputFormat,
+    graphZeroBased,
+    showGraphRangeSelector
+  } = storeToRefs(frontendSettingsStore);
   return {
     floatingPrecision: computed<number>(
       () => store.getters['session/floatingPrecision']
@@ -92,26 +99,10 @@ export const userSettings = (): UserSettingsApi => {
     scrambleData: computed<boolean>(
       () => (store.state as any).session.scrambleData
     ),
-    selectedTheme: computed<Theme>(() => {
-      return store.getters['settings/selectedTheme'];
-    }),
-    dateInputFormat: computed<string>(() => {
-      return store.getters['settings/dateInputFormat'];
-    }),
-    graphZeroBased: computed(() => {
-      const state = store.state;
-      if (state.settings && state.settings.graphZeroBased) {
-        return state.settings.graphZeroBased;
-      }
-      return false;
-    }),
-    showGraphRangeSelector: computed(() => {
-      const state = store.state;
-      if (state.settings && state.settings.showGraphRangeSelector) {
-        return state.settings.showGraphRangeSelector;
-      }
-      return false;
-    }),
+    selectedTheme: selectedTheme,
+    dateInputFormat: dateInputFormat,
+    graphZeroBased: graphZeroBased,
+    showGraphRangeSelector: showGraphRangeSelector,
     privacyMode: computed<number>(() => store.getters['session/privacyMode'])
   };
 };

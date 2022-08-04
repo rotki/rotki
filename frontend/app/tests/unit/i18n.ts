@@ -11,10 +11,12 @@ function stringify(value: { [key: string]: any }): string {
 export const mockT = (key: any, args?: any) =>
   args ? `${key}::${stringify(args)}` : key;
 
+export const mockTc = (key: string, choice?: number, args?: object) =>
+  args ? `${key}::${choice}::${stringify(args)}` : key;
+
 function I18n(vue: typeof Vue): void {
   vue.prototype.$t = mockT;
-  vue.prototype.$tc = (key: string, choice?: number, args?: object) =>
-    args ? `${key}::${choice}::${stringify(args)}` : key;
+  vue.prototype.$tc = mockTc;
 }
 
 Vue.use(I18n);

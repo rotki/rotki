@@ -199,7 +199,6 @@ import {
   setupEntryLimit,
   setupIgnore
 } from '@/composables/history';
-import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import {
@@ -212,6 +211,7 @@ import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import { useHistory, useLedgerActions } from '@/store/history';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { Collection } from '@/types/collection';
 import { LedgerActionType } from '@/types/ledger-actions';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
@@ -425,7 +425,7 @@ export default defineComponent({
       return await addLedgerAction(ledgerAction as NewLedgerAction);
     };
 
-    const { dateInputFormat } = setupSettings();
+    const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
     const options: Ref<PaginationOptions | null> = ref(null);
     const filters: Ref<MatchedKeyword<LedgerActionFilterValueKeys>> = ref({});

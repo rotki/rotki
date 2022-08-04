@@ -1,5 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
@@ -7,6 +7,7 @@ import store from '@/store/store';
 import '../../../i18n';
 
 Vue.use(Vuetify);
+Vue.use(PiniaVuePlugin);
 
 describe('ServiceKey.vue', () => {
   let wrapper: Wrapper<ServiceKey>;

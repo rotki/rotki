@@ -20,13 +20,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 const zeroBased = ref<boolean>(false);
-const { frontendSettings } = useSettings();
+const { graphZeroBased: enabled } = storeToRefs(useFrontendSettingsStore());
 
 onMounted(() => {
-  const frontendSettingsVal = get(frontendSettings);
-  set(zeroBased, frontendSettingsVal.graphZeroBased);
+  set(zeroBased, get(enabled));
 });
 </script>

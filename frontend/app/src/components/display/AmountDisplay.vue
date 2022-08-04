@@ -85,13 +85,14 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set, useClipboard, useTimeoutFn } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupDisplayData, setupGeneralSettings } from '@/composables/session';
-import { setupSettings } from '@/composables/settings';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { findCurrency } from '@/data/currencies';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { Currency } from '@/types/currency';
 import { bigNumberify } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
@@ -157,7 +158,7 @@ export default defineComponent({
       currencyLocation,
       amountRoundingMode,
       valueRoundingMode
-    } = setupSettings();
+    } = storeToRefs(useFrontendSettingsStore());
 
     const { assetSymbol } = useAssetInfoRetrieval();
 

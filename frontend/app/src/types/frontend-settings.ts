@@ -1,13 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  DARK_THEME,
-  LIGHT_THEME,
-  ThemeColors,
-  SELECTED_THEME,
-  Theme,
-  ThemeEnum
-} from '@rotki/common/lib/settings';
+import { Theme, ThemeColors, ThemeEnum } from '@rotki/common/lib/settings';
 import {
   TimeFramePeriod,
   TimeFramePeriodEnum,
@@ -21,31 +14,6 @@ import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { CurrencyLocationEnum } from '@/types/currency-location';
 import { DateFormatEnum } from '@/types/date-format';
 import { TableColumnEnum } from '@/types/table-column';
-
-export const DEFI_SETUP_DONE = 'defiSetupDone' as const;
-export const LANGUAGE = 'language' as const;
-export const TIMEFRAME_SETTING = 'timeframeSetting' as const;
-export const VISIBLE_TIMEFRAMES = 'visibleTimeframes' as const;
-export const LAST_KNOWN_TIMEFRAME = 'lastKnownTimeframe' as const;
-export const QUERY_PERIOD = 'queryPeriod' as const;
-export const PROFIT_LOSS_PERIOD = 'profitLossReportPeriod' as const;
-export const THOUSAND_SEPARATOR = 'thousandSeparator' as const;
-export const DECIMAL_SEPARATOR = 'decimalSeparator' as const;
-export const CURRENCY_LOCATION = 'currencyLocation' as const;
-export const REFRESH_PERIOD = 'refreshPeriod' as const;
-export const EXPLORERS = 'explorers' as const;
-export const ITEMS_PER_PAGE = 'itemsPerPage' as const;
-export const AMOUNT_ROUNDING_MODE = 'amountRoundingMode' as const;
-export const VALUE_ROUNDING_MODE = 'valueRoundingMode' as const;
-export const GRAPH_ZERO_BASED = 'graphZeroBased' as const;
-export const SHOW_GRAPH_RANGE_SELECTOR = 'showGraphRangeSelector' as const;
-export const NFTS_IN_NET_VALUE = 'nftsInNetValue' as const;
-export const DASHBOARD_TABLES_VISIBLE_COLUMNS =
-  'dashboardTablesVisibleColumns' as const;
-export const DATE_INPUT_FORMAT = 'dateInputFormat' as const;
-export const VERSION_UPDATE_CHECK_FREQUENCY =
-  'versionUpdateCheckFrequency' as const;
-export const ENABLE_ETH_NAMES = 'enableEthNames' as const;
 
 export enum Quarter {
   Q1 = 'Q1',
@@ -149,14 +117,14 @@ export enum SupportedLanguage {
 const SupportedLanguageEnum = z.nativeEnum(SupportedLanguage);
 
 export const FrontendSettings = z.object({
-  [DEFI_SETUP_DONE]: z.boolean().default(false),
-  [LANGUAGE]: SupportedLanguageEnum.default(SupportedLanguage.EN),
-  [TIMEFRAME_SETTING]: TimeFrameSetting.default(TimeFramePersist.REMEMBER),
-  [VISIBLE_TIMEFRAMES]: z
+  defiSetupDone: z.boolean().default(false),
+  language: SupportedLanguageEnum.default(SupportedLanguage.EN),
+  timeframeSetting: TimeFrameSetting.default(TimeFramePersist.REMEMBER),
+  visibleTimeframes: z
     .array(TimeFrameSetting)
     .default(Defaults.DEFAULT_VISIBLE_TIMEFRAMES),
-  [LAST_KNOWN_TIMEFRAME]: TimeFramePeriodEnum.default(TimeFramePeriod.ALL),
-  [QUERY_PERIOD]: z.preprocess(
+  lastKnownTimeframe: TimeFramePeriodEnum.default(TimeFramePeriod.ALL),
+  queryPeriod: z.preprocess(
     queryPeriod =>
       Math.min(
         parseInt(queryPeriod as string) || Defaults.DEFAULT_QUERY_PERIOD,
@@ -164,16 +132,16 @@ export const FrontendSettings = z.object({
       ),
     QueryPeriod.default(Defaults.DEFAULT_QUERY_PERIOD)
   ),
-  [PROFIT_LOSS_PERIOD]: ProfitLossTimeframe.default({
+  profitLossReportPeriod: ProfitLossTimeframe.default({
     year: new Date().getFullYear().toString(),
     quarter: Quarter.ALL
   }),
-  [THOUSAND_SEPARATOR]: z.string().default(Defaults.DEFAULT_THOUSAND_SEPARATOR),
-  [DECIMAL_SEPARATOR]: z.string().default(Defaults.DEFAULT_DECIMAL_SEPARATOR),
-  [CURRENCY_LOCATION]: CurrencyLocationEnum.default(
+  thousandSeparator: z.string().default(Defaults.DEFAULT_THOUSAND_SEPARATOR),
+  decimalSeparator: z.string().default(Defaults.DEFAULT_DECIMAL_SEPARATOR),
+  currencyLocation: CurrencyLocationEnum.default(
     Defaults.DEFAULT_CURRENCY_LOCATION
   ),
-  [REFRESH_PERIOD]: z.preprocess(
+  refreshPeriod: z.preprocess(
     refreshPeriod =>
       Math.min(
         parseInt(refreshPeriod as string) || -1,
@@ -181,21 +149,19 @@ export const FrontendSettings = z.object({
       ),
     RefreshPeriod.default(-1)
   ),
-  [EXPLORERS]: ExplorersSettings.default({}),
-  [ITEMS_PER_PAGE]: z.number().positive().int().default(10),
-  [AMOUNT_ROUNDING_MODE]: RoundingMode.default(BigNumber.ROUND_UP),
-  [VALUE_ROUNDING_MODE]: RoundingMode.default(BigNumber.ROUND_DOWN),
-  [SELECTED_THEME]: ThemeEnum.default(Theme.AUTO),
-  [LIGHT_THEME]: ThemeColors.default(LIGHT_COLORS),
-  [DARK_THEME]: ThemeColors.default(DARK_COLORS),
-  [GRAPH_ZERO_BASED]: z.boolean().default(false),
-  [SHOW_GRAPH_RANGE_SELECTOR]: z.boolean().default(true),
-  [NFTS_IN_NET_VALUE]: z.boolean().default(true),
-  [DASHBOARD_TABLES_VISIBLE_COLUMNS]: DashboardTablesVisibleColumns.default({}),
-  [DATE_INPUT_FORMAT]: DateFormatEnum.default(
-    Defaults.DEFAULT_DATE_INPUT_FORMAT
-  ),
-  [VERSION_UPDATE_CHECK_FREQUENCY]: z.preprocess(
+  explorers: ExplorersSettings.default({}),
+  itemsPerPage: z.number().positive().int().default(10),
+  amountRoundingMode: RoundingMode.default(BigNumber.ROUND_UP),
+  valueRoundingMode: RoundingMode.default(BigNumber.ROUND_DOWN),
+  selectedTheme: ThemeEnum.default(Theme.AUTO),
+  lightTheme: ThemeColors.default(LIGHT_COLORS),
+  darkTheme: ThemeColors.default(DARK_COLORS),
+  graphZeroBased: z.boolean().default(false),
+  showGraphRangeSelector: z.boolean().default(true),
+  nftsInNetValue: z.boolean().default(true),
+  dashboardTablesVisibleColumns: DashboardTablesVisibleColumns.default({}),
+  dateInputFormat: DateFormatEnum.default(Defaults.DEFAULT_DATE_INPUT_FORMAT),
+  versionUpdateCheckFrequency: z.preprocess(
     versionUpdateCheckFrequency =>
       Math.min(
         parseInt(versionUpdateCheckFrequency as string) ||
@@ -206,7 +172,7 @@ export const FrontendSettings = z.object({
       Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY
     )
   ),
-  [ENABLE_ETH_NAMES]: z.boolean().default(true)
+  enableEthNames: z.boolean().default(true)
 });
 
 export type FrontendSettings = z.infer<typeof FrontendSettings>;

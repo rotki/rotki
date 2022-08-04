@@ -1,5 +1,5 @@
 import { mount, ThisTypedMountOptions, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import Vuex from 'vuex';
@@ -8,6 +8,7 @@ import store from '@/store/store';
 
 Vue.use(Vuetify);
 Vue.use(Vuex);
+Vue.use(PiniaVuePlugin);
 
 describe('TabNavigation.vue', () => {
   let wrapper: Wrapper<any>;

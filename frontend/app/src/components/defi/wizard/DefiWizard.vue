@@ -98,18 +98,17 @@
 import { defineComponent, ref } from '@vue/composition-api';
 import ModuleAddressSelector from '@/components/defi/wizard/ModuleAddressSelector.vue';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
-import { setupSettings } from '@/composables/settings';
-import { DEFI_SETUP_DONE } from '@/types/frontend-settings';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 export default defineComponent({
   name: 'DefiWizard',
   components: { ModuleAddressSelector, ModuleSelector },
   setup() {
-    const { updateSetting } = setupSettings();
+    const { updateSetting } = useFrontendSettingsStore();
 
     const step = ref<number>(1);
-    const done = () => {
-      updateSetting({ [DEFI_SETUP_DONE]: true });
+    const done = async () => {
+      await updateSetting({ defiSetupDone: true });
     };
 
     return {

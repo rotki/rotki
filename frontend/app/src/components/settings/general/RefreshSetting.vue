@@ -61,12 +61,11 @@ import { onMounted, ref } from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
 import { useValidation } from '@/composables/validation';
 import { Constraints } from '@/data/constraints';
 import i18n from '@/i18n';
-
-const { frontendSettings } = useSettings();
+import { useFrontendSettingsStore } from '@/store/settings';
 
 const refreshPeriod = ref<string>('');
 const refreshEnabled = ref<boolean>(false);
@@ -97,9 +96,12 @@ const rules = {
 const v$ = useVuelidate(rules, { refreshPeriod }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
+const { refreshPeriod: currentPeriod } = storeToRefs(
+  useFrontendSettingsStore()
+);
+
 const resetRefreshPeriod = () => {
-  const frontendSettingsVal = get(frontendSettings);
-  const period = frontendSettingsVal.refreshPeriod;
+  const period = get(currentPeriod);
   set(refreshEnabled, period > 0);
   set(refreshPeriod, get(refreshEnabled) ? period.toString() : '');
 };

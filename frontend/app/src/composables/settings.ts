@@ -3,17 +3,10 @@ import { promiseTimeout, set, useTimeoutFn } from '@vueuse/core';
 import { BaseMessage } from '@/components/settings/utils';
 import i18n from '@/i18n';
 import { EditableSessionState } from '@/store/session/types';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
-import { DateFormat } from '@/types/date-format';
-import {
-  DashboardTablesVisibleColumns,
-  ExplorersSettings,
-  FrontendSettings,
-  FrontendSettingsPayload,
-  RoundingMode,
-  SupportedLanguage
-} from '@/types/frontend-settings';
+import { FrontendSettingsPayload } from '@/types/frontend-settings';
 import {
   AccountingSettings,
   GeneralSettings,
@@ -22,90 +15,6 @@ import {
 import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';
 
-export const setupSettings = () => {
-  const store = useStore();
-
-  const dashboardTablesVisibleColumns = computed<DashboardTablesVisibleColumns>(
-    () => store.getters['settings/dashboardTablesVisibleColumns']
-  );
-
-  const language = computed<SupportedLanguage>(
-    () => store.getters['settings/language']
-  );
-
-  const dateInputFormat = computed<DateFormat>(
-    () => store.getters['settings/dateInputFormat']
-  );
-
-  const itemsPerPage = computed<number>(
-    () => store.state.settings!.itemsPerPage
-  );
-
-  const refreshPeriod = computed<number>(
-    () => store.state.settings!.refreshPeriod
-  );
-
-  const thousandSeparator = computed<string>(
-    () => store.getters['settings/thousandSeparator']
-  );
-
-  const decimalSeparator = computed<string>(
-    () => store.getters['settings/decimalSeparator']
-  );
-
-  const currencyLocation = computed<string>(
-    () => store.getters['settings/currencyLocation']
-  );
-
-  const amountRoundingMode = computed<RoundingMode>(
-    () => store.state.settings!.amountRoundingMode
-  );
-
-  const valueRoundingMode = computed<RoundingMode>(
-    () => store.state.settings!.valueRoundingMode
-  );
-
-  const graphZeroBased = computed<boolean>(
-    () => store.state.settings!.graphZeroBased
-  );
-
-  const showGraphRangeSelector = computed<boolean>(
-    () => store.state.settings!.showGraphRangeSelector
-  );
-
-  const nftsInNetValue = computed<boolean>(
-    () => store.state.settings!.nftsInNetValue
-  );
-
-  const explorers = computed<ExplorersSettings>(
-    () => store.state.settings!.explorers
-  );
-
-  const updateSetting = async (
-    settings: FrontendSettingsPayload
-  ): Promise<void> => {
-    await store.dispatch('settings/updateSetting', settings);
-  };
-
-  return {
-    language,
-    dateInputFormat,
-    dashboardTablesVisibleColumns,
-    itemsPerPage,
-    refreshPeriod,
-    thousandSeparator,
-    decimalSeparator,
-    currencyLocation,
-    amountRoundingMode,
-    valueRoundingMode,
-    explorers,
-    graphZeroBased,
-    showGraphRangeSelector,
-    nftsInNetValue,
-    updateSetting
-  };
-};
-
 export enum SettingLocation {
   FRONTEND,
   SESSION,
@@ -113,6 +22,7 @@ export enum SettingLocation {
 }
 
 export const useSettings = () => {
+  const frontendSettingsStore = useFrontendSettingsStore();
   const store = useStore();
 
   const accountingSettings = computed<AccountingSettings>(() => {
@@ -121,10 +31,6 @@ export const useSettings = () => {
 
   const generalSettings = computed<GeneralSettings>(() => {
     return store.state!.session!.generalSettings;
-  });
-
-  const frontendSettings = computed<FrontendSettings>(() => {
-    return store.state!.settings!;
   });
 
   const updateGeneralSetting = async (
@@ -176,10 +82,8 @@ export const useSettings = () => {
     };
     try {
       // @ts-ignore
-      const { success, message: backendMessage } = (await store.dispatch(
-        'settings/updateSetting',
-        settings
-      )) as ActionStatus;
+      const { success, message: backendMessage } =
+        await frontendSettingsStore.updateSetting(settings);
 
       if (success) {
         message = {
@@ -235,7 +139,6 @@ export const useSettings = () => {
   return {
     accountingSettings,
     generalSettings,
-    frontendSettings,
     updateGeneralSetting,
     updateFrontendSetting,
     updateSetting

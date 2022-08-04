@@ -1,6 +1,6 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { VDialog } from 'vuetify/lib/components';
@@ -17,6 +17,7 @@ vi.mock('@/services/rotkehlchen-api');
 Vue.use(Vuetify);
 Vue.use(Api);
 Vue.use(Interop);
+Vue.use(PiniaVuePlugin);
 
 // This is workaround used because stubs is somehow not working,
 // Eager prop will render the <slot /> immediately

@@ -42,6 +42,7 @@ import {
   mapCollectionEntriesWithMeta
 } from '@/store/history/utils';
 import { useNotifications } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings';
 import store, { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
@@ -62,10 +63,10 @@ const defaultHistoricState = <T>(): Collection<T> => ({
 const defaultHistoricPayloadState = <
   T extends Object
 >(): HistoryRequestPayload<T> => {
-  const itemsPerPage = store.state.settings!.itemsPerPage;
+  const store = useFrontendSettingsStore();
 
   return {
-    limit: itemsPerPage,
+    limit: store.itemsPerPage,
     offset: 0,
     orderByAttribute: 'timestamp' as keyof T,
     ascending: false

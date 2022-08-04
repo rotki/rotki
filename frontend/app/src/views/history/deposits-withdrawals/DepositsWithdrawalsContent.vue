@@ -152,7 +152,6 @@ import {
   setupEntryLimit,
   setupIgnore
 } from '@/composables/history';
-import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import {
@@ -169,6 +168,7 @@ import {
   IgnoreActionType,
   TradeEntry
 } from '@/store/history/types';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { Collection } from '@/types/collection';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 import DepositWithdrawalDetails from '@/views/history/deposits-withdrawals/DepositWithdrawalDetails.vue';
@@ -296,7 +296,7 @@ export default defineComponent({
 
     const expanded: Ref<TradeEntry[]> = ref([]);
 
-    const { dateInputFormat } = setupSettings();
+    const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
     const options: Ref<PaginationOptions | null> = ref(null);
     const filters: Ref<MatchedKeyword<AssetMovementFilterValueKeys>> = ref({});

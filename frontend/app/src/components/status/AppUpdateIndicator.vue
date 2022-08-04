@@ -14,11 +14,12 @@ import {
   computed,
   defineComponent,
   onMounted,
-  toRefs,
   watch
 } from '@vue/composition-api';
 import { get, useIntervalFn } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { useInterop } from '@/electron-interop';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useMainStore } from '@/store/store';
 import { useStore } from '@/store/utils';
 
@@ -27,13 +28,13 @@ export default defineComponent({
   setup() {
     const mainStore = useMainStore();
     const store = useStore();
-    const { version, updateNeeded } = toRefs(mainStore);
+    const { version, updateNeeded } = storeToRefs(mainStore);
     const { getVersion } = mainStore;
     const { isPackaged, openUrl } = useInterop();
-
-    const versionUpdateCheckFrequency = computed(
-      () => store.state.settings!.versionUpdateCheckFrequency
+    const { versionUpdateCheckFrequency } = storeToRefs(
+      useFrontendSettingsStore()
     );
+
     const appVersion = computed(() => get(version).latestVersion);
 
     const openLink = () => openUrl(get(version).downloadUrl);

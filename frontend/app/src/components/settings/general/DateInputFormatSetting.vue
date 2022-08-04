@@ -28,13 +28,16 @@ import { onMounted, ref } from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
 import { useValidation } from '@/composables/validation';
 import { displayDateFormatter } from '@/data/date_formatter';
 import i18n from '@/i18n';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 const dateInputFormat = ref<string>('');
-const { frontendSettings } = useSettings();
+const { dateInputFormat: inputFormat } = storeToRefs(
+  useFrontendSettingsStore()
+);
 
 const containsValidDirectives = (v: string) =>
   displayDateFormatter.containsValidDirectives(v);
@@ -56,8 +59,7 @@ const v$ = useVuelidate(rules, { dateInputFormat }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
 const resetDateInputFormat = () => {
-  const frontendSettingsVal = get(frontendSettings);
-  set(dateInputFormat, frontendSettingsVal.dateInputFormat);
+  set(dateInputFormat, get(inputFormat));
 };
 
 onMounted(() => {

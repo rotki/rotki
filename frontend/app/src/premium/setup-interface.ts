@@ -4,12 +4,7 @@ import {
   PremiumInterface,
   SettingsApi
 } from '@rotki/common/lib/premium';
-import {
-  DARK_THEME,
-  LIGHT_THEME,
-  Themes,
-  TimeUnit
-} from '@rotki/common/lib/settings';
+import { Themes, TimeUnit } from '@rotki/common/lib/settings';
 import * as CompositionAPI from '@vue/composition-api';
 import * as BigNumber from 'bignumber.js';
 import * as Chart from 'chart.js';
@@ -32,6 +27,7 @@ import {
   utilsApi
 } from '@/premium/premium-apis';
 import { registerComponents } from '@/premium/register-components';
+import { useFrontendSettingsStore } from '@/store/settings';
 import store from '@/store/store';
 import { DateFormat } from '@/types/date-format';
 import { FrontendSettingsPayload } from '@/types/frontend-settings';
@@ -82,25 +78,27 @@ const data = (): DataUtilities => ({
   utils: utilsApi()
 });
 
-const settings = (): SettingsApi => ({
-  async update(settings: FrontendSettingsPayload): Promise<void> {
-    await store.dispatch('settings/updateSetting', settings);
-  },
-  defaultThemes(): Themes {
-    return {
-      dark: DARK_COLORS,
-      light: LIGHT_COLORS
-    };
-  },
-  themes(): Themes {
-    const settings = store.state.settings!;
-    return {
-      light: settings[LIGHT_THEME],
-      dark: settings[DARK_THEME]
-    };
-  },
-  user: userSettings()
-});
+const settings = (): SettingsApi => {
+  const frontendStore = useFrontendSettingsStore();
+  return {
+    async update(settings: FrontendSettingsPayload): Promise<void> {
+      await frontendStore.updateSetting(settings);
+    },
+    defaultThemes(): Themes {
+      return {
+        dark: DARK_COLORS,
+        light: LIGHT_COLORS
+      };
+    },
+    themes(): Themes {
+      return {
+        light: frontendStore.lightTheme,
+        dark: frontendStore.darkTheme
+      };
+    },
+    user: userSettings()
+  };
+};
 
 export const usePremiumApi = (): PremiumInterface => ({
   useHostComponents: true,

@@ -92,11 +92,11 @@ import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelecto
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupGeneralSettings } from '@/composables/session';
-import { setupSettings } from '@/composables/settings';
 import { bigNumberSum } from '@/filters';
 import i18nFn from '@/i18n';
 import { Routes } from '@/router/routes';
 import { useUniswap } from '@/store/defi/uniswap';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useStatisticsStore } from '@/store/statistics';
 import { useTasks } from '@/store/tasks';
 import {
@@ -185,7 +185,9 @@ const balances = computed(() => {
 });
 
 const { currencySymbol } = setupGeneralSettings();
-const { dashboardTablesVisibleColumns } = setupSettings();
+const { dashboardTablesVisibleColumns } = storeToRefs(
+  useFrontendSettingsStore()
+);
 
 const tableHeaders = createTableHeaders(
   currencySymbol,

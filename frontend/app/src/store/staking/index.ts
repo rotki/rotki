@@ -16,7 +16,7 @@ import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
-import store from '@/store/store';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useTasks } from '@/store/tasks';
 import {
   getStatus,
@@ -39,7 +39,8 @@ const defaultStats = () => ({
 });
 
 const defaultPagination = (): Eth2DailyStatsPayload => {
-  const itemsPerPage = store.state.settings!.itemsPerPage;
+  const store = useFrontendSettingsStore();
+  const itemsPerPage = store.itemsPerPage;
 
   return {
     limit: itemsPerPage,

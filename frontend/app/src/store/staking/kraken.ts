@@ -6,7 +6,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
-import store from '@/store/store';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useTasks } from '@/store/tasks';
 import { getStatusUpdater } from '@/store/utils';
 import {
@@ -22,7 +22,7 @@ import { logger } from '@/utils/logging';
 
 const defaultPagination = (): KrakenStakingPagination => ({
   offset: 0,
-  limit: store.state.settings!.itemsPerPage,
+  limit: useFrontendSettingsStore().itemsPerPage,
   orderByAttribute: 'timestamp',
   ascending: false
 });

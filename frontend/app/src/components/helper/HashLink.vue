@@ -77,6 +77,7 @@ import {
 } from '@vue/composition-api';
 import { get, useClipboard } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
+import { storeToRefs } from 'pinia';
 import {
   Chains,
   ExplorerUrls,
@@ -84,10 +85,10 @@ import {
 } from '@/components/helper/asset-urls';
 import { useTheme } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
-import { setupSettings } from '@/composables/settings';
 import { interop } from '@/electron-interop';
 import { truncateAddress } from '@/filters';
 import { useEthNamesStore } from '@/store/balances';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { randomHex } from '@/utils/data';
 
 export default defineComponent({
@@ -113,7 +114,7 @@ export default defineComponent({
     const { text, baseUrl, chain, tx } = toRefs(props);
 
     const { scrambleData, shouldShowAmount } = setupDisplayData();
-    const { explorers } = setupSettings();
+    const { explorers } = storeToRefs(useFrontendSettingsStore());
     const { dark } = useTheme();
 
     const { ethNameSelector } = useEthNamesStore();

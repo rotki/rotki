@@ -228,7 +228,6 @@ import {
   setupEntryLimit,
   setupIgnore
 } from '@/composables/history';
-import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import {
@@ -242,6 +241,7 @@ import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import { useHistory, useTrades } from '@/store/history';
 import { IgnoreActionType, TradeEntry } from '@/store/history/types';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { Collection } from '@/types/collection';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
@@ -485,7 +485,7 @@ export default defineComponent({
       return await addExternalTrade(trade as NewTrade);
     };
 
-    const { dateInputFormat } = setupSettings();
+    const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
     const options: Ref<PaginationOptions | null> = ref(null);
     const filters: Ref<MatchedKeyword<TradeFilterValueKeys>> = ref({});

@@ -1,5 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { BackupApi } from '@/services/backup/backup-api';
@@ -16,6 +16,7 @@ vi.spyOn(api, 'backups', 'get').mockReturnValue(
 );
 
 Vue.use(Vuetify);
+Vue.use(PiniaVuePlugin);
 
 describe('UserSecuritySettings.vue', () => {
   let wrapper: Wrapper<any>;

@@ -1,8 +1,8 @@
 import { BigNumber } from '@rotki/common';
 import {
-  SELECTED_THEME,
   DARK_THEME,
   LIGHT_THEME,
+  SELECTED_THEME,
   Theme
 } from '@rotki/common/lib/settings';
 import {
@@ -12,27 +12,9 @@ import {
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
-  AMOUNT_ROUNDING_MODE,
-  CURRENCY_LOCATION,
-  DECIMAL_SEPARATOR,
-  DEFI_SETUP_DONE,
-  ENABLE_ETH_NAMES,
-  EXPLORERS,
   FrontendSettings,
-  GRAPH_ZERO_BASED,
-  ITEMS_PER_PAGE,
-  LANGUAGE,
-  LAST_KNOWN_TIMEFRAME,
-  NFTS_IN_NET_VALUE,
-  PROFIT_LOSS_PERIOD,
   Quarter,
-  QUERY_PERIOD,
-  REFRESH_PERIOD,
-  SHOW_GRAPH_RANGE_SELECTOR,
-  SupportedLanguage,
-  THOUSAND_SEPARATOR,
-  TIMEFRAME_SETTING,
-  VALUE_ROUNDING_MODE
+  SupportedLanguage
 } from '@/types/frontend-settings';
 
 describe('settings:utils', () => {
@@ -42,41 +24,41 @@ describe('settings:utils', () => {
 
   test('restore nothing is the loaded value has an unexpected type', async () => {
     expect.assertions(1);
-    expect(() => FrontendSettings.parse({ [DEFI_SETUP_DONE]: 1 })).toThrow();
+    expect(() => FrontendSettings.parse({ defiSetupDone: 1 })).toThrow();
   });
 
   test('restore valid properties', async () => {
     expect.assertions(1);
     const frontendSettings = FrontendSettings.parse({
-      [DEFI_SETUP_DONE]: true,
+      defiSetupDone: true,
       invalid: 2
     });
 
     expect(frontendSettings).toMatchObject({
-      [TIMEFRAME_SETTING]: TimeFramePersist.REMEMBER,
-      [DEFI_SETUP_DONE]: true,
-      [LANGUAGE]: SupportedLanguage.EN,
-      [LAST_KNOWN_TIMEFRAME]: TimeFramePeriod.ALL,
-      [QUERY_PERIOD]: 5,
-      [PROFIT_LOSS_PERIOD]: {
+      timeframeSetting: TimeFramePersist.REMEMBER,
+      defiSetupDone: true,
+      language: SupportedLanguage.EN,
+      lastKnownTimeframe: TimeFramePeriod.ALL,
+      queryPeriod: 5,
+      profitLossReportPeriod: {
         year: new Date().getFullYear().toString(),
         quarter: Quarter.ALL
       },
-      [THOUSAND_SEPARATOR]: Defaults.DEFAULT_THOUSAND_SEPARATOR,
-      [DECIMAL_SEPARATOR]: Defaults.DEFAULT_DECIMAL_SEPARATOR,
-      [CURRENCY_LOCATION]: Defaults.DEFAULT_CURRENCY_LOCATION,
-      [REFRESH_PERIOD]: -1,
-      [EXPLORERS]: {},
-      [ITEMS_PER_PAGE]: 10,
-      [AMOUNT_ROUNDING_MODE]: BigNumber.ROUND_UP,
-      [VALUE_ROUNDING_MODE]: BigNumber.ROUND_DOWN,
+      thousandSeparator: Defaults.DEFAULT_THOUSAND_SEPARATOR,
+      decimalSeparator: Defaults.DEFAULT_DECIMAL_SEPARATOR,
+      currencyLocation: Defaults.DEFAULT_CURRENCY_LOCATION,
+      refreshPeriod: -1,
+      explorers: {},
+      itemsPerPage: 10,
+      amountRoundingMode: BigNumber.ROUND_UP,
+      valueRoundingMode: BigNumber.ROUND_DOWN,
       [SELECTED_THEME]: Theme.AUTO,
       [LIGHT_THEME]: LIGHT_COLORS,
       [DARK_THEME]: DARK_COLORS,
-      [GRAPH_ZERO_BASED]: false,
-      [SHOW_GRAPH_RANGE_SELECTOR]: true,
-      [NFTS_IN_NET_VALUE]: true,
-      [ENABLE_ETH_NAMES]: true
+      graphZeroBased: false,
+      showGraphRangeSelector: true,
+      nftsInNetValue: true,
+      enableEthNames: true
     });
   });
 });

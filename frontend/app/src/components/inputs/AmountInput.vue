@@ -28,7 +28,8 @@ import {
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import Cleave from 'cleave.js';
-import { setupSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 /**
  * When this component is used, prop [type] shouldn't be passed,
@@ -46,7 +47,9 @@ export default defineComponent({
   setup(props, { emit }) {
     const { integer, value } = toRefs(props);
 
-    const { thousandSeparator, decimalSeparator } = setupSettings();
+    const { thousandSeparator, decimalSeparator } = storeToRefs(
+      useFrontendSettingsStore()
+    );
 
     const formattedValue = get(value).replace('.', get(decimalSeparator));
 

@@ -1,9 +1,11 @@
+import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { setupExchanges, setupGeneralBalances } from '@/composables/balances';
 import { websocket } from '@/services/websocket/websocket-service';
 import { useNotifications } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings';
 import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
-import { QUERY_PERIOD, REFRESH_PERIOD } from '@/types/frontend-settings';
 
 const PERIODIC = 'periodic';
 const TASK = 'task';
@@ -46,7 +48,9 @@ class Monitoring {
    * client and updates the UI with the response.
    */
   start(restarting: boolean = false) {
-    const settings = store.state.settings!;
+    const { queryPeriod, refreshPeriod } = storeToRefs(
+      useFrontendSettingsStore()
+    );
 
     websocket.connect().then(() => {
       if (!this.monitors[PERIODIC]) {
@@ -56,7 +60,7 @@ class Monitoring {
 
         this.monitors[PERIODIC] = setInterval(
           Monitoring.fetch,
-          settings[QUERY_PERIOD] * 1000
+          get(queryPeriod) * 1000
         );
       }
     });
@@ -78,7 +82,7 @@ class Monitoring {
       this.monitors[WATCHER] = setInterval(Monitoring.fetchWatchers, 360000);
     }
 
-    const period = settings[REFRESH_PERIOD] * 60 * 1000;
+    const period = get(refreshPeriod) * 60 * 1000;
     if (!this.monitors[BALANCES] && period > 0) {
       this.monitors[BALANCES] = setInterval(Monitoring.fetchBalances, period);
     }

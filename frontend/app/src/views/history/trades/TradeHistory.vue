@@ -21,14 +21,15 @@ import {
   onUnmounted
 } from '@vue/composition-api';
 import { get, useIntervalFn } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import OpenTrades from '@/components/history/OpenTrades.vue';
 import { setupStatusChecking } from '@/composables/common';
-import { setupSettings } from '@/composables/settings';
 import { Section } from '@/store/const';
 import { useTrades } from '@/store/history';
 import { TradeEntry } from '@/store/history/types';
+import { useFrontendSettingsStore } from '@/store/settings';
 
 export default defineComponent({
   name: 'Trades',
@@ -38,7 +39,7 @@ export default defineComponent({
     OpenTrades
   },
   setup() {
-    const { refreshPeriod } = setupSettings();
+    const { refreshPeriod } = storeToRefs(useFrontendSettingsStore());
     const { fetchTrades } = useTrades();
 
     const preview = computed<boolean>(() => {

@@ -73,6 +73,7 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -85,10 +86,10 @@ import {
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useTheme } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
-import { setupSettings } from '@/composables/settings';
 import { SupportedCurrency } from '@/data/currencies';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { krakenStakingEventTypeData } from '@/store/staking/consts';
 import {
   KrakenStakingEvents,
@@ -152,7 +153,7 @@ const getEventTypeIdentifier = (label: string) => {
 
 const useMatchers = (events: Ref<KrakenStakingEvents>) => {
   const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
-  const { dateInputFormat } = setupSettings();
+  const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   return computed<SearchMatcher<KrakenStakingKeys, KrakenStakingValueKeys>[]>(
     () => {
       const krakenStakingEventTypeValues = get(krakenStakingEventTypeData).map(
@@ -250,7 +251,7 @@ export default defineComponent({
     const { events } = toRefs(props);
     const filters: Ref<MatchedKeyword<KrakenStakingValueKeys>> = ref({});
 
-    const { itemsPerPage } = setupSettings();
+    const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
     const { isMobile } = useTheme();
 
     const { currencySymbol } = setupGeneralSettings();

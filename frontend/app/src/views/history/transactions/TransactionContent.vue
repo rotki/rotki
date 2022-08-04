@@ -251,7 +251,6 @@ import {
   setupEntryLimit,
   setupIgnore
 } from '@/composables/history';
-import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import {
   EthTransaction,
@@ -266,6 +265,7 @@ import {
   EthTransactionEventEntry,
   IgnoreActionType
 } from '@/store/history/types';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useTasks } from '@/store/tasks';
 import { Collection } from '@/types/collection';
 import { TaskType } from '@/types/task-type';
@@ -608,7 +608,7 @@ export default defineComponent({
     const loading = isSectionLoading(Section.TX);
     const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
 
-    const { dateInputFormat } = setupSettings();
+    const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
     const assetInfoRetrievalStore = useAssetInfoRetrieval();
     const { supportedAssetsSymbol } = toRefs(assetInfoRetrievalStore);
     const { getAssetIdentifierForSymbol } = assetInfoRetrievalStore;

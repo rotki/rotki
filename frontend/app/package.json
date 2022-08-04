@@ -64,6 +64,7 @@
     "@intlify/eslint-plugin-vue-i18n": "2.0.0",
     "@mdi/font": "6.5.95",
     "@namics/stylelint-bem": "6.3.4",
+    "@pinia/testing": "0.0.13",
     "@types/chart.js": "2.9.37",
     "@types/cleave.js": "1.4.6",
     "@types/electron-devtools-installer": "2.2.1",

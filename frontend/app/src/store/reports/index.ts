@@ -1,14 +1,14 @@
 import { Message } from '@rotki/common/lib/messages';
 import { computed, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { setupSettings } from '@/composables/settings';
+import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances';
 import { filterAddressesFromWords } from '@/store/history/utils';
 import { useNotifications } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings';
 import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import {
@@ -89,6 +89,7 @@ export const useReports = defineStore('reports', () => {
   });
 
   const { setMessage } = useMainStore();
+  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 
   const createCsv = async (path: string) => {
     let message: Message;
@@ -130,7 +131,6 @@ export const useReports = defineStore('reports', () => {
     page?: { limit: number; offset: number }
   ): Promise<boolean> => {
     set(loaded, false);
-    const { itemsPerPage } = setupSettings();
     const currentPage = page ?? { limit: get(itemsPerPage), offset: 0 };
 
     try {
