@@ -866,12 +866,12 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'stakingresource',
         ),
         json={
-            "ascending": False,
+            "ascending": [False],
             "async_query": False,
             "limit": 10,
             "offset": 0,
             "only_cache": True,
-            "order_by_attribute": "random_column",
+            "order_by_attributes": ["random_column"],
         },
     )
     assert_error_response(
@@ -887,12 +887,12 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'stakingresource',
         ),
         json={
-            "ascending": False,
+            "ascending": [False],
             "async_query": False,
             "limit": 10,
             "offset": 0,
             "only_cache": True,
-            "order_by_attribute": "event_type",
+            "order_by_attributes": ["event_type"],
         },
     )
     assert_proper_response_with_result(response)

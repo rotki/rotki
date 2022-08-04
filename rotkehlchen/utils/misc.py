@@ -16,6 +16,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Tuple,
     TypeVar,
     Union,
     overload,
@@ -370,3 +371,16 @@ def shift_num_right_by(num: int, digits: int) -> int:
 def is_valid_ethereum_tx_hash(val: str) -> bool:
     """Validates an Ethereum transaction hash."""
     return len(val) == 66 and is_hexstr(val) is True
+
+
+def create_order_by_rules_list(
+        data: Dict[str, Any],
+        timestamp_field: str = 'timestamp',
+) -> List[Tuple[str, bool]]:
+    """Create a list of attributes and sorting order taking values from DBOrderBySchema
+    to be used by the filters that allow sorting. By default the attribute used for sorting is
+    timestamp and the ascending value for this field is False.
+    """
+    order_by_attribute = data['order_by_attributes'] if data['order_by_attributes'] is not None else [timestamp_field]  # noqa: E501
+    ascending = data['ascending'] if data['ascending'] is not None else [False]
+    return list(zip(order_by_attribute, ascending))

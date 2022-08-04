@@ -59,7 +59,8 @@ def query_api_create_and_get_report(
         json={
             'offset': events_offset,
             'limit': events_limit,
-            'ascending': events_ascending_timestamp,
+            'order_by_attributes': ['timestamp'],
+            'ascending': [events_ascending_timestamp],
         },
     )
     events_result = assert_proper_response_with_result(response)

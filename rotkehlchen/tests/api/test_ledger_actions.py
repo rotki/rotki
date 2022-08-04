@@ -177,7 +177,7 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server, start_with_valid_p
         api_url_for(
             rotkehlchen_api_server,
             'ledgeractionsresource',
-        ), json={'asset': 'EUR', 'ascending': True},
+        ), json={'asset': 'EUR', 'order_by_attributes': ['timestamp'], 'ascending': [True]},
     )
     result = assert_proper_response_with_result(response)
     result = [x['entry'] for x in result['entries']]
@@ -211,7 +211,7 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server, start_with_valid_p
 
     def assert_order_by(order_by: str):
         """A helper to keep things DRY in the test"""
-        data = {'order_by_attribute': order_by, 'ascending': False, 'only_cache': True}
+        data = {'order_by_attributes': [order_by], 'ascending': [False], 'only_cache': True}
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -224,7 +224,7 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server, start_with_valid_p
         assert result['entries_found'] == 4
         desc_result = result['entries']
         assert len(desc_result) == 4
-        data = {'order_by_attribute': order_by, 'ascending': True, 'only_cache': True}
+        data = {'order_by_attributes': [order_by], 'ascending': [True], 'only_cache': True}
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,

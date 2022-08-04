@@ -747,7 +747,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
 
     def assert_order_by(order_by: str):
         """A helper to keep things DRY in the test"""
-        data = {'order_by_attribute': order_by, 'ascending': False, 'only_cache': True}
+        data = {'order_by_attributes': [order_by], 'ascending': [False], 'only_cache': True}
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
@@ -760,7 +760,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
         assert result['entries_found'] == 10
         desc_result = result['entries']
         assert len(desc_result) == 10
-        data = {'order_by_attribute': order_by, 'ascending': True, 'only_cache': True}
+        data = {'order_by_attributes': [order_by], 'ascending': [True], 'only_cache': True}
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,

@@ -539,11 +539,11 @@ def test_query_transactions_errors(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'per_address_ethereum_transactions_resource',
             address='0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7',
-        ), json={'order_by_attribute': 'tim3'},
+        ), json={'order_by_attributes': ['tim3'], 'ascending': [False]},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='order_by_attribute for transactions can not be tim3',
+        contained_in_msg='order_by_attributes for transactions can not be tim3',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
