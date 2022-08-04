@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 import requests
+from flaky import flaky
 
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
@@ -14,11 +15,12 @@ from rotkehlchen.tests.utils.factories import make_ethereum_address
 
 
 @pytest.fixture(name='ethtokens')
-def fixture_ethtokens(ethereum_manager, database):
+def fixture_ethtokens(ethereum_manager, database, inquirer):  # pylint: disable=unused-argument
     return EthTokens(database, ethereum_manager)
 
 
-def test_detect_tokens_for_addresses(ethtokens, inquirer):  # pylint: disable=unused-argument
+@flaky(max_runs=3, min_passes=1)  # failed in a flaky way sometimes in the CI due to etherscan
+def test_detect_tokens_for_addresses(ethtokens):
     """
     Autodetect tokens of two addresses
 
@@ -44,10 +46,12 @@ def test_detect_tokens_for_addresses(ethtokens, inquirer):  # pylint: disable=un
     assert len(token_usd_prices) == len(set(result[addr1].keys()).union(set(result[addr2].keys())))
 
 
-def test_detected_tokens_cache(ethtokens, inquirer):  # pylint: disable=unused-argument
+def test_detected_tokens_cache(ethtokens):  # pylint: disable=unused-argument
     """Test that a cache of the detected tokens is created and used at subsequent queries.
 
     Also test that the cache can be ignored and recreated with a forced redetection
+
+    This test is mocking etherscan and does not make any remote queries.
     """
     addr1 = make_ethereum_address()
     addr2 = make_ethereum_address()
@@ -92,8 +96,11 @@ def test_detected_tokens_cache(ethtokens, inquirer):  # pylint: disable=unused-a
 
 
 @pytest.mark.parametrize('ignored_assets', [[A_GNO]])
-def test_ignored_tokens_in_query(ethtokens, inquirer):  # pylint: disable=unused-argument
-    """Test that if a token is ignored it's not included in the query"""
+def test_ignored_tokens_in_query(ethtokens):
+    """Test that if a token is ignored it's not included in the query
+
+    This test is mocking etherscan and does not make any remote queries.
+    """
     addr1 = make_ethereum_address()
     addr2 = make_ethereum_address()
     eth_map = {addr1: {A_GNO: 5000, A_MKR: 4000}, addr2: {A_MKR: 6000}}
