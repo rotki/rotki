@@ -1,15 +1,13 @@
 import fs from 'fs';
 import * as http from 'http';
 import * as querystring from 'querystring';
-import { Request, Response } from 'express';
+import { urlencoded, json } from 'body-parser';
+import express, { Request, Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { bodyParser, default as jsonServer } from 'json-server';
 import { statistics } from './mocked-apis/statistics';
 import { enableCors } from './setup';
 
-const server = jsonServer.create();
-const router = jsonServer.router('db.json');
-const middlewares = jsonServer.defaults();
+const server = express();
 
 const port = process.env.PORT || 4243;
 const backend = process.env.BACKEND || 'http://localhost:4242';
@@ -340,7 +338,8 @@ function onProxyRes(
   }
 }
 
-server.use(bodyParser);
+server.use(urlencoded({ extended: true }));
+server.use(json());
 server.use(
   createProxyMiddleware({
     target: backend,
@@ -349,8 +348,6 @@ server.use(
     ws: true,
   })
 );
-server.use(middlewares);
-server.use(router);
 
 server.listen(port, () => {
   console.log(`Proxy server is running at http://localhost:${port}`);
