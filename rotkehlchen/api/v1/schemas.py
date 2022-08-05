@@ -173,8 +173,8 @@ class DBPaginationSchema(Schema):
 
 
 class DBOrderBySchema(Schema):
-    order_by_attributes = fields.List(fields.String(), load_default=None)
-    ascending = fields.List(fields.Boolean(), load_default=None)  # most recent first by default
+    order_by_attributes = DelimitedOrNormalList(fields.String(), load_default=None)
+    ascending = DelimitedOrNormalList(fields.Boolean(), load_default=None)  # noqa: E501 most recent first by default
 
     @validates_schema
     def validate_order_by_schema(  # pylint: disable=no-self-use
