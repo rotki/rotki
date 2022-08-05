@@ -205,14 +205,20 @@ def _encode_ens_contract(params: EnsContractParams) -> str:
     return contract.encode(method_name=params.method_name, arguments=params.arguments)
 
 
-def _decode_ens_contract(params: EnsContractParams, result_encoded: Any) -> ChecksumEthAddress:
+def _decode_ens_contract(
+        params: EnsContractParams,
+        result_encoded: Any,
+) -> Optional[ChecksumEthAddress]:
     contract = EthereumContract(address=params.address, abi=params.abi, deployed_block=0)
     result = contract.decode(  # pylint: disable=E1136
         result=result_encoded,
         method_name=params.method_name,
         arguments=params.arguments,
     )[0]
-    return string_to_ethereum_address(result)
+    decoded_address = string_to_ethereum_address(result)
+    if is_none_or_zero_address(decoded_address) is True:
+        return None
+    return decoded_address
 
 
 class EthereumManager():
@@ -633,7 +639,7 @@ class EthereumManager():
         # Processing resolvers query output
         for reversed_addr, params, resolver_output in zip(reversed_addresses, resolver_params, resolvers_output):  # noqa: E501
             decoded_resolver = _decode_ens_contract(params=params, result_encoded=resolver_output)
-            if is_none_or_zero_address(decoded_resolver):
+            if decoded_resolver is None:
                 human_names[reversed_addr] = None
                 continue
             try:
