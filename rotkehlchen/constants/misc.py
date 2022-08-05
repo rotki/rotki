@@ -7,6 +7,10 @@ ZERO = FVal(0)
 ONE = FVal(1)
 EXP18 = FVal(1e18)
 
+# Could also try to extend HTTPStatus but looks complicated
+# https://stackoverflow.com/questions/45028991/best-way-to-extend-httpstatus-with-custom-value
+HTTP_STATUS_INTERNAL_DB_ERROR = 542
+
 NFT_DIRECTIVE = '_nft_'
 
 # API URLS

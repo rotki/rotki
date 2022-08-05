@@ -76,6 +76,7 @@ from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_SIZE_IN_MB,
     DEFAULT_SLEEP_SECS,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+    HTTP_STATUS_INTERNAL_DB_ERROR,
     ONE,
     ZERO,
 )
@@ -1204,6 +1205,10 @@ class RestAPI():
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+        except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+            self.rotkehlchen.reset_after_failed_account_creation_or_login()
+            result_dict['message'] = f'Unexpected database error: {str(e)}'
+            return api_response(result_dict, status_code=HTTP_STATUS_INTERNAL_DB_ERROR)  # type: ignore  # noqa: E501
         # Success!
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             result_dict['result'] = {
