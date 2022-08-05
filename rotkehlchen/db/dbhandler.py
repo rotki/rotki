@@ -61,7 +61,11 @@ from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
-from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
+from rotkehlchen.constants.limits import (
+    FREE_ASSET_MOVEMENTS_LIMIT,
+    FREE_TRADES_LIMIT,
+    FREE_USER_NOTES_LIMIT,
+)
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
@@ -3428,12 +3432,30 @@ class DBHandler:
             self,
             filter_query: UserNotesFilterQuery,
             cursor: 'DBCursor',
-    ) -> Tuple[List[UserNote], int]:
-        """Returns all the notes created by a user and the total amount without pagination"""
+            has_premium: bool,
+    ) -> List[UserNote]:
+        """Returns all the notes created by a user filtered by the given filter"""
         query, bindings = filter_query.prepare()
-        query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM user_notes ' + query  # noqa: E501
-        cursor.execute(query, bindings)
-        user_notes = [UserNote.deserialize_from_db(entry) for entry in cursor]
+        if has_premium:
+            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM user_notes ' + query  # noqa: E501
+            cursor.execute(query, bindings)
+        else:
+            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM (SELECT identifier, title, content, location, last_update_timestamp, is_pinned from user_notes ORDER BY last_update_timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            cursor.execute(query, [FREE_USER_NOTES_LIMIT] + bindings)
+
+        return [UserNote.deserialize_from_db(entry) for entry in cursor]
+
+    def get_user_notes_and_limit_info(
+            self,
+            filter_query: UserNotesFilterQuery,
+            cursor: 'DBCursor',
+            has_premium: bool,
+    ) -> Tuple[List[UserNote], int]:
+        """Gets all user_notes for the query from the DB
+
+        Also returns how many are the total found for the filter
+        """
+        user_notes = self.get_user_notes(filter_query=filter_query, cursor=cursor, has_premium=has_premium)  # noqa: E501
         query, bindings = filter_query.prepare(with_pagination=False)
         query = 'SELECT COUNT(*) from user_notes ' + query
         total_found_result = cursor.execute(query, bindings)

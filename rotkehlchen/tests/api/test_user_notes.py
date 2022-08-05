@@ -1,6 +1,9 @@
 from http import HTTPStatus
 
+import pytest
+
 import requests
+from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
 from rotkehlchen.db.filtering import UserNotesFilterQuery
 
 from rotkehlchen.tests.utils.api import (
@@ -10,7 +13,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.factories import make_user_notes_entries
+from rotkehlchen.tests.utils.factories import make_random_user_notes, make_user_notes_entries
 
 
 def test_add_get_user_notes(rotkehlchen_api_server):
@@ -95,7 +98,7 @@ def test_add_get_user_notes(rotkehlchen_api_server):
     assert result['entries'][0]['location'] == 'trades'
 
     # test sorting by multiple fields
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'usernotesresource',
@@ -106,10 +109,10 @@ def test_add_get_user_notes(rotkehlchen_api_server):
         },
     )
     result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
-    assert len(result) == 3
-    assert result[0]['title'] == '#1'
-    assert result[1]['title'] == '#3'
-    assert result[2]['title'] == '#2'
+    assert len(result['entries']) == 3
+    assert result['entries'][0]['title'] == '#1'
+    assert result['entries'][1]['title'] == '#3'
+    assert result['entries'][2]['title'] == '#2'
 
 
 def test_edit_user_notes(rotkehlchen_api_server):
@@ -141,7 +144,11 @@ def test_edit_user_notes(rotkehlchen_api_server):
     filter_query = UserNotesFilterQuery.make()
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     with db.conn.read_ctx() as cursor:
-        user_notes, _ = db.get_user_notes(filter_query=filter_query, cursor=cursor)
+        user_notes, _ = db.get_user_notes_and_limit_info(
+            filter_query=filter_query,
+            cursor=cursor,
+            has_premium=True,
+        )
     for note in user_notes:
         if note.identifier == 1:
             assert note.title == 'My TODO List'
@@ -215,3 +222,39 @@ def test_delete_user_notes(rotkehlchen_api_server):
         contained_in_msg='User note with identifier 1 not found in database',
         status_code=HTTPStatus.CONFLICT,
     )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True, False])
+def test_premium_limits(rotkehlchen_api_server, start_with_valid_premium):
+    """Test that premium limits are set correctly"""
+    generated_entries = make_random_user_notes(20)
+    for entry in generated_entries:
+        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.add_user_note(
+            title=entry['title'],
+            content=entry['content'],
+            location=entry['location'],
+            is_pinned=entry['is_pinned'],
+        )
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'usernotesresource',
+        ),
+        json={
+            'order_by_attributes': ['is_pinned', 'last_update_timestamp'],
+            'ascending': [False, True],
+        },
+    )
+    result = assert_proper_response_with_result(response, status_code=HTTPStatus.OK)
+
+    if start_with_valid_premium is False:
+        assert result['entries_limit'] == FREE_USER_NOTES_LIMIT
+        assert len(result['entries']) == FREE_USER_NOTES_LIMIT
+        assert result['entries_total'] == 20
+        assert result['entries_found'] == 20
+    else:
+        assert result['entries_limit'] == -1
+        assert len(result['entries']) == 20
+        assert result['entries_total'] == 20
+        assert result['entries_found'] == 20

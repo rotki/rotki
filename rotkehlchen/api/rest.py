@@ -70,6 +70,7 @@ from rotkehlchen.constants.limits import (
     FREE_HISTORY_EVENTS_LIMIT,
     FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
+    FREE_USER_NOTES_LIMIT,
 )
 from rotkehlchen.constants.misc import (
     ASSET_TYPES_EXCLUDED_FOR_USERS,
@@ -4513,9 +4514,10 @@ class RestAPI():
 
     def get_user_notes(self, filter_query: UserNotesFilterQuery) -> Response:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            user_notes, entries_found = self.rotkehlchen.data.db.get_user_notes(
+            user_notes, entries_found = self.rotkehlchen.data.db.get_user_notes_and_limit_info(
                 filter_query=filter_query,
                 cursor=cursor,
+                has_premium=self.rotkehlchen.premium is not None,
             )
             user_notes_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,
@@ -4526,7 +4528,7 @@ class RestAPI():
             'entries': entries,
             'entries_found': entries_found,
             'entries_total': user_notes_total,
-            'entries_limit': -1,
+            'entries_limit': FREE_USER_NOTES_LIMIT if self.rotkehlchen.premium is None else -1,
         }
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
