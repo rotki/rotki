@@ -13,7 +13,7 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
-from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -32,7 +32,7 @@ from rotkehlchen.tests.utils.constants import (
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Timestamp
+from rotkehlchen.types import AssetMovementCategory, Fee, Location, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -308,133 +308,84 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
 
         return MockResponse(200, payload)
 
-    def mock_poloniex_api_queries(url, req, timeout):  # pylint: disable=unused-argument
+    def mock_poloniex_api_queries(url, **kwargs):  # pylint: disable=unused-argument
         payload = ''
         if remote_errors:
             payload = invalid_payload
-        elif req['command'] == 'returnTradeHistory':
-            payload = """{
-                "BTC_ETH": [{
-                    "globalTradeID": 394131412,
-                    "tradeID": "5455033",
-                    "date": "2018-10-16 18:05:17",
-                    "rate": "0.06935244",
-                    "amount": "1.40308443",
-                    "total": "0.09730732",
-                    "fee": "0.00100000",
-                    "orderNumber": "104768235081",
-                    "type": "sell",
-                    "category": "exchange"
-                }, {
-                    "globalTradeID": 394131413,
-                    "tradeID": "5455034",
-                    "date": "2018-10-16 18:07:17",
-                    "rate": "0.06935244",
-                    "amount": "1.40308443",
-                    "total": "0.09730732",
-                    "fee": "0.00100000",
-                    "orderNumber": "104768235081",
-                    "type": "buy",
-                    "category": "exchange"
-                }],
-                "ETH_XMR": [{
-                    "globalTradeID": 394131415,
-                    "tradeID": "5455036",
-                    "date": "2018-10-16 18:07:18",
-                    "rate": "0.06935244",
-                    "amount": "1.40308443",
-                    "total": "0.09730732",
-                    "fee": "0.00100000",
-                    "orderNumber": "104768235081",
-                    "type": "buy",
-                    "category": "exchange"
-                }],
-                "ETH_NOEXISTINGASSET": [{
-                    "globalTradeID": 394131416,
-                    "tradeID": "5455036",
-                    "date": "2018-10-16 18:07:17",
-                    "rate": "0.06935244",
-                    "amount": "1.40308443",
-                    "total": "0.09730732",
-                    "fee": "0.00100000",
-                    "orderNumber": "104768235081",
-                    "type": "buy",
-                    "category": "exchange"
-                }],
-                "ETH_BALLS": [{
-                    "globalTradeID": 394131417,
-                    "tradeID": "5455036",
-                    "date": "2018-10-16 18:07:17",
-                    "rate": "0.06935244",
-                    "amount": "1.40308443",
-                    "total": "0.09730732",
-                    "fee": "0.00100000",
-                    "orderNumber": "104768235081",
-                    "type": "buy",
-                    "category": "exchange"
-                }]
-            }"""
-
-        elif req['command'] == 'returnLendingHistory':
+        elif '/trades?' in url:
             payload = """[{
-                "id": 246300115,
-                "currency": "BTC",
-                "rate": "0.00013890",
-                "amount": "0.33714830",
-                "duration": "0.00090000",
-                "interest": "0.00000005",
-                "fee": "0.00000000",
-                "earned": "0.00000005",
-                "open": "2017-01-01 23:41:37",
-                "close": "2017-01-01 23:42:51"
-            }, {
-                "id": 246294775,
-                "currency": "ETH",
-                "rate": "0.00013890",
-                "amount": "0.03764586",
-                "duration": "0.00150000",
-                "interest": "0.00000001",
-                "fee": "0.00000000",
-                "earned": "0.00000001",
-                "open": "2017-01-01 23:36:32",
-                "close": "2017-01-01 23:38:45"
-            }, {
-                "id": 246294776,
-                "currency": "NOTEXISTINGASSET",
-                "rate": "0.00013890",
-                "amount": "0.03764586",
-                "duration": "0.00150000",
-                "interest": "0.00000001",
-                "fee": "0.00000000",
-                "earned": "0.00000001",
-                "open": "2017-01-01 23:36:32",
-                "close": "2017-01-01 23:38:45"
-            }, {
-                "id": 246294777,
-                "currency": "BDC",
-                "rate": "0.00013890",
-                "amount": "0.03764586",
-                "duration": "0.00150000",
-                "interest": "0.00000001",
-                "fee": "0.00000000",
-                "earned": "0.00000001",
-                "open": "2017-01-01 23:36:32",
-                "close": "2017-01-01 23:38:45"
-            }]"""
-        elif req['command'] == 'returnDepositsWithdrawals':
+                    "symbol": "ETH_BTC",
+                    "id": 394131412,
+                    "createTime": 1539713117000,
+                    "price": "0.06935244",
+                    "quantity": "1.40308443",
+                    "feeAmount": "0.0000973073287465092",
+                    "feeCurrency": "BTC",
+                    "side": "SELL",
+                    "type": "LIMIT",
+                    "accountType": "SPOT"
+                }, {
+                    "symbol": "ETH_BTC",
+                    "id": 394131413,
+                    "createTime": 1539713237000,
+                    "price": "0.06935244",
+                    "quantity": "1.40308443",
+                    "feeAmount": "0.00140308443",
+                    "feeCurrency": "ETH",
+                    "side": "BUY",
+                    "type": "LIMIT",
+                    "accountType": "SPOT"
+                }, {
+                    "symbol": "XMR_ETH",
+                    "id": 394131415,
+                    "createTime": 1539713238000,
+                    "price": "0.06935244",
+                    "quantity": "1.40308443",
+                    "feeAmount": "0.00140308443",
+                    "feeCurrency": "XMR",
+                    "side": "BUY",
+                    "type": "LIMIT",
+                    "accountType": "SPOT"
+                }, {
+                    "symbol": "ETH_NOEXISTINGASSET",
+                    "id": 394131418,
+                    "createTime": 1539713237000,
+                    "price": "0.06935244",
+                    "quantity": "1.40308443",
+                    "feeAmount": "9.730732e-5",
+                    "feeCurrency": "ETH",
+                    "side": "BUY",
+                    "type": "LIMIT",
+                    "accountType": "SPOT"
+                }, {
+                    "symbol": "ETH_BALLS",
+                    "id": 394131419,
+                    "createTime": 1539713237000,
+                    "price": "0.06935244",
+                    "quantity": "1.40308443",
+                    "feeAmount": "9.730732e-5",
+                    "feeCurrency": "ETH",
+                    "side": "BUY",
+                    "type": "LIMIT",
+                    "accountType": "SPOT"
+                }]"""
+        elif '/wallets/activity' in url:
+            split1 = url.split('start=')[1]
+            start_ts = int(split1.split('&')[0])
+            end_ts = int(split1.split('end=')[1])
             data = json.loads(POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE)
             new_data = {}
             for x in ('deposits', 'withdrawals'):
                 new_data[x] = []
                 for entry in data[x]:
-                    if entry['timestamp'] < req['start'] or entry['timestamp'] > req['end']:
+                    if entry['timestamp'] < start_ts or entry['timestamp'] > end_ts:
                         continue
                     new_data[x].append(entry)
 
             payload = json.dumps(new_data)
         else:
             raise RuntimeError(
-                f'Poloniex test mock got unexpected/unmocked command {req["command"]}',
+                f'Poloniex test mock got unexpected/unmocked url {url}',
             )
         return MockResponse(200, payload)
 
@@ -580,7 +531,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
     if poloniex:
         polo_patch = patch.object(
             poloniex.session,
-            'post',
+            'get',
             side_effect=mock_poloniex_api_queries,
         )
 
@@ -815,13 +766,6 @@ def mock_history_processing(
 
         margin_positions = [x for x in events if isinstance(x, MarginPosition)]
         assert len(margin_positions) == expected_margin_num
-
-        loans = [x for x in events if isinstance(x, Loan)]
-        assert len(loans) == 2
-        assert loans[0].currency == A_ETH
-        assert loans[0].earned == AssetAmount(FVal('0.00000001'))
-        assert loans[1].currency == A_BTC
-        assert loans[1].earned == AssetAmount(FVal('0.00000005'))
 
         asset_movements = [x for x in events if isinstance(x, AssetMovement)]
         assert len(asset_movements) == expected_asset_movements_num

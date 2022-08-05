@@ -52,8 +52,8 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
     deserialize_fee,
-    deserialize_timestamp_from_binance,
     deserialize_timestamp_from_date,
+    deserialize_timestamp_from_intms,
 )
 from rotkehlchen.types import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -129,7 +129,7 @@ def trade_from_binance(
         )
 
     binance_pair = binance_symbols_to_pair[binance_trade['symbol']]
-    timestamp = deserialize_timestamp_from_binance(binance_trade['time'])
+    timestamp = deserialize_timestamp_from_intms(binance_trade['time'])
 
     base_asset = binance_pair.base_asset
     quote_asset = binance_pair.quote_asset
@@ -990,7 +990,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             fiat_asset = asset_from_binance(raw_data['fiatCurrency'])
             tx_id = get_key_if_has_val(raw_data, 'orderNo')
-            timestamp = deserialize_timestamp_from_binance(raw_data['createTime'])
+            timestamp = deserialize_timestamp_from_intms(raw_data['createTime'])
             fee = Fee(deserialize_asset_amount(raw_data['totalFee']))
             link_str = str(tx_id) if tx_id else ''
             crypto_asset = asset_from_binance(raw_data['cryptoCurrency'])
@@ -1057,7 +1057,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             asset = asset_from_binance(raw_data['fiatCurrency'])
             tx_id = get_key_if_has_val(raw_data, 'orderNo')
-            timestamp = deserialize_timestamp_from_binance(raw_data['createTime'])
+            timestamp = deserialize_timestamp_from_intms(raw_data['createTime'])
             fee = Fee(deserialize_asset_amount(raw_data['totalFee']))
             link_str = str(tx_id) if tx_id else ''
             amount = deserialize_asset_amount_force_positive(raw_data['amount'])
@@ -1108,7 +1108,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         try:
             if 'insertTime' in raw_data:
                 category = AssetMovementCategory.DEPOSIT
-                timestamp = deserialize_timestamp_from_binance(raw_data['insertTime'])
+                timestamp = deserialize_timestamp_from_intms(raw_data['insertTime'])
                 fee = Fee(ZERO)
             else:
                 category = AssetMovementCategory.WITHDRAWAL

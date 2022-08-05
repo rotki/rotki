@@ -263,7 +263,7 @@ def test_query_all_balances_ignore_cache(
     )
     original_binance_query_dict = binance.api_query_dict
     binance_query_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
-    poloniex_query_patch = patch.object(poloniex, 'api_query_dict', wraps=poloniex.api_query_dict)
+    poloniex_query_patch = patch.object(poloniex, 'api_query_list', wraps=poloniex.api_query_list)
 
     with ExitStack() as stack:
         stack.enter_context(setup.poloniex_patch)

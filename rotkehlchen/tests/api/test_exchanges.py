@@ -97,8 +97,6 @@ def test_setup_exchange(rotkehlchen_api_server):
 
     # First test that if api key validation fails we get an error, for every exchange
     for location in SUPPORTED_EXCHANGES:
-        if location == Location.POLONIEX:
-            continue  # temporary due to https://github.com/rotki/rotki/issues/4645
         data = {'location': str(location), 'name': f'my_{str(location)}', 'api_key': 'ddddd', 'api_secret': 'fffffff'}  # noqa: E501
         if location in (Location.COINBASEPRO, Location.KUCOIN):
             data['passphrase'] = '123'
@@ -119,6 +117,7 @@ def test_setup_exchange(rotkehlchen_api_server):
                 'Error validating API Keys',
                 'ApiKey has invalid value',
                 'Error validating Bitpanda API Key',
+                '',  # poloniex fails with no error message now
             ],
             status_code=HTTPStatus.CONFLICT,
         )
