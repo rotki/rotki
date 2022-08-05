@@ -1,12 +1,12 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_ethereum_address
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import multicall, token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
@@ -35,7 +35,7 @@ DetectedTokensType = Dict[
 # 08/08/2020
 # Etherscan has by far the fastest responding server if you use a (free) API key
 # The chunk length for Etherscan is limited though to 120 addresses due to the URI length.
-# For all other nodes (mycrypto, avado cloud, blockscout) we have ran some benchmarks
+# For all other nodes (mycrypto, avado cloud, blockscout) we have run some benchmarks
 # with them being queried randomly with different chunk lenghts. They are all for an account with:
 # - 29 ethereum addresses
 # - rotki knows of 1010 different ethereum tokens as of this writing
@@ -59,8 +59,56 @@ DetectedTokensType = Dict[
 # tokens the benchmark will probably have to run again.
 
 
-ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH = 120
 OTHER_MAX_TOKEN_CHUNK_LENGTH = 590
+
+# maximum 32-bytes arguments in one call to a contract (either tokensBalance or multicall)
+ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT = 122
+
+# this is a number of arguments that a pure tokensBalance contract occupies when is added
+# to multicall. In total, it occupies (7 + number of tokens passed) arguments.
+PURE_TOKENS_BALANCE_ARGUMENTS = 7
+
+
+def generate_regular_chunks(
+        chunk_length: int,
+        accounts_to_tokens: Dict[ChecksumEthAddress, List[EthereumToken]],
+) -> List[Tuple[ChecksumEthAddress, List[EthereumToken]]]:
+    regular_split_chunks = []
+    for account, tokens in accounts_to_tokens.items():
+        for tokens_chunk in get_chunks(tokens, chunk_length):
+            regular_split_chunks.append(
+                (
+                    account,
+                    tokens_chunk,
+                ),
+            )
+    return regular_split_chunks
+
+
+def generate_multicall_chunks(
+        chunk_length: int,
+        accounts_to_tokens: Dict[ChecksumEthAddress, List[EthereumToken]],
+) -> List[List[Tuple[ChecksumEthAddress, List[EthereumToken]]]]:
+    multicall_chunks = []
+    free_space = chunk_length
+    new_chunk = []
+    for account, tokens in accounts_to_tokens.items():
+        while len(tokens) > 0:
+            free_space -= PURE_TOKENS_BALANCE_ARGUMENTS
+            if free_space > len(tokens):
+                new_chunk.append((account, tokens))
+                free_space -= len(tokens)
+                tokens = []
+            else:
+                if free_space > 0:
+                    new_chunk.append((account, tokens[:free_space]))
+                    tokens = tokens[free_space:]
+                multicall_chunks.append(new_chunk)
+                new_chunk = []  # start new chunk
+                free_space = chunk_length
+    if new_chunk != []:
+        multicall_chunks.append(new_chunk)
+    return multicall_chunks
 
 
 class EthTokens():
@@ -106,18 +154,55 @@ class EthTokens():
             balances[token] += normalized_balance
         return balances
 
+    def _get_multicall_token_balances(
+            self,
+            chunk: List[Tuple[ChecksumEthAddress, List[EthereumToken]]],
+    ) -> Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]]:
+        calls: List[Tuple[ChecksumEthAddress, str]] = []
+        for account, tokens in chunk:
+            tokens_addrs = [token.ethereum_address for token in tokens]
+            calls.append(
+                (
+                    ETH_SCAN.address,
+                    ETH_SCAN.encode(
+                        method_name='tokensBalance',
+                        arguments=[account, tokens_addrs],
+                    ),
+                ),
+            )
+        results = multicall(
+            ethereum=self.ethereum,
+            calls=calls,
+        )
+        balances: Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
+        for (account, tokens), result in zip(chunk, results):
+            decoded_result = ETH_SCAN.decode(  # pylint: disable=unsubscriptable-object
+                result=result,
+                method_name='tokensBalance',
+                arguments=[account, [token.ethereum_address for token in tokens]],
+            )[0]
+            for token, token_balance in zip(tokens, decoded_result):
+                if token_balance == 0:
+                    continue
+
+                normalized_balance = token_normalized_value(token_balance, token)
+                log.debug(
+                    f'Found {token.symbol}({token.ethereum_address}) token balance for '
+                    f'{account} and balance {normalized_balance}',
+                )
+                balances[account][token] += normalized_balance
+        return balances
+
     def _query_chunks(
             self,
             account: ChecksumEthAddress,
-            chunks: Iterable[List[EthereumToken]],
-            querying_etherscan: bool,
+            tokens: List[EthereumToken],
+            chunk_size: int,
+            call_order: List[WeightedNode],
     ) -> Dict[EthereumToken, FVal]:
         total_token_balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
+        chunks = get_chunks(tokens, n=chunk_size)
         for chunk in chunks:
-            if querying_etherscan is True:
-                call_order = [ETHERSCAN_NODE]
-            else:
-                call_order = self.ethereum.default_call_order()
             new_token_balances = self._get_token_balances(
                 account=account,
                 tokens=chunk,
@@ -199,17 +284,19 @@ class EthTokens():
             exceptions=exceptions,
             except_protocols=['balancer'],
         )
+        if self.ethereum.connected_to_any_web3():
+            chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
+            # skipping etherscan because chunk size is too big for etherscan
+            call_order = self.ethereum.default_call_order(skip_etherscan=True)
+        else:
+            chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
+            call_order = [ETHERSCAN_NODE]
         for account in accounts:
-            if self.ethereum.connected_to_any_web3():
-                querying_etherscan = False
-                tokens_batch_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
-            else:
-                querying_etherscan = True
-                tokens_batch_size = ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH
             token_balances = self._query_chunks(
                 account=account,
-                chunks=get_chunks(all_tokens, n=tokens_batch_size),
-                querying_etherscan=querying_etherscan,
+                tokens=all_tokens,
+                chunk_size=chunk_size,
+                call_order=call_order,
             )
             detected_tokens = list(token_balances.keys())
             with self.db.user_write() as write_cursor:
@@ -228,8 +315,17 @@ class EthTokens():
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        address_to_balance: Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]] = {}
+        accounts_to_balances: Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]] = {}
         all_tokens = set()
+        accounts_to_tokens: Dict[ChecksumEthAddress, List[EthereumToken]] = {}
+
+        if self.ethereum.connected_to_any_web3():
+            chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
+            # skipping etherscan because chunk size is too big for etherscan
+            call_order = self.ethereum.default_call_order(skip_etherscan=True)
+        else:
+            chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
+            call_order = [ETHERSCAN_NODE]
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
@@ -237,16 +333,33 @@ class EthTokens():
                 if saved_list is None:
                     continue  # Do not query if we know the address has no tokens
                 all_tokens.update(saved_list)
+                accounts_to_tokens[address] = saved_list
 
+        regular_chunks = generate_regular_chunks(
+            accounts_to_tokens=accounts_to_tokens,
+            chunk_length=chunk_size,
+        )
+        multicall_chunks = generate_multicall_chunks(
+            accounts_to_tokens=accounts_to_tokens,
+            chunk_length=chunk_size,
+        )
+
+        if len(multicall_chunks) < len(regular_chunks):
+            for chunk in multicall_chunks:
+                accounts_to_balances.update(self._get_multicall_token_balances(
+                    chunk=chunk,
+                ))
+        else:
+            for account, tokens in regular_chunks:
                 token_balances = self._get_token_balances(
-                    account=address,
-                    tokens=saved_list,
-                    call_order=None,  # use defaults
+                    account=account,
+                    tokens=tokens,
+                    call_order=call_order,
                 )
-                address_to_balance[address] = token_balances
+                accounts_to_balances[account] = token_balances
 
         token_usd_price: Dict[EthereumToken, Price] = {}
         for token in all_tokens:
             token_usd_price[token] = Inquirer.find_usd_price(asset=token)
 
-        return address_to_balance, token_usd_price
+        return accounts_to_balances, token_usd_price
