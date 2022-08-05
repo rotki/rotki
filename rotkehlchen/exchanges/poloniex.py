@@ -147,7 +147,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> bool:
         changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
         if api_key is not None:
-            self.session.headers.update({'Key': self.api_key})
+            self.session.headers.update({'key': self.api_key})
 
         return changed
 
@@ -301,7 +301,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return result
 
     def return_fee_info(self) -> Dict:
-        response = self.api_query_dict('returnFeeInfo')
+        response = self.api_query_dict('/feeinfo')
         return response
 
     def return_trade_history(
