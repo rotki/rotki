@@ -357,17 +357,6 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return data
 
-    def return_deposits_withdrawals(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> Dict:
-        response = self.api_query_dict(
-            'returnDepositsWithdrawals',
-            {'start': start_ts, 'end': end_ts},
-        )
-        return response
-
     # ---- General exchanges interface ----
     @protect_with_lock()
     @cache_response_timewise()
