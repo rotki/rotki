@@ -147,23 +147,6 @@ def deserialize_timestamp_from_date(
         ) from e
 
 
-def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
-    """Deserializes a timestamp from a poloniex api query result date entry
-
-    The poloniex dates follow the %Y-%m-%d %H:%M:%S format but are in UTC time
-    and not local time so can't use iso8601ts_to_timestamp() directly since that
-    would interpet them as local time.
-
-    Can throw DeserializationError if the data is not as expected
-    """
-    return deserialize_timestamp_from_date(
-        date,
-        '%Y-%m-%d %H:%M:%S',
-        'poloniex',
-        skip_milliseconds=True,
-    )
-
-
 def deserialize_timestamp_from_bitstamp_date(date: str) -> Timestamp:
     """Deserializes a timestamp from a bitstamp api query result date entry
 
@@ -217,9 +200,8 @@ def deserialize_timestamp_from_kraken(time: Union[str, FVal, int, float]) -> Tim
     )
 
 
-def deserialize_timestamp_from_binance(time: int) -> Timestamp:
-    """Deserializes a timestamp from a binance api query result entry
-    Kraken has timestamps in integer but also including milliseconds
+def deserialize_timestamp_from_intms(time: int) -> Timestamp:
+    """Deserializes a timestamp an integer in millseconds
 
 
     Can throw DeserializationError if the data is not as expected

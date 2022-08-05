@@ -229,8 +229,7 @@ class Trade(AccountingEventMixin):
     Exchanges don't use the same part of the pair to denote the same thing. For
     example in Poloniex the pair is called BTC_ETH and you buy and sell ETH for
     BTC. In Kraken XXBTZEUR translates to BTC_EUR. This means we buy BTC for EUR
-    or we sell BTC for EUR. So for some exchanges like poloniex when importing a
-    trade, the base and quote assets need to be swapped.
+    or we sell BTC for EUR.
 
     All trades have a unique ID which is generated from some of the attributes.
     For details check identifier() function
