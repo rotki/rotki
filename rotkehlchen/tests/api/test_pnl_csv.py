@@ -51,7 +51,6 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
                 str(AccountingEventType.PREFORK_ACQUISITION),
                 str(AccountingEventType.TRANSACTION_EVENT),
                 str(AccountingEventType.MARGIN_POSITION),
-                str(AccountingEventType.LOAN),
             )
             assert create_timestamp(row['timestamp'], '%d/%m/%Y %H:%M:%S') > 0
             assert row['notes'] is not None
@@ -64,7 +63,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
             assert row['pnl_free'] is not None
             assert row['cost_basis_free'] is not None
             count += 1
-    assert count == 47
+    assert count == 43
 
 
 @pytest.mark.parametrize(

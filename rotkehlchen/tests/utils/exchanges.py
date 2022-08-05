@@ -547,7 +547,7 @@ def patch_poloniex_balances_query(poloniex: 'Poloniex'):
     def mock_poloniex_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
 
-    poloniex_patch = patch.object(poloniex.session, 'post', side_effect=mock_poloniex_asset_return)
+    poloniex_patch = patch.object(poloniex.session, 'get', side_effect=mock_poloniex_asset_return)
     return poloniex_patch
 
 # # -- Test Exchange Objects creation --

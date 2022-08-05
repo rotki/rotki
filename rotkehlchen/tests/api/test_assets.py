@@ -66,7 +66,7 @@ def test_query_owned_assets(
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "allbalancesresource",
+                'allbalancesresource',
             ), json={'save_data': True},
         )
     assert_proper_response(response)
@@ -77,7 +77,7 @@ def test_query_owned_assets(
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "ownedassetsresource",
+                'ownedassetsresource',
             ),
         )
     result = assert_proper_response_with_result(response)
