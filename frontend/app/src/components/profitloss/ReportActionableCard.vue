@@ -240,6 +240,7 @@
   </div>
 </template>
 <script lang="ts">
+import { Nullable } from '@rotki/common';
 import {
   computed,
   defineComponent,
@@ -248,15 +249,16 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcquisitions.vue';
 import ReportMissingPrices, {
   EditableMissingPrice
 } from '@/components/profitloss/ReportMissingPrices.vue';
 import { useRouter } from '@/composables/common';
-import { setupSession } from '@/composables/session';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
+import { useSessionStore } from '@/store/session';
 import { Pinned } from '@/store/session/types';
 import { SelectedReport } from '@/types/reports';
 import { toSentenceCase } from '@/utils/text';
@@ -278,7 +280,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const { report, isPinned } = toRefs(props);
     const router = useRouter();
-    const { setPinned } = setupSession();
+    const { pinned } = storeToRefs(useSessionStore());
 
     const setDialog = (dialog: boolean) => {
       emit('set-dialog', dialog);
@@ -310,6 +312,10 @@ export default defineComponent({
         total
       };
     });
+
+    const setPinned = (pin: Nullable<Pinned>) => {
+      set(pinned, pin);
+    };
 
     const pinSection = () => {
       const pinned: Pinned = {

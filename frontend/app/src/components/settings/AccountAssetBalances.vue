@@ -41,12 +41,13 @@
 import { AssetBalance } from '@rotki/common';
 import { computed, defineComponent, PropType } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import { usePrices } from '@/composables/balances';
-import { setupGeneralSettings } from '@/composables/session';
 import i18n from '@/i18n';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 export default defineComponent({
   name: 'AccountAssetBalances',
@@ -57,7 +58,7 @@ export default defineComponent({
   },
   setup() {
     const { prices } = usePrices();
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const headers = computed<DataTableHeader[]>(() => [
       {

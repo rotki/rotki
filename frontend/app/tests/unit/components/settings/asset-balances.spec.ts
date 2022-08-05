@@ -3,6 +3,7 @@ import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AssetBalances from '@/components/AssetBalances.vue';
+import { useSessionStore } from '@/store/session';
 import store from '@/store/store';
 import '../../i18n';
 
@@ -29,7 +30,7 @@ describe('AssetBalances.vue', () => {
   });
 
   afterEach(() => {
-    store.commit('session/reset');
+    useSessionStore().reset();
   });
 
   test('table enters into loading state when balances load', async () => {

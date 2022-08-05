@@ -1,72 +1,108 @@
-import { BigNumber } from '@rotki/common';
-import { reactive, toRefs } from '@vue/composition-api';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { getBnFormat } from '@/data/amount_formatter';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { set } from '@vueuse/core';
+import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useMainStore } from '@/store/main';
+import { usePremiumStore } from '@/store/session/premium';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { ActionStatus } from '@/store/types';
-import {
-  FrontendSettings,
-  FrontendSettingsPayload
-} from '@/types/frontend-settings';
-import { assert } from '@/utils/assertions';
+import { KrakenAccountType } from '@/types/exchanges';
+import { Module } from '@/types/modules';
+import { SettingsUpdate } from '@/types/user';
+import { uniqueStrings } from '@/utils/data';
 
-export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
-  const frontendSettings = reactive(FrontendSettings.parse({}));
+export const useSettingsStore = defineStore('settings', () => {
+  const { setMessage } = useMainStore();
+  const { addQueriedAddress } = useQueriedAddressesStore();
+  const generalStore = useGeneralSettingsStore();
+  const accountingStore = useAccountingSettingsStore();
+  const frontendStore = useFrontendSettingsStore();
+  const sessionStore = useSessionSettingsStore();
+  const { premium, premiumSync } = storeToRefs(usePremiumStore());
 
-  async function updateSetting(
-    payload: FrontendSettingsPayload
-  ): Promise<ActionStatus> {
-    const props = Object.keys(payload);
-    assert(props.length > 0, 'Payload must be not-empty');
+  const setKrakenAccountType = async (krakenAccountType: KrakenAccountType) => {
     try {
-      const updatedSettings = { ...frontendSettings, ...payload };
-      const { other } = await api.setSettings({
-        frontendSettings: JSON.stringify(
-          axiosSnakeCaseTransformer(updatedSettings)
-        )
+      const { general } = await api.setSettings({
+        krakenAccountType
       });
-
-      Object.assign(frontendSettings, updatedSettings);
-
-      if (payload.thousandSeparator || payload.decimalSeparator) {
-        BigNumber.config({
-          FORMAT: getBnFormat(
-            other.frontendSettings.thousandSeparator,
-            other.frontendSettings.decimalSeparator
-          )
-        });
-      }
-
-      return {
+      generalStore.update(general);
+      setMessage({
+        title: i18n
+          .t('actions.session.kraken_account.success.title')
+          .toString(),
+        description: i18n
+          .t('actions.session.kraken_account.success.message')
+          .toString(),
         success: true
-      };
+      });
     } catch (e: any) {
-      return {
-        success: false,
-        message: e.message
-      };
+      setMessage({
+        title: i18n.t('actions.session.kraken_account.error.title').toString(),
+        description: e.message
+      });
     }
-  }
+  };
 
-  const update = (settings: FrontendSettings) => {
-    Object.assign(frontendSettings, settings);
+  const update = async (update: SettingsUpdate): Promise<ActionStatus> => {
+    let success = false;
+    let message = '';
+    try {
+      const {
+        accounting,
+        general,
+        other: { havePremium, premiumShouldSync }
+      } = await api.setSettings(update);
+      set(premium, havePremium);
+      set(premiumSync, premiumShouldSync);
+      generalStore.update(general);
+      accountingStore.update(accounting);
+      success = true;
+    } catch (e: any) {
+      message = e.message;
+    }
+    return {
+      success,
+      message
+    };
+  };
+
+  const enableModule = async (payload: {
+    readonly enable: Module[];
+    readonly addresses: string[];
+  }) => {
+    const activeModules = generalStore.activeModules;
+    const modules: Module[] = [...activeModules, ...payload.enable].filter(
+      uniqueStrings
+    );
+
+    await update({ activeModules: modules });
+
+    for (const module of payload.enable) {
+      for (const address of payload.addresses) {
+        await addQueriedAddress({ module, address });
+      }
+    }
   };
 
   const reset = () => {
-    Object.assign(frontendSettings, FrontendSettings.parse({}));
+    accountingStore.reset();
+    generalStore.reset();
+    frontendStore.reset();
+    sessionStore.reset();
   };
 
   return {
-    ...toRefs(frontendSettings),
-    updateSetting,
+    setKrakenAccountType,
+    enableModule,
     update,
     reset
   };
 });
 
 if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useFrontendSettingsStore, import.meta.hot)
-  );
+  import.meta.hot.accept(acceptHMRUpdate(useSettingsStore, import.meta.hot));
 }

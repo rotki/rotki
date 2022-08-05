@@ -87,11 +87,11 @@ import {
 } from '@/components/history/filtering/types';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useTheme } from '@/composables/common';
-import { setupGeneralSettings } from '@/composables/session';
 import { SupportedCurrency } from '@/data/currencies';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { krakenStakingEventTypeData } from '@/store/staking/consts';
 import {
   KrakenStakingEvents,
@@ -256,7 +256,7 @@ export default defineComponent({
     const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
     const { isMobile } = useTheme();
 
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const options = ref<KrakenStakingPaginationOptions>({
       page: 1,

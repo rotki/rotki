@@ -53,20 +53,22 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import MakerDaoVaultCollateral from '@/components/defi/loan/loans/makerdao/MakerDaoVaultCollateral.vue';
 import MakerDaoVaultDebtDetails from '@/components/defi/loan/loans/makerdao/MakerDaoVaultDebtDetails.vue';
 import MakerDaoVaultLiquidation from '@/components/defi/loan/loans/makerdao/MakerDaoVaultLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-import { getPremium, setupDisplayData } from '@/composables/session';
-import { interop } from '@/electron-interop';
+import { useInterop } from '@/electron-interop';
 import { VaultEventsList } from '@/premium/premium';
 import {
   MakerDAOVault,
   MakerDAOVaultDetails,
   MakerDAOVaultModel
 } from '@/store/defi/types';
+import { usePremiumStore } from '@/store/session/premium';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { Zero } from '@/utils/bignumbers';
 
 export default defineComponent({
@@ -88,11 +90,12 @@ export default defineComponent({
   },
   setup(props) {
     const { vault } = toRefs(props);
-    const { scrambleData } = setupDisplayData();
-    const premium = getPremium();
+    const { scrambleData } = storeToRefs(useSessionSettingsStore());
+    const { premium } = storeToRefs(usePremiumStore());
+    const { openUrl } = useInterop();
 
     const openLink = (url: string) => {
-      interop.openUrl(url);
+      openUrl(url);
     };
 
     const totalInterestOwed = computed(() => {

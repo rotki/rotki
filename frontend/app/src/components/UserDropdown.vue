@@ -87,13 +87,15 @@
 <script lang="ts">
 import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get, set, useLocalStorage } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import ThemeControl from '@/components/premium/ThemeControl.vue';
 import { useTheme, useRoute, useRouter } from '@/composables/common';
 import { usePrivacyMode } from '@/composables/privacy';
-import { setupSession, useDarkMode } from '@/composables/session';
+import { useDarkMode } from '@/composables/session';
 import { interop } from '@/electron-interop';
+import { useSessionStore } from '@/store/session';
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 
@@ -105,7 +107,8 @@ export default defineComponent({
     MenuTooltipButton
   },
   setup() {
-    const { username, logout } = setupSession();
+    const store = useSessionStore();
+    const { username } = storeToRefs(store);
     const confirmLogout = ref<boolean>(false);
     const router = useRouter();
     const route = useRoute();
@@ -121,7 +124,7 @@ export default defineComponent({
       }
 
       set(confirmLogout, false);
-      await logout();
+      await store.logout();
 
       if (get(route).path !== '/') {
         router.replace('/');

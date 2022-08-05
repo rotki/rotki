@@ -44,7 +44,7 @@ import {
   PoapDelivery,
   TokenInfo
 } from '@/store/defi/types';
-import { useUniswap } from '@/store/defi/uniswap';
+import { useUniswapStore } from '@/store/defi/uniswap';
 import { useYearnStore } from '@/store/defi/yearn';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
@@ -76,7 +76,7 @@ export const useDefiStore = defineStore('defi', () => {
   const makerDaoStore = useMakerDaoStore();
   const balancerStore = useBalancerStore();
   const sushiswapStore = useSushiswapStore();
-  const uniswapStore = useUniswap();
+  const uniswapStore = useUniswapStore();
   const lendingStore = useDefiSupportedProtocolsStore();
 
   const {

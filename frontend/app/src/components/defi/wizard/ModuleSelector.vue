@@ -59,13 +59,17 @@
   </v-autocomplete>
 </template>
 
-<script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
+<script setup lang="ts">
+import { onMounted, Ref, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import ModuleMixin from '@/mixins/module-mixin';
 import { BalanceActions } from '@/store/balances/action-types';
 import { BalanceMutations } from '@/store/balances/mutation-types';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 
 const wasActivated = (
@@ -80,68 +84,68 @@ const wasDeactivated = (
   module: Module
 ) => !active.includes(module) && previouslyActive.includes(module);
 
-@Component({
-  components: { AdaptiveWrapper }
-})
-export default class ModuleSelector extends Mixins(ModuleMixin) {
-  readonly supportedModules = SUPPORTED_MODULES;
-  selectedModules: Module[] = [];
-  search: string = '';
-  loading: boolean = false;
+const supportedModules = SUPPORTED_MODULES;
+const loading = ref(false);
+const search = ref('');
+const selectedModules: Ref<Module[]> = ref([]);
+const autocomplete = ref();
 
-  mounted() {
-    this.selectedModules = this.activeModules;
+const { activeModules } = storeToRefs(useGeneralSettingsStore());
+const { update: updateSettings } = useSettingsStore();
+const { dispatch, commit } = useStore();
+
+const fetchNfBalances = () => {
+  const callback = () =>
+    dispatch(`balances/${BalanceActions.FETCH_NF_BALANCES}`).then();
+  setTimeout(callback, 800);
+};
+
+const clearNfBalances = () => {
+  const callback = () =>
+    commit(`balances/${BalanceMutations.UPDATE_NF_BALANCES}`, {});
+  setTimeout(callback, 800);
+};
+
+const onModuleActivation = (active: Module[]) => {
+  if (wasActivated(active, get(selectedModules), Module.NFTS)) {
+    fetchNfBalances();
   }
+};
 
-  unselect(identifier: Module) {
-    const previouslyActive = [...this.selectedModules];
-    const selectionIndex = this.selectedModules.indexOf(identifier);
-    if (selectionIndex < 0) {
-      return;
-    }
-    this.selectedModules.splice(selectionIndex, 1);
-    this.update(this.selectedModules, false);
-
-    if (wasDeactivated(this.selectedModules, previouslyActive, Module.NFTS)) {
-      this.clearNfBalances();
-    }
+const update = async (activeModules: Module[], clearSearch: boolean = true) => {
+  if (clearSearch) {
+    set(search, '');
+    setTimeout(() => {
+      const searchField = get(autocomplete) as any;
+      if (searchField) {
+        searchField.focus();
+      }
+    }, 10);
   }
+  set(loading, true);
 
-  async update(activeModules: Module[], clearSearch: boolean = true) {
-    if (clearSearch) {
-      this.search = '';
-      setTimeout(() => {
-        const autocomplete = this.$refs.autocomplete as any;
-        if (autocomplete) {
-          autocomplete.focus();
-        }
-      }, 10);
-    }
-    this.loading = true;
-    await this.activateModules(activeModules);
-    this.onModuleActivation(activeModules);
-    this.selectedModules = activeModules;
-    this.loading = false;
-  }
+  await updateSettings({ activeModules });
+  onModuleActivation(activeModules);
+  set(selectedModules, activeModules);
+  set(loading, false);
+};
 
-  private onModuleActivation(active: Module[]) {
-    if (wasActivated(active, this.selectedModules, Module.NFTS)) {
-      this.fetchNfBalances();
-    }
+const unselect = (identifier: Module) => {
+  const selected = get(selectedModules);
+  const previouslyActive = [...selected];
+  const selectionIndex = selected.indexOf(identifier);
+  if (selectionIndex < 0) {
+    return;
   }
+  selected.splice(selectionIndex, 1);
+  update(selected, false);
 
-  private fetchNfBalances() {
-    const callback = () =>
-      this.$store
-        .dispatch(`balances/${BalanceActions.FETCH_NF_BALANCES}`)
-        .then();
-    setTimeout(callback, 800);
+  if (wasDeactivated(selected, previouslyActive, Module.NFTS)) {
+    clearNfBalances();
   }
+};
 
-  private clearNfBalances() {
-    const callback = () =>
-      this.$store.commit(`balances/${BalanceMutations.UPDATE_NF_BALANCES}`, {});
-    setTimeout(callback, 800);
-  }
-}
+onMounted(() => {
+  set(selectedModules, get(activeModules));
+});
 </script>

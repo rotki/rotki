@@ -35,13 +35,14 @@
 
 <script lang="ts">
 import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import { setupGeneralSettings } from '@/composables/session';
 import i18n from '@/i18n';
 import { DefiBalance } from '@/store/defi/types';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const headers = computed<DataTableHeader[]>(() => [
   {
@@ -71,7 +72,7 @@ export default defineComponent({
     loading: { reuirqed: false, type: Boolean, default: false }
   },
   setup() {
-    const { currency } = setupGeneralSettings();
+    const { currency } = storeToRefs(useGeneralSettingsStore());
 
     return {
       headers,

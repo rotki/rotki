@@ -11,6 +11,7 @@ import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 import { get } from '@vueuse/core';
 import { forEach } from 'lodash';
 import isEmpty from 'lodash/isEmpty';
+import { storeToRefs } from 'pinia';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { bigNumberSum } from '@/filters';
 import { BlockchainAssetBalances } from '@/services/balances/types';
@@ -30,7 +31,8 @@ import {
   NonFungibleBalance
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
-import { useUniswap } from '@/store/defi/uniswap';
+import { useUniswapStore } from '@/store/defi/uniswap';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { getStatus } from '@/store/utils';
@@ -517,11 +519,10 @@ export const getters: Getters<
   // simplify the manual balances object so that we can easily reduce it
   manualBalanceByLocation: (
     state: BalanceState,
-    { exchangeRate },
-    { session }
+    { exchangeRate }
   ): LocationBalance[] => {
-    const mainCurrency = session?.generalSettings.mainCurrency.tickerSymbol;
-
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+    const mainCurrency = get(currencySymbol);
     assert(mainCurrency, 'main currency was not properly set');
 
     const manualBalances = state.manualBalances;
@@ -830,7 +831,7 @@ export const getters: Getters<
       return asset;
     });
 
-    const { uniswapV3AggregatedBalances } = useUniswap();
+    const { uniswapV3AggregatedBalances } = useUniswapStore();
     const uniswapV3Assets = get(uniswapV3AggregatedBalances()).map(
       item => item.asset
     );
@@ -859,8 +860,7 @@ export const getters: Getters<
         manualBalances,
         loopringBalances
       },
-      _,
-      { session }
+      _
     ) =>
     asset => {
       const breakdown: AssetBreakdown[] = [];
@@ -1067,9 +1067,9 @@ export const getters: Getters<
         });
       }
 
-      const treatEth2AsEth = session?.generalSettings.treatEth2AsEth;
+      const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
 
-      if (asset === 'ETH2' || (treatEth2AsEth && asset === 'ETH')) {
+      if (asset === 'ETH2' || (get(treatEth2AsEth) && asset === 'ETH')) {
         for (const { publicKey } of eth2Validators.entries) {
           const validatorBalances = eth2[publicKey];
           let balance: Balance = { amount: Zero, usdValue: Zero };
@@ -1247,8 +1247,7 @@ export const getters: Getters<
       exchangeRate,
       exchanges,
       manualBalanceByLocation: manual
-    },
-    { session }
+    }
   ) => {
     const byLocations: Record<string, BigNumber> = {};
 
@@ -1262,8 +1261,8 @@ export const getters: Getters<
       addToOwned(location, usdValue);
     }
 
-    const mainCurrency = session?.generalSettings.mainCurrency.tickerSymbol;
-    assert(mainCurrency, 'main currency was not properly set');
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+    const mainCurrency = get(currencySymbol);
 
     const currentExchangeRate = exchangeRate(mainCurrency);
     const blockchainTotalConverted = currentExchangeRate

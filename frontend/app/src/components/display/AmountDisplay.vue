@@ -88,11 +88,12 @@ import { get, set, useClipboard, useTimeoutFn } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { setupExchangeRateGetter } from '@/composables/balances';
-import { setupDisplayData, setupGeneralSettings } from '@/composables/session';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { findCurrency } from '@/data/currencies';
 import { useAssetInfoRetrieval } from '@/store/assets';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { Currency } from '@/types/currency';
 import { bigNumberify } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
@@ -145,10 +146,13 @@ export default defineComponent({
       integer,
       forceCurrency
     } = toRefs(props);
-    const { currency, currencySymbol, floatingPrecision } =
-      setupGeneralSettings();
+    const { currency, currencySymbol, floatingPrecision } = storeToRefs(
+      useGeneralSettingsStore()
+    );
 
-    const { scrambleData, shouldShowAmount } = setupDisplayData();
+    const { scrambleData, shouldShowAmount } = storeToRefs(
+      useSessionSettingsStore()
+    );
 
     const exchangeRate = setupExchangeRateGetter();
 

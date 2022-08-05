@@ -47,7 +47,7 @@ import { get, useElementBounding } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import { footerProps } from '@/config/datatable.common';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 export default defineComponent({
   name: 'DataTable',

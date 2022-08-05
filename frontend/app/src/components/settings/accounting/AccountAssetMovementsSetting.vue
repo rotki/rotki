@@ -21,13 +21,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const accountForAssetsMovements = ref(false);
-const { accountingSettings } = useSettings();
+const { accountForAssetsMovements: enabled } = storeToRefs(
+  useAccountingSettingsStore()
+);
 
 onMounted(() => {
-  const settings = get(accountingSettings);
-  set(accountForAssetsMovements, settings.accountForAssetsMovements);
+  set(accountForAssetsMovements, get(enabled));
 });
 </script>

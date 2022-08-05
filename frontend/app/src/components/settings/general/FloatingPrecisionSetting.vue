@@ -39,9 +39,10 @@ import { onMounted, ref } from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
 import { useValidation } from '@/composables/validation';
 import i18n from '@/i18n';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const floatingPrecision = ref<string>('0');
 const maxFloatingPrecision = 8;
@@ -56,13 +57,12 @@ const rules = {
   }
 };
 
-const { generalSettings } = useSettings();
+const { floatingPrecision: current } = storeToRefs(useGeneralSettingsStore());
 const v$ = useVuelidate(rules, { floatingPrecision }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
 const resetFloatingPrecision = () => {
-  const settings = get(generalSettings);
-  set(floatingPrecision, settings.uiFloatingPrecision.toString());
+  set(floatingPrecision, get(current).toString());
 };
 
 onMounted(() => {

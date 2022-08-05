@@ -5,19 +5,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, toRefs, watch } from '@vue/composition-api';
+import { defineComponent, PropType, toRefs } from '@vue/composition-api';
 import { get, MaybeRef } from '@vueuse/core';
-import { getSessionState } from '@/composables/session';
 import {
   SettingLocation,
   useClearableMessages,
   useSettings
 } from '@/composables/settings';
 import { EditableSessionState } from '@/store/session/types';
-import { useFrontendSettingsStore } from '@/store/settings';
 import { FrontendSettingsPayload } from '@/types/frontend-settings';
 import { SettingsUpdate } from '@/types/user';
-import { logger } from '@/utils/logging';
 
 export default defineComponent({
   name: 'SettingsOption',
@@ -68,30 +65,7 @@ export default defineComponent({
     } = toRefs(props);
     const { error, success, clear, wait, stop, setSuccess, setError } =
       useClearableMessages();
-    const { generalSettings, accountingSettings, updateSetting } =
-      useSettings();
-
-    const store = useFrontendSettingsStore();
-    const sessionState = getSessionState();
-
-    watch(
-      [setting, frontendSetting, sessionSetting],
-      ([setting, frontend, session]) => {
-        if (
-          (session &&
-            !Object.keys(get(sessionState)).includes(setting as string)) ||
-          (frontend &&
-            !Object.keys(get(store.$state)).includes(setting as string)) ||
-          (!session &&
-            !frontend &&
-            !Object.keys(get(generalSettings)).includes(setting as string) &&
-            !Object.keys(get(accountingSettings)).includes(setting as string))
-        ) {
-          logger.error(`Invalid setting options for setting: ${setting}`);
-        }
-      },
-      { immediate: true }
-    );
+    const { updateSetting } = useSettings();
 
     const getMessage = (
       ref: MaybeRef<string | ((value: any) => string)>,

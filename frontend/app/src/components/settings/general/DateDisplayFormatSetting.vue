@@ -64,11 +64,12 @@ import { computed, onMounted, ref } from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
 import { useValidation } from '@/composables/validation';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { Defaults } from '@/data/defaults';
 import i18n from '@/i18n';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
 
 const dateDisplayFormat = ref<string>('');
@@ -95,15 +96,14 @@ const rules = {
 const v$ = useVuelidate(rules, { dateDisplayFormat }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const { generalSettings } = useSettings();
+const { dateDisplayFormat: format } = storeToRefs(useGeneralSettingsStore());
 
 const dateDisplayFormatExample = computed<string>(() => {
   return displayDateFormatter.format(now, get(dateDisplayFormat));
 });
 
 const resetDateDisplayFormat = () => {
-  const settings = get(generalSettings);
-  set(dateDisplayFormat, settings.dateDisplayFormat);
+  set(dateDisplayFormat, get(format));
 };
 
 onMounted(() => {

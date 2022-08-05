@@ -117,7 +117,7 @@ import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import { interop } from '@/electron-interop';
 import { SystemVersion } from '@/electron-main/ipc';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
 import { WebVersion } from '@/types';
 
 export default defineComponent({

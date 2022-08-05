@@ -26,7 +26,6 @@ import { DefiApi } from '@/services/defi/defi-api';
 import { IgnoredActions } from '@/services/history/const';
 import { HistoryApi } from '@/services/history/history-api';
 import { ReportsApi } from '@/services/reports/reports-api';
-import { SessionApi } from '@/services/session/session-api';
 import {
   BackendConfiguration,
   BackendInfo,
@@ -63,7 +62,6 @@ import {
 import { IgnoreActionType } from '@/store/history/types';
 import { SyncConflictPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
-import { Collection } from '@/types/collection';
 import { Exchange, Exchanges } from '@/types/exchanges';
 import {
   AccountSession,
@@ -71,11 +69,6 @@ import {
   LoginCredentials,
   SyncConflictError
 } from '@/types/login';
-import {
-  UserNote,
-  UserNoteCollectionResponse,
-  UserNotesFilter
-} from '@/types/notes';
 import { EthereumRpcNode, EthereumRpcNodeList } from '@/types/settings';
 import {
   emptyPagination,
@@ -94,14 +87,12 @@ import {
   UserSettingsModel
 } from '@/types/user';
 import { assert } from '@/utils/assertions';
-import { mapCollectionResponse } from '@/utils/collection';
 import { nonNullProperties } from '@/utils/data';
 import { downloadFileByUrl } from '@/utils/download';
 
 export class RotkehlchenApi {
   private axios: AxiosInstance;
   private _defi: DefiApi;
-  private _session: SessionApi;
   private _balances: BalancesApi;
   private _history: HistoryApi;
   private _reports: ReportsApi;
@@ -125,6 +116,10 @@ export class RotkehlchenApi {
     return '';
   }
 
+  get instance(): AxiosInstance {
+    return this.axios;
+  }
+
   get serverUrl(): string {
     return this._serverUrl;
   }
@@ -140,7 +135,6 @@ export class RotkehlchenApi {
 
   private setupApis = (axios: AxiosInstance) => ({
     defi: new DefiApi(axios),
-    session: new SessionApi(axios),
     balances: new BalancesApi(axios),
     history: new HistoryApi(axios),
     reports: new ReportsApi(axios),
@@ -159,7 +153,6 @@ export class RotkehlchenApi {
     this.baseTransformer = setupTransformer();
     ({
       defi: this._defi,
-      session: this._session,
       balances: this._balances,
       history: this._history,
       reports: this._reports,
@@ -170,10 +163,6 @@ export class RotkehlchenApi {
 
   get defi(): DefiApi {
     return this._defi;
-  }
-
-  get session(): SessionApi {
-    return this._session;
   }
 
   get balances(): BalancesApi {
@@ -205,7 +194,6 @@ export class RotkehlchenApi {
     this.setupCancellation();
     ({
       defi: this._defi,
-      session: this._session,
       balances: this._balances,
       history: this._history,
       reports: this._reports,
@@ -1290,12 +1278,12 @@ export class RotkehlchenApi {
     return handleResponse(response);
   }
 
-  async fetchNfts(payload?: { ignoreCache: boolean }): Promise<PendingTask> {
+  async fetchNfts(ignoreCache: boolean): Promise<PendingTask> {
     const params = Object.assign(
       {
         asyncQuery: true
       },
-      payload
+      ignoreCache ? { ignoreCache } : {}
     );
     const response = await this.axios.get<ActionResult<PendingTask>>('/nfts', {
       params: axiosSnakeCaseTransformer(params),
@@ -1427,55 +1415,6 @@ export class RotkehlchenApi {
       }
     );
     return BackendConfiguration.parse(handleResponse(response));
-  }
-
-  async fetchUserNotes(filter: UserNotesFilter): Promise<Collection<UserNote>> {
-    const response = await this.axios.post<ActionResult<Collection<UserNote>>>(
-      '/notes',
-      axiosSnakeCaseTransformer(filter),
-      {
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return mapCollectionResponse<UserNote>(
-      UserNoteCollectionResponse.parse(handleResponse(response))
-    );
-  }
-
-  async addUserNote(payload: Partial<UserNote>): Promise<number> {
-    const response = await this.axios.put<ActionResult<number>>(
-      '/notes',
-      axiosSnakeCaseTransformer(payload),
-      {
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async updateUserNote(payload: Partial<UserNote>): Promise<boolean> {
-    const response = await this.axios.patch<ActionResult<boolean>>(
-      '/notes',
-      axiosSnakeCaseTransformer(payload),
-      {
-        transformResponse: basicAxiosTransformer
-      }
-    );
-
-    return handleResponse(response);
-  }
-
-  async deleteUserNote(identifier: number): Promise<boolean> {
-    const response = await this.axios.delete<ActionResult<boolean>>('/notes', {
-      data: {
-        identifier
-      },
-      transformResponse: basicAxiosTransformer
-    });
-
-    return handleResponse(response);
   }
 }
 

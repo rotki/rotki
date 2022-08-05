@@ -30,15 +30,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useSettings } from '@/composables/settings';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { CostBasisMethod } from '@/types/user';
 
 const costBasisMethod = ref<CostBasisMethod>(CostBasisMethod.Fifo);
-const { accountingSettings } = useSettings();
+const { costBasisMethod: method } = storeToRefs(useAccountingSettingsStore());
 
 onMounted(() => {
-  const settings = get(accountingSettings);
-  set(costBasisMethod, settings.costBasisMethod);
+  set(costBasisMethod, get(method));
 });
 </script>

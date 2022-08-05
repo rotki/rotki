@@ -1,7 +1,7 @@
 import { computed, getCurrentInstance, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { Section, Status } from '@/store/const';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
 import { getStatus } from '@/store/utils';
 import { assert } from '@/utils/assertions';
 

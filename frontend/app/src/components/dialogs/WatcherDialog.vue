@@ -155,18 +155,23 @@
 
 <script lang="ts">
 import cloneDeep from 'lodash/cloneDeep';
+import { mapActions } from 'pinia';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
 import {
   WatcherOpTypes,
   Watcher,
   WatcherType,
   WatcherTypes
 } from '@/services/session/types';
+import { useWatchersStore } from '@/store/session/watchers';
 
 @Component({
   methods: {
-    ...mapActions('session', ['addWatchers', 'deleteWatchers', 'editWatchers'])
+    ...mapActions(useWatchersStore, [
+      'addWatchers',
+      'deleteWatchers',
+      'editWatchers'
+    ])
   }
 })
 export default class WatcherDialog extends Vue {

@@ -57,10 +57,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import PriceOracleSelection from '@/components/settings/PriceOracleSelection.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { useSettings } from '@/composables/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const baseAvailableOracles = ['cryptocompare', 'coingecko'];
 const availableCurrentOracles: string[] = [
@@ -74,13 +75,16 @@ const availableHistoricOracles = [...baseAvailableOracles, 'manual'];
 const currentOracles = ref<string[]>([]);
 const historicOracles = ref<string[]>([]);
 
-const { generalSettings } = useSettings();
+const { currentPriceOracles, historicalPriceOracles } = storeToRefs(
+  useGeneralSettingsStore()
+);
+
 const resetCurrentPriceOracles = () => {
-  set(currentOracles, get(generalSettings).currentPriceOracles);
+  set(currentOracles, get(currentPriceOracles));
 };
 
 const resetHistoricalPriceOracles = () => {
-  set(historicOracles, get(generalSettings).historicalPriceOracles);
+  set(historicOracles, get(historicalPriceOracles));
 };
 
 onMounted(() => {

@@ -57,12 +57,16 @@ import { onMounted, ref } from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
 import i18n from '@/i18n';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const taxFreeAfterPeriod = ref<number | null>(null);
 const taxFreePeriod = ref(false);
-const { accountingSettings } = useSettings();
+
+const { taxfreeAfterPeriod: period } = storeToRefs(
+  useAccountingSettingsStore()
+);
 
 const rules = {
   taxFreeAfterPeriod: {
@@ -98,12 +102,10 @@ const getTaxFreePeriod = (enabled: boolean) => {
 };
 
 const resetTaxFreePeriod = () => {
-  const settings = get(accountingSettings);
-  const period = settings.taxfreeAfterPeriod;
-
-  if (period && period > -1) {
+  const currentPeriod = get(period);
+  if (currentPeriod && currentPeriod > -1) {
     set(taxFreePeriod, true);
-    set(taxFreeAfterPeriod, convertPeriod(period, 'seconds'));
+    set(taxFreeAfterPeriod, convertPeriod(currentPeriod, 'seconds'));
   } else {
     set(taxFreePeriod, false);
     set(taxFreeAfterPeriod, null);

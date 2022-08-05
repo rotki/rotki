@@ -4,6 +4,7 @@ import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import { useSessionStore } from '@/store/session';
 import store from '@/store/store';
 
 Vue.use(Vuetify);
@@ -27,7 +28,7 @@ describe('RevealableInput.vue', () => {
   });
 
   afterEach(() => {
-    store.commit('session/reset');
+    useSessionStore().reset();
   });
 
   test('should be password mode by default', async () => {

@@ -36,7 +36,8 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { setupDisplayData } from '@/composables/session';
+import { storeToRefs } from 'pinia';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 export default defineComponent({
   name: 'PercentageDisplay',
@@ -64,7 +65,9 @@ export default defineComponent({
   },
   setup(props) {
     const { assetPadding, value } = toRefs(props);
-    const { shouldShowPercentage, scrambleData } = setupDisplayData();
+    const { shouldShowPercentage, scrambleData } = storeToRefs(
+      useSessionSettingsStore()
+    );
 
     const displayValue = computed<string>(() => {
       if (get(scrambleData) || !get(shouldShowPercentage)) {

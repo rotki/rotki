@@ -115,21 +115,22 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocationData } from '@/components/history/type';
 import {
+  setupExchanges,
   setupGeneralBalances,
-  setupLocationInfo,
-  setupExchanges
+  setupLocationInfo
 } from '@/composables/balances';
-import { useTheme, useRouter } from '@/composables/common';
-import { setupGeneralSettings } from '@/composables/session';
+import { useRouter, useTheme } from '@/composables/common';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { routesRef } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Exchange } from '@/types/exchanges';
 
 type SearchItem = {
@@ -166,7 +167,7 @@ export default defineComponent({
 
     const router = useRouter();
 
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const { assetSymbol } = useAssetInfoRetrieval();
     const { connectedExchanges } = setupExchanges();
     const { aggregatedBalances, balancesByLocation } = setupGeneralBalances();

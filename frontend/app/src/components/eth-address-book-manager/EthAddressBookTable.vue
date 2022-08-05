@@ -39,7 +39,7 @@ import { get, set } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
 import i18n from '@/i18n';
-import { useEthNamesStore } from '@/store/balances';
+import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import {
   EthAddressBookLocation,
   EthNamesEntries,

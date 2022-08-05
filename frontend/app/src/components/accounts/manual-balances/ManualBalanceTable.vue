@@ -109,6 +109,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { IVueI18n } from 'vue-i18n';
 import { DataTableHeader } from 'vuetify';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -121,10 +122,10 @@ import {
   setupExchangeRateGetter,
   setupManualBalances
 } from '@/composables/balances';
-import { setupGeneralSettings } from '@/composables/session';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { ManualBalance } from '@/services/balances/types';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { assert } from '@/utils/assertions';
 import { One } from '@/utils/bignumbers';
 
@@ -197,7 +198,7 @@ const ManualBalanceTable = defineComponent({
       emit('edit', balance);
     };
 
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const { deleteManualBalance } = setupManualBalances();
 
     const deleteBalance = async () => {

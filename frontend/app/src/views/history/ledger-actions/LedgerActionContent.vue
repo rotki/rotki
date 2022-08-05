@@ -210,7 +210,7 @@ import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import { useHistory, useLedgerActions } from '@/store/history';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';
 import { LedgerActionType } from '@/types/ledger-actions';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';

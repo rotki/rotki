@@ -7,14 +7,14 @@ import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { setupGeneralBalances } from '@/composables/balances';
-import { getSessionState } from '@/composables/session';
-import { useSettings } from '@/composables/settings';
 import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 export interface OverallPerformance {
@@ -37,7 +37,9 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const settingsStore = useFrontendSettingsStore();
   const { nftsInNetValue } = storeToRefs(settingsStore);
   const { notify } = useNotifications();
-  const { generalSettings } = useSettings();
+  const { currencySymbol, floatingPrecision } = storeToRefs(
+    useGeneralSettingsStore()
+  );
   const {
     aggregatedBalances,
     liabilities,
@@ -45,9 +47,10 @@ export const useStatisticsStore = defineStore('statistics', () => {
     nfTotalValue,
     exchangeRate
   } = setupGeneralBalances();
+  const { timeframe } = storeToRefs(useSessionSettingsStore());
 
   const totalNetWorth = computed(() => {
-    const mainCurrency = get(generalSettings).mainCurrency.tickerSymbol;
+    const mainCurrency = get(currencySymbol);
     const balances = get(aggregatedBalances);
     const totalLiabilities = get(liabilities);
     const nfbs = get(nfBalances);
@@ -86,17 +89,13 @@ export const useStatisticsStore = defineStore('statistics', () => {
   });
 
   const overall = computed(() => {
-    const {
-      mainCurrency: { tickerSymbol: currency },
-      uiFloatingPrecision: floatingPrecision
-    } = get(generalSettings);
+    const currency = get(currencySymbol);
     const rate = get(exchangeRate(currency));
-
-    const timeframe = getSessionState().timeframe;
+    const selectedTimeframe = get(timeframe);
     const allTimeframes = timeframes((unit, amount) =>
       dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()
     );
-    const startingDate = allTimeframes[timeframe].startingDate();
+    const startingDate = allTimeframes[selectedTimeframe].startingDate();
     const startingValue: () => BigNumber = () => {
       const data = get(getNetValue(startingDate)).data;
       let start = data[0];
@@ -123,12 +122,13 @@ export const useStatisticsStore = defineStore('statistics', () => {
       up = false;
     }
 
-    const delta = balanceDelta.multipliedBy(rate).toFormat(floatingPrecision);
+    const floatPrecision = get(floatingPrecision);
+    const delta = balanceDelta.multipliedBy(rate).toFormat(floatPrecision);
 
     return {
-      period: timeframe,
+      period: selectedTimeframe,
       currency,
-      netWorth: totalNW.toFormat(floatingPrecision),
+      netWorth: totalNW.toFormat(floatPrecision),
       delta: delta,
       percentage: percentage.isFinite() ? percentage.toFormat(2) : '-',
       up
@@ -153,7 +153,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const getNetValue = (startingDate: number) =>
     computed(() => {
-      const currency = get(generalSettings).mainCurrency.tickerSymbol;
+      const currency = get(currencySymbol);
       const rate = get(exchangeRate(currency));
 
       const convert = (value: string | number | BigNumber): number => {

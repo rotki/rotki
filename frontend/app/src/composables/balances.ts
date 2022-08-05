@@ -300,54 +300,56 @@ export const setupManualBalances = () => {
 };
 
 export const setupBlockchainAccounts = () => {
-  const { dispatch, getters, state } = useStore();
+  const store = useStore();
 
   const account = (address: string) =>
     computed<GeneralAccount | undefined>(() =>
-      getters['balances/account'](address)
+      store.getters['balances/account'](address)
     );
 
   const eth2Account = (address: string) =>
     computed<GeneralAccount | undefined>(() =>
-      getters['balances/eth2Account'](address)
+      store.getters['balances/eth2Account'](address)
     );
 
   const accounts = computed<GeneralAccount[]>(
-    () => getters['balances/accounts']
+    () => store.getters['balances/accounts']
   );
 
   const addAccount = async (payload: BlockchainAccountPayload) => {
-    return await dispatch('balances/addAccount', payload);
+    return await store.dispatch('balances/addAccount', payload);
   };
 
   const removeAccount = async (payload: BasicBlockchainAccountPayload) => {
-    return await dispatch('balances/removeAccount', payload);
+    return await store.dispatch('balances/removeAccount', payload);
   };
 
   const editAccount = async (payload: BlockchainAccountPayload) => {
-    return await dispatch('balances/editAccount', payload);
+    return await store.dispatch('balances/editAccount', payload);
   };
 
   const addAccounts = async (payload: AddAccountsPayload) => {
-    return await dispatch('balances/addAccounts', payload);
+    return await store.dispatch('balances/addAccounts', payload);
   };
 
-  const eth2Validators = computed(() => state.balances?.eth2Validators.entries);
+  const eth2Validators = computed(
+    () => store.state.balances?.eth2Validators.entries
+  );
 
   const addEth2Validator = async (payload: Eth2Validator) => {
-    return await dispatch('balances/addEth2Validator', payload);
+    return await store.dispatch('balances/addEth2Validator', payload);
   };
 
   const editEth2Validator = async (payload: Eth2Validator) => {
-    return await dispatch('balances/editEth2Validator', payload);
+    return await store.dispatch('balances/editEth2Validator', payload);
   };
 
   const deleteEth2Validators = async (payload: string[]) => {
-    return await dispatch('balances/deleteEth2Validators', payload);
+    return await store.dispatch('balances/deleteEth2Validators', payload);
   };
 
   const deleteXpub = async (payload: XpubPayload) => {
-    return await dispatch('balances/deleteXpub', payload);
+    return await store.dispatch('balances/deleteXpub', payload);
   };
 
   return {

@@ -191,7 +191,7 @@ import {
   BackendConfiguration,
   NumericBackendArgument
 } from '@/services/types-api';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
 import { Properties, Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
 

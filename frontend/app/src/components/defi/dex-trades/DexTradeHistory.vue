@@ -31,13 +31,13 @@ import { DexTradesTable } from '@/premium/premium';
 import { Section } from '@/store/const';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
-import { useUniswap } from '@/store/defi/uniswap';
+import { useUniswapStore } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';
 
 const modules: Module[] = [Module.UNISWAP, Module.BALANCER, Module.SUSHISWAP];
 
 const { fetchTrades: fetchBalancerTrades } = useBalancerStore();
-const { fetchTrades: fetchUniswapTrades } = useUniswap();
+const { fetchTrades: fetchUniswapTrades } = useUniswapStore();
 const { fetchTrades: fetchSushiswapTrades } = useSushiswapStore();
 const { isAnyModuleEnabled, isModuleEnabled } = useModules();
 const {

@@ -40,7 +40,7 @@ import { BigNumber } from '@rotki/common';
 import { defineComponent } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
 import RoundingSelector from '@/components/settings/explorers/RoundingSelector.vue';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { RoundingMode } from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
 

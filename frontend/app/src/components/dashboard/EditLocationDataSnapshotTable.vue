@@ -91,18 +91,19 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import EditLocationDataSnapshotForm from '@/components/dashboard/EditLocationDataSnapshotForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { setupExchangeRateGetter } from '@/composables/balances';
-import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import {
   LocationDataSnapshot,
   LocationDataSnapshotPayload
 } from '@/store/balances/types';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { bigNumberify, One, sortDesc, Zero } from '@/utils/bignumbers';
 import { toSentenceCase } from '@/utils/text';
 
@@ -158,7 +159,7 @@ export default defineComponent({
   emits: ['update:step', 'input'],
   setup(props, { emit }) {
     const { value, timestamp } = toRefs(props);
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const showForm = ref<boolean>(false);
     const showDeleteConfirmation = ref<boolean>(false);
     const editedIndex = ref<number | null>(null);

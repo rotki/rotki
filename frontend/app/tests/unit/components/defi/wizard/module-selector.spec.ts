@@ -1,12 +1,19 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
+import { set } from '@vueuse/core';
+import {
+  createPinia,
+  Pinia,
+  PiniaVuePlugin,
+  setActivePinia,
+  storeToRefs
+} from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { api } from '@/services/rotkehlchen-api';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import store from '@/store/store';
 import { Module } from '@/types/modules';
-import { GeneralSettings } from '@/types/user';
 import '../../../i18n';
 
 vi.mock('@/services/rotkehlchen-api');
@@ -16,27 +23,27 @@ Vue.use(PiniaVuePlugin);
 
 describe('ModuleSelector.vue', () => {
   let wrapper: Wrapper<ModuleSelector>;
+  let settingsStore: ReturnType<typeof useGeneralSettingsStore>;
+  let pinia: Pinia;
 
-  function createWrapper() {
+  const createWrapper = () => {
     const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
     return mount(ModuleSelector, {
       store,
       pinia,
       vuetify,
       stubs: ['v-tooltip', 'card']
     });
-  }
+  };
 
   beforeEach(() => {
-    document.body.setAttribute('data-app', 'true');
-    const settings: GeneralSettings = {
-      ...store.state.session!.generalSettings,
-      activeModules: [Module.AAVE]
-    };
-    store.commit('session/generalSettings', settings);
+    pinia = createPinia();
+    setActivePinia(pinia);
+    settingsStore = useGeneralSettingsStore(pinia);
 
+    document.body.setAttribute('data-app', 'true');
+    const { activeModules } = storeToRefs(settingsStore);
+    set(activeModules, [Module.AAVE]);
     wrapper = createWrapper();
   });
 
@@ -50,6 +57,6 @@ describe('ModuleSelector.vue', () => {
     wrapper.find('#defi-module-aave').find('button').trigger('click');
     await wrapper.vm.$nextTick();
     expect(wrapper.find('#defi-module-aave').exists()).toBe(false);
-    expect(store.state.session!.generalSettings.activeModules).toEqual([]);
+    expect(settingsStore.activeModules).toEqual([]);
   });
 });

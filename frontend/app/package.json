@@ -107,7 +107,7 @@
     "vite-plugin-istanbul": "2.9.0",
     "vite-plugin-pwa": "0.12.3",
     "vite-plugin-vue2": "2.0.2",
-    "vitest": "0.19.1",
+    "vitest": "0.21.0",
     "vue-eslint-parser": "8.3.0",
     "vue-i18n-extract": "2.0.7",
     "vue-template-compiler": "2.6.14"

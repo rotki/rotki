@@ -1,11 +1,21 @@
 import { BigNumber } from '@rotki/common';
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
+import { set } from '@vueuse/core';
+import {
+  createPinia,
+  Pinia,
+  PiniaVuePlugin,
+  setActivePinia,
+  storeToRefs
+} from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { VTooltip } from 'vuetify/lib/components';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { currencies } from '@/data/currencies';
+import { useSessionStore } from '@/store/session';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import store from '@/store/store';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import '@/filters';
@@ -19,43 +29,45 @@ Vue.use(PiniaVuePlugin);
 // @ts-ignore
 VTooltip.options.props.eager.default = true;
 
-function createWrapper(
-  value: BigNumber,
-  amount: BigNumber,
-  fiatCurrency: string | null
-) {
-  const vuetify = new Vuetify();
-  const pinia = createPinia();
-  setActivePinia(pinia);
-  return mount(AmountDisplay, {
-    store,
-    pinia,
-    provide: {
-      'vuex-store': store
-    },
-    vuetify,
-    propsData: {
-      value,
-      fiatCurrency,
-      amount
-    }
-  });
-}
-
 describe('AmountDisplay.vue', () => {
   let wrapper: Wrapper<any>;
+  let pinia: Pinia;
+
+  const createWrapper = (
+    value: BigNumber,
+    amount: BigNumber,
+    fiatCurrency: string | null
+  ) => {
+    const vuetify = new Vuetify();
+    return mount(AmountDisplay, {
+      store,
+      pinia,
+      provide: {
+        'vuex-store': store
+      },
+      vuetify,
+      propsData: {
+        value,
+        fiatCurrency,
+        amount
+      }
+    });
+  };
 
   beforeEach(async () => {
+    pinia = createPinia();
+    setActivePinia(pinia);
     document.body.setAttribute('data-app', 'true');
-    store.commit('session/generalSettings', {
-      mainCurrency: currencies[1]
-    });
+    const { uiFloatingPrecision, mainCurrency } = storeToRefs(
+      useGeneralSettingsStore()
+    );
+    set(mainCurrency, currencies[1]);
+    set(uiFloatingPrecision, 2);
     store.commit('balances/usdToFiatExchangeRates', { EUR: 1.2 });
-    store.commit('session/generalSettings', { uiFloatingPrecision: 2 });
   });
 
   afterEach(() => {
-    store.commit('session/reset');
+    useSessionStore().reset();
   });
 
   describe('Common case', () => {
@@ -90,7 +102,8 @@ describe('AmountDisplay.vue', () => {
 
   describe('Scramble data', () => {
     beforeEach(() => {
-      store.commit('session/scrambleData', true);
+      const { scrambleData } = storeToRefs(useSessionSettingsStore());
+      set(scrambleData, true);
     });
 
     test('displays amount converted to selected fiat currency as scrambled', async () => {

@@ -43,41 +43,60 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Mixins } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  Ref,
+  ref
+} from '@vue/composition-api';
+import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
-import { SupportedModule } from '@/components/defi/wizard/types';
-import ModuleMixin from '@/mixins/module-mixin';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 
-@Component({
-  name: 'ModuleActivator'
-})
-export default class ModuleActivator extends Mixins(ModuleMixin) {
-  readonly modules = SUPPORTED_MODULES;
-  enabledModules: Module[] = [];
+export default defineComponent({
+  name: 'ModuleActivator',
+  emits: ['update:selection'],
+  setup(_, { emit }) {
+    const modules = SUPPORTED_MODULES;
+    const enabledModules: Ref<Module[]> = ref([]);
+    const { activeModules } = storeToRefs(useGeneralSettingsStore());
+    let queriedAddressesStore = useQueriedAddressesStore();
+    const { queriedAddresses } = storeToRefs(queriedAddressesStore);
 
-  @Emit('update:selection')
-  updateSelection(_modules: string[]) {}
+    const updateSelection = (modules: string[]) => {
+      emit('update:selection', modules);
+    };
 
-  hasAddresses(module: Module): boolean {
-    const queriedAddresses = this.queriedAddresses[module];
-    if (queriedAddresses) {
-      return queriedAddresses.length > 0;
-    }
-    return false;
-  }
+    const hasAddresses = (module: Module) => {
+      const addresses = get(queriedAddresses)[module];
+      if (addresses) {
+        return addresses.length > 0;
+      }
+      return false;
+    };
 
-  get visibleModules(): SupportedModule[] {
-    return SUPPORTED_MODULES.filter(module => {
-      const identifier = module.identifier;
-      const isActive = this.activeModules.includes(identifier);
-      const activeWithQueried = isActive && this.hasAddresses(identifier);
-      return activeWithQueried || !isActive;
+    const visibleModules = computed(() => {
+      return SUPPORTED_MODULES.filter(module => {
+        const identifier = module.identifier;
+        const isActive = get(activeModules).includes(identifier);
+        const activeWithQueried = isActive && hasAddresses(identifier);
+        return activeWithQueried || !isActive;
+      });
     });
-  }
 
-  async mounted() {
-    await this.fetchQueriedAddresses();
+    onMounted(async () => await queriedAddressesStore.fetchQueriedAddresses());
+
+    return {
+      modules,
+      enabledModules,
+      queriedAddresses,
+      visibleModules,
+      updateSelection
+    };
   }
-}
+});
 </script>

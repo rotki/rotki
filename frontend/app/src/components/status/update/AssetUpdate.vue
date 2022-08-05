@@ -106,9 +106,8 @@
 </template>
 
 <script lang="ts">
-import { mapActions as mapPiniaActions } from 'pinia';
+import { mapActions } from 'pinia';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
@@ -118,7 +117,8 @@ import {
   ConflictResolution
 } from '@/services/assets/types';
 import { useAssets } from '@/store/assets';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
+import { useSessionStore } from '@/store/session';
 import {
   ApplyUpdateResult,
   AssetUpdateCheckResult,
@@ -131,8 +131,8 @@ const SKIP_ASSET_DB_VERSION = 'rotki_skip_asset_db_version';
   name: 'AssetUpdate',
   components: { ConfirmDialog, Fragment, ConflictDialog },
   methods: {
-    ...mapPiniaActions(useAssets, ['checkForUpdate', 'applyUpdates']),
-    ...mapActions('session', ['logout'])
+    ...mapActions(useAssets, ['checkForUpdate', 'applyUpdates']),
+    ...mapActions(useSessionStore, ['logout'])
   }
 })
 export default class AssetUpdate extends Mixins(BackendMixin) {

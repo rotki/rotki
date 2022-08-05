@@ -35,17 +35,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useSettings } from '@/composables/settings';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const ethStakingTaxableAfterWithdrawalEnabled = ref(false);
-const { accountingSettings } = useSettings();
+const { ethStakingTaxableAfterWithdrawalEnabled: enabled } = storeToRefs(
+  useAccountingSettingsStore()
+);
 
 onMounted(() => {
-  const settings = get(accountingSettings);
-  set(
-    ethStakingTaxableAfterWithdrawalEnabled,
-    settings.ethStakingTaxableAfterWithdrawalEnabled
-  );
+  set(ethStakingTaxableAfterWithdrawalEnabled, get(enabled));
 });
 </script>

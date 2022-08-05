@@ -58,14 +58,15 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { setupGeneralSettings } from '@/composables/session';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { getSortItems } from '@/utils/assets';
 
 const tableHeaders = (symbol: Ref<string>) => {
@@ -122,7 +123,7 @@ const AssetBalancesTable = defineComponent({
       return bigNumberSum(balances.value.map(({ usdValue }) => usdValue));
     });
 
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const { getAssetInfo } = useAssetInfoRetrieval();
 
     return {

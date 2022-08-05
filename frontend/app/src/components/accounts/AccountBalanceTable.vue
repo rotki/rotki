@@ -139,10 +139,10 @@ import { defineAsyncComponent } from '@vue/runtime-dom';
 import { get } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import { setupGeneralBalances } from '@/composables/balances';
 import { useTheme } from '@/composables/common';
-import { setupGeneralSettings } from '@/composables/session';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import { chainSection } from '@/store/balances/const';
@@ -152,6 +152,7 @@ import {
   XpubPayload
 } from '@/store/balances/types';
 import { Section } from '@/store/const';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { getStatusUpdater } from '@/store/utils';
 import { Properties } from '@/types';
@@ -211,7 +212,9 @@ export default defineComponent({
       toRefs(props);
 
     const { isTaskRunning } = useTasks();
-    const { currencySymbol, treatEth2AsEth } = setupGeneralSettings();
+    const { currencySymbol, treatEth2AsEth } = storeToRefs(
+      useGeneralSettingsStore()
+    );
     const { hasDetails, accountAssets, accountLiabilities, loopringBalances } =
       setupGeneralBalances();
 

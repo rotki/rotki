@@ -6,7 +6,7 @@
     flat
     :label="$t('module_queried_address.label')"
     multiple
-    :chains="['ETH']"
+    :chains="[ETH]"
     :loading="loading"
     @input="added($event)"
   />
@@ -14,73 +14,89 @@
 
 <script lang="ts">
 import { Account, GeneralAccount } from '@rotki/common/lib/account';
-import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import {
+  defineComponent,
+  PropType,
+  Ref,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import { QueriedAddressPayload } from '@/services/session/types';
+import { setupBlockchainAccounts } from '@/composables/balances';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { Module } from '@/types/modules';
 
-@Component({
+export default defineComponent({
   components: { BlockchainAccountSelector },
-  computed: {
-    ...mapGetters('balances', ['accounts'])
+  props: {
+    module: { required: true, type: String as PropType<Module> }
   },
-  methods: {
-    ...mapActions('session', ['deleteQueriedAddress', 'addQueriedAddress'])
-  }
-})
-export default class ModuleQueriedAddress extends Vue {
-  @Prop({ required: true })
-  module!: Module;
-  @Prop({ required: true })
-  selectedAddresses!: string[];
+  setup(props) {
+    const { module } = toRefs(props);
+    const loading = ref(false);
+    const selectedAccounts: Ref<Account[]> = ref([]);
 
-  loading: boolean = false;
-  selectedAccounts: Account[] = [];
-  addQueriedAddress!: (payload: QueriedAddressPayload) => Promise<void>;
-  deleteQueriedAddress!: (payload: QueriedAddressPayload) => Promise<void>;
-  accounts!: GeneralAccount[];
+    let store = useQueriedAddressesStore();
+    const { queriedAddresses } = storeToRefs(store);
+    const { addQueriedAddress, deleteQueriedAddress } = store;
 
-  async created() {
-    this.onAddressesChange();
-  }
+    const { accounts } = setupBlockchainAccounts();
 
-  @Watch('selectedAddresses')
-  onAddressesChange() {
-    this.selectedAccounts = this.accounts.filter(account =>
-      this.selectedAddresses.includes(account.address)
-    );
-  }
+    const setSelectedAccounts = (addresses: string[]): void => {
+      const selected = get(accounts).filter(account =>
+        addresses.includes(account.address)
+      );
+      set(selectedAccounts, selected);
+    };
 
-  async added(accounts: GeneralAccount[]) {
-    this.loading = true;
-    const addresses = accounts.map(({ address }) => address);
-    const allAddresses = this.selectedAccounts.map(({ address }) => address);
-    const added = addresses.filter(address => !allAddresses.includes(address));
-    const removed = allAddresses.filter(
-      address => !addresses.includes(address)
-    );
+    const added = async (accounts: GeneralAccount[]) => {
+      set(loading, true);
+      const selectedModule = get(module);
+      const addresses = accounts.map(({ address }) => address);
+      const allAddresses = get(selectedAccounts).map(({ address }) => address);
+      const added = addresses.filter(
+        address => !allAddresses.includes(address)
+      );
+      const removed = allAddresses.filter(
+        address => !addresses.includes(address)
+      );
 
-    if (added.length > 0) {
-      for (const address of added) {
-        await this.addQueriedAddress({
-          address,
-          module: this.module
-        });
+      if (added.length > 0) {
+        for (const address of added) {
+          await addQueriedAddress({
+            address,
+            module: selectedModule
+          });
+        }
+      } else if (removed.length > 0) {
+        for (const address of removed) {
+          await deleteQueriedAddress({
+            address,
+            module: selectedModule
+          });
+        }
       }
-    } else if (removed.length > 0) {
-      for (const address of removed) {
-        await this.deleteQueriedAddress({
-          address,
-          module: this.module
-        });
-      }
-    }
 
-    this.selectedAccounts = this.accounts.filter(account =>
-      addresses.includes(account.address)
-    );
-    this.loading = false;
+      setSelectedAccounts(addresses);
+      set(loading, false);
+    };
+
+    watch(queriedAddresses, queried => {
+      const selectedModule = get(module);
+      const queriedForModule = queried[selectedModule];
+      setSelectedAccounts(queriedForModule ? queriedForModule : []);
+    });
+
+    return {
+      loading,
+      selectedAccounts,
+      ETH: Blockchain.ETH,
+      added
+    };
   }
-}
+});
 </script>

@@ -12,13 +12,14 @@
 <script lang="ts">
 import { computed, defineComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { setupGeneralSettings } from '@/composables/session';
+import { storeToRefs } from 'pinia';
 import { CURRENCY_USD } from '@/data/currencies';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 export default defineComponent({
   name: 'ValueAccuracyHint',
   setup() {
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const notUsd = computed(() => {
       return get(currencySymbol) !== CURRENCY_USD;

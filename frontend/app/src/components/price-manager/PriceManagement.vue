@@ -76,7 +76,7 @@ import {
   HistoricalPriceFormPayload
 } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
 import { Nullable } from '@/types';
 
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({

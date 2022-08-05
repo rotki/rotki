@@ -77,7 +77,7 @@ import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
 import { timezones } from '@/data/timezones';
 import i18n from '@/i18n';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { DateFormat } from '@/types/date-format';
 import {
   changeDateFormat,

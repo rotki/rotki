@@ -4,7 +4,9 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Section, Status } from '@/store/const';
-import store, { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
+import { useSessionStore } from '@/store/session';
+import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import '../../i18n';
@@ -35,7 +37,7 @@ describe('AccountBalances.vue', () => {
   });
 
   afterEach(() => {
-    store.commit('session/reset');
+    useSessionStore().reset();
   });
 
   test('table enters into loading state when balances load', async () => {

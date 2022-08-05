@@ -1,6 +1,8 @@
+import { createTestingPinia } from '@pinia/testing';
 import { mount, Wrapper } from '@vue/test-utils';
+import { set } from '@vueuse/core';
 import flushPromises from 'flush-promises/index';
-import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
+import { PiniaVuePlugin, setActivePinia, storeToRefs } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { VDialog } from 'vuetify/lib/components';
@@ -8,7 +10,10 @@ import AccountManagement from '@/components/AccountManagement.vue';
 import { interop, useInterop } from '@/electron-interop';
 import { Api } from '@/plugins/api';
 import { Interop } from '@/plugins/interop';
-import store, { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
+import { useSessionStore } from '@/store/session';
+import { usePremiumStore } from '@/store/session/premium';
+import store from '@/store/store';
 import '../i18n';
 
 vi.mock('@/electron-interop');
@@ -26,21 +31,24 @@ VDialog.options.props.eager.default = true;
 
 describe('AccountManagement.vue', () => {
   let wrapper: Wrapper<any>;
+  let sessionStore: ReturnType<typeof useSessionStore>;
 
   beforeEach(() => {
     document.body.setAttribute('data-app', 'true');
     const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
 
     (useInterop as any).mockImplementation(() => interop);
     interop.premiumUserLoggedIn = vi.fn();
 
-    useMainStore().setConnected(true);
+    const testingPinia = createTestingPinia();
+    setActivePinia(testingPinia);
+
+    useMainStore(testingPinia).connected = true;
+    sessionStore = useSessionStore();
 
     wrapper = mount(AccountManagement, {
       store,
-      pinia,
+      pinia: testingPinia,
       provide: {
         'vuex-store': store
       },
@@ -51,13 +59,11 @@ describe('AccountManagement.vue', () => {
     });
   });
 
-  afterEach(() => {
-    store.commit('session/reset');
-  });
-
   describe('existing account', () => {
     test('non premium users should see the premium dialog', async () => {
-      store.dispatch = vi.fn().mockResolvedValue({ success: true });
+      (sessionStore.login as any).mockResolvedValue({
+        success: true
+      });
       expect.assertions(4);
       // @ts-ignore
       await wrapper.vm.userLogin({ username: '1234', password: '1234' });
@@ -76,8 +82,11 @@ describe('AccountManagement.vue', () => {
     });
 
     test('premium users should not see the premium dialog', async () => {
-      store.commit('session/premium', true);
-      store.dispatch = vi.fn().mockResolvedValue({ success: true });
+      (sessionStore.login as any).mockResolvedValue({
+        success: true
+      });
+      const { premium } = storeToRefs(usePremiumStore());
+      set(premium, true);
       expect.assertions(4);
       // @ts-ignore
       await wrapper.vm.userLogin({ username: '1234', password: '1234' });
@@ -94,7 +103,7 @@ describe('AccountManagement.vue', () => {
 
   describe('new account', () => {
     test('non premium users should only see menu', async () => {
-      store.dispatch = vi.fn().mockResolvedValue({ success: true });
+      (sessionStore.createAccount as any).mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
       await wrapper.vm.createNewAccount({ username: '1234', password: '1234' });
@@ -107,13 +116,14 @@ describe('AccountManagement.vue', () => {
     });
 
     test('premium users should not see the premium menu entry', async () => {
+      (sessionStore.createAccount as any).mockResolvedValue({ success: true });
       expect.assertions(4);
-      store.dispatch = vi.fn().mockResolvedValue({ success: true });
-
-      store.commit('session/premium', true);
+      const { premium } = storeToRefs(usePremiumStore());
+      set(premium, true);
       // @ts-ignore
       await wrapper.vm.createNewAccount({ username: '1234', password: '1234' });
       await wrapper.vm.$nextTick();
+      await flushPromises();
 
       expect(wrapper.find('.premium-reminder').exists()).toBe(false);
       expect(wrapper.emitted()['login-complete']).toBeTruthy();

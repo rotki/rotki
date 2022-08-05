@@ -6,7 +6,7 @@ import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { DexTrades } from '@/store/defi/types';
-import { useUniswap } from '@/store/defi/uniswap';
+import { useUniswapStore } from '@/store/defi/uniswap';
 
 const addTrades = (
   dexTrades: DexTrades,
@@ -24,7 +24,7 @@ const addTrades = (
 export const useDexTradesStore = defineStore('defi/trades', () => {
   const balancerStore = useBalancerStore();
   const sushiswapStore = useSushiswapStore();
-  const uniswapStore = useUniswap();
+  const uniswapStore = useUniswapStore();
 
   const { trades: uniswapTrades } = storeToRefs(uniswapStore);
   const { trades: sushiswapTrades } = storeToRefs(sushiswapStore);

@@ -98,6 +98,7 @@ import { GeneralAccount } from '@rotki/common/lib/account';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { computed, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import DepositProtocolReset from '@/components/defi/DepositProtocolReset.vue';
 import DepositTotals from '@/components/defi/DepositTotals.vue';
@@ -110,7 +111,7 @@ import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { setupStatusChecking, useRoute } from '@/composables/common';
-import { getPremium, setupGeneralSettings } from '@/composables/session';
+import { getPremium } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import {
   AaveEarnedDetails,
@@ -126,6 +127,7 @@ import { useDefiStore } from '@/store/defi';
 import { useAaveStore } from '@/store/defi/aave';
 import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
 import { useYearnStore } from '@/store/defi/yearn';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 
 const section = Section.DEFI_LENDING;
@@ -144,7 +146,7 @@ const premium = getPremium();
 const route = useRoute();
 const { openUrl } = useInterop();
 const { shouldShowLoadingScreen, isSectionRefreshing } = setupStatusChecking();
-const { floatingPrecision } = setupGeneralSettings();
+const { floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 
 const defiStore = useDefiStore();
 const store = useDefiSupportedProtocolsStore();

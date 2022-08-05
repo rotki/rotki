@@ -1,6 +1,6 @@
 <template>
   <v-snackbar
-    v-if="$interop.isPackaged"
+    v-if="isPackaged"
     :value="showUpdatePopup"
     class="update-popup"
     :timeout="-1"
@@ -94,90 +94,74 @@
   </v-snackbar>
 </template>
 
-<script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapState } from 'vuex';
+<script setup lang="ts">
+import { onMounted, ref } from '@vue/composition-api';
+import { set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import { Interop } from '@/electron-main/ipc';
-import { assert } from '@/utils/assertions';
+import { useInterop } from '@/electron-interop';
+import { default as i18nFn } from '@/i18n';
+import { useSessionStore } from '@/store/session';
 
-@Component({
-  components: { BaseExternalLink },
-  computed: {
-    ...mapState('session', ['showUpdatePopup'])
-  },
-  methods: {
-    ...mapActions('session', [
-      'checkForUpdate',
-      'dismissUpdatePopup',
-      'openUpdatePopup'
-    ])
+const releaseNotesLink = 'https://github.com/rotki/rotki/releases';
+
+const downloadReady = ref(false);
+const downloading = ref(false);
+const restarting = ref(false);
+const percentage = ref(0);
+const error = ref('');
+
+const store = useSessionStore();
+const { showUpdatePopup } = storeToRefs(store);
+const { checkForUpdate } = store;
+const { downloadUpdate, isPackaged, installUpdate } = useInterop();
+
+const dismiss = () => {
+  set(showUpdatePopup, false);
+  setTimeout(() => {
+    set(error, '');
+    set(downloading, false);
+    set(downloadReady, false);
+    set(percentage, 0);
+  }, 400);
+};
+
+const update = async () => {
+  set(downloading, true);
+  const downloaded = await downloadUpdate(progress => {
+    set(percentage, progress);
+  });
+  set(downloading, false);
+  if (downloaded) {
+    set(downloadReady, true);
+    set(showUpdatePopup, true);
+  } else {
+    set(error, i18nFn.t('update_popup.download_failed.message').toString());
   }
-})
-export default class AppUpdatePopup extends Vue {
-  showUpdatePopup!: boolean;
-  downloadReady: boolean = false;
-  downloading: boolean = false;
-  restarting: boolean = false;
-  percentage: number = 0;
-  error: string = '';
+};
 
-  checkForUpdate!: () => void;
-  dismissUpdatePopup!: () => void;
-  openUpdatePopup!: () => void;
+const install = async () => {
+  set(downloadReady, false);
+  set(restarting, true);
 
-  dismiss() {
-    this.dismissUpdatePopup();
-    setTimeout(() => {
-      this.error = '';
-      this.downloading = false;
-      this.downloadReady = false;
-      this.percentage = 0;
-    }, 400);
+  const result = await installUpdate();
+  if (typeof result !== 'boolean') {
+    set(
+      error,
+      i18nFn
+        .t('update_popup.install_failed.message', {
+          message: result
+        })
+        .toString()
+    );
   }
+};
 
-  async update() {
-    this.downloading = true;
-    const downloaded = await this.interop.downloadUpdate(percentage => {
-      this.percentage = percentage;
-    });
-    this.downloading = false;
-    if (downloaded) {
-      this.downloadReady = true;
-      this.openUpdatePopup();
-    } else {
-      this.error = this.$t('update_popup.download_failed.message').toString();
-    }
+onMounted(async () => {
+  if (isPackaged) {
+    await checkForUpdate();
   }
-
-  async install() {
-    this.downloadReady = false;
-    this.restarting = true;
-    const result = await this.interop.installUpdate();
-    if (typeof result !== 'boolean') {
-      this.error = this.$t('update_popup.install_failed.message', {
-        message: result
-      }).toString();
-    }
-  }
-
-  get interop(): Interop {
-    const interop = window.interop;
-    assert(interop);
-    return interop;
-  }
-
-  async created() {
-    if (!this.$interop.isPackaged) {
-      return;
-    }
-    this.checkForUpdate();
-  }
-
-  get releaseNotesLink(): string {
-    return 'https://github.com/rotki/rotki/releases';
-  }
-}
+});
 </script>
 <style scoped lang="scss">
 .update-popup {

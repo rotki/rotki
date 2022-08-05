@@ -56,17 +56,19 @@
 <script lang="ts">
 import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get, set, useTimeoutFn } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { setupGeneralSettings, setupSession } from '@/composables/session';
 import { currencies } from '@/data/currencies';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Currency } from '@/types/currency';
 
 export default defineComponent({
   name: 'CurrencyDropdown',
   components: { MenuTooltipButton },
   setup() {
-    const { updateSettings } = setupSession();
-    const { currency } = setupGeneralSettings();
+    const { update } = useSettingsStore();
+    const { currency } = storeToRefs(useGeneralSettingsStore());
 
     const filter = ref<string>('');
     const visible = ref<boolean>(false);
@@ -92,7 +94,7 @@ export default defineComponent({
         return;
       }
 
-      await updateSettings({ mainCurrency: newCurrency.tickerSymbol });
+      await update({ mainCurrency: newCurrency.tickerSymbol });
     };
 
     const { start, stop, isPending } = useTimeoutFn(

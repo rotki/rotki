@@ -119,6 +119,7 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set, useLocalStorage } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import {
@@ -130,10 +131,11 @@ import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import { setupBackendManagement } from '@/composables/backend';
 import { useTheme } from '@/composables/common';
-import { getPremium, setupSession } from '@/composables/session';
+import { getPremium } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import i18n from '@/i18n';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
+import { useSessionStore } from '@/store/session';
 import { CreateAccountPayload, LoginCredentials } from '@/types/login';
 
 export default defineComponent({
@@ -211,7 +213,9 @@ export default defineComponent({
       set(premiumVisible, true);
     };
 
-    const { syncConflict, login, createAccount } = setupSession();
+    const sessionStore = useSessionStore();
+    const { login, createAccount } = sessionStore;
+    const { syncConflict } = storeToRefs(sessionStore);
     const interop = useInterop();
 
     const upgrade = () => {

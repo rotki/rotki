@@ -41,9 +41,10 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { setupDisplayData } from '@/composables/session';
+import { storeToRefs } from 'pinia';
 import { truncateAddress } from '@/filters';
-import { useEthNamesStore } from '@/store/balances';
+import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { randomHex } from '@/utils/data';
 
 export default defineComponent({
@@ -58,7 +59,9 @@ export default defineComponent({
   },
   setup(props) {
     const { account } = toRefs(props);
-    const { scrambleData, shouldShowAmount } = setupDisplayData();
+    const { scrambleData, shouldShowAmount } = storeToRefs(
+      useSessionSettingsStore()
+    );
 
     const { ethNameSelector } = useEthNamesStore();
 

@@ -1,6 +1,12 @@
 import { mount, Wrapper } from '@vue/test-utils';
+import { set } from '@vueuse/core';
 import flushPromises from 'flush-promises/index';
-import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
+import {
+  createPinia,
+  PiniaVuePlugin,
+  setActivePinia,
+  storeToRefs
+} from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import Card from '@/components/helper/Card.vue';
@@ -9,6 +15,7 @@ import { interop } from '@/electron-interop';
 import { Api } from '@/plugins/api';
 import { Interop } from '@/plugins/interop';
 import { api } from '@/services/rotkehlchen-api';
+import { usePremiumStore } from '@/store/session/premium';
 import store from '@/store/store';
 import '../../i18n';
 
@@ -63,7 +70,9 @@ describe('PremiumSettings.vue', () => {
   });
 
   test('updates premium status upon removing keys', async () => {
-    store.commit('session/premium', true);
+    const { premium } = storeToRefs(usePremiumStore());
+    set(premium, true);
+
     await wrapper.vm.$nextTick();
     api.deletePremiumCredentials = vi.fn().mockResolvedValue({ result: true });
 

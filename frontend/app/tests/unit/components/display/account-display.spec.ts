@@ -1,18 +1,37 @@
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
+import { set } from '@vueuse/core';
+import {
+  createPinia,
+  Pinia,
+  PiniaVuePlugin,
+  setActivePinia,
+  storeToRefs
+} from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
-import store from '@/store/store';
 import '../../i18n';
+import { useSessionStore } from '@/store/session';
+import { PrivacyMode } from '@/store/session/types';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import store from '@/store/store';
+
+vi.mock('@/store/store', () => ({
+  default: {
+    getters: {
+      'balances/accounts': []
+    }
+  }
+}));
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 
 describe('AccountDisplay.vue', () => {
   let wrapper: Wrapper<any>;
+  let pinia: Pinia;
 
   const account: GeneralAccount = {
     chain: Blockchain.ETH,
@@ -23,14 +42,9 @@ describe('AccountDisplay.vue', () => {
 
   function createWrapper() {
     const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
     return mount(AccountDisplay, {
       store,
       pinia,
-      provide: {
-        'vuex-store': store
-      },
       vuetify,
       stubs: {
         VTooltip: {
@@ -48,8 +62,10 @@ describe('AccountDisplay.vue', () => {
     });
   }
 
-  beforeEach(() => {
-    store.dispatch('session/logout');
+  beforeEach(async () => {
+    pinia = createPinia();
+    setActivePinia(pinia);
+    await useSessionStore().logout();
     wrapper = createWrapper();
   });
 
@@ -58,7 +74,8 @@ describe('AccountDisplay.vue', () => {
   });
 
   test('blurs address on privacy mode', async () => {
-    store.commit('session/privacyMode', 1);
+    const { privacyMode } = storeToRefs(useSessionSettingsStore());
+    set(privacyMode, PrivacyMode.SEMI_PRIVATE);
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.blur-content').exists()).toBe(true);
   });

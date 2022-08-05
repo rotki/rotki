@@ -1,9 +1,16 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
+import { set } from '@vueuse/core';
+import {
+  createPinia,
+  PiniaVuePlugin,
+  setActivePinia,
+  storeToRefs
+} from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { BackupApi } from '@/services/backup/backup-api';
 import { api } from '@/services/rotkehlchen-api';
+import { usePremiumStore } from '@/store/session/premium';
 import store from '@/store/store';
 import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
 import { stub } from '../../../common/utils';
@@ -66,7 +73,8 @@ describe('UserSecuritySettings.vue', () => {
   });
 
   test('displays warning if premium sync enabled', async () => {
-    store.commit('session/premiumSync', true);
+    const { premiumSync } = storeToRefs(usePremiumStore());
+    set(premiumSync, true);
     await wrapper.vm.$nextTick();
     expect(wrapper.find('[data-cy=premium-warning]').exists()).toBe(true);
   });

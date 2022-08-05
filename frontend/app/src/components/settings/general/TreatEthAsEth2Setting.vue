@@ -19,14 +19,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const treatEth2asEth = ref<boolean>(false);
-
-const { generalSettings } = useSettings();
+const { treatEth2AsEth: enabled } = storeToRefs(useGeneralSettingsStore());
 
 onMounted(() => {
-  const settings = get(generalSettings);
-  set(treatEth2asEth, settings.treatEth2AsEth);
+  set(treatEth2asEth, get(enabled));
 });
 </script>

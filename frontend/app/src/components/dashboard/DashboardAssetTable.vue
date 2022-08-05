@@ -127,12 +127,12 @@ import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelecto
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupExchangeRateGetter } from '@/composables/balances';
-import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { Nullable } from '@/types';
 import {
@@ -247,7 +247,7 @@ const DashboardAssetTable = defineComponent({
     const { balances, title, tableType } = toRefs(props);
     const search = ref('');
 
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const exchangeRate = setupExchangeRateGetter();
     const totalInUsd = computed(() => {

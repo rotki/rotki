@@ -27,17 +27,7 @@
   </v-container>
 </template>
 
-<script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+<script setup lang="ts">
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import GroupedImport from '@/components/import/GroupedImport.vue';
-import PremiumMixin from '@/mixins/premium-mixin';
-
-export default defineComponent({
-  components: {
-    GroupedImport,
-    ExternalLink
-  },
-  mixins: [PremiumMixin]
-});
 </script>

@@ -2,8 +2,7 @@ import { AssetBalanceWithPrice } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { setupGeneralSettings } from '@/composables/session';
+import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { AssetUpdatePayload } from '@/services/assets/types';
@@ -11,6 +10,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { SupportedAssets } from '@/services/types-api';
 import { AssetPriceInfo, NonFungibleBalance } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { showMessage, useStore } from '@/store/utils';
@@ -178,7 +178,7 @@ export const useAssetInfoRetrieval = defineStore(
     const store = useStore();
     const supportedAssetsMap = ref<SupportedAssets>({});
 
-    const { treatEth2AsEth } = setupGeneralSettings();
+    const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
 
     const assetAssociationMap = computed<{ [key: string]: string }>(() => {
       const associationMap: { [key: string]: string } = {};

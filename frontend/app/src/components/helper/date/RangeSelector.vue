@@ -43,7 +43,7 @@ import ReportPeriodSelector, {
   PeriodChangedEvent,
   SelectionChangedEvent
 } from '@/components/profitloss/ReportPeriodSelector.vue';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { convertToTimestamp } from '@/utils/date';
 
 export default defineComponent({

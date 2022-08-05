@@ -63,15 +63,26 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  PropType,
+  ref,
+  Ref,
+  toRefs
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
+import { useTheme } from '@/composables/common';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Nullable } from '@/types';
 import { Module } from '@/types/modules';
-import { SettingsUpdate } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
 type ModuleWithStatus = {
@@ -79,72 +90,82 @@ type ModuleWithStatus = {
   readonly enabled: boolean;
 };
 
-@Component({
+export default defineComponent({
   name: 'ActiveModules',
-  components: { ConfirmDialog, QueriedAddressDialog, LabeledAddressDisplay },
-  computed: {
-    ...mapGetters('session', ['activeModules'])
+  components: { ConfirmDialog, QueriedAddressDialog },
+  props: {
+    modules: { required: true, type: Array as PropType<Module[]> }
   },
-  methods: {
-    ...mapActions('session', ['updateSettings', 'fetchQueriedAddresses'])
-  }
-})
-export default class ActiveModules extends Vue {
-  @Prop({ required: true, type: Array })
-  modules!: Module[];
+  setup(props) {
+    const { modules } = toRefs(props);
+    const manageModule: Ref<Nullable<Module>> = ref(null);
+    const confirmEnable: Ref<Nullable<Module>> = ref(null);
 
-  fetchQueriedAddresses!: () => Promise<void>;
-  updateSettings!: (update: SettingsUpdate) => Promise<void>;
-  activeModules!: Module[];
-  manageModule: Nullable<Module> = null;
-  confirmEnable: Nullable<Module> = null;
+    const supportedModules = SUPPORTED_MODULES;
 
-  get style() {
+    const { fetchQueriedAddresses } = useQueriedAddressesStore();
+    const { update } = useSettingsStore();
+    const { activeModules } = storeToRefs(useGeneralSettingsStore());
+    const { dark } = useTheme();
+
+    const style = computed(() => ({
+      background: get(dark) ? '#1E1E1E' : 'white',
+      width: `${get(modules).length * 38}px`
+    }));
+
+    const moduleStatus = computed(() => {
+      const active = get(activeModules);
+      return get(modules)
+        .map(module => ({
+          identifier: module,
+          enabled: active.includes(module)
+        }))
+        .sort((a, b) => (a.enabled === b.enabled ? 0 : a.enabled ? -1 : 1));
+    });
+
+    const onModulePress = (module: ModuleWithStatus) => {
+      if (module.enabled) {
+        set(manageModule, module.identifier);
+      } else {
+        set(confirmEnable, module.identifier);
+      }
+    };
+
+    const enableModule = async () => {
+      const module = get(confirmEnable);
+      assert(module !== null);
+      await update({
+        activeModules: [...get(activeModules), module]
+      });
+      set(confirmEnable, null);
+    };
+
+    const name = (module: string): string => {
+      const data = supportedModules.find(value => value.identifier === module);
+      return data?.name ?? '';
+    };
+
+    const icon = (module: Module): string => {
+      const data = supportedModules.find(value => value.identifier === module);
+      return data?.icon ?? '';
+    };
+
+    onMounted(async () => {
+      await fetchQueriedAddresses();
+    });
+
     return {
-      background: this.$vuetify.theme.dark ? '#1E1E1E' : 'white',
-      width: `${this.modules.length * 38}px`
+      manageModule,
+      confirmEnable,
+      moduleStatus,
+      style,
+      onModulePress,
+      enableModule,
+      name,
+      icon
     };
   }
-
-  get moduleStatus(): ModuleWithStatus[] {
-    return this.modules
-      .map(module => ({
-        identifier: module,
-        enabled: this.activeModules.includes(module)
-      }))
-      .sort((a, b) => (a.enabled === b.enabled ? 0 : a.enabled ? -1 : 1));
-  }
-
-  name(module: string): string {
-    const data = SUPPORTED_MODULES.find(value => value.identifier === module);
-    return data?.name ?? '';
-  }
-
-  icon(module: Module): string {
-    const data = SUPPORTED_MODULES.find(value => value.identifier === module);
-    return data?.icon ?? '';
-  }
-
-  onModulePress(module: ModuleWithStatus) {
-    if (module.enabled) {
-      this.manageModule = module.identifier;
-    } else {
-      this.confirmEnable = module.identifier;
-    }
-  }
-
-  enableModule() {
-    assert(this.confirmEnable !== null);
-    this.updateSettings({
-      activeModules: [...this.activeModules, this.confirmEnable]
-    });
-    this.confirmEnable = null;
-  }
-
-  async mounted() {
-    await this.fetchQueriedAddresses();
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

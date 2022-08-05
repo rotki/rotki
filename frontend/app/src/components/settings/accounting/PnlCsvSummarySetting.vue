@@ -21,14 +21,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useSettings } from '@/composables/settings';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const haveCSVSummary = ref(false);
-const { accountingSettings } = useSettings();
+const { pnlCsvHaveSummary } = storeToRefs(useAccountingSettingsStore());
 
 onMounted(() => {
-  const settings = get(accountingSettings);
-  set(haveCSVSummary, settings.pnlCsvHaveSummary);
+  set(haveCSVSummary, get(pnlCsvHaveSummary));
 });
 </script>

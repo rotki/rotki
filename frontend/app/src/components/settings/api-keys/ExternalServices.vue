@@ -137,13 +137,15 @@
 </template>
 
 <script lang="ts">
+import { mapState } from 'pinia';
 import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 import {
   ExternalServiceKey,
@@ -154,7 +156,7 @@ import {
 @Component({
   components: { ExternalLink, ApiKeyBox, ServiceKey, ConfirmDialog },
   computed: {
-    ...mapGetters('session', ['activeModules'])
+    ...mapState(useGeneralSettingsStore, ['activeModules'])
   },
   methods: {
     ...mapActions('balances', ['fetchLoopringBalances'])

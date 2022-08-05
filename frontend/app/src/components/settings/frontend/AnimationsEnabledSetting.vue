@@ -19,13 +19,15 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
-import { set } from '@vueuse/core';
-import { getSessionState } from '@/composables/session';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 const animationsEnabled = ref<boolean>(true);
 
+const { animationsEnabled: enabled } = storeToRefs(useSessionSettingsStore());
+
 onMounted(() => {
-  const state = getSessionState();
-  set(animationsEnabled, state.animationsEnabled);
+  set(animationsEnabled, get(enabled));
 });
 </script>

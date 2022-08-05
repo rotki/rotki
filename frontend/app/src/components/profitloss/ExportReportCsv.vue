@@ -42,8 +42,8 @@ import { computed, defineComponent } from '@vue/composition-api';
 import { useInterop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useMainStore } from '@/store/main';
 import { useReports } from '@/store/reports';
-import { useMainStore } from '@/store/store';
 
 export default defineComponent({
   name: 'ExportReportCsv',

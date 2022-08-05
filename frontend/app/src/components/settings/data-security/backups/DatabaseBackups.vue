@@ -78,15 +78,16 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { getFilepath } from '@/components/settings/data-security/backups/utils';
-import { setupGeneralSettings } from '@/composables/session';
 import { displayDateFormatter } from '@/data/date_formatter';
 import i18n from '@/i18n';
 import { UserDbBackup } from '@/services/backup/types';
 import { api } from '@/services/rotkehlchen-api';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { size } from '@/utils/data';
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
@@ -123,7 +124,7 @@ export default defineComponent({
     const { items, directory } = toRefs(props);
     const pendingDeletion = ref<UserDbBackup | null>(null);
 
-    const { dateDisplayFormat } = setupGeneralSettings();
+    const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 
     const messageInfo = computed(() => {
       const db = get(pendingDeletion);

@@ -28,9 +28,10 @@
 <script lang="ts">
 import { defineComponent, PropType, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import { setupGeneralSettings } from '@/composables/session';
 import { LocationDataSnapshotPayload } from '@/store/balances/types';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 export default defineComponent({
   name: 'EditLocationDataSnapshotForm',
@@ -54,7 +55,7 @@ export default defineComponent({
   emits: ['update:form', 'input'],
   setup(props, { emit }) {
     const { form } = toRefs(props);
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const input = (valid: boolean) => {
       emit('input', valid);

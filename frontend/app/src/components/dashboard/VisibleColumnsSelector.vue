@@ -32,7 +32,7 @@ import {
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import i18n from '@/i18n';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import {
   DashboardTableType,
   FrontendSettingsPayload

@@ -159,18 +159,20 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 import { storeToRefs } from 'pinia';
 import { setupBackendManagement } from '@/composables/backend';
 import { useRoute, useRouter, useTheme } from '@/composables/common';
-import { getPremium, setupSession, useDarkMode } from '@/composables/session';
+import { getPremium, useDarkMode } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
 import i18n from '@/i18n';
 import { ThemeChecker } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import { Section, Status } from '@/store/const';
-import { useUniswap } from '@/store/defi/uniswap';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useUniswapStore } from '@/store/defi/uniswap';
+import { useMainStore } from '@/store/main';
+import { useSessionStore } from '@/store/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStatisticsStore } from '@/store/statistics';
-import { useMainStore } from '@/store/store';
-import { getStatus, useStore } from '@/store/utils';
+import { getStatus } from '@/store/utils';
 import { logger } from '@/utils/logging';
 import 'chartjs-adapter-moment';
 
@@ -261,7 +263,11 @@ export default defineComponent({
     const { appVersion, message } = toRefs(store);
     const { setMessage, connect } = store;
 
-    const { animationsEnabled } = setupSession();
+    const sessionSettings = useSessionSettingsStore();
+    const { animationsEnabled } = storeToRefs(sessionSettings);
+    const { logged, username, loginComplete, pinned } = storeToRefs(
+      useSessionStore()
+    );
 
     const showNotificationBar = ref(false);
     const showHelpBar = ref(false);
@@ -308,16 +314,12 @@ export default defineComponent({
       return null;
     });
 
-    const { commit, state } = useStore();
     const { overall } = storeToRefs(useStatisticsStore());
 
-    const logged = computed(() => state.session?.logged ?? false);
-    const username = computed(() => state.session?.username ?? '');
-    const loginComplete = computed(() => state.session?.loginComplete ?? false);
     const loginIn = computed(() => get(logged) && get(loginComplete));
 
     const completeLogin = async (complete: boolean) => {
-      await commit('session/completeLogin', complete, { root: true });
+      set(loginComplete, complete);
     };
 
     const { restartBackend } = setupBackendManagement();
@@ -390,7 +392,7 @@ export default defineComponent({
     });
 
     const premium = getPremium();
-    const { fetchV3Balances } = useUniswap();
+    const { fetchV3Balances } = useUniswapStore();
 
     const defiUniswapV3Section = Section.DEFI_UNISWAP_V3_BALANCES;
 
@@ -400,8 +402,6 @@ export default defineComponent({
         fetchV3Balances(true);
       }
     });
-
-    const { pinned } = setupSession();
 
     watch(pinned, (current, prev) => {
       if (current !== prev) {

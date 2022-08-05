@@ -20,8 +20,10 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { setupDisplayData } from '@/composables/session';
+
+import { storeToRefs } from 'pinia';
 import i18n from '@/i18n';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 type DefiProtocolInfo = {
   readonly identifier: string;
@@ -35,8 +37,7 @@ export default defineComponent({
   },
   setup(props) {
     const { item } = toRefs(props);
-
-    const { scrambleData } = setupDisplayData();
+    const { scrambleData } = storeToRefs(useSessionSettingsStore());
 
     const getIcon = ({ protocol }: DefiProtocolInfo): string => {
       return protocol.startsWith('makerdao') ? 'makerdao' : protocol;

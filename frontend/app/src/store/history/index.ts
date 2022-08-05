@@ -27,7 +27,7 @@ import {
 } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
-import { useEthNamesStore } from '@/store/balances';
+import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { Section, Status } from '@/store/const';
 import {
   AssetMovementEntry,
@@ -40,9 +40,10 @@ import {
   filterAddressesFromWords,
   mapCollectionEntriesWithMeta
 } from '@/store/history/utils';
+import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings';
-import store, { useMainStore } from '@/store/store';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { getStatusUpdater } from '@/store/utils';

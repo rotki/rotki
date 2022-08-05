@@ -16,7 +16,7 @@ import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
 import {
   getStatus,

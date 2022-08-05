@@ -83,6 +83,7 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -92,10 +93,11 @@ import { exchangeName } from '@/components/history/consts';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
 import { setupExchanges } from '@/composables/balances';
 import { useRouter } from '@/composables/common';
-import { useSettings } from '@/composables/settings';
 import i18nFn from '@/i18n';
 import { ExchangePayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Nullable, Writeable } from '@/types';
 import { Exchange, SupportedExchange } from '@/types/exchanges';
 import { assert } from '@/utils/assertions';
@@ -125,7 +127,8 @@ const edit = ref<boolean>(false);
 const valid = ref<boolean>(false);
 const pending = ref<boolean>(false);
 
-const { generalSettings, updateGeneralSetting } = useSettings();
+const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
+const { update } = useSettingsStore();
 
 const findNonSyncExchangeIndex = (exchange: Exchange) => {
   return get(nonSyncingExchanges).findIndex((item: Exchange) => {
@@ -138,7 +141,7 @@ const isNonSyncExchange = (exchange: Exchange) => {
 };
 
 const resetNonSyncingExchanges = () => {
-  set(nonSyncingExchanges, get(generalSettings).nonSyncingExchanges);
+  set(nonSyncingExchanges, get(current));
 };
 
 const toggleSync = async (exchange: Exchange) => {
@@ -155,7 +158,7 @@ const toggleSync = async (exchange: Exchange) => {
     data.push({ location: exchange.location, name: exchange.name });
   }
 
-  const status = await updateGeneralSetting({
+  const status = await update({
     nonSyncingExchanges: data
   });
 

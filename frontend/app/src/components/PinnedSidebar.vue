@@ -16,8 +16,9 @@
 </template>
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
-import { setupSession } from '@/composables/session';
+import { useSessionStore } from '@/store/session';
 
 export default defineComponent({
   name: 'PinnedSidebar',
@@ -33,7 +34,7 @@ export default defineComponent({
       emit('visible:update', _visible);
     };
 
-    const { pinned } = setupSession();
+    const { pinned } = storeToRefs(useSessionStore());
 
     return {
       pinned,

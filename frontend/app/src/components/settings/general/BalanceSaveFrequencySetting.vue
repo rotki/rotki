@@ -34,14 +34,17 @@ import { onMounted, ref } from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
 import { useValidation } from '@/composables/validation';
 import { Constraints } from '@/data/constraints';
 import i18n from '@/i18n';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const balanceSaveFrequency = ref<string>('0');
 
-const { generalSettings } = useSettings();
+const { balanceSaveFrequency: frequency } = storeToRefs(
+  useGeneralSettingsStore()
+);
 
 const maxBalanceSaveFrequency = Constraints.MAX_HOURS_DELAY;
 const rules = {
@@ -67,8 +70,7 @@ const v$ = useVuelidate(rules, { balanceSaveFrequency }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
 const resetBalanceSaveFrequency = () => {
-  const settings = get(generalSettings);
-  set(balanceSaveFrequency, settings.balanceSaveFrequency.toString());
+  set(balanceSaveFrequency, get(frequency).toString());
 };
 
 onMounted(() => {

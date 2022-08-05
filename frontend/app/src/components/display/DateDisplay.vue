@@ -7,8 +7,10 @@
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { setupDisplayData, setupGeneralSettings } from '@/composables/session';
+import { storeToRefs } from 'pinia';
 import { displayDateFormatter } from '@/data/date_formatter';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 export default defineComponent({
   name: 'DateDisplay',
@@ -19,8 +21,10 @@ export default defineComponent({
   },
   setup(props) {
     const { timestamp, noTimezone, noTime } = toRefs(props);
-    const { dateDisplayFormat } = setupGeneralSettings();
-    const { scrambleData, shouldShowAmount } = setupDisplayData();
+    const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
+    const { scrambleData, shouldShowAmount } = storeToRefs(
+      useSessionSettingsStore()
+    );
 
     const dateFormat = computed<string>(() => {
       const display = get(noTimezone)

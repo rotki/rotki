@@ -67,7 +67,7 @@
         <refresh-button
           :loading="loading"
           :tooltip="$t('nft_gallery.refresh_tooltip')"
-          @refresh="fetchNfts({ ignoreCache: true })"
+          @refresh="fetchNfts(true)"
         />
       </v-col>
     </v-row>
@@ -113,7 +113,6 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
-import { ActionResult } from '@rotki/common/lib/data';
 import {
   computed,
   defineComponent,
@@ -138,8 +137,8 @@ import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
-import { SessionActions } from '@/store/session/const';
-import { GalleryNft, Nft, NftResponse, Nfts } from '@/store/session/types';
+import { useSessionStore } from '@/store/session';
+import { GalleryNft, Nft, Nfts } from '@/store/session/types';
 import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { uniqueStrings } from '@/utils/data';
@@ -300,12 +299,11 @@ const setupNfts = (
       .filter(uniqueStrings);
   });
 
-  const fetchNfts = async (payload?: { ignoreCache: boolean }) => {
+  const { fetchNfts: nftFetch } = useSessionStore();
+
+  const fetchNfts = async (ignoreCache: boolean = false) => {
     set(loading, true);
-    const { message, result }: ActionResult<NftResponse> = await dispatch(
-      `session/${SessionActions.FETCH_NFTS}`,
-      payload
-    );
+    const { message, result } = await nftFetch(ignoreCache);
     if (result) {
       set(total, result.entriesFound);
       set(limit, result.entriesLimit);
