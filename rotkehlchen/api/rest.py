@@ -70,6 +70,7 @@ from rotkehlchen.constants.limits import (
     FREE_HISTORY_EVENTS_LIMIT,
     FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
+    FREE_USER_NOTES_LIMIT,
 )
 from rotkehlchen.constants.misc import (
     ASSET_TYPES_EXCLUDED_FOR_USERS,
@@ -4512,9 +4513,24 @@ class RestAPI():
         return api_response(_wrap_in_ok_result(config), status_code=HTTPStatus.OK)
 
     def get_user_notes(self, filter_query: UserNotesFilterQuery) -> Response:
-        user_notes = self.rotkehlchen.data.db.get_user_notes(filter_query=filter_query)
-        result_dict = _wrap_in_ok_result([entry.serialize() for entry in user_notes])
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            user_notes, entries_found = self.rotkehlchen.data.db.get_user_notes_and_limit_info(
+                filter_query=filter_query,
+                cursor=cursor,
+                has_premium=self.rotkehlchen.premium is not None,
+            )
+            user_notes_total = self.rotkehlchen.data.db.get_entries_count(
+                cursor=cursor,
+                entries_table='user_notes',
+            )
+        entries = [entry.serialize() for entry in user_notes]
+        result = {
+            'entries': entries,
+            'entries_found': entries_found,
+            'entries_total': user_notes_total,
+            'entries_limit': FREE_USER_NOTES_LIMIT if self.rotkehlchen.premium is None else -1,
+        }
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     def add_user_note(
             self,
@@ -4523,12 +4539,16 @@ class RestAPI():
             location: str,
             is_pinned: bool,
     ) -> Response:
-        note_id = self.rotkehlchen.data.db.add_user_note(
-            title=title,
-            content=content,
-            location=location,
-            is_pinned=is_pinned,
-        )
+        try:
+            note_id = self.rotkehlchen.data.db.add_user_note(
+                title=title,
+                content=content,
+                location=location,
+                is_pinned=is_pinned,
+                has_premium=self.rotkehlchen.premium is not None,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         return api_response(result={'result': note_id, 'message': ''}, status_code=HTTPStatus.OK)
 
     def edit_user_note(self, user_note: UserNote) -> Response:

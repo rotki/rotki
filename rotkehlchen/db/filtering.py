@@ -862,7 +862,7 @@ class DBIgnoredAssetsFilter(DBFilter):
         return filters, []
 
 
-class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
+class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @classmethod
     def make(
@@ -873,7 +873,7 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocatio
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            location: Optional[Location] = None,
+            location: Optional[str] = None,
             substring_search: Optional[str] = None,
     ) -> 'UserNotesFilterQuery':
         if order_by_rules is None:
@@ -886,10 +886,6 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocatio
         )
         filter_query = cast('UserNotesFilterQuery', filter_query)
         filters: List[DBFilter] = []
-        if location is not None:
-            filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
-            filters.append(filter_query.location_filter)
-
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
             from_ts=from_ts,
@@ -902,6 +898,8 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocatio
                 field='title',
                 search_string=substring_search,
             ))
+        if location is not None:
+            filters.append(DBEqualsFilter(and_op=True, column='location', value=location))
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters
         return filter_query

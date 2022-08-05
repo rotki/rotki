@@ -61,7 +61,11 @@ from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
-from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
+from rotkehlchen.constants.limits import (
+    FREE_ASSET_MOVEMENTS_LIMIT,
+    FREE_TRADES_LIMIT,
+    FREE_USER_NOTES_LIMIT,
+)
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
@@ -2191,6 +2195,8 @@ class DBHandler:
                 'combined_trades_view',
                 'ledger_actions',
                 'eth2_daily_staking_details',
+                'entries_notes',
+                'user_notes',
             ],
             op: Literal['OR', 'AND'] = 'OR',
             **kwargs: Any,
@@ -3422,17 +3428,62 @@ class DBHandler:
                 exclude_identifier=None,
             )
 
-    def get_user_notes(self, filter_query: UserNotesFilterQuery) -> List[UserNote]:
-        """Returns all the notes created by a user."""
+    def get_user_notes(
+            self,
+            filter_query: UserNotesFilterQuery,
+            cursor: 'DBCursor',
+            has_premium: bool,
+    ) -> List[UserNote]:
+        """Returns all the notes created by a user filtered by the given filter"""
         query, bindings = filter_query.prepare()
-        with self.conn.read_ctx() as cursor:
+        if has_premium:
             query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM user_notes ' + query  # noqa: E501
             cursor.execute(query, bindings)
-            return [UserNote.deserialize_from_db(entry) for entry in cursor]
+        else:
+            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM (SELECT identifier, title, content, location, last_update_timestamp, is_pinned from user_notes ORDER BY last_update_timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            cursor.execute(query, [FREE_USER_NOTES_LIMIT] + bindings)
 
-    def add_user_note(self, title: str, content: str, location: str, is_pinned: bool) -> int:
+        return [UserNote.deserialize_from_db(entry) for entry in cursor]
+
+    def get_user_notes_and_limit_info(
+            self,
+            filter_query: UserNotesFilterQuery,
+            cursor: 'DBCursor',
+            has_premium: bool,
+    ) -> Tuple[List[UserNote], int]:
+        """Gets all user_notes for the query from the DB
+
+        Also returns how many are the total found for the filter
+        """
+        user_notes = self.get_user_notes(filter_query=filter_query, cursor=cursor, has_premium=has_premium)  # noqa: E501
+        query, bindings = filter_query.prepare(with_pagination=False)
+        query = 'SELECT COUNT(*) from user_notes ' + query
+        total_found_result = cursor.execute(query, bindings)
+        return user_notes, total_found_result.fetchone()[0]
+
+    def add_user_note(
+            self,
+            title: str,
+            content: str,
+            location: str,
+            is_pinned: bool,
+            has_premium: bool,
+    ) -> int:
         """Add a user_note entry to the DB"""
         with self.user_write() as write_cursor:
+            if has_premium is False:
+                num_user_notes = self.get_entries_count(
+                    cursor=write_cursor,
+                    entries_table='user_notes',
+                )
+                if num_user_notes >= FREE_USER_NOTES_LIMIT:
+                    msg = (
+                        f'The limit of {FREE_USER_NOTES_LIMIT} user notes has been '
+                        f'reached in the free plan. To get more notes you can upgrade to '
+                        f'premium: https://rotki.com/products'
+                    )
+                    raise InputError(msg)
+
             write_cursor.execute(
                 'INSERT INTO user_notes(title, content, location, last_update_timestamp, is_pinned) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
                 (title, content, location, ts_now(), is_pinned),
