@@ -11775,5 +11775,5 @@ Handling user notes
 
    :statuscode 200: User note was added successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. User note with the given title already exists. Check error message.
+   :statuscode 409: No user is currently logged in. User note with the given title already exists. User has reached the limit of available notes. Check error message.
    :statuscode 500: Internal rotki error.

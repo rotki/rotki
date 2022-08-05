@@ -4539,12 +4539,16 @@ class RestAPI():
             location: str,
             is_pinned: bool,
     ) -> Response:
-        note_id = self.rotkehlchen.data.db.add_user_note(
-            title=title,
-            content=content,
-            location=location,
-            is_pinned=is_pinned,
-        )
+        try:
+            note_id = self.rotkehlchen.data.db.add_user_note(
+                title=title,
+                content=content,
+                location=location,
+                is_pinned=is_pinned,
+                has_premium=self.rotkehlchen.premium is not None,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         return api_response(result={'result': note_id, 'message': ''}, status_code=HTTPStatus.OK)
 
     def edit_user_note(self, user_note: UserNote) -> Response:

@@ -123,6 +123,7 @@ def test_edit_user_notes(rotkehlchen_api_server):
             content=entry['content'],
             location=entry['location'],
             is_pinned=entry['is_pinned'],
+            has_premium=True,
         )
 
     # check that editing a user note works as expected.
@@ -185,6 +186,7 @@ def test_delete_user_notes(rotkehlchen_api_server):
             content=entry['content'],
             location=entry['location'],
             is_pinned=entry['is_pinned'],
+            has_premium=True,
         )
 
     # check that deleting a user note works as expected
@@ -234,6 +236,7 @@ def test_premium_limits(rotkehlchen_api_server, start_with_valid_premium):
             content=entry['content'],
             location=entry['location'],
             is_pinned=entry['is_pinned'],
+            has_premium=True,
         )
 
     response = requests.post(
@@ -253,6 +256,24 @@ def test_premium_limits(rotkehlchen_api_server, start_with_valid_premium):
         assert len(result['entries']) == FREE_USER_NOTES_LIMIT
         assert result['entries_total'] == 20
         assert result['entries_found'] == 20
+        # Try to add a new entry and check that it fails
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'usernotesresource',
+            ),
+            json={
+                'title': '#21',
+                'content': 'I should fail',
+                'location': 'trades',
+                'is_pinned': True,
+            },
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg=f'The limit of {FREE_USER_NOTES_LIMIT} user notes has been',
+            status_code=HTTPStatus.CONFLICT,
+        )
     else:
         assert result['entries_limit'] == -1
         assert len(result['entries']) == 20

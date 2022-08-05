@@ -3461,9 +3461,29 @@ class DBHandler:
         total_found_result = cursor.execute(query, bindings)
         return user_notes, total_found_result.fetchone()[0]
 
-    def add_user_note(self, title: str, content: str, location: str, is_pinned: bool) -> int:
+    def add_user_note(
+            self,
+            title: str,
+            content: str,
+            location: str,
+            is_pinned: bool,
+            has_premium: bool,
+    ) -> int:
         """Add a user_note entry to the DB"""
         with self.user_write() as write_cursor:
+            if has_premium is False:
+                num_user_notes = self.get_entries_count(
+                    cursor=write_cursor,
+                    entries_table='user_notes',
+                )
+                if num_user_notes >= FREE_USER_NOTES_LIMIT:
+                    msg = (
+                        f'The limit of {FREE_USER_NOTES_LIMIT} user notes has been '
+                        f'reached in the free plan. To get more notes you can upgrade to '
+                        f'premium: https://rotki.com/products'
+                    )
+                    raise InputError(msg)
+
             write_cursor.execute(
                 'INSERT INTO user_notes(title, content, location, last_update_timestamp, is_pinned) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
                 (title, content, location, ts_now(), is_pinned),
