@@ -117,6 +117,7 @@ def test_setup_exchange(rotkehlchen_api_server):
                 'Error validating API Keys',
                 'ApiKey has invalid value',
                 'Error validating Bitpanda API Key',
+                '',  # poloniex fails with no error message now
             ],
             status_code=HTTPStatus.CONFLICT,
         )

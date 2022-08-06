@@ -9,13 +9,18 @@
         v-blur
         data-cy="add-blockchain-balance"
         fixed
-        fab
         bottom
         right
+        :fab="!$vuetify.breakpoint.xl"
+        :rounded="$vuetify.breakpoint.xl"
+        :x-large="$vuetify.breakpoint.xl"
         color="primary"
         @click="createAccount()"
       >
         <v-icon> mdi-plus </v-icon>
+        <div v-if="$vuetify.breakpoint.xl" class="ml-2">
+          {{ $tc('blockchain_balances.add_account') }}
+        </div>
       </v-btn>
       <big-dialog
         :display="openDialog"

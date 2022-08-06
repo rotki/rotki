@@ -233,7 +233,8 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: Provided password is wrong for the user or some other authentication error.
    :statuscode 409: Another user is already logged in. User does not exist. There was a fatal error during the upgrade of the DB. Permission error while trying to access the directory where rotki saves data.
-   :statuscode 500: Internal rotki error
+   :statuscode 500: Generic internal rotki error
+   :statuscode 542: Internal rotki error relating to the Database. Check message for more details.
 
 .. http:patch:: /api/(version)/users/(username)
 

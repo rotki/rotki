@@ -51,6 +51,7 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
+  "adjustments": [],
   "withdrawals": [
     {
       "currency": "BTC",
@@ -59,7 +60,7 @@ POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
       "timestamp": 1458994442,
       "amount": "5.0",
       "fee": "0.5",
-      "withdrawalNumber": 1
+      "withdrawalRequestsId": 1
     }, {
       "currency": "ETH",
       "address": "0xb7e033598cb94ef5a35349316d3a2e4f95f308da",
@@ -67,13 +68,13 @@ POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
       "timestamp": 1468994442,
       "amount": "10.0",
       "fee": "0.1",
-      "withdrawalNumber": 2
+      "withdrawalRequestsId": 2
     }, {
       "currency": "IDONTEXIST",
       "timestamp": 1478994442,
       "amount": "10.0",
       "fee": "0.1",
-      "withdrawalNumber": 3,
+      "withdrawalRequestsId": 3,
       "status": "COMPLETE: 0xbd4da74e1a0b81c21d056c6f58a5b306de85d21ddf89992693b812bb117eace4"
     }, {
       "currency": "DIS",
@@ -81,7 +82,7 @@ POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
       "amount": "10.0",
       "fee": "0.1",
       "status": "COMPLETE: 0xbd4da74e1a0b81c21d056c6f58a5b306de85d21ddf89992693b812bb117eace4",
-      "withdrawalNumber": 4
+      "withdrawalRequestsId": 4
   }],
   "deposits": [
     {
@@ -115,37 +116,44 @@ POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
   }]
 }"""
 
-POLONIEX_BALANCES_RESPONSE = """
-{
-    "BTC": {"available": "5.0", "onOrders": "0.5"},
-    "ETH": {"available": "10.0", "onOrders": "1.0"},
-    "IDONTEXIST": {"available": "1.0", "onOrders": "2.0"},
-    "CNOTE": {"available": "2.0", "onOrders": "3.0"}
-}
+POLONIEX_BALANCES_RESPONSE = """[{
+    "accountId": 1337,
+    "accountType": "SPOT",
+    "balances": [{
+        "available": "5.0", "currency": "BTC", "currencyId": "28", "hold": "0.5"
+    }, {
+        "available": "10.0", "currency": "ETH", "currencyId": "1", "hold": "1.0"
+    }, {
+        "available": "1.0", "currency": "IDONTEXIST", "currencyId": "42", "hold": "1.0"
+    }, {
+        "available": "2.0", "currency": "CNOTE", "currencyId": "44", "hold": "3.0"
+    }]
+}]
 """
 
-POLONIEX_TRADES_RESPONSE = """{ "BTC_BCH":
-        [ { "globalTradeID": 394131412,
-        "tradeID": "5455033",
-        "date": "2018-10-16 18:05:17",
-        "rate": "0.06935244",
-        "amount": "1.40308443",
-        "total": "0.09730732",
-        "fee": "0.00100000",
-        "orderNumber": "104768235081",
-        "type": "sell",
-        "category": "exchange" }],
-        "BTC_ETH":
-        [{ "globalTradeID": 394127361,
-        "tradeID": "13536350",
-        "date": "2018-10-16 17:03:43",
-        "rate": "0.00003432",
-        "amount": "3600.53748129",
-        "total": "0.12357044",
-        "fee": "0.00200000",
-        "orderNumber": "96238912841",
-        "type": "buy",
-        "category": "exchange"}]}"""
+POLONIEX_TRADES_RESPONSE = """[{
+    "symbol": "BCH_BTC",
+    "id": 394131412,
+    "createTime": 1539713117000,
+    "price": "0.06935244",
+    "quantity": "1.40308443",
+    "feeAmount": "0.00009730732",
+    "feeCurrency": "BTC",
+    "side": "SELL",
+    "type": "LIMIT",
+    "accountType": "SPOT"
+    }, {
+    "symbol": "ETH_BTC",
+    "id": 13536350,
+    "createTime": 1539709423000,
+    "price": "0.00003432",
+    "quantity": "3600.53748129",
+    "feeAmount": "7.20107496258",
+    "feeCurrency": "ETH",
+    "side": "BUY",
+    "type": "MARKET",
+    "accountType": "SPOT"
+}]"""
 
 BINANCE_BALANCES_RESPONSE = """
 {
@@ -539,7 +547,7 @@ def patch_poloniex_balances_query(poloniex: 'Poloniex'):
     def mock_poloniex_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
 
-    poloniex_patch = patch.object(poloniex.session, 'post', side_effect=mock_poloniex_asset_return)
+    poloniex_patch = patch.object(poloniex.session, 'get', side_effect=mock_poloniex_asset_return)
     return poloniex_patch
 
 # # -- Test Exchange Objects creation --

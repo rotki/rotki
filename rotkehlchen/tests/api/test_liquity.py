@@ -2,6 +2,7 @@ import random
 
 import pytest
 import requests
+from flaky import flaky
 
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
@@ -43,6 +44,7 @@ liquity_mocked_historical_prices = {
 }
 
 
+@flaky(max_runs=3, min_passes=1)  # etherscan may occasionally time out
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
@@ -90,6 +92,7 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
     assert 'amount' in stake_data and stake_data['amount'].isnumeric()
 
 
+@flaky(max_runs=3, min_passes=1)  # etherscan may occasionally time out
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR, LQTY_PROXY]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])

@@ -184,6 +184,8 @@ class Rotkehlchen():
         - DBUpgradeError if the rotki DB version is newer than the software or
         there is a DB upgrade and there is an error.
         - SystemPermissionError if the directory or DB file can not be accessed
+        - sqlcipher.OperationalError: If some very weird error happens with the DB.
+        For example unexpected schema.
         """
         log.info(
             'Unlocking user',

@@ -5,6 +5,7 @@ from http import HTTPStatus
 
 import pytest
 import requests
+from flaky import flaky
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType
@@ -1218,6 +1219,7 @@ def test_get_uniswap_trades_history_v3(rotkehlchen_api_server):
     assert trades['0x000e62ea8bf5f69e1e32920600839f56313c490f'] == expected_trades
 
 
+@flaky(max_runs=3, min_passes=1)  # etherscan may occasionally time out
 @pytest.mark.parametrize('ethereum_accounts', [[LP_V3_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])

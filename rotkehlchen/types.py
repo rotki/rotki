@@ -69,7 +69,6 @@ UNISWAP_PROTOCOL = 'UNI-V2'
 YEARN_VAULTS_V2_PROTOCOL = 'yearn_vaults_v2'
 CURVE_POOL_PROTOCOL = 'curve_pool'
 PICKLE_JAR_PROTOCOL = 'pickle_jar'
-COMPOUND_PROTOCOL = 'compound'
 SPAM_PROTOCOL = 'spam'
 
 
