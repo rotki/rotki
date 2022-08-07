@@ -4,11 +4,7 @@ import pytest
 from flaky import flaky
 
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.ethereum.tokens import (
-    EthTokens,
-    generate_multicall_chunks,
-    generate_regular_chunks,
-)
+from rotkehlchen.chain.ethereum.tokens import EthTokens, generate_multicall_chunks
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import multicall
 from rotkehlchen.constants.assets import A_OMG
@@ -68,20 +64,6 @@ def test_detect_tokens_for_addresses(ethtokens):
 
 
 def test_generate_chunks():
-    generated_chunks = generate_regular_chunks(
-        chunk_length=3,
-        addresses_to_tokens={
-            'acc1': ['token1', 'token2', 'token3', 'token4'],
-            'acc2': ['token5', 'token6', 'token7'],
-        },
-    )
-    expected_chunks = [
-        ('acc1', ['token1', 'token2', 'token3']),
-        ('acc1', ['token4']),
-        ('acc2', ['token5', 'token6', 'token7']),
-    ]
-    assert generated_chunks == expected_chunks
-
     generated_chunks = generate_multicall_chunks(
         chunk_length=17,
         addresses_to_tokens={

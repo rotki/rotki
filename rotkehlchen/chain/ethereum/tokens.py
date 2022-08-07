@@ -69,26 +69,11 @@ ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT = 122
 PURE_TOKENS_BALANCE_ARGUMENTS = 7
 
 
-def generate_regular_chunks(
-        chunk_length: int,
-        addresses_to_tokens: Dict[ChecksumEthAddress, List[EthereumToken]],
-) -> List[Tuple[ChecksumEthAddress, List[EthereumToken]]]:
-    regular_split_chunks = []
-    for address, tokens in addresses_to_tokens.items():
-        for tokens_chunk in get_chunks(tokens, chunk_length):
-            regular_split_chunks.append(
-                (
-                    address,
-                    tokens_chunk,
-                ),
-            )
-    return regular_split_chunks
-
-
 def generate_multicall_chunks(
         chunk_length: int,
         addresses_to_tokens: Dict[ChecksumEthAddress, List[EthereumToken]],
 ) -> List[List[Tuple[ChecksumEthAddress, List[EthereumToken]]]]:
+    """Generate appropriate num of chunks for multicall address->tokens, address->tokens query"""
     multicall_chunks = []
     free_space = chunk_length
     new_chunk = []
@@ -157,7 +142,13 @@ class EthTokens():
     def _get_multicall_token_balances(
             self,
             chunk: List[Tuple[ChecksumEthAddress, List[EthereumToken]]],
+            call_order: Optional[Sequence['WeightedNode']] = None,
     ) -> Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]]:
+        """Gets token balances from a chunk of address -> token address
+
+        May raise:
+        - RemoteError if no result is queried in multicall
+        """
         calls: List[Tuple[ChecksumEthAddress, str]] = []
         for address, tokens in chunk:
             tokens_addrs = [token.ethereum_address for token in tokens]
@@ -173,6 +164,7 @@ class EthTokens():
         results = multicall(
             ethereum=self.ethereum,
             calls=calls,
+            call_order=call_order,
         )
         balances: Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
         for (address, tokens), result in zip(chunk, results):
@@ -335,28 +327,15 @@ class EthTokens():
                 all_tokens.update(saved_list)
                 addresses_to_tokens[address] = saved_list
 
-        regular_chunks = generate_regular_chunks(
-            addresses_to_tokens=addresses_to_tokens,
-            chunk_length=chunk_size,
-        )
         multicall_chunks = generate_multicall_chunks(
             addresses_to_tokens=addresses_to_tokens,
             chunk_length=chunk_size,
         )
-
-        if len(multicall_chunks) < len(regular_chunks):
-            for chunk in multicall_chunks:
-                addresses_to_balances.update(self._get_multicall_token_balances(
-                    chunk=chunk,
-                ))
-        else:
-            for address, tokens in regular_chunks:
-                token_balances = self._get_token_balances(
-                    address=address,
-                    tokens=tokens,
-                    call_order=call_order,
-                )
-                addresses_to_balances[address] = token_balances
+        for chunk in multicall_chunks:
+            addresses_to_balances.update(self._get_multicall_token_balances(
+                chunk=chunk,
+                call_order=call_order,
+            ))
 
         token_usd_price: Dict[EthereumToken, Price] = {}
         for token in all_tokens:
