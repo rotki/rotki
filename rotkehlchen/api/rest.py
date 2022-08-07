@@ -4463,7 +4463,7 @@ class RestAPI():
         try:
             account_tokens_info = ethtokens.detect_tokens(
                 only_cache=only_cache,
-                accounts=addresses,
+                addresses=addresses,
             )
         except (RemoteError, BadFunctionCallOutput) as e:
             return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.CONFLICT)

@@ -70,7 +70,7 @@ def test_detect_tokens_for_addresses(ethtokens):
 def test_generate_chunks():
     generated_chunks = generate_regular_chunks(
         chunk_length=3,
-        accounts_to_tokens={
+        addresses_to_tokens={
             'acc1': ['token1', 'token2', 'token3', 'token4'],
             'acc2': ['token5', 'token6', 'token7'],
         },
@@ -84,7 +84,7 @@ def test_generate_chunks():
 
     generated_chunks = generate_multicall_chunks(
         chunk_length=17,
-        accounts_to_tokens={
+        addresses_to_tokens={
             'acc1': ['token1'],
             'acc2': ['token2', 'token3', 'token4', 'token5', 'token6'],
             'acc3': ['token7', 'token8', 'token9', 'token10', 'token11', 'token12', 'token13', 'token14', 'token15', 'token16'],  # noqa: E501

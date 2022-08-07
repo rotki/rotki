@@ -109,7 +109,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         ethtokens = EthTokens(database=blockchain.database, ethereum=blockchain.ethereum)
         ethtokens.detect_tokens(
             only_cache=False,
-            accounts=[addr1, addr2],
+            addresses=[addr1, addr2],
         )
 
     assert addr1 in blockchain.accounts.eth
