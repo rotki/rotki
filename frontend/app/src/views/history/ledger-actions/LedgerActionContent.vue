@@ -257,7 +257,7 @@ const tableHeaders = (locationOverview: string) => {
         align: 'center'
       },
       {
-        text: i18n.t('ledger_actions.headers.type').toString(),
+        text: i18n.t('common.type').toString(),
         value: 'type'
       },
       {

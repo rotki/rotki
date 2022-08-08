@@ -1,4 +1,5 @@
 import { Ref } from "@vue/composition-api";
+import VueI18n from 'vue-i18n';
 import { SupportedAsset } from "../data";
 import { ProfitLossModel } from "../defi";
 import { BalancerBalanceWithOwner, BalancerEvent, BalancerProfitLoss, Pool } from "../defi/balancer";
@@ -126,7 +127,11 @@ export interface SettingsApi {
   update(settings: FrontendSettingsPayload): Promise<void>;
   defaultThemes(): Themes;
   themes(): Themes;
-  user: UserSettingsApi
+  user: UserSettingsApi;
+  i18n: {
+    t: typeof VueI18n.prototype.t,
+    tc: typeof VueI18n.prototype.tc,
+  };
 }
 
 export type PremiumApi = {

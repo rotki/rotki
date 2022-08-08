@@ -104,7 +104,7 @@ import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 const useHeaders = (currencySymbol: Ref<SupportedCurrency>) => {
   return computed<DataTableHeader[]>(() => [
     {
-      text: i18n.t('kraken_staking_events.column.event_type').toString(),
+      text: i18n.t('common.event').toString(),
       value: 'type'
     },
     {

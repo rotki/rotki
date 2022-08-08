@@ -7,7 +7,7 @@
       <v-col>
         <refresh-header
           :loading="refreshing"
-          :title="$t('lending.title')"
+          :title="$tc('common.deposits')"
           @refresh="refresh()"
         >
           <deposit-protocol-reset
@@ -44,7 +44,7 @@
     </v-row>
     <v-row v-if="!isYearnVaults && !isYearnVaultsV2" class="mt-8" no-gutters>
       <v-col>
-        <stat-card :title="$t('lending.assets')">
+        <stat-card :title="$t('common.assets')">
           <lending-asset-table
             :loading="refreshing"
             :assets="lendingBalances"

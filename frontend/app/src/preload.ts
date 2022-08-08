@@ -104,5 +104,5 @@ contextBridge.exposeInMainWorld('interop', {
   storePassword: (username: string, password: string) =>
     ipcAction(IPC_STORE_PASSWORD, { username, password }),
   getPassword: (username: string) => ipcAction(IPC_GET_PASSWORD, username),
-  clearPassword: (username: string) => ipcAction(IPC_CLEAR_PASSWORD, username)
+  clearPassword: () => ipcAction(IPC_CLEAR_PASSWORD)
 } as Interop);

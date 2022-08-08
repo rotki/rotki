@@ -87,7 +87,7 @@ export const routesRef = computed(() => ({
   DEFI_DEPOSITS: {
     route: '/defi/deposits',
     icon: 'mdi-bank-transfer-in',
-    text: i18n.t('navigation_menu.defi_sub.deposits').toString()
+    text: i18n.t('common.deposits').toString()
   },
   DEFI_LIABILITIES: {
     route: '/defi/liabilities',
@@ -229,7 +229,7 @@ export const routesRef = computed(() => ({
   },
   ASSETS: {
     route: '/assets/:identifier',
-    text: i18n.t('navigation_menu.assets').toString()
+    text: i18n.t('common.assets').toString()
   },
   LOCATIONS: {
     route: '/locations/:identifier',

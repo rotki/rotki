@@ -1,6 +1,6 @@
 <template>
   <card outlined-body>
-    <template #title>{{ $t('profit_loss_events.title') }}</template>
+    <template #title>{{ $t('common.events') }}</template>
     <data-table
       :headers="tableHeaders"
       :items="items"
@@ -95,7 +95,7 @@
           :time-end="report.lastProcessedTimestamp"
           :time-start="report.firstProcessedTimestamp"
           :colspan="headers.length"
-          :label="$tc('profit_loss_events.title')"
+          :label="$tc('common.events')"
         />
       </template>
       <template #item.notes="{ item }">
@@ -158,7 +158,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     cellClass: 'px-0'
   },
   {
-    text: i18n.t('profit_loss_events.headers.type').toString(),
+    text: i18n.t('common.type').toString(),
     align: 'center',
     value: 'type',
     width: 110,

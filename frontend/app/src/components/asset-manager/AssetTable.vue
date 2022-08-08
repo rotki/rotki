@@ -1,7 +1,7 @@
 <template>
   <card outlined-body>
     <template #title>
-      {{ $t('asset_table.assets') }}
+      {{ $t('common.assets') }}
     </template>
     <template #subtitle>
       {{ $t('asset_table.subtitle') }}
@@ -143,7 +143,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     value: 'symbol'
   },
   {
-    text: i18n.t('asset_table.headers.type').toString(),
+    text: i18n.t('common.type').toString(),
     value: 'assetType'
   },
   {

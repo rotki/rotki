@@ -165,7 +165,7 @@
                   clearable
                   clear-icon="mdi-close"
                   class="asset-form__protocol"
-                  :label="$t('asset_form.labels.protocol')"
+                  :label="$t('common.protocol')"
                   :error-messages="errors['protocol']"
                   :disabled="saving"
                   @focus="delete errors['protocol']"

@@ -1,10 +1,13 @@
 <template>
   <div>
-    <no-premium-placeholder v-if="!premium" :text="$t('eth2page.no_premium')" />
+    <no-premium-placeholder
+      v-if="!premium"
+      :text="$t('eth2_page.no_premium')"
+    />
     <module-not-active v-else-if="!enabled" :modules="module" />
     <progress-screen v-else-if="loading">
       <template #message>
-        {{ $t('eth2page.loading') }}
+        {{ $t('eth2_page.loading') }}
       </template>
     </progress-screen>
     <eth2-staking

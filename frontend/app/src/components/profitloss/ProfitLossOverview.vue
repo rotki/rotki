@@ -6,17 +6,14 @@
     <v-simple-table>
       <thead>
         <tr>
+          <th class="text-left" v-text="$t('common.type')" />
           <th
-            class="text-left"
-            v-text="$t('profit_loss_overview.columns.type')"
+            class="text-right"
+            v-text="$t('profit_loss_overview.headers.tax_free_profit_loss')"
           />
           <th
             class="text-right"
-            v-text="$t('profit_loss_overview.columns.tax_free_profit_loss')"
-          />
-          <th
-            class="text-right"
-            v-text="$t('profit_loss_overview.columns.taxable_profit_loss')"
+            v-text="$t('profit_loss_overview.headers.taxable_profit_loss')"
           />
         </tr>
       </thead>

@@ -1,6 +1,6 @@
 <template>
   <card v-if="loadingData || locationBreakdown.length > 0" outlined-body>
-    <template #title> {{ $t('locations.assets') }} </template>
+    <template #title> {{ $t('common.assets') }} </template>
     <asset-balances :loading="loadingData" :balances="locationBreakdown" />
   </card>
 </template>

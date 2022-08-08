@@ -86,7 +86,7 @@
             <div class="d-flex flex-wrap">
               <div class="mt-6 mr-16">
                 <div class="text--secondary text-body-2">
-                  {{ $t('uniswap.balance') }}
+                  {{ $t('common.balance') }}
                 </div>
                 <div class="d-flex text-h6">
                   <amount-display
@@ -119,7 +119,7 @@
 
             <div class="mt-6">
               <div class="text--secondary text-body-2">
-                {{ $t('uniswap.assets') }}
+                {{ $t('common.assets') }}
               </div>
               <div v-if="premium">
                 <v-row

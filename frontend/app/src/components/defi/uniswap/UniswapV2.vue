@@ -79,7 +79,7 @@
           <div class="mt-4">
             <div>
               <div class="text--secondary text-body-2">
-                {{ $t('uniswap.balance') }}
+                {{ $t('common.balance') }}
               </div>
               <div class="d-flex text-h6">
                 <balance-display
@@ -93,7 +93,7 @@
 
             <div class="mt-6">
               <div class="text--secondary text-body-2">
-                {{ $t('uniswap.assets') }}
+                {{ $t('common.assets') }}
               </div>
               <div>
                 <v-row

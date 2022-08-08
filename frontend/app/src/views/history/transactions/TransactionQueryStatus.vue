@@ -94,7 +94,7 @@
         <v-dialog width="1200">
           <template #activator="{ on }">
             <v-btn text class="ml-4" v-on="on">
-              {{ $t('transactions.query_status.details') }}
+              {{ $t('common.details') }}
               <v-icon small>mdi-chevron-right</v-icon>
             </v-btn>
           </template>
