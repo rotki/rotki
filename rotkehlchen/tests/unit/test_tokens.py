@@ -1,17 +1,15 @@
 from unittest.mock import patch
 
 import pytest
-import requests
 from flaky import flaky
 
-from rotkehlchen.chain.ethereum.tokens import EthTokens
+from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.tokens import EthTokens, generate_multicall_chunks
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.constants.assets import A_MKR, A_OMG
+from rotkehlchen.chain.ethereum.utils import multicall
+from rotkehlchen.constants.assets import A_OMG
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.blockchain import mock_etherscan_query
-from rotkehlchen.tests.utils.constants import A_GNO
-from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.constants import A_LPT
 
 
 @pytest.fixture(name='ethtokens')
@@ -20,9 +18,10 @@ def fixture_ethtokens(ethereum_manager, database, inquirer):  # pylint: disable=
 
 
 @flaky(max_runs=3, min_passes=1)  # failed in a flaky way sometimes in the CI due to etherscan
+@pytest.mark.parametrize('ignored_assets', [[A_LPT]])
 def test_detect_tokens_for_addresses(ethtokens):
     """
-    Autodetect tokens of two addresses
+    Detect tokens, query balances and check that ignored assets are not queried.
 
     This is going to be a bit slow test since it actually queries etherscan without any mocks.
     By doing so we can test that the whole behavior with etherscan works fine and our
@@ -30,95 +29,59 @@ def test_detect_tokens_for_addresses(ethtokens):
 
     USD price queries are mocked so we don't care about the result.
     Just check that all prices are included
-
-
     """
     addr1 = string_to_ethereum_address('0x8d89170b92b2Be2C08d57C48a7b190a2f146720f')
     addr2 = string_to_ethereum_address('0xB756AD52f3Bf74a7d24C67471E0887436936504C')
-    ethtokens.detect_tokens(False, [addr1, addr2])
-    result, token_usd_prices = ethtokens.query_tokens_for_addresses([addr1, addr2])
-    assert len(result[addr1]) == 3
+
+    ethtokens.ethereum.multicall_used = False
+
+    multicall_uses = 0
+
+    def mock_multicall(ethereum: EthereumManager, **kwargs):
+        nonlocal multicall_uses
+        multicall_uses += 1
+        return multicall(ethereum=ethereum, **kwargs)
+
+    multicall_patch = patch(
+        target='rotkehlchen.chain.ethereum.tokens.multicall',
+        new=mock_multicall,
+    )
+    with multicall_patch:
+        ethtokens.detect_tokens(False, [addr1, addr2])
+        assert multicall_uses == 0  # don't use multicall for detection
+        result, token_usd_prices = ethtokens.query_tokens_for_addresses([addr1, addr2])
+        assert multicall_uses == 1  # do use multicall one time for balances query
+    assert len(result[addr1]) == 2
     balance = result[addr1][A_OMG]
     assert isinstance(balance, FVal)
     assert balance == FVal('0.036108311660753218')
     assert len(result[addr2]) >= 1
 
+    # test that  ignored assets are not queried
+    assert A_LPT not in result[addr1] and A_LPT not in result[addr2]
+
     assert len(token_usd_prices) == len(set(result[addr1].keys()).union(set(result[addr2].keys())))
 
 
-def test_detected_tokens_cache(ethtokens):  # pylint: disable=unused-argument
-    """Test that a cache of the detected tokens is created and used at subsequent queries.
-
-    Also test that the cache can be ignored and recreated with a forced redetection
-
-    This test is mocking etherscan and does not make any remote queries.
-    """
-    addr1 = make_ethereum_address()
-    addr2 = make_ethereum_address()
-    eth_map = {addr1: {A_GNO: 5000, A_MKR: 4000}, addr2: {A_MKR: 6000}}
-    etherscan_patch = mock_etherscan_query(
-        eth_map=eth_map,
-        etherscan=ethtokens.ethereum.etherscan,
-        original_queries=None,
-        original_requests_get=requests.get,
-        extra_flags=None,
+def test_generate_chunks():
+    generated_chunks = generate_multicall_chunks(
+        chunk_length=17,
+        addresses_to_tokens={
+            'acc1': ['token1'],
+            'acc2': ['token2', 'token3', 'token4', 'token5', 'token6'],
+            'acc3': ['token7', 'token8', 'token9', 'token10', 'token11', 'token12', 'token13', 'token14', 'token15', 'token16'],  # noqa: E501
+        },
     )
-    ethtokens_max_chunks_patch = patch(
-        'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH',
-        new=800,
-    )
-
-    with ethtokens_max_chunks_patch, etherscan_patch as etherscan_mock:
-        # Initially autodetect the tokens at the first call
-        ethtokens.detect_tokens(False, [addr1, addr2])
-        result1, _ = ethtokens.query_tokens_for_addresses([addr1, addr2])
-        initial_call_count = etherscan_mock.call_count
-
-        # Then in second call autodetect queries should not have been made, and DB cache used
-        ethtokens.detect_tokens(True, [addr1, addr2])
-        result2, _ = ethtokens.query_tokens_for_addresses([addr1, addr2])
-        call_count = etherscan_mock.call_count
-        assert call_count == initial_call_count + 2
-
-        # In the third call force re-detection
-        ethtokens.detect_tokens(False, [addr1, addr2])
-        result3, _ = ethtokens.query_tokens_for_addresses([addr1, addr2])
-        call_count = etherscan_mock.call_count
-        assert call_count == initial_call_count + 2 + initial_call_count
-
-        assert result1 == result2 == result3
-        assert len(result1) == len(eth_map)
-        for key, entry in result1.items():
-            eth_map_entry = eth_map[key]
-            assert len(entry) == len(eth_map_entry)
-            for token, val in entry.items():
-                assert token_normalized_value(eth_map_entry[token], token) == val
-
-
-@pytest.mark.parametrize('ignored_assets', [[A_GNO]])
-def test_ignored_tokens_in_query(ethtokens):
-    """Test that if a token is ignored it's not included in the query
-
-    This test is mocking etherscan and does not make any remote queries.
-    """
-    addr1 = make_ethereum_address()
-    addr2 = make_ethereum_address()
-    eth_map = {addr1: {A_GNO: 5000, A_MKR: 4000}, addr2: {A_MKR: 6000}}
-    etherscan_patch = mock_etherscan_query(
-        eth_map=eth_map,
-        etherscan=ethtokens.ethereum.etherscan,
-        original_queries=None,
-        original_requests_get=requests.get,
-        extra_flags=None,
-    )
-    ethtokens_max_chunks_patch = patch(
-        'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH',
-        new=800,
-    )
-
-    with ethtokens_max_chunks_patch, etherscan_patch:
-        ethtokens.detect_tokens(False, [addr1, addr2])
-        result, _ = ethtokens.query_tokens_for_addresses([addr1, addr2])
-        assert len(result[addr1]) == 1
-        assert result[addr1][A_MKR] == FVal('4E-15')
-        assert len(result[addr2]) == 1
+    expected_chunks = [
+        [
+            ('acc1', ['token1']),
+            ('acc2', ['token2', 'token3']),
+        ],
+        [
+            ('acc2', ['token4', 'token5', 'token6']),
+        ],
+        [
+            ('acc3', ['token7', 'token8', 'token9', 'token10', 'token11', 'token12', 'token13', 'token14', 'token15', 'token16']),  # noqa: E501
+        ],
+    ]
+    assert generated_chunks == expected_chunks

@@ -29,7 +29,6 @@ from rotkehlchen.types import Location
 @pytest.mark.parametrize(
     'added_exchanges',
     [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
-    # [(Location.BINANCE, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])

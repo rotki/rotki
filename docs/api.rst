@@ -2883,46 +2883,46 @@ Detecting owned ethereum tokens
 .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   **Example Request**:
+  **Example Request**:
 
-   .. http:example:: curl wget httpie python-requests
+  .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/tokens/detect HTTP/1.1
-      Host: localhost:5042
+    GET /api/1/blockchains/ETH/tokens/detect HTTP/1.1
+    Host: localhost:5042
 
-      {"addresses": ["0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D", "0xE07Af3FBEAf8584dc885f5bAA7c72419BDDf002D"]}
-
-   
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson bool only_cache: Boolean denoting whether to use only cache or re-detect tokens.
-   :reqjson list addresses: A list of addresses to detect tokens for. 
+    {"addresses": ["0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D", "0xE07Af3FBEAf8584dc885f5bAA7c72419BDDf002D"]}
 
 
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "0x31F05553be0EBBf7774241603Cc7b28771F989B3": {
-                  "tokens": [
-                      "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F", "_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-                  ],
-                  "last_update_timestamp": 1658764910,
-              },
-          },
-          "message": ""
-      }
+  :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+  :reqjson bool only_cache: Boolean denoting whether to use only cache or re-detect tokens.
+  :reqjson list addresses: A list of addresses to detect tokens for. 
 
 
-   :resjson object result: a dictionary containing mappings of an account to owned tokens and last tokens update timestamp. Tokens and last_update_timestamp can be None (if no info about account's tokens yet).
-   :statuscode 200: Tokens successfully detected.
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is currently logged in.
-   :statuscode 500: Internal rotki error
+  **Example Response**:
+
+  .. sourcecode:: http
+
+    HTTP/1.1 200 OK
+    Content-Type: application/json
+
+    {
+        "result": {
+            "0x31F05553be0EBBf7774241603Cc7b28771F989B3": {
+                "tokens": [
+                    "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F", "_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+                ],
+                "last_update_timestamp": 1658764910,
+            },
+        },
+        "message": ""
+    }
+
+
+  :resjson object result: a dictionary containing mappings of an account to owned tokens and last tokens update timestamp. Tokens and last_update_timestamp can be None (if no info about account's tokens yet).
+  :statuscode 200: Tokens successfully detected.
+  :statuscode 400: Provided JSON is in some way malformed
+  :statuscode 409: No user is currently logged in.
+  :statuscode 500: Internal rotki error
 
 Getting custom ethereum tokens
 ==================================

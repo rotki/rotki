@@ -47,7 +47,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         extra_flags=None,
     )
     ethtokens_max_chunks_patch = patch(
-        'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH',
+        'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT',
         new=800,
     )
     beaconchain_patch = mock_beaconchain(
@@ -109,7 +109,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         ethtokens = EthTokens(database=blockchain.database, ethereum=blockchain.ethereum)
         ethtokens.detect_tokens(
             only_cache=False,
-            accounts=[addr1, addr2],
+            addresses=[addr1, addr2],
         )
 
     assert addr1 in blockchain.accounts.eth
