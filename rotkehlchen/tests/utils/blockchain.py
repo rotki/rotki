@@ -328,8 +328,11 @@ def mock_etherscan_query(
                 multicall_purpose = 'compound_balances'
             elif '5f3b5dfeb7b28cdbd7faba78963ee202a494e2a2' in url:
                 multicall_purpose = 'vecrv'
+            elif '86f25b64e1fe4c5162cdeed5245575d32ec549db' in url:
+                multicall_purpose = 'multibalance_query'
             else:
                 raise AssertionError('Unknown multicall in mocked tests')
+
             if 'data=0x252dba42' in url:  # aggregate
                 if multicall_purpose in ('adex_staking', 'ds_proxy', 'compound_balances'):
                     if 'adex_staking' in original_queries:
@@ -344,19 +347,55 @@ def mock_etherscan_query(
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
 
+                # Get the multicall aggregate input data
                 fn_abi = contract.functions.abi[1]
                 assert fn_abi['name'] == 'aggregate', 'Abi position of multicall aggregate changed'
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
-                # For now the only mocked multicall is 32 bytes for multicall balance
-                # of both veCRV and adex staking pool.
-                # When there is more we have to figure out a way to differentiate
-                # between them in mocking. Just return empty response here
-                # all pylint ignores below due to https://github.com/PyCQA/pylint/issues/4114
-                args = [1, [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' for x in decoded_input[0]]]  # pylint: disable=unsubscriptable-object  # noqa: E501
-                result = '0x' + web3.codec.encode_abi(output_types, args).hex()
-                response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
+
+                if multicall_purpose == 'multibalance_query':
+                    # Get the ethscan multibalance subcalls
+                    ethscan_contract = web3.eth.contract(address=ETH_SCAN.address, abi=ETH_SCAN.abi)  # noqa: E501
+                    # not really the given args, but we just want the fn abi
+                    args = [list(eth_map.keys())[0], list(eth_map.keys())]
+                    scan_fn_abi = ethscan_contract._find_matching_fn_abi(
+                        fn_identifier='tokensBalance',
+                        args=args,
+                    )
+                    scan_input_types = get_abi_input_types(scan_fn_abi)
+                    scan_output_types = get_abi_output_types(scan_fn_abi)
+                    result_bytes = []
+                    for call_entry in decoded_input[0]:  # pylint: disable=unsubscriptable-object
+                        call_contract_address = deserialize_ethereum_address(call_entry[0])
+                        assert call_contract_address == ETH_SCAN.address, 'balances multicall should only contain calls to scan contract'  # noqa: E501
+                        call_data = call_entry[1]
+                        scan_decoded_input = web3.codec.decode_abi(scan_input_types, call_data[4:])
+                        account_address = deserialize_ethereum_address(scan_decoded_input[0])  # pylint: disable=unsubscriptable-object  # noqa: E501
+                        token_values = []
+                        for token_addy_str in scan_decoded_input[1]:  # pylint: disable=unsubscriptable-object # noqa: E501
+                            token_address = deserialize_ethereum_address(token_addy_str)
+                            token = _get_token(token_address)
+                            if token is None:
+                                value = 0  # if token is missing from mapping return 0 value
+                            else:
+                                value = int(eth_map[account_address].get(token))
+                                if value is None:
+                                    value = 0  # if token is missing from mapping return 0 value
+                            token_values.append(value)
+
+                        result_bytes.append(web3.codec.encode_abi(scan_output_types, [token_values]))  # noqa: E501
+
+                    result = '0x' + web3.codec.encode_abi(output_types, [len(result_bytes), result_bytes]).hex()  # noqa: E501
+                    response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
+                else:
+                    # else has to be the 32 bytes for multicall balance
+                    # of both veCRV and adex staking pool. Return empty response
+                    # all pylint ignores below due to https://github.com/PyCQA/pylint/issues/4114
+                    args = [1, [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' for x in decoded_input[0]]]  # pylint: disable=unsubscriptable-object  # noqa: E501
+                    result = '0x' + web3.codec.encode_abi(output_types, args).hex()
+                    response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
+
             else:
                 raise AssertionError('Unexpected etherscan multicall during tests: {url}')
 

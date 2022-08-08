@@ -28,7 +28,7 @@ def _wait_for_listening_port(
         # so get connections of the current process only
         connections = psutil.Process(pid).connections()
         for conn in connections:
-            if conn.status == "LISTEN" and conn.laddr[1] == port_number:
+            if conn.status == 'LISTEN' and conn.laddr[1] == port_number:
                 return
 
     raise RuntimeError(f"{port_number} is not bound")
@@ -40,7 +40,7 @@ def create_api_server(
 ) -> APIServer:
     api_server = APIServer(RestAPI(rotkehlchen=rotki), rotki.rotki_notifier)
 
-    api_server.flask_app.config["SERVER_NAME"] = f"localhost:{rest_port_number}"
+    api_server.flask_app.config['SERVER_NAME'] = f'localhost:{rest_port_number}'
     api_server.start(
         host='127.0.0.1',
         rest_port=rest_port_number,

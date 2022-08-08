@@ -155,7 +155,7 @@ def test_query_blockchain_balances(
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "named_blockchain_balances_resource",
+            'named_blockchain_balances_resource',
             blockchain='ETH',
         ), json={'async_query': async_query})
         if async_query:
@@ -736,7 +736,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server):
         setup.enter_ethereum_patches(stack)
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain='ETH',
         ), json=request_data)
 
@@ -747,7 +747,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server):
     request_data = {'accounts': [{'address': 'ishouldnotexistforrealz.eth'}]}
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='ETH',
     ), json=request_data)
     assert_error_response(
@@ -761,7 +761,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server):
     request_data = {'accounts': [{'address': 'rotki.eth', 'label': label}]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='ETH',
     ), json=request_data)
     result = assert_proper_response_with_result(response)[0]
@@ -773,7 +773,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server):
     request_data = {'accounts': [{'address': 'ishouldnotexistforrealz.eth', 'label': label}]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='ETH',
     ), json=request_data)
     assert_error_response(
@@ -802,7 +802,7 @@ def test_deleting_ens_account_works(rotkehlchen_api_server, ethereum_accounts):
         setup.enter_ethereum_patches(stack)
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain='ETH',
         ), json=request_data)
     result = assert_proper_response_with_result(response)
@@ -811,7 +811,7 @@ def test_deleting_ens_account_works(rotkehlchen_api_server, ethereum_accounts):
     request_data = {'accounts': ['ishouldnotexistforrealz.eth']}
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
+        'blockchainsaccountsresource',
         blockchain='ETH',
     ), json=request_data)
     assert_error_response(
