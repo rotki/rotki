@@ -53,7 +53,7 @@ import {
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import i18n from '@/i18n';
-import { useEthNamesStore } from '@/store/balances';
+import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import {
   EthAddressBookLocation,
   EthNamesPayload

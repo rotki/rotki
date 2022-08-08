@@ -5,7 +5,9 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
 import i18n from '@/i18n';
-import store, { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
+import { useSessionStore } from '@/store/session';
+import store from '@/store/store';
 
 import { ExternalServiceKeys } from '@/types/user';
 import '../../../i18n';
@@ -60,7 +62,7 @@ describe('ExternalServices.vue', () => {
   });
 
   afterEach(() => {
-    store.commit('session/reset');
+    useSessionStore().reset();
   });
 
   describe('first time', () => {

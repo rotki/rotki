@@ -5,8 +5,11 @@ import * as logger from 'loglevel';
 import { ActionContext, Store } from 'vuex';
 import i18n from '@/i18n';
 import { Section, Status } from '@/store/const';
+import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
-import store, { useMainStore } from '@/store/store';
+import { usePremiumStore } from '@/store/session/premium';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
 import { FetchData, FetchPayload } from '@/store/typing';
@@ -14,13 +17,14 @@ import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 export async function fetchAsync<S, T extends TaskMeta, R>(
-  { commit, rootState: { session } }: ActionContext<S, RotkehlchenState>,
+  { commit }: ActionContext<S, RotkehlchenState>,
   payload: FetchPayload<T, R>
 ): Promise<void> {
-  const { activeModules } = session!.generalSettings;
+  const { premium } = usePremiumStore();
+  const { activeModules } = useGeneralSettingsStore();
   if (
     !activeModules.includes(payload.module) ||
-    (payload.checkPremium && !session!.premium)
+    (payload.checkPremium && !premium)
   ) {
     return;
   }
@@ -104,12 +108,11 @@ export async function fetchDataAsync<T extends TaskMeta, R>(
 
 export function showError(description: string, title?: string) {
   const { setMessage } = useMainStore();
-  const message = {
-    title: title ?? i18n.t('message.error.title').toString(),
-    description: description || '',
+  setMessage({
+    title: title,
+    description: description,
     success: false
-  };
-  setMessage(message);
+  });
 }
 
 export function showMessage(description: string, title?: string): void {
@@ -200,16 +203,3 @@ export function filterAddresses<T>(
 }
 
 export const useStore = (): Store<RotkehlchenState> => store;
-
-const KEY_ANIMATIONS_ENABLED = 'rotki.animations_enabled' as const;
-export function isAnimationsEnabled(): boolean {
-  return !localStorage.getItem(KEY_ANIMATIONS_ENABLED) ?? true;
-}
-
-export function setAnimationsEnabled(enabled: boolean): void {
-  if (!enabled) {
-    localStorage.setItem(KEY_ANIMATIONS_ENABLED, `${enabled}`);
-  } else {
-    localStorage.removeItem(KEY_ANIMATIONS_ENABLED);
-  }
-}

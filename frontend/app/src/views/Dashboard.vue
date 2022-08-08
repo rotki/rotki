@@ -156,7 +156,7 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { setupExchanges, setupGeneralBalances } from '@/composables/balances';
-import { useUniswap } from '@/store/defi/uniswap';
+import { useUniswapStore } from '@/store/defi/uniswap';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
@@ -238,7 +238,7 @@ export default defineComponent({
           ignoreCache: true
         });
         fetchLoopringBalances(true);
-        const { fetchV3Balances } = useUniswap();
+        const { fetchV3Balances } = useUniswapStore();
         fetchV3Balances();
       } else if (balanceSource === 'exchange') {
         for (const exchange of get(exchanges)) {

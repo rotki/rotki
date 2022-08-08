@@ -53,13 +53,15 @@ import { AssetBalanceWithPrice } from '@rotki/common';
 import { XswapAsset } from '@rotki/common/lib/defi/xswap';
 import { computed, defineComponent, PropType, Ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { usePrices } from '@/composables/balances';
 import { useTheme } from '@/composables/common';
-import { getPremium, setupGeneralSettings } from '@/composables/session';
+import { getPremium } from '@/composables/session';
 import i18nFn from '@/i18n';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Zero } from '@/utils/bignumbers';
 
 const createTableHeaders = (currency: Ref<string>) => {
@@ -118,7 +120,7 @@ export default defineComponent({
     }
   },
   setup() {
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const { dark } = useTheme();
     const premium = getPremium();

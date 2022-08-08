@@ -29,7 +29,7 @@ import {
 import { get, set } from '@vueuse/core';
 import Cleave from 'cleave.js';
 import { storeToRefs } from 'pinia';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 /**
  * When this component is used, prop [type] shouldn't be passed,
@@ -46,18 +46,13 @@ export default defineComponent({
   emits: ['input'],
   setup(props, { emit }) {
     const { integer, value } = toRefs(props);
-
     const { thousandSeparator, decimalSeparator } = storeToRefs(
       useFrontendSettingsStore()
     );
 
-    const formattedValue = get(value).replace('.', get(decimalSeparator));
-
     const textInput = ref(null);
-
-    const currentValue = ref(get(formattedValue));
-
     const cleave = ref<Cleave | null>(null);
+    const currentValue = ref(get(value)?.replace('.', get(decimalSeparator)));
 
     const onValueChanged = ({
       target

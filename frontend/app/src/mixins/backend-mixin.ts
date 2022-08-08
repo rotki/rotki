@@ -1,7 +1,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { loadUserOptions, saveUserOptions } from '@/composables/backend';
 import { BackendOptions } from '@/electron-main/ipc';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
 import { LogLevel } from '@/utils/log-level';
 import { getDefaultLogLevel, setLevel } from '@/utils/logging';
 

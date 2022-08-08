@@ -21,7 +21,7 @@
           <div>
             <amount-display
               :value="formattedSelectedBalance"
-              :fiat-currency="currency.tickerSymbol"
+              :fiat-currency="currency"
               class="font-weight-bold"
             />
           </div>
@@ -65,13 +65,14 @@ import { Message } from '@rotki/common/lib/messages';
 import { computed, defineComponent, ref, toRefs } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
+import { storeToRefs } from 'pinia';
 import EditSnapshotDialog from '@/components/dashboard/EditSnapshotDialog.vue';
-import { setupGeneralSettings } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useMainStore } from '@/store/main';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { useMainStore } from '@/store/store';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { downloadFileByUrl } from '@/utils/download';
 
@@ -86,7 +87,7 @@ export default defineComponent({
   emits: ['input'],
   setup(props, { emit }) {
     const { timestamp, balance } = toRefs(props);
-    const { currency } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const editMode = ref<boolean>(false);
 
     const deleteSnapshotConfirmationDialog = ref<boolean>(false);
@@ -214,7 +215,7 @@ export default defineComponent({
 
     return {
       editMode,
-      currency,
+      currency: currencySymbol,
       formattedSelectedBalance,
       deleteSnapshotConfirmationDialog,
       updateVisibility,

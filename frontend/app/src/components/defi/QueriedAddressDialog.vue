@@ -102,8 +102,9 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { mapActions, mapState } from 'pinia';
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapState } from 'vuex';
+import { mapGetters } from 'vuex';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
@@ -111,6 +112,7 @@ import {
   QueriedAddresses,
   QueriedAddressPayload
 } from '@/services/session/types';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { Nullable } from '@/types';
 import { Module } from '@/types/modules';
 import { assert } from '@/utils/assertions';
@@ -119,11 +121,14 @@ import { assert } from '@/utils/assertions';
   name: 'QueriedAddressDialog',
   components: { TagDisplay, LabeledAddressDisplay },
   computed: {
-    ...mapState('session', ['queriedAddresses']),
+    ...mapState(useQueriedAddressesStore, ['queriedAddresses']),
     ...mapGetters('balances', ['accounts'])
   },
   methods: {
-    ...mapActions('session', ['addQueriedAddress', 'deleteQueriedAddress'])
+    ...mapActions(useQueriedAddressesStore, [
+      'addQueriedAddress',
+      'deleteQueriedAddress'
+    ])
   }
 })
 export default class QueriedAddressDialog extends Vue {

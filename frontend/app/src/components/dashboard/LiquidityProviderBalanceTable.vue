@@ -91,12 +91,12 @@ import LiquidityProviderBalanceDetails from '@/components/dashboard/LiquidityPro
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { setupGeneralSettings } from '@/composables/session';
 import { bigNumberSum } from '@/filters';
 import i18nFn from '@/i18n';
 import { Routes } from '@/router/routes';
-import { useUniswap } from '@/store/defi/uniswap';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useUniswapStore } from '@/store/defi/uniswap';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { useTasks } from '@/store/tasks';
 import {
@@ -175,7 +175,7 @@ const createTableHeaders = (
 const route = Routes.DEFI_DEPOSITS_LIQUIDITY.route;
 const expanded = ref<XswapBalance[]>([]);
 
-const { uniswapV3Balances } = useUniswap();
+const { uniswapV3Balances } = useUniswapStore();
 const balances = computed(() => {
   return get(uniswapV3Balances([])).map(item => ({
     ...item,
@@ -184,7 +184,7 @@ const balances = computed(() => {
   }));
 });
 
-const { currencySymbol } = setupGeneralSettings();
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { dashboardTablesVisibleColumns } = storeToRefs(
   useFrontendSettingsStore()
 );

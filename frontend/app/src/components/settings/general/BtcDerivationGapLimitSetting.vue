@@ -26,14 +26,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const btcDerivationGapLimit = ref<string>('20');
 
-const { generalSettings } = useSettings();
+const { btcDerivationGapLimit: limit } = storeToRefs(useGeneralSettingsStore());
 
 onMounted(() => {
-  const settings = get(generalSettings);
-  set(btcDerivationGapLimit, settings.btcDerivationGapLimit.toString());
+  set(btcDerivationGapLimit, get(limit).toString());
 });
 </script>

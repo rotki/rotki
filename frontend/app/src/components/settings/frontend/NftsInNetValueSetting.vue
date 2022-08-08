@@ -22,7 +22,7 @@
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
 
 const includeNfts = ref<boolean>(true);

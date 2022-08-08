@@ -21,7 +21,7 @@
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const zeroBased = ref<boolean>(false);
 const { graphZeroBased: enabled } = storeToRefs(useFrontendSettingsStore());

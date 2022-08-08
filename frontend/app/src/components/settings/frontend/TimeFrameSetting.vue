@@ -39,13 +39,14 @@ import {
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { getSessionState } from '@/composables/session';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
 const visibleTimeframes = ref<TimeFrameSetting[]>([]);
 const currentSessionTimeframe = ref<TimeFramePeriod>(TimeFramePeriod.ALL);
 
+const { timeframe } = useSessionSettingsStore();
 const { timeframeSetting, visibleTimeframes: visible } = storeToRefs(
   useFrontendSettingsStore()
 );
@@ -59,8 +60,7 @@ const resetVisibleTimeframes = () => {
 };
 
 onMounted(() => {
-  const state = getSessionState();
-  set(currentSessionTimeframe, state.timeframe);
+  set(currentSessionTimeframe, get(timeframe));
   resetTimeframeSetting();
   resetVisibleTimeframes();
 });

@@ -50,10 +50,11 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useSettings } from '@/composables/settings';
 import { Defaults } from '@/data/defaults';
 import i18n from '@/i18n';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 export default defineComponent({
   name: 'RpcSettings',
@@ -61,7 +62,9 @@ export default defineComponent({
   setup() {
     const ksmRpcEndpoint = ref(Defaults.KSM_RPC_ENDPOINT);
     const dotRpcEndpoint = ref(Defaults.DOT_RPC_ENDPOINT);
-    const { generalSettings } = useSettings();
+    const { ksmRpcEndpoint: ksmRpc, dotRpcEndpoint: dotRpc } = storeToRefs(
+      useGeneralSettingsStore()
+    );
 
     const ksmSuccessMessage = (endpoint: string) => {
       if (endpoint) {
@@ -82,9 +85,8 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      const settings = get(generalSettings);
-      set(ksmRpcEndpoint, settings.ksmRpcEndpoint || Defaults.KSM_RPC_ENDPOINT);
-      set(dotRpcEndpoint, settings.dotRpcEndpoint || Defaults.DOT_RPC_ENDPOINT);
+      set(ksmRpcEndpoint, get(ksmRpc) || Defaults.KSM_RPC_ENDPOINT);
+      set(dotRpcEndpoint, get(dotRpc) || Defaults.DOT_RPC_ENDPOINT);
     });
 
     return {

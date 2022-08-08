@@ -54,10 +54,10 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { RotkehlchenState } from '@/store/types';
-import { useStore } from '@/store/utils';
-import { SettingsUpdate } from '@/types/user';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 export default defineComponent({
   name: 'StatisticsGraphSettings',
@@ -74,29 +74,30 @@ export default defineComponent({
       const numericValue = parseInt(get(multiplier));
       return isNaN(numericValue) || numericValue < 0;
     });
-    const store = useStore();
+
+    const { update } = useSettingsStore();
+    const { ssf0graphMultiplier, balanceSaveFrequency } = storeToRefs(
+      useGeneralSettingsStore()
+    );
+
     const updateSetting = async () => {
-      await store.dispatch('session/settingsUpdate', {
+      await update({
         ssf0graphMultiplier: get(numericMultiplier)
-      } as SettingsUpdate);
+      });
       emit('updated');
       set(visible, false);
     };
 
     const multiplierSetting = computed(() => {
-      const { session }: RotkehlchenState = store.state;
-      const { ssf0graphMultiplier } = session!!.generalSettings;
-      return ssf0graphMultiplier.toString();
+      return get(ssf0graphMultiplier).toString();
     });
 
     const period = computed(() => {
-      const { session }: RotkehlchenState = store.state;
-      const { balanceSaveFrequency } = session!!.generalSettings;
       const multi = get(numericMultiplier);
       if (multi <= 0) {
         return 0;
       }
-      return multi * balanceSaveFrequency;
+      return multi * get(balanceSaveFrequency);
     });
 
     onMounted(() => {

@@ -23,7 +23,7 @@ import {
 } from '@/services/types-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
-import { useEthNamesStore } from '@/store/balances/index';
+import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { BalanceMutations } from '@/store/balances/mutation-types';
 import {
   AccountAssetBalances,
@@ -49,10 +49,14 @@ import {
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
-import { useUniswap } from '@/store/defi/uniswap';
+import { useUniswapStore } from '@/store/defi/uniswap';
 import { useHistory } from '@/store/history';
+import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
-import { useMainStore } from '@/store/store';
+import { usePremiumStore } from '@/store/session/premium';
+import { useSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus, RotkehlchenState } from '@/store/types';
 import {
@@ -362,7 +366,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     await dispatch('fetchBlockchainBalances');
     await dispatch(BalanceActions.FETCH_NF_BALANCES);
 
-    const { fetchV3Balances } = useUniswap();
+    const { fetchV3Balances } = useUniswapStore();
     await fetchV3Balances();
   },
 
@@ -511,7 +515,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       dispatch(BalanceActions.FETCH_NF_BALANCES);
 
       if (blockchain === Blockchain.ETH) {
-        const { fetchV3Balances } = useUniswap();
+        const { fetchV3Balances } = useUniswapStore();
         fetchV3Balances();
       }
 
@@ -627,14 +631,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         );
 
         if (modules && blockchain === Blockchain.ETH) {
-          await dispatch(
-            'session/enableModule',
-            {
-              enable: modules,
-              addresses: [address]
-            },
-            { root: true }
-          );
+          const { enableModule } = useSettingsStore();
+          await enableModule({
+            enable: modules,
+            addresses: [address]
+          });
         }
 
         const balances = BlockchainBalances.parse(result);
@@ -660,7 +661,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           blockchain: Blockchain.ETH2
         });
 
-        const { fetchV3Balances } = useUniswap();
+        const { fetchV3Balances } = useUniswapStore();
         fetchV3Balances();
       }
       await dispatch('refreshPrices', { ignoreCache: false });
@@ -729,16 +730,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       if (blockchain === Blockchain.ETH) {
         if (payload.modules) {
-          await dispatch(
-            'session/enableModule',
-            {
-              enable: payload.modules,
-              addresses: [address]
-            },
-            { root: true }
-          );
+          const { enableModule } = useSettingsStore();
+          await enableModule({
+            enable: payload.modules,
+            addresses: [address]
+          });
 
-          const { fetchV3Balances } = useUniswap();
+          const { fetchV3Balances } = useUniswapStore();
           fetchV3Balances();
         }
 
@@ -798,10 +796,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async accounts(
-    { commit, rootState: { session } },
-    blockchains: Blockchain[] | null
-  ) {
+  async accounts({ commit }, blockchains: Blockchain[] | null) {
     const error = (error: any, blockchain: Blockchain) => {
       logger.error(error);
       const { notify } = useNotifications();
@@ -859,7 +854,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     };
 
     const getEth2Validators = async () => {
-      const { activeModules } = session!.generalSettings;
+      const { activeModules } = useGeneralSettingsStore();
       if (!activeModules.includes(Module.ETH2)) {
         return;
       }
@@ -930,13 +925,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       });
     });
   },
-  async fetchNetvalueData({ commit, rootState: { session, settings } }) {
-    if (!session?.premium) {
+  async fetchNetvalueData({ commit }) {
+    const { premium } = usePremiumStore();
+    const { nftsInNetValue } = useFrontendSettingsStore();
+    if (!premium) {
       return;
     }
     try {
-      const includeNfts = settings?.nftsInNetValue ?? true;
-      const netvalueData = await api.queryNetvalueData(includeNfts);
+      const netvalueData = await api.queryNetvalueData(nftsInNetValue);
       commit('netvalueData', netvalueData);
     } catch (e: any) {
       const { notify } = useNotifications();
@@ -1438,11 +1434,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async fetchLoopringBalances(
-    { commit, rootState: { session } },
-    refresh: boolean
-  ) {
-    const { activeModules } = session!.generalSettings;
+  async fetchLoopringBalances({ commit }, refresh: boolean) {
+    const { activeModules } = useGeneralSettingsStore();
     if (!activeModules.includes(Module.LOOPRING)) {
       return;
     }
@@ -1522,11 +1515,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async [BalanceActions.FETCH_NF_BALANCES](
-    { commit, rootState: { session } },
+    { commit },
     payload?: { ignoreCache: boolean }
   ): Promise<void> {
     const { awaitTask } = useTasks();
-    const { activeModules } = session!!.generalSettings;
+    const { activeModules } = useGeneralSettingsStore();
     if (!activeModules.includes(Module.NFTS)) {
       return;
     }
@@ -1564,13 +1557,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       setStatus(Status.NONE, section);
     }
   },
-  async addEth2Validator(
-    { dispatch, rootState: { session } },
-    payload: Eth2Validator
-  ) {
-    assert(session);
+  async addEth2Validator({ dispatch }, payload: Eth2Validator) {
     const { awaitTask } = useTasks();
-    const { activeModules } = session.generalSettings;
+    const { activeModules } = useGeneralSettingsStore();
     if (!activeModules.includes(Module.ETH2)) {
       return;
     }
@@ -1613,12 +1602,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       return false;
     }
   },
-  async editEth2Validator(
-    { dispatch, rootState: { session } },
-    payload: Eth2Validator
-  ) {
-    assert(session);
-    const { activeModules } = session.generalSettings;
+  async editEth2Validator({ dispatch }, payload: Eth2Validator) {
+    const { activeModules } = useGeneralSettingsStore();
     if (!activeModules.includes(Module.ETH2)) {
       return;
     }

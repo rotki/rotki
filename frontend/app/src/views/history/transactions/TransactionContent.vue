@@ -261,7 +261,7 @@ import {
   EthTransactionEventEntry,
   IgnoreActionType
 } from '@/store/history/types';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
 import { Collection } from '@/types/collection';
 import { TaskType } from '@/types/task-type';

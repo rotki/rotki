@@ -30,8 +30,10 @@ import { useBalancerStore } from '@/store/defi/balancer';
 import { useCompoundStore } from '@/store/defi/compound';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useDexTradesStore } from '@/store/defi/trades';
-import { useUniswap } from '@/store/defi/uniswap';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useUniswapStore } from '@/store/defi/uniswap';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { useAdexStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
 import { useStore } from '@/store/utils';
@@ -75,35 +77,25 @@ export const statisticsApi = (): StatisticsApi => {
 };
 
 export const userSettings = (): UserSettingsApi => {
-  const store = useStore();
-  const frontendSettingsStore = useFrontendSettingsStore();
+  const sessionRefs = storeToRefs(useSessionSettingsStore());
+  const { floatingPrecision, currencySymbol } = storeToRefs(
+    useGeneralSettingsStore()
+  );
   const {
     selectedTheme,
     dateInputFormat,
     graphZeroBased,
     showGraphRangeSelector
-  } = storeToRefs(frontendSettingsStore);
+  } = storeToRefs(useFrontendSettingsStore());
+
   return {
-    floatingPrecision: computed<number>(
-      () => store.getters['session/floatingPrecision']
-    ),
-    currencySymbol: computed<string>(
-      () => store.getters['session/currencySymbol']
-    ),
-    shouldShowAmount: computed<boolean>(
-      () => store.getters['session/shouldShowAmount']
-    ),
-    shouldShowPercentage: computed<boolean>(
-      () => store.getters['session/shouldShowPercentage']
-    ),
-    scrambleData: computed<boolean>(
-      () => (store.state as any).session.scrambleData
-    ),
-    selectedTheme: selectedTheme,
-    dateInputFormat: dateInputFormat,
-    graphZeroBased: graphZeroBased,
-    showGraphRangeSelector: showGraphRangeSelector,
-    privacyMode: computed<number>(() => store.getters['session/privacyMode'])
+    floatingPrecision,
+    currencySymbol,
+    ...sessionRefs,
+    selectedTheme,
+    dateInputFormat,
+    graphZeroBased,
+    showGraphRangeSelector
   };
 };
 
@@ -169,7 +161,7 @@ export const compoundApi = (): CompoundApi => {
 
 export const dexTradeApi = (): DexTradesApi => {
   const store = useDexTradesStore();
-  const { fetchTrades: fetchUniswapTrades } = useUniswap();
+  const { fetchTrades: fetchUniswapTrades } = useUniswapStore();
   const { fetchTrades: fetchSushiswapTrades } = useSushiswapStore();
   const { fetchTrades: fetchBalancerTrades } = useBalancerStore();
   return {

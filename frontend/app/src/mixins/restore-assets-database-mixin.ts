@@ -1,13 +1,14 @@
 import { Severity } from '@rotki/common/lib/messages';
+import { mapActions } from 'pinia';
 import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
 import BackendMixin from '@/mixins/backend-mixin';
+import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
-import { useMainStore } from '@/store/store';
+import { useSessionStore } from '@/store/session';
 
 @Component({
   methods: {
-    ...mapActions('session', ['logout'])
+    ...mapActions(useSessionStore, ['logout'])
   }
 })
 export default class RestoreAssetsDatabaseMixin extends Mixins(BackendMixin) {

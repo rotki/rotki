@@ -94,6 +94,7 @@ import {
   ref
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -103,13 +104,13 @@ import RowAction from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupGeneralBalances } from '@/composables/balances';
 import { isSectionLoading } from '@/composables/common';
-import { setupGeneralSettings } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { Section } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { assert } from '@/utils/assertions';
@@ -229,7 +230,7 @@ export default defineComponent({
 
     const total = nfTotalValue();
 
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const setupRefresh = (ignoreCache: boolean = false) => {
       const payload = ignoreCache ? { ignoreCache: true } : undefined;

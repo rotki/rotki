@@ -104,9 +104,9 @@ import {
 import { get } from '@vueuse/core';
 import Fragment from '@/components/helper/Fragment';
 import { getPremium } from '@/composables/session';
-import { useSettings } from '@/composables/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { isPeriodAllowed } from '@/store/settings/utils';
-import { useStore } from '@/store/utils';
 
 const validator = (value: any) =>
   Object.values(TimeFramePeriod).includes(value) ||
@@ -189,8 +189,6 @@ export default defineComponent({
       emit('visible-timeframes-change', _timeframes);
     };
 
-    const store = useStore();
-
     const updateVisibleTimeframes = (
       newTimeFrames: TimeFramePeriod[],
       replaceCurrentSessionTimeframe: boolean = false
@@ -200,10 +198,11 @@ export default defineComponent({
       });
 
       if (replaceCurrentSessionTimeframe) {
+        const { updateSetting } = useFrontendSettingsStore();
+        const { update } = useSessionSettingsStore();
         const value = newTimeFrames[0];
-        store.commit('session/setTimeframe', value);
-        const { updateFrontendSetting } = useSettings();
-        updateFrontendSetting({ lastKnownTimeframe: value });
+        update({ timeframe: value });
+        updateSetting({ lastKnownTimeframe: value });
       }
 
       visibleTimeframesChange(newTimeFrames);

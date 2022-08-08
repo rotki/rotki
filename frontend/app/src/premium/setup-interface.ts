@@ -27,8 +27,8 @@ import {
   utilsApi
 } from '@/premium/premium-apis';
 import { registerComponents } from '@/premium/register-components';
-import { useFrontendSettingsStore } from '@/store/settings';
-import store from '@/store/store';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { DateFormat } from '@/types/date-format';
 import { FrontendSettingsPayload } from '@/types/frontend-settings';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
@@ -55,7 +55,7 @@ const date: DateUtilities = {
   toUserSelectedFormat(timestamp: number): string {
     return displayDateFormatter.format(
       new Date(timestamp * 1000),
-      store.getters['session/dateDisplayFormat']
+      useGeneralSettingsStore().dateDisplayFormat
     );
   },
   getDateInputISOFormat(format: string): string {

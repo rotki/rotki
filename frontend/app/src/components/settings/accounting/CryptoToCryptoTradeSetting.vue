@@ -19,13 +19,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const crypto2CryptoTrades = ref(false);
-const { accountingSettings } = useSettings();
+const { includeCrypto2crypto } = storeToRefs(useAccountingSettingsStore());
 
 onMounted(() => {
-  const settings = get(accountingSettings);
-  set(crypto2CryptoTrades, settings.includeCrypto2crypto);
+  set(crypto2CryptoTrades, get(includeCrypto2crypto));
 });
 </script>

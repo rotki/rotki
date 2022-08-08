@@ -16,8 +16,9 @@
 <script lang="ts">
 import { defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { setupSession } from '@/composables/session';
+import { useSessionStore } from '@/store/session';
 
 export default defineComponent({
   name: 'PinnedIndicator',
@@ -29,7 +30,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const { visible } = toRefs(props);
 
-    const { pinned } = setupSession();
+    const { pinned } = storeToRefs(useSessionStore());
 
     const toggleVisibility = () => {
       emit('visible:update', !get(visible));

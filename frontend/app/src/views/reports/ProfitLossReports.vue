@@ -79,13 +79,13 @@ import FileUpload from '@/components/import/FileUpload.vue';
 import Generate from '@/components/profitloss/Generate.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
 import { useRoute, useRouter } from '@/composables/common';
-import { setupSession } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { api } from '@/services/rotkehlchen-api';
+import { useMainStore } from '@/store/main';
 import { useReports } from '@/store/reports';
-import { useMainStore } from '@/store/store';
+import { useSessionStore } from '@/store/session';
 import { useTasks } from '@/store/tasks';
 import { showError, showMessage } from '@/store/utils';
 import {
@@ -138,11 +138,11 @@ export default defineComponent({
       }
     });
 
-    const { pinned, setPinned } = setupSession();
+    const { pinned } = storeToRefs(useSessionStore());
 
     const generate = async (period: ProfitLossReportPeriod) => {
       if (get(pinned)?.name === 'report-actionable-card') {
-        setPinned(null);
+        set(pinned, null);
       }
 
       const reportId = await generateReport(period);

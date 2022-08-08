@@ -70,7 +70,8 @@
 <script lang="ts">
 import { XswapBalance } from '@rotki/common/lib/defi/xswap';
 import { defineComponent, PropType, ref } from '@vue/composition-api';
-import { setupGeneralSettings } from '@/composables/session';
+import { storeToRefs } from 'pinia';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 export default defineComponent({
   name: 'UniswapPoolDetails',
@@ -80,7 +81,7 @@ export default defineComponent({
   setup() {
     const details = ref<boolean>(false);
 
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     return {
       currencySymbol,

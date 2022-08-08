@@ -108,14 +108,15 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useTheme } from '@/composables/common';
-import { setupDisplayData } from '@/composables/session';
 import { bigNumberSum, truncateAddress, truncationPoints } from '@/filters';
 import { XpubAccountWithBalance } from '@/store/balances/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 export default defineComponent({
   name: 'AccountGroupHeader',
@@ -134,7 +135,7 @@ export default defineComponent({
     const { items } = toRefs(props);
     const { breakpoint, currentBreakpoint } = useTheme();
     const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-    const { shouldShowAmount } = setupDisplayData();
+    const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
     const mobileClass = computed<string | null>(() => {
       return get(xsOnly) ? 'v-data-table__mobile-row' : null;

@@ -17,7 +17,7 @@ import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
 import { routesRef } from '@/router/routes';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const Routes = get(routesRef);
 

@@ -1,12 +1,5 @@
-import { BigNumber, Nullable, NumericString } from '@rotki/common';
-import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
+import { BigNumber, NumericString } from '@rotki/common';
 import { z } from 'zod';
-import {
-  QueriedAddresses,
-  Watcher,
-  WatcherTypes
-} from '@/services/session/types';
-import { AccountingSettings, GeneralSettings, Tags } from '@/types/user';
 
 export enum PrivacyMode {
   NORMAL = 0,
@@ -17,33 +10,6 @@ export enum PrivacyMode {
 export interface Pinned {
   name: string;
   props: { [key: string]: any };
-}
-
-export interface EditableSessionState {
-  animationsEnabled: boolean;
-  scrambleData: boolean;
-}
-
-export interface SessionState extends EditableSessionState {
-  newAccount: boolean;
-  logged: boolean;
-  loginComplete: boolean;
-  username: string;
-  generalSettings: GeneralSettings;
-  accountingSettings: AccountingSettings;
-  premium: boolean;
-  premiumSync: boolean;
-  privacyMode: PrivacyMode;
-  nodeConnection: boolean;
-  syncConflict: SyncConflict;
-  tags: Tags;
-  watchers: Watcher<WatcherTypes>[];
-  queriedAddresses: QueriedAddresses;
-  lastBalanceSave: number;
-  lastDataUpload: number;
-  timeframe: TimeFramePeriod;
-  showUpdatePopup: boolean;
-  pinned: Nullable<Pinned>;
 }
 
 export const SyncConflictPayload = z.object({

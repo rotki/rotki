@@ -20,7 +20,7 @@
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const enableEthNames = ref<boolean>(true);
 const { enableEthNames: enabled } = storeToRefs(useFrontendSettingsStore());

@@ -2,7 +2,7 @@ import { AssetBalance, Balance } from '@rotki/common';
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { computed, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
@@ -20,13 +20,14 @@ import {
   getPools
 } from '@/store/defi/xswap-utils';
 import { useNotifications } from '@/store/notifications';
+import { usePremiumStore } from '@/store/session/premium';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import {
   getStatus,
   getStatusUpdater,
   isLoading,
-  setStatus,
-  useStore
+  setStatus
 } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
@@ -35,14 +36,17 @@ import { sortDesc } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 
-export const useUniswap = defineStore('defi/uniswap', () => {
+export const useUniswapStore = defineStore('defi/uniswap', () => {
   const v2Balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
   const v3Balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
   const trades = ref<DexTrades>({}) as Ref<DexTrades>;
   const events = ref<XswapEvents>({}) as Ref<XswapEvents>;
 
-  const store = useStore();
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
+  const { notify } = useNotifications();
+  const { awaitTask, isTaskRunning } = useTasks();
+  const { activeModules } = storeToRefs(useGeneralSettingsStore());
+  const { premium } = storeToRefs(usePremiumStore());
 
   const uniswapV2Balances = (addresses: string[]) =>
     computed(() => {
@@ -139,9 +143,7 @@ export const useUniswap = defineStore('defi/uniswap', () => {
     });
 
   const fetchV2Balances = async (refresh: boolean = false) => {
-    const session = store.state.session!;
-    const { activeModules } = session.generalSettings;
-    if (!activeModules.includes(Module.UNISWAP)) {
+    if (!get(activeModules).includes(Module.UNISWAP)) {
       return;
     }
 
@@ -157,7 +159,6 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section);
-    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_UNISWAP_V2_BALANCES;
       const { taskId } = await api.defi.fetchUniswapV2Balances();
@@ -172,7 +173,6 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 
       set(v2Balances, XswapBalances.parse(result));
     } catch (e: any) {
-      const { notify } = useNotifications();
       notify({
         title: i18n.t('actions.defi.uniswap.error.title', { v: 2 }).toString(),
         message: i18n
@@ -190,15 +190,11 @@ export const useUniswap = defineStore('defi/uniswap', () => {
   };
 
   const fetchV3Balances = async (refresh: boolean = false) => {
-    const session = store.state.session!;
-    const { activeModules } = session.generalSettings;
-    if (!activeModules.includes(Module.UNISWAP)) {
+    if (!get(activeModules).includes(Module.UNISWAP)) {
       return;
     }
 
-    const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.DEFI_UNISWAP_V3_BALANCES;
-
     const section = Section.DEFI_UNISWAP_V3_BALANCES;
     const currentStatus = getStatus(section);
 
@@ -227,7 +223,6 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 
       set(v3Balances, XswapBalances.parse(result));
     } catch (e: any) {
-      const { notify } = useNotifications();
       notify({
         title: i18n.t('actions.defi.uniswap.error.title', { v: 3 }).toString(),
         message: i18n
@@ -245,9 +240,7 @@ export const useUniswap = defineStore('defi/uniswap', () => {
   };
 
   const fetchTrades = async (refresh: boolean = false) => {
-    const session = store.state.session!;
-    const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(Module.UNISWAP) || !session!.premium) {
+    if (!get(activeModules).includes(Module.UNISWAP) || !get(premium)) {
       return;
     }
 
@@ -263,7 +256,6 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section);
-    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_UNISWAP_TRADES;
       const { taskId } = await api.defi.fetchUniswapTrades();
@@ -278,7 +270,6 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 
       set(trades, result);
     } catch (e: any) {
-      const { notify } = useNotifications();
       notify({
         title: i18n.tc('actions.defi.uniswap_trades.error.title'),
         message: i18n.tc(
@@ -297,9 +288,7 @@ export const useUniswap = defineStore('defi/uniswap', () => {
   };
 
   const fetchEvents = async (refresh: boolean = false) => {
-    const session = store.state.session!;
-    const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(Module.UNISWAP) || !session!.premium) {
+    if (!get(activeModules).includes(Module.UNISWAP) || !get(premium)) {
       return;
     }
 
@@ -315,8 +304,6 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section);
-
-    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_UNISWAP_EVENTS;
       const { taskId } = await api.defi.fetchUniswapEvents();
@@ -331,7 +318,6 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 
       set(events, result);
     } catch (e: any) {
-      const { notify } = useNotifications();
       notify({
         title: i18n.tc('actions.defi.uniswap_events.error.title'),
         message: i18n.tc(
@@ -385,5 +371,5 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 });
 
 if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useUniswap, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useUniswapStore, import.meta.hot));
 }

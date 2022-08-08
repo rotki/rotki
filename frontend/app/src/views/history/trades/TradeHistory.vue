@@ -29,7 +29,7 @@ import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useTrades } from '@/store/history';
 import { TradeEntry } from '@/store/history/types';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 export default defineComponent({
   name: 'Trades',

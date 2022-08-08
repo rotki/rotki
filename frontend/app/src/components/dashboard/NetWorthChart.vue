@@ -121,8 +121,8 @@ import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
 import { useTheme } from '@/composables/common';
 import { useGraph, useTooltip } from '@/composables/graphs';
-import { setupGeneralSettings } from '@/composables/session';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -156,7 +156,7 @@ export default defineComponent({
     const { graphZeroBased, showGraphRangeSelector } = storeToRefs(
       useFrontendSettingsStore()
     );
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const { dark } = useTheme();
 
     const selectedTimestamp = ref<number>(0);

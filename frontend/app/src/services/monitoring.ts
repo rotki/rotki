@@ -3,8 +3,9 @@ import { storeToRefs } from 'pinia';
 import { setupExchanges, setupGeneralBalances } from '@/composables/balances';
 import { websocket } from '@/services/websocket/websocket-service';
 import { useNotifications } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings';
-import store from '@/store/store';
+import { useSessionStore } from '@/store/session';
+import { useWatchersStore } from '@/store/session/watchers';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
 
 const PERIODIC = 'periodic';
@@ -16,7 +17,7 @@ class Monitoring {
   private monitors: { [monitor: string]: any } = {};
 
   private static fetch() {
-    store.dispatch('session/periodicCheck');
+    useSessionStore().periodicCheck().then();
     const { consume } = useNotifications();
     if (!websocket.connected) {
       consume();
@@ -24,7 +25,7 @@ class Monitoring {
   }
 
   private static fetchWatchers() {
-    store.dispatch('session/fetchWatchers');
+    useWatchersStore().fetchWatchers().then();
   }
 
   private static async fetchBalances() {

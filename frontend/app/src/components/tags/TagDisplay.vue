@@ -16,9 +16,10 @@
   </span>
 </template>
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
+import { defineComponent } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { useStore } from '@/store/utils';
+import { useTagStore } from '@/store/session/tags';
 
 export default defineComponent({
   name: 'TagDisplay',
@@ -31,11 +32,7 @@ export default defineComponent({
     wrapperClass: { required: false, type: String, default: '' }
   },
   setup() {
-    const store = useStore();
-    const availableTags = computed(
-      () => store.getters['session/availableTags']
-    );
-
+    const { availableTags } = storeToRefs(useTagStore());
     return {
       availableTags
     };

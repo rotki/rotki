@@ -19,13 +19,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const anonymousUsageAnalytics = ref<boolean>(false);
-const { generalSettings } = useSettings();
+const { submitUsageAnalytics } = storeToRefs(useGeneralSettingsStore());
 
 onMounted(() => {
-  const settings = get(generalSettings);
-  set(anonymousUsageAnalytics, settings.submitUsageAnalytics);
+  set(anonymousUsageAnalytics, get(submitUsageAnalytics));
 });
 </script>

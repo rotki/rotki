@@ -747,18 +747,13 @@
         }
       },
       "password_change": {
-        "error": "Error while changing the user password",
+        "error": "Error while changing the user password: {message}",
         "success": "Successfully changed user password"
       },
       "periodic_query": {
         "error": {
           "message": "Error at periodic client query: {message}",
           "title": "Periodic client query"
-        }
-      },
-      "settings_update": {
-        "error": {
-          "message": "Updating settings was not successful: {message}"
         }
       },
       "tag_add": {

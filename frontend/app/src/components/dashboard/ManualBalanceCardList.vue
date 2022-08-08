@@ -29,7 +29,8 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { defineAsyncComponent, defineComponent } from '@vue/composition-api';
-import { setupGeneralSettings } from '@/composables/session';
+import { storeToRefs } from 'pinia';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toSentenceCase } from '@/utils/text';
 
 export default defineComponent({
@@ -50,7 +51,7 @@ export default defineComponent({
     }
   },
   setup() {
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     return {
       currencySymbol,

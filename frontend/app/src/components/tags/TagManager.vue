@@ -80,14 +80,15 @@
 <script lang="ts">
 import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import TagCreator from '@/components/tags/TagCreator.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { defaultTag } from '@/components/tags/types';
-import { setupTags } from '@/composables/session';
 import i18n from '@/i18n';
+import { useTagStore } from '@/store/session/tags';
 import { Tag } from '@/types/user';
 
 const headers = computed<DataTableHeader[]>(() => [
@@ -116,7 +117,9 @@ export default defineComponent({
   },
   emits: ['close'],
   setup(_, { emit }) {
-    const { tags, addTag, editTag, deleteTag } = setupTags();
+    const store = useTagStore();
+    const { addTag, editTag, deleteTag } = store;
+    const { tags } = storeToRefs(store);
 
     const tag = ref<Tag>(defaultTag());
     const editMode = ref<boolean>(false);

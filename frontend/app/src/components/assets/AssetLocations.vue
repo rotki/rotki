@@ -55,6 +55,7 @@ import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { computed, defineComponent, ref, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -64,12 +65,12 @@ import {
   setupBlockchainAccounts,
   setupGeneralBalances
 } from '@/composables/balances';
-import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { AssetBreakdown } from '@/store/balances/types';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 type AssetLocations = (AssetBreakdown & {
   readonly account: GeneralAccount | undefined;
@@ -91,7 +92,7 @@ export default defineComponent({
   setup(props) {
     const { identifier } = toRefs(props);
 
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const { account, eth2Account } = setupBlockchainAccounts();
     const { detailsLoading } = toRefs(useMainStore());
     const { assetPriceInfo } = useAssetInfoRetrieval();

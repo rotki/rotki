@@ -48,24 +48,17 @@
         </v-row>
 
         <v-card class="mb-12 mt-4" flat height="110px">
-          <module-queried-address
-            :module="modules[n - 1].identifier"
-            :selected-addresses="
-              queriedAddresses[modules[n - 1].identifier]
-                ? queriedAddresses[modules[n - 1].identifier]
-                : []
-            "
-          />
+          <module-queried-address :module="modules[n - 1].identifier" />
         </v-card>
 
         <div>
-          <v-btn v-if="step > 1" class="mr-4" text @click="previousStep(n)">
+          <v-btn v-if="step > 1" class="mr-4" text @click="previousStep()">
             {{ $t('common.actions.back') }}
           </v-btn>
           <v-btn
             v-if="step < modules.length"
             color="primary"
-            @click="nextStep(n)"
+            @click="nextStep()"
           >
             {{ $t('common.actions.next') }}
           </v-btn>
@@ -75,56 +68,35 @@
   </v-stepper>
 </template>
 
-<script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapState } from 'vuex';
+<script setup lang="ts">
+import { computed, onMounted } from '@vue/composition-api';
+import { get, useCounter } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleQueriedAddress from '@/components/defi/wizard/ModuleQueriedAddress.vue';
-import { SupportedModule } from '@/components/defi/wizard/types';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { QueriedAddresses } from '@/services/session/types';
-import { Module } from '@/types/modules';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
-@Component({
-  components: { AdaptiveWrapper, ModuleQueriedAddress },
-  computed: {
-    ...mapGetters('session', ['activeModules']),
-    ...mapState('session', ['queriedAddresses'])
-  },
-  methods: {
-    ...mapActions('session', ['fetchQueriedAddresses'])
-  }
-})
-export default class ModuleAddressSelector extends Vue {
-  step: number = 1;
-  activeModules!: Module[];
-  queriedAddresses!: QueriedAddresses;
-  fetchQueriedAddresses!: () => Promise<void>;
+const { inc: nextStep, dec: previousStep, count: step } = useCounter(-1);
+const { fetchQueriedAddresses } = useQueriedAddressesStore();
+const { activeModules } = storeToRefs(useGeneralSettingsStore());
 
-  async mounted() {
-    await this.fetchQueriedAddresses();
-  }
+const supportedModules = SUPPORTED_MODULES;
 
-  get modules(): SupportedModule[] {
-    if (this.activeModules.length === 0) {
-      return SUPPORTED_MODULES;
-    }
-    return SUPPORTED_MODULES.filter(module =>
-      this.activeModules.includes(module.identifier)
-    );
+const modules = computed(() => {
+  const active = get(activeModules);
+  if (active.length === 0) {
+    return supportedModules;
   }
+  return supportedModules.filter(module => active.includes(module.identifier));
+});
 
-  get steps(): number {
-    return this.modules.length;
-  }
-  nextStep(step: number) {
-    this.step = step + 1;
-  }
+const steps = computed(() => get(modules).length);
 
-  previousStep(step: number) {
-    this.step = step - 1;
-  }
-}
+onMounted(async () => {
+  await fetchQueriedAddresses();
+});
 </script>
 
 <!--suppress Stylelint -->

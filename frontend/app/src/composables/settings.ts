@@ -1,18 +1,16 @@
-import { computed, ref, watch } from '@vue/composition-api';
+import { ref, watch } from '@vue/composition-api';
 import { promiseTimeout, set, useTimeoutFn } from '@vueuse/core';
 import { BaseMessage } from '@/components/settings/utils';
 import i18n from '@/i18n';
-import { EditableSessionState } from '@/store/session/types';
-import { useFrontendSettingsStore } from '@/store/settings';
-import { ActionStatus } from '@/store/types';
-import { useStore } from '@/store/utils';
-import { FrontendSettingsPayload } from '@/types/frontend-settings';
+import { useSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import {
-  AccountingSettings,
-  GeneralSettings,
-  SettingsUpdate
-} from '@/types/user';
-import { assert } from '@/utils/assertions';
+  SessionSettings,
+  useSessionSettingsStore
+} from '@/store/settings/session';
+import { ActionStatus } from '@/store/types';
+import { FrontendSettingsPayload } from '@/types/frontend-settings';
+import { SettingsUpdate } from '@/types/user';
 import { logger } from '@/utils/logging';
 
 export enum SettingLocation {
@@ -21,126 +19,65 @@ export enum SettingLocation {
   GENERAL
 }
 
+type SuccessfulUpdate = { success: string };
+type UnsuccessfulUpdate = { error: string };
+type UpdateResult = SuccessfulUpdate | UnsuccessfulUpdate;
+
+const getActionStatus = async (
+  method: () => Promise<ActionStatus>,
+  messages?: BaseMessage
+) => {
+  let message: UpdateResult = {
+    error: messages?.error || ''
+  };
+  try {
+    const result = await method();
+
+    if (result.success) {
+      message = {
+        success: messages?.success || ''
+      };
+    } else {
+      if (result.message) {
+        message.error = `${message.error} (${result.message})`;
+      }
+    }
+  } catch (e) {
+    logger.error(e);
+  }
+
+  return message;
+};
+
 export const useSettings = () => {
-  const frontendSettingsStore = useFrontendSettingsStore();
-  const store = useStore();
+  const { update: updateSettings } = useSettingsStore();
+  const { updateSetting: updateFrontendSettings } = useFrontendSettingsStore();
+  const { update: updateSessionSettings } = useSessionSettingsStore();
 
-  const accountingSettings = computed<AccountingSettings>(() => {
-    return store.state!.session!.accountingSettings;
-  });
-
-  const generalSettings = computed<GeneralSettings>(() => {
-    return store.state!.session!.generalSettings;
-  });
-
-  const updateGeneralSetting = async (
-    settings: SettingsUpdate,
-    messages?: BaseMessage
-  ) => {
-    const updateKeys = Object.keys(settings);
-    assert(
-      updateKeys.length === 1,
-      'Settings update should only contain a single setting'
-    );
-
-    let message: { success: string } | { error: string } = {
-      error: messages?.error || ''
-    };
-    try {
-      // @ts-ignore
-      const { success, message: backendMessage } = (await store.dispatch(
-        'session/settingsUpdate',
-        settings
-      )) as ActionStatus;
-
-      if (success) {
-        message = {
-          success: messages?.success || ''
-        };
-      } else if (backendMessage) {
-        message.error = `${message.error} (${backendMessage})`;
-      }
-    } catch (e) {
-      logger.error(e);
-    }
-
-    return message;
-  };
-
-  const updateFrontendSetting = async (
-    settings: FrontendSettingsPayload,
-    messages?: BaseMessage
-  ) => {
-    const updateKeys = Object.keys(settings);
-    assert(
-      updateKeys.length === 1,
-      'Settings update should only contain a single setting'
-    );
-
-    let message: { success: string } | { error: string } = {
-      error: messages?.error || ''
-    };
-    try {
-      // @ts-ignore
-      const { success, message: backendMessage } =
-        await frontendSettingsStore.updateSetting(settings);
-
-      if (success) {
-        message = {
-          success: messages?.success || ''
-        };
-      } else if (backendMessage) {
-        message.error = `${message.error} (${backendMessage})`;
-      }
-    } catch (e) {
-      logger.error(e);
-    }
-
-    return message;
-  };
-
-  const updateSetting = async (
-    settingKey:
+  const updateSetting = async <
+    T extends
       | keyof SettingsUpdate
       | keyof FrontendSettingsPayload
-      | keyof EditableSessionState,
+      | keyof SessionSettings
+  >(
+    settingKey: T,
     settingValue: any,
     settingLocation: SettingLocation,
     message: BaseMessage
   ) => {
-    let result;
+    const payload = { [settingKey]: settingValue };
 
-    if (settingLocation === SettingLocation.SESSION) {
-      const { dispatch } = useStore();
-      try {
-        await dispatch(`session/${settingKey}`, settingValue);
-        result = { success: message.success };
-      } catch (e: any) {
-        result = {
-          error: `${message.error} (${e.message})}`
-        };
-      }
-    } else {
-      const caller =
-        settingLocation === SettingLocation.FRONTEND
-          ? updateFrontendSetting
-          : updateGeneralSetting;
+    const updateMethods: Record<SettingLocation, () => Promise<ActionStatus>> =
+      {
+        [SettingLocation.GENERAL]: () => updateSettings(payload),
+        [SettingLocation.FRONTEND]: () => updateFrontendSettings(payload),
+        [SettingLocation.SESSION]: () => updateSessionSettings(payload)
+      };
 
-      result = await caller(
-        {
-          [settingKey]: settingValue
-        },
-        message
-      );
-    }
-    return result;
+    return await getActionStatus(updateMethods[settingLocation], message);
   };
 
   return {
-    accountingSettings,
-    generalSettings,
-    updateGeneralSetting,
-    updateFrontendSetting,
     updateSetting
   };
 };

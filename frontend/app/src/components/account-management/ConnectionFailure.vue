@@ -22,7 +22,7 @@
 import { defineComponent } from '@vue/composition-api';
 import { useInterop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
 
 export default defineComponent({
   name: 'ConnectionFailure',

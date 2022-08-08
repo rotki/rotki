@@ -23,8 +23,9 @@
 import { BigNumber } from '@rotki/common';
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { setupGeneralBalances } from '@/composables/balances';
-import { setupGeneralSettings } from '@/composables/session';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Zero } from '@/utils/bignumbers';
 
 export default defineComponent({
@@ -35,7 +36,7 @@ export default defineComponent({
   setup(props) {
     const { identifier } = toRefs(props);
 
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const { balancesByLocation } = setupGeneralBalances();
 
     const totalValue = computed<BigNumber>(() => {

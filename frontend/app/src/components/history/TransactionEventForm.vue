@@ -192,13 +192,13 @@ import {
 } from '@vue/composition-api';
 import { get, set, useLocalStorage } from '@vueuse/core';
 import dayjs from 'dayjs';
+import { storeToRefs } from 'pinia';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import {
   setupExchangeRateGetter,
   setupGeneralBalances
 } from '@/composables/balances';
-import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
@@ -216,6 +216,7 @@ import {
   EthTransactionEntry,
   EthTransactionEventEntry
 } from '@/store/history/types';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
@@ -258,7 +259,7 @@ const TransactionEventForm = defineComponent({
 
     const { isTaskRunning } = useTasks();
     const { fetchHistoricPrice } = setupGeneralBalances();
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const exchangeRate = setupExchangeRateGetter();
 
     const lastLocation = useLocalStorage(

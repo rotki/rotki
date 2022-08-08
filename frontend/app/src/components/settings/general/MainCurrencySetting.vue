@@ -50,12 +50,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { setupGeneralSettings } from '@/composables/session';
+import { storeToRefs } from 'pinia';
 import { currencies } from '@/data/currencies';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Currency } from '@/types/currency';
 
 const selectedCurrency = ref<Currency>(currencies[0]);
-const { currency } = setupGeneralSettings();
+const { currency } = storeToRefs(useGeneralSettingsStore());
 
 onMounted(() => {
   set(selectedCurrency, get(currency));

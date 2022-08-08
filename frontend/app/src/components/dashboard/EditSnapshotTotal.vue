@@ -74,12 +74,13 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { setupExchangeRateGetter } from '@/composables/balances';
-import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import { BalanceSnapshot, LocationDataSnapshot } from '@/store/balances/types';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { bigNumberify, One, Zero } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 
@@ -102,7 +103,7 @@ export default defineComponent({
   emits: ['update:step', 'input'],
   setup(props, { emit }) {
     const { value, balancesSnapshot } = toRefs(props);
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const total = ref<string>('');
     const valid = ref<boolean>(false);

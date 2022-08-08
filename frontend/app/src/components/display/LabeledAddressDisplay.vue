@@ -55,10 +55,11 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
+import { storeToRefs } from 'pinia';
 import { useTheme } from '@/composables/common';
-import { setupDisplayData } from '@/composables/session';
 import { truncateAddress, truncationPoints } from '@/filters';
-import { useEthNamesStore } from '@/store/balances';
+import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { randomHex } from '@/utils/data';
 
 export default defineComponent({
@@ -69,7 +70,9 @@ export default defineComponent({
   setup(props) {
     const { account } = toRefs(props);
     const { currentBreakpoint } = useTheme();
-    const { scrambleData, shouldShowAmount } = setupDisplayData();
+    const { scrambleData, shouldShowAmount } = storeToRefs(
+      useSessionSettingsStore()
+    );
 
     const { ethNameSelector } = useEthNamesStore();
     const ethName = computed<string | null>(() =>

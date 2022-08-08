@@ -167,7 +167,7 @@ import {
   IgnoreActionType,
   TradeEntry
 } from '@/store/history/types';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';

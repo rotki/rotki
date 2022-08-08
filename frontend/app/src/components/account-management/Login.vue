@@ -256,19 +256,9 @@ import {
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
+import { useSessionStore } from '@/store/session';
 import { SyncConflict } from '@/store/session/types';
-import { useStore } from '@/store/utils';
 import { LoginCredentials, SyncApproval } from '@/types/login';
-
-const setupLogout = () => {
-  const store = useStore();
-  const logoutRemoteSession = () =>
-    store.dispatch('session/logoutRemoteSession');
-
-  return {
-    logoutRemoteSession
-  };
-};
 
 const KEY_REMEMBER_USERNAME = 'rotki.remember_username';
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
@@ -314,7 +304,7 @@ export default defineComponent({
     const newAccount = () => emit('new-account');
     const backendChanged = (url: string | null) => emit('backend-changed', url);
 
-    const { logoutRemoteSession } = setupLogout();
+    const { logoutRemoteSession } = useSessionStore();
 
     const username: Ref<string> = ref('');
     const password: Ref<string> = ref('');

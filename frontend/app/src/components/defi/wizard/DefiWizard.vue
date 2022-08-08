@@ -94,29 +94,18 @@
   </v-container>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+<script setup lang="ts">
+import { ref } from '@vue/composition-api';
 import ModuleAddressSelector from '@/components/defi/wizard/ModuleAddressSelector.vue';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-export default defineComponent({
-  name: 'DefiWizard',
-  components: { ModuleAddressSelector, ModuleSelector },
-  setup() {
-    const { updateSetting } = useFrontendSettingsStore();
+const { updateSetting } = useFrontendSettingsStore();
 
-    const step = ref<number>(1);
-    const done = async () => {
-      await updateSetting({ defiSetupDone: true });
-    };
-
-    return {
-      step,
-      done
-    };
-  }
-});
+const step = ref<number>(1);
+const done = async () => {
+  await updateSetting({ defiSetupDone: true });
+};
 </script>
 
 <style scoped lang="scss">

@@ -39,7 +39,7 @@ import { storeToRefs } from 'pinia';
 import { useValidation } from '@/composables/validation';
 import i18n from '@/i18n';
 import { monitor } from '@/services/monitoring';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;

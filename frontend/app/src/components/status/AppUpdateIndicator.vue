@@ -16,30 +16,30 @@ import {
   onMounted,
   watch
 } from '@vue/composition-api';
-import { get, useIntervalFn } from '@vueuse/core';
+import { get, set, useIntervalFn } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { useInterop } from '@/electron-interop';
-import { useFrontendSettingsStore } from '@/store/settings';
-import { useMainStore } from '@/store/store';
-import { useStore } from '@/store/utils';
+import { useMainStore } from '@/store/main';
+import { useSessionStore } from '@/store/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 export default defineComponent({
   name: 'AppUpdateIndicator',
   setup() {
     const mainStore = useMainStore();
-    const store = useStore();
     const { version, updateNeeded } = storeToRefs(mainStore);
     const { getVersion } = mainStore;
     const { isPackaged, openUrl } = useInterop();
     const { versionUpdateCheckFrequency } = storeToRefs(
       useFrontendSettingsStore()
     );
+    const { showUpdatePopup } = storeToRefs(useSessionStore());
 
     const appVersion = computed(() => get(version).latestVersion);
 
     const openLink = () => openUrl(get(version).downloadUrl);
-    const openUpdatePopup = async () => {
-      await store.dispatch('session/openUpdatePopup');
+    const openUpdatePopup = () => {
+      set(showUpdatePopup, true);
     };
 
     const update = () => {

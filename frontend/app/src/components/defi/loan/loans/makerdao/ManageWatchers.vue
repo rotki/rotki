@@ -44,6 +44,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
@@ -51,7 +52,7 @@ import { useTheme } from '@/composables/common';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { MakerDAOVaultModel } from '@/store/defi/types';
-import { useStore } from '@/store/utils';
+import { useWatchersStore } from '@/store/session/watchers';
 
 export default defineComponent({
   name: 'ManageWatchers',
@@ -66,8 +67,7 @@ export default defineComponent({
     const showWatcherDialog = ref(false);
     const watcherMessage = ref('');
     const { vault } = toRefs(props);
-    const store = useStore();
-    const loanWatchers = computed(() => store.state.session!!.watchers);
+    const { watchers: loanWatchers } = storeToRefs(useWatchersStore());
     const premium = getPremium();
     const watchers = computed(() => {
       const { identifier } = get(vault);

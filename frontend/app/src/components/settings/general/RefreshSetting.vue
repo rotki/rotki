@@ -65,7 +65,7 @@ import { storeToRefs } from 'pinia';
 import { useValidation } from '@/composables/validation';
 import { Constraints } from '@/data/constraints';
 import i18n from '@/i18n';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const refreshPeriod = ref<string>('');
 const refreshEnabled = ref<boolean>(false);

@@ -84,11 +84,11 @@ import {
   explorerUrls
 } from '@/components/helper/asset-urls';
 import { useTheme } from '@/composables/common';
-import { setupDisplayData } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import { truncateAddress } from '@/filters';
-import { useEthNamesStore } from '@/store/balances';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { randomHex } from '@/utils/data';
 
 export default defineComponent({
@@ -113,7 +113,9 @@ export default defineComponent({
   setup(props) {
     const { text, baseUrl, chain, tx } = toRefs(props);
 
-    const { scrambleData, shouldShowAmount } = setupDisplayData();
+    const { scrambleData, shouldShowAmount } = storeToRefs(
+      useSessionSettingsStore()
+    );
     const { explorers } = storeToRefs(useFrontendSettingsStore());
     const { dark } = useTheme();
 

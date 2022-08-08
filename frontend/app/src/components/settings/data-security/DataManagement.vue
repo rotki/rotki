@@ -48,8 +48,8 @@ import {
   ALL_TRANSACTIONS
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
-import { ACTION_PURGE_CACHED_DATA } from '@/store/session/const';
-import { useStore } from '@/store/utils';
+
+import { useSessionStore } from '@/store/session';
 import { SUPPORTED_EXCHANGES, SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 
@@ -59,11 +59,7 @@ const confirm = ref<boolean>(false);
 const pending = ref<boolean>(false);
 const sourceLabel = ref<string>('');
 
-const store = useStore();
-
-const purgeCachedData = async (purgeable: Purgeable) => {
-  await store.dispatch(`session/${ACTION_PURGE_CACHED_DATA}`, purgeable);
-};
+const { purgeCache } = useSessionStore();
 
 const showConfirmation = (source: PurgeParams) => {
   set(sourceLabel, source.text);
@@ -92,7 +88,7 @@ const purgeSource = async (source: Purgeable) => {
       await api.balances.deleteModuleData(source as Module);
     }
   }
-  await purgeCachedData(source);
+  await purgeCache(source);
 };
 
 const purge = async (source: string) => {

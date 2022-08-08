@@ -213,6 +213,7 @@
 <script lang="ts">
 import { computed, defineComponent, ref, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import Fragment from '@/components/helper/Fragment';
@@ -221,12 +222,14 @@ import FileUpload from '@/components/import/FileUpload.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import { setupGeneralBalances } from '@/composables/balances';
 import { useTheme } from '@/composables/common';
-import { getPremium, setupSession } from '@/composables/session';
+import { getPremium } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
 import { AllBalancePayload } from '@/store/balances/types';
+import { useSessionStore } from '@/store/session';
+import { usePremiumStore } from '@/store/session/premium';
 import { useTasks } from '@/store/tasks';
 import { showError, showMessage } from '@/store/utils';
 import { Writeable } from '@/types';
@@ -243,11 +246,14 @@ export default defineComponent({
     MenuTooltipButton
   },
   setup() {
-    const { lastBalanceSave, lastDataUpload, forceSync } = setupSession();
+    const store = useSessionStore();
+    const { lastBalanceSave, lastDataUpload } = storeToRefs(store);
+    const { forceSync } = usePremiumStore();
 
     const { fetchBalances } = setupGeneralBalances();
     const { currentBreakpoint } = useTheme();
     const premium = getPremium();
+    let { logout } = store;
 
     const pending = ref<boolean>(false);
     const confirmChecked = ref<boolean>(false);
@@ -298,7 +304,7 @@ export default defineComponent({
 
     const performSync = async () => {
       set(pending, true);
-      await forceSync(get(syncAction));
+      await forceSync(get(syncAction), logout);
       set(pending, false);
     };
 
@@ -320,8 +326,6 @@ export default defineComponent({
     const importFilesCompleted = computed<boolean>(
       () => !!get(balanceSnapshotFile) && !!get(locationDataSnapshotFile)
     );
-
-    const { logout } = setupSession();
 
     const importSnapshot = async () => {
       if (!get(importFilesCompleted)) return;

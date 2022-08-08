@@ -93,12 +93,12 @@ import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import { setupGeneralBalances } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
-import { setupGeneralSettings } from '@/composables/session';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { BalanceActions } from '@/store/balances/action-types';
 import { Section } from '@/store/const';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { useStore } from '@/store/utils';
 import {
@@ -202,7 +202,7 @@ export default defineComponent({
 
     const { shouldShowLoadingScreen } = setupStatusChecking();
 
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const total = nfTotalValue();
 

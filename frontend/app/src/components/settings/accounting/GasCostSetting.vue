@@ -19,13 +19,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const gasCosts = ref(false);
-const { accountingSettings } = useSettings();
+const { includeGasCosts } = storeToRefs(useAccountingSettingsStore());
 
 onMounted(() => {
-  const settings = get(accountingSettings);
-  set(gasCosts, settings.includeGasCosts);
+  set(gasCosts, get(includeGasCosts));
 });
 </script>

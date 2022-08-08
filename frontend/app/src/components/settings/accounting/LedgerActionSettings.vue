@@ -39,11 +39,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { useSettings } from '@/composables/settings';
 import { ledgerActionsData } from '@/store/history/consts';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { LedgerActionType } from '@/types/ledger-actions';
 
 const defaultTaxable: () => TaxableState = () => {
@@ -70,10 +71,10 @@ const changed = async (update: (value: any) => void) => {
   update(taxableActions);
 };
 
-const { accountingSettings } = useSettings();
+const { taxableLedgerActions } = storeToRefs(useAccountingSettingsStore());
 
 onMounted(() => {
-  for (let taxableAction of get(accountingSettings).taxableLedgerActions) {
+  for (let taxableAction of get(taxableLedgerActions)) {
     taxable.value[taxableAction] = true;
   }
 });

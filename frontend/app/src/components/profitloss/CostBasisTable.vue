@@ -95,11 +95,12 @@ import {
   Ref
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
-import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CostBasis } from '@/types/reports';
 
 const getHeaders = (currency: Ref<string>) =>
@@ -148,7 +149,7 @@ export default defineComponent({
     showGroupLine: { required: false, type: Boolean, default: false }
   },
   setup() {
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const panel = ref<number[]>([]);
 

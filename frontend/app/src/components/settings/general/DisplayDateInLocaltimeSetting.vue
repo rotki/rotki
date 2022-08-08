@@ -21,13 +21,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { useSettings } from '@/composables/settings';
+import { storeToRefs } from 'pinia';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const displayDateInLocaltime = ref<boolean>(true);
-const { generalSettings } = useSettings();
+const { displayDateInLocaltime: enabled } = storeToRefs(
+  useGeneralSettingsStore()
+);
 
 onMounted(() => {
-  const settings = get(generalSettings);
-  set(displayDateInLocaltime, settings.displayDateInLocaltime);
+  set(displayDateInLocaltime, get(enabled));
 });
 </script>

@@ -11,7 +11,7 @@
           class="overall-balances__net-worth text-center font-weight-medium mb-2"
         >
           <loading
-            v-if="anyLoading"
+            v-if="loading"
             class="overall-balances__net-worth__loading text-start ms-2"
           />
           <div :style="`font-size: ${adjustedTotalNetWorthFontSize}em`">
@@ -30,21 +30,22 @@
           >
             <span class="me-2">{{ indicator }}</span>
             <amount-display
-              v-if="!anyLoading"
+              v-if="!loading"
               show-currency="symbol"
               :fiat-currency="currencySymbol"
               :value="balanceDelta"
             />
             <percentage-display
-              v-if="!anyLoading"
+              v-if="!loading"
               class="ms-2 px-1 text--secondary pe-2"
               :value="percentage"
             />
           </span>
         </div>
         <timeframe-selector
-          v-model="activeTimeframe"
+          :value="timeframe"
           :visible-timeframes="visibleTimeframes"
+          @input="setTimeframe"
         />
       </v-col>
       <v-col cols="12" md="6" lg="7" class="d-flex">
@@ -52,10 +53,10 @@
           class="d-flex justify-center align-center flex-grow-1 overall-balances__net-worth-chart"
         >
           <net-worth-chart
-            v-if="!anyLoading"
+            v-if="!loading"
             :chart-data="timeframeData"
-            :timeframe="selection"
-            :timeframes="timeframes"
+            :timeframe="timeframe"
+            :timeframes="allTimeframes"
           />
           <div v-else class="overall-balances__net-worth-chart__loader">
             <v-progress-circular
@@ -73,163 +74,138 @@
   </v-card>
 </template>
 
-<script lang="ts">
-import { BigNumber } from '@rotki/common';
+<script setup lang="ts">
 import { TimeUnit } from '@rotki/common/lib/settings';
+import { TimeFramePeriod, timeframes } from '@rotki/common/lib/settings/graphs';
 import {
-  TimeFramePeriod,
-  Timeframes,
-  timeframes
-} from '@rotki/common/lib/settings/graphs';
-import { NetValue } from '@rotki/common/lib/statistics';
-import { defineAsyncComponent } from '@vue/composition-api';
-import { get } from '@vueuse/core';
+  computed,
+  defineAsyncComponent,
+  onMounted,
+  watch
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
-import {
-  mapActions as mapPiniaActions,
-  mapState as mapPiniaState
-} from 'pinia';
-import { Component, Mixins, Watch } from 'vue-property-decorator';
-import { mapGetters, mapMutations, mapState } from 'vuex';
-import PremiumMixin from '@/mixins/premium-mixin';
-import StatusMixin from '@/mixins/status-mixin';
+import { storeToRefs } from 'pinia';
+import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { usePremiumStore } from '@/store/session/premium';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { isPeriodAllowed } from '@/store/settings/utils';
 import { useStatisticsStore } from '@/store/statistics';
-import { ActionStatus } from '@/store/types';
-import { FrontendSettingsPayload } from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
 
-@Component({
-  components: {
-    TimeframeSelector: defineAsyncComponent(
-      () => import('@/components/helper/TimeframeSelector.vue')
-    ),
-    Loading: defineAsyncComponent(
-      () => import('@/components/helper/Loading.vue')
-    ),
-    AmountDisplay: defineAsyncComponent(
-      () => import('@/components/display/AmountDisplay.vue')
-    ),
-    NetWorthChart: defineAsyncComponent(
-      () => import('@/components/dashboard/NetWorthChart.vue')
-    )
-  },
-  computed: {
-    ...mapGetters('session', ['currencySymbol', 'floatingPrecision']),
-    ...mapPiniaState(useStatisticsStore, ['totalNetWorth']),
-    ...mapState('session', ['timeframe']),
-    ...mapPiniaState(useFrontendSettingsStore, ['visibleTimeframes'])
-  },
-  methods: {
-    ...mapPiniaActions(useStatisticsStore, ['fetchNetValue', 'getNetValue']),
-    ...mapMutations('session', ['setTimeframe']),
-    ...mapPiniaActions(useFrontendSettingsStore, ['updateSetting'])
-  }
-})
-export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
-  currencySymbol!: string;
-  getNetValue!: (startingDate: number) => NetValue;
-  totalNetWorth!: BigNumber;
-  fetchNetValue!: () => Promise<void>;
-  timeframe!: TimeFramePeriod;
-  visibleTimeframes!: TimeFramePeriod[];
-  setTimeframe!: (timeframe: TimeFramePeriod) => void;
-  updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
-  floatingPrecision!: number;
+const TimeframeSelector = defineAsyncComponent(
+  () => import('@/components/helper/TimeframeSelector.vue')
+);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const Loading = defineAsyncComponent(
+  () => import('@/components/helper/Loading.vue')
+);
+const AmountDisplay = defineAsyncComponent(
+  () => import('@/components/display/AmountDisplay.vue')
+);
+const NetWorthChart = defineAsyncComponent(
+  () => import('@/components/dashboard/NetWorthChart.vue')
+);
 
-  get activeTimeframe(): TimeFramePeriod {
-    return this.timeframe;
-  }
+const { currencySymbol, floatingPrecision } = storeToRefs(
+  useGeneralSettingsStore()
+);
+const { timeframe } = storeToRefs(useSessionSettingsStore());
+const { premium } = storeToRefs(usePremiumStore());
+const statistics = useStatisticsStore();
+const { fetchNetValue, getNetValue } = statistics;
+const { totalNetWorth } = storeToRefs(statistics);
+const frontendStore = useFrontendSettingsStore();
+const { visibleTimeframes } = storeToRefs(frontendStore);
 
-  set activeTimeframe(value: TimeFramePeriod) {
-    this.setTimeframe(value);
-    this.updateSetting({ lastKnownTimeframe: value });
-  }
-
-  section = Section.BLOCKCHAIN_ETH;
-  secondSection = Section.BLOCKCHAIN_BTC;
-
-  get indicator(): string {
-    if (this.anyLoading) {
-      return '';
+const { isSectionRefreshing } = setupStatusChecking();
+const loading = computed(() => {
+  const sections = [Section.BLOCKCHAIN_ETH, Section.BLOCKCHAIN_BTC];
+  for (const section of sections) {
+    if (get(isSectionRefreshing(section))) {
+      return true;
     }
-    return this.balanceDelta.isNegative() ? '▼' : '▲';
   }
+  return false;
+});
 
-  get selection(): TimeFramePeriod {
-    return this.activeTimeframe;
-  }
-
-  get balanceClass(): string {
-    if (this.anyLoading) {
-      return 'rotki-grey lighten-3';
-    }
-    return this.balanceDelta.isNegative()
-      ? 'rotki-red lighten-1'
-      : 'rotki-green';
-  }
-
-  get timeframes(): Timeframes {
-    return timeframes((unit, amount) =>
-      dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()
-    );
-  }
-
-  get startingValue(): BigNumber {
-    const data = this.timeframeData.data;
-    let start = data[0];
-    if (start === 0) {
-      for (let i = 1; i < data.length; i++) {
-        if (data[i] > 0) {
-          start = data[i];
-          break;
-        }
+const startingValue = computed(() => {
+  const data = get(timeframeData).data;
+  let start = data[0];
+  if (start === 0) {
+    for (let i = 1; i < data.length; i++) {
+      if (data[i] > 0) {
+        start = data[i];
+        break;
       }
     }
-    return bigNumberify(start);
   }
+  return bigNumberify(start);
+});
 
-  get adjustedTotalNetWorthFontSize(): number {
-    const digits = this.totalNetWorth
-      .toFormat(this.floatingPrecision)
-      .replace(/\./g, '')
-      .replace(/,/g, '').length;
+const adjustedTotalNetWorthFontSize = computed(() => {
+  const digits = get(totalNetWorth)
+    .toFormat(get(floatingPrecision))
+    .replace(/\./g, '')
+    .replace(/,/g, '').length;
 
-    // this number adjusted visually
-    // when we use max floating precision (8), it won't overlap
-    return Math.min(1, 12 / digits);
+  // this number adjusted visually
+  // when we use max floating precision (8), it won't overlap
+  return Math.min(1, 12 / digits);
+});
+
+const allTimeframes = computed(() => {
+  return timeframes((unit, amount) =>
+    dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()
+  );
+});
+
+const balanceDelta = computed(() => {
+  return get(totalNetWorth).minus(get(startingValue));
+});
+
+const timeframeData = computed(() => {
+  const all = get(allTimeframes);
+  let selection = get(timeframe);
+  const startingDate = all[selection].startingDate();
+  return get(getNetValue(startingDate));
+});
+
+const percentage = computed(() => {
+  const bigNumber = get(balanceDelta).div(get(startingValue)).multipliedBy(100);
+
+  return bigNumber.isFinite() ? bigNumber.toFormat(2) : '-';
+});
+
+const indicator = computed(() => {
+  if (get(loading)) {
+    return '';
   }
+  return get(balanceDelta).isNegative() ? '▼' : '▲';
+});
 
-  get balanceDelta(): BigNumber {
-    return this.totalNetWorth.minus(this.startingValue);
+const balanceClass = computed(() => {
+  if (get(loading)) {
+    return 'rotki-grey lighten-3';
   }
+  return get(balanceDelta).isNegative() ? 'rotki-red lighten-1' : 'rotki-green';
+});
 
-  get percentage(): string {
-    const bigNumber = this.balanceDelta
-      .div(this.startingValue)
-      .multipliedBy(100);
+const setTimeframe = (value: TimeFramePeriod) => {
+  set(timeframe, value);
+  frontendStore.updateSetting({ lastKnownTimeframe: value });
+};
 
-    return bigNumber.isFinite() ? bigNumber.toFormat(2) : '-';
+watch(premium, async () => fetchNetValue());
+
+onMounted(() => {
+  if (get(premium) && !isPeriodAllowed(get(timeframe))) {
+    set(timeframe, TimeFramePeriod.TWO_WEEKS);
   }
-
-  get timeframeData(): NetValue {
-    const startingDate = this.timeframes[this.selection].startingDate();
-    return get(this.getNetValue(startingDate));
-  }
-
-  @Watch('premium')
-  async onPremiumChange() {
-    await this.fetchNetValue();
-  }
-
-  created() {
-    if (!this.premium && !isPeriodAllowed(this.activeTimeframe)) {
-      this.activeTimeframe = TimeFramePeriod.TWO_WEEKS;
-    }
-  }
-}
+});
 </script>
 <style scoped lang="scss">
 .overall-balances {

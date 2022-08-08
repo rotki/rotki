@@ -104,13 +104,13 @@ import EthAddressBookForm from '@/components/eth-address-book-manager/EthAddress
 import EthAddressBookTable from '@/components/eth-address-book-manager/EthAddressBookTable.vue';
 import EthNamesHint from '@/components/EthNamesHint.vue';
 import i18n from '@/i18n';
-import { useEthNamesStore } from '@/store/balances';
+import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import {
   EthAddressBookLocation,
   EthNamesEntry,
   EthNamesPayload
 } from '@/store/balances/types';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
 
 export default defineComponent({
   name: 'EthAddressBookManagement',

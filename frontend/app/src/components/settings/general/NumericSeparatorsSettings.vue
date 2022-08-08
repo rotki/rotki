@@ -68,7 +68,7 @@ import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { useValidation } from '@/composables/validation';
 import i18n from '@/i18n';
-import { useFrontendSettingsStore } from '@/store/settings';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');

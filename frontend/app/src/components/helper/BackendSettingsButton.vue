@@ -25,7 +25,7 @@
 <script lang="ts">
 import { defineComponent, ref, toRefs } from '@vue/composition-api';
 import BackendSettings from '@/components/settings/BackendSettings.vue';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
 
 export default defineComponent({
   name: 'BackendSettingsButton',

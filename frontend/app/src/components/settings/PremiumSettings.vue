@@ -43,7 +43,7 @@
                 depressed
                 color="primary"
                 type="submit"
-                @click="setup()"
+                @click="setupPremium()"
               >
                 {{
                   premium && !edit
@@ -101,12 +101,15 @@
 </template>
 
 <script lang="ts">
+import { mapActions, mapState } from 'pinia';
 import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import { useSessionStore } from '@/store/session';
+import { usePremiumStore } from '@/store/session/premium';
 import { PremiumCredentialsPayload } from '@/store/session/types';
+import { useSettingsStore } from '@/store/settings';
 import { ActionStatus } from '@/store/types';
 import { SettingsUpdate } from '@/types/user';
 import { trimOnPaste } from '@/utils/event';
@@ -117,13 +120,13 @@ import { trimOnPaste } from '@/utils/event';
     ConfirmDialog,
     BaseExternalLink
   },
-  computed: mapState('session', ['premium', 'premiumSync', 'username']),
+  computed: {
+    ...mapState(usePremiumStore, ['premium', 'premiumSync']),
+    ...mapState(useSessionStore, ['username'])
+  },
   methods: {
-    ...mapActions('session', [
-      'setupPremium',
-      'deletePremium',
-      'updateSettings'
-    ])
+    ...mapActions(usePremiumStore, ['setup', 'deletePremium']),
+    ...mapActions(useSettingsStore, ['update'])
   }
 })
 export default class PremiumSettings extends Vue {
@@ -138,9 +141,9 @@ export default class PremiumSettings extends Vue {
   premiumSync!: boolean;
   username!: string;
 
-  setupPremium!: (payload: PremiumCredentialsPayload) => Promise<ActionStatus>;
+  setup!: (payload: PremiumCredentialsPayload) => Promise<ActionStatus>;
   deletePremium!: () => Promise<ActionStatus>;
-  updateSettings!: (settings: SettingsUpdate) => Promise<void>;
+  update!: (settings: SettingsUpdate) => Promise<void>;
 
   private reset() {
     this.apiSecret = '';
@@ -180,7 +183,7 @@ export default class PremiumSettings extends Vue {
     this.clearErrors();
   }
 
-  async setup() {
+  async setupPremium() {
     this.clearErrors();
     if (this.premium && !this.edit) {
       this.edit = true;
@@ -192,7 +195,7 @@ export default class PremiumSettings extends Vue {
       apiKey: this.apiKey.trim(),
       apiSecret: this.apiSecret.trim()
     };
-    const result = await this.setupPremium(payload);
+    const result = await this.setup(payload);
     if (!result.success) {
       this.errorMessages.push(
         result.message ?? this.$tc('premium_settings.error.setting_failed')
@@ -221,7 +224,7 @@ export default class PremiumSettings extends Vue {
   }
 
   async onSyncChange() {
-    await this.updateSettings({ premiumShouldSync: this.sync });
+    await this.update({ premiumShouldSync: this.sync });
   }
 }
 </script>

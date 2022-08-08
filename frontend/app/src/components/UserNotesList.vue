@@ -160,7 +160,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import UserNoteForm from '@/components/UserNoteForm.vue';
 import { getPremium } from '@/composables/session';
-import { api } from '@/services/rotkehlchen-api';
+import { useUserNotesApi } from '@/services/session/user-notes.api';
 import { Collection } from '@/types/collection';
 import { UserNote, UserNotesFilter } from '@/types/notes';
 import {
@@ -214,6 +214,8 @@ export default defineComponent({
       orderByAttributes: ['is_pinned', 'last_update_timestamp'],
       ascending: [false, false]
     });
+
+    const api = useUserNotesApi();
 
     const updateValid = (_valid: boolean) => {
       set(valid, _valid);

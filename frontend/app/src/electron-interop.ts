@@ -123,7 +123,21 @@ export class ElectronInterop {
   }
 
   async clearPassword() {
-    window.interop?.clearPassword();
+    await window.interop?.clearPassword();
+  }
+
+  async checkForUpdates() {
+    return (await window.interop?.checkForUpdates()) ?? false;
+  }
+
+  async downloadUpdate(
+    progress: (percentage: number) => void
+  ): Promise<boolean> {
+    return (await window.interop?.downloadUpdate(progress)) ?? false;
+  }
+
+  async installUpdate(): Promise<boolean | Error> {
+    return (await window.interop?.installUpdate()) ?? false;
   }
 }
 

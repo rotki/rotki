@@ -4,7 +4,7 @@ import i18n from '@/i18n';
 import { EntryMeta } from '@/services/history/types';
 import { useHistory } from '@/store/history';
 import { IgnoreActionPayload, IgnoreActionType } from '@/store/history/types';
-import { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/main';
 import { ActionStatus } from '@/store/types';
 import { uniqueStrings } from '@/utils/data';
 

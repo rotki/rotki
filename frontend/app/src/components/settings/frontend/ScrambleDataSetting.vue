@@ -18,12 +18,13 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from '@vue/composition-api';
-import { set } from '@vueuse/core';
-import { getSessionState } from '@/composables/session';
+import { get, set } from '@vueuse/core';
+import { useSessionSettingsStore } from '@/store/settings/session';
+
+const { scrambleData: enabled } = useSessionSettingsStore();
 
 const scrambleData = ref<boolean>(false);
 onMounted(() => {
-  const state = getSessionState();
-  set(scrambleData, state.scrambleData);
+  set(scrambleData, get(enabled));
 });
 </script>

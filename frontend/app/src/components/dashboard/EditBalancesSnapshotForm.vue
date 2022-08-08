@@ -91,11 +91,12 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
-import { setupGeneralSettings } from '@/composables/session';
 import i18n from '@/i18n';
 import { BalanceSnapshotPayload } from '@/store/balances/types';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { isNft } from '@/utils/nft';
 
 export default defineComponent({
@@ -133,7 +134,7 @@ export default defineComponent({
   emits: ['update:form', 'input'],
   setup(props, { emit }) {
     const { form, excludedAssets } = toRefs(props);
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const assetType = ref<string>('token');
 

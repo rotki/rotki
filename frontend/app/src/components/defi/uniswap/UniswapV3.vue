@@ -190,7 +190,7 @@ import { setupStatusChecking, useTheme } from '@/composables/common';
 import { getPremium, useModules } from '@/composables/session';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
-import { useUniswap } from '@/store/defi/uniswap';
+import { useUniswapStore } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';
 
 export default defineComponent({
@@ -214,7 +214,7 @@ export default defineComponent({
       uniswapV3Addresses: addresses,
       uniswapV3Balances: uniswapBalances,
       uniswapV3PoolAssets: poolAssets
-    } = useUniswap();
+    } = useUniswapStore();
     const { isModuleEnabled } = useModules();
     const { getAssetSymbol: getSymbol, getTokenAddress } =
       useAssetInfoRetrieval();

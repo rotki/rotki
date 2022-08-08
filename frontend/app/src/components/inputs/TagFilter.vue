@@ -2,7 +2,7 @@
   <v-autocomplete
     :value="value"
     :disabled="disabled"
-    :items="availableTagsArray"
+    :items="availableTagsList"
     class="tag-filter"
     small-chips
     :label="$t('tag_filter.label')"
@@ -46,48 +46,63 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import { useTagStore } from '@/store/session/tags';
 import { Tag } from '@/types/user';
 
-const { mapGetters } = createNamespacedHelpers('session');
-
-@Component({
+export default defineComponent({
   components: {
     TagIcon
   },
-  computed: {
-    ...mapGetters(['availableTagsArray'])
-  }
-})
-export default class TagFilter extends Vue {
-  @Prop({ required: true })
-  value!: string[];
-  @Prop({ required: false, default: false, type: Boolean })
-  disabled!: boolean;
-  @Prop({ required: false, default: false, type: Boolean })
-  hideDetails!: boolean;
-  availableTagsArray!: Tag[];
+  props: {
+    value: { required: true, type: Array as PropType<string[]> },
+    disabled: { required: false, default: false, type: Boolean },
+    hideDetails: { required: false, default: false, type: Boolean }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { value } = toRefs(props);
 
-  filter(tag: Tag, queryText: string): boolean {
-    const { name, description } = tag;
-    const query = queryText.toLocaleLowerCase();
-    return (
-      name.toLocaleLowerCase().indexOf(query) > -1 ||
-      description.toLocaleLowerCase().indexOf(query) > -1
-    );
-  }
+    const { availableTags } = storeToRefs(useTagStore());
 
-  remove(tag: string) {
-    const tags = this.value;
-    const index = tags.indexOf(tag);
-    this.input([...tags.slice(0, index), ...tags.slice(index + 1)]);
-  }
+    const availableTagsList = computed<Tag[]>(() => {
+      const tags = get(availableTags);
+      return Object.values(tags);
+    });
+    const input = (tags: string[]) => {
+      emit('input', tags);
+    };
+    const filter = (tag: Tag, queryText: string): boolean => {
+      const { name, description } = tag;
+      const query = queryText.toLocaleLowerCase();
+      return (
+        name.toLocaleLowerCase().indexOf(query) > -1 ||
+        description.toLocaleLowerCase().indexOf(query) > -1
+      );
+    };
 
-  @Emit()
-  input(_value: string[]) {}
-}
+    const remove = (tag: string) => {
+      const tags = get(value);
+      const index = tags.indexOf(tag);
+      input([...tags.slice(0, index), ...tags.slice(index + 1)]);
+    };
+
+    return {
+      availableTagsList,
+      remove,
+      filter,
+      input
+    };
+  }
+});
 </script>
 
 <style scoped lang="scss">

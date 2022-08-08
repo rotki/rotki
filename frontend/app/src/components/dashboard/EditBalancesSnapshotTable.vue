@@ -122,6 +122,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import EditBalancesSnapshotForm from '@/components/dashboard/EditBalancesSnapshotForm.vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
@@ -129,7 +130,6 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { setupExchangeRateGetter } from '@/composables/balances';
-import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
@@ -138,6 +138,7 @@ import {
   BalanceSnapshotPayload,
   Snapshot
 } from '@/store/balances/types';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { bigNumberify, One, sortDesc, Zero } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
@@ -205,7 +206,7 @@ export default defineComponent({
   emits: ['update:step', 'input'],
   setup(props, { emit }) {
     const { value, timestamp } = toRefs(props);
-    const { currencySymbol } = setupGeneralSettings();
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const showForm = ref<boolean>(false);
     const showDeleteConfirmation = ref<boolean>(false);
     const indexToEdit = ref<number | null>(null);

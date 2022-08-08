@@ -92,9 +92,10 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import TagManager from '@/components/tags/TagManager.vue';
-import { setupTags } from '@/composables/session';
+import { useTagStore } from '@/store/session/tags';
 import { Tag } from '@/types/user';
 import { invertColor, randomColor } from '@/utils/Color';
 
@@ -123,7 +124,8 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const { value } = toRefs(props);
-    const { tags, addTag } = setupTags();
+    const store = useTagStore();
+    const { tags } = storeToRefs(store);
 
     const manageTags = ref<boolean>(false);
 
@@ -153,7 +155,7 @@ export default defineComponent({
         backgroundColor,
         foregroundColor
       };
-      return await addTag(tag);
+      return await store.addTag(tag);
     };
 
     const remove = (tag: string) => {
