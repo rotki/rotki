@@ -106,143 +106,149 @@
 </template>
 
 <script lang="ts">
-import { mapActions } from 'pinia';
-import { Component, Mixins, Prop } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  ref,
+  Ref,
+  toRefs
+} from '@vue/composition-api';
+import { get, set, useLocalStorage } from '@vueuse/core';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
-import BackendMixin from '@/mixins/backend-mixin';
-import {
-  AssetUpdatePayload,
-  ConflictResolution
-} from '@/services/assets/types';
+import { useBackendManagement } from '@/composables/backend';
+import { ConflictResolution } from '@/services/assets/types';
 import { useAssets } from '@/store/assets';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
-import {
-  ApplyUpdateResult,
-  AssetUpdateCheckResult,
-  AssetUpdateConflictResult
-} from '@/types/assets';
+import { AssetUpdateConflictResult } from '@/types/assets';
 
-const SKIP_ASSET_DB_VERSION = 'rotki_skip_asset_db_version';
-
-@Component({
+export default defineComponent({
   name: 'AssetUpdate',
   components: { ConfirmDialog, Fragment, ConflictDialog },
-  methods: {
-    ...mapActions(useAssets, ['checkForUpdate', 'applyUpdates']),
-    ...mapActions(useSessionStore, ['logout'])
-  }
-})
-export default class AssetUpdate extends Mixins(BackendMixin) {
-  @Prop({ required: false, default: false, type: Boolean })
-  auto!: Boolean;
-  showUpdateDialog: boolean = false;
-  showConflictDialog: boolean = false;
-  skipUpdate: boolean = false;
-  localVersion: number = 0;
-  remoteVersion: number = 0;
-  changes: number = 0;
-  upToVersion: number = 0;
-  partial: boolean = false;
-  checkForUpdate!: () => Promise<AssetUpdateCheckResult>;
-  applyUpdates!: (payload: AssetUpdatePayload) => Promise<ApplyUpdateResult>;
-  logout!: () => Promise<void>;
-  conflicts: AssetUpdateConflictResult[] = [];
-  done: boolean = false;
+  props: {
+    auto: { required: false, default: false, type: Boolean }
+  },
+  setup(props) {
+    const { auto } = toRefs(props);
+    const showUpdateDialog: Ref<boolean> = ref(false);
+    const showConflictDialog: Ref<boolean> = ref(false);
+    const skipUpdate: Ref<boolean> = ref(false);
+    const localVersion: Ref<number> = ref(0);
+    const remoteVersion: Ref<number> = ref(0);
+    const changes: Ref<number> = ref(0);
+    const upToVersion: Ref<number> = ref(0);
+    const partial: Ref<boolean> = ref(false);
 
-  get multiple(): boolean {
-    return this.remoteVersion - this.localVersion > 1;
-  }
+    const conflicts: Ref<AssetUpdateConflictResult[]> = ref([]);
+    const done: Ref<boolean> = ref(false);
 
-  get skipped(): number | undefined {
-    const skipped = localStorage.getItem(SKIP_ASSET_DB_VERSION);
-    return skipped ? parseInt(skipped) : undefined;
-  }
+    const skipped = useLocalStorage('rotki_skip_asset_db_version', undefined);
 
-  set skipped(version: number | undefined) {
-    if (version === undefined) {
-      localStorage.removeItem(SKIP_ASSET_DB_VERSION);
-    } else {
-      localStorage.setItem(SKIP_ASSET_DB_VERSION, version.toString());
-    }
-  }
-
-  async mounted() {
-    const skipUpdate = sessionStorage.getItem('skip_update');
-    if (skipUpdate) {
-      return;
-    }
-
-    if (this.auto) {
-      await this.check();
-    }
-  }
-
-  async check() {
-    const checkResult = await this.checkForUpdate();
-    const skipped = this.skipped;
-    const versions = checkResult.versions;
-    if (this.auto && skipped && skipped === versions?.remote) {
-      return;
-    }
-    this.showUpdateDialog = checkResult.updateAvailable;
-    if (versions) {
-      this.localVersion = versions.local;
-      this.remoteVersion = versions.remote;
-      this.changes = versions.newChanges;
-      this.upToVersion = versions.remote;
-    }
-  }
-
-  skip() {
-    this.showUpdateDialog = false;
-    this.showConflictDialog = false;
-    if (this.skipUpdate) {
-      this.skipped = this.remoteVersion;
-    }
-  }
-
-  onChange(value: string) {
-    const number = parseInt(value);
-    if (isNaN(number)) {
-      this.upToVersion = this.localVersion + 1;
-    } else {
-      if (number < this.localVersion) {
-        this.upToVersion = this.localVersion + 1;
-      } else if (number > this.remoteVersion) {
-        this.upToVersion = this.remoteVersion;
-      } else {
-        this.upToVersion = number;
-      }
-    }
-  }
-
-  async updateAssets(resolution?: ConflictResolution) {
-    this.showUpdateDialog = false;
-    this.showConflictDialog = false;
-    const version = this.multiple ? this.upToVersion : this.remoteVersion;
-    const updateResult = await this.applyUpdates({ version, resolution });
-    if (updateResult.done) {
-      this.skipped = undefined;
-      this.done = true;
-    } else if (updateResult.conflicts) {
-      this.conflicts = updateResult.conflicts;
-      this.showConflictDialog = true;
-    }
-  }
-
-  async updateComplete() {
-    await this.logout();
+    const { logout } = useSessionStore();
+    const { checkForUpdate, applyUpdates } = useAssets();
     const { connect, setConnected } = useMainStore();
-    setConnected(false);
-    if (this.$interop.isPackaged) {
-      await this.restartBackend();
-    }
-    await connect();
+    const { restartBackend } = useBackendManagement();
+
+    const multiple = computed(() => {
+      return get(remoteVersion) - get(localVersion) > 1;
+    });
+
+    const check = async () => {
+      const checkResult = await checkForUpdate();
+      const skippedVersion = get(skipped);
+      const versions = checkResult.versions;
+      if (get(auto) && skippedVersion && skippedVersion === versions?.remote) {
+        return;
+      }
+      set(showUpdateDialog, checkResult.updateAvailable);
+      if (versions) {
+        set(localVersion, versions.local);
+        set(remoteVersion, versions.remote);
+        set(changes, versions.newChanges);
+        set(upToVersion, versions.remote);
+      }
+    };
+
+    const skip = () => {
+      set(showUpdateDialog, false);
+      set(showConflictDialog, false);
+      if (get(skipUpdate)) {
+        set(skipped, get(remoteVersion));
+      }
+    };
+
+    const onChange = (value: string) => {
+      const number = parseInt(value);
+      const local = get(localVersion);
+      if (isNaN(number)) {
+        set(upToVersion, local + 1);
+      } else {
+        if (number < local) {
+          set(upToVersion, local + 1);
+        } else if (number > get(remoteVersion)) {
+          set(upToVersion, get(remoteVersion));
+        } else {
+          set(upToVersion, number);
+        }
+      }
+    };
+
+    const updateAssets = async (resolution?: ConflictResolution) => {
+      set(showUpdateDialog, false);
+      set(showConflictDialog, false);
+      const version = get(multiple) ? get(upToVersion) : get(remoteVersion);
+      const updateResult = await applyUpdates({ version, resolution });
+      if (updateResult.done) {
+        set(skipped, undefined);
+        set(done, true);
+      } else if (updateResult.conflicts) {
+        set(conflicts, updateResult.conflicts);
+        set(showConflictDialog, true);
+      }
+    };
+
+    const updateComplete = async () => {
+      await logout();
+      setConnected(false);
+      await restartBackend();
+      await connect();
+    };
+
+    onMounted(async () => {
+      const skipUpdate = sessionStorage.getItem('skip_update');
+      if (skipUpdate) {
+        return;
+      }
+
+      if (get(auto)) {
+        await check();
+      }
+    });
+
+    return {
+      showUpdateDialog,
+      showConflictDialog,
+      skipUpdate,
+      localVersion,
+      remoteVersion,
+      changes,
+      upToVersion,
+      partial,
+      conflicts,
+      done,
+      multiple,
+      skipped,
+      check,
+      skip,
+      onChange,
+      updateAssets,
+      updateComplete
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

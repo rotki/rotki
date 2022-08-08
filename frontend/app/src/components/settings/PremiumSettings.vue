@@ -9,7 +9,7 @@
           <i18n tag="div" path="premium_settings.subtitle">
             <base-external-link
               :text="$tc('premium_settings.rotki_premium')"
-              :href="$interop.premiumURL"
+              :href="premiumURL"
             />
           </i18n>
         </template>
@@ -100,133 +100,117 @@
   </v-row>
 </template>
 
-<script lang="ts">
-import { mapActions, mapState } from 'pinia';
-import { Component, Vue } from 'vue-property-decorator';
+<script setup lang="ts">
+import { onMounted, Ref, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import { useInterop } from '@/electron-interop';
+import { default as i18nFn } from '@/i18n';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
 import { PremiumCredentialsPayload } from '@/store/session/types';
 import { useSettingsStore } from '@/store/settings';
-import { ActionStatus } from '@/store/types';
-import { SettingsUpdate } from '@/types/user';
 import { trimOnPaste } from '@/utils/event';
 
-@Component({
-  components: {
-    RevealableInput,
-    ConfirmDialog,
-    BaseExternalLink
-  },
-  computed: {
-    ...mapState(usePremiumStore, ['premium', 'premiumSync']),
-    ...mapState(useSessionStore, ['username'])
-  },
-  methods: {
-    ...mapActions(usePremiumStore, ['setup', 'deletePremium']),
-    ...mapActions(useSettingsStore, ['update'])
+const { username } = storeToRefs(useSessionStore());
+const { update } = useSettingsStore();
+const store = usePremiumStore();
+const { premium, premiumSync } = storeToRefs(store);
+const { setup, deletePremium } = store;
+
+const { premiumURL, premiumUserLoggedIn } = useInterop();
+
+const apiKey: Ref<string> = ref('');
+const apiSecret: Ref<string> = ref('');
+const sync: Ref<boolean> = ref(false);
+const edit: Ref<boolean> = ref(true);
+const confirmDeletePremium: Ref<boolean> = ref(false);
+const errorMessages: Ref<string[]> = ref([]);
+
+const clearErrors = () => {
+  set(errorMessages, []);
+};
+
+const onApiKeyPaste = (event: ClipboardEvent) => {
+  const paste = trimOnPaste(event);
+  if (paste) {
+    set(apiKey, paste);
   }
-})
-export default class PremiumSettings extends Vue {
-  apiKey: string = '';
-  apiSecret: string = '';
-  sync: boolean = false;
-  edit: boolean = true;
-  confirmDeletePremium: boolean = false;
-  errorMessages: string[] = [];
+};
 
-  premium!: boolean;
-  premiumSync!: boolean;
-  username!: string;
-
-  setup!: (payload: PremiumCredentialsPayload) => Promise<ActionStatus>;
-  deletePremium!: () => Promise<ActionStatus>;
-  update!: (settings: SettingsUpdate) => Promise<void>;
-
-  private reset() {
-    this.apiSecret = '';
-    this.apiKey = '';
-    this.edit = false;
+const onApiSecretPaste = (event: ClipboardEvent) => {
+  const paste = trimOnPaste(event);
+  if (paste) {
+    set(apiSecret, paste);
   }
+};
 
-  private clearErrors() {
-    for (let i = 0; i < this.errorMessages.length; i++) {
-      this.errorMessages.pop();
-    }
-  }
+const onSyncChange = async () => {
+  await update({ premiumShouldSync: get(sync) });
+};
 
-  onApiKeyPaste(event: ClipboardEvent) {
-    const paste = trimOnPaste(event);
-    if (paste) {
-      this.apiKey = paste;
-    }
-  }
+const cancelEdit = () => {
+  set(edit, false);
+  set(apiKey, '');
+  set(apiSecret, '');
+  clearErrors();
+};
 
-  onApiSecretPaste(event: ClipboardEvent) {
-    const paste = trimOnPaste(event);
-    if (paste) {
-      this.apiSecret = paste;
-    }
-  }
+const reset = () => {
+  set(apiSecret, '');
+  set(apiKey, '');
+  set(edit, false);
+};
 
-  mounted() {
-    this.sync = this.premiumSync;
-    this.edit = !this.premium && !this.edit;
+const setupPremium = async () => {
+  clearErrors();
+  if (get(premium) && !get(edit)) {
+    set(edit, true);
+    return;
   }
 
-  cancelEdit() {
-    this.edit = false;
-    this.apiKey = '';
-    this.apiSecret = '';
-    this.clearErrors();
+  const payload: PremiumCredentialsPayload = {
+    username: get(username),
+    apiKey: get(apiKey).trim(),
+    apiSecret: get(apiSecret).trim()
+  };
+  const result = await setup(payload);
+  if (!result.success) {
+    set(errorMessages, [
+      ...get(errorMessages),
+      result.message ?? i18nFn.tc('premium_settings.error.setting_failed')
+    ]);
+    return;
   }
+  premiumUserLoggedIn(true);
+  reset();
+};
 
-  async setupPremium() {
-    this.clearErrors();
-    if (this.premium && !this.edit) {
-      this.edit = true;
-      return;
-    }
-
-    const payload: PremiumCredentialsPayload = {
-      username: this.username,
-      apiKey: this.apiKey.trim(),
-      apiSecret: this.apiSecret.trim()
-    };
-    const result = await this.setup(payload);
-    if (!result.success) {
-      this.errorMessages.push(
-        result.message ?? this.$tc('premium_settings.error.setting_failed')
-      );
-      return;
-    }
-    this.$interop.premiumUserLoggedIn(true);
-    this.reset();
+const remove = async () => {
+  clearErrors();
+  set(confirmDeletePremium, false);
+  if (!get(premium)) {
+    return;
   }
-
-  async remove() {
-    this.clearErrors();
-    this.confirmDeletePremium = false;
-    if (!this.premium) {
-      return;
-    }
-    const result = await this.deletePremium();
-    if (!result.success) {
-      this.errorMessages.push(
-        result.message ?? this.$tc('premium_settings.error.removing_failed')
-      );
-      return;
-    }
-    this.$interop.premiumUserLoggedIn(false);
-    this.reset();
+  const result = await deletePremium();
+  if (!result.success) {
+    set(errorMessages, [
+      ...get(errorMessages),
+      result.message ?? i18nFn.tc('premium_settings.error.removing_failed')
+    ]);
+    return;
   }
+  premiumUserLoggedIn(false);
+  reset();
+};
 
-  async onSyncChange() {
-    await this.update({ premiumShouldSync: this.sync });
-  }
-}
+onMounted(() => {
+  set(sync, get(premiumSync));
+  set(edit, !get(premium) && !get(edit));
+});
 </script>
 
 <style scoped lang="scss">

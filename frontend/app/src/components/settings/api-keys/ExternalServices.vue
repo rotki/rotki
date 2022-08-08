@@ -136,14 +136,17 @@
   </card>
 </template>
 
-<script lang="ts">
-import { mapState } from 'pinia';
-import { Component, Vue } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
+<script setup lang="ts">
+import { computed, onMounted, Ref, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import { setupGeneralBalances } from '@/composables/balances';
+import { default as i18nFn } from '@/i18n';
+import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
@@ -152,113 +155,106 @@ import {
   ExternalServiceKeys,
   ExternalServiceName
 } from '@/types/user';
+import { assert } from '@/utils/assertions';
 
-@Component({
-  components: { ExternalLink, ApiKeyBox, ServiceKey, ConfirmDialog },
-  computed: {
-    ...mapState(useGeneralSettingsStore, ['activeModules'])
-  },
-  methods: {
-    ...mapActions('balances', ['fetchLoopringBalances'])
-  }
-})
-export default class ExternalServices extends Vue {
-  etherscanKey: string = '';
-  cryptocompareKey: string = '';
-  covalentKey: string = '';
-  beaconchainKey: string = '';
-  loopringKey: string = '';
-  openseaKey: string = '';
+const etherscanKey = ref('');
+const cryptocompareKey = ref('');
+const covalentKey = ref('');
+const beaconchainKey = ref('');
+const loopringKey = ref('');
+const openseaKey = ref('');
 
-  serviceToDelete: ExternalServiceName | '' = '';
+const serviceToDelete: Ref<ExternalServiceName | ''> = ref('');
 
-  loading: boolean = false;
-  activeModules!: Module[];
-  fetchLoopringBalances!: (refresh: boolean) => Promise<void>;
+const loading = ref(false);
 
-  get isLoopringActive(): boolean {
-    return this.activeModules.includes(Module.LOOPRING);
-  }
+const { activeModules } = storeToRefs(useGeneralSettingsStore());
+const { setMessage } = useMainStore();
+const { fetchLoopringBalances } = setupGeneralBalances();
 
-  private updateKeys({
-    cryptocompare,
-    covalent,
-    etherscan,
-    beaconchain,
-    loopring,
-    opensea
-  }: ExternalServiceKeys) {
-    this.cryptocompareKey = cryptocompare?.apiKey || '';
-    this.covalentKey = covalent?.apiKey || '';
-    this.etherscanKey = etherscan?.apiKey || '';
-    this.beaconchainKey = beaconchain?.apiKey || '';
-    this.loopringKey = loopring?.apiKey || '';
-    this.openseaKey = opensea?.apiKey || '';
-  }
+const isLoopringActive = computed(() => {
+  return get(activeModules).includes(Module.LOOPRING);
+});
 
-  async mounted() {
-    this.loading = true;
-    this.updateKeys(await this.$api.queryExternalServices());
-    this.loading = false;
-  }
+const updateKeys = ({
+  cryptocompare,
+  covalent,
+  etherscan,
+  beaconchain,
+  loopring,
+  opensea
+}: ExternalServiceKeys) => {
+  set(cryptocompareKey, cryptocompare?.apiKey || '');
+  set(covalentKey, covalent?.apiKey || '');
+  set(etherscanKey, etherscan?.apiKey || '');
+  set(beaconchainKey, beaconchain?.apiKey || '');
+  set(loopringKey, loopring?.apiKey || '');
+  set(openseaKey, opensea?.apiKey || '');
+};
 
-  async save(serviceName: ExternalServiceName, key: string) {
-    const { setMessage } = useMainStore();
-    const keys: ExternalServiceKey[] = [
-      { name: serviceName, apiKey: key.trim() }
-    ];
+const save = async (serviceName: ExternalServiceName, key: string) => {
+  const keys: ExternalServiceKey[] = [
+    { name: serviceName, apiKey: key.trim() }
+  ];
 
-    try {
-      this.loading = true;
-      this.updateKeys(await this.$api.setExternalServices(keys));
-      setMessage({
-        title: this.$t('external_services.set.success.title').toString(),
-        description: this.$t('external_services.set.success.message', {
+  try {
+    set(loading, true);
+    updateKeys(await api.setExternalServices(keys));
+    setMessage({
+      title: i18nFn.t('external_services.set.success.title').toString(),
+      description: i18nFn
+        .t('external_services.set.success.message', {
           serviceName
-        }).toString(),
-        success: true
-      });
-      if (serviceName === 'loopring') {
-        await this.fetchLoopringBalances(true);
-      }
-    } catch (e: any) {
-      setMessage({
-        title: this.$t('external_services.set.error.title').toString(),
-        description: this.$t('external_services.set.error.message', {
+        })
+        .toString(),
+      success: true
+    });
+    if (serviceName === 'loopring') {
+      await fetchLoopringBalances(true);
+    }
+  } catch (e: any) {
+    setMessage({
+      title: i18nFn.t('external_services.set.error.title').toString(),
+      description: i18nFn
+        .t('external_services.set.error.message', {
           error: e.message
-        }).toString(),
-        success: false
-      });
-    }
-    this.loading = false;
+        })
+        .toString(),
+      success: false
+    });
   }
+  set(loading, false);
+};
 
-  deleteKey(serviceName: ExternalServiceName) {
-    this.serviceToDelete = serviceName;
-  }
+const deleteKey = (serviceName: ExternalServiceName) => {
+  set(serviceToDelete, serviceName);
+};
 
-  async confirmDelete() {
-    /* istanbul ignore if */
-    if (!this.serviceToDelete) {
-      return;
-    }
-    const { setMessage } = useMainStore();
-    try {
-      this.loading = true;
-      this.updateKeys(
-        await this.$api.deleteExternalServices(this.serviceToDelete)
-      );
-    } catch (e: any) {
-      setMessage({
-        title: this.$t('external_services.delete_error.title').toString(),
-        description: this.$t('external_services.delete_error.description', {
+const confirmDelete = async () => {
+  const exchangeName = get(serviceToDelete);
+  assert(exchangeName);
+  set(loading, true);
+  try {
+    updateKeys(await api.deleteExternalServices(exchangeName));
+  } catch (e: any) {
+    setMessage({
+      title: i18nFn.t('external_services.delete_error.title').toString(),
+      description: i18nFn
+        .t('external_services.delete_error.description', {
           message: e.message
-        }).toString(),
-        success: false
-      });
-    }
-    this.loading = false;
-    this.serviceToDelete = '';
+        })
+        .toString(),
+      success: false
+    });
   }
-}
+
+  set(loading, false);
+  set(serviceToDelete, '');
+};
+
+onMounted(async () => {
+  set(loading, true);
+  updateKeys(await api.queryExternalServices());
+  set(loading, false);
+});
 </script>

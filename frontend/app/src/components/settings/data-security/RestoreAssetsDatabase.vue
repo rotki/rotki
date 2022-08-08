@@ -8,7 +8,7 @@
           depressed
           color="primary"
           class="mt-2"
-          @click="activateRestoreAssets()"
+          @click="confirmRestore = true"
         >
           {{ $t('asset_update.restore.action') }}
         </v-btn>
@@ -40,14 +40,64 @@
   </fragment>
 </template>
 
-<script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+<script setup lang="ts">
+import { Severity } from '@rotki/common/lib/messages';
+import { ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import Fragment from '@/components/helper/Fragment';
-import RestoreAssetsDatabaseMixin from '@/mixins/restore-assets-database-mixin';
+import { useBackendManagement } from '@/composables/backend';
+import i18n from '@/i18n';
+import { api } from '@/services/rotkehlchen-api';
+import { useMainStore } from '@/store/main';
+import { useNotifications } from '@/store/notifications';
+import { useSessionStore } from '@/store/session';
 
-export default defineComponent({
-  name: 'RestoreAssetsDatabase',
-  components: { Fragment },
-  mixins: [RestoreAssetsDatabaseMixin]
-});
+const confirmRestore = ref(false);
+const doubleConfirmation = ref(false);
+const restoreHard = ref(false);
+const done = ref(false);
+
+const { notify } = useNotifications();
+const { connect, setConnected } = useMainStore();
+const { logout } = useSessionStore();
+
+const { restartBackend } = useBackendManagement();
+
+async function confirmHardReset() {
+  set(restoreHard, true);
+  await restoreAssets();
+}
+
+async function restoreAssets() {
+  try {
+    set(confirmRestore, false);
+    const updated = await api.assets.restoreAssetsDatabase(
+      'hard',
+      get(restoreHard)
+    );
+    if (updated) {
+      set(done, true);
+      set(restoreHard, false);
+    }
+  } catch (e: any) {
+    const title = i18n.t('asset_update.restore.title').toString();
+    const message = e.toString();
+    if (message.includes('There are assets that can not')) {
+      set(doubleConfirmation, true);
+    }
+    notify({
+      title,
+      message,
+      severity: Severity.ERROR,
+      display: true
+    });
+  }
+}
+
+async function updateComplete() {
+  await logout();
+  setConnected(false);
+  await restartBackend();
+  await connect();
+}
 </script>

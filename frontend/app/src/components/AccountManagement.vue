@@ -129,7 +129,7 @@ import {
 } from '@/components/account-management/utils';
 import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue';
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
-import { setupBackendManagement } from '@/composables/backend';
+import { useBackendManagement } from '@/composables/backend';
 import { useTheme } from '@/composables/common';
 import { getPremium } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
@@ -227,7 +227,7 @@ export default defineComponent({
       interop.premiumUserLoggedIn(get(premium));
     };
 
-    const { restartBackend } = setupBackendManagement();
+    const { restartBackend } = useBackendManagement();
 
     onMounted(async () => {
       const { sessionOnly } = getBackendUrl();

@@ -32,7 +32,7 @@ export const saveUserOptions = (config: Partial<BackendOptions>) => {
   localStorage.setItem(BACKEND_OPTIONS, options);
 };
 
-export const setupBackendManagement = (loaded: () => void = () => {}) => {
+export const useBackendManagement = (loaded: () => void = () => {}) => {
   const interop = useInterop();
 
   const defaultLogLevel = computed<LogLevel>(() => getDefaultLogLevel());
@@ -102,6 +102,7 @@ export const setupBackendManagement = (loaded: () => void = () => {}) => {
   return {
     logLevel,
     defaultLogLevel,
+    defaultLogDirectory,
     options,
     fileConfig,
     saveOptions,

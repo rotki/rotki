@@ -154,9 +154,18 @@
 </template>
 
 <script lang="ts">
-import cloneDeep from 'lodash/cloneDeep';
-import { mapActions } from 'pinia';
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  Ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
+import i18n from '@/i18n';
 import {
   WatcherOpTypes,
   Watcher,
@@ -165,247 +174,266 @@ import {
 } from '@/services/session/types';
 import { useWatchersStore } from '@/store/session/watchers';
 
-@Component({
-  methods: {
-    ...mapActions(useWatchersStore, [
-      'addWatchers',
-      'deleteWatchers',
-      'editWatchers'
-    ])
-  }
-})
-export default class WatcherDialog extends Vue {
-  @Prop({ required: true })
-  title!: string;
-  @Prop({ required: true })
-  message!: string;
-  @Prop({ type: Boolean, required: true })
-  display!: boolean;
-
-  @Prop({ required: false, default: 'Watcher Value' })
-  watcherValueLabel!: string;
-  @Prop({ required: true, default: null })
-  watcherContentId!: number | null;
-  @Prop({ required: false, default: '' })
-  preselectWatcherType!: WatcherTypes;
-  @Prop({ required: false, type: Array, default: () => [] })
-  existingWatchers!: Watcher<WatcherType>[];
-
-  watcherType: WatcherTypes | null = null;
-  watcherOperation: WatcherOpTypes | null = null;
-  watcherValue: string | null = null;
-  validationMessage: string = '';
-  validationStatus: 'success' | 'error' | '' = '';
-
-  addWatchers!: (
-    watchers: Omit<Watcher<WatcherTypes>, 'identifier'>[]
-  ) => Promise<Watcher<WatcherType>[]>;
-  editWatchers!: (
-    watchers: Watcher<WatcherType>[]
-  ) => Promise<Watcher<WatcherType>[]>;
-  deleteWatchers!: (identifiers: string[]) => Promise<Watcher<WatcherType>[]>;
-
-  loadedWatchers: Watcher<WatcherType>[] = [];
-  existingWatchersEdit: {
-    [identifier: string]: boolean;
-  } = {};
-
-  existingWatchersIcon(identifier: string): string {
-    return this.existingWatchersEdit[identifier] ? 'mdi-check' : 'mdi-pencil';
-  }
-
-  @Watch('display')
-  onDialogToggle() {
-    if (this.display) {
-      this.watcherType = this.preselectWatcherType;
-      this.loadedWatchers = cloneDeep(this.existingWatchers);
-      this.loadedWatchers.forEach(watcher => {
-        this.existingWatchersEdit[watcher.identifier] = false;
-      });
-    } else {
-      this.watcherType = null;
-      this.loadedWatchers = [];
-      this.existingWatchersEdit = {};
+export default defineComponent({
+  name: 'WatcherDialog',
+  props: {
+    title: { required: true, type: String },
+    message: { required: true, type: String },
+    display: { required: true, type: Boolean },
+    watcherValueLabel: {
+      required: false,
+      type: String,
+      default: 'Watcher Value'
+    },
+    watcherContentId: {
+      required: false,
+      type: String,
+      default: null
+    },
+    preselectWatcherType: {
+      required: false,
+      type: String as PropType<WatcherTypes>,
+      default: ''
+    },
+    existingWatchers: {
+      required: false,
+      type: Array as PropType<Watcher<WatcherType>[]>,
+      default: () => []
     }
-  }
+  },
+  emits: ['cancel'],
+  setup(props, { emit }) {
+    const {
+      display,
+      preselectWatcherType,
+      existingWatchers,
+      watcherContentId
+    } = toRefs(props);
+    const watcherType: Ref<WatcherTypes | null> = ref(null);
+    const watcherOperation: Ref<WatcherOpTypes | null> = ref(null);
+    const watcherValue: Ref<string | null> = ref(null);
+    const validationMessage: Ref<string> = ref('');
+    const validationStatus: Ref<'success' | 'error' | ''> = ref('');
+    const existingWatchersEdit: Ref<Record<string, boolean>> = ref({});
 
-  watcherTypes = [
-    {
-      text: this.$t(
-        'watcher_dialog.types.make_collateralization_ratio'
-      ).toString(),
-      type: 'makervault_collateralization_ratio',
-      value: 'makervault_collateralization_ratio'
-    }
-  ];
+    let store = useWatchersStore();
+    const { watchers } = storeToRefs(store);
+    const { addWatchers, editWatchers, deleteWatchers } = store;
 
-  watcherOperations = {
-    makervault_collateralization_ratio: [
+    const loadedWatchers = computed(() => {
+      const id = get(watcherContentId)?.toString();
+      return get(watchers).filter(watcher => watcher.args.vault_id === id);
+    });
+
+    const watcherTypes = computed(() => [
       {
-        op: 'gt',
-        value: 'gt',
-        text: this.$t('watcher_dialog.ratio.gt').toString()
-      },
-      {
-        op: 'ge',
-        value: 'ge',
-        text: this.$t('watcher_dialog.ratio.ge').toString()
-      },
-      {
-        op: 'lt',
-        value: 'lt',
-        text: this.$t('watcher_dialog.ratio.lt').toString()
-      },
-      {
-        op: 'le',
-        value: 'le',
-        text: this.$t('watcher_dialog.ratio.le').toString()
+        text: i18n
+          .t('watcher_dialog.types.make_collateralization_ratio')
+          .toString(),
+        type: 'makervault_collateralization_ratio',
+        value: 'makervault_collateralization_ratio'
       }
-    ]
-  };
+    ]);
 
-  changeEditMode(identifier: string) {
-    this.existingWatchersEdit = {
-      ...this.existingWatchersEdit,
-      [identifier]: !this.existingWatchersEdit[identifier]
-    };
-  }
-
-  async deleteWatcher(identifier: string) {
-    try {
-      const updatedWatchers = await this.deleteWatchers([identifier]);
-      this.validateSettingChange(
-        'success',
-        this.$t('watcher_dialog.delete_success').toString()
-      );
-      this.clear();
-      this.updateLoadedWatchers(updatedWatchers);
-    } catch (e: any) {
-      this.validateSettingChange(
-        'error',
-        this.$t('watcher_dialog.delete_error', {
-          message: e.message
-        }).toString()
-      );
-    }
-  }
-
-  private updateLoadedWatchers(updatedWatchers: Watcher<WatcherType>[]) {
-    this.loadedWatchers = cloneDeep(
-      updatedWatchers.filter(
-        watcher => this.watcherContentId?.toString() === watcher.args.vault_id
-      )
-    );
-  }
-
-  private clear() {
-    this.watcherValue = null;
-    this.watcherOperation = null;
-  }
-
-  async editWatcher(watcher: Watcher<WatcherType>) {
-    if (!this.existingWatchersEdit[watcher.identifier]) {
-      // If we're not in edit mode, just go into edit mode
-      this.changeEditMode(watcher.identifier);
-    } else {
-      // If we're in edit mode, check to see if the values have changed before
-      // sending an API call
-      const existingWatcherArgs = this.existingWatchers.find(
-        existingWatcher => existingWatcher.identifier === watcher.identifier
-      )!.args;
-      const modifiedWatcherArgs = watcher.args;
-
-      if (
-        existingWatcherArgs.op !== modifiedWatcherArgs.op ||
-        existingWatcherArgs.ratio !== modifiedWatcherArgs.ratio
-      ) {
-        try {
-          const updatedWatchers = await this.editWatchers([watcher]);
-          this.validateSettingChange(
-            'success',
-            this.$t('watcher_dialog.edit_success').toString()
-          );
-          this.changeEditMode(watcher.identifier);
-          this.updateLoadedWatchers(updatedWatchers);
-        } catch (e: any) {
-          this.validateSettingChange(
-            'error',
-            this.$t('watcher_dialog.edit_error', {
-              message: e.message
-            }).toString()
-          );
+    const watcherOperations = computed(() => ({
+      makervault_collateralization_ratio: [
+        {
+          op: 'gt',
+          value: 'gt',
+          text: i18n.t('watcher_dialog.ratio.gt').toString()
+        },
+        {
+          op: 'ge',
+          value: 'ge',
+          text: i18n.t('watcher_dialog.ratio.ge').toString()
+        },
+        {
+          op: 'lt',
+          value: 'lt',
+          text: i18n.t('watcher_dialog.ratio.lt').toString()
+        },
+        {
+          op: 'le',
+          value: 'le',
+          text: i18n.t('watcher_dialog.ratio.le').toString()
         }
-      } else {
-        this.changeEditMode(watcher.identifier);
-      }
-    }
-  }
+      ]
+    }));
 
-  async addWatcher() {
-    if (
-      !(
-        this.watcherType &&
-        this.watcherValue &&
-        this.watcherOperation &&
-        this.watcherContentId
-      )
-    ) {
-      return;
-    }
+    const existingWatchersIcon = (identifier: string): string => {
+      const edit = get(existingWatchersEdit);
+      return edit[identifier] ? 'mdi-check' : 'mdi-pencil';
+    };
 
-    const watcherData: Omit<Watcher<WatcherType>, 'identifier'> = {
-      type: this.watcherType,
-      args: {
-        ratio: this.watcherValue,
-        op: this.watcherOperation,
-        vault_id: this.watcherContentId.toString()
+    const validateSettingChange = (
+      targetState: string,
+      message: string = '',
+      timeOut: number = 5500
+    ) => {
+      if (targetState === 'success' || targetState === 'error') {
+        setTimeout(() => {
+          set(validationMessage, message);
+          set(validationStatus, targetState);
+        }, 200);
+        setTimeout(() => {
+          set(validationMessage, '');
+          set(validationStatus, '');
+        }, timeOut);
       }
     };
 
-    try {
-      const updatedWatchers = await this.addWatchers([watcherData]);
-      this.validateSettingChange(
-        'success',
-        this.$t('watcher_dialog.add_success').toString()
-      );
-      this.clear();
-      this.updateLoadedWatchers(updatedWatchers);
-    } catch (e: any) {
-      this.validateSettingChange(
-        'error',
-        this.$t('watcher_dialog.add_error', { message: e.message }).toString()
-      );
-    }
-  }
+    const changeEditMode = (identifier: string) => {
+      const edit = get(existingWatchersEdit);
+      set(existingWatchersEdit, {
+        ...edit,
+        [identifier]: !edit[identifier]
+      });
+    };
 
-  validateSettingChange(
-    targetState: string,
-    message: string = '',
-    timeOut: number = 5500
-  ) {
-    if (targetState === 'success' || targetState === 'error') {
-      setTimeout(() => {
-        this.validationMessage = message;
-        this.validationStatus = targetState;
-      }, 200);
-      setTimeout(() => {
-        this.validationMessage = '';
-        this.validationStatus = '';
-      }, timeOut);
-    }
-  }
+    const addWatcher = async () => {
+      const type = get(watcherType);
+      const value = get(watcherValue);
+      const operation = get(watcherOperation);
+      const contentId = get(watcherContentId);
+      if (!(type && value && operation && contentId)) {
+        return;
+      }
 
-  @Emit()
-  cancel() {
-    for (const index in this.existingWatchersEdit) {
-      // Reset edit mode on all fields
-      this.existingWatchersEdit[index] = false;
-      this.clear();
+      const watcherData: Omit<Watcher<WatcherType>, 'identifier'> = {
+        type: type,
+        args: {
+          ratio: value,
+          op: operation,
+          vault_id: contentId.toString()
+        }
+      };
+
+      try {
+        await addWatchers([watcherData]);
+        validateSettingChange(
+          'success',
+          i18n.t('watcher_dialog.add_success').toString()
+        );
+        clear();
+      } catch (e: any) {
+        validateSettingChange(
+          'error',
+          i18n.t('watcher_dialog.add_error', { message: e.message }).toString()
+        );
+      }
+    };
+
+    const editWatcher = async (watcher: Watcher<WatcherType>) => {
+      const edit = get(existingWatchersEdit);
+      if (!edit[watcher.identifier]) {
+        // If we're not in edit mode, just go into edit mode
+        changeEditMode(watcher.identifier);
+      } else {
+        // If we're in edit mode, check to see if the values have changed before
+        // sending an API call
+        const existingWatcherArgs = get(existingWatchers).find(
+          existingWatcher => existingWatcher.identifier === watcher.identifier
+        )!.args;
+        const modifiedWatcherArgs = watcher.args;
+
+        if (
+          existingWatcherArgs.op !== modifiedWatcherArgs.op ||
+          existingWatcherArgs.ratio !== modifiedWatcherArgs.ratio
+        ) {
+          try {
+            await editWatchers([watcher]);
+            validateSettingChange(
+              'success',
+              i18n.t('watcher_dialog.edit_success').toString()
+            );
+            changeEditMode(watcher.identifier);
+          } catch (e: any) {
+            validateSettingChange(
+              'error',
+              i18n
+                .t('watcher_dialog.edit_error', {
+                  message: e.message
+                })
+                .toString()
+            );
+          }
+        } else {
+          changeEditMode(watcher.identifier);
+        }
+      }
+    };
+
+    const deleteWatcher = async (identifier: string) => {
+      try {
+        await deleteWatchers([identifier]);
+        validateSettingChange(
+          'success',
+          i18n.t('watcher_dialog.delete_success').toString()
+        );
+        clear();
+      } catch (e: any) {
+        validateSettingChange(
+          'error',
+          i18n
+            .t('watcher_dialog.delete_error', {
+              message: e.message
+            })
+            .toString()
+        );
+      }
+    };
+
+    const clear = () => {
+      set(watcherValue, null);
+      set(watcherOperation, null);
+    };
+
+    watch(display, display => {
+      if (display) {
+        set(watcherType, get(preselectWatcherType));
+
+        const edit = { ...get(existingWatchersEdit) };
+        get(loadedWatchers).forEach(watcher => {
+          edit[watcher.identifier] = false;
+        });
+        set(existingWatchersEdit, edit);
+      } else {
+        set(watcherType, null);
+        set(existingWatchersEdit, {});
+      }
+    });
+
+    const cancel = () => {
+      emit('cancel');
+      const edit = { ...get(existingWatchersEdit) };
+      for (const index in edit) {
+        // Reset edit mode on all fields
+        edit[index] = false;
+      }
       // Reset unsaved changes to the current saved state
-      this.loadedWatchers = cloneDeep(this.existingWatchers);
-    }
+      set(existingWatchersEdit, edit);
+      clear();
+    };
+
+    return {
+      loadedWatchers,
+      watcherValue,
+      watcherType,
+      watcherTypes,
+      watcherOperation,
+      watcherOperations,
+      validationMessage,
+      validationStatus,
+      existingWatchersEdit,
+      addWatcher,
+      editWatcher,
+      deleteWatcher,
+      existingWatchersIcon,
+      clear,
+      cancel
+    };
   }
-}
+});
 </script>
 
 <style lang="scss" scoped>
