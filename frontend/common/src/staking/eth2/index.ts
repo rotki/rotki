@@ -66,8 +66,8 @@ export type Eth2Details = z.infer<typeof Eth2Details>
 export type Eth2DailyStatsPayload = {
   readonly limit: number;
   readonly offset: number;
-  readonly orderByAttribute: string;
-  readonly ascending: boolean;
+  readonly orderByAttributes: string[];
+  readonly ascending: boolean[];
   readonly validators?: number[]
   readonly fromTimestamp?: number;
   readonly toTimestamp?: number;

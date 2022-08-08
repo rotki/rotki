@@ -2,7 +2,7 @@
   <v-data-table
     ref="tableRef"
     v-bind="$attrs"
-    must-sort
+    :must-sort="mustSort"
     :sort-desc="sortDesc"
     :items="items"
     :item-class="itemClass"
@@ -53,6 +53,7 @@ export default defineComponent({
   name: 'DataTable',
   props: {
     sortDesc: { required: false, type: Boolean, default: true },
+    mustSort: { required: false, type: Boolean, default: true },
     items: { required: true, type: Array },
     headers: { required: true, type: Array as PropType<DataTableHeader[]> },
     expanded: { required: false, type: Array, default: () => [] },

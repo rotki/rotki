@@ -228,10 +228,12 @@ export const routesRef = computed(() => ({
     text: i18n.t('navigation_menu.settings_sub.modules').toString()
   },
   ASSETS: {
-    route: '/assets/:identifier'
+    route: '/assets/:identifier',
+    text: i18n.t('navigation_menu.assets').toString()
   },
   LOCATIONS: {
-    route: '/locations/:identifier'
+    route: '/locations/:identifier',
+    text: i18n.t('navigation_menu.locations').toString()
   }
 }));
 

@@ -246,11 +246,7 @@ import {
 } from '@/components/history/filtering/types';
 import { TransactionEventFormInstance } from '@/components/history/TransactionEventForm.vue';
 import { isSectionLoading } from '@/composables/common';
-import {
-  getCollectionData,
-  setupEntryLimit,
-  setupIgnore
-} from '@/composables/history';
+import { setupIgnore } from '@/composables/history';
 import i18n from '@/i18n';
 import {
   EthTransaction,
@@ -269,6 +265,7 @@ import { useFrontendSettingsStore } from '@/store/settings';
 import { useTasks } from '@/store/tasks';
 import { Collection } from '@/types/collection';
 import { TaskType } from '@/types/task-type';
+import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 type PaginationOptions = {
@@ -538,21 +535,14 @@ export default defineComponent({
       let paginationOptions = {};
       const optionsVal = get(options);
       if (optionsVal) {
-        set(options, {
-          ...optionsVal,
-          sortBy: optionsVal.sortBy.length > 0 ? [optionsVal.sortBy[0]] : [],
-          sortDesc:
-            optionsVal.sortDesc.length > 0 ? [optionsVal.sortDesc[0]] : []
-        });
-
         const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
         const offset = (page - 1) * itemsPerPage;
 
         paginationOptions = {
           limit: itemsPerPage,
           offset,
-          orderByAttribute: sortBy.length > 0 ? sortBy[0] : 'timestamp',
-          ascending: !sortDesc[0]
+          orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
+          ascending: sortDesc.map(bool => !bool)
         };
       }
 

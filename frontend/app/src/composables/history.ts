@@ -1,58 +1,12 @@
-import { computed, Ref } from '@vue/composition-api';
+import { Ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { EntryMeta } from '@/services/history/types';
 import { useHistory } from '@/store/history';
 import { IgnoreActionPayload, IgnoreActionType } from '@/store/history/types';
 import { useMainStore } from '@/store/store';
 import { ActionStatus } from '@/store/types';
-import { Collection } from '@/types/collection';
 import { uniqueStrings } from '@/utils/data';
-
-export const getCollectionData = <T>(collection: Ref<Collection<T>>) => {
-  const data = computed<T[]>(() => {
-    return get(collection).data as T[];
-  });
-  const limit = computed<number>(() => get(collection).limit);
-  const found = computed<number>(() => get(collection).found);
-  const total = computed<number>(() => get(collection).total);
-
-  return {
-    data,
-    limit,
-    found,
-    total
-  };
-};
-
-export const setupEntryLimit = (
-  limit: Ref<number>,
-  found: Ref<number>,
-  total: Ref<number>
-) => {
-  const premium = getPremium();
-
-  const itemLength = computed(() => {
-    const isPremium = get(premium);
-    const totalFound = get(found);
-    if (isPremium) {
-      return totalFound;
-    }
-
-    const entryLimit = get(limit);
-    return Math.min(totalFound, entryLimit);
-  });
-
-  const showUpgradeRow = computed(() => {
-    return get(limit) <= get(total) && get(limit) > 0;
-  });
-
-  return {
-    itemLength,
-    showUpgradeRow
-  };
-};
 
 export const setupIgnore = <T extends EntryMeta>(
   type: IgnoreActionType,

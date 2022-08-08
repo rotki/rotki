@@ -62,6 +62,10 @@
             <v-icon>mdi-crane</v-icon>
           </v-btn>
           <app-update-indicator />
+          <user-notes-indicator
+            :visible="showNotesSidebar"
+            @visible:update="showNotesSidebar = $event"
+          />
           <pinned-indicator
             :visible="showPinned"
             @visible:update="showPinned = $event"
@@ -94,6 +98,10 @@
       <pinned-sidebar
         :visible="showPinned"
         @visible:update="showPinned = $event"
+      />
+      <user-notes-sidebar
+        :visible="showNotesSidebar"
+        @visible:update="showNotesSidebar = $event"
       />
       <div
         class="app-main"
@@ -240,6 +248,12 @@ export default defineComponent({
     ),
     PinnedSidebar: defineAsyncComponent(
       () => import('@/components/PinnedSidebar.vue')
+    ),
+    UserNotesIndicator: defineAsyncComponent(
+      () => import('@/components/UserNotesIndicator.vue')
+    ),
+    UserNotesSidebar: defineAsyncComponent(
+      () => import('@/components/UserNotesSidebar.vue')
     )
   },
   setup(_, { root }) {
@@ -251,6 +265,7 @@ export default defineComponent({
 
     const showNotificationBar = ref(false);
     const showHelpBar = ref(false);
+    const showNotesSidebar = ref(false);
     const showPinned = ref(false);
     const showAbout = ref(false);
     const showDrawer = ref(false);
@@ -424,6 +439,7 @@ export default defineComponent({
       showNotificationBar,
       showAbout,
       showHelpBar,
+      showNotesSidebar,
       showPinned,
       isMini,
       startupErrorMessage,

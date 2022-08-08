@@ -1,6 +1,7 @@
 import { Balance, NumericString } from '@rotki/common';
 import { z, ZodTypeAny } from 'zod';
 import { SUPPORTED_TRADE_LOCATIONS } from '@/data/defaults';
+import { getCollectionResponseType } from '@/types/collection';
 import { SUPPORTED_EXCHANGES } from '@/types/exchanges';
 import { LedgerActionEnum } from '@/types/ledger-actions';
 
@@ -56,15 +57,6 @@ function getEntryWithMeta(obj: ZodTypeAny) {
     .merge(EntryMeta);
 }
 
-function getCollectionResponseType(obj: ZodTypeAny) {
-  return z.object({
-    entries: z.array(obj),
-    entriesFound: z.number(),
-    entriesLimit: z.number(),
-    entriesTotal: z.number()
-  });
-}
-
 // Trades
 export const TradeType = z.enum([
   'buy',
@@ -109,8 +101,8 @@ export type NewTrade = Omit<Trade, 'tradeId' | 'ignoredInAccounting'>;
 export type HistoryRequestPayload<T> = {
   readonly limit: number;
   readonly offset: number;
-  readonly orderByAttribute?: keyof T;
-  readonly ascending: boolean;
+  readonly orderByAttributes?: (keyof T)[];
+  readonly ascending: boolean[];
   readonly onlyCache?: boolean;
 };
 

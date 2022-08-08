@@ -63,6 +63,7 @@ import {
 import { IgnoreActionType } from '@/store/history/types';
 import { SyncConflictPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
+import { Collection } from '@/types/collection';
 import { Exchange, Exchanges } from '@/types/exchanges';
 import {
   AccountSession,
@@ -70,6 +71,11 @@ import {
   LoginCredentials,
   SyncConflictError
 } from '@/types/login';
+import {
+  UserNote,
+  UserNoteCollectionResponse,
+  UserNotesFilter
+} from '@/types/notes';
 import { EthereumRpcNode, EthereumRpcNodeList } from '@/types/settings';
 import {
   emptyPagination,
@@ -88,6 +94,7 @@ import {
   UserSettingsModel
 } from '@/types/user';
 import { assert } from '@/utils/assertions';
+import { mapCollectionResponse } from '@/utils/collection';
 import { nonNullProperties } from '@/utils/data';
 import { downloadFileByUrl } from '@/utils/download';
 
@@ -1059,7 +1066,10 @@ export class RotkehlchenApi {
       axiosSnakeCaseTransformer({
         asyncQuery,
         ...payload,
-        orderByAttribute: getUpdatedKey(payload.orderByAttribute, false)
+        orderByAttributes:
+          payload.orderByAttributes?.map((item: string) =>
+            getUpdatedKey(item, false)
+          ) ?? []
       }),
       {
         validateStatus: validWithSessionAndExternalService,
@@ -1108,7 +1118,7 @@ export class RotkehlchenApi {
     return handleResponse(response);
   }
 
-  private async interalKrakenStaking<T>(
+  private async internalKrakenStaking<T>(
     pagination: KrakenStakingPagination,
     asyncQuery: boolean = false
   ): Promise<T> {
@@ -1117,7 +1127,10 @@ export class RotkehlchenApi {
       axiosSnakeCaseTransformer({
         asyncQuery,
         ...pagination,
-        orderByAttribute: getUpdatedKey(pagination.orderByAttribute, false)
+        orderByAttributes:
+          pagination.orderByAttributes?.map(item =>
+            getUpdatedKey(item, false)
+          ) ?? []
       }),
       {
         validateStatus: validWithSessionAndExternalService,
@@ -1128,13 +1141,13 @@ export class RotkehlchenApi {
   }
 
   async refreshKrakenStaking(): Promise<PendingTask> {
-    return await this.interalKrakenStaking(emptyPagination(), true);
+    return await this.internalKrakenStaking(emptyPagination(), true);
   }
 
   async fetchKrakenStakingEvents(
     pagination: KrakenStakingPagination
   ): Promise<KrakenStakingEvents> {
-    const data = await this.interalKrakenStaking({
+    const data = await this.internalKrakenStaking({
       ...pagination,
       onlyCache: true
     });
@@ -1414,6 +1427,55 @@ export class RotkehlchenApi {
       }
     );
     return BackendConfiguration.parse(handleResponse(response));
+  }
+
+  async fetchUserNotes(filter: UserNotesFilter): Promise<Collection<UserNote>> {
+    const response = await this.axios.post<ActionResult<Collection<UserNote>>>(
+      '/notes',
+      axiosSnakeCaseTransformer(filter),
+      {
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    return mapCollectionResponse<UserNote>(
+      UserNoteCollectionResponse.parse(handleResponse(response))
+    );
+  }
+
+  async addUserNote(payload: Partial<UserNote>): Promise<number> {
+    const response = await this.axios.put<ActionResult<number>>(
+      '/notes',
+      axiosSnakeCaseTransformer(payload),
+      {
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    return handleResponse(response);
+  }
+
+  async updateUserNote(payload: Partial<UserNote>): Promise<boolean> {
+    const response = await this.axios.patch<ActionResult<boolean>>(
+      '/notes',
+      axiosSnakeCaseTransformer(payload),
+      {
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    return handleResponse(response);
+  }
+
+  async deleteUserNote(identifier: number): Promise<boolean> {
+    const response = await this.axios.delete<ActionResult<boolean>>('/notes', {
+      data: {
+        identifier
+      },
+      transformResponse: basicAxiosTransformer
+    });
+
+    return handleResponse(response);
   }
 }
 

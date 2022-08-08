@@ -68,6 +68,7 @@ export class HistoryApi {
           asyncQuery,
           ...payload
         }),
+        paramsSerializer,
         validateStatus: validWithParamsSessionAndExternalService,
         transformResponse: basicAxiosTransformer
       })
@@ -127,6 +128,7 @@ export class HistoryApi {
           asyncQuery,
           ...payload
         }),
+        paramsSerializer,
         validateStatus: validWithParamsSessionAndExternalService,
         transformResponse: basicAxiosTransformer
       })
@@ -163,7 +165,10 @@ export class HistoryApi {
         params: axiosSnakeCaseTransformer({
           asyncQuery,
           ...data,
-          orderByAttribute: getUpdatedKey(payload.orderByAttribute ?? '', false)
+          orderByAttributes:
+            payload.orderByAttributes?.map(item =>
+              getUpdatedKey(item, false)
+            ) ?? []
         }),
         paramsSerializer,
         validateStatus: validWithParamsSessionAndExternalService,
@@ -193,7 +198,7 @@ export class HistoryApi {
   ): Promise<PendingTask> {
     return this.axios
       .post<ActionResult<PendingTask>>(
-        'blockchains/ETH/transactions',
+        'blockchains/ETH/transactions/events',
         axiosSnakeCaseTransformer({
           asyncQuery: true,
           ...payload
@@ -246,6 +251,7 @@ export class HistoryApi {
           asyncQuery,
           ...payload
         }),
+        paramsSerializer,
         validateStatus: validWithParamsSessionAndExternalService,
         transformResponse: basicAxiosTransformer
       })
