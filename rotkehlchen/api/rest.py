@@ -112,6 +112,7 @@ from rotkehlchen.errors.api import (
 )
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import (
+    BlockchainQueryError,
     DBUpgradeError,
     EthSyncError,
     InputError,
@@ -4279,7 +4280,11 @@ class RestAPI():
                         mappings_to_send[cached_value.address] = cached_value.name  # type: ignore
                 addresses_to_query += list(set(addresses) - set(cached_data.keys()))
 
-            query_results = self.rotkehlchen.chain_manager.ethereum.ens_reverse_lookup(addresses_to_query)  # noqa: E501
+            try:
+                query_results = self.rotkehlchen.chain_manager.ethereum.ens_reverse_lookup(addresses_to_query)  # noqa: E501
+            except (RemoteError, BlockchainQueryError) as e:
+                msg = f'Error occurred while querying ens names: {str(e)}'
+                return wrap_in_fail_result(message=msg, status_code=HTTPStatus.CONFLICT)
 
             mappings_to_send = dbens.update_values(
                 write_cursor=cursor,

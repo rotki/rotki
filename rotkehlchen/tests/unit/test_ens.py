@@ -1,4 +1,5 @@
 import warnings as test_warnings
+from unittest.mock import patch
 
 import pytest
 from eth_utils import to_checksum_address
@@ -88,20 +89,33 @@ def test_ens_reverse_lookup(ethereum_manager):
     """This test could be flaky because it assumes
         that all used ens names exist
     """
-    reversed_addr_0 = to_checksum_address('0x71C7656EC7ab88b098defB751B7401B5f6d8976F')
-    reversed_addr_1 = ethereum_manager.ens_lookup('lefteris.eth')
-    expected = {reversed_addr_0: None, reversed_addr_1: 'lefteris.eth'}
-    assert ethereum_manager.ens_reverse_lookup([reversed_addr_0, reversed_addr_1]) == expected
-
-    reversed_addr_2 = ethereum_manager.ens_lookup('abc.eth')
-    reversed_addr_3 = ethereum_manager.ens_lookup('rotki.eth')
-    # reversed_addr_4 has not configured ens name resolution properly
-    reversed_addr_4 = string_to_ethereum_address('0x5b2Ed2eF8F480cC165A600aC451D9D9Ebf521e94')
-    expected = {reversed_addr_2: 'abc.eth', reversed_addr_3: 'rotki.eth', reversed_addr_4: None}
-    queried_ens_names = ethereum_manager.ens_reverse_lookup(
-        [reversed_addr_2, reversed_addr_3, reversed_addr_4],
+    call_contract_patch = patch.object(
+        ethereum_manager,
+        'call_contract',
+        wraps=ethereum_manager.call_contract,
     )
-    assert queried_ens_names == expected
+    # Mocking addresses per reverse ens query to check that chunking works correctly
+    # We do 2 requests - first without splitting in chunks and in the second one addresses
+    # should be split. We confirm it by checking call_count attribute of the call contract patch.
+    addrs_in_chunk_patch = patch(
+        target='rotkehlchen.chain.ethereum.manager.MAX_ADDRESSES_IN_REVERSE_ENS_QUERY',
+        new=2,
+    )
+    with addrs_in_chunk_patch, call_contract_patch as call_contract_mock:
+        reversed_addr_0 = to_checksum_address('0x71C7656EC7ab88b098defB751B7401B5f6d8976F')
+        reversed_addr_1 = ethereum_manager.ens_lookup('lefteris.eth')
+        expected = {reversed_addr_0: None, reversed_addr_1: 'lefteris.eth'}
+        assert ethereum_manager.ens_reverse_lookup([reversed_addr_0, reversed_addr_1]) == expected
+        assert call_contract_mock.call_count == 1
 
-    with pytest.raises(InputError):
-        ethereum_manager.ens_reverse_lookup('xyz')
+    with addrs_in_chunk_patch, call_contract_patch as call_contract_mock:
+        reversed_addr_2 = ethereum_manager.ens_lookup('abc.eth')
+        reversed_addr_3 = ethereum_manager.ens_lookup('rotki.eth')
+        # reversed_addr_4 has not configured ens name resolution properly
+        reversed_addr_4 = string_to_ethereum_address('0x5b2Ed2eF8F480cC165A600aC451D9D9Ebf521e94')
+        expected = {reversed_addr_2: 'abc.eth', reversed_addr_3: 'rotki.eth', reversed_addr_4: None}  # noqa: E501
+        queried_ens_names = ethereum_manager.ens_reverse_lookup(
+            [reversed_addr_2, reversed_addr_3, reversed_addr_4],
+        )
+        assert queried_ens_names == expected
+        assert call_contract_mock.call_count == 2

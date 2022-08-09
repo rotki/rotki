@@ -11326,7 +11326,7 @@ Get ENS names
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Names were returned successfully.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in or addresses have incorrect format.
+   :statuscode 409: Failed to query names or no user is currently logged in or addresses have incorrect format.
    :statuscode 500: Internal rotki error.
 
 
