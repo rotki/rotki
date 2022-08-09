@@ -19,7 +19,15 @@ import { usePremiumStore } from '@/store/session/premium';
 import store from '@/store/store';
 import '../../i18n';
 
-vi.mock('@/electron-interop');
+vi.mock('@/electron-interop', () => {
+  const mockInterop = {
+    premiumUserLoggedIn: vi.fn()
+  };
+  return {
+    useInterop: vi.fn().mockReturnValue(mockInterop),
+    interop: mockInterop
+  };
+});
 vi.mock('@/services/rotkehlchen-api');
 
 Vue.use(Vuetify);

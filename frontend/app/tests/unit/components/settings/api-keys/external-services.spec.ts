@@ -5,21 +5,20 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
 import i18n from '@/i18n';
+import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import store from '@/store/store';
-
 import { ExternalServiceKeys } from '@/types/user';
 import '../../../i18n';
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 
+vi.mock('@/services/rotkehlchen-api');
+
 describe('ExternalServices.vue', () => {
   let wrapper: Wrapper<ExternalServices>;
-  let queryExternalServices: any;
-  let setExternalServices: any;
-  let deleteExternalServices: any;
   let pinia: Pinia;
 
   const mockResponse: ExternalServiceKeys = {
@@ -41,14 +40,7 @@ describe('ExternalServices.vue', () => {
       propsData: {
         value: ''
       },
-      i18n,
-      mocks: {
-        $api: {
-          queryExternalServices,
-          setExternalServices,
-          deleteExternalServices
-        }
-      }
+      i18n
     });
   }
 
@@ -56,38 +48,39 @@ describe('ExternalServices.vue', () => {
     document.body.setAttribute('data-app', 'true');
     pinia = createPinia();
     setActivePinia(pinia);
-    queryExternalServices = vi.fn();
-    setExternalServices = vi.fn();
-    deleteExternalServices = vi.fn();
   });
 
   afterEach(() => {
     useSessionStore().reset();
+    vi.resetAllMocks();
   });
 
   describe('first time', () => {
     beforeEach(async () => {
-      queryExternalServices.mockResolvedValueOnce({} as ExternalServiceKeys);
+      const query = api.queryExternalServices as any;
+      query.mockResolvedValueOnce({});
       wrapper = createWrapper();
       await wrapper.vm.$nextTick();
       await flushPromises();
     });
 
     test('save the values when etherscan save is pressed', async () => {
-      setExternalServices.mockResolvedValueOnce(mockResponse);
+      const setService = api.setExternalServices as any;
+      setService.mockResolvedValueOnce(mockResponse);
       wrapper.find('.external-services__etherscan-key input').setValue('123');
       await wrapper.vm.$nextTick();
       wrapper
         .find('.external-services__etherscan-key .service-key__buttons__save')
         .trigger('click');
       await flushPromises();
-      expect(setExternalServices).toHaveBeenCalledWith([
+      expect(setService).toHaveBeenCalledWith([
         { name: 'etherscan', apiKey: '123' }
       ]);
     });
 
     test('save the values when cryptocompare save is pressed', async () => {
-      setExternalServices.mockResolvedValueOnce(mockResponse);
+      const setService = api.setExternalServices as any;
+      setService.mockResolvedValueOnce(mockResponse);
       wrapper
         .find('.external-services__cryptocompare-key input')
         .setValue('123');
@@ -100,13 +93,14 @@ describe('ExternalServices.vue', () => {
       await flushPromises();
       const store = useMainStore();
       expect(store.message.description).toMatch('cryptocompare');
-      expect(setExternalServices).toHaveBeenCalledWith([
+      expect(setService).toHaveBeenCalledWith([
         { name: 'cryptocompare', apiKey: '123' }
       ]);
     });
 
     test('save fails with an error', async () => {
-      setExternalServices.mockRejectedValueOnce(new Error('mock failure'));
+      const setService = api.setExternalServices as any;
+      setService.mockRejectedValueOnce(new Error('mock failure'));
       wrapper.find('.external-services__etherscan-key input').setValue('123');
       await wrapper.vm.$nextTick();
       wrapper
@@ -145,7 +139,8 @@ describe('ExternalServices.vue', () => {
 
   describe('the api returns value', () => {
     beforeEach(async () => {
-      queryExternalServices.mockResolvedValueOnce(mockResponse);
+      const query = api.queryExternalServices as any;
+      query.mockResolvedValueOnce(mockResponse);
       wrapper = createWrapper();
       await wrapper.vm.$nextTick();
       await flushPromises();
@@ -163,7 +158,8 @@ describe('ExternalServices.vue', () => {
     });
 
     test('confirm and delete etherscan key', async () => {
-      deleteExternalServices.mockResolvedValueOnce({});
+      const deleteService = api.deleteExternalServices as any;
+      deleteService.mockResolvedValueOnce({});
       wrapper
         .find('.external-services__etherscan-key .service-key__content__delete')
         .trigger('click');
@@ -178,14 +174,15 @@ describe('ExternalServices.vue', () => {
       await wrapper.vm.$nextTick();
       await flushPromises();
 
-      expect(deleteExternalServices).toHaveBeenCalledWith('etherscan');
+      expect(deleteService).toHaveBeenCalledWith('etherscan');
 
       // @ts-ignore
       expect(wrapper.vm.serviceToDelete).toBe('');
     });
 
     test('delete cryptocompare fails', async () => {
-      deleteExternalServices.mockRejectedValueOnce(new Error('mock failure'));
+      const deleteService = api.deleteExternalServices as any;
+      deleteService.mockRejectedValueOnce(new Error('mock failure'));
       wrapper
         .find(
           '.external-services__cryptocompare-key .service-key__content__delete'
@@ -202,7 +199,7 @@ describe('ExternalServices.vue', () => {
       await wrapper.vm.$nextTick();
       await flushPromises();
 
-      expect(deleteExternalServices).toHaveBeenCalledWith('cryptocompare');
+      expect(deleteService).toHaveBeenCalledWith('cryptocompare');
 
       // @ts-ignore
       expect(wrapper.vm.serviceToDelete).toBe('');

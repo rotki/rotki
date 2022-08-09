@@ -49,7 +49,7 @@
       </v-text-field>
 
       <v-select
-        v-model="loglevel"
+        v-model="logLevel"
         :items="levels"
         :disabled="!!fileConfig.loglevel"
         :label="$t('backend_settings.settings.log_level.label')"
@@ -181,11 +181,20 @@
 </template>
 
 <script lang="ts">
-import { mapState } from 'pinia';
-import { Component, Emit, Mixins, Watch } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  Ref,
+  ref,
+  watch
+} from '@vue/composition-api';
+import { asyncComputed, get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import { useBackendManagement } from '@/composables/backend';
+import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';
-import BackendMixin from '@/mixins/backend-mixin';
+import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import {
   BackendConfiguration,
@@ -213,206 +222,225 @@ const updateArgument = (args: Args) => {
   }
 };
 
-@Component({
+export default defineComponent({
   name: 'BackendSettings',
   components: { ConfirmDialog },
-  computed: {
-    ...mapState(useMainStore, ['dataDirectory'])
-  }
-})
-export default class BackendSettings extends Mixins(BackendMixin) {
-  dataDirectory!: string;
-  userDataDirectory: string = '';
-  userLogDirectory: string = '';
-  logFromOtherModules: boolean = false;
-  maxLogSize: string = '';
-  sqliteInstructions: string = '';
-  maxLogFiles: string = '';
-  formValid: boolean = false;
+  emits: ['dismiss'],
+  setup(_, { emit }) {
+    const { dataDirectory } = storeToRefs(useMainStore());
 
-  readonly levels = Object.values(LogLevel);
-  selecting: boolean = false;
-  confirmReset: boolean = false;
-  configuration: BackendConfiguration | null = null;
+    const userDataDirectory: Ref<string> = ref('');
+    const userLogDirectory: Ref<string> = ref('');
+    const logFromOtherModules: Ref<boolean> = ref(false);
+    const maxLogSize: Ref<string> = ref('');
+    const sqliteInstructions: Ref<string> = ref('');
+    const maxLogFiles: Ref<string> = ref('');
+    const formValid: Ref<boolean> = ref(false);
 
-  beforeMount() {
-    this.getConfig();
-  }
+    const selecting: Ref<boolean> = ref(false);
+    const confirmReset: Ref<boolean> = ref(false);
+    const configuration = asyncComputed<BackendConfiguration>(() =>
+      api.backendSettings()
+    );
 
-  @Emit()
-  dismiss() {}
-
-  private async getConfig(): Promise<BackendConfiguration> {
-    let config = this.configuration;
-    if (!config) {
-      config = await api.backendSettings();
-      this.configuration = config;
-    }
-
-    return config;
-  }
-
-  get valid() {
-    const newOptions = this.newUserOptions;
-    const oldOptions = this.options;
-    const newLogLevel = newOptions.loglevel ?? this.defaultLogLevel;
-    const oldLogLevel = oldOptions.loglevel ?? this.defaultLogLevel;
-    let updatedKeys = Object.keys(newOptions).filter(s => s !== 'loglevel');
-    return updatedKeys.length > 0 || newLogLevel !== oldLogLevel;
-  }
-
-  get newUserOptions(): Partial<BackendOptions> {
-    const options: Writeable<Partial<BackendOptions>> = {};
-    if (this.loglevel !== this.defaultLogLevel) {
-      options.loglevel = this.loglevel;
-    }
-
-    if (this.userLogDirectory !== this.defaultLogDirectory) {
-      options.logDirectory = this.userLogDirectory;
-    }
-
-    if (this.logFromOtherModules) {
-      options.logFromOtherModules = true;
-    }
-
-    if (this.userDataDirectory !== this.dataDirectory) {
-      options.dataDirectory = this.userDataDirectory;
-    }
-
-    const config = this.configuration;
-    if (config) {
-      updateArgument({
-        value: this.maxLogFiles,
-        arg: config.maxLogfilesNum,
-        options,
-        key: 'maxLogfilesNum'
-      });
-      updateArgument({
-        value: this.maxLogSize,
-        arg: config.maxSizeInMbAllLogs,
-        options,
-        key: 'maxSizeInMbAllLogs'
-      });
-      updateArgument({
-        value: this.sqliteInstructions,
-        arg: config.sqliteInstructions,
-        options,
-        key: 'sqliteInstructions'
-      });
-    }
-
-    return options;
-  }
-
-  icon(level: LogLevel): string {
-    if (level === LogLevel.DEBUG) {
-      return 'mdi-bug';
-    } else if (level === LogLevel.INFO) {
-      return 'mdi-information';
-    } else if (level === LogLevel.WARNING) {
-      return 'mdi-alert';
-    } else if (level === LogLevel.ERROR) {
-      return 'mdi-alert-circle';
-    } else if (level === LogLevel.CRITICAL) {
-      return 'mdi-alert-decagram';
-    } else if (level === LogLevel.TRACE) {
-      return 'mdi-magnify-scan';
-    }
-    throw new Error(`Invalid option: ${level}`);
-  }
-
-  isDefault(prop?: NumericBackendArgument) {
-    return prop?.isDefault;
-  }
-
-  @Watch('dataDirectory')
-  onDataDirectoryChange() {
-    this.userDataDirectory = this.options.dataDirectory ?? this.dataDirectory;
-  }
-
-  async loaded() {
-    const config = await this.getConfig();
-    const options = this.options;
-    this.userDataDirectory = options.dataDirectory ?? this.dataDirectory;
-    this.userLogDirectory = options.logDirectory ?? this.defaultLogDirectory;
-    this.loglevel = options.loglevel ?? this.defaultLogLevel;
-    this.logFromOtherModules = options.logFromOtherModules ?? false;
-    this.maxLogFiles = (
-      options.maxLogfilesNum ?? config.maxLogfilesNum.value
-    ).toString();
-    this.maxLogSize = (
-      options.maxSizeInMbAllLogs ?? config.maxSizeInMbAllLogs.value
-    ).toString();
-    this.sqliteInstructions = (
-      options.sqliteInstructions ?? config.sqliteInstructions.value
-    ).toString();
-  }
-
-  async save() {
-    this.dismiss();
-    await this.saveOptions(this.newUserOptions);
-  }
-
-  async selectLogsDirectory() {
-    if (this.selecting) {
-      return;
-    }
-    this.selecting = true;
-    try {
-      const directory = await this.$interop.openDirectory(
-        this.$t('backend_settings.log_directory.select').toString()
+    const loaded = async () => {
+      const config = get(configuration);
+      const opts = get(options);
+      set(userDataDirectory, opts.dataDirectory ?? get(dataDirectory));
+      set(userLogDirectory, opts.logDirectory ?? get(defaultLogDirectory));
+      set(logLevel, opts.loglevel ?? get(defaultLogLevel));
+      set(logFromOtherModules, opts.logFromOtherModules ?? false);
+      set(
+        maxLogFiles,
+        (opts.maxLogfilesNum ?? config.maxLogfilesNum.value).toString()
       );
-      if (directory) {
-        this.userLogDirectory = directory;
-      }
-    } finally {
-      this.selecting = false;
-    }
-  }
-
-  async selectDataDirectory() {
-    if (this.selecting) {
-      return;
-    }
-    this.selecting = true;
-    try {
-      const directory = await this.$interop.openDirectory(
-        this.$t('backend_settings.data_directory.select').toString()
+      set(
+        maxLogSize,
+        (opts.maxSizeInMbAllLogs ?? config.maxSizeInMbAllLogs.value).toString()
       );
-      if (directory) {
-        this.userDataDirectory = directory;
+      set(
+        sqliteInstructions,
+        (opts.sqliteInstructions ?? config.sqliteInstructions.value).toString()
+      );
+    };
+
+    const {
+      resetOptions,
+      saveOptions,
+      fileConfig,
+      logLevel,
+      defaultLogLevel,
+      defaultLogDirectory,
+      options
+    } = useBackendManagement(loaded);
+
+    const newUserOptions = computed(() => {
+      const options: Writeable<Partial<BackendOptions>> = {};
+      const level = get(logLevel);
+      const defaultLevel = get(defaultLogLevel);
+      if (level !== defaultLevel) {
+        options.loglevel = level;
       }
-    } finally {
-      this.selecting = false;
+
+      const userLog = get(userLogDirectory);
+      if (userLog !== get(defaultLogDirectory)) {
+        options.logDirectory = userLog;
+      }
+
+      const logFromOther = get(logFromOtherModules);
+      if (logFromOther) {
+        options.logFromOtherModules = true;
+      }
+
+      const userData = get(userDataDirectory);
+      if (userData !== get(dataDirectory)) {
+        options.dataDirectory = userData;
+      }
+
+      const config = get(configuration);
+      if (config) {
+        updateArgument({
+          value: get(maxLogFiles),
+          arg: config.maxLogfilesNum,
+          options,
+          key: 'maxLogfilesNum'
+        });
+        updateArgument({
+          value: get(maxLogSize),
+          arg: config.maxSizeInMbAllLogs,
+          options,
+          key: 'maxSizeInMbAllLogs'
+        });
+        updateArgument({
+          value: get(sqliteInstructions),
+          arg: config.sqliteInstructions,
+          options,
+          key: 'sqliteInstructions'
+        });
+      }
+
+      return options;
+    });
+
+    const valid = computed(() => {
+      const newOptions = get(newUserOptions);
+      const oldOptions = get(options);
+      const defaultLevel = get(defaultLogLevel);
+      const newLogLevel = newOptions.loglevel ?? defaultLevel;
+      const oldLogLevel = oldOptions.loglevel ?? defaultLevel;
+      const updatedKeys = Object.keys(newOptions).filter(s => s !== 'loglevel');
+      return updatedKeys.length > 0 || newLogLevel !== oldLogLevel;
+    });
+
+    const { openDirectory } = useInterop();
+
+    const nonNegativeNumberRules = computed(() => {
+      return [
+        (v: string) =>
+          !!v || i18n.t('backend_settings.errors.non_empty').toString(),
+        (v: string) =>
+          parseInt(v) >= 0 ||
+          i18n.t('backend_settings.errors.min', { min: 0 }).toString()
+      ];
+    });
+
+    const icon = (level: LogLevel): string => {
+      if (level === LogLevel.DEBUG) {
+        return 'mdi-bug';
+      } else if (level === LogLevel.INFO) {
+        return 'mdi-information';
+      } else if (level === LogLevel.WARNING) {
+        return 'mdi-alert';
+      } else if (level === LogLevel.ERROR) {
+        return 'mdi-alert-circle';
+      } else if (level === LogLevel.CRITICAL) {
+        return 'mdi-alert-decagram';
+      } else if (level === LogLevel.TRACE) {
+        return 'mdi-magnify-scan';
+      }
+      throw new Error(`Invalid option: ${level}`);
+    };
+
+    const isDefault = (prop?: NumericBackendArgument) => prop?.isDefault;
+
+    const reset = async function () {
+      set(confirmReset, false);
+      dismiss();
+      await resetOptions();
+    };
+
+    const selectDataDirectory = async function () {
+      if (get(selecting)) {
+        return;
+      }
+
+      try {
+        let title = i18n.t('backend_settings.data_directory.select').toString();
+        const directory = await openDirectory(title);
+        if (directory) {
+          set(userDataDirectory, directory);
+        }
+      } finally {
+        set(selecting, false);
+      }
+    };
+
+    async function save() {
+      dismiss();
+      await saveOptions(get(newUserOptions));
     }
-  }
 
-  async reset() {
-    this.confirmReset = false;
-    this.dismiss();
-    await this.resetOptions();
-  }
+    async function selectLogsDirectory() {
+      if (get(selecting)) {
+        return;
+      }
+      set(selecting, true);
+      try {
+        const directory = await openDirectory(
+          i18n.t('backend_settings.log_directory.select').toString()
+        );
+        if (directory) {
+          set(userLogDirectory, directory);
+        }
+      } finally {
+        set(selecting, false);
+      }
+    }
 
-  get positiveNumberRules() {
-    return [
-      (v: string) =>
-        !!v || this.$t('backend_settings.errors.non_empty').toString(),
-      (v: string) =>
-        parseInt(v) >= 1 ||
-        this.$t('backend_settings.errors.min', { min: 1 }).toString()
-    ];
-  }
+    const dismiss = () => {
+      emit('dismiss');
+    };
 
-  get nonNegativeNumberRules() {
-    return [
-      (v: string) =>
-        !!v || this.$t('backend_settings.errors.non_empty').toString(),
-      (v: string) =>
-        parseInt(v) >= 0 ||
-        this.$t('backend_settings.errors.min', { min: 0 }).toString()
-    ];
+    watch(dataDirectory, directory => {
+      set(userDataDirectory, get(options).dataDirectory ?? directory);
+    });
+
+    return {
+      userDataDirectory,
+      userLogDirectory,
+      logFromOtherModules,
+      maxLogSize,
+      maxLogFiles,
+      sqliteInstructions,
+      logLevel,
+      formValid,
+      levels: Object.values(LogLevel),
+      selecting,
+      confirmReset,
+      configuration,
+      nonNegativeNumberRules,
+      fileConfig,
+      valid,
+      dismiss,
+      reset,
+      icon,
+      isDefault,
+      selectDataDirectory,
+      selectLogsDirectory,
+      save
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

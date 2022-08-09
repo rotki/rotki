@@ -157,7 +157,7 @@ import { get, set } from '@vueuse/core';
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { storeToRefs } from 'pinia';
-import { setupBackendManagement } from '@/composables/backend';
+import { useBackendManagement } from '@/composables/backend';
 import { useRoute, useRouter, useTheme } from '@/composables/common';
 import { getPremium, useDarkMode } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
@@ -322,7 +322,7 @@ export default defineComponent({
       set(loginComplete, complete);
     };
 
-    const { restartBackend } = setupBackendManagement();
+    const { restartBackend } = useBackendManagement();
 
     onBeforeMount(async () => {
       setupListeners({

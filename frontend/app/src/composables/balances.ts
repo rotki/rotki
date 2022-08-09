@@ -32,7 +32,7 @@ import {
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Eth2Validator } from '@/types/balances';
-import { Exchange, ExchangeInfo } from '@/types/exchanges';
+import { Exchange, ExchangeInfo, SupportedExchange } from '@/types/exchanges';
 import { PriceOracle } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
@@ -63,6 +63,10 @@ export const setupGeneralBalances = () => {
   const blockchainTotals = computed<BlockchainTotal[]>(() => {
     return store.getters['balances/blockchainTotals'];
   });
+
+  const exchangeNonce = (exchange: SupportedExchange): number => {
+    return store.getters['balances/exchangeNonce'](exchange);
+  };
 
   const hasDetails = (account: string) =>
     computed<boolean>(() => {
@@ -152,6 +156,7 @@ export const setupGeneralBalances = () => {
     liabilities,
     blockchainTotals,
     nfBalances,
+    exchangeNonce,
     nfTotalValue,
     hasDetails,
     accountAssets,

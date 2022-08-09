@@ -149,12 +149,21 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  PropType,
+  ref,
+  toRefs
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import { tradeLocations } from '@/components/history/consts';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import { setupGeneralBalances } from '@/composables/balances';
+import i18n from '@/i18n';
 import { ExchangePayload } from '@/store/balances/types';
 import {
   KrakenAccountType,
@@ -163,131 +172,145 @@ import {
 } from '@/types/exchanges';
 import { trimOnPaste } from '@/utils/event';
 
-@Component({
+export default defineComponent({
   name: 'ExchangeKeysForm',
   components: { RevealableInput, ExchangeDisplay, BinancePairsSelector },
-  computed: {
-    ...mapGetters('balances', ['exchangeNonce'])
-  }
-})
-export default class ExchangeKeysForm extends Vue {
-  readonly krakenAccountTypes = KrakenAccountType.options;
-  readonly exchanges = SUPPORTED_EXCHANGES;
-  exchangeNonce!: (exchange: SupportedExchange) => number;
+  props: {
+    value: { required: true, type: Boolean },
+    exchange: { required: true, type: Object as PropType<ExchangePayload> },
+    edit: { required: true, type: Boolean }
+  },
+  emits: ['input', 'update:exchange'],
+  setup(props, { emit }) {
+    const { edit, exchange } = toRefs(props);
+    const editKeys = ref(false);
+    const form = ref();
 
-  @Prop({ required: true, type: Boolean })
-  value!: boolean;
+    const { exchangeNonce } = setupGeneralBalances();
 
-  @Prop({ required: true })
-  exchange!: ExchangePayload;
+    const requiresPassphrase = computed(() => {
+      const { location } = get(exchange);
+      return (
+        location === SupportedExchange.COINBASEPRO ||
+        location === SupportedExchange.KUCOIN
+      );
+    });
 
-  @Prop({ required: true, type: Boolean })
-  edit!: boolean;
+    const isBinance = computed(() => {
+      const { location } = get(exchange);
+      return (
+        location === SupportedExchange.BINANCE ||
+        location === SupportedExchange.BINANCEUS
+      );
+    });
 
-  @Emit('input')
-  input(_value: boolean) {}
+    const nameRules = computed(() => [
+      (v: string) =>
+        !!v || i18n.t('exchange_keys_form.name.non_empty').toString()
+    ]);
 
-  @Emit('update:exchange')
-  onUpdateExchange(_exchange: ExchangePayload) {}
+    const apiKeyRules = computed(() => [
+      (v: string) =>
+        !!v || i18n.t('exchange_keys_form.api_key.non_empty').toString()
+    ]);
 
-  binancePairs: string[] = [];
-  editKeys: boolean = false;
+    const apiSecretRules = computed(() => [
+      (v: string) =>
+        !!v || i18n.t('exchange_keys_form.api_secret.non_empty').toString()
+    ]);
 
-  toggleEdit() {
-    this.editKeys = !this.editKeys;
-    if (!this.editKeys) {
-      this.onUpdateExchange({
-        ...this.exchange,
-        apiSecret: null,
-        apiKey: null
+    const passphraseRules = computed(() => [
+      (v: string) =>
+        !!v || i18n.t('exchange_keys_form.passphrase.non_empty').toString()
+    ]);
+
+    const suggestedName = function (exchange: SupportedExchange): string {
+      const location = tradeLocations.find(
+        ({ identifier }) => identifier === exchange
+      );
+      return location ? `${location.name} ${exchangeNonce(exchange)}` : '';
+    };
+
+    const toggleEdit = () => {
+      set(editKeys, !get(editKeys));
+
+      if (!get(editKeys)) {
+        onUpdateExchange({
+          ...get(exchange),
+          apiSecret: null,
+          apiKey: null
+        });
+      }
+    };
+
+    const onExchangeChange = (exchange: SupportedExchange) => {
+      get(form).reset();
+      onUpdateExchange({
+        name: suggestedName(exchange),
+        newName: null,
+        location: exchange,
+        apiKey: null,
+        apiSecret: exchange === SupportedExchange.BITPANDA ? '' : null,
+        passphrase: null,
+        krakenAccountType:
+          exchange === SupportedExchange.KRAKEN ? 'starter' : null,
+        binanceMarkets: null,
+        ftxSubaccount: null
       });
-    }
-  }
+    };
 
-  readonly nameRules = [
-    (v: string) =>
-      !!v || this.$t('exchange_keys_form.name.non_empty').toString()
-  ];
+    const onApiKeyPaste = function (event: ClipboardEvent) {
+      const paste = trimOnPaste(event);
+      if (paste) {
+        onUpdateExchange({ ...get(exchange), apiKey: paste });
+      }
+    };
 
-  readonly apiKeyRules = [
-    (v: string) =>
-      !!v || this.$t('exchange_keys_form.api_key.non_empty').toString()
-  ];
+    const onApiSecretPaste = function (event: ClipboardEvent) {
+      const paste = trimOnPaste(event);
+      if (paste) {
+        onUpdateExchange({ ...get(exchange), apiSecret: paste });
+      }
+    };
 
-  readonly apiSecretRules = [
-    (v: string) =>
-      !!v || this.$t('exchange_keys_form.api_secret.non_empty').toString()
-  ];
+    const input = (value: boolean) => {
+      emit('input', value);
+    };
 
-  readonly passphraseRules = [
-    (v: string) =>
-      !!v || this.$t('exchange_keys_form.passphrase.non_empty').toString()
-  ];
+    const onUpdateExchange = (payload: ExchangePayload) => {
+      emit('update:exchange', payload);
+    };
 
-  get requiresPassphrase(): boolean {
-    const exchange = this.exchange.location;
-    return (
-      exchange === SupportedExchange.COINBASEPRO ||
-      exchange === SupportedExchange.KUCOIN
-    );
-  }
-
-  get isBinance(): boolean {
-    const exchange = this.exchange.location;
-    return (
-      exchange === SupportedExchange.BINANCE ||
-      exchange === SupportedExchange.BINANCEUS
-    );
-  }
-
-  mounted() {
-    if (this.edit) {
-      return;
-    }
-    this.onUpdateExchange({
-      ...this.exchange,
-      name: this.suggestedName(this.exchange.location)
+    onMounted(() => {
+      if (get(edit)) {
+        return;
+      }
+      onUpdateExchange({
+        ...get(exchange),
+        name: suggestedName(get(exchange).location)
+      });
     });
-  }
 
-  onExchangeChange(exchange: SupportedExchange) {
-    (this.$refs.form as any).reset();
-    const name = this.suggestedName(exchange);
-    this.onUpdateExchange({
-      name: name,
-      newName: null,
-      location: exchange,
-      apiKey: null,
-      apiSecret: exchange === SupportedExchange.BITPANDA ? '' : null,
-      passphrase: null,
-      krakenAccountType:
-        exchange === SupportedExchange.KRAKEN ? 'starter' : null,
-      binanceMarkets: null,
-      ftxSubaccount: null
-    });
+    return {
+      krakenAccountTypes: KrakenAccountType.options,
+      exchanges: SUPPORTED_EXCHANGES,
+      editKeys,
+      form,
+      requiresPassphrase,
+      isBinance,
+      nameRules,
+      apiKeyRules,
+      apiSecretRules,
+      passphraseRules,
+      input,
+      onUpdateExchange,
+      onExchangeChange,
+      toggleEdit,
+      onApiKeyPaste,
+      onApiSecretPaste
+    };
   }
-
-  private suggestedName(exchange: SupportedExchange): string {
-    const location = tradeLocations.find(
-      ({ identifier }) => identifier === exchange
-    );
-    return location ? `${location.name} ${this.exchangeNonce(exchange)}` : '';
-  }
-
-  onApiKeyPaste(event: ClipboardEvent) {
-    const paste = trimOnPaste(event);
-    if (paste) {
-      this.onUpdateExchange({ ...this.exchange, apiKey: paste });
-    }
-  }
-
-  onApiSecretPaste(event: ClipboardEvent) {
-    const paste = trimOnPaste(event);
-    if (paste) {
-      this.onUpdateExchange({ ...this.exchange, apiSecret: paste });
-    }
-  }
-}
+});
 </script>
 
 <style lang="scss" scoped>
