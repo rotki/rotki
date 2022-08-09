@@ -121,7 +121,6 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocationData } from '@/components/history/type';
 import {
-  setupExchanges,
   setupGeneralBalances,
   setupLocationInfo
 } from '@/composables/balances';
@@ -130,6 +129,7 @@ import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { routesRef } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Exchange } from '@/types/exchanges';
 
@@ -169,7 +169,7 @@ export default defineComponent({
 
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const { assetSymbol } = useAssetInfoRetrieval();
-    const { connectedExchanges } = setupExchanges();
+    const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
     const { aggregatedBalances, balancesByLocation } = setupGeneralBalances();
     const { getLocation } = setupLocationInfo();
     const { dark } = useTheme();

@@ -114,12 +114,13 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { setupExchanges } from '@/composables/balances';
 import { useRoute, useRouter } from '@/composables/common';
 import { Routes } from '@/router/routes';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useTasks } from '@/store/tasks';
 import { SupportedExchange } from '@/types/exchanges';
 import { TaskType } from '@/types/task-type';
@@ -143,7 +144,8 @@ export default defineComponent({
   setup(props) {
     const { exchange } = toRefs(props);
     const { isTaskRunning } = useTasks();
-    const { exchangeBalances, connectedExchanges } = setupExchanges();
+    const store = useExchangeBalancesStore();
+    const { connectedExchanges } = storeToRefs(store);
 
     const selectedExchange = ref<string>('');
     const usedExchanges = computed<string[]>(() => {
@@ -169,8 +171,9 @@ export default defineComponent({
       setSelectedExchange();
     });
 
-    const exchangeBalance = (exchange: string): BigNumber => {
-      return get(exchangeBalances(exchange)).reduce(
+    const exchangeBalance = (exchange: SupportedExchange): BigNumber => {
+      const balances = get(store.getBalances(exchange));
+      return balances.reduce(
         (sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue),
         Zero
       );
@@ -185,7 +188,8 @@ export default defineComponent({
     };
 
     const balances = computed(() => {
-      return get(exchangeBalances(get(exchange)));
+      let currentExchange = get(exchange);
+      return get(store.getBalances(currentExchange));
     });
 
     return {
@@ -194,8 +198,7 @@ export default defineComponent({
       selectedExchange,
       openExchangeDetails,
       exchangeBalance,
-      isExchangeLoading,
-      exchangeBalances
+      isExchangeLoading
     };
   }
 });

@@ -15,7 +15,6 @@ import { Section } from '@/store/const';
 import { Nullable } from '@/types';
 import {
   Exchange,
-  ExchangeData,
   KrakenAccountType,
   SupportedExchange
 } from '@/types/exchanges';
@@ -53,8 +52,6 @@ export interface BalanceState {
   totals: AssetBalances;
   liabilities: AssetBalances;
   usdToFiatExchangeRates: ExchangeRates;
-  connectedExchanges: Exchange[];
-  exchangeBalances: ExchangeData;
   ethAccounts: GeneralAccountData[];
   btcAccounts: BtcAccountData;
   bchAccounts: BtcAccountData;

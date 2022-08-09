@@ -14,10 +14,8 @@ import {
   AccountAssetBalances,
   AssetPrices,
   BalanceState,
-  EditExchange,
   NonFungibleBalances
 } from '@/store/balances/types';
-import { Exchange, ExchangeData, ExchangeInfo } from '@/types/exchanges';
 import { ExchangeRates } from '@/types/user';
 
 export const mutations: MutationTree<BalanceState> = {
@@ -65,53 +63,6 @@ export const mutations: MutationTree<BalanceState> = {
     usdToFiatExchangeRates: ExchangeRates
   ) {
     state.usdToFiatExchangeRates = usdToFiatExchangeRates;
-  },
-  connectedExchanges(state: BalanceState, connectedExchanges: Exchange[]) {
-    state.connectedExchanges = connectedExchanges;
-  },
-  addExchange(state: BalanceState, exchange: Exchange) {
-    state.connectedExchanges.push(exchange);
-  },
-  editExchange(
-    state: BalanceState,
-    {
-      exchange: { location, name: oldName, krakenAccountType, ftxSubaccount },
-      newName
-    }: EditExchange
-  ) {
-    const exchanges = [...state.connectedExchanges];
-    const name = newName ?? oldName;
-    const index = exchanges.findIndex(
-      value => value.name === oldName && value.location === location
-    );
-    exchanges[index] = Object.assign(exchanges[index], {
-      name,
-      location,
-      krakenAccountType,
-      ftxSubaccount
-    });
-    state.connectedExchanges = exchanges;
-  },
-  removeExchange(state: BalanceState, exchange: Exchange) {
-    const exchanges = [...state.connectedExchanges];
-    const balances = { ...state.exchangeBalances };
-    const index = exchanges.findIndex(
-      ({ location, name }) =>
-        name === exchange.name && location === exchange.location
-    );
-    // can't modify in place or else the vue reactivity does not work
-    exchanges.splice(index, 1);
-    delete balances[exchange.location];
-    state.connectedExchanges = exchanges;
-    state.exchangeBalances = balances;
-  },
-  updateExchangeBalances(state: BalanceState, data: ExchangeData) {
-    state.exchangeBalances = data;
-  },
-  addExchangeBalances(state: BalanceState, data: ExchangeInfo) {
-    const update: ExchangeData = {};
-    update[data.location] = data.balances;
-    state.exchangeBalances = { ...state.exchangeBalances, ...update };
   },
   ethAccounts(state: BalanceState, accounts: GeneralAccountData[]) {
     state.ethAccounts = accounts;

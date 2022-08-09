@@ -1,9 +1,11 @@
-import { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
+import { AssetBalanceWithPrice } from '@rotki/common';
+import { set } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { BalanceType, BtcBalances } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { BalanceGetters, getters } from '@/store/balances/getters';
 import { BalanceState } from '@/store/balances/types';
 import store from '@/store/store';
@@ -14,36 +16,42 @@ import { stub } from '../../../common/utils';
 
 describe('balances:getters', () => {
   beforeEach(() => {
-    const pinia = createPinia();
-    setActivePinia(pinia);
+    setActivePinia(createPinia());
   });
 
   test('aggregatedBalances', () => {
+    const { connectedExchanges, exchangeBalances } = storeToRefs(
+      useExchangeBalancesStore()
+    );
+    set(connectedExchanges, [
+      {
+        location: SupportedExchange.KRAKEN,
+        name: 'Bitrex Acc'
+      }
+    ]);
+
+    set(exchangeBalances, {
+      [SupportedExchange.KRAKEN]: {
+        DAI: {
+          amount: bigNumberify(50),
+          usdValue: bigNumberify(50)
+        },
+        BTC: {
+          amount: bigNumberify(50),
+          usdValue: bigNumberify(50)
+        },
+        ETH: {
+          amount: bigNumberify(50),
+          usdValue: bigNumberify(50)
+        },
+        EUR: {
+          amount: bigNumberify(50),
+          usdValue: bigNumberify(50)
+        }
+      }
+    });
+
     const mockGetters = {
-      exchangeBalances: function (): AssetBalance[] {
-        return [
-          {
-            asset: 'DAI',
-            amount: bigNumberify(50),
-            usdValue: bigNumberify(50)
-          },
-          {
-            asset: 'BTC',
-            amount: bigNumberify(50),
-            usdValue: bigNumberify(50)
-          },
-          {
-            asset: 'ETH',
-            amount: bigNumberify(50),
-            usdValue: bigNumberify(50)
-          },
-          {
-            asset: 'EUR',
-            amount: bigNumberify(50),
-            usdValue: bigNumberify(50)
-          }
-        ];
-      },
       totals: [
         {
           asset: 'DAI',
@@ -88,13 +96,7 @@ describe('balances:getters', () => {
         SAI: bigNumberify(1),
         ETH: bigNumberify(3000),
         BTC: bigNumberify(40000)
-      },
-      connectedExchanges: [
-        {
-          location: SupportedExchange.BITTREX,
-          name: 'Bitrex Acc'
-        }
-      ]
+      }
     });
 
     const actualResult = sortBy(

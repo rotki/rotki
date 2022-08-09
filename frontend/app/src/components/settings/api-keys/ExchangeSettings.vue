@@ -91,9 +91,9 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { exchangeName } from '@/components/history/consts';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
-import { setupExchanges } from '@/composables/balances';
 import { useRouter } from '@/composables/common';
 import i18nFn from '@/i18n';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { ExchangePayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
@@ -118,7 +118,9 @@ const nonSyncingExchanges = ref<Exchange[]>([]);
 const pendingRemoval = ref<Nullable<Exchange>>(null);
 const confirmation = ref<boolean>(false);
 
-const { connectedExchanges, setupExchange, removeExchange } = setupExchanges();
+const store = useExchangeBalancesStore();
+const { setupExchange, removeExchange } = store;
+const { connectedExchanges } = storeToRefs(store);
 
 const exchange = ref<ExchangePayload>(placeholder());
 
