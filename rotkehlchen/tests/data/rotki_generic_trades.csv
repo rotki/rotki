@@ -1,0 +1,6 @@
+Location,Base Currency,Quote Currency,Type,Buy Amount,Sell Amount,Fee,Fee Currency,Description,Timestamp
+binance,USDC,ETH,Sell,1.0000,1875.64,,,Trade USDC for ETH,2022-07-29 09:00:00
+kraken,BTC,LTC,Buy,4.3241,392.8870,,,Trade LTC for BTC,2022-07-30 09:00:00
+kucoin,UNI,DAI,Sell,880.0000,20.0000,0.1040,USD,Trade UNI for DAI,2022-08-01 09:00:00
+luno,BCH,ADA,Buy,16.3444,4576.6400,5.1345,USD,Trade ADA for BCH,2022-08-02 09:00:00
+bisq,DAI,USDT,Buy,0,4576.6400,5.1345,USD,Trade USDT for DAI,2022-08-03 09:00:00

@@ -29,6 +29,8 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_cryptocom_special_events_import_results,
     assert_custom_cointracking,
     assert_nexo_results,
+    assert_rotki_generic_events_import_results,
+    assert_rotki_generic_trades_import_results,
     assert_shapeshift_trades_import_results,
     assert_uphold_transactions_import_results,
 )
@@ -451,6 +453,40 @@ def test_data_import_binance_history(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert result is True
     assert_binance_import_results(rotki)
+
+
+def test_data_import_rotki_generic_trades(rotkehlchen_api_server):
+    """Test that data import works for Rotki generic trades import csv file."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'rotki_generic_trades.csv'
+
+    json_data = {'source': 'rotki_trades', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    assert assert_proper_response_with_result(response) is True
+    assert_rotki_generic_trades_import_results(rotki)
+
+
+def test_data_import_rotki_generic_events(rotkehlchen_api_server):
+    """Test that data import works for Rotki generic events import csv file."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'rotki_generic_events.csv'
+
+    json_data = {'source': 'rotki_events', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    assert assert_proper_response_with_result(response) is True
+    assert_rotki_generic_events_import_results(rotki)
 
 
 def test_docker_async_import(rotkehlchen_api_server):

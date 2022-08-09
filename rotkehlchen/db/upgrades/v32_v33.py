@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import deserialize_evm_tx_hash
-from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -455,10 +454,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     for history_event in history_events:
         history_event = list(history_event)
         try:
-            if is_valid_ethereum_tx_hash(history_event[1]):
-                history_event[1] = HistoryBaseEntry.deserialize_event_identifier(history_event[1])
-            else:
-                history_event[1] = HistoryBaseEntry.deserialize_event_identifier_from_kraken(history_event[1])  # noqa: 501
+            history_event[1] = HistoryBaseEntry.deserialize_event_identifier(history_event[1])
         except DeserializationError:
             continue
         new_history_events.append(tuple(history_event))

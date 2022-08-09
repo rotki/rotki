@@ -25,7 +25,7 @@ def test_receiving_value_from_tx(accountant, google_service):
     Test that receiving a transaction that provides value works fine
     """
     addr2 = make_ethereum_address()
-    tx_hash = HistoryBaseEntry.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: 501
+    tx_hash = HistoryBaseEntry.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
         HistoryBaseEntry(
             event_identifier=tx_hash,
@@ -59,7 +59,7 @@ def test_gas_fees_after_year(accountant, google_service):
     Test that for an expense like gas fees after year the "selling" part is tax free
     PnL, and the expense part is taxable pnl.
     """
-    tx_hash = HistoryBaseEntry.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: 501
+    tx_hash = HistoryBaseEntry.deserialize_event_identifier('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
         LedgerAction(
             identifier=0,

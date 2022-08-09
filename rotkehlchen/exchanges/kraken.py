@@ -213,7 +213,7 @@ def history_event_from_kraken(
             # Make sure to not generate an event for KFEES that is not of type FEE
             if asset != A_KFEE:
                 group_events.append(HistoryBaseEntry(
-                    event_identifier=HistoryBaseEntry.deserialize_event_identifier_from_kraken(identifier),  # noqa: 501
+                    event_identifier=HistoryBaseEntry.deserialize_event_identifier(identifier),
                     sequence_index=idx,
                     timestamp=timestamp,
                     location=Location.KRAKEN,
@@ -229,7 +229,7 @@ def history_event_from_kraken(
                 ))
             if fee_amount != ZERO:
                 group_events.append(HistoryBaseEntry(
-                    event_identifier=HistoryBaseEntry.deserialize_event_identifier_from_kraken(identifier),  # noqa: 501
+                    event_identifier=HistoryBaseEntry.deserialize_event_identifier(identifier),
                     sequence_index=current_fee_index,
                     timestamp=timestamp,
                     location=Location.KRAKEN,
