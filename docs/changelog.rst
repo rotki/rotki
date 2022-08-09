@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`4657` Fix an edge case at ENS reverse resolution making an address resolving to the zero address instead of a name.
+* :bug:`4657` Now ens names are verified by forward resolution.
 * :feature:`4645` Support the new poloniex API. Note that with their "new and advanced" API we can't query trades history older than 90 days
 
 * :release:`1.25.1 <2022-07-28>`
