@@ -63,7 +63,8 @@ export enum TransactionEventType {
   RECEIVE_DONATION = 'receive_donation',
   RENEW = 'renew',
   PLACE_ORDER = 'place_order',
-  TRANSFER = 'transfer'
+  TRANSFER = 'transfer',
+  CLAIM_REWARD = 'claim_reward'
 }
 
 export const TransactionEventTypeEnum = z.nativeEnum(TransactionEventType);

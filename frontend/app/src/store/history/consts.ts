@@ -294,6 +294,11 @@ export const transactionEventTypeData = computed<ActionDataEntry[]>(() => [
     identifier: TransactionEventType.TRANSFER,
     label: i18n.t('transactions.events.type.transfer').toString(),
     icon: 'mdi-swap-horizontal'
+  },
+  {
+    identifier: TransactionEventType.CLAIM_REWARD,
+    label: i18n.t('transactions.events.type.claim_reward').toString(),
+    icon: 'mdi-gift'
   }
 ]);
 
@@ -312,7 +317,7 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.RECEIVE_WRAPPED]: TransactionEventType.RECEIVE,
     [HistoryEventSubType.RETURN_WRAPPED]: TransactionEventType.RECEIVE,
     [HistoryEventSubType.AIRDROP]: TransactionEventType.AIRDROP,
-    [HistoryEventSubType.REWARD]: TransactionEventType.RECEIVE,
+    [HistoryEventSubType.REWARD]: TransactionEventType.CLAIM_REWARD,
     [HistoryEventSubType.NONE]: TransactionEventType.RECEIVE,
     [HistoryEventSubType.DONATE]: TransactionEventType.RECEIVE_DONATION
   },
