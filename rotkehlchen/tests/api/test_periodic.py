@@ -35,6 +35,6 @@ def test_query_periodic(rotkehlchen_api_server_with_exchanges):
     result = assert_proper_response_with_result(response)
     assert len(result) == 3
     assert result['last_balance_save'] >= start_ts
-    assert result['eth_node_connection'] is False
+    assert result['connected_eth_nodes'] == []
     # Non -1 value tests for these exist in test_history.py::test_query_history_timerange
     assert result['last_data_upload_ts'] == 0

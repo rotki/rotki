@@ -310,6 +310,9 @@ class EthereumManager():
                 return node
         return None
 
+    def get_connected_nodes(self) -> List[NodeName]:
+        return list(self.web3_mapping.keys())
+
     def attempt_connect(
             self,
             node: NodeName,

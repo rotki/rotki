@@ -954,14 +954,14 @@ class Rotkehlchen():
                 self.data.db.delete_used_query_range_for_exchange(write_cursor=cursor, location=location)  # noqa: E501
         return True, ''
 
-    def query_periodic_data(self) -> Dict[str, Union[bool, Timestamp]]:
+    def query_periodic_data(self) -> Dict[str, Union[bool, List[str], Timestamp]]:
         """Query for frequently changing data"""
-        result: Dict[str, Union[bool, Timestamp]] = {}
+        result: Dict[str, Union[bool, List[str], Timestamp]] = {}
 
         if self.user_is_logged_in:
             with self.data.db.conn.read_ctx() as cursor:
                 result['last_balance_save'] = self.data.db.get_last_balance_save_time(cursor)
-                result['eth_node_connection'] = self.chain_manager.ethereum.get_own_node_web3() is not None  # noqa : E501
+                result['connected_eth_nodes'] = [node.name for node in self.chain_manager.ethereum.get_connected_nodes()]  # noqa: E501
                 result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa : E501
         return result
 
