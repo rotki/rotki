@@ -14,8 +14,6 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-// eslint-disable-next-line import/no-unresolved
-import { registerSW } from 'virtual:pwa-register';
 
 export default defineComponent({
   name: 'FrontendUpdateNotifier',
@@ -27,7 +25,9 @@ export default defineComponent({
     const needRefresh = ref<boolean>(false);
     const updating = ref<boolean>(false);
 
-    onMounted(() => {
+    onMounted(async () => {
+      // eslint-disable-next-line import/no-unresolved
+      const { registerSW } = await import('virtual:pwa-register');
       try {
         set(
           updateSW,

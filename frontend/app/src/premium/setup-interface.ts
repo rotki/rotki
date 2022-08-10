@@ -5,13 +5,7 @@ import {
   SettingsApi
 } from '@rotki/common/lib/premium';
 import { Themes, TimeUnit } from '@rotki/common/lib/settings';
-import * as CompositionAPI from '@vue/composition-api';
-import * as BigNumber from 'bignumber.js';
-import * as Chart from 'chart.js';
-import ChartJsPluginZoom from 'chartjs-plugin-zoom';
 import dayjs from 'dayjs';
-import Vue from 'vue';
-import * as zod from 'zod';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
@@ -26,7 +20,6 @@ import {
   userSettings,
   utilsApi
 } from '@/premium/premium-apis';
-import { registerComponents } from '@/premium/register-components';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { DateFormat } from '@/types/date-format';
@@ -109,14 +102,3 @@ export const usePremiumApi = (): PremiumInterface => ({
     settings: settings()
   }
 });
-
-export const setupPremium = () => {
-  window.Vue = Vue;
-  window.Chart = Chart;
-  window['chartjs-plugin-zoom'] = ChartJsPluginZoom;
-  window.Chart = Chart;
-  window['@vue/composition-api'] = CompositionAPI;
-  window.zod = zod;
-  window.bn = BigNumber;
-  registerComponents();
-};
