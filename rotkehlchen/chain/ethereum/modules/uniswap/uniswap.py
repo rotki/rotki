@@ -20,6 +20,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     ProtocolBalance,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
+from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import (
     get_latest_lp_addresses,
     uniswap_lp_token_balances,
@@ -541,6 +542,10 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         else:
             protocol_balance = self.get_balances_chain(addresses)
 
+        self.add_lp_tokens_to_db(
+            lp_balances_mappings=protocol_balance.address_balances,
+            protocol=CPT_UNISWAP_V2,
+        )
         known_assets = protocol_balance.known_assets
         unknown_assets = protocol_balance.unknown_assets
 

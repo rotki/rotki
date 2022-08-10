@@ -746,12 +746,12 @@ class Rotkehlchen():
                 if len(loopring_balances) != 0:
                     balances[str(Location.LOOPRING)] = loopring_balances
 
-        # retrieve uniswap v3 lps
+        # retrieve uniswap v3 & v2 lps
         uniswap = self.chain_manager.get_module('uniswap')
-        uniswap_balances = None
+        uniswap_v3_balances = None
         if uniswap is not None:
             try:
-                uniswap_balances = uniswap.get_v3_balances(
+                uniswap_v3_balances = uniswap.get_v3_balances(
                     addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
                 )
             except RemoteError as e:
@@ -759,6 +759,22 @@ class Rotkehlchen():
                     f'At balance snapshot Uniswap V3 balances query failed due to {str(e)}. Error '
                     f'is ignored and balance snapshot will still be saved.',
                 )
+            try:
+                uniswap_v2_balances = uniswap.get_balances(
+                    addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
+                )
+            except RemoteError as e:
+                log.error(
+                    f'At balance snapshot Uniswap V2 balances query failed due to {str(e)}. Error '
+                    f'is ignored and balance snapshot will still be saved.',
+                )
+            else:
+                if str(Location.BLOCKCHAIN) not in balances:
+                    balances[str(Location.BLOCKCHAIN)] = {}
+
+                for uniswap_v2_lps in uniswap_v2_balances.values():
+                    for lp in uniswap_v2_lps:
+                        balances[str(Location.BLOCKCHAIN)][Asset(lp.address)] = lp.user_balance
 
         # retrieve nft balances if module is activated
         nfts = self.chain_manager.get_module('nfts')
@@ -766,7 +782,7 @@ class Rotkehlchen():
             try:
                 nft_mapping = nfts.get_balances(
                     addresses=self.chain_manager.queried_addresses_for_module('nfts'),
-                    uniswap_nfts=uniswap_balances,
+                    uniswap_nfts=uniswap_v3_balances,
                     return_zero_values=False,
                     ignore_cache=False,
                 )

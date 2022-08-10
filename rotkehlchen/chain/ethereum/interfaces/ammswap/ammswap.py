@@ -11,7 +11,7 @@ import abc
 import logging
 from collections import defaultdict
 from datetime import datetime, time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Set, Tuple
 
 from gevent.lock import Semaphore
 
@@ -993,6 +993,25 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             unknown_assets=unknown_assets,
         )
         return protocol_balance
+
+    def add_lp_tokens_to_db(
+            self,
+            lp_balances_mappings: AddressToLPBalances,
+            protocol: Literal['uniswap-v2', 'sushiswap-v2'],
+    ) -> None:
+        """Adds LP token addresses to the database if not present."""
+        name = 'Uniswap V2' if protocol == 'uniswap-v2' else 'SushiSwap LP Token'
+        symbol = 'UNI-V2' if protocol == 'uniswap-v2' else 'SLP'
+        for lp_balances in lp_balances_mappings.values():
+            for lp_balance in lp_balances:
+                get_or_create_ethereum_token(
+                    userdb=self.database,
+                    ethereum_address=lp_balance.address,
+                    decimals=18,
+                    protocol=protocol,
+                    name=name,
+                    symbol=symbol,
+                )
 
     @abc.abstractmethod
     def _get_trades_graph_for_address(
