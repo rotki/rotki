@@ -1,7 +1,7 @@
 <template>
   <table-expand-container visible :colspan="span" :padded="false">
     <data-table
-      v-if="premium"
+      v-if="premium || !premiumOnly"
       hide-default-footer
       :headers="tableHeaders"
       :items="transformAssets(assets)"
@@ -117,6 +117,11 @@ export default defineComponent({
     assets: {
       required: true,
       type: Array as PropType<XswapAsset[]>
+    },
+    premiumOnly: {
+      required: false,
+      type: Boolean,
+      default: true
     }
   },
   setup() {
@@ -131,7 +136,8 @@ export default defineComponent({
       return assets.map(item => {
         return {
           asset: item.asset,
-          usdPrice: (get(prices)[item.asset] as BigNumber) ?? Zero,
+          usdPrice:
+            item.usdPrice ?? (get(prices)[item.asset] as BigNumber) ?? Zero,
           amount: item.userBalance.amount,
           usdValue: item.userBalance.usdValue
         };

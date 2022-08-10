@@ -5,6 +5,7 @@
       :asset="currentAsset"
       :opens-details="opensDetails"
       :dense="dense"
+      :asset-styled="assetStyled"
       :enable-association="enableAssociation"
     />
   </div>
@@ -27,6 +28,7 @@ export default defineComponent({
         return !!value && value.length > 0;
       }
     },
+    assetStyled: { required: false, type: Object, default: () => null },
     opensDetails: { required: false, type: Boolean, default: false },
     hideName: { required: false, type: Boolean, default: false },
     dense: { required: false, type: Boolean, default: false },

@@ -22,18 +22,20 @@ export async function fetchDataAsync<T extends TaskMeta, R>(
     logger.debug('module inactive or not premium');
     return;
   }
+  const { awaitTask, isTaskRunning } = useTasks();
 
   const task = data.task;
-  const { getStatus, loading, setStatus } = getStatusUpdater(task.section);
+  const { getStatus, setStatus } = getStatusUpdater(task.section);
 
-  if (loading() || (getStatus() === Status.LOADED && !data.refresh)) {
+  if (
+    get(isTaskRunning(task.type, data.task.checkLoading)) ||
+    (getStatus() === Status.LOADED && !data.refresh)
+  ) {
     logger.debug(`${Section[data.task.section]} is already loading`);
     return;
   }
 
   setStatus(data.refresh ? Status.REFRESHING : Status.LOADING);
-
-  const { awaitTask } = useTasks();
 
   try {
     const { taskId } = await task.query();

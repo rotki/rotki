@@ -157,7 +157,6 @@ import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
-import { useUniswapStore } from '@/store/defi/uniswap';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
@@ -212,15 +211,8 @@ const { fetchConnectedExchangeBalances } = exchangeStore;
 
 const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
-const isUniswapV3BalancesLoading = isTaskRunning(
-  TaskType.DEFI_UNISWAP_V3_BALANCES
-);
 const isBlockchainLoading = computed<boolean>(() => {
-  return (
-    get(isQueryingBlockchain) ||
-    get(isLoopringLoading) ||
-    get(isUniswapV3BalancesLoading)
-  );
+  return get(isQueryingBlockchain) || get(isLoopringLoading);
 });
 
 const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
@@ -233,8 +225,7 @@ const isAnyLoading = computed<boolean>(() => {
   return (
     get(isBlockchainLoading) ||
     get(isExchangeLoading) ||
-    get(isAllBalancesLoading) ||
-    get(isUniswapV3BalancesLoading)
+    get(isAllBalancesLoading)
   );
 });
 
@@ -244,8 +235,6 @@ const refreshBalance = (balanceSource: string) => {
       ignoreCache: true
     });
     fetchLoopringBalances(true);
-    const { fetchV3Balances } = useUniswapStore();
-    fetchV3Balances();
   } else if (balanceSource === 'exchange') {
     fetchConnectedExchangeBalances(true);
   }

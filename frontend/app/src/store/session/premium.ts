@@ -7,6 +7,8 @@ import { setupPremium } from '@/premium/setup-premium';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
+import { useDefiStore } from '@/store/defi';
+import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
 import { PremiumCredentialsPayload } from '@/store/session/types';
 import { useTasks } from '@/store/tasks';
@@ -110,8 +112,13 @@ export const usePremiumStore = defineStore('session/premium', () => {
   };
 
   watch(premium, async (premium, prev) => {
-    if (premium && premium !== prev) {
-      await setupPremium();
+    if (premium !== prev) {
+      if (premium) {
+        await setupPremium();
+      }
+
+      useDefiStore().reset();
+      useMainStore().resetDefiStatus();
     }
   });
 

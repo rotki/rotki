@@ -69,7 +69,7 @@ describe('settings:frontend', () => {
                 Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
               [DashboardTableType.NFT]:
                 Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-              [DashboardTableType.LIQUIDITY_PROVIDER]:
+              [DashboardTableType.LIQUIDITY_POSITION]:
                 Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
             },
             dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
@@ -142,7 +142,7 @@ describe('settings:frontend', () => {
           TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
         ],
         [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
-        [DashboardTableType.LIQUIDITY_PROVIDER]: [
+        [DashboardTableType.LIQUIDITY_POSITION]: [
           TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
         ]
       },
@@ -202,7 +202,7 @@ describe('settings:frontend', () => {
         TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
       ],
       [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
-      [DashboardTableType.LIQUIDITY_PROVIDER]: [
+      [DashboardTableType.LIQUIDITY_POSITION]: [
         TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
       ]
     });
