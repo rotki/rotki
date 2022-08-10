@@ -5353,14 +5353,14 @@ Querying periodic data
       {
           "result": {
               "last_balance_save": 1572345881,
-              "eth_node_connection": true,
+              "connected_eth_nodes": ['nodeX', 'nodeY'],
               "last_data_upload_ts": 0
           }
           "message": ""
       }
 
    :resjson int last_balance_save: The last time (unix timestamp) at which balances were saved in the database.
-   :resjson bool eth_node_connection: A boolean denoting if the application is connected to an ethereum node. If ``false`` that means we fall back to etherscan.
+   :resjson list connected_eth_nodes: A list of nodes that we are connected to.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.
