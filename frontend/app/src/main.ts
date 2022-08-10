@@ -11,7 +11,7 @@ import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
 import { Interop } from '@/plugins/interop';
 import vuetify from '@/plugins/vuetify';
-import { setupPremium, usePremiumApi } from '@/premium/setup-interface';
+import { usePremiumApi } from '@/premium/setup-interface';
 import { storePiniaPlugins } from '@/store/debug';
 import { setupDayjs } from '@/utils/date';
 import { setupFormatter } from '@/utils/setup-formatter';
@@ -29,8 +29,6 @@ Vue.use(Interop);
 Vue.use(VueCompositionAPI);
 Vue.use(PiniaVuePlugin);
 
-setupPremium();
-
 Vue.directive('blur', {
   inserted: function (el) {
     el.onfocus = ({ target }) => {
@@ -47,7 +45,6 @@ pinia.use(storePiniaPlugins);
 
 new Vue({
   setup() {
-    provide('vuex-store', store);
     provide('premium', usePremiumApi());
   },
   vuetify,

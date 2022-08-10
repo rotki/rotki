@@ -1,4 +1,4 @@
-import { BigNumber, Nullable } from '@rotki/common';
+import { BigNumber } from '@rotki/common';
 import { ActionResult } from '@rotki/common/lib/data';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { ref } from '@vue/composition-api';
@@ -9,6 +9,7 @@ import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop, useInterop } from '@/electron-interop';
 import i18n from '@/i18n';
+import { setupPremium } from '@/premium/setup-premium';
 import { SupportedExternalExchanges } from '@/services/balances/types';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
@@ -32,7 +33,6 @@ import { useTagStore } from '@/store/session/tags';
 import {
   ChangePasswordPayload,
   NftResponse,
-  Pinned,
   SyncConflict
 } from '@/store/session/types';
 import { useWatchersStore } from '@/store/session/watchers';
@@ -80,7 +80,6 @@ export const useSessionStore = defineStore('session', () => {
   const lastDataUpload = ref(0);
   const showUpdatePopup = ref(false);
   const darkModeEnabled = ref(false);
-  const pinned = ref<Nullable<Pinned>>(null);
 
   const periodicRunning = ref(false);
 
@@ -188,6 +187,9 @@ export const useSessionStore = defineStore('session', () => {
         });
       }
 
+      if (other.havePremium) {
+        setupPremium();
+      }
       set(premium, other.havePremium);
       set(premiumSync, other.premiumShouldSync);
       set(lastBalanceSave, settings.data.lastBalanceSave);
@@ -433,7 +435,6 @@ export const useSessionStore = defineStore('session', () => {
     set(lastDataUpload, 0);
     set(showUpdatePopup, false);
     set(darkModeEnabled, false);
-    set(pinned, null);
 
     usePremiumStore().reset();
     useQueriedAddressesStore().reset();
@@ -451,7 +452,6 @@ export const useSessionStore = defineStore('session', () => {
     lastDataUpload,
     showUpdatePopup,
     darkModeEnabled,
-    pinned,
     login,
     logout,
     logoutRemoteSession,

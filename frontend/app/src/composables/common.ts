@@ -34,6 +34,12 @@ export const useTheme = () => {
       color: get(dark) ? 'rgba(255,255,255,0.87)' : 'rgba(0,0,0,0.87)'
     };
   });
+  const appBarColor = computed(() => {
+    if (!get(dark)) {
+      return 'white';
+    }
+    return null;
+  });
   return {
     $vuetify,
     isMobile,
@@ -42,7 +48,8 @@ export const useTheme = () => {
     breakpoint,
     currentBreakpoint,
     width,
-    fontStyle
+    fontStyle,
+    appBarColor
   };
 };
 
