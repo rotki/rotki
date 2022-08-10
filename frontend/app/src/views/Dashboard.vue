@@ -155,7 +155,9 @@ import {
   defineComponent
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { setupExchanges, setupGeneralBalances } from '@/composables/balances';
+import { storeToRefs } from 'pinia';
+import { setupGeneralBalances } from '@/composables/balances';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -200,7 +202,8 @@ export default defineComponent({
       fetchManualBalances
     } = setupGeneralBalances();
 
-    const { exchanges, fetchExchangeBalances } = setupExchanges();
+    const exchangeStore = useExchangeBalancesStore();
+    const { exchanges } = storeToRefs(exchangeStore);
 
     const isQueryingBlockchain = isTaskRunning(
       TaskType.QUERY_BLOCKCHAIN_BALANCES
@@ -241,12 +244,7 @@ export default defineComponent({
         const { fetchV3Balances } = useUniswapStore();
         fetchV3Balances();
       } else if (balanceSource === 'exchange') {
-        for (const exchange of get(exchanges)) {
-          fetchExchangeBalances({
-            location: exchange.location,
-            ignoreCache: true
-          });
-        }
+        exchangeStore.fetchConnectedExchangeBalances(true);
       }
     };
 

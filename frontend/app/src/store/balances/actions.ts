@@ -2,7 +2,8 @@ import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Message, Severity } from '@rotki/common/lib/messages';
 import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
-import { get } from '@vueuse/core';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
@@ -24,13 +25,13 @@ import {
 import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { BalanceMutations } from '@/store/balances/mutation-types';
 import {
   AccountAssetBalances,
   AccountPayload,
   AddAccountsPayload,
   AllBalancePayload,
-  AssetBalances,
   AssetPriceResponse,
   AssetPrices,
   BalanceState,
@@ -38,8 +39,6 @@ import {
   BlockchainAccountPayload,
   BlockchainBalancePayload,
   ERC20Token,
-  ExchangeBalancePayload,
-  ExchangeSetupPayload,
   FetchPricePayload,
   HistoricPricePayload,
   HistoricPrices,
@@ -50,7 +49,6 @@ import {
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import { useUniswapStore } from '@/store/defi/uniswap';
-import { useHistory } from '@/store/history';
 import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
 import { usePremiumStore } from '@/store/session/premium';
@@ -68,9 +66,9 @@ import {
 } from '@/store/utils';
 import { Writeable } from '@/types';
 import { Eth2Validator } from '@/types/balances';
-import { Exchange } from '@/types/exchanges';
+import { Exchange, ExchangeData } from '@/types/exchanges';
 import { Module } from '@/types/modules';
-import { BlockchainMetadata, ExchangeMeta, TaskMeta } from '@/types/task';
+import { BlockchainMetadata, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
 import { assert } from '@/utils/assertions';
@@ -159,83 +157,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     await dispatch('accounts');
   },
 
-  async fetchConnectedExchangeBalances(
-    { dispatch, state: { connectedExchanges: exchanges } },
-    refresh: boolean = false
-  ): Promise<void> {
-    for (const exchange of exchanges) {
-      await dispatch('fetchExchangeBalances', {
-        location: exchange.location,
-        ignoreCache: refresh
-      } as ExchangeBalancePayload);
-    }
-  },
-
-  async fetchExchangeBalances(
-    { commit },
-    payload: ExchangeBalancePayload
-  ): Promise<void> {
-    const { location, ignoreCache } = payload;
-    const taskType = TaskType.QUERY_EXCHANGE_BALANCES;
-
-    const { awaitTask, isTaskRunning, metadata } = useTasks();
-    const meta = metadata<ExchangeMeta>(taskType);
-
-    if (get(isTaskRunning(taskType)) && meta?.location === location) {
-      return;
-    }
-
-    const currentStatus: Status = getStatus(Section.EXCHANGES);
-    const section = Section.EXCHANGES;
-    const newStatus =
-      currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-
-    try {
-      const { taskId } = await api.queryExchangeBalances(location, ignoreCache);
-      const meta: ExchangeMeta = {
-        location,
-        title: i18n
-          .t('actions.balances.exchange_balances.task.title', {
-            location
-          })
-          .toString(),
-        numericKeys: balanceKeys
-      };
-
-      const { result } = await awaitTask<AssetBalances, ExchangeMeta>(
-        taskId,
-        taskType,
-        meta,
-        true
-      );
-
-      commit('addExchangeBalances', {
-        location: location,
-        balances: result
-      });
-    } catch (e: any) {
-      const message = i18n
-        .t('actions.balances.exchange_balances.error.message', {
-          location,
-          error: e.message
-        })
-        .toString();
-      const title = i18n
-        .t('actions.balances.exchange_balances.error.title', {
-          location
-        })
-        .toString();
-      const { notify } = useNotifications();
-      notify({
-        title,
-        message,
-        display: true
-      });
-    } finally {
-      setStatus(Status.LOADED, section);
-    }
-  },
   async fetchExchangeRates({ commit }): Promise<void> {
     try {
       const { taskId } = await api.getFiatExchangeRates(
@@ -343,25 +264,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       });
     }
   },
-  async addExchanges(
-    { commit, dispatch },
-    exchanges: Exchange[]
-  ): Promise<void> {
-    commit('connectedExchanges', exchanges);
-    for (const exchange of exchanges) {
-      await dispatch('fetchExchangeBalances', {
-        location: exchange.location,
-        ignoreCache: false
-      } as ExchangeBalancePayload);
-    }
-  },
 
   async fetch({ dispatch }, exchanges: Exchange[]): Promise<void> {
     await dispatch('fetchExchangeRates');
     await dispatch('fetchBalances');
 
     if (exchanges && exchanges.length > 0) {
-      await dispatch('addExchanges', exchanges);
+      const { setExchanges } = useExchangeBalancesStore();
+      await setExchanges(exchanges);
     }
     await dispatch('fetchBlockchainBalances');
     await dispatch(BalanceActions.FETCH_NF_BALANCES);
@@ -1038,100 +948,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async setupExchange(
-    { commit, dispatch },
-    { exchange, edit }: ExchangeSetupPayload
-  ): Promise<boolean> {
-    try {
-      const success = await api.setupExchange(exchange, edit);
-      const exchangeEntry: Exchange = {
-        name: exchange.name,
-        location: exchange.location,
-        krakenAccountType: exchange.krakenAccountType ?? undefined,
-        ftxSubaccount: exchange.ftxSubaccount ?? undefined
-      };
-
-      if (!edit) {
-        commit('addExchange', exchangeEntry);
-      } else {
-        commit('editExchange', {
-          exchange: exchangeEntry,
-          newName: exchange.newName
-        });
-      }
-
-      dispatch('fetchExchangeBalances', {
-        location: exchange.location,
-        ignoreCache: false
-      } as ExchangeBalancePayload).then(() =>
-        dispatch('refreshPrices', { ignoreCache: false })
-      );
-
-      const { purgeHistoryLocation } = useHistory();
-      purgeHistoryLocation(exchange.location);
-
-      return success;
-    } catch (e: any) {
-      showError(
-        i18n
-          .t('actions.balances.exchange_setup.description', {
-            exchange: exchange.location,
-            error: e.message
-          })
-          .toString(),
-        i18n.t('actions.balances.exchange_setup.title').toString()
-      );
-      return false;
-    }
-  },
-
-  async removeExchange(
-    { commit, dispatch, state },
-    exchange: Exchange
-  ): Promise<boolean> {
-    try {
-      const success = await api.removeExchange(exchange);
-      if (success) {
-        const exchangeIndex = state.connectedExchanges.findIndex(
-          ({ location, name }) =>
-            name === exchange.name && location === exchange.location
-        );
-        assert(
-          exchangeIndex >= 0,
-          `${exchange} not found in ${state.connectedExchanges
-            .map(exchange => `${exchange.name} on ${exchange.location}`)
-            .join(', ')}`
-        );
-        commit('removeExchange', exchange);
-
-        const remaining = state.connectedExchanges
-          .map(({ location }) => location)
-          .filter(location => location === exchange.location);
-
-        if (remaining.length > 0) {
-          await dispatch('fetchExchangeBalances', {
-            location: exchange.location,
-            ignoreCache: false
-          } as ExchangeBalancePayload);
-        }
-      }
-
-      const { purgeHistoryLocation } = useHistory();
-      await purgeHistoryLocation(exchange.location);
-
-      return success;
-    } catch (e: any) {
-      showError(
-        i18n.tc('actions.balances.exchange_removal.description', 0, {
-          exchange,
-          error: e.message
-        }),
-        i18n.tc('actions.balances.exchange_removal.title')
-      );
-      return false;
-    }
-  },
-
   async updatePrices({ commit, state }, prices: AssetPrices): Promise<void> {
     const manualBalances = [
       ...state.manualBalances,
@@ -1151,7 +967,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const polkadot = { ...state.dot };
     const avalanche = { ...state.avax };
 
-    const exchanges = { ...state.exchangeBalances };
+    const { exchangeBalances } = storeToRefs(useExchangeBalancesStore());
+
+    const exchanges = { ...(get(exchangeBalances) as ExchangeData) };
 
     for (const asset in totals) {
       const assetPrice = prices[asset];
@@ -1271,7 +1089,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       exchanges[exchange] = updateBalancePrice(exchanges[exchange], prices);
     }
 
-    commit('updateExchangeBalances', exchanges);
+    set(exchangeBalances, exchanges);
   },
 
   async fetchPrices(

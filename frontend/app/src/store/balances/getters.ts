@@ -18,6 +18,7 @@ import { BlockchainAssetBalances } from '@/services/balances/types';
 import { GeneralAccountData } from '@/services/types-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { samePriceAssets } from '@/store/balances/const';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import {
   AccountAssetBalances,
   AssetBreakdown,
@@ -37,7 +38,7 @@ import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { getStatus } from '@/store/utils';
 import { Writeable } from '@/types';
-import { ExchangeInfo, SupportedExchange } from '@/types/exchanges';
+import { ExchangeData, ExchangeInfo } from '@/types/exchanges';
 import { L2_LOOPRING } from '@/types/protocols';
 import { ReadOnlyTag } from '@/types/user';
 import { assert } from '@/utils/assertions';
@@ -57,8 +58,6 @@ export interface BalanceGetters {
   loopringAccounts: BlockchainAccountWithBalance[];
   totals: AssetBalance[];
   exchangeRate: ExchangeRateGetter;
-  exchanges: ExchangeInfo[];
-  exchangeBalances: (exchange: string) => AssetBalance[];
   aggregatedBalances: AssetBalanceWithPrice[];
   aggregatedAssets: string[];
   liabilities: AssetBalanceWithPrice[];
@@ -78,7 +77,6 @@ export interface BalanceGetters {
   blockchainAssets: AssetBalanceWithPrice[];
   locationBreakdown: (location: string) => AssetBalanceWithPrice[];
   byLocation: BalanceByLocation;
-  exchangeNonce: (exchange: SupportedExchange) => number;
   nfTotalValue: (includeLPToken: boolean) => BigNumber;
   nfBalances: NonFungibleBalance[];
 }
@@ -371,58 +369,9 @@ export const getters: Getters<
     return state.usdToFiatExchangeRates[currency];
   },
 
-  exchanges: (state: BalanceState): ExchangeInfo[] => {
-    const balances = state.exchangeBalances;
-    return Object.keys(balances)
-      .map(value => ({
-        location: value,
-        balances: balances[value],
-        total: assetSum(balances[value])
-      }))
-      .sort((a, b) => sortDesc(a.total, b.total));
-  },
-
-  exchangeBalances:
-    ({ exchangeBalances, prices }) =>
-    (exchange: string): AssetBalanceWithPrice[] => {
-      const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
-      const { isAssetIgnored } = useIgnoredAssetsStore();
-      const ownedAssets: Record<string, Balance> = {};
-
-      forEach(exchangeBalances[exchange], (value: Balance, asset: string) => {
-        const associatedAsset: string = get(
-          getAssociatedAssetIdentifier(asset)
-        );
-
-        const ownedAsset = ownedAssets[associatedAsset];
-
-        ownedAssets[associatedAsset] = !ownedAsset
-          ? {
-              ...value
-            }
-          : {
-              ...balanceSum(ownedAsset, value)
-            };
-      });
-
-      return Object.keys(ownedAssets)
-        .filter(asset => !get(isAssetIgnored(asset)))
-        .map(asset => ({
-          asset,
-          amount: ownedAssets[asset].amount,
-          usdValue: ownedAssets[asset].usdValue,
-          usdPrice: prices[asset] ?? NoPrice
-        }));
-    },
-
   aggregatedBalances: (
-    {
-      connectedExchanges,
-      manualBalances,
-      loopringBalances,
-      prices
-    }: BalanceState,
-    { exchangeBalances, totals }
+    { manualBalances, loopringBalances, prices }: BalanceState,
+    { totals }
   ): AssetBalanceWithPrice[] => {
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -444,12 +393,15 @@ export const getters: Getters<
           };
     };
 
-    const exchanges = connectedExchanges
+    const exchangeStore = useExchangeBalancesStore();
+    const { connectedExchanges } = storeToRefs(exchangeStore);
+
+    const exchanges = get(connectedExchanges)
       .map(({ location }) => location)
       .filter(uniqueStrings);
 
     for (const exchange of exchanges) {
-      const balances = exchangeBalances(exchange);
+      const balances = get(exchangeStore.getBalances(exchange));
       balances.forEach((value: AssetBalance) => addToOwned(value));
     }
 
@@ -853,7 +805,6 @@ export const getters: Getters<
         ethAccounts,
         eth2,
         eth2Validators,
-        exchangeBalances,
         ksm,
         dot,
         avax,
@@ -865,8 +816,11 @@ export const getters: Getters<
     asset => {
       const breakdown: AssetBreakdown[] = [];
 
-      for (const exchange in exchangeBalances) {
-        const exchangeData = exchangeBalances[exchange];
+      const { exchangeBalances } = storeToRefs(useExchangeBalancesStore());
+
+      const cexBalances = get(exchangeBalances) as ExchangeData;
+      for (const exchange in cexBalances) {
+        const exchangeData = cexBalances[exchange];
         if (!exchangeData[asset]) {
           continue;
         }
@@ -1173,15 +1127,7 @@ export const getters: Getters<
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
   locationBreakdown:
-    (
-      {
-        connectedExchanges,
-        manualBalances,
-        loopringBalances,
-        prices
-      }: BalanceState,
-      { exchangeBalances, totals }
-    ) =>
+    ({ manualBalances, loopringBalances, prices }: BalanceState, { totals }) =>
     identifier => {
       const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
       const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -1203,12 +1149,15 @@ export const getters: Getters<
             };
       };
 
-      const exchange = connectedExchanges.find(
+      const exchangeStore = useExchangeBalancesStore();
+      const { connectedExchanges } = storeToRefs(exchangeStore);
+
+      const exchange = get(connectedExchanges).find(
         ({ location }) => identifier === location
       );
 
       if (exchange) {
-        const balances = exchangeBalances(identifier);
+        const balances = get(exchangeStore.getBalances(exchange.location));
         balances.forEach((value: AssetBalance) => addToOwned(value));
       }
 
@@ -1242,12 +1191,7 @@ export const getters: Getters<
     },
   byLocation: (
     state,
-    {
-      blockchainTotal,
-      exchangeRate,
-      exchanges,
-      manualBalanceByLocation: manual
-    }
+    { blockchainTotal, exchangeRate, manualBalanceByLocation: manual }
   ) => {
     const byLocations: Record<string, BigNumber> = {};
 
@@ -1271,7 +1215,8 @@ export const getters: Getters<
 
     addToOwned(TRADE_LOCATION_BLOCKCHAIN, blockchainTotalConverted);
 
-    for (const { location, total } of exchanges) {
+    const { exchanges } = storeToRefs(useExchangeBalancesStore());
+    for (const { location, total } of get(exchanges) as ExchangeInfo[]) {
       const exchangeBalanceConverted = currentExchangeRate
         ? total.multipliedBy(currentExchangeRate)
         : total;
@@ -1280,13 +1225,6 @@ export const getters: Getters<
 
     return byLocations;
   },
-  exchangeNonce:
-    ({ connectedExchanges: exchanges }) =>
-    exchange => {
-      return (
-        exchanges.filter(({ location }) => location === exchange).length + 1
-      );
-    },
   nfBalances: ({ nonFungibleBalances }) => {
     const nfBalances: NonFungibleBalance[] = [];
     for (const address in nonFungibleBalances) {

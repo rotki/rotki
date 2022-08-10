@@ -162,8 +162,8 @@ import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import { tradeLocations } from '@/components/history/consts';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { setupGeneralBalances } from '@/composables/balances';
 import i18n from '@/i18n';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { ExchangePayload } from '@/store/balances/types';
 import {
   KrakenAccountType,
@@ -186,7 +186,7 @@ export default defineComponent({
     const editKeys = ref(false);
     const form = ref();
 
-    const { exchangeNonce } = setupGeneralBalances();
+    const { getExchangeNonce } = useExchangeBalancesStore();
 
     const requiresPassphrase = computed(() => {
       const { location } = get(exchange);
@@ -228,7 +228,8 @@ export default defineComponent({
       const location = tradeLocations.find(
         ({ identifier }) => identifier === exchange
       );
-      return location ? `${location.name} ${exchangeNonce(exchange)}` : '';
+      const nonce = get(getExchangeNonce(exchange));
+      return location ? `${location.name} ${nonce}` : '';
     };
 
     const toggleEdit = () => {

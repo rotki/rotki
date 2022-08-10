@@ -19,9 +19,7 @@ import {
   BlockchainAccountWithBalance,
   BlockchainBalancePayload,
   BlockchainTotal,
-  ExchangeBalancePayload,
   ExchangeRateGetter,
-  ExchangeSetupPayload,
   FetchPricePayload,
   HistoricPricePayload,
   LocationBalance,
@@ -32,7 +30,6 @@ import {
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Eth2Validator } from '@/types/balances';
-import { Exchange, ExchangeInfo, SupportedExchange } from '@/types/exchanges';
 import { PriceOracle } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
@@ -63,10 +60,6 @@ export const setupGeneralBalances = () => {
   const blockchainTotals = computed<BlockchainTotal[]>(() => {
     return store.getters['balances/blockchainTotals'];
   });
-
-  const exchangeNonce = (exchange: SupportedExchange): number => {
-    return store.getters['balances/exchangeNonce'](exchange);
-  };
 
   const hasDetails = (account: string) =>
     computed<boolean>(() => {
@@ -156,7 +149,6 @@ export const setupGeneralBalances = () => {
     liabilities,
     blockchainTotals,
     nfBalances,
-    exchangeNonce,
     nfTotalValue,
     hasDetails,
     accountAssets,
@@ -402,53 +394,5 @@ export const usePrices = () => {
     createOracleCache,
     getPriceCache,
     deletePriceCache
-  };
-};
-
-export const setupExchanges = () => {
-  const store = useStore();
-
-  const exchanges = computed<ExchangeInfo[]>(() => {
-    return store.getters['balances/exchanges'];
-  });
-
-  const connectedExchanges = computed<Exchange[]>(() => {
-    return store.state.balances!!.connectedExchanges;
-  });
-
-  const exchangeBalances = (exchange: string) =>
-    computed<AssetBalanceWithPrice[]>(() =>
-      store.getters['balances/exchangeBalances'](exchange)
-    );
-
-  const fetchExchangeBalances: (
-    payload: ExchangeBalancePayload
-  ) => Promise<void> = async payload => {
-    return await store.dispatch('balances/fetchExchangeBalances', payload);
-  };
-
-  const fetchConnectedExchangeBalances = async (refresh: boolean = false) => {
-    return await store.dispatch(
-      'balances/fetchConnectedExchangeBalances',
-      refresh
-    );
-  };
-
-  const setupExchange = async (payload: ExchangeSetupPayload) => {
-    return await store.dispatch('balances/setupExchange', payload);
-  };
-
-  const removeExchange = async (exchange: Exchange) => {
-    return await store.dispatch('balances/removeExchange', exchange);
-  };
-
-  return {
-    exchanges,
-    exchangeBalances,
-    connectedExchanges,
-    fetchExchangeBalances,
-    fetchConnectedExchangeBalances,
-    setupExchange,
-    removeExchange
   };
 };

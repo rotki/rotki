@@ -1,7 +1,8 @@
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { setupExchanges, setupGeneralBalances } from '@/composables/balances';
+import { setupGeneralBalances } from '@/composables/balances';
 import { websocket } from '@/services/websocket/websocket-service';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useNotifications } from '@/store/notifications';
 import { useSessionStore } from '@/store/session';
 import { useWatchersStore } from '@/store/session/watchers';
@@ -35,7 +36,7 @@ class Monitoring {
       fetchLoopringBalances,
       refreshPrices
     } = setupGeneralBalances();
-    const { fetchConnectedExchangeBalances } = setupExchanges();
+    const { fetchConnectedExchangeBalances } = useExchangeBalancesStore();
 
     await fetchManualBalances();
     await fetchBlockchainBalances({ ignoreCache: true });
