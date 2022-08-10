@@ -193,10 +193,11 @@ function setupPasswordStorage() {
     event.sender.send(IPC_GET_PASSWORD, password);
   });
 
-  ipcMain.on(IPC_CLEAR_PASSWORD, () => {
+  ipcMain.on(IPC_CLEAR_PASSWORD, event => {
     if (getEncryptionAvailability()) {
       clearPassword();
     }
+    event.sender.send(IPC_CLEAR_PASSWORD);
   });
 }
 

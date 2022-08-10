@@ -126,7 +126,7 @@ export default defineComponent({
 
     const headers: DataTableHeader[] = [
       {
-        text: i18n.t('transactions.events.headers.type').toString(),
+        text: i18n.t('common.type').toString(),
         value: 'type',
         sortable: false,
         cellClass: $style['row__type']

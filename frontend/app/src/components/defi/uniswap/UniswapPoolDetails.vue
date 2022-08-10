@@ -12,11 +12,11 @@
             <v-icon small color="primary">mdi-launch</v-icon>
           </v-btn>
         </template>
-        <span>{{ $t('uniswap_pool_details.tooltip') }}</span>
+        <span>{{ $t('liquidity_pool_details.tooltip') }}</span>
       </v-tooltip>
     </template>
     <card>
-      <template #title>{{ $t('uniswap_pool_details.title') }}</template>
+      <template #title>{{ $t('liquidity_pool_details.title') }}</template>
       <template v-for="(token, key) in balance.assets">
         <v-divider v-if="key > 0" :key="token.asset + 'divider'" class="my-3" />
         <v-row :key="token.asset" align="center">
@@ -27,7 +27,7 @@
             <v-row>
               <v-col md="6">
                 <div class="text--secondary text-body-2">
-                  {{ $t('uniswap_pool_details.total_amount') }}
+                  {{ $t('liquidity_pool_details.total_amount') }}
                 </div>
                 <div class="d-flex font-weight-bold">
                   <amount-display
@@ -39,7 +39,7 @@
               <v-col md="6">
                 <div class="text--secondary text-body-2">
                   {{
-                    $t('uniswap_pool_details.total_value_in_symbol', {
+                    $t('liquidity_pool_details.total_value_in_symbol', {
                       symbol: currencySymbol
                     })
                   }}
@@ -57,7 +57,7 @@
       </template>
       <div v-if="balance.totalSupply" class="d-flex pt-6">
         <div class="text--secondary text-body-2">
-          {{ $t('uniswap_pool_details.liquidity') }}:
+          {{ $t('liquidity_pool_details.liquidity') }}:
         </div>
         <div class="pl-2 font-weight-bold">
           <amount-display :value="balance.totalSupply" />

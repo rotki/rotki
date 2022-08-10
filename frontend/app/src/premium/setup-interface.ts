@@ -7,6 +7,7 @@ import {
 import { Themes, TimeUnit } from '@rotki/common/lib/settings';
 import dayjs from 'dayjs';
 import { displayDateFormatter } from '@/data/date_formatter';
+import i18n from '@/i18n';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
   adexApi,
@@ -89,7 +90,11 @@ const settings = (): SettingsApi => {
         dark: frontendStore.darkTheme
       };
     },
-    user: userSettings()
+    user: userSettings(),
+    i18n: {
+      t: i18n.t.bind(i18n),
+      tc: i18n.tc.bind(i18n)
+    }
   };
 };
 

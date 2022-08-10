@@ -14,7 +14,6 @@
     "user_agent": "User Agent:"
   },
   "account_balance_table": {
-    "assets": "Assets",
     "liabilities": "Liabilities",
     "loopring": "Loopring"
   },
@@ -917,7 +916,6 @@
       "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not given, the symbol is assumed as default. If that does not work and if not otherwise set rotki will not be able to retrieve prices for the asset from CryptoCompare",
       "decimals": "Decimals",
       "forked": "Forked",
-      "protocol": "Protocol",
       "started": "Started",
       "swapped_for": "Swapped for",
       "symbol": "Symbol"
@@ -954,15 +952,13 @@
     "title": "Asset Management"
   },
   "asset_table": {
-    "assets": "Assets",
     "copy_identifier": {
       "tooltip": "Copy the asset identifier to clipboard"
     },
     "delete_tooltip": "Delete the asset",
     "edit_tooltip": "Edit the asset",
     "headers": {
-      "started": "Started",
-      "type": "Type"
+      "started": "Started"
     },
     "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts",
     "underlying_tokens": "Underlying Tokens"
@@ -1246,9 +1242,15 @@
     "address": "Address",
     "amount": "Amount",
     "asset": "Asset",
+    "assets": "Assets",
     "available_to_premium": "only available to premium users.",
+    "balance": "Balance",
     "category": "Category",
     "datetime": "Date/Time",
+    "deposits": "Deposits",
+    "details": "Details",
+    "event": "Event",
+    "events": "Events",
     "ignored_in_accounting": "Ignored in Accounting",
     "loading": {
       "getting_loaded": "getting loaded...",
@@ -1259,7 +1261,11 @@
     "no_premium": "No premium subscription detected. ",
     "price": "Price",
     "price_in_symbol": "Price in {symbol}",
+    "protocol": "Protocol",
     "total": "Total",
+    "tx": "Tx",
+    "tx_hash": "Tx Hash",
+    "type": "Type",
     "value_in_symbol": "{symbol} Value",
     "visit_website": "To get a premium subscription please visit our {0}"
   },
@@ -1393,11 +1399,7 @@
       "title": "manual",
       "tooltip": "Aggregate value of manual balances entered"
     },
-    "per_asset_balances": {
-      "title": "Assets"
-    },
     "snapshot": {
-      "balance": "Balance: ",
       "delete": {
         "dialog": {
           "message": "Are you sure you want to delete this snapshot?",
@@ -1691,6 +1693,8 @@
     "validator_index": "Validator Index"
   },
   "eth2_page": {
+    "loading": "Please wait while your eth2 staking details are getting loaded...",
+    "no_premium": "ETH2 Staking is",
     "toggle": {
       "depositor": "Depositor",
       "hint": "Switch the filtering and display mode between ETH2 validators and ETH1 Addresses",
@@ -1702,10 +1706,6 @@
   },
   "eth2_validator_limit_row": {
     "label": "Beacon chain validators"
-  },
-  "eth2page": {
-    "loading": "Please wait while your eth2 staking details are getting loaded...",
-    "no_premium": "ETH2 Staking is"
   },
   "eth_address_book": {
     "actions": {
@@ -2419,9 +2419,6 @@
     }
   },
   "kraken_staking_events": {
-    "column": {
-      "event_type": "Event"
-    },
     "filter": {
       "asset": "filter by the staked asset",
       "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
@@ -2497,9 +2494,6 @@
     "rate_asset": {
       "hint": "[Optional] The asset used for the rate",
       "label": "Rate asset"
-    },
-    "type": {
-      "label": "Type"
     }
   },
   "ledger_action_settings": {
@@ -2554,8 +2548,7 @@
       "start_date": "filter by the start date of the ledger action period"
     },
     "headers": {
-      "actions": "Actions",
-      "type": "Type"
+      "actions": "Actions"
     },
     "label": "ledger actions",
     "loading": "Please wait while your ledger actions are getting loaded...",
@@ -2565,7 +2558,6 @@
     "title": "Ledger Actions"
   },
   "lending": {
-    "assets": "Assets",
     "currently_deposited": "Currently Deposited",
     "effective_interest_rate": "Effective Savings Rate",
     "effective_interest_rate_tooltip": "The savings rate across all of the protocols in which you are actively lending, weighted based on the relative position in each protocol.",
@@ -2576,8 +2568,7 @@
       "protocol_selection": "Select protocol(s) to reset"
     },
     "reset_confirm": "This action will overwrite any cached history entries in the DB for the selected protocols and will fetch everything again. Depending on the number of accounts it may take a long time. Are you sure you want to continue?",
-    "reset_tooltip": "Refreshes the data overwriting cached Aave and yearn.finance Vaults historical entries",
-    "title": "Deposits"
+    "reset_tooltip": "Refreshes the data overwriting cached Aave and yearn.finance Vaults historical entries"
   },
   "lending_asset_table": {
     "headers": {
@@ -2587,6 +2578,13 @@
   },
   "liabilities": {
     "no_selection": "Select a loan to view more information"
+  },
+  "liquidity_pool_details": {
+    "liquidity": "Liquidity",
+    "title": "Total in pools",
+    "tooltip": "Show details about the pool assets",
+    "total_amount": "Total amount",
+    "total_value_in_symbol": "Total {symbol} value"
   },
   "liquidity_pool_selector": {
     "label": "Filter by pool(s)"
@@ -2645,7 +2643,6 @@
     "title": "Stake"
   },
   "locations": {
-    "assets": "Assets",
     "total_asset_price": "Total Asset Price"
   },
   "login": {
@@ -2801,10 +2798,6 @@
     "select_accounts_description": "If no accounts are selected for a protocol, data for all accounts will be queried for that protocol.",
     "title": "Module Settings"
   },
-  "movement_links": {
-    "address": "Address:",
-    "transaction": "TX:"
-  },
   "navigation_menu": {
     "accounts_balances": "Accounts & Balances",
     "accounts_balances_sub": {
@@ -2819,12 +2812,10 @@
       "external_services": "External Services",
       "premium": "rotki Premium"
     },
-    "assets": "Assets",
     "dashboard": "Dashboard",
     "defi": "DeFi",
     "defi_sub": {
       "airdrops": "Airdrops",
-      "deposits": "Deposits",
       "deposits_sub": {
         "liquidity": "Liquidity Pools",
         "liquidity_sub": {
@@ -3046,20 +3037,15 @@
       "subtitle": "Protocol asset details"
     },
     "stat_card": {
-      "buttons": {
-        "details": "Details"
-      },
       "content": {
         "labels": {
-          "balance": "Balance",
           "total_collateral": "Total Collateral",
           "total_debt": "Total Debt",
           "total_deposited": "Total Deposited"
         }
       },
       "headers": {
-        "borrowing": "Liabilities",
-        "lending": "Deposits"
+        "borrowing": "Liabilities"
       }
     }
   },
@@ -3074,6 +3060,136 @@
   },
   "poap_delivery_airdrops": {
     "title": "Claimable POAP Delivery NFTs"
+  },
+  "premium_components": {
+    "common": {
+      "apr": "APR",
+      "no_entries_found": "No {title} entries found",
+      "pool": "Pool",
+      "profit_loss": "Profit/Loss"
+    },
+    "dex_trades": {
+      "headers": {
+        "in": "In",
+        "out": "Out"
+      }
+    },
+    "eth2_staking": {
+      "based_of_performance": "Based of performance of",
+      "corresponds_to_percentage_of_the_validator_pnl": "This corresponds to {percentage} % of the validator pnl.",
+      "current": {
+        "description": "Based on the current price of ETH",
+        "title": "Current"
+      },
+      "daily": {
+        "description": "Based on the daily prices of ETH",
+        "title": "Daily"
+      },
+      "daily_stats": "Daily Stats",
+      "earned": "Earned",
+      "headers": {
+        "attestations": "Attestations",
+        "blocks": "Blocks",
+        "deposited_amount": "Deposited Amount",
+        "deposits_number": "Deposits Number",
+        "end": "End",
+        "included_attester_slashings": "Included Attester Slashings",
+        "income": "Income",
+        "missed_attestations": "Missed Attestations",
+        "missed_blocks": "Missed Blocks",
+        "orphaned_attestations": "Orphaned Attestations",
+        "orphaned_blocks": "Orphaned Blocks",
+        "proposed_blocks": "Proposed Blocks",
+        "proposer_attester_slashings": "Proposer Attester Slashings",
+        "public_key": "Public key",
+        "slashing": "Slashing",
+        "start": "Start",
+        "validator": "Validator",
+        "value": "Value"
+      },
+      "overview": "Overview",
+      "ranges": {
+        "one_day": "1D",
+        "one_month": "1M",
+        "one_week": "1W",
+        "one_year": "1Y"
+      },
+      "staking_per_beacon_chain": "Staking per beacon chain validator",
+      "staking_per_eth1_address": "Staking per ETH1 address",
+      "total_based_on_eth_daily_prices": "The total is based on the daily prices of ETH",
+      "validator_index": "Validator index"
+    },
+    "lending": {
+      "yearn_inaccuracy": "Historic fiat price for yearn.finance vault events may be inaccurate."
+    },
+    "liquidity": {
+      "headers": {
+        "asset_1_pnl": "Asset 1 PnL",
+        "asset_2_pnl": "Asset 2 PnL",
+        "asset_pnl": "Asset PnL",
+        "pnl": "PnL",
+        "total_pnl": "Total PnL"
+      }
+    },
+    "liquity": {
+      "headers": {
+        "collateral": "Collateral",
+        "debt": "Debt",
+        "operation": "Operation"
+      },
+      "stake_events": "Stake Events",
+      "trove_events": "Trove Events"
+    },
+    "staking": {
+      "balance_overview": "Balance Overview",
+      "detail_for_address": "Detail for {address}",
+      "headers": {
+        "issuance": "Issuance +",
+        "operation": "Operation",
+        "pool": "Pool",
+        "redemption": "Redemption +",
+        "stake": "Stake",
+        "value": "Value"
+      },
+      "no_accounts": "No accounts with {protocol} staking were detected.",
+      "pools": "Pools",
+      "refresh": "Refresh the staking details",
+      "staking_balances_per_address": "Staking balances per address",
+      "staking_history": "Staking History",
+      "unclaimed_rewards": "Unclaimed rewards"
+    },
+    "statistics": {
+      "no_balance_snapshot_data_available": "No balance snapshot data available.",
+      "range_selector": {
+        "clear": "Clear",
+        "clear_date_range": "Clear date range",
+        "data_available": "Data available",
+        "ending_date_must_before_starting_date": "The ending date cannot be earlier than the starting date.",
+        "no_entries_available_before": "There are no entries available before"
+      },
+      "refresh_the_net_value_data": "Refresh the net value data",
+      "show_graph_for_selected_range": "Show the graph for the selected range"
+    },
+    "theme_manager": {
+      "dark_theme": "Dark Theme",
+      "light_theme": "Light Theme",
+      "reset": {
+        "default": "Reset to the default application color",
+        "short": "Reset to default"
+      },
+      "select_color": "Select Color",
+      "subtitle": "Manage colors for the app theme",
+      "title": "Theme"
+    },
+    "unsupported_app_version": {
+      "minimum_supported": "The minimum supported version is v{v}",
+      "subtitle": "This version of rotki is no longer supported by the premium components.",
+      "title": "Unsupported app version",
+      "update_to_latest": "For better support please update to the latest release."
+    },
+    "vault": {
+      "borrowing_history": "Borrowing History"
+    }
   },
   "premium_credentials": {
     "label_api_key": "rotki API Key",
@@ -3235,17 +3351,14 @@
       "pnl_free": "Tax Free PnL",
       "pnl_taxable": "Taxable PnL",
       "tax_free_amount": "Tax Free Amount",
-      "taxable_amount": "Taxable Amount",
-      "type": "Type"
+      "taxable_amount": "Taxable Amount"
     },
-    "same_action": "This events happen on the same action",
-    "title": "Events"
+    "same_action": "This events happen on the same action"
   },
   "profit_loss_overview": {
-    "columns": {
+    "headers": {
       "tax_free_profit_loss": "Tax Free Profit/Loss",
-      "taxable_profit_loss": "Taxable Profit/Loss",
-      "type": "Type"
+      "taxable_profit_loss": "Taxable Profit/Loss"
     },
     "title": "Overview"
   },
@@ -3360,7 +3473,6 @@
       "tooltip": "Load the report"
     }
   },
-
   "rounding_settings": {
     "amount_rounding": "Amount Rounding",
     "amount_rounding_hint": "Specify how the amount (e.g. the amount of an owned asset) is rounded.",
@@ -3526,7 +3638,6 @@
   "transactions": {
     "actions": {
       "add_event": "Add a new event",
-      "details": "Details",
       "redecode_events": "Redecode events"
     },
     "details": {
@@ -3622,8 +3733,7 @@
         }
       },
       "headers": {
-        "description": "Description",
-        "type": "Type"
+        "description": "Description"
       },
       "history_event_subtype": {
         "airdrop": "Airdrop",
@@ -3695,16 +3805,12 @@
       "protocol": "filter by the protocol / counterparty of the events",
       "start_date": "filter by the start date of the transaction period"
     },
-    "headers": {
-      "tx_hash": "Tx Hash"
-    },
     "ignore": "Ignore Tx in Accounting",
     "label": "transactions",
     "loading": "Please wait while your transactions are getting loaded...",
     "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",
     "query_status": {
       "date_range": "Querying {status} for {address} between {start} and {end}",
-      "details": "Details",
       "done_date_range": "Done querying all transactions for {address} between {start} and {end}",
       "done_end_date": "Done querying all transactions for {address} until {end}",
       "done_group": "Done querying all transactions information for {length} address(es)",
@@ -3748,22 +3854,13 @@
     }
   },
   "uniswap": {
-    "assets": "Assets",
     "assets_non_premium": "Upgrade to {0} to see assets information",
-    "balance": "Balance",
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "loading_non_premium": "Loading the liquidity pool balances might take a while... Consider upgrading to {0} for faster load times.",
     "pool_header": "UNI_v{version} {asset1}/{asset2}",
     "premium": "premium",
     "price_range": "Price Range",
     "title": "Uniswap v{v} Pools"
-  },
-  "uniswap_pool_details": {
-    "liquidity": "Liquidity",
-    "title": "Total in pools",
-    "tooltip": "Show details about the pool assets",
-    "total_amount": "Total amount",
-    "total_value_in_symbol": "Total {symbol} value"
   },
   "update_indicator": {
     "version": "An Updated Version ({appVersion}) of rotki is available"

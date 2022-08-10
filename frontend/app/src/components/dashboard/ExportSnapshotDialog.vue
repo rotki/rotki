@@ -15,9 +15,7 @@
           </div>
         </div>
         <div class="pt-2">
-          <div>
-            {{ $t('dashboard.snapshot.balance') }}
-          </div>
+          <div>{{ $t('common.balance') }}:</div>
           <div>
             <amount-display
               :value="formattedSelectedBalance"

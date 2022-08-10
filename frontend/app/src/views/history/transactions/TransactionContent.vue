@@ -118,7 +118,7 @@
             <v-dialog width="600">
               <template #activator="{ on }">
                 <v-btn small color="primary" text v-on="on">
-                  {{ $t('transactions.actions.details') }}
+                  {{ $t('common.details') }}
                   <v-icon small>mdi-chevron-right</v-icon>
                 </v-btn>
               </template>
@@ -285,7 +285,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     width: '0px'
   },
   {
-    text: i18n.t('transactions.headers.tx_hash').toString(),
+    text: i18n.t('common.tx_hash').toString(),
     value: 'txHash',
     sortable: false
   },

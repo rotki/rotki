@@ -68,7 +68,7 @@ module.exports = {
       {
         src: './src',
         extensions: ['.ts', '.vue'],
-        ignores: ['/transactions.query_status.*/']
+        ignores: ['/transactions.query_status.*/', '/premium_components.*/']
       }
     ],
     '@intlify/vue-i18n/no-raw-text': [

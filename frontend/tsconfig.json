@@ -15,6 +15,7 @@
     "baseUrl": ".",
     "types": [
       "vuetify",
+      "vue-i18n",
       "vite/client",
       "unplugin-vue2-script-setup/types"
     ],

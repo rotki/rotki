@@ -68,7 +68,7 @@
         <v-select
           v-model="actionType"
           outlined
-          :label="$t('ledger_action_form.type.label')"
+          :label="$t('common.type')"
           :items="ledgerActionsData"
           item-value="identifier"
           item-text="label"

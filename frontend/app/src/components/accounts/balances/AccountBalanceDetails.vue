@@ -1,10 +1,7 @@
 <template>
   <div>
     <template v-if="!loopring">
-      <account-asset-balances
-        :title="$t('account_balance_table.assets')"
-        :assets="assets"
-      />
+      <account-asset-balances :title="$t('common.assets')" :assets="assets" />
       <account-asset-balances
         v-if="liabilities.length > 0"
         :title="$t('account_balance_table.liabilities')"

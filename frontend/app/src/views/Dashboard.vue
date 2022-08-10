@@ -129,7 +129,7 @@
         </v-col>
       </v-row>
       <dashboard-asset-table
-        :title="$tc('dashboard.per_asset_balances.title')"
+        :title="$tc('common.assets')"
         table-type="ASSETS"
         :loading="isAnyLoading"
         :balances="aggregatedBalances"

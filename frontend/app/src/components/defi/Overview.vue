@@ -31,7 +31,7 @@
       <div
         class="pb-2 d-flex flex-row justify-space-between text-subtitle-1 font-weight-medium"
       >
-        {{ $t('overview.stat_card.headers.lending') }}
+        {{ $t('common.deposits') }}
         <v-btn
           v-if="summary.depositsUrl"
           :to="summary.depositsUrl"
@@ -59,16 +59,12 @@
     <span class="text-subtitle-1 font-weight-bold pb-2">
       {{ summary.tokenInfo.tokenName }}
     </span>
-    <info-row
-      :title="$t('overview.stat_card.content.labels.balance')"
-      fiat
-      :value="summary.balanceUsd"
-    />
+    <info-row :title="$t('common.balance')" fiat :value="summary.balanceUsd" />
     <v-divider class="my-4" />
     <v-dialog v-model="details" scrollable max-width="450px">
       <template #activator="{ on, attrs }">
         <v-btn small v-bind="attrs" block text class="justify-end" v-on="on">
-          {{ $t('overview.stat_card.buttons.details') }}
+          {{ $t('common.details') }}
           <v-icon color="primary" right>mdi-launch</v-icon>
         </v-btn>
       </template>
