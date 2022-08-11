@@ -45,8 +45,8 @@ import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import { usePrices } from '@/composables/balances';
 import i18n from '@/i18n';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 export default defineComponent({
@@ -57,7 +57,7 @@ export default defineComponent({
     title: { required: true, type: String }
   },
   setup() {
-    const { prices } = usePrices();
+    const { prices } = storeToRefs(useBalancePricesStore());
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
     const headers = computed<DataTableHeader[]>(() => [

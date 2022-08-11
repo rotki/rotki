@@ -19,6 +19,7 @@ import { GeneralAccountData } from '@/services/types-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { samePriceAssets } from '@/store/balances/const';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import {
   AccountAssetBalances,
   AssetBreakdown,
@@ -26,13 +27,11 @@ import {
   BalanceState,
   BlockchainAccountWithBalance,
   BlockchainTotal,
-  ExchangeRateGetter,
   SubBlockchainTotal,
   LocationBalance,
   NonFungibleBalance
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
-import { useUniswapStore } from '@/store/defi/uniswap';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
@@ -57,7 +56,6 @@ export interface BalanceGetters {
   polkadotBalances: BlockchainAccountWithBalance[];
   loopringAccounts: BlockchainAccountWithBalance[];
   totals: AssetBalance[];
-  exchangeRate: ExchangeRateGetter;
   aggregatedBalances: AssetBalanceWithPrice[];
   aggregatedAssets: string[];
   liabilities: AssetBalanceWithPrice[];
@@ -335,7 +333,7 @@ export const getters: Getters<
     return accounts;
   },
 
-  totals: ({ totals, prices }): AssetBalance[] => {
+  totals: ({ totals }): AssetBalance[] => {
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
     const ownedAssets: Record<string, Balance> = {};
@@ -359,20 +357,16 @@ export const getters: Getters<
       .map(asset => ({
         asset,
         amount: ownedAssets[asset].amount,
-        usdValue: ownedAssets[asset].usdValue,
-        usdPrice: prices[asset] ?? NoPrice
+        usdValue: ownedAssets[asset].usdValue
       }))
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
 
-  exchangeRate: (state: BalanceState) => (currency: string) => {
-    return state.usdToFiatExchangeRates[currency];
-  },
-
   aggregatedBalances: (
-    { manualBalances, loopringBalances, prices }: BalanceState,
+    { manualBalances, loopringBalances }: BalanceState,
     { totals }
   ): AssetBalanceWithPrice[] => {
+    const { prices } = storeToRefs(useBalancePricesStore());
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
     const ownedAssets: Record<string, Balance> = {};
@@ -425,12 +419,13 @@ export const getters: Getters<
         asset,
         amount: ownedAssets[asset].amount,
         usdValue: ownedAssets[asset].usdValue,
-        usdPrice: prices[asset] ?? NoPrice
+        usdPrice: (get(prices)[asset] as BigNumber) ?? NoPrice
       }))
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
 
-  liabilities: ({ liabilities, manualLiabilities, prices }) => {
+  liabilities: ({ liabilities, manualLiabilities }) => {
+    const { prices } = storeToRefs(useBalancePricesStore());
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
     const liabilitiesMerged: Record<string, Balance> = {};
@@ -463,22 +458,20 @@ export const getters: Getters<
         asset,
         amount: liabilitiesMerged[asset].amount,
         usdValue: liabilitiesMerged[asset].usdValue,
-        usdPrice: prices[asset] ?? NoPrice
+        usdPrice: (get(prices)[asset] as BigNumber) ?? NoPrice
       }))
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
 
   // simplify the manual balances object so that we can easily reduce it
-  manualBalanceByLocation: (
-    state: BalanceState,
-    { exchangeRate }
-  ): LocationBalance[] => {
+  manualBalanceByLocation: (state: BalanceState): LocationBalance[] => {
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const mainCurrency = get(currencySymbol);
     assert(mainCurrency, 'main currency was not properly set');
 
     const manualBalances = state.manualBalances;
-    const currentExchangeRate = exchangeRate(mainCurrency);
+    const { exchangeRate } = useBalancePricesStore();
+    const currentExchangeRate = get(exchangeRate(mainCurrency));
     if (currentExchangeRate === undefined) {
       return [];
     }
@@ -783,12 +776,7 @@ export const getters: Getters<
       return asset;
     });
 
-    const { uniswapV3AggregatedBalances } = useUniswapStore();
-    const uniswapV3Assets = get(uniswapV3AggregatedBalances()).map(
-      item => item.asset
-    );
-
-    assets.push(...liabilitiesAsset, ...additional, ...uniswapV3Assets);
+    assets.push(...liabilitiesAsset, ...additional);
     return assets.filter(uniqueStrings);
   },
   assetBreakdown:
@@ -1085,7 +1073,8 @@ export const getters: Getters<
       }))
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
-  blockchainAssets: ({ loopringBalances, prices }, { totals }) => {
+  blockchainAssets: ({ loopringBalances }, { totals }) => {
+    const { prices } = storeToRefs(useBalancePricesStore());
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
     const ownedAssets: Record<string, Balance> = {};
@@ -1122,13 +1111,14 @@ export const getters: Getters<
         asset,
         amount: ownedAssets[asset].amount,
         usdValue: ownedAssets[asset].usdValue,
-        usdPrice: prices[asset] ?? NoPrice
+        usdPrice: (get(prices)[asset] as BigNumber) ?? NoPrice
       }))
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
   locationBreakdown:
-    ({ manualBalances, loopringBalances, prices }: BalanceState, { totals }) =>
+    ({ manualBalances, loopringBalances }: BalanceState, { totals }) =>
     identifier => {
+      const { prices } = storeToRefs(useBalancePricesStore());
       const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
       const { isAssetIgnored } = useIgnoredAssetsStore();
       const ownedAssets: Record<string, Balance> = {};
@@ -1185,14 +1175,12 @@ export const getters: Getters<
           asset,
           amount: ownedAssets[asset].amount,
           usdValue: ownedAssets[asset].usdValue,
-          usdPrice: prices[asset] ?? NoPrice
+          usdPrice: (get(prices)[asset] as BigNumber) ?? NoPrice
         }))
         .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
     },
-  byLocation: (
-    state,
-    { blockchainTotal, exchangeRate, manualBalanceByLocation: manual }
-  ) => {
+  byLocation: (state, { blockchainTotal, manualBalanceByLocation: manual }) => {
+    const { exchangeRate } = useBalancePricesStore();
     const byLocations: Record<string, BigNumber> = {};
 
     const addToOwned = (location: string, value: BigNumber) => {
@@ -1208,7 +1196,7 @@ export const getters: Getters<
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const mainCurrency = get(currencySymbol);
 
-    const currentExchangeRate = exchangeRate(mainCurrency);
+    const currentExchangeRate = get(exchangeRate(mainCurrency));
     const blockchainTotalConverted = currentExchangeRate
       ? blockchainTotal.multipliedBy(currentExchangeRate)
       : blockchainTotal;

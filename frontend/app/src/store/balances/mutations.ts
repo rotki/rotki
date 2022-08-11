@@ -12,11 +12,9 @@ import { BalanceMutations } from '@/store/balances/mutation-types';
 import { defaultState } from '@/store/balances/state';
 import {
   AccountAssetBalances,
-  AssetPrices,
   BalanceState,
   NonFungibleBalances
 } from '@/store/balances/types';
-import { ExchangeRates } from '@/types/user';
 
 export const mutations: MutationTree<BalanceState> = {
   updateEth(state: BalanceState, payload: BlockchainAssetBalances) {
@@ -58,12 +56,6 @@ export const mutations: MutationTree<BalanceState> = {
 
     state.liabilities = liabilities;
   },
-  usdToFiatExchangeRates(
-    state: BalanceState,
-    usdToFiatExchangeRates: ExchangeRates
-  ) {
-    state.usdToFiatExchangeRates = usdToFiatExchangeRates;
-  },
   ethAccounts(state: BalanceState, accounts: GeneralAccountData[]) {
     state.ethAccounts = accounts;
   },
@@ -95,9 +87,6 @@ export const mutations: MutationTree<BalanceState> = {
     state.manualLiabilities = manualBalances.filter(
       x => x.balanceType === BalanceType.LIABILITY
     );
-  },
-  [BalanceMutations.UPDATE_PRICES](state: BalanceState, prices: AssetPrices) {
-    state.prices = prices;
   },
   [BalanceMutations.UPDATE_LOOPRING_BALANCES](
     state: BalanceState,

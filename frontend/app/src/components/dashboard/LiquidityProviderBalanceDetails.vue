@@ -49,7 +49,7 @@
   </table-expand-container>
 </template>
 <script lang="ts">
-import { AssetBalanceWithPrice } from '@rotki/common';
+import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { XswapAsset } from '@rotki/common/lib/defi/xswap';
 import { computed, defineComponent, PropType, Ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
@@ -57,10 +57,10 @@ import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
-import { usePrices } from '@/composables/balances';
 import { useTheme } from '@/composables/common';
 import { getPremium } from '@/composables/session';
 import i18nFn from '@/i18n';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Zero } from '@/utils/bignumbers';
 
@@ -125,13 +125,13 @@ export default defineComponent({
     const { dark } = useTheme();
     const premium = getPremium();
 
-    const { prices } = usePrices();
+    const { prices } = storeToRefs(useBalancePricesStore());
 
     const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] => {
       return assets.map(item => {
         return {
           asset: item.asset,
-          usdPrice: get(prices)[item.asset] ?? Zero,
+          usdPrice: (get(prices)[item.asset] as BigNumber) ?? Zero,
           amount: item.userBalance.amount,
           usdValue: item.userBalance.usdValue
         };

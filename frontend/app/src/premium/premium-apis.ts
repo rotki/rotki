@@ -26,6 +26,7 @@ import { storeToRefs } from 'pinia';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useCompoundStore } from '@/store/defi/compound';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
@@ -37,6 +38,7 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { useAdexStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
 import { useStore } from '@/store/utils';
+import { One } from '@/utils/bignumbers';
 
 export const assetsApi = (): AssetsApi => {
   const { getAssetInfo, getAssetSymbol, getAssetIdentifierForSymbol } =
@@ -114,6 +116,7 @@ export const adexApi = (): AdexApi => {
 
 export const balancesApi = (): BalancesApi => {
   const store = useStore();
+  const { exchangeRate } = useBalancePricesStore();
   return {
     byLocation: computed<Record<string, BigNumber>>(() => {
       return store.getters['balances/byLocation'];
@@ -121,8 +124,8 @@ export const balancesApi = (): BalancesApi => {
     aggregatedBalances: computed<AssetBalanceWithPrice[]>(() => {
       return store.getters['balances/aggregatedBalances'];
     }),
-    exchangeRate: currency =>
-      computed(() => store.getters['balances/exchangeRate'](currency))
+    exchangeRate: (currency: string) =>
+      computed(() => get(exchangeRate(currency)) ?? One)
   };
 };
 

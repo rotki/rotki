@@ -40,8 +40,9 @@
 import { Balance } from '@rotki/common';
 import { computed, defineComponent, PropType, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
-import { usePrices } from '@/composables/balances';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { ReceivedAmount } from '@/types/staking';
 import { Zero } from '@/utils/bignumbers';
 
@@ -55,7 +56,7 @@ export default defineComponent({
     }
   },
   setup() {
-    const { prices } = usePrices();
+    const { prices } = storeToRefs(useBalancePricesStore());
     const current = ref(true);
     const pricesAreLoading = computed(() => {
       return Object.keys(get(prices)).length === 0;

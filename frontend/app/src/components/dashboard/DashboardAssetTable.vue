@@ -126,11 +126,11 @@ import DashboardExpandableTable from '@/components/dashboard/DashboardExpandable
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { setupExchangeRateGetter } from '@/composables/balances';
 import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
@@ -249,13 +249,15 @@ const DashboardAssetTable = defineComponent({
 
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-    const exchangeRate = setupExchangeRateGetter();
+    const { exchangeRate } = useBalancePricesStore();
     const totalInUsd = computed(() => {
       return aggregateTotal(get(balances), CURRENCY_USD, One);
     });
     const total = computed(() => {
       const mainCurrency = get(currencySymbol);
-      return get(totalInUsd).multipliedBy(exchangeRate(mainCurrency) ?? One);
+      return get(totalInUsd).multipliedBy(
+        get(exchangeRate(mainCurrency)) ?? One
+      );
     });
 
     const { getAssetSymbol, getAssetName } = useAssetInfoRetrieval();

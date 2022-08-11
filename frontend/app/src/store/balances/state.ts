@@ -16,7 +16,6 @@ export const defaultState = (): BalanceState => ({
   },
   totals: {},
   liabilities: {},
-  usdToFiatExchangeRates: {},
   ethAccounts: [],
   ksmAccounts: [],
   dotAccounts: [],
@@ -37,7 +36,6 @@ export const defaultState = (): BalanceState => ({
   manualBalances: [],
   manualLiabilities: [],
   manualBalanceByLocation: {},
-  prices: {},
   loopringBalances: {},
   nonFungibleBalances: {}
 });

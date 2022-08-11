@@ -77,8 +77,9 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
-import { usePrices } from '@/composables/balances';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { ReceivedAmount } from '@/types/staking';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
@@ -92,7 +93,7 @@ export default defineComponent({
   },
   setup(props) {
     const { earned } = toRefs(props);
-    const { prices } = usePrices();
+    const { prices } = storeToRefs(useBalancePricesStore());
     const pricesAreLoading = computed(() => {
       const assetPrices = get(prices);
       return Object.keys(assetPrices).length === 0;

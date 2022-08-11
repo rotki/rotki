@@ -20,7 +20,7 @@ import {
 } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 import { SupportedSubBlockchainProtocol } from '@/types/protocols';
-import { ExchangeRates, PriceOracle } from '@/types/user';
+import { PriceOracle } from '@/types/user';
 
 export interface LocationBalance {
   readonly location: string;
@@ -51,7 +51,6 @@ export interface BalanceState {
   avax: BlockchainAssetBalances;
   totals: AssetBalances;
   liabilities: AssetBalances;
-  usdToFiatExchangeRates: ExchangeRates;
   ethAccounts: GeneralAccountData[];
   btcAccounts: BtcAccountData;
   bchAccounts: BtcAccountData;
@@ -61,7 +60,6 @@ export interface BalanceState {
   manualBalances: ManualBalanceWithValue[];
   manualLiabilities: ManualBalanceWithValue[];
   manualBalanceByLocation: BalanceByLocation;
-  prices: AssetPrices;
   nonFungibleBalances: NonFungibleBalances;
 }
 
