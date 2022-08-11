@@ -78,6 +78,7 @@ export const useSessionStore = defineStore('session', () => {
   const syncConflict = ref<SyncConflict>(defaultSyncConflict());
   const lastBalanceSave = ref(0);
   const lastDataUpload = ref(0);
+  const connectedEthNodes = ref<string[]>([]);
   const showUpdatePopup = ref(false);
   const darkModeEnabled = ref(false);
 
@@ -111,7 +112,11 @@ export const useSessionStore = defineStore('session', () => {
         return;
       }
 
-      const { lastBalanceSave: balance, lastDataUploadTs: upload } = result;
+      const {
+        lastBalanceSave: balance,
+        lastDataUploadTs: upload,
+        connectedEthNodes: connectedNodes
+      } = result;
 
       if (get(lastBalanceSave) !== balance) {
         set(lastBalanceSave, balance);
@@ -120,6 +125,8 @@ export const useSessionStore = defineStore('session', () => {
       if (get(lastDataUpload) !== upload) {
         set(lastDataUpload, upload);
       }
+
+      set(connectedEthNodes, connectedNodes);
     } catch (e: any) {
       notify({
         title: i18n.t('actions.session.periodic_query.error.title').toString(),
@@ -452,6 +459,7 @@ export const useSessionStore = defineStore('session', () => {
     lastDataUpload,
     showUpdatePopup,
     darkModeEnabled,
+    connectedEthNodes,
     login,
     logout,
     logoutRemoteSession,
