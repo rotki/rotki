@@ -1,8 +1,9 @@
 =========
 Changelog
 =========
-* :feature:`3249` Add Uniswap V3 LP Positions Functionality.
 
+* :feature:`4602` Shows indicator that indicates whether ETH nodes are connected or not.
+* :feature:`3249` Add Uniswap V3 LP Positions Functionality.
 * :feature:`4600` User will now be notified if a leftover backend process is running when starting rotki.
 
 * :bug:`4657` Fix an edge case at ENS reverse resolution making an address resolving to the zero address instead of a name.

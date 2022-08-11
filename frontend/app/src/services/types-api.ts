@@ -31,6 +31,7 @@ export interface Messages {
 export interface PeriodicClientQueryResult {
   readonly lastBalanceSave: number;
   readonly ethNodeConnection: boolean;
+  readonly connectedEthNodes: string[];
   readonly lastDataUploadTs: number;
 }
 

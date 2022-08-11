@@ -1,24 +1,49 @@
 <template>
   <card outlined-body class="mt-8">
     <template #title> {{ $tc('ethereum_rpc_node_manager.title') }} </template>
-    <v-list max-height="300px" :class="$style.list" three-line>
+    <v-list max-height="300px" :class="$style.list" three-line class="py-0">
       <template v-for="(item, index) in nodes">
         <v-divider v-if="index !== 0" :key="index" />
-        <v-list-item :key="item.node" data-cy="ethereum-node">
-          <v-avatar>
-            <v-tooltip v-if="!item.owned" top open-delay="400">
-              <template #activator="{ on, attrs }">
-                <v-icon v-bind="attrs" v-on="on"> mdi-earth </v-icon>
-              </template>
-              <span>{{ $tc('ethereum_rpc_node_manager.public_node') }}</span>
-            </v-tooltip>
-            <v-tooltip v-else>
-              <template #activator="{ on, attrs }">
-                <v-icon v-bind="attrs" v-on="on">mdi-account-network</v-icon>
-              </template>
-              <span>{{ $tc('ethereum_rpc_node_manager.private_node') }}</span>
-            </v-tooltip>
-          </v-avatar>
+        <v-list-item :key="item.node" data-cy="ethereum-node" class="px-2">
+          <div class="mr-2 pa-4 text-center d-flex flex-column align-center">
+            <div>
+              <v-tooltip v-if="!item.owned" top open-delay="400">
+                <template #activator="{ on, attrs }">
+                  <v-icon v-bind="attrs" v-on="on"> mdi-earth </v-icon>
+                </template>
+                <span>{{ $tc('ethereum_rpc_node_manager.public_node') }}</span>
+              </v-tooltip>
+              <v-tooltip v-else>
+                <template #activator="{ on, attrs }">
+                  <v-icon v-bind="attrs" v-on="on">mdi-account-network</v-icon>
+                </template>
+                <span>{{ $tc('ethereum_rpc_node_manager.private_node') }}</span>
+              </v-tooltip>
+            </div>
+
+            <div class="mt-2">
+              <v-tooltip v-if="isNodeConnected(item)" top open-delay="400">
+                <template #activator="{ on, attrs }">
+                  <v-icon v-bind="attrs" small color="green" v-on="on">
+                    mdi-wifi
+                  </v-icon>
+                </template>
+                <span>
+                  {{ $tc('ethereum_rpc_node_manager.connected.true') }}
+                </span>
+              </v-tooltip>
+              <v-tooltip v-else top open-delay="400">
+                <template #activator="{ on, attrs }">
+                  <v-icon v-bind="attrs" small color="red" v-on="on">
+                    mdi-wifi-off
+                  </v-icon>
+                </template>
+                <span>
+                  {{ $tc('ethereum_rpc_node_manager.connected.false') }}
+                </span>
+              </v-tooltip>
+            </div>
+          </div>
 
           <v-list-item-content>
             <v-list-item-title class="font-weight-medium">
@@ -113,6 +138,7 @@
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { omit } from 'lodash';
+import { storeToRefs } from 'pinia';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RpcNodeForm from '@/components/settings/general/rpc/RpcNodeForm.vue';
@@ -121,6 +147,7 @@ import i18n from '@/i18n';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
+import { useSessionStore } from '@/store/session';
 import {
   EthereumRpcNode,
   EthereumRpcNodeList,
@@ -143,6 +170,8 @@ export default defineComponent({
 
     const { notify } = useNotifications();
     const { setMessage } = setupMessages();
+
+    const { connectedEthNodes } = storeToRefs(useSessionStore());
 
     async function loadNodes(): Promise<void> {
       try {
@@ -256,6 +285,10 @@ export default defineComponent({
 
     const isEtherscan = (item: EthereumRpcNode) => item.name === 'etherscan';
 
+    const isNodeConnected = (item: EthereumRpcNode): boolean => {
+      return get(connectedEthNodes).includes(item.name) || isEtherscan(item);
+    };
+
     return {
       nodes,
       showForm,
@@ -266,6 +299,7 @@ export default defineComponent({
       errors,
       loading,
       isEtherscan,
+      isNodeConnected,
       onActiveChange,
       updateValid,
       save,
@@ -279,7 +313,8 @@ export default defineComponent({
 
 <style module lang="scss">
 .list {
-  overflow-y: scroll;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .weight {

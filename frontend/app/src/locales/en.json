@@ -1798,6 +1798,10 @@
       "message": "Are you sure you want to delete the RPC node '{node}' ({endpoint})?",
       "title": "Delete Ethereum RPC Node"
     },
+    "connected": {
+      "false": "Not connected",
+      "true": "Connected"
+    },
     "delete_error": {
       "title": "Deleting Ethereum RPC Node"
     },
