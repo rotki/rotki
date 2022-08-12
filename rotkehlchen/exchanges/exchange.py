@@ -316,7 +316,8 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[MarginPosition]:
-        """Queries the local DB and the remote exchange for the margin positions history of the user
+        """
+        Queries the local DB and the remote exchange for the margin positions history of the user
         """
         log.debug(f'Querying margin history for {self.name} exchange')
         with self.db.conn.read_ctx() as cursor:

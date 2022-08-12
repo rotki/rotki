@@ -672,9 +672,10 @@ class TradeSchema(Schema):
         data: Dict[str, Any],
         **_kwargs: Any,
     ) -> None:
-        """This validation checks that fee_currency is provided whenever fee is given and vice versa.
-         It also checks that fee is not a zero value when both fee and fee_currency are provided.
-        Also checks that the trade rate is not zero. Negative rate is checked by price field.
+        """This validation checks that fee_currency is provided whenever fee is given and
+        vice versa. It also checks that fee is not a zero value when both fee and
+        fee_currency are provided. Also checks that the trade rate is not zero.
+        Negative rate is checked by price field.
         """
         fee = data.get('fee')
         fee_currency = data.get('fee_currency')

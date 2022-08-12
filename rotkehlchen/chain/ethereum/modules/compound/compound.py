@@ -345,7 +345,8 @@ class Compound(EthereumModule):
         """https://compound.finance/docs/ctokens#liquidate-borrow"""
         param_types, param_values = get_common_params(from_ts, to_ts, address)
         result = self.graph.query(  # type: ignore
-            querystr="""liquidationEvents (where: {blockTime_lte: $end_ts, blockTime_gte: $start_ts, from: $address}) {
+            querystr="""liquidationEvents
+            (where: {blockTime_lte: $end_ts, blockTime_gte: $start_ts, from: $address}) {
     id
     amount
     from

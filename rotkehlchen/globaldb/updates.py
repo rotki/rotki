@@ -247,7 +247,7 @@ class AssetsUpdater():
         )
 
     def _parse_full_insert(self, insert_text: str) -> AssetData:
-        """Parses the full insert line for an asset to give information for the conflict to the user
+        """Parses full insert line for an asset to give information for the conflict to the user
 
         Note: In the future this needs to be different for each version
         May raise:
