@@ -48,6 +48,7 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaults,
     YearnVaultsV2,
 )
+from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerPoolBalance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
@@ -91,6 +92,7 @@ from rotkehlchen.types import (
     ChecksumEthAddress,
     Eth2PubKey,
     ListOfBlockchainAddresses,
+    Location,
     ModuleName,
     Price,
     SupportedBlockchain,
@@ -104,13 +106,16 @@ from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_l
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
+    from rotkehlchen.chain.ethereum.interfaces.ammswap.types import AddressToLPBalances
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.modules.balancer.types import AddressToPoolBalances
     from rotkehlchen.chain.ethereum.modules.eth2.structures import (
         Eth2Deposit,
         ValidatorDailyStats,
         ValidatorDetails,
     )
     from rotkehlchen.chain.ethereum.modules.nfts import Nfts
+    from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -1568,6 +1573,61 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.query_defi_balances()
         self.query_ethereum_tokens()
         self._add_protocol_balances()
+
+    def query_ethereum_lp_balances(
+            self,
+            balances: Dict[str, Dict[Asset, Balance]],
+    ) -> Optional['AddressToUniswapV3LPBalances']:
+        """Queries all ethereum liquidity pool balances and adds them to the balances.
+        Returns the Uniswap V3 LP balances as they're needed for the NFTs balances.
+        May raise:
+        - RemoteError if any of the calls fail.
+        """
+        module_names: List[Literal['sushiswap', 'balancer']] = ['sushiswap', 'balancer']
+        uniswap = self.get_module('uniswap')
+        uniswap_v3_balances = None
+        if uniswap is not None:
+            uniswap_v3_balances = uniswap.get_v3_balances(
+                addresses=self.queried_addresses_for_module('uniswap'),
+            )
+            uniswap_v2_balances = uniswap.get_balances(
+                addresses=self.queried_addresses_for_module('uniswap'),
+            )
+            self.add_ethereum_lp_to_balance(
+                lp_balance=uniswap_v2_balances,
+                balances=balances,
+            )
+
+        for module_name in module_names:
+            module = self.get_module(module_name)
+            if module is not None:
+                module_lp_balances = module.get_balances(
+                    addresses=self.queried_addresses_for_module(module_name),
+                )
+                self.add_ethereum_lp_to_balance(
+                    lp_balance=module_lp_balances,
+                    balances=balances,
+                )
+
+        return uniswap_v3_balances
+
+    def add_ethereum_lp_to_balance(
+            self,
+            lp_balance: Union['AddressToPoolBalances', 'AddressToLPBalances'],
+            balances: Dict[str, Dict[Asset, Balance]],
+    ) -> None:
+        """Adds the liquidity pool balance(one of Uniswap, Sushiswap or Balancer) to the
+        blockchain balances.
+        """
+        if len(lp_balance) != 0:
+            if str(Location.BLOCKCHAIN) not in balances:
+                balances[str(Location.BLOCKCHAIN)] = {}
+                for lps in lp_balance.values():
+                    for lp in lps:
+                        if isinstance(lp, BalancerPoolBalance):
+                            balances[str(Location.BLOCKCHAIN)][lp.pool_token] = lp.user_balance
+                        else:
+                            balances[str(Location.BLOCKCHAIN)][EthereumToken(lp.address)] = lp.user_balance  # noqa: E501
 
     def _add_protocol_balances(self) -> None:
         """Also count token balances that may come from various protocols"""

@@ -14,6 +14,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     EventType,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
+from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -196,6 +197,10 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         """
         protocol_balance = self._get_balances_graph(addresses=addresses)
 
+        self.add_lp_tokens_to_db(
+            lp_balances_mappings=protocol_balance.address_balances,
+            protocol=CPT_SUSHISWAP_V2,
+        )
         known_assets = protocol_balance.known_assets
         unknown_assets = protocol_balance.unknown_assets
         known_asset_price = self._get_known_asset_price(
