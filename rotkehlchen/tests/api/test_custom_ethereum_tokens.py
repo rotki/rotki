@@ -441,8 +441,8 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         json={'address': non_existing_address, 'chain': str(ChainID.ETHEREUM)},
     )
     expected_msg = (
-        f'Tried to delete ethereum token with address {non_existing_address} '
-        f'but it was not found in the DB'
+        f'Tried to delete EVM token with address {non_existing_address} '
+        f'at chain ethereum but it was not found in the DB'
     )
     assert_error_response(
         response=response,

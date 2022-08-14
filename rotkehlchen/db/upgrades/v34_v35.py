@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE, strethaddress_to_identifier
+
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -35,11 +37,25 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
     """)
 
 
+def _rename_assets_identifiers(cursor: 'DBCursor') -> None:
+    """Version 1.26 includes the migration for the global db and the references to assets
+    need to be updated also in this database"""
+    cursor.execute('SELECT identifier FROM assets')
+    old_id_to_new = {}
+    for (identifier,) in cursor:
+        if identifier.startswith(ETHEREUM_DIRECTIVE):
+            old_id_to_new[identifier] = strethaddress_to_identifier(identifier[6:])
+
+    sqlite_tuples = [(new_id, old_id) for old_id, new_id in old_id_to_new.items()]
+    cursor.executemany('UPDATE assets SET identifier=? WHERE identifier=?', sqlite_tuples)
+
+
 def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     """Upgrades the DB from v34 to v35
     - Change tables where time is used as column name to timestamp
     - Add user_notes table
     """
     with db.user_write() as cursor:
+        _rename_assets_identifiers(cursor)
         _refactor_time_columns(cursor)
         _create_new_tables(cursor)

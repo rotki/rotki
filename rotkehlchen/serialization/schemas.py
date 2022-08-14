@@ -2,18 +2,13 @@ from typing import Any, Dict, Union
 
 from marshmallow import Schema, fields, post_load
 
-from rotkehlchen.api.v1.fields import (
-    AssetField,
-    AssetTypeField,
-    EthereumAddressField,
-    TimestampField,
-)
-from rotkehlchen.api.v1.schemas import UnderlyingTokenInfoSchema
+from rotkehlchen.api.v1.fields import AssetField, AssetTypeField, TimestampField
+from rotkehlchen.api.v1.schemas import OptionalEvmTokenInformationSchema, UnderlyingTokenInfoSchema
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
 
 
-class AssetDataSchema(Schema):
+class AssetDataSchema(OptionalEvmTokenInformationSchema):
     identifier = fields.String(required=True)
     name = fields.String(required=True)
     symbol = fields.String(required=True)
@@ -22,7 +17,6 @@ class AssetDataSchema(Schema):
     swapped_for = AssetField(required=True, allow_none=True)
     cryptocompare = fields.String(required=True, allow_none=True)
     coingecko = fields.String(required=True, allow_none=True)
-    evm_address = EthereumAddressField(required=False)
     decimals = fields.Integer(required=False)
     protocol = fields.String(allow_none=True)
     underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), allow_none=True)
@@ -59,9 +53,9 @@ class AssetDataSchema(Schema):
         if swapped_for is not None:
             swapped_for_ident = swapped_for.identifier
 
-        if asset_type == AssetType.ETHEREUM_TOKEN:
+        if asset_type == AssetType.EVM_TOKEN:
             extra_information = EvmToken.initialize(
-                address=data.pop('evm_address'),
+                address=data.pop('address'),
                 chain=data.pop('chain'),
                 token_kind=data.pop('token_kind'),
                 name=data.get('name'),

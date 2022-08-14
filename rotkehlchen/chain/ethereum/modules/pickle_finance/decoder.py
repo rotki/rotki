@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import PICKLE_JAR_PROTOCOL, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
@@ -58,7 +59,7 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             event.location_label == transaction.from_address and
             hex_or_bytes_to_address(tx_log.topics[2]) in self.pickle_contracts
         ):
-            if EvmToken(tx_log.address) != event.asset:
+            if EvmToken(ethaddress_to_identifier(tx_log.address)) != event.asset:
                 return True
             amount_raw = hex_or_bytes_to_int(tx_log.data)
             amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
@@ -86,7 +87,7 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             hex_or_bytes_to_address(tx_log.topics[2]) == ZERO_ADDRESS and
             hex_or_bytes_to_address(tx_log.topics[1]) in transaction.from_address
         ):
-            if event.asset != EvmToken(tx_log.address):
+            if event.asset != EvmToken(ethaddress_to_identifier(tx_log.address)):
                 return True
             amount_raw = hex_or_bytes_to_int(tx_log.data)
             amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
@@ -102,7 +103,7 @@ class PickleFinanceDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             hex_or_bytes_to_address(tx_log.topics[2]) == transaction.from_address and
             hex_or_bytes_to_address(tx_log.topics[1]) in self.pickle_contracts
         ):
-            if event.asset != EvmToken(tx_log.address):
+            if event.asset != EvmToken(ethaddress_to_identifier(tx_log.address)):
                 return True
             amount_raw = hex_or_bytes_to_int(tx_log.data)
             amount = asset_normalized_value(amount=amount_raw, asset=event.asset)

@@ -4,7 +4,6 @@ from typing import Dict
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.resolver import ChainID, strethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import EvmTokenKind
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 

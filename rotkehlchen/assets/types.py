@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Set, Type
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.types import EvmTokenKind
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class AssetType(DBEnumMixIn):
     FIAT = 1
     OWN_CHAIN = 2
-    ETHEREUM_TOKEN = 3
+    EVM_TOKEN = 3
     OMNI_TOKEN = 4
     NEO_TOKEN = 5
     COUNTERPARTY_TOKEN = 6
@@ -35,25 +35,6 @@ class AssetType(DBEnumMixIn):
     AVALANCHE_TOKEN = 24
     SOLANA_TOKEN = 25
     NFT = 26
-    OPTIMISM_TOKEN = 27
-    ARBITRUM_TOKEN = 28
-    GNOSIS_TOKEN = 29
-    POLYGON_TOKEN = 30
-    FANTOM_TOKEN = 31
-
-    @classmethod
-    def evm_compatible_types(cls: Type['AssetType']) -> Set['AssetType']:
-        return {
-            AssetType.ETHEREUM_TOKEN,
-            AssetType.OPTIMISM_TOKEN,
-            AssetType.ARBITRUM_TOKEN,
-            AssetType.GNOSIS_TOKEN,
-            AssetType.POLYGON_TOKEN,
-            AssetType.FANTOM_TOKEN,
-        }
-
-    def is_evm_compatible(self) -> bool:
-        return self in self.evm_compatible_types()
 
 
 class AssetData(NamedTuple):

@@ -270,7 +270,7 @@ class EthTokens():
         ]
         ignored_assets = self.db.get_ignored_assets(cursor=cursor)
         for asset in ignored_assets:  # don't query for the ignored tokens
-            if asset.is_eth_token():  # type ignore since we know asset is a token
+            if asset.is_evm_token():  # type ignore since we know asset is a token
                 exceptions.append(EvmToken.from_asset(asset).evm_address)  # type: ignore
         all_tokens = GlobalDBHandler().get_ethereum_tokens(
             exceptions=exceptions,

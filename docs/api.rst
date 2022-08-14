@@ -1045,7 +1045,7 @@ Query the current price of assets
       Content-Type: application/json;charset=UTF-8
 
       {
-          "assets": ["BTC", "ETH", "_ceth_0x514910771AF9Ca656af840dff83E8264EcF986CA", "USD", "EUR"],
+          "assets": ["BTC", "ETH", "eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA", "USD", "EUR"],
           "target_asset": "USD",
           "ignore_cache": true
       }
@@ -1069,7 +1069,7 @@ Query the current price of assets
                   "ETH": "1302.62",
                   "EUR": "1.209",
                   "GBP": "1.362",
-                  "_ceth_0x514910771AF9Ca656af840dff83E8264EcF986CA": "20.29",
+                  "eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA": "20.29",
                   "USD": "1"
               },
               "target_asset": "USD"
@@ -1338,7 +1338,7 @@ Query the historical price of assets
       Content-Type: application/json;charset=UTF-8
 
        {
-            "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
+            "from_asset": "eip155:1/erc20:0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
             "to_asset": "USD",
             "timestamp": 1611166335,
             "price": "1.20"
@@ -1383,7 +1383,7 @@ Query the historical price of assets
       Content-Type: application/json;charset=UTF-8
 
        {
-            "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
+            "from_asset": "eip155:1/erc20:0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
             "to_asset": "USD",
             "timestamp": 1611166335,
             "price": "1.20"
@@ -1428,7 +1428,7 @@ Query the historical price of assets
       Content-Type: application/json;charset=UTF-8
 
        {
-          "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620"
+          "from_asset": "eip155:1/erc20:0xD71eCFF9342A5Ced620049e616c5035F1dB98620"
        }
 
    :reqjson string from_asset: Optional. The from_asset for which the price is retrieved.
@@ -1445,13 +1445,13 @@ Query the historical price of assets
       {
           "result": [
             {
-              "from_asset": "_ceth_0xD533a949740bb3306d119CC777fa900bA034cd52",
+              "from_asset": "eip155:1/erc20:0xD533a949740bb3306d119CC777fa900bA034cd52",
               "to_asset": "USD",
               "timestamp": 1611166335,
               "price": "1.20"
             },
             {
-              "from_asset": "_ceth_0xD533a949740bb3306d119CC777fa900bA034cd52",
+              "from_asset": "eip155:1/erc20:0xD533a949740bb3306d119CC777fa900bA034cd52",
               "to_asset": "USD",
               "timestamp": 1611166340,
               "price": "1.40"
@@ -1480,7 +1480,7 @@ Query the historical price of assets
       Content-Type: application/json;charset=UTF-8
 
        {
-        "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
+        "from_asset": "eip155:1/erc20:0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
         "to_asset": "USD",
         "timestamp": 1611166335
        }
@@ -2614,10 +2614,10 @@ Querying onchain balances
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
                        "assets": {
                            "ETH": {"amount": "10", "usd_value": "1650.53"},
-                           "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "15", "usd_value": "15.21"}
+                           "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "15", "usd_value": "15.21"}
                        },
                        "liabilities": {
-                           "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "20", "usd_value": "20.35"}
+                           "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "20", "usd_value": "20.35"}
                        }
                   }},
                    "ETH2": { "0x9675faa8d15665e30d31dc10a332828fa15e2c7490f7d1894d9092901b139801ce476810f8e1e0c7658a9abdb9c4412e": {
@@ -2635,10 +2635,10 @@ Querying onchain balances
                       "BTC": {"amount": "1", "usd_value": "7540.15"},
                       "ETH": {"amount": "10", "usd_value": "1650.53"},
                       "ETH2": {"amount": "65.57", "usd_value": "85484.76"},
-                      "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "15", "usd_value": "15.21"}
+                      "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "15", "usd_value": "15.21"}
                   },
                   "liabilities": {
-                      "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "20", "usd_value": "20.35"}
+                      "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "20", "usd_value": "20.35"}
                   }
               }
           },
@@ -2717,7 +2717,7 @@ Querying all balances
                    }
                },
                "liabilities": {
-                   "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+                   "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
                        "amount": "100",
                        "usd_value": "102.5",
                        "percentage_of_net_value": "1%"
@@ -2763,8 +2763,10 @@ The details of each asset can contain the following keys:
 - **forked**: An optional attribute representing another asset out of which this asset forked from. For example ``ETC`` would have ``ETH`` here.
 - **swapped_for**: An optional attribute representing another asset for which this asset was swapped for. For example ``VEN`` tokens were at some point swapped for ``VET`` tokens.
 - **symbol**: The symbol used for this asset. This is not guaranteed to be unique. Unfortunately some assets use the same symbol as others.
-- **ethereum_address**: If the type is ``ethereum_token`` then this will be the hexadecimal address of the token's contract.
-- **ethereum_token_decimals**: If the type is ``ethereum_token`` then this will be the number of decimals the token has
+- **evm_address**: If the type is ``ethereum_token`` then this will be the hexadecimal address of the token's contract.
+- **chain**: If the type is ``ethereum_token`` then this will be the chain in which the token is.
+- **token_kind**:  If the type is ``ethereum_token`` then this will be the token type, for example ``erc20``.
+- **decimals**: If the type is ``ethereum_token`` then this will be the number of decimals the token has
 - **cryptocompare**: The cryptocompare identifier for the asset. can be missing if not known. If missing the symbol is attempted to be queried.
 - **coingecko**: The coingecko identifier for the asset. can be missing if not known.
 - **protocol**: An optional string for ethereum tokens denoting the protocol they belong to. For example uniswap, for uniswap LP tokens.
@@ -2786,13 +2788,18 @@ The details of each asset can contain the following keys:
 
       {
           "result": {
-              "_ceth_0xB6eD7644C69416d67B522e20bC294A9a9B405B31": {
-                  "ethereum_address": "0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
-                  "ethereum_token_decimals": 8,
+              "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31": {
+                  "evm_address": "0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
+                  "chain":"ethereum",
+                  "token_kind":"erc20",
+                  "decimals": 8,
                   "name": "0xBitcoin",
                   "started": 1517875200,
                   "symbol": "0xBTC",
                   "type": "ethereum token"
+                  "cryptocompare":"0xbtc",
+                  "coingecko":"0xbtc",
+                  "protocol":"None"
               },
               "DCR": {
                   "name": "Decred",
@@ -2800,13 +2807,18 @@ The details of each asset can contain the following keys:
                   "symbol": "DCR",
                   "type": "own chain"
               },
-              "_ceth_0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
-                  "ethereum_address": "0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
-                  "ethereum_token_decimals": 18,
+              "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
+                  "evm_address": "0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
+                  "chain":"ethereum",
+                  "token_kind":"erc20",
+                  "decimals": 18,
                   "name": "DigitalDevelopersFund",
                   "started": 1498504259,
                   "symbol": "DDF",
                   "type": "ethereum token"
+                  "cryptocompare":"DDF",
+                  "coingecko":"ddf",
+                  "protocol":"None"
               },
               "ETC": {
                   "forked": "ETH",
@@ -2820,15 +2832,20 @@ The details of each asset can contain the following keys:
                   "symbol": "KRW",
                   "type": "fiat"
               },
-              "_ceth_0xD850942eF8811f2A866692A623011bDE52a462C1": {
-                  "ethereum_address": "0xD850942eF8811f2A866692A623011bDE52a462C1",
-                  "ethereum_token_decimals": 18,
+              "eip155:1/erc20:0xD850942eF8811f2A866692A623011bDE52a462C1": {
+                  "evm_address": "0xD850942eF8811f2A866692A623011bDE52a462C1",
+                  "chain":"ethereum",
+                  "token_kind":"erc20",
+                  "decimals": 18,
                   "name": "Vechain Token",
                   "started": 1503360000,
                   "swapped_for": "VET",
                   "symbol": "VEN",
                   "type": "ethereum token",
                   "coingecko": "vechain"
+                  "cryptocompare":"VET",
+                  "coingecko":"vet",
+                  "protocol":"None"
               },
           },
           "message": ""
@@ -2909,7 +2926,7 @@ Detecting owned ethereum tokens
         "result": {
             "0x31F05553be0EBBf7774241603Cc7b28771F989B3": {
                 "tokens": [
-                    "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F", "_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+                    "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F", "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
                 ],
                 "last_update_timestamp": 1658764910,
             },
@@ -2924,12 +2941,12 @@ Detecting owned ethereum tokens
   :statuscode 409: No user is currently logged in.
   :statuscode 500: Internal rotki error
 
-Getting custom ethereum tokens
+Getting custom EVM tokens
 ==================================
 
 .. http:get:: /api/(version)/assets/ethereum
 
-   Doing a GET on the ethereum assets endpoint will return a list of all custom ethereum tokens. You can also optionally specify an ethereum address to get its token details. If you query by address only a single object is returned. If you query without, a list of objects.
+   Doing a GET on the ethereum assets endpoint will return a list of all custom EVM tokens. You can also optionally specify an ethereum address to get its token details. If you query by address only a single object is returned. If you query without, a list of objects.
 
    **Example Request**:
 
@@ -2939,7 +2956,7 @@ Getting custom ethereum tokens
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807"}
+      {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807", "chain": "ethereum"}
 
    :reqjson string address: An optional address to query for ethereum token info. If given only token info of this address are returned. As an object. **not a list**. If not given, a list of all known tokens is returned.
 
@@ -2951,9 +2968,11 @@ Getting custom ethereum tokens
       Content-Type: application/json
 
       {
-          "result": [{
-              "identifier": "_ceth_0x1169C72f36A843cD3a3713a76019FAB9503B2807",
+          "result": {
+              "identifier": "eip155:1/erc20:0x1169C72f36A843cD3a3713a76019FAB9503B2807",
               "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
+              "chain":"ethereum",
+              "token_kind":"erc20",
               "decimals": 18,
               "name": "foo",
               "symbol": "FTK",
@@ -2963,14 +2982,11 @@ Getting custom ethereum tokens
               "cryptocompare": "FOO",
               "protocol": "uniswap",
               "underlying_tokens": [
-                  {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "weight": "15.45"},
-                  {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "weight": "35.65"},
-                  {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "weight": "39"}
+                  {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "chain":"ethereum", "token_kind":"erc20", "weight": "15.45"},
+                  {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "chain":"ethereum", "token_kind":"erc20", "weight": "35.65"},
+                  {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "chain":"ethereum", "token_kind":"erc20", "weight": "39"}
               ]
-          }, {
-              "address": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
-              "decimals": 4
-          }],
+          },
           "message": ""
       }
 
@@ -2979,6 +2995,8 @@ Getting custom ethereum tokens
    :resjson list result: A list of ethereum tokens
    :resjsonarr string identifier: The rotki identifier of the token. This is only returned from the GET endpoint and not input from the add/edit one.
    :resjsonarr string address: The address of the token. Can not be optional.
+   :resjsonarr string chain: The chain where the token is deployed. Can not be optional.
+   :resjsonarr string token_kind: The kind of the token. Can not be optional.
    :resjsonarr integer decimals: Ethereum token decimals. Can be missing if not known.
    :resjsonarr string name: Asset name. Can be missing if not known.
    :resjsonarr string symbol: Asset symbol. Can be missing if not known.
@@ -2987,7 +3005,7 @@ Getting custom ethereum tokens
    :resjsonarr string coingecko: The coingecko identifier for the asset. can be missing if not known.
    :resjsonarr string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known.
    :resjsonarr string protocol: A name for the protocol the token belongs to. For example uniswap for all uniswap LP tokens. Can be missing if not known or there is no protocol the token belongs to.
-   :resjsonarr list underlying_tokens: Optional. If the token is an LP token or a token set or something similar which represents a pool of multiple other tokens, then this is a list of the underlying token addresses and a percentage that each token contributes to the pool.
+   :resjsonarr list underlying_tokens: Optional. If the token is an LP token or a token set or something similar which represents a pool of multiple other tokens, then this is a list of the underlying token addresses, chain, token kind and a percentage that each token contributes to the pool.
    :statuscode 200: Assets successfully queried.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 404: Queried by address and no token was found.
@@ -2998,7 +3016,7 @@ Adding custom ethereum tokens
 
 .. http:put:: /api/(version)/assets/ethereum
 
-   Doing a PUT on the ethereum assets endpoint will allow you to add a new ethereum token in the global rotki DB. Returns the asset identifier of the new custom token. For ethereum ones it's ``_ceth_0xADDRESS``
+   Doing a PUT on the ethereum assets endpoint will allow you to add a new ethereum token in the global rotki DB. Returns the asset identifier of the new custom token. For ethereum ones it's ``eip155:1/erc20:0xADDRESS``
 
    **Example Request**:
 
@@ -3010,6 +3028,8 @@ Adding custom ethereum tokens
 
       {"token": {
           "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
+          "chain":"ethereum",
+          "token_kind":"erc20",
           "decimals": 18,
           "name": "foo",
           "symbol": "FTK",
@@ -3019,9 +3039,9 @@ Adding custom ethereum tokens
           "cryptocompare": "FOO",
           "protocol": "uniswap",
           "underlying_tokens": [
-              {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "weight": "15.45"},
-                  {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "weight": "35.65"},
-                  {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "weight": "39"}
+              {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "chain":"ethereum", "token_kind":"erc20", "weight": "15.45"},
+              {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "chain":"ethereum", "token_kind":"erc20", "weight": "35.65"},
+              {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "chain":"ethereum", "token_kind":"erc20", "weight": "39"}
          ]
        }}
 
@@ -3035,7 +3055,7 @@ Adding custom ethereum tokens
       Content-Type: application/json
 
       {
-          "result": {"identifier": "_ceth_0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
+          "result": {"identifier": "eip155:1/erc20:0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
           "message": ""
       }
 
@@ -3085,7 +3105,7 @@ Editing custom ethereum tokens
       Content-Type: application/json
 
       {
-          "result": {"identifier": "_ceth_0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
+          "result": {"identifier": "eip155:1/erc20:0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
           "message": ""
       }
 
@@ -3376,8 +3396,8 @@ Performing an asset update
           "async_query": true,
           "up_to_version": 5,
           "conflicts": {
-              "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "local",
-              "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "remote",
+              "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "local",
+              "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "remote",
               "Fas-23-da20": "local"
           }
       }
@@ -3537,14 +3557,14 @@ Querying asset icons
 .. http:get:: /api/(version)/assets/(identifier)/icon
 
    Doing a GET on the asset icon endpoint will return the icon of the given asset.
-   If we have no icon for an asset a 404 is returned.
+   If we have no icon for an asset a 404 is returned. The identifier of the asset needs to be url encoded since it can contain invalid symbols for urls.
 
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e/icon HTTP/1.1
+      GET /api/1/assets/eip155%3A1%2Ferc20%3A0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e/icon HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
@@ -3590,7 +3610,7 @@ Uploading custom asset icons
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      {"result": {"identifier": "_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96"}, "message": ""}
+      {"result": {"identifier": "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96"}, "message": ""}
 
    :resjson strin identifier: The identifier of the asset for which the icon was uploaded.
    :statuscode 200: Icon successfully uploaded
@@ -3610,7 +3630,7 @@ Refreshing asset icons
 
    .. http:example:: curl wget httpie python-requests
 
-      PATCH /api/1/assets/_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e/icon HTTP/1.1
+      PATCH /api/1/assets/eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e/icon HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
@@ -4277,7 +4297,7 @@ Dealing with ledger actions
                       "action_type": "loss",
                       "location": "blockchain",
                       "amount": "1550",
-                      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
                       "rate": "0.85",
                       "rate_asset": "EUR",
                       "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
@@ -4493,7 +4513,7 @@ Dealing with BaseHistoryEntry events
           "timestamp": 1569924574,
           "location": "blockchain",
           "event_type": "informational",
-          "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+          "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
           "balance": {"amount": "1.542", "usd_value": "1.675"},
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
           "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
@@ -4552,7 +4572,7 @@ Dealing with BaseHistoryEntry events
           "timestamp": 1569924574,
           "location": "blockchain",
           "event_type": "informational",
-          "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+          "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
           "balance": {"amount": "1.542", "usd_value": "1.675"},
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
           "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
@@ -4979,25 +4999,25 @@ Get missing acquisitions and prices
             "report_id": 42,
             "missing_acquisitions": [
               {
-                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359v",
+                "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359v",
                 "time": 1428994442,
                 "found_amount": "0",
                 "missing_amount": "0.1"
               },
               {
-                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+                "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
                 "time": 1439048640,
                 "found_amount": "0",
                 "missing_amount": "14.36963"
               },
               {
-                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+                "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
                 "time": 1439994442,
                 "found_amount": "0",
                 "missing_amount": "0.0035000000"
               },
               {
-                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+                "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
                 "time": 1439994442,
                 "found_amount": "0",
                 "missing_amount": "1.7500"
@@ -5005,7 +5025,7 @@ Get missing acquisitions and prices
             ],
           "missing_prices": [
             {
-              "from_asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+              "from_asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
               "to_asset": "AVAX",
               "time": 1439994442,
             }
@@ -5851,7 +5871,7 @@ Getting MakerDAO vaults basic data
               "identifier": 55,
               "collateral_type": "USDC-A",
               "owner": "0xB26a9561ffFD9fC603F7d6A30c37D79665207876",
-              "collateral_asset": "_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+              "collateral_asset": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
               "collateral": {
                   "amount": "150",
                   "usd_value": "150"
@@ -5947,7 +5967,7 @@ Getting MakerDAO vault details
               }]
           }, {
               "identifier": 56,
-              "collateral_asset": "_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+              "collateral_asset": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
               "creation_ts": 1589067897,
               "total_interest_owed": "-751.32",
               "total_liquidated": {
@@ -6040,14 +6060,14 @@ Getting Aave balances
           "result": {
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
                   "lending": {
-                      "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+                      "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
                           "balance": {
                               "amount": "350.0",
                               "usd_value": "351.21"
                           },
                           "apy": "3.51%"
                       },
-                      "_ceth_0xdd974D5C2e2928deA5F71b9825b8b646686BD200": {
+                      "eip155:1/erc20:0xdd974D5C2e2928deA5F71b9825b8b646686BD200": {
                           "balance": {
                               "amount": "220.21",
                               "usd_value": "363.3465"
@@ -6056,7 +6076,7 @@ Getting Aave balances
                       },
                   },
                   "borrowing": {
-                      "_ceth_0x80fB784B7eD66730e8b1DBd9820aFD29931aab03": {
+                      "eip155:1/erc20:0x80fB784B7eD66730e8b1DBd9820aFD29931aab03": {
                           "balance": {
                               "amount": "590.21",
                               "usd_value": "146.076975"
@@ -6069,7 +6089,7 @@ Getting Aave balances
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "lending": {},
                   "borrowing": {
-                      "_ceth_0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
+                      "eip155:1/erc20:0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
                           "balance": {
                               "amount": "560",
                               "usd_value": "156.8"
@@ -6129,8 +6149,8 @@ Getting Aave historical data
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
                   "events": [{
                       "event_type": "deposit",
-                      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
-                      "atoken": "_ceth_0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
+                      "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "atoken": "eip155:1/erc20:0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
                       "value": {
                           "amount": "350.0",
                           "usd_value": "351.21"
@@ -6141,7 +6161,7 @@ Getting Aave historical data
                       "log_index": 1
                   }, {
                       "event_type": "interest",
-                      "asset": "_ceth_0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
+                      "asset": "eip155:1/erc20:0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
                       "value": {
                           "amount": "0.5323",
                           "usd_value": "0.5482"
@@ -6152,8 +6172,8 @@ Getting Aave historical data
                       "log_index": 1
                   }, {
                       "event_type": "withdrawal",
-                      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
-                      "atoken": "_ceth_0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
+                      "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "atoken": "eip155:1/erc20:0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
                       "value": {
                           "amount": "150",
                           "usd_value": "150.87"
@@ -6164,8 +6184,8 @@ Getting Aave historical data
                       "log_index": 1
                   }, {
                       "event_type": "deposit",
-                      "asset": "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498",
-                      "atoken": "_ceth_0x6Fb0855c404E09c47C3fBCA25f08d4E41f9F062f",
+                      "asset": "eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498",
+                      "atoken": "eip155:1/erc20:0x6Fb0855c404E09c47C3fBCA25f08d4E41f9F062f",
                       "value": {
                           "amount": "150",
                           "usd_value": "60.995"
@@ -6176,17 +6196,17 @@ Getting Aave historical data
                       "log_index": 1
                   }],
                   "total_earned": {
-                      "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+                      "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
                           "amount": "0.9482",
                           "usd_value": "1.001"
                       },
-                      "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498": {
+                      "eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498": {
                           "amount": "0.523",
                           "usd_value": "0.0253"
                       }
                   },
                   "total_lost": {
-                      "_ceth_0xFC4B8ED459e00e5400be803A9BB3954234FD50e3": {
+                      "eip155:1/erc20:0xFC4B8ED459e00e5400be803A9BB3954234FD50e3": {
                           "amount": "0.3212",
                           "usd_value": "3560.32"
                       }
@@ -6195,7 +6215,7 @@ Getting Aave historical data
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "events": [{
                       "event_type": "deposit",
-                      "asset": "_ceth_0x0D8775F648430679A709E98d2b0Cb6250d2887EF",
+                      "asset": "eip155:1/erc20:0x0D8775F648430679A709E98d2b0Cb6250d2887EF",
                       "value": {
                           "amount": "500",
                           "usd_value": "124.1"
@@ -6206,7 +6226,7 @@ Getting Aave historical data
                       "log_index": 1
                   }],
                   "total_earned_interest": {
-                      "_ceth_0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
+                      "eip155:1/erc20:0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
                           "amount": "0.9482",
                           "usd_value": "0.2312"
                       }
@@ -6358,7 +6378,7 @@ Getting AdEx historical data
                             "amount": "50",
                             "usd_value": "45.23"
                         },
-                        "token": "_ceth_0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
+                        "token": "eip155:1/erc20:0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
                     },
                     {
                         "bond_id": "0x540cab9883923c01e657d5da4ca5674b6e4626b4a148224635495502d674c7c5",
@@ -6397,7 +6417,7 @@ Getting AdEx historical data
                             "amount": "43",
                             "usd_value": "39.233"
                         },
-                        "token": "_ceth_0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
+                        "token": "eip155:1/erc20:0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
                     },
                     {
                         "bond_id": "0x16bb43690fe3764b15a2eb8d5e94e1ac13d6ef38e6c6f9d9f9c745eaff92d427",
@@ -6527,7 +6547,7 @@ Getting Balancer balances
               "address": "0x1efF8aF5D577060BA4ac8A29A13525bb0Ee2A3D5",
               "tokens": [
                 {
-                  "token": "_ceth_0xFC4B8ED459e00e5400be803A9BB3954234FD50e3",
+                  "token": "eip155:1/erc20:0xFC4B8ED459e00e5400be803A9BB3954234FD50e3",
                   "total_amount": "2326.81686488",
                   "user_balance": {
                     "amount": "331.3943886097855861540937492",
@@ -6537,7 +6557,7 @@ Getting Balancer balances
                   "weight": "50"
                 },
                 {
-                  "token": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                  "token": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "total_amount": "74878.381384930530866965",
                   "user_balance": {
                     "amount": "10664.47290875603144268225218",
@@ -6557,7 +6577,7 @@ Getting Balancer balances
               "address": "0x280267901C175565C64ACBD9A3c8F60705A72639",
               "tokens": [
                 {
-                  "token": "_ceth_0x2ba592F78dB6436527729929AAf6c908497cB200",
+                  "token": "eip155:1/erc20:0x2ba592F78dB6436527729929AAf6c908497cB200",
                   "total_amount": "3728.283461100135483274",
                   "user_balance": {
                     "amount": "3115.861971106915456546519315",
@@ -6567,7 +6587,7 @@ Getting Balancer balances
                   "weight": "75.0"
                 },
                 {
-                  "token": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                  "token": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "total_amount": "98.530639172406329742",
                   "user_balance": {
                     "amount": "82.34563567641578625390887189",
@@ -6642,8 +6662,8 @@ Getting Balancer events
                   {
                     "pool_address": "0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4",
                     "pool_tokens": [
-                      { "token": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "weight": "20" },
-                      { "token": "_ceth_0xba100000625a3754423978a60c9317c58a424e3D", "weight": "80" }
+                      { "token": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "weight": "20" },
+                      { "token": "eip155:1/erc20:0xba100000625a3754423978a60c9317c58a424e3D", "weight": "80" }
                     ],
                     "events": [
                       {
@@ -6656,8 +6676,8 @@ Getting Balancer events
                           "usd_value": "19.779488662371895"
                         },
                         "amounts": {
-                          "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": "0.05",
-                          "_ceth_0xba100000625a3754423978a60c9317c58a424e3D": "0"
+                          "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": "0.05",
+                          "eip155:1/erc20:0xba100000625a3754423978a60c9317c58a424e3D": "0"
                         }
                       },
                       {
@@ -6670,14 +6690,14 @@ Getting Balancer events
                           "usd_value": "19.01364749076136579119809947"
                         },
                         "amounts": {
-                          "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": "0.010687148200906598",
-                          "_ceth_0xba100000625a3754423978a60c9317c58a424e3D": "0.744372160905819159"
+                          "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": "0.010687148200906598",
+                          "eip155:1/erc20:0xba100000625a3754423978a60c9317c58a424e3D": "0.744372160905819159"
                         }
                       }
                     ],
                     "profit_loss_amounts": {
-                      "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": "-0.039312851799093402",
-                      "_ceth_0xba100000625a3754423978a60c9317c58a424e3D": "0.744372160905819159"
+                      "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": "-0.039312851799093402",
+                      "eip155:1/erc20:0xba100000625a3754423978a60c9317c58a424e3D": "0.744372160905819159"
                     },
                     "usd_profit_loss": "-0.76584117161052920880190053"
                   }
@@ -6745,11 +6765,11 @@ Getting Balancer trades
                 {
                     "address": "0x029f388aC4D5C8BfF490550ce0853221030E822b",
                     "amount": "0.075627332013165531",
-                    "base_asset": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                    "base_asset": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                     "fee": "0",
-                    "fee_currency": "_ceth_0x4a220E6096B25EADb88358cb44068A3248254675",
+                    "fee_currency": "eip155:1/erc20:0x4a220E6096B25EADb88358cb44068A3248254675",
                     "location": "balancer",
-                    "quote_asset": "_ceth_0x4a220E6096B25EADb88358cb44068A3248254675",
+                    "quote_asset": "eip155:1/erc20:0x4a220E6096B25EADb88358cb44068A3248254675",
                     "rate": "0.02194014031410883771422129499",
                     "swaps": [
                         {
@@ -6760,8 +6780,8 @@ Getting Balancer trades
                             "from_address": "0x0000000000007F150Bd6f54c40A34d7C3d5e9f56",
                             "log_index": 37,
                             "to_address": "0x6545773483142Fd781023EC74ee008d93aD5466B",
-                            "token0": "_ceth_0x4a220E6096B25EADb88358cb44068A3248254675",
-                            "token1": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                            "token0": "eip155:1/erc20:0x4a220E6096B25EADb88358cb44068A3248254675",
+                            "token1": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                             "tx_hash": "0x9a5c2c73762ef2e8af326e7b286488a4b238b9855d3fd749370bb3074aabf6e5"
                         }
                     ],
@@ -6773,11 +6793,11 @@ Getting Balancer trades
                 {
                     "address": "0x029f388aC4D5C8BfF490550ce0853221030E822b",
                     "amount": "3.214606868598057153",
-                    "base_asset": "_ceth_0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",
+                    "base_asset": "eip155:1/erc20:0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",
                     "fee": "0",
-                    "fee_currency": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                    "fee_currency": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                     "location": "balancer",
-                    "quote_asset": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                    "quote_asset": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                     "rate": "1.068431955314709719236410104",
                     "swaps": [
                         {
@@ -6788,8 +6808,8 @@ Getting Balancer trades
                             "from_address": "0x0000000000007F150Bd6f54c40A34d7C3d5e9f56",
                             "log_index": 334,
                             "to_address": "0x987D7Cc04652710b74Fff380403f5c02f82e290a",
-                            "token0": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-                            "token1": "_ceth_0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",
+                            "token0": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                            "token1": "eip155:1/erc20:0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",
                             "tx_hash": "0xe8f02a2c1105a0dd093d6bff6983bbc6ac662424e116fe4d53ea4f2fd4d36497"
                         }
                     ],
@@ -6869,7 +6889,7 @@ Getting Compound balances
           "result": {
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
                   "rewards": {
-                      "_ceth_0xc00e94Cb662C3520282E6f5717214004A7f26888": {
+                      "eip155:1/erc20:0xc00e94Cb662C3520282E6f5717214004A7f26888": {
                           "balance" :{
                               "amount": "3.5",
                               "usd_value": "892.5",
@@ -6877,14 +6897,14 @@ Getting Compound balances
                       }
                   },
                   "lending": {
-                      "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+                      "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
                           "balance": {
                               "amount": "350.0",
                               "usd_value": "351.21"
                           },
                           "apy": "3.51%"
                       },
-                      "_ceth_0xFC4B8ED459e00e5400be803A9BB3954234FD50e3": {
+                      "eip155:1/erc20:0xFC4B8ED459e00e5400be803A9BB3954234FD50e3": {
                           "balance": {
                               "amount": "1",
                               "usd_value": "9500"
@@ -6905,7 +6925,7 @@ Getting Compound balances
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "lending": {},
                   "borrowing": {
-                      "_ceth_0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
+                      "eip155:1/erc20:0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
                           "balance": {
                               "amount": "560",
                               "usd_value": "156.8"
@@ -6968,12 +6988,12 @@ Getting compound historical data
                   "address": "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056",
                   "block_number": 1,
                   "timestamp": 2,
-                  "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                  "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
                   "value": {
                       "amount": "10.5",
                       "usd_value": "10.86"
                   },
-                  "to_asset": "_ceth_0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
+                  "to_asset": "eip155:1/erc20:0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
                   "to_value": {
                       "amount": "165.21",
                       "usd_value": "10.86"
@@ -6985,12 +7005,12 @@ Getting compound historical data
                   "address": "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056",
                   "block_number": 1,
                   "timestamp": 2,
-                  "asset": "_ceth_0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
+                  "asset": "eip155:1/erc20:0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
                   "value": {
                       "amount": "165.21",
                       "usd_value": "12.25"
                   },
-                  "to_asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                  "to_asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
                   "to_value": {
                       "amount": "12.01",
                       "usd_value": "12.25"
@@ -7006,7 +7026,7 @@ Getting compound historical data
                   "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
                   "block_number": 1,
                   "timestamp": 2,
-                  "asset": "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498",
+                  "asset": "eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498",
                   "value": {
                       "amount": "10",
                       "usd_value": "4.5"
@@ -7018,7 +7038,7 @@ Getting compound historical data
                   "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
                   "block_number": 1,
                   "timestamp": 2,
-                  "asset": "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498",
+                  "asset": "eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498",
                   "value": {
                       "amount": "10.5",
                       "usd_value": "4.8"
@@ -7039,7 +7059,7 @@ Getting compound historical data
                       "amount": "0.00005",
                       "usd_value": "0.09"
                   },
-                  "to_asset": "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498",
+                  "to_asset": "eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498",
                   "to_value": {
                       "amount": "10",
                       "usd_value": "4.5"
@@ -7052,7 +7072,7 @@ Getting compound historical data
                   "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
                   "block_number": 1,
                   "timestamp": 2,
-                  "asset": "_ceth_0xc00e94Cb662C3520282E6f5717214004A7f26888",
+                  "asset": "eip155:1/erc20:0xc00e94Cb662C3520282E6f5717214004A7f26888",
                   "value": {
                       "amount": "1.01",
                       "usd_value": "195"
@@ -7066,17 +7086,17 @@ Getting compound historical data
               }],
               "interest_profit": {
                   "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-                      "_ceth_0xc00e94Cb662C3520282E6f5717214004A7f26888": {
+                      "eip155:1/erc20:0xc00e94Cb662C3520282E6f5717214004A7f26888": {
                               "amount": "3.5",
                               "usd_value": "892.5",
                           },
-                       "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+                       "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
                               "amount": "250",
                               "usd_value": "261.1",
                       }
                   },
                   "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-                      "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498": {
+                      "eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498": {
                           "amount": "0.55",
                           "usd_value": "86.1"
                       }
@@ -7100,7 +7120,7 @@ Getting compound historical data
                },
                "rewards": {
                   "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-                      "_ceth_0xc00e94Cb662C3520282E6f5717214004A7f26888": {
+                      "eip155:1/erc20:0xc00e94Cb662C3520282E6f5717214004A7f26888": {
                               "amount": "3.5",
                               "usd_value": "892.5",
                           },
@@ -7192,7 +7212,7 @@ Getting Liquity balances
                     "usd_value": "16161.675300000001521815"
                 },
                 "debt": {
-                    "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                    "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
                     "amount": "6029.001719188487",
                     "usd_value": "6089.29173638037187"
                 },
@@ -7248,7 +7268,7 @@ Getting Liquity staked amount
       {
           "result": {
             "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
-                "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
                 "amount": "177.02",
                 "usd_value": "265.530"
             }
@@ -7309,12 +7329,12 @@ Getting Liquity historical trove data
                             "debt_after": {
                                 "amount": "6029.001719188487125",
                                 "usd_value": "6149.58175357225686750",
-                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                                "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
                             },
                             "debt_delta": {
                                 "amount": "6029.001719188487125",
                                 "usd_value": "6149.58175357225686750",
-                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                                "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
                             },
                             "collateral_after": {
                                 "amount": "3.5",
@@ -7337,12 +7357,12 @@ Getting Liquity historical trove data
                             "debt_after": {
                                 "amount": "6029.001719188487125",
                                 "usd_value": "6143.552751853068380375",
-                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                                "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
                             },
                             "debt_delta": {
                                 "amount": "0",
                                 "usd_value": "0.000",
-                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                                "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
                             },
                             "collateral_after": {
                                 "amount": "5.31",
@@ -7367,22 +7387,22 @@ Getting Liquity historical trove data
                             "stake_after": {
                                 "amount": "177.02",
                                 "usd_value": "654.974",
-                                "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                                "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
                             },
                             "stake_change": {
                                 "amount": "177.02",
                                 "usd_value": "654.974",
-                                "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                                "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
                             },
                             "issuance_gain": {
                                 "amount": "0",
                                 "usd_value": "0.00",
-                                "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                                "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
                             },
                             "redemption_gain": {
                                 "amount": "0",
                                 "usd_value": "0.00",
-                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                                "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
                             },
                             "stake_operation": "Stake Created",
                             "sequence_number": "51676"
@@ -7454,22 +7474,22 @@ Getting Liquity historical staking data
                         "stake_after": {
                             "amount": "177.02",
                             "usd_value": "654.974",
-                            "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                            "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
                         },
                         "stake_change": {
                             "amount": "177.02",
                             "usd_value": "654.974",
-                            "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                            "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
                         },
                         "issuance_gain": {
                             "amount": "0",
                             "usd_value": "0.00",
-                            "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                            "asset": "eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
                         },
                         "redemption_gain": {
                             "amount": "0",
                             "usd_value": "0.00",
-                            "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                            "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
                         },
                         "stake_operation": "Stake Created",
                         "sequence_number": "51676"
@@ -7538,7 +7558,7 @@ Getting Uniswap balances
                   }
                 },
                 {
-                  "asset": "_ceth_0xdAC17F958D2ee523a2206206994597C13D831ec7",
+                  "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
                   "total_amount": "2897321.681999",
                   "usd_price": "1.001",
                   "user_balance": {
@@ -7617,7 +7637,7 @@ Getting Uniswap V3 balances
                   }
                 },
                 {
-                  "asset": "_ceth_0xdAC17F958D2ee523a2206206994597C13D831ec7",
+                  "asset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
                   "total_amount": "1251.608339987909",
                   "usd_price": "1.001",
                   "user_balance": {
@@ -7710,8 +7730,8 @@ Getting Uniswap events
                       "pool_address": "0x2C7a51A357d5739C5C74Bf3C96816849d2c9F726",
                       "profit_loss0": "264.089867496935331902",
                       "profit_loss1": "88.677078283001177264",
-                      "token0": "_ceth_0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16",
-                      "token1": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+                      "token0": "eip155:1/erc20:0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16",
+                      "token1": "eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                       "usd_profit_loss": "162.1876736563418464415499063"
                   }
               ]
@@ -7779,11 +7799,11 @@ Getting Uniswap trades
           "0x21d05071cA08593e13cd3aFD0b4869537e015C92": [{
               "address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
               "amount": "1411.453463704718081611",
-              "base_asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+              "base_asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
               "fee": "0",
-              "fee_currency": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+              "fee_currency": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
               "location": "uniswap",
-              "quote_asset": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+              "quote_asset": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
               "rate": "371.4351220275573898976315789",
               "swaps": [{
                   "amount0_in": "0",
@@ -7793,8 +7813,8 @@ Getting Uniswap trades
                   "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
                   "log_index": 90,
                   "to_address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
-                  "token0": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
-                  "token1": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                  "token0": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                  "token1": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "tx_hash": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900"}],
               "timestamp": 1603056982,
               "trade_id": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900-0",
@@ -7802,11 +7822,11 @@ Getting Uniswap trades
               "tx_hash": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900"}, {
               "address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
               "amount": "904.171423330858608178",
-              "base_asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+              "base_asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
               "fee": "0",
               "fee_currency": "ALEPH",
               "location": "uniswap",
-              "quote_asset": "_ceth_0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
+              "quote_asset": "eip155:1/erc20:0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
               "rate": "0.1604821621994156262081817395",
               "swaps": [{
                   "amount0_in": "5634.092979176915803392",
@@ -7816,8 +7836,8 @@ Getting Uniswap trades
                   "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
                   "log_index": 98,
                   "to_address": "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11",
-                  "token0": "_ceth_0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
-                  "token1": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                  "token0": "eip155:1/erc20:0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
+                  "token1": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}, {
                   "amount0_in": "0",
                   "amount0_out": "904.171423330858608178",
@@ -7826,8 +7846,8 @@ Getting Uniswap trades
                   "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
                   "log_index": 101,
                   "to_address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
-                  "token0": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
-                  "token1": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                  "token0": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                  "token1": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}],
               "timestamp": 1602796833,
               "trade_id": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6-0",
@@ -7905,8 +7925,8 @@ Getting yearn finance vaults balances
           "result": {
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "YCRV Vault": {
-                      "underlying_token": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
-                      "vault_token": "_ceth_0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c",
+                      "underlying_token": "eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+                      "vault_token": "eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c",
                       "underlying_value": {
                           "amount": "25", "usd_value": "150"
                       },
@@ -7916,8 +7936,8 @@ Getting yearn finance vaults balances
                       "roi": "25.55%",
                   },
                   "YYFI Vault": {
-                      "underlying_token": "_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
-                      "vault_token": "_ceth_0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1",
+                      "underlying_token": "eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
+                      "vault_token": "eip155:1/erc20:0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1",
                       "underlying_value": {
                           "amount": "25", "usd_value": "150"
                       },
@@ -7929,8 +7949,8 @@ Getting yearn finance vaults balances
               },
           "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
               "YALINK Vault": {
-                      "underlying_token": "_ceth_0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84",
-                      "vault_token": "_ceth_0x29E240CFD7946BA20895a7a02eDb25C210f9f324",
+                      "underlying_token": "eip155:1/erc20:0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84",
+                      "vault_token": "eip155:1/erc20:0x29E240CFD7946BA20895a7a02eDb25C210f9f324",
                       "underlying_value": {
                           "amount": "25", "usd_value": "150"
                       },
@@ -8002,11 +8022,11 @@ Getting yearn finance vaults historical data
                           "event_type": "deposit",
                           "block_number": 1,
                           "timestamp": 1,
-                          "from_asset": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+                          "from_asset": "eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                           "from_value": {
                               "amount": "115000", "usd_value": "119523.23"
                           },
-                          "to_asset": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+                          "to_asset": "eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                           "to_value": {
                               "amount": "108230.234", "usd_value": "119523.23"
                           },
@@ -8017,11 +8037,11 @@ Getting yearn finance vaults historical data
                           "event_type": "withdraw",
                           "block_number": 1,
                           "timestamp": 1,
-                          "from_asset": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+                          "from_asset": "eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                           "from_value": {
                               "amount": "108230.234", "usd_value": "125321.24"
                           },
-                          "to_asset": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+                          "to_asset": "eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                           "to_value": {
                               "amount": "117500.23", "usd_value": "123500.32"
                           },
@@ -8040,7 +8060,7 @@ Getting yearn finance vaults historical data
                           "event_type": "deposit",
                           "block_number": 1,
                           "timestamp": 1,
-                          "from_asset": "_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
+                          "from_asset": "eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
                           "from_value": {
                               "amount": "5", "usd_value": "155300.23"
                           },
@@ -8063,11 +8083,11 @@ Getting yearn finance vaults historical data
                           "event_type": "deposit",
                           "block_number": 1,
                           "timestamp": 1,
-                          "from_asset": "_ceth_0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3",
+                          "from_asset": "eip155:1/erc20:0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3",
                           "from_value": {
                               "amount": "20", "usd_value": "205213.12"
                           },
-                          "to_asset": "_ceth_0x7Ff566E1d69DEfF32a7b244aE7276b9f90e9D0f6",
+                          "to_asset": "eip155:1/erc20:0x7Ff566E1d69DEfF32a7b244aE7276b9f90e9D0f6",
                           "to_value": {
                               "amount": "19.8523", "usd_value": "2049874.23"
                           },
@@ -8141,8 +8161,8 @@ Getting yearn finance V2 vaults balances
         "result":{
             "0x915C4580dFFD112db25a6cf06c76cDd9009637b7":{
               "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9":{
-                  "underlying_token":"_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-                  "vault_token":"_ceth_0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+                  "underlying_token":"eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                  "vault_token":"eip155:1/erc20:0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
                   "underlying_value":{
                     "amount":"74.292820",
                     "usd_value":"105.0"
@@ -8154,8 +8174,8 @@ Getting yearn finance V2 vaults balances
                   "roi":"-238.20%"
               },
               "0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67":{
-                  "underlying_token":"_ceth_0x111111111117dC0aa78b770fA6A738034120C302",
-                  "vault_token":"_ceth_0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67",
+                  "underlying_token":"eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
+                  "vault_token":"eip155:1/erc20:0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67",
                   "underlying_value":{
                     "amount":"2627.246068139435250",
                     "usd_value":"3825.0"
@@ -8224,18 +8244,18 @@ Getting yearn finance V2 vaults historical data
       {
         "result":{
             "0x915C4580dFFD112db25a6cf06c76cDd9009637b7":{
-              "_ceth_0xF29AE508698bDeF169B89834F76704C3B205aedf":{
+              "eip155:1/erc20:0xF29AE508698bDeF169B89834F76704C3B205aedf":{
                   "events":[
                     {
                         "event_type":"deposit",
                         "block_number":12588754,
                         "timestamp":1623087604,
-                        "from_asset":"_ceth_0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F",
+                        "from_asset":"eip155:1/erc20:0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F",
                         "from_value":{
                           "amount":"273.682277822922514201",
                           "usd_value":"273.682277822922514201"
                         },
-                        "to_asset":"_ceth_0xF29AE508698bDeF169B89834F76704C3B205aedf",
+                        "to_asset":"eip155:1/erc20:0xF29AE508698bDeF169B89834F76704C3B205aedf",
                         "to_value":{
                           "amount":"269.581682615706959373",
                           "usd_value":"269.581682615706959373"
@@ -8250,18 +8270,18 @@ Getting yearn finance V2 vaults historical data
                     "usd_value":"-273.682277822922514201"
                   }
               },
-              "_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44":{
+              "eip155:1/erc20:0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44":{
                   "events":[
                     {
                         "event_type":"deposit",
                         "block_number":12462638,
                         "timestamp":1621397797,
-                        "from_asset":"_ceth_0x94e131324b6054c0D789b190b2dAC504e4361b53",
+                        "from_asset":"eip155:1/erc20:0x94e131324b6054c0D789b190b2dAC504e4361b53",
                         "from_value":{
                           "amount":"32064.715735449204040742",
                           "usd_value":"32064.715735449204040742"
                         },
-                        "to_asset":"_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44",
+                        "to_asset":"eip155:1/erc20:0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44",
                         "to_value":{
                           "amount":"32064.715735449204040742",
                           "usd_value":"32064.715735449204040742"
@@ -8274,12 +8294,12 @@ Getting yearn finance V2 vaults historical data
                         "event_type":"withdraw",
                         "block_number":12494161,
                         "timestamp":1621820621,
-                        "from_asset":"_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44",
+                        "from_asset":"eip155:1/erc20:0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44",
                         "from_value":{
                           "amount":"32064.715735449204040742",
                           "usd_value":"32064.715735449204040742"
                         },
-                        "to_asset":"_ceth_0x94e131324b6054c0D789b190b2dAC504e4361b53",
+                        "to_asset":"eip155:1/erc20:0x94e131324b6054c0D789b190b2dAC504e4361b53",
                         "to_value":{
                           "amount":"32092.30659836985292638",
                           "usd_value":"32092.30659836985292638"
@@ -8361,7 +8381,7 @@ Getting Loopring balances
                         "amount": "1050",
                         "usd_value": "950"
                     },
-                    "_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96": {
+                    "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96": {
                         "amount": "1",
                         "usd_value": "5"
                     }
@@ -8845,12 +8865,12 @@ Getting Pickle's DILL balances
                     "locked_amount": {
                         "amount": "4431.204412216798860222",
                         "usd_value": "43735.98754857980475039114",
-                        "asset": "_ceth_0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+                        "asset": "eip155:1/erc20:0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
                     },
                     "pending_rewards": {
                         "amount": "82.217560698031032969",
                         "usd_value": "811.48732408956629540403",
-                        "asset": "_ceth_0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+                        "asset": "eip155:1/erc20:0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
                     },
                     "locked_until": 1755129600
                 }
@@ -8894,19 +8914,19 @@ Querying ethereum airdrops
               "0xe5B3330A43CeC5A01A80E75ebaB2d3bc17e70819": {
                   "1inch": {
                       "amount": "675.55",
-                      "asset": "_ceth_0x111111111117dC0aa78b770fA6A738034120C302",
+                      "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
                       "link": "https://app.uniswap.org/"
                   }
               },
               "0x0B89f648eEcCc574a9B7449B5242103789CCD9D7": {
                   "1inch": {
                       "amount": "1823.23",
-                      "asset": "_ceth_0x111111111117dC0aa78b770fA6A738034120C302",
+                      "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
                       "link": "https://1inch.exchange/"
                   },
                   "uniswap": {
                       "amount": "400",
-                      "asset": "_ceth_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+                      "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
                       "link": "https://app.uniswap.org/"
                   }
               },
@@ -9123,8 +9143,8 @@ Adding blockchain accounts
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
                        "assets": {
                            "ETH": {"amount": "10", "usd_value": "1755.53"},
-                           "_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96": {"amount": "1", "usd_value": "50"},
-                           "_ceth_0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6": {"amount": "1", "usd_value": "1.5"}
+                           "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96": {"amount": "1", "usd_value": "50"},
+                           "eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6": {"amount": "1", "usd_value": "1.5"}
                        },
                        "liabilities": {}
                    },
@@ -9140,8 +9160,8 @@ Adding blockchain accounts
                       "BTC": {"amount": "1", "usd_value": "7540.15"},
                       "ETH": {"amount": "10", "usd_value": "1650.53"},
                       "KSM": {"amount": "12", "usd_value": "894.84"},
-                      "_ceth_0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6": {"amount": "1", "usd_value": "1.5"},
-                      "_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96": {"amount": "1", "usd_value": "50"}
+                      "eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6": {"amount": "1", "usd_value": "1.5"},
+                      "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96": {"amount": "1", "usd_value": "50"}
                   },
                   "liabilities": {}
           },
@@ -10121,7 +10141,7 @@ Dealing with ignored assets
       Content-Type: application/json
 
       {
-          "result": ["_ceth_0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7", "_ceth_0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413"]
+          "result": ["eip155:1/erc20:0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7", "eip155:1/erc20:0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413"]
           "message": ""
       }
 
@@ -10144,7 +10164,7 @@ Dealing with ignored assets
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"assets": ["_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96"]}
+      {"assets": ["eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96"]}
 
    :reqjson list assets: A list of asset symbols to add to the ignored assets.
 
@@ -10156,7 +10176,7 @@ Dealing with ignored assets
       Content-Type: application/json
 
       {
-          "result": ["_ceth_0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7", "_ceth_0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413", "_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96"]
+          "result": ["eip155:1/erc20:0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7", "eip155:1/erc20:0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413", "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96"]
           "message": ""
       }
 
@@ -10179,7 +10199,7 @@ Dealing with ignored assets
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"assets": ["_ceth_0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413"]}
+      {"assets": ["eip155:1/erc20:0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413"]}
 
    :reqjson list assets: A list of asset symbols to remove from the ignored assets.
 
@@ -10191,7 +10211,7 @@ Dealing with ignored assets
       Content-Type: application/json
 
       {
-          "result": ["_ceth_0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7"]
+          "result": ["eip155:1/erc20:0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7"]
           "message": ""
       }
 

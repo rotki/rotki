@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# /home/yabirgb/work/rotki/tools/scripts/generate_constant_assets.py at 28/07/2022 07:41:58.
+# /home/yabirgb/work/rotki/tools/scripts/generate_constant_assets.py at 11/08/2022 16:17:32.
 # Do not edit manually!
 
 from typing import List
@@ -54,7 +54,7 @@ A_BCH = Asset.initialize(
     name="Bitcoin Cash",
     symbol='BCH',
     started=Timestamp(1501593374),
-    forked=None,
+    forked=A_BTC,
     swapped_for=None,
     coingecko='bitcoin-cash',
     cryptocompare=None,
@@ -66,7 +66,7 @@ A_BSV = Asset.initialize(
     name="Bitcoin Satoshi's Vision",
     symbol='BSV',
     started=Timestamp(1542300000),
-    forked=None,
+    forked=A_BCH,
     swapped_for=None,
     coingecko='bitcoin-cash-sv',
     cryptocompare=None,
@@ -102,7 +102,7 @@ A_ETC = Asset.initialize(
     name="Ethereum classic",
     symbol='ETC',
     started=Timestamp(1469020840),
-    forked=None,
+    forked=A_ETH,
     swapped_for=None,
     coingecko='ethereum-classic',
     cryptocompare=None,
@@ -2235,7 +2235,7 @@ A_DXD = EvmToken.initialize(
 CONSTANT_ASSETS.append(A_DXD)
 SWAPPEDFOR_0X0BA45A8B5D5575935B8158A88C631E9F9C95A2E5 = Asset.initialize(
     identifier='eip155:1/erc20:0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0',
-    asset_type=AssetType.ETHEREUM_TOKEN,
+    asset_type=AssetType.EVM_TOKEN,
     name="Tellor",
     symbol='TRB',
     started=Timestamp(1613850551),

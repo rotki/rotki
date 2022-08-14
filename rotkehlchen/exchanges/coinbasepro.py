@@ -468,7 +468,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     except KeyError:
                         pass
 
-                if transaction_id and (asset == A_ETH or asset.asset_type == AssetType.ETHEREUM_TOKEN):  # noqa: E501
+                if transaction_id and (asset == A_ETH or asset.asset_type == AssetType.EVM_TOKEN):  # noqa: E501
                     transaction_id = '0x' + transaction_id
 
                 movements.append(AssetMovement(

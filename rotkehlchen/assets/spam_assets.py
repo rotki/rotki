@@ -8,7 +8,7 @@ from eth_utils import to_checksum_address
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.constants.resolver import ChainID
+from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
@@ -184,7 +184,7 @@ def query_token_spam_list(db: 'DBHandler') -> Set[EvmToken]:
             log.debug(f'Failed to read address from cryptoscamdb. {str(e)}')
             continue
         try:
-            token = EvmToken(checksumed_address)
+            token = EvmToken(ethaddress_to_identifier(checksumed_address))
         except UnknownAsset:
             continue
         if token is not None:

@@ -111,7 +111,7 @@ def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
     )
     # try to add an ethereum token with the custom asset endpoint
     bad_asset = {
-        'asset_type': 'ethereum token',
+        'asset_type': 'evm token',
         'name': 'Euro',
         'symbol': 'EUR',
     }
@@ -122,7 +122,7 @@ def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
         ),
         json=bad_asset,
     )
-    expected_msg = 'Asset type ethereum token is not allowed in this endpoint'
+    expected_msg = 'Asset type evm token is not allowed in this endpoint'
     assert_error_response(
         response=response,
         contained_in_msg=expected_msg,
@@ -276,7 +276,7 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
     # try to edit an ethereum token with the custom asset endpoint
     bad_asset = {
         'identifier': 'EUR',
-        'asset_type': 'ethereum token',
+        'asset_type': 'evm token',
         'name': 'ethereum Euro',
         'symbol': 'EUR',
     }
@@ -287,7 +287,7 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
         ),
         json=bad_asset,
     )
-    expected_msg = 'Asset type ethereum token is not allowed in this endpoint'
+    expected_msg = 'Asset type evm token is not allowed in this endpoint'
     assert_error_response(
         response=response,
         contained_in_msg=expected_msg,
@@ -851,7 +851,7 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_cus
     identifier = ethaddress_to_identifier(eth_address)
     globaldb.add_asset(
         asset_id=identifier,
-        asset_type=AssetType.ETHEREUM_TOKEN,
+        asset_type=AssetType.EVM_TOKEN,
         data=EvmToken.initialize(
             address=eth_address,
             chain=ChainID.ETHEREUM,
@@ -892,7 +892,7 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_cus
                 'name': 'yabirtoken',
                 'decimals': 18,
                 'symbol': 'YAB',
-                'asset_type': 'ethereum token',
+                'asset_type': 'evm token',
                 'started': None,
                 'forked': None,
                 'swapped_for': None,

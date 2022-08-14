@@ -73,7 +73,7 @@ def _force_remote(cursor: DBCursor, local_asset: Asset, full_insert: str) -> Non
     May raise an sqlite3 error if something fails.
     """
     cursor.executescript('PRAGMA foreign_keys = OFF;')
-    if local_asset.asset_type == AssetType.ETHEREUM_TOKEN:
+    if local_asset.asset_type == AssetType.EVM_TOKEN:
         token = EvmToken.from_asset(local_asset)
         cursor.execute(
             'DELETE FROM evm_tokens WHERE identifier=?;',
@@ -252,7 +252,7 @@ class AssetsUpdater():
 
         if len(match.groups()) != 6:
             raise DeserializationError(
-                f'At asset DB update could not parse ethereum token data out of {insert_text}',
+                f'At asset DB update could not parse evm token data out of {insert_text}',
             )
 
         chain_value = self._parse_optional_str(
@@ -293,7 +293,7 @@ class AssetsUpdater():
         """
         asset_data = self._parse_asset_data(insert_text)
         address = decimals = protocol = chain = token_kind = None
-        if asset_data.asset_type.is_evm_compatible():
+        if asset_data.asset_type == AssetType.EVM_TOKEN:
             address, decimals, protocol, chain, token_kind = self._parse_ethereum_token_data(insert_text)  # noqa: E501
 
         # types are not really proper here (except for asset_type, chain and token_kind)

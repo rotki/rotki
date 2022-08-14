@@ -201,7 +201,7 @@ def get_underlying_asset_price(token: EvmToken) -> Optional[Price]:
     if custom_token and custom_token.underlying_tokens is not None:
         usd_price = ZERO
         for underlying_token in custom_token.underlying_tokens:
-            token = EvmToken(underlying_token.address)
+            token = EvmToken(underlying_token.get_identifier())
             usd_price += Inquirer().find_usd_price(token) * underlying_token.weight
         if usd_price != Price(ZERO):
             price = Price(usd_price)

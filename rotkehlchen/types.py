@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 from typing import (
     Any,
     Callable,
@@ -563,5 +563,6 @@ class UserNote(NamedTuple):
 
 
 class EvmTokenKind(DBEnumMixIn):
-    ERC20 = 1
-    ERC721 = 2
+    ERC20 = auto()
+    ERC721 = auto()
+    UNKNOWN = auto()

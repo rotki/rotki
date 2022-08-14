@@ -53,7 +53,7 @@ def import_assets_from_file(
         # with same name and symbol will make this fail.
         asset_type = asset_data['asset_type']
         asset_ref: Union[Optional[List[str]], Optional[AssetData]]
-        if asset_type == AssetType.ETHEREUM_TOKEN:
+        if asset_type == AssetType.EVM_TOKEN:
             asset_ref = globaldb.get_asset_data(
                 identifier=asset_data['identifier'],
                 form_with_incomplete_data=True,

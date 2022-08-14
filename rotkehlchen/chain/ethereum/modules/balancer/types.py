@@ -306,7 +306,7 @@ class BalancerPoolEventsBalance(NamedTuple):
 
         return {
             'pool_address': self.pool_address_token.evm_address,
-            'pool_tokens': tokens_and_weights,
+            'pool_tokens': tokens_and_weights.sort(key=lambda x: x['token']),
             'events': [event.serialize(pool_tokens=self.pool_address_token.underlying_tokens) for event in self.events],  # noqa: E501
             'profit_loss_amounts': profit_loss_amounts,
             'usd_profit_loss': str(self.usd_profit_loss),

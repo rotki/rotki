@@ -211,7 +211,7 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         if from_asset == to_asset:
             return Price(ONE)
 
-        if not (from_asset.is_eth_token() and to_asset.is_eth_token()):
+        if not (from_asset.is_evm_token() and to_asset.is_evm_token()):
             raise PriceQueryUnsupportedAsset(
                 f'Either {from_asset} or {to_asset} arent ethereum tokens for the uniswap oracle',
             )

@@ -16,19 +16,38 @@ def fixture_assets_updater(messages_aggregator):
 @pytest.mark.parametrize('text,expected_data,error_msg', [
     (
         """
-        INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES(
-        "0xD178b20c6007572bD1FD01D205cC20D32B4A6015", 18, NULL
+        INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol)
+        VALUES(
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015",
+            "A",
+            "A",
+            "0xD178b20c6007572bD1FD01D205cC20D32B4A6015",
+            18,
+            NULL
         );
-        INSERT INTO assets(identifier,type, name, symbol,
-        started, swapped_for, coingecko, cryptocompare, details_reference)
-        VALUES("_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015", "C", "Aidus", "AID"   ,
-        123, NULL,   NULL, "AIDU", "0xD178b20c6007572bD1FD01D205cC20D32B4A6015");
+        INSERT INTO assets(identifier,type, started, swapped_for)
+        VALUES(
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015",
+            "C",
+            123,
+            NULL
+        );
+        INSERT INTO common_asset_details(identifier, name, symbol, coingecko,
+        cryptocompare, forked)
+        VALUES(
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015",
+            "Aidus",
+            "AID",
+            NULL,
+            "AIDU",
+            NULL
+        );
         """,
         AssetData(
-            identifier='_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
+            identifier='eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
             name='Aidus',
             symbol='AID',
-            asset_type=AssetType.ETHEREUM_TOKEN,
+            asset_type=AssetType.EVM_TOKEN,
             started=Timestamp(123),
             forked=None,
             swapped_for=None,
@@ -44,12 +63,22 @@ def fixture_assets_updater(messages_aggregator):
     ),
     (
         """
-        INSERT INTO assets(identifier,type, name, symbol,
-        started, swapped_for, coingecko, cryptocompare, details_reference)
-        VALUES("121-ada-FADS-as", "F", "A name", "SYMBOL"   ,
-        NULL, NULL,   "", "", "121-ada-FADS-as");
-        INSERT INTO common_asset_details(asset_id, forked) VALUES(
-        "121-ada-FADS-as", "421-bbc-FADS-ks"
+        INSERT INTO assets(identifier,type, started, swapped_for)
+        VALUES(
+            "121-ada-FADS-as",
+            "F",
+            NULL,
+            NULL
+        );
+        INSERT INTO common_asset_details(identifier, name, symbol, coingecko,
+        cryptocompare, forked)
+        VALUES(
+            "121-ada-FADS-as",
+            "A name",
+            "SYMBOL",
+            "",
+            "",
+            "421-bbc-FADS-ks"
         );
         """,
         AssetData(
@@ -72,23 +101,41 @@ def fixture_assets_updater(messages_aggregator):
     ),
     (
         """
-        INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES(
-        "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C", 18, "uniswap"
+        INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "A",
+            "A",
+            "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            18,
+            "uniswap"
         );
-        INSERT INTO assets(identifier,type, name, symbol,
-        started, swapped_for, coingecko, cryptocompare, details_reference)
-        VALUES("_ceth_0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C", "C", "Test token", "TEST"   ,
-        123, "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015",   "test-token",
-        "", "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C");
+        INSERT INTO assets(identifier,type, started, swapped_for)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "C",
+            123,
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
+        );
+        INSERT INTO common_asset_details(identifier, name, symbol, coingecko,
+        cryptocompare, forked)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "Test token",
+            "TEST",
+            "test-token",
+            "",
+            NULL
+        );
 """,
         AssetData(
-            identifier='_ceth_0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C',
+            identifier='eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C',
             name='Test token',
             symbol='TEST',
-            asset_type=AssetType.ETHEREUM_TOKEN,
+            asset_type=AssetType.EVM_TOKEN,
             started=Timestamp(123),
             forked=None,
-            swapped_for='_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
+            swapped_for='eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
             evm_address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),  # noqa: E501
             chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
@@ -101,23 +148,41 @@ def fixture_assets_updater(messages_aggregator):
     ),
     (
         """
-        INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES(
-        "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C", 18, "uniswap"
+        INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "A",
+            "A",
+            "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            18,
+            "uniswap"
         );
-        INSERT INTO assets(identifier,type, name, symbol,
-        started, swapped_for, coingecko, cryptocompare, details_reference)
-        VALUES("_ceth_0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C", "C", "Test token", "TEST"   ,
-        123, "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015",   "test-token",
-        "", "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C");
+        INSERT INTO assets(identifier,type, started, swapped_for)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "C",
+            123,
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
+        );
+        INSERT INTO common_asset_details(identifier, name, symbol, coingecko,
+        cryptocompare, forked)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "Test token",
+            "TEST",
+                        "test-token",
+            "",
+            NULL
+        );
 """,
         AssetData(
-            identifier='_ceth_0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C',
+            identifier='eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C',
             name='Test token',
             symbol='TEST',
-            asset_type=AssetType.ETHEREUM_TOKEN,
+            asset_type=AssetType.EVM_TOKEN,
             started=Timestamp(123),
             forked=None,
-            swapped_for='_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
+            swapped_for='eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
             evm_address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),  # noqa: E501
             chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
@@ -130,40 +195,92 @@ def fixture_assets_updater(messages_aggregator):
     ),
     (
         """
-        INSERT INTO ethereum_tokens(address, decimals, protocol)
-        , 18, "uniswap"
+        INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "A",
+            "A",
+            18,
+            "uniswap"
         );
-        INSERT INTO assets(identifier,type, name, symbol,
-        started, swapped_for, coingecko, cryptocompare, details_reference)
-        VALUES("_ceth_0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C", "C", "Test token", "TEST"   ,
-        123, "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015",   "test-token",
-        "", "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C");
+        INSERT INTO assets(identifier,type, started, swapped_for)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "C",
+            123,
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
+        );
+        INSERT INTO common_asset_details(identifier, name, symbol, coingecko,
+        cryptocompare, forked)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "Test token",
+            "TEST",
+                        "test-token",
+            "",
+            NULL
+        );
 """,
         None,
-        'At asset DB update could not parse ethereum token data out of',
+        'At asset DB update could not parse evm token data out of',
     ),
     (
         """
-        INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES(
-        "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C", 18, "uniswap"
+        INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "A",
+            "A",
+            "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            18,
+            "uniswap"
         );
-        INSERT INTO assets(identifier,type, name, symbol,
-        started, coingecko, cryptocompare, details_reference)
-        VALUES(", "C", "Test token", "TEST"   ,
-        123, "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015",   "test-token",
-        "", "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C");
+        INSERT INTO assets(identifier,type, started, swapped_for)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "C",
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
+        );
+        INSERT INTO common_asset_details(identifier, name, symbol, coingecko,
+        cryptocompare, forked)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "Test token",
+            "TEST",
+                        "test-token",
+            "",
+            NULL
+        );
         """,
         None,
         'At asset DB update could not parse asset data out of',
     ),
     (
         """
-        INSERT INTO assets(identifier,type, name, symbol,
-        started, swapped_for, coingecko, cryptocompare, details_reference)
-        VALUES("121-ada-FADS-as", "F", "A name", "SYMBOL"   ,
-        NULL, NULL,   "", "", "121-ada-FADS-as");
-        INSERT INTO common_asset_details(asset_id, forked) VALUES(
-        "421-bbc-FADS-ks"
+        INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "A",
+            "A",
+            "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            18,
+            "uniswap"
+        );
+        INSERT INTO assets(identifier,type, started, swapped_for)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "C",
+            123,
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
+        );
+        INSERT INTO common_asset_details(identifier, name, symbol, coingecko,
+        cryptocompare, forked)
+        VALUES(
+            "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
+            "Test token",
+            "TEST",
+            "",
+            NULL
         );
         """,
         None,

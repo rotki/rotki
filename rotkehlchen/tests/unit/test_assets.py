@@ -12,6 +12,7 @@ from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 
@@ -72,9 +73,9 @@ def test_ethereum_tokens():
     rdn_asset = EvmToken('eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')
     assert rdn_asset.evm_address == '0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'
     assert rdn_asset.decimals == 18
-    assert rdn_asset.is_eth_token()
+    assert rdn_asset.is_evm_token()
 
-    with pytest.raises(UnknownAsset):
+    with pytest.raises(DeserializationError):
         EvmToken('BTC')
 
 
@@ -217,7 +218,7 @@ def test_cryptocompare_asset_support(cryptocompare):
 def test_all_assets_json_tokens_address_is_checksummed():
     """Test that all ethereum saved token asset addresses are checksummed"""
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
-        if not asset_data.asset_type == AssetType.ETHEREUM_TOKEN:
+        if not asset_data.asset_type == AssetType.EVM_TOKEN:
             continue
 
         msg = (

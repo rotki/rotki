@@ -89,7 +89,7 @@ from rotkehlchen.api.v1.schemas import (
     ManualPriceDeleteSchema,
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
-    ModifyEthereumTokenSchema,
+    ModifyEvmTokenSchema,
     NameDeleteSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
@@ -697,8 +697,8 @@ class EthereumAssetsResource(BaseMethodView):
     get_schema = OptionalEthereumAddressSchema()
     delete_schema = RequiredEthereumAddressSchema()
 
-    def make_edit_schema(self) -> ModifyEthereumTokenSchema:
-        return ModifyEthereumTokenSchema(
+    def make_edit_schema(self) -> ModifyEvmTokenSchema:
+        return ModifyEvmTokenSchema(
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )

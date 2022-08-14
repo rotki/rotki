@@ -390,6 +390,9 @@ class AssetField(fields.Field):
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> Asset:
+        if isinstance(value, str) is False:
+            raise ValidationError(f'Tried to initialize an asset out of a non-string identifier {value}')  # noqa: E501
+
         try:
             asset = Asset(
                 identifier=urllib.parse.unquote(value),

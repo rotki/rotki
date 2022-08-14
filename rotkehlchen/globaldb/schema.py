@@ -1,6 +1,6 @@
 DB_CREATE_ETHEREUM_TOKENS_LIST = """
 CREATE TABLE IF NOT EXISTS underlying_tokens_list (
-    identifier VARCHAR[42] NOT NULL,
+    identifier TEXT NOT NULL,
     weight TEXT NOT NULL,
     parent_token_entry TEXT NOT NULL,
     FOREIGN KEY(parent_token_entry) REFERENCES evm_tokens(identifier)
@@ -9,14 +9,6 @@ CREATE TABLE IF NOT EXISTS underlying_tokens_list (
     PRIMARY KEY(identifier, parent_token_entry)
 );
 """  # noqa: E501
-
-DB_CREATE_ETHEREUM_TOKENS = """
-CREATE TABLE IF NOT EXISTS ethereum_tokens (
-    address VARCHAR[42] PRIMARY KEY NOT NULL,
-    decimals INTEGER,
-    protocol TEXT
-);
-"""
 
 # Custom enum table for asset types
 DB_CREATE_ASSET_TYPES = """
@@ -78,6 +70,44 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Y', 25);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 26);
 """
 
+# Custom enum table for chains
+DB_CREATE_CHAIN_IDS = """
+CREATE TABLE IF NOT EXISTS chain_ids (
+  chain    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* ETHEREUM */
+INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('A', 1);
+/* OPTIMISM */
+INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('B', 2);
+/* BINANCE */
+INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('C', 3);
+/* GNOSIS */
+INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('D', 4);
+/* MATIC */
+INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('E', 5);
+/* FANTOM */
+INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('F', 6);
+/* ARBITRUM */
+INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('G', 7);
+/* AVALANCHE */
+INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('H', 8);
+"""
+
+# Custom enum table for token kindss
+DB_CREATE_TOKEN_KINDS = """
+CREATE TABLE IF NOT EXISTS token_kinds (
+  token_kind    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* ERC20 */
+INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('A', 1);
+/* ERC721 */
+INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('B', 2);
+/* UNKNOWN */
+INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('C', 3);
+"""
+
 # Using asset_id as a primary key here since nothing else is guaranteed to be unique
 # Advantage we have here is that by deleting the parent asset this also gets deleted
 DB_CREATE_COMMON_ASSET_DETAILS = """
@@ -115,8 +145,8 @@ CREATE TABLE IF NOT EXISTS settings (
 DB_CREATE_EVM_TOKENS = """
 CREATE TABLE IF NOT EXISTS evm_tokens (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
-    token_kind CHAR(1) NOT NULL DEFAULT('A'),
-    chain CHAR(1) NOT NULL DEFAULT('A'),
+    token_kind CHAR(1) NOT NULL DEFAULT('A') REFERENCES token_kinds(token_kind),
+    chain CHAR(1) NOT NULL DEFAULT('A') REFERENCES chain_ids(chain),
     address VARCHAR[42] NOT NULL,
     decimals INTEGER,
     protocol TEXT
@@ -128,6 +158,7 @@ CREATE TABLE IF NOT EXISTS multiasset_collector(
     identifier TEXT NOT NULL,
     child_asset_id TEXT,
     FOREIGN KEY(child_asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
+    FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE
     PRIMARY KEY(identifier, child_asset_id)
 );
 """
@@ -189,10 +220,30 @@ CREATE TABLE IF NOT EXISTS address_book (
 );
 """
 
+DB_CREATE_CUSTOM_ASSET = """
+CREATE TABLE IF NOT EXISTS custom_asset(
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    symbol TEXT,
+    notes TEXT,
+    asset_type TEXT
+);
+"""
+
+DB_CREATE_ASSET_COLLECTION_PROPERTIES = """
+CREATE TABLE IF NOT EXISTS asset_collection_properties(
+    identifier TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    FOREIGN KEY(identifier) REFERENCES multiasset_collector(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+);
+"""  # noqa: E501
+
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{DB_CREATE_ETHEREUM_TOKENS}
+{DB_CREATE_CHAIN_IDS}
+{DB_CREATE_TOKEN_KINDS}
 {DB_CREATE_ETHEREUM_TOKENS_LIST}
 {DB_CREATE_SETTINGS}
 {DB_CREATE_ASSET_TYPES}
@@ -205,6 +256,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_PRICE_HISTORY}
 {DB_CREATE_BINANCE_PARIS}
 {DB_CREATE_ADDRESS_BOOK}
+{DB_CREATE_CUSTOM_ASSET}
+{DB_CREATE_ASSET_COLLECTION_PROPERTIES}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

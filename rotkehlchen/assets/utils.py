@@ -30,7 +30,7 @@ def add_ethereum_token_to_db(token_data: EvmToken) -> EvmToken:
     globaldb = GlobalDBHandler()
     globaldb.add_asset(
         asset_id=token_data.identifier,
-        asset_type=AssetType.ETHEREUM_TOKEN,
+        asset_type=AssetType.EVM_TOKEN,
         data=token_data,
     )
     # This can, but should not raise UnknownAsset, DeserializationError
@@ -103,17 +103,28 @@ def get_or_create_evm_token(
     return ethereum_token
 
 
-def get_asset_by_symbol(symbol: str, asset_type: Optional[AssetType] = None) -> Optional[Asset]:
+def get_asset_by_symbol(
+        symbol: str,
+        asset_type: Optional[AssetType] = None,
+        preferred_chain: ChainID = ChainID.ETHEREUM,
+) -> Optional[Asset]:
     """Gets an asset by symbol from the DB.
 
-    If no asset with that symbol or multiple assets with the same
-    symbol are found returns None
+    If no asset with that symbol or multiple assets (except for EVM tokens) with the same
+    symbol are found returns None. If all the results are evm tokens then the one from the
+    preferred_chain is selected.
     """
     if symbol == 'ETH':
         return A_ETH  # ETH can be ETH and ETH2 in the DB
 
     assets_data = GlobalDBHandler().get_assets_with_symbol(symbol, asset_type)
-    if len(assets_data) != 1:
+    if (
+        len(assets_data) != 1 and
+        all((asset.asset_type == AssetType.EVM_TOKEN for asset in assets_data))
+    ):
+        for token in assets_data:
+            if preferred_chain == token.chain:
+                return Asset(token.identifier)
         return None
 
     return Asset(assets_data[0].identifier)
@@ -145,7 +156,7 @@ def symbol_to_ethereum_token(symbol: str) -> EvmToken:
     - UnknownAsset if an ethereum token can't be found by the symbol or if
     more than one tokens match this symbol
     """
-    maybe_asset = get_asset_by_symbol(symbol, asset_type=AssetType.ETHEREUM_TOKEN)
+    maybe_asset = get_asset_by_symbol(symbol, asset_type=AssetType.EVM_TOKEN)
     if maybe_asset is None:
         raise UnknownAsset(symbol)
 

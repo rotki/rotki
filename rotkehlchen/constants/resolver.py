@@ -1,5 +1,8 @@
-from typing import Optional, Tuple
+from typing import Final, Optional, Tuple, Type
+
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
@@ -31,14 +34,45 @@ class ChainID(DBEnumMixIn):
 
         raise RuntimeError(f'Unknown chain {chain}')
 
+    def serialize_for_db(self) -> str:
+        return CHAINS_TO_DB_SYMBOL[self]
+
+    @classmethod
+    def deserialize_from_db(cls: Type['ChainID'], value: str) -> 'ChainID':
+        """May raise a DeserializationError if something is wrong with the DB data"""
+        if not isinstance(value, str):
+            raise DeserializationError(
+                f'Failed to deserialize ChainID DB value from non string value: {value}',
+            )
+
+        symbol_to_chain = {v: k for k, v in CHAINS_TO_DB_SYMBOL.items()}
+        chain = symbol_to_chain.get(value)
+        if chain is None:
+            raise DeserializationError(
+                f'Failed to deserialize ChainID DB value from invalid value: {value}',
+            )
+        return chain
+
+
+CHAINS_TO_DB_SYMBOL: Final = {
+    ChainID.ETHEREUM: 'A',
+    ChainID.OPTIMISM: 'B',
+    ChainID.BINANCE: 'C',
+    ChainID.GNOSIS: 'D',
+    ChainID.MATIC: 'E',
+    ChainID.FANTOM: 'F',
+    ChainID.ARBITRUM: 'G',
+    ChainID.AVALANCHE: 'H',
+}
+
 
 def evm_address_to_identifier(
-    address: str,
-    chain: ChainID,
-    token_type: EvmTokenKind,
-    collectible_id: Optional[str] = None,
+        address: str,
+        chain: ChainID,
+        token_type: EvmTokenKind,
+        collectible_id: Optional[str] = None,
 ) -> str:
-    """Format an EVM token information into the CAIPs identifier format"""
+    """Format a EVM token information into the CAIPs identifier format"""
     ident = f'{EVM_CHAIN_DIRECTIVE}:{chain.value}/{str(token_type)}:{address}'
     if collectible_id is not None:
         return ident + f'/{collectible_id}'
@@ -62,8 +96,22 @@ def strethaddress_to_identifier(address: str) -> str:
 
 
 def identifier_to_address_chain(identifier: str) -> Tuple[ChecksumEvmAddress, ChainID]:
+    """Given an identefier in the CAIPs format extract from it the address and
+    chain of the token.
+    May raise:
+    - InputError: if the information couldn't be extracted from the identifier.
+    - AttributeError: if a string is not used as identifier.
+    """
     identifier_parts = identifier.split(':')
+    if len(identifier_parts) != 3:
+        raise InputError(f'Malformed CAIPs identifier. {identifier}')
+    try:
+        chain = ChainID(int(identifier_parts[1].split('/')[0]))
+    except ValueError as e:
+        raise InputError(
+            f'Tried to extract chain from CAIPs identifier but had an invalid value {identifier}',
+        ) from e
     return (
         string_to_evm_address(identifier_parts[-1]),
-        ChainID(int(identifier_parts[1].split('/')[0])),
+        chain,
     )

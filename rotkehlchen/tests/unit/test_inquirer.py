@@ -157,7 +157,7 @@ def test_parsing_forex_cache_works(
 def test_fallback_to_coingecko(inquirer):  # pylint: disable=unused-argument
     """Cryptocompare does not return current prices for some assets.
     For those we are going to be using coingecko"""
-    price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'))  # RARRI # noqa: E501
+    price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'))  # RARI # noqa: E501
     assert price != Price(ZERO)
     price = inquirer.find_usd_price(EvmToken('eip155:1/erc20:0x679131F591B4f369acB8cd8c51E68596806c3916'))  # TLN # noqa: E501
     assert price != Price(ZERO)
@@ -301,7 +301,7 @@ def test_price_underlying_tokens(inquirer, globaldb):
     )
     globaldb.add_asset(
         asset_id=identifier,
-        asset_type=AssetType.ETHEREUM_TOKEN,
+        asset_type=AssetType.EVM_TOKEN,
         data=token,
     )
 
@@ -326,7 +326,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
     )
     globaldb.add_asset(
         asset_id=identifier,
-        asset_type=AssetType.ETHEREUM_TOKEN,
+        asset_type=AssetType.EVM_TOKEN,
         data=token,
     )
 

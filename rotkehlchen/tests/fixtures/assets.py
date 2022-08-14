@@ -77,6 +77,6 @@ def asset_resolver(
                 chain=entry.chain,
                 token_type=entry.token_kind,
             )
-            globaldb.add_asset(asset_id=asset_id, asset_type=AssetType.ETHEREUM_TOKEN, data=entry)
+            globaldb.add_asset(asset_id=asset_id, asset_type=AssetType.EVM_TOKEN, data=entry)
 
     return resolver

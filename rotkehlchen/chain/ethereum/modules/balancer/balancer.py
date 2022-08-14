@@ -994,7 +994,7 @@ class Balancer(EthereumModule):
                 try:
                     address, balancer_pool = deserialize_pool_share(self.database, raw_pool_share)
                     for pool_token in balancer_pool.pool_token.underlying_tokens:
-                        token = EvmToken(pool_token.address)  # should not raise
+                        token = EvmToken(ethaddress_to_identifier(pool_token.address))  # noqa: E501  # should not raise
                         if token.has_oracle():
                             known_tokens.add(token)
                         else:

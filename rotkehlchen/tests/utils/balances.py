@@ -13,7 +13,7 @@ def get_asset_balance_total(asset: Asset, setup: BalancesTestSetup) -> FVal:
     if asset in (A_ETH, A_BTC):
         asset_balances = getattr(setup, f'{asset.symbol.lower()}_balances')
         total += sum(conversion_function(FVal(b)) for b in asset_balances)
-    elif asset.is_eth_token():
+    elif asset.is_evm_token():
         asset_balances = setup.token_balances[asset]  # type: ignore
         total += sum(conversion_function(FVal(b)) for b in asset_balances)
 
