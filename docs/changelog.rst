@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`4657` Now ens names are verified by forward resolution.
 * :feature:`4645` Support the new poloniex API. Note that with their "new and advanced" API we can't query trades history older than 90 days
+* :bug:`4682` Premium users will again be able to load the dex trades section correctly.
 
 * :release:`1.25.1 <2022-07-28>`
 * :bug:`-` Introduce an experimental approach to ignore uniswap v2 pool pricing for pools with single sided liquidity that is less than $5k. This is experimental and we will probably figure out a better way to filter spam assets in the future. Context: https://twitter.com/peter_szilagyi/status/1552532767790997504
