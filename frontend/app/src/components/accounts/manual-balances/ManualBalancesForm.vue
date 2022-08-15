@@ -78,12 +78,12 @@ import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
-import { setupManualBalances } from '@/composables/balances';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
 import { BalanceType, ManualBalance } from '@/services/balances/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { TradeLocation } from '@/services/history/types';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import { bigNumberify } from '@/utils/bignumbers';
 
 const setupRules = (i18n: IVueI18n) => {
@@ -171,7 +171,8 @@ const ManualBalancesForm = defineComponent({
       { immediate: true }
     );
 
-    const { editBalance, addBalance, manualLabels } = setupManualBalances();
+    const { editManualBalance, addManualBalance, manualLabels } =
+      useManualBalancesStore();
 
     const save = async () => {
       set(pending, true);
@@ -187,8 +188,8 @@ const ManualBalancesForm = defineComponent({
       const idVal = get(id);
 
       const status = await (get(edit) && idVal
-        ? editBalance({ ...balance, id: idVal })
-        : addBalance(balance));
+        ? editManualBalance({ ...balance, id: idVal })
+        : addManualBalance(balance));
 
       set(pending, false);
 

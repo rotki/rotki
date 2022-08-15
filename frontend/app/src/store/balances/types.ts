@@ -7,8 +7,7 @@ import { z } from 'zod';
 import { PriceInformation } from '@/services/assets/types';
 import {
   BlockchainAssetBalances,
-  BtcBalances,
-  ManualBalanceWithValue
+  BtcBalances
 } from '@/services/balances/types';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { Section } from '@/store/const';
@@ -57,9 +56,6 @@ export interface BalanceState {
   ksmAccounts: GeneralAccountData[];
   dotAccounts: GeneralAccountData[];
   avaxAccounts: GeneralAccountData[];
-  manualBalances: ManualBalanceWithValue[];
-  manualLiabilities: ManualBalanceWithValue[];
-  manualBalanceByLocation: BalanceByLocation;
   nonFungibleBalances: NonFungibleBalances;
 }
 

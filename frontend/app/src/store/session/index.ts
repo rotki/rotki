@@ -20,6 +20,7 @@ import {
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import { useHistory, useTransactions } from '@/store/history';
@@ -99,6 +100,7 @@ export const useSessionStore = defineStore('session', () => {
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
   const { fetchCounterparties } = useTransactions();
   const { timeframe } = storeToRefs(useSessionSettingsStore());
+  const { fetchManualBalances } = useManualBalancesStore();
 
   const periodicCheck = async () => {
     if (get(periodicRunning)) {
@@ -153,7 +155,7 @@ export const useSessionStore = defineStore('session', () => {
       fetchIgnored(),
       fetchIgnoredAssets(),
       fetchWatchers(),
-      dispatch('balances/fetchManualBalances', null, options),
+      fetchManualBalances(),
       fetchNetValue(),
       dispatch('balances/fetch', exchanges, options),
       dispatch('balances/fetchLoopringBalances', false, options)

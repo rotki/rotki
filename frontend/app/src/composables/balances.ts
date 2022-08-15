@@ -5,7 +5,6 @@ import { computed, Ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { tradeLocations } from '@/components/history/consts';
 import { Routes } from '@/router/routes';
-import { ManualBalance } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import {
@@ -19,11 +18,9 @@ import {
   BlockchainBalancePayload,
   BlockchainTotal,
   FetchPricePayload,
-  LocationBalance,
   NonFungibleBalance,
   XpubPayload
 } from '@/store/balances/types';
-import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Eth2Validator } from '@/types/balances';
 import { assert } from '@/utils/assertions';
@@ -37,10 +34,6 @@ export const setupGeneralBalances = () => {
 
   const balancesByLocation = computed<BalanceByLocation>(() => {
     return store.getters['balances/byLocation'];
-  });
-
-  const manualBalanceByLocation = computed<LocationBalance[]>(() => {
-    return store.getters['balances/manualBalanceByLocation'];
   });
 
   const liabilities = computed<AssetBalance[]>(() => {
@@ -94,10 +87,6 @@ export const setupGeneralBalances = () => {
     return await store.dispatch('balances/fetchLoopringBalances', refresh);
   };
 
-  const fetchManualBalances: () => Promise<void> = async () => {
-    return await store.dispatch('balances/fetchManualBalances');
-  };
-
   const refreshPrices: (
     payload: FetchPricePayload
   ) => Promise<void> = async payload => {
@@ -126,7 +115,6 @@ export const setupGeneralBalances = () => {
   return {
     aggregatedBalances,
     balancesByLocation,
-    manualBalanceByLocation,
     liabilities,
     blockchainTotals,
     nfBalances,
@@ -141,7 +129,6 @@ export const setupGeneralBalances = () => {
     fetchTokenDetails,
     fetchBlockchainBalances,
     fetchLoopringBalances,
-    fetchManualBalances,
     refreshPrices
   };
 };
@@ -230,48 +217,6 @@ export const setupLocationInfo = () => {
 
   return {
     getLocation
-  };
-};
-
-export const setupManualBalances = () => {
-  const store = useStore();
-  const fetchManualBalances = async () => {
-    await store.dispatch('balances/fetchManualBalances');
-  };
-
-  const deleteManualBalance = async (id: number) => {
-    await store.dispatch('balances/deleteManualBalance', id);
-  };
-
-  const manualBalances = computed(() => store.state.balances!.manualBalances);
-  const manualLiabilities = computed(
-    () => store.state.balances!.manualLiabilities
-  );
-
-  const editBalance: (
-    balance: ManualBalance
-  ) => Promise<ActionStatus> = async balance => {
-    return await store.dispatch('balances/editManualBalance', balance);
-  };
-
-  const addBalance: (
-    balance: Omit<ManualBalance, 'id'>
-  ) => Promise<ActionStatus> = async balance => {
-    return await store.dispatch('balances/addManualBalance', balance);
-  };
-
-  const manualLabels = computed<string[]>(() => {
-    return store.getters['balances/manualLabels'];
-  });
-
-  return {
-    editBalance,
-    addBalance,
-    fetchManualBalances,
-    deleteManualBalance,
-    manualLabels,
-    manualBalances,
-    manualLiabilities
   };
 };
 

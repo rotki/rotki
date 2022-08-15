@@ -89,7 +89,9 @@ export class BalancesApi {
       .then(handleResponse);
   }
 
-  async addManualBalances(balances: ManualBalance[]): Promise<ManualBalances> {
+  async addManualBalances(
+    balances: Omit<ManualBalance, 'id'>[]
+  ): Promise<ManualBalances> {
     return this.axios
       .put<ActionResult<ManualBalances>>(
         'balances/manual',

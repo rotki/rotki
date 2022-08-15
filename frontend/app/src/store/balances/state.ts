@@ -33,9 +33,6 @@ export const defaultState = (): BalanceState => ({
     entriesLimit: 0,
     entriesFound: 0
   },
-  manualBalances: [],
-  manualLiabilities: [],
-  manualBalanceByLocation: {},
   loopringBalances: {},
   nonFungibleBalances: {}
 });

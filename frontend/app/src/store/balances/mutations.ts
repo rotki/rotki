@@ -2,10 +2,8 @@ import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { MutationTree } from 'vuex';
 import {
   Balances,
-  BalanceType,
   BlockchainAssetBalances,
-  BtcBalances,
-  ManualBalanceWithValue
+  BtcBalances
 } from '@/services/balances/types';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { BalanceMutations } from '@/store/balances/mutation-types';
@@ -76,17 +74,6 @@ export const mutations: MutationTree<BalanceState> = {
   },
   eth2Validators(state: BalanceState, eth2Validators: Eth2Validators) {
     state.eth2Validators = eth2Validators;
-  },
-  manualBalances(
-    state: BalanceState,
-    manualBalances: ManualBalanceWithValue[]
-  ) {
-    state.manualBalances = manualBalances.filter(
-      x => x.balanceType === BalanceType.ASSET
-    );
-    state.manualLiabilities = manualBalances.filter(
-      x => x.balanceType === BalanceType.LIABILITY
-    );
   },
   [BalanceMutations.UPDATE_LOOPRING_BALANCES](
     state: BalanceState,
