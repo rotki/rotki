@@ -1,8 +1,9 @@
 import { Severity } from '@rotki/common/lib/messages';
-import { ref } from '@vue/composition-api';
+import { ref, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import i18n from '@/i18n';
+import { setupPremium } from '@/premium/setup-premium';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
@@ -16,6 +17,7 @@ import { TaskType } from '@/types/task-type';
 export const usePremiumStore = defineStore('session/premium', () => {
   const premium = ref(false);
   const premiumSync = ref(false);
+  const componentsLoaded = ref(false);
 
   const { isTaskRunning, awaitTask } = useTasks();
   const { notify } = useNotifications();
@@ -104,11 +106,19 @@ export const usePremiumStore = defineStore('session/premium', () => {
   const reset = () => {
     set(premium, false);
     set(premiumSync, false);
+    set(componentsLoaded, false);
   };
+
+  watch(premium, async (premium, prev) => {
+    if (premium && premium !== prev) {
+      await setupPremium();
+    }
+  });
 
   return {
     premium,
     premiumSync,
+    componentsLoaded,
     setup,
     deletePremium,
     forceSync,

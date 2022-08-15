@@ -9,7 +9,6 @@ import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop, useInterop } from '@/electron-interop';
 import i18n from '@/i18n';
-import { setupPremium } from '@/premium/setup-premium';
 import { SupportedExternalExchanges } from '@/services/balances/types';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
@@ -196,9 +195,6 @@ export const useSessionStore = defineStore('session', () => {
         });
       }
 
-      if (other.havePremium) {
-        setupPremium();
-      }
       set(premium, other.havePremium);
       set(premiumSync, other.premiumShouldSync);
       set(lastBalanceSave, settings.data.lastBalanceSave);

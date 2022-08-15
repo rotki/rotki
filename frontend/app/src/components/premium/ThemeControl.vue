@@ -1,7 +1,7 @@
 <template>
   <div>
     <theme-switch
-      v-if="premium"
+      v-if="premium && componentsLoaded"
       :dark-mode-enabled="darkModeEnabled"
       :class="{ [$style.menu]: menu }"
     />
@@ -11,9 +11,10 @@
 
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
-import { getPremium } from '@/composables/session';
 import { ThemeSwitch } from '@/premium/premium';
+import { usePremiumStore } from '@/store/session/premium';
 
 export default defineComponent({
   name: 'ThemeControl',
@@ -33,10 +34,11 @@ export default defineComponent({
     }
   },
   setup() {
-    const premium = getPremium();
+    const { premium, componentsLoaded } = storeToRefs(usePremiumStore());
 
     return {
-      premium
+      premium,
+      componentsLoaded
     };
   }
 });

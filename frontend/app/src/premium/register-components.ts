@@ -1,4 +1,3 @@
-import { defineAsyncComponent } from '@vue/composition-api';
 import Vue from 'vue';
 import {
   VAlert,
@@ -18,106 +17,41 @@ import {
   VTextField,
   VTooltip
 } from 'vuetify/lib/components';
-const AssetLink = defineAsyncComponent(
-  () => import('@/components/assets/AssetLink.vue')
-);
-const PaginatedCards = defineAsyncComponent(
-  () => import('@/components/common/PaginatedCards.vue')
-);
-const ExportSnapshotDialog = defineAsyncComponent(
-  () => import('@/components/dashboard/ExportSnapshotDialog.vue')
-);
-const DefiProtocolIcon = defineAsyncComponent(
-  () => import('@/components/defi/display/DefiProtocolIcon.vue')
-);
-const UniswapPoolDetails = defineAsyncComponent(
-  () => import('@/components/defi/uniswap/UniswapPoolDetails.vue')
-);
-const ConfirmDialog = defineAsyncComponent(
-  () => import('@/components/dialogs/ConfirmDialog.vue')
-);
-const DateTimePicker = defineAsyncComponent(
-  () => import('@/components/dialogs/DateTimePicker.vue')
-);
-const AmountDisplay = defineAsyncComponent(
-  () => import('@/components/display/AmountDisplay.vue')
-);
-const AssetMovementDisplay = defineAsyncComponent(
-  () => import('@/components/display/AssetMovementDisplay.vue')
-);
-const BalanceDisplay = defineAsyncComponent(
-  () => import('@/components/display/BalanceDisplay.vue')
-);
-const DateDisplay = defineAsyncComponent(
-  () => import('@/components/display/DateDisplay.vue')
-);
-const EventTypeDisplay = defineAsyncComponent(
-  () => import('@/components/display/EventTypeDisplay.vue')
-);
-const BalancerPoolAsset = defineAsyncComponent(
-  () => import('@/components/display/icons/BalancerPoolAsset.vue')
-);
-const UniswapPoolAsset = defineAsyncComponent(
-  () => import('@/components/display/icons/UniswapPoolAsset.vue')
-);
-const PercentageDisplay = defineAsyncComponent(
-  () => import('@/components/display/PercentageDisplay.vue')
-);
-const GraphTooltipWrapper = defineAsyncComponent(
-  () => import('@/components/graphs/GraphTooltipWrapper.vue')
-);
-const AssetDetails = defineAsyncComponent(
-  () => import('@/components/helper/AssetDetails.vue')
-);
-const BlockchainAccountSelector = defineAsyncComponent(
-  () => import('@/components/helper/BlockchainAccountSelector.vue')
-);
-const Card = defineAsyncComponent(() => import('@/components/helper/Card.vue'));
-const DataTable = defineAsyncComponent(
-  () => import('@/components/helper/DataTable.vue')
-);
-const RangeSelector = defineAsyncComponent(
-  () => import('@/components/helper/date/RangeSelector.vue')
-);
-const AssetIcon = defineAsyncComponent(
-  () => import('@/components/helper/display/icons/AssetIcon.vue')
-);
-const HashLink = defineAsyncComponent(
-  () => import('@/components/helper/HashLink.vue')
-);
-const LiquidityPoolSelector = defineAsyncComponent(
-  () => import('@/components/helper/LiquidityPoolSelector.vue')
-);
-const MenuTooltipButton = defineAsyncComponent(
-  () => import('@/components/helper/MenuTooltipButton.vue')
-);
-const RefreshHeader = defineAsyncComponent(
-  () => import('@/components/helper/RefreshHeader.vue')
-);
-const TableExpandContainer = defineAsyncComponent(
-  () => import('@/components/helper/table/TableExpandContainer.vue')
-);
-const TableFilter = defineAsyncComponent(
-  () => import('@/components/history/filtering/TableFilter.vue')
-);
-const LocationDisplay = defineAsyncComponent(
-  () => import('@/components/history/LocationDisplay.vue')
-);
-const TradeLocationSelector = defineAsyncComponent(
-  () => import('@/components/history/TradeLocationSelector.vue')
-);
-const AmountInput = defineAsyncComponent(
-  () => import('@/components/inputs/AmountInput.vue')
-);
-const AssetSelect = defineAsyncComponent(
-  () => import('@/components/inputs/AssetSelect.vue')
-);
-const StatisticsGraphSettings = defineAsyncComponent(
-  () => import('@/components/settings/StatisticsGraphSettings.vue')
-);
-const CardTitle = defineAsyncComponent(
-  () => import('@/components/typography/CardTitle.vue')
-);
+import AssetLink from '@/components/assets/AssetLink.vue';
+import PaginatedCards from '@/components/common/PaginatedCards.vue';
+import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
+import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
+import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
+import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import EventTypeDisplay from '@/components/display/EventTypeDisplay.vue';
+import BalancerPoolAsset from '@/components/display/icons/BalancerPoolAsset.vue';
+import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import Card from '@/components/helper/Card.vue';
+import DataTable from '@/components/helper/DataTable.vue';
+import RangeSelector from '@/components/helper/date/RangeSelector.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import RefreshHeader from '@/components/helper/RefreshHeader.vue';
+import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
+import TableFilter from '@/components/history/filtering/TableFilter.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
+import { logger } from '@/utils/logging';
 
 /**
  * Vuetify components that are used in the premium components
@@ -197,4 +131,5 @@ export function registerComponents() {
   Vue.component('MenuTooltipButton', MenuTooltipButton);
   Vue.component('GraphTooltipWrapper', GraphTooltipWrapper);
   vuetifyRegister();
+  logger.info('Components registered');
 }
