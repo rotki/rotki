@@ -220,13 +220,13 @@ import Fragment from '@/components/helper/Fragment';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
-import { setupGeneralBalances } from '@/composables/balances';
 import { useTheme } from '@/composables/common';
 import { getPremium } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
+import { useBalancesStore } from '@/store/balances';
 import { AllBalancePayload } from '@/store/balances/types';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
@@ -250,7 +250,7 @@ export default defineComponent({
     const { lastBalanceSave, lastDataUpload } = storeToRefs(store);
     const { forceSync } = usePremiumStore();
 
-    const { fetchBalances } = setupGeneralBalances();
+    const { fetchBalances } = useBalancesStore();
     const { currentBreakpoint } = useTheme();
     const premium = getPremium();
     let { logout } = store;

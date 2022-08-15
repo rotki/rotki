@@ -55,7 +55,7 @@
             <div slot="tooltip">
               {{ tc('dashboard.blockchain_balances.tooltip') }}
             </div>
-            <div v-if="blockchainTotals.length === 0">
+            <div v-if="blockchainSummary.length === 0">
               <v-card-actions class="px-4">
                 <v-btn
                   text
@@ -75,7 +75,7 @@
             </div>
             <div v-else>
               <blockchain-balance-card-list
-                v-for="total in blockchainTotals"
+                v-for="total in blockchainSummary"
                 :key="total.chain"
                 :total="total"
               />
@@ -153,7 +153,8 @@ import { computed, defineAsyncComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n-composable';
-import { setupGeneralBalances } from '@/composables/balances';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useUniswapStore } from '@/store/defi/uniswap';
@@ -190,13 +191,16 @@ const LiquidityProviderBalanceTable = defineAsyncComponent(
 
 const { t, tc } = useI18n();
 const { isTaskRunning } = useTasks();
-const {
-  blockchainTotals,
-  aggregatedBalances,
-  liabilities,
-  fetchBlockchainBalances,
-  fetchLoopringBalances
-} = setupGeneralBalances();
+
+const blockchainBalancesStore = useBlockchainBalancesStore();
+
+const { aggregatedBalances, liabilities } = storeToRefs(
+  blockchainBalancesStore
+);
+const { fetchBlockchainBalances, fetchLoopringBalances } =
+  blockchainBalancesStore;
+
+const { blockchainSummary } = storeToRefs(useBlockchainAccountsStore());
 
 const manualBalancesStore = useManualBalancesStore();
 const { fetchManualBalances } = manualBalancesStore;
@@ -204,6 +208,7 @@ const { manualBalanceByLocation } = storeToRefs(manualBalancesStore);
 
 const exchangeStore = useExchangeBalancesStore();
 const { exchanges } = storeToRefs(exchangeStore);
+const { fetchConnectedExchangeBalances } = exchangeStore;
 
 const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
@@ -242,7 +247,7 @@ const refreshBalance = (balanceSource: string) => {
     const { fetchV3Balances } = useUniswapStore();
     fetchV3Balances();
   } else if (balanceSource === 'exchange') {
-    exchangeStore.fetchConnectedExchangeBalances(true);
+    fetchConnectedExchangeBalances(true);
   }
 };
 </script>

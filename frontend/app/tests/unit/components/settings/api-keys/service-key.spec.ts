@@ -3,7 +3,6 @@ import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import store from '@/store/store';
 import '../../../i18n';
 
 Vue.use(Vuetify);
@@ -17,7 +16,6 @@ describe('ServiceKey.vue', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(ServiceKey, {
-      store,
       pinia,
       vuetify,
       propsData: {

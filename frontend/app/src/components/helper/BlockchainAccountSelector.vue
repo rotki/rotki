@@ -86,11 +86,12 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { setupBlockchainAccounts } from '@/composables/balances';
 import { useTheme } from '@/composables/common';
 import i18n from '@/i18n';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 
 export default defineComponent({
   components: { AccountDisplay, TagDisplay },
@@ -125,7 +126,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const { chains, value, usableAddresses, hideOnEmptyUsable } = toRefs(props);
     const search = ref('');
-    const { accounts } = setupBlockchainAccounts();
+    const { accounts } = storeToRefs(useBlockchainAccountsStore());
     const selectableAccounts = computed(() => {
       const filteredChains = get(chains);
       const blockchainAccounts = get(accounts);

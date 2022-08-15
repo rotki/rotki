@@ -2,68 +2,14 @@ import { Message, Severity } from '@rotki/common/lib/messages';
 import { Ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import * as logger from 'loglevel';
-import { ActionContext, Store } from 'vuex';
 import i18n from '@/i18n';
 import { Section, Status } from '@/store/const';
 import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
-import { usePremiumStore } from '@/store/session/premium';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
-import { RotkehlchenState } from '@/store/types';
-import { FetchData, FetchPayload } from '@/store/typing';
+import { FetchData } from '@/store/typing';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-
-export async function fetchAsync<S, T extends TaskMeta, R>(
-  { commit }: ActionContext<S, RotkehlchenState>,
-  payload: FetchPayload<T, R>
-): Promise<void> {
-  const { premium } = usePremiumStore();
-  const { activeModules } = useGeneralSettingsStore();
-  if (
-    !activeModules.includes(payload.module) ||
-    (payload.checkPremium && !premium)
-  ) {
-    return;
-  }
-
-  const section = payload.section;
-  const currentStatus = getStatus(section);
-
-  if (
-    isLoading(currentStatus) ||
-    (currentStatus === Status.LOADED && !payload.refresh)
-  ) {
-    return;
-  }
-
-  const newStatus = payload.refresh ? Status.REFRESHING : Status.LOADING;
-  setStatus(newStatus, section);
-
-  const { awaitTask } = useTasks();
-
-  try {
-    const { taskId } = await payload.query();
-    const { result } = await awaitTask<R, T>(
-      taskId,
-      payload.taskType,
-      payload.meta
-    );
-    commit(payload.mutation, payload.parser ? payload.parser(result) : result);
-  } catch (e: any) {
-    logger.error(`action failure for task ${TaskType[payload.taskType]}:`, e);
-    const { notify } = useNotifications();
-    notify({
-      title: payload.onError.title,
-      message: payload.onError.error(e.message),
-      severity: Severity.ERROR,
-      display: true
-    });
-  }
-  setStatus(Status.LOADED, section);
-}
 
 export async function fetchDataAsync<T extends TaskMeta, R>(
   data: FetchData<T, R>,
@@ -201,5 +147,3 @@ export function filterAddresses<T>(
     item(entries[address]);
   }
 }
-
-export const useStore = (): Store<RotkehlchenState> => store;

@@ -1,4 +1,3 @@
-import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { ProfitLossModel } from '@rotki/common/lib/defi';
 import { BalancerBalanceWithOwner } from '@rotki/common/lib/defi/balancer';
 import {
@@ -26,6 +25,8 @@ import { storeToRefs } from 'pinia';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useBalancesStore } from '@/store/balances';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useCompoundStore } from '@/store/defi/compound';
@@ -37,7 +38,6 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useAdexStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
-import { useStore } from '@/store/utils';
 import { One } from '@/utils/bignumbers';
 
 export const assetsApi = (): AssetsApi => {
@@ -115,15 +115,12 @@ export const adexApi = (): AdexApi => {
 };
 
 export const balancesApi = (): BalancesApi => {
-  const store = useStore();
   const { exchangeRate } = useBalancePricesStore();
+  const { balancesByLocation } = storeToRefs(useBalancesStore());
+  const { aggregatedBalances } = storeToRefs(useBlockchainBalancesStore());
   return {
-    byLocation: computed<Record<string, BigNumber>>(() => {
-      return store.getters['balances/byLocation'];
-    }),
-    aggregatedBalances: computed<AssetBalanceWithPrice[]>(() => {
-      return store.getters['balances/aggregatedBalances'];
-    }),
+    byLocation: balancesByLocation,
+    aggregatedBalances,
     exchangeRate: (currency: string) =>
       computed(() => get(exchangeRate(currency)) ?? One)
   };

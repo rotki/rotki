@@ -123,7 +123,6 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { Dispatch } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -139,7 +138,6 @@ import { AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useSessionStore } from '@/store/session';
 import { GalleryNft, Nft, Nfts } from '@/store/session/types';
-import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { uniqueStrings } from '@/utils/data';
 
@@ -192,7 +190,6 @@ function sortNfts(
 }
 
 const setupNfts = (
-  dispatch: Dispatch,
   selectedAccount: Ref<GeneralAccount | null>,
   selectedCollection: Ref<string | null>,
   itemsPerPage: Ref<number>,
@@ -359,8 +356,6 @@ export default defineComponent({
   },
   setup() {
     const { isMobile, breakpoint, width } = useTheme();
-    const { dispatch } = useStore();
-
     const page = ref(1);
 
     const itemsPerPage = computed(() => {
@@ -389,7 +384,6 @@ export default defineComponent({
       premium,
       ...retrievePrices,
       ...setupNfts(
-        dispatch,
         selectedAccount,
         selectedCollection,
         itemsPerPage,

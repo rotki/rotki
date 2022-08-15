@@ -17,7 +17,6 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionStore } from '@/store/session';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import store from '@/store/store';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import '@/filters';
 import '../../i18n';
@@ -41,11 +40,7 @@ describe('AmountDisplay.vue', () => {
   ) => {
     const vuetify = new Vuetify();
     return mount(AmountDisplay, {
-      store,
       pinia,
-      provide: {
-        'vuex-store': store
-      },
       vuetify,
       propsData: {
         value,

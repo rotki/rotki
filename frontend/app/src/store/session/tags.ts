@@ -4,8 +4,8 @@ import logger from 'loglevel';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useMainStore } from '@/store/main';
-import store from '@/store/store';
 import { ActionStatus } from '@/store/types';
 import { READ_ONLY_TAGS, Tag, Tags } from '@/types/user';
 
@@ -58,7 +58,8 @@ export const useTagStore = defineStore('session/tags', () => {
         description: e.message
       });
     }
-    await store.dispatch('balances/removeTag', name, { root: true });
+    const { removeBlockchainTags } = useBlockchainAccountsStore();
+    await removeBlockchainTags(name);
   };
 
   const fetchTags = async () => {

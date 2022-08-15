@@ -5,16 +5,13 @@ import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { BalanceType, BtcBalances } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { BalanceGetters, getters } from '@/store/balances/getters';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { BalanceState } from '@/store/balances/types';
-import store from '@/store/store';
-import { RotkehlchenState } from '@/store/types';
 import { SupportedExchange } from '@/types/exchanges';
-import { bigNumberify, Zero } from '@/utils/bignumbers';
-import { stub } from '../../../common/utils';
+import { bigNumberify, zeroBalance } from '@/utils/bignumbers';
 
 describe('balances:getters', () => {
   beforeEach(() => {
@@ -62,31 +59,6 @@ describe('balances:getters', () => {
       BTC: bigNumberify(40000)
     });
 
-    const mockGetters = {
-      totals: [
-        {
-          asset: 'DAI',
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100)
-        },
-        {
-          asset: 'BTC',
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100)
-        },
-        {
-          asset: 'ETH',
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100)
-        },
-        {
-          asset: 'SAI',
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100)
-        }
-      ]
-    };
-
     const { manualBalancesData } = storeToRefs(useManualBalancesStore());
     set(manualBalancesData, [
       {
@@ -100,17 +72,33 @@ describe('balances:getters', () => {
         balanceType: BalanceType.ASSET
       }
     ]);
-    const state: BalanceState = stub<BalanceState>({});
 
-    const actualResult = sortBy(
-      getters.aggregatedBalances(
-        state,
-        stub<BalanceGetters>(mockGetters),
-        stub<RotkehlchenState>(),
-        stub()
-      ),
-      'asset'
+    const { blockchainTotalsState, aggregatedBalances } = storeToRefs(
+      useBlockchainBalancesStore()
     );
+
+    const mockBlockchainTotalsState = {
+      DAI: {
+        amount: bigNumberify(100),
+        usdValue: bigNumberify(100)
+      },
+      BTC: {
+        amount: bigNumberify(100),
+        usdValue: bigNumberify(100)
+      },
+      ETH: {
+        amount: bigNumberify(100),
+        usdValue: bigNumberify(100)
+      },
+      SAI: {
+        amount: bigNumberify(100),
+        usdValue: bigNumberify(100)
+      }
+    };
+
+    set(blockchainTotalsState, mockBlockchainTotalsState);
+
+    const actualResult = sortBy(get(aggregatedBalances), 'asset');
 
     const expectedResult = sortBy(
       [
@@ -229,17 +217,16 @@ describe('balances:getters', () => {
         }
       ]
     };
-    store.commit('balances/btcAccounts', accounts);
-    store.commit('balances/updateBtc', balances);
 
-    const btcAccounts = getters.btcAccounts(
-      store.state.balances!!,
-      getters as any as BalanceGetters,
-      stub<RotkehlchenState>(),
-      null
+    const { btcAccountsState, btcAccounts } = storeToRefs(
+      useBlockchainAccountsStore()
     );
+    const { btcBalancesState } = storeToRefs(useBlockchainBalancesStore());
 
-    expect(btcAccounts).toEqual([
+    set(btcAccountsState, accounts);
+    set(btcBalancesState, balances);
+
+    expect(get(btcAccounts)).toEqual([
       {
         address: '123',
         balance: {
@@ -252,10 +239,7 @@ describe('balances:getters', () => {
       },
       {
         address: '',
-        balance: {
-          amount: Zero,
-          usdValue: Zero
-        },
+        balance: zeroBalance(),
         chain: 'BTC',
         derivationPath: 'm',
         label: '',
@@ -276,10 +260,7 @@ describe('balances:getters', () => {
       },
       {
         address: '',
-        balance: {
-          amount: Zero,
-          usdValue: Zero
-        },
+        balance: zeroBalance(),
         chain: 'BTC',
         derivationPath: '',
         label: '123',

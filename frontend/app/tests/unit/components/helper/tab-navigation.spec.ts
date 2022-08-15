@@ -2,12 +2,9 @@ import { mount, ThisTypedMountOptions, Wrapper } from '@vue/test-utils';
 import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
-import Vuex from 'vuex';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
-import store from '@/store/store';
 
 Vue.use(Vuetify);
-Vue.use(Vuex);
 Vue.use(PiniaVuePlugin);
 
 describe('TabNavigation.vue', () => {
@@ -21,7 +18,6 @@ describe('TabNavigation.vue', () => {
     setActivePinia(pinia);
     return mount(TabNavigation, {
       pinia,
-      store,
       vuetify,
       ...options
     });

@@ -13,7 +13,6 @@ import { Interop } from '@/plugins/interop';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
-import store from '@/store/store';
 import '../i18n';
 
 vi.mock('@/electron-interop');
@@ -47,11 +46,7 @@ describe('AccountManagement.vue', () => {
     sessionStore = useSessionStore();
 
     wrapper = mount(AccountManagement, {
-      store,
       pinia: testingPinia,
-      provide: {
-        'vuex-store': store
-      },
       vuetify,
       propsData: {
         logged: true

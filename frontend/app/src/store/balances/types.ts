@@ -2,14 +2,8 @@ import { Balance, BigNumber, HasBalance, NumericString } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { z } from 'zod';
 import { PriceInformation } from '@/services/assets/types';
-import {
-  BlockchainAssetBalances,
-  BtcBalances
-} from '@/services/balances/types';
-import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { Section } from '@/store/const';
 import { Nullable } from '@/types';
 import {
@@ -31,32 +25,11 @@ export interface BalanceByLocation {
 }
 
 export interface AssetBalances {
-  readonly [asset: string]: Balance;
+  [asset: string]: Balance;
 }
 
 export interface AccountAssetBalances {
   readonly [account: string]: AssetBalances;
-}
-
-export interface BalanceState {
-  eth2Validators: Eth2Validators;
-  loopringBalances: AccountAssetBalances;
-  eth: BlockchainAssetBalances;
-  eth2: BlockchainAssetBalances;
-  btc: BtcBalances;
-  bch: BtcBalances;
-  ksm: BlockchainAssetBalances;
-  dot: BlockchainAssetBalances;
-  avax: BlockchainAssetBalances;
-  totals: AssetBalances;
-  liabilities: AssetBalances;
-  ethAccounts: GeneralAccountData[];
-  btcAccounts: BtcAccountData;
-  bchAccounts: BtcAccountData;
-  ksmAccounts: GeneralAccountData[];
-  dotAccounts: GeneralAccountData[];
-  avaxAccounts: GeneralAccountData[];
-  nonFungibleBalances: NonFungibleBalances;
 }
 
 export interface EditExchange {
@@ -108,6 +81,7 @@ export interface BlockchainAccountPayload
 export interface AccountPayload {
   readonly address: string;
   readonly label?: string;
+  readonly xpub?: XpubPayload;
   readonly tags: string[];
 }
 

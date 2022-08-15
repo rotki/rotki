@@ -141,10 +141,10 @@ import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
-import { setupGeneralBalances } from '@/composables/balances';
 import { useTheme } from '@/composables/common';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { chainSection } from '@/store/balances/const';
 import {
   BlockchainAccountWithBalance,
@@ -157,7 +157,7 @@ import { useTasks } from '@/store/tasks';
 import { getStatusUpdater } from '@/store/utils';
 import { Properties } from '@/types';
 import { TaskType } from '@/types/task-type';
-import { Zero } from '@/utils/bignumbers';
+import { Zero, zeroBalance } from '@/utils/bignumbers';
 
 export default defineComponent({
   name: 'AccountBalanceTable',
@@ -216,7 +216,7 @@ export default defineComponent({
       useGeneralSettingsStore()
     );
     const { hasDetails, accountAssets, accountLiabilities, loopringBalances } =
-      setupGeneralBalances();
+      useBlockchainBalancesStore();
 
     const editClick = (account: BlockchainAccountWithBalance) => {
       emit('edit-click', account);
@@ -322,7 +322,7 @@ export default defineComponent({
                 address: '',
                 label: '',
                 tags: [],
-                balance: { amount: Zero, usdValue: Zero },
+                balance: zeroBalance(),
                 chain: get(blockchain)
               }
             );
@@ -345,10 +345,7 @@ export default defineComponent({
     });
 
     const collapsedXpubBalances = computed<Balance>(() => {
-      const balance: Balance = {
-        amount: Zero,
-        usdValue: Zero
-      };
+      const balance = zeroBalance();
 
       return get(collapsedXpubs)
         .filter(({ tags }) => get(visibleTags).every(tag => tags.includes(tag)))

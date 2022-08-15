@@ -6,14 +6,20 @@ import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { AssetUpdatePayload } from '@/services/assets/types';
+import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { SupportedAssets } from '@/services/types-api';
-import { AssetPriceInfo, NonFungibleBalance } from '@/store/balances/types';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import {
+  AssetPriceInfo,
+  ERC20Token,
+  NonFungibleBalance
+} from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
-import { showMessage, useStore } from '@/store/utils';
+import { showMessage } from '@/store/utils';
 import {
   ApplyUpdateResult,
   AssetDBVersion,
@@ -175,7 +181,6 @@ export const useAssets = defineStore('assets', () => {
 export const useAssetInfoRetrieval = defineStore(
   'assets/infoRetrievals',
   () => {
-    const store = useStore();
     const supportedAssetsMap = ref<SupportedAssets>({});
 
     const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
@@ -348,11 +353,14 @@ export const useAssetInfoRetrieval = defineStore(
 
     const assetPriceInfo = (identifier: string) => {
       return computed<AssetPriceInfo>(() => {
-        const assetValue = store.getters['balances/aggregatedBalances'].find(
+        const { aggregatedBalances } = storeToRefs(
+          useBlockchainBalancesStore()
+        );
+        const assetValue = get(aggregatedBalances).find(
           (value: AssetBalanceWithPrice) => value.asset === identifier
         );
         return {
-          usdPrice: assetValue.usdPrice ?? Zero,
+          usdPrice: assetValue?.usdPrice ?? Zero,
           amount: assetValue?.amount ?? Zero,
           usdValue: assetValue?.usdValue ?? Zero
         };
@@ -368,11 +376,55 @@ export const useAssetInfoRetrieval = defineStore(
       return [...data, 'ETH2'];
     });
 
+    const fetchTokenDetails = async (address: string): Promise<ERC20Token> => {
+      const { awaitTask } = useTasks();
+      try {
+        const taskType = TaskType.ERC20_DETAILS;
+        const { taskId } = await api.erc20details(address);
+        const { result } = await awaitTask<ERC20Token, TaskMeta>(
+          taskId,
+          taskType,
+          {
+            title: i18n
+              .t('actions.assets.erc20.task.title', { address })
+              .toString(),
+            numericKeys: balanceKeys
+          }
+        );
+        return result;
+      } catch (e: any) {
+        const { notify } = useNotifications();
+        notify({
+          title: i18n
+            .t('actions.assets.erc20.error.title', { address })
+            .toString(),
+          message: i18n
+            .t('actions.assets.erc20.error.description', {
+              message: e.message
+            })
+            .toString(),
+          display: true
+        });
+        return {};
+      }
+    };
+
+    const isEthereumToken = (asset: string) =>
+      computed<boolean>(() => {
+        const match = get(assetInfo(asset));
+        if (match) {
+          return match.assetType === 'ethereum token';
+        }
+        return false;
+      });
+
     return {
       allSupportedAssets,
       supportedAssets,
       supportedAssetsMap,
       supportedAssetsSymbol,
+      fetchTokenDetails,
+      isEthereumToken,
       fetchSupportedAssets,
       getAssociatedAssetIdentifier,
       getAssociatedAsset,

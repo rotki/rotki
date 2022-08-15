@@ -6,11 +6,12 @@ import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { setupGeneralBalances } from '@/composables/balances';
 import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useBalancesStore } from '@/store/balances';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -41,8 +42,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { currencySymbol, floatingPrecision } = storeToRefs(
     useGeneralSettingsStore()
   );
-  const { aggregatedBalances, liabilities, nfBalances, nfTotalValue } =
-    setupGeneralBalances();
+  const { aggregatedBalances, liabilities } = storeToRefs(
+    useBlockchainBalancesStore()
+  );
+  const balancesStore = useBalancesStore();
+  const { nfTotalValue } = balancesStore;
+  const { nfBalances } = storeToRefs(balancesStore);
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { exchangeRate } = useBalancePricesStore();
 

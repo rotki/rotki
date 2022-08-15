@@ -96,12 +96,12 @@ import InputModeSelect from '@/components/accounts/InputModeSelect.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import { AccountInput } from '@/components/accounts/types';
 import TagInput from '@/components/inputs/TagInput.vue';
-import { setupBlockchainAccounts } from '@/composables/balances';
 import { setupMessages } from '@/composables/common';
 import { setupTaskStatus } from '@/composables/tasks';
 import { useInterop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { deserializeApiErrorMessage } from '@/services/converters';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import {
   AccountPayload,
   BlockchainAccountPayload,
@@ -295,15 +295,10 @@ const AccountForm = defineComponent({
       input(get(valid) && !loading);
     });
 
-    const {
-      addAccount,
-      addAccounts,
-      editAccount,
-      addEth2Validator,
-      editEth2Validator
-    } = setupBlockchainAccounts();
+    const { addAccounts, editAccount, addEth2Validator, editEth2Validator } =
+      useBlockchainAccountsStore();
 
-    const metamaskImport = async () => {
+    const metamaskImport = async (): Promise<boolean> => {
       const interop = useInterop();
       try {
         let addresses: string[];
@@ -354,20 +349,16 @@ const AccountForm = defineComponent({
           await editAccount(blockchainAccount);
         } else {
           const entries = get(addresses);
-          if (entries.length > 1) {
-            const payload = entries.map(address => ({
-              address: address,
-              label: get(label),
-              tags: get(tags)
-            }));
-            await addAccounts({
-              blockchain: get(blockchain),
-              payload,
-              modules: get(isEth) ? get(selectedModules) : undefined
-            });
-          } else {
-            await addAccount(blockchainAccount);
-          }
+          const payload = entries.map(address => ({
+            address: address,
+            label: get(label),
+            tags: get(tags)
+          }));
+          await addAccounts({
+            blockchain: get(blockchain),
+            payload: entries.length > 1 ? payload : [blockchainAccount],
+            modules: get(isEth) ? get(selectedModules) : undefined
+          });
         }
 
         reset();

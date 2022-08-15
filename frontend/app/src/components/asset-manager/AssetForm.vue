@@ -273,7 +273,6 @@ import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
-import { setupGeneralBalances } from '@/composables/balances';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import {
@@ -320,8 +319,7 @@ export default defineComponent({
   emits: ['input'],
   setup(props, { emit }) {
     const { edit } = toRefs(props);
-    const { fetchSupportedAssets } = useAssetInfoRetrieval();
-    const { fetchTokenDetails } = setupGeneralBalances();
+    const { fetchSupportedAssets, fetchTokenDetails } = useAssetInfoRetrieval();
 
     const input = (value: boolean) => {
       emit('input', value);

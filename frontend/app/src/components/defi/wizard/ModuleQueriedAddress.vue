@@ -26,7 +26,7 @@ import {
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import { setupBlockchainAccounts } from '@/composables/balances';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { Module } from '@/types/modules';
 
@@ -44,7 +44,7 @@ export default defineComponent({
     const { queriedAddresses } = storeToRefs(store);
     const { addQueriedAddress, deleteQueriedAddress } = store;
 
-    const { accounts } = setupBlockchainAccounts();
+    const { accounts } = storeToRefs(useBlockchainAccountsStore());
 
     const setSelectedAccounts = (addresses: string[]): void => {
       const selected = get(accounts).filter(account =>

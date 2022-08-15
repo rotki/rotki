@@ -74,15 +74,13 @@ import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
-import { setupBlockchainAccounts } from '@/composables/balances';
 import { isSectionLoading, setupStatusChecking } from '@/composables/common';
 import { getPremium, useModules } from '@/composables/session';
 import { Eth2Staking } from '@/premium/premium';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { Section } from '@/store/const';
 import { useEth2StakingStore } from '@/store/staking';
-import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
-import { assert } from '@/utils/assertions';
 
 const Eth2Page = defineComponent({
   name: 'Eth2Page',
@@ -120,18 +118,17 @@ const Eth2Page = defineComponent({
     );
     const eth2StatsLoading = isSectionLoading(Section.STAKING_ETH2_STATS);
 
-    const { eth2Validators } = setupBlockchainAccounts();
+    const { eth2ValidatorsState: eth2Validators } = storeToRefs(
+      useBlockchainAccountsStore()
+    );
     watch(filterType, () => set(selection, []));
 
     const refresh = async () => await load(true);
 
-    const vStore = useStore();
     const ownership = computed(() => {
-      const balances = vStore.state.balances;
       const ownership: Record<string, string> = {};
-      assert(balances);
-      for (const { validatorIndex, ownershipPercentage } of balances
-        .eth2Validators.entries) {
+      for (const { validatorIndex, ownershipPercentage } of get(eth2Validators)
+        .entries) {
         ownership[validatorIndex] = ownershipPercentage;
       }
       return ownership;

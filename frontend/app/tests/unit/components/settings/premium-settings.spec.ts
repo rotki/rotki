@@ -16,7 +16,6 @@ import { Api } from '@/plugins/api';
 import { Interop } from '@/plugins/interop';
 import { api } from '@/services/rotkehlchen-api';
 import { usePremiumStore } from '@/store/session/premium';
-import store from '@/store/store';
 import '../../i18n';
 
 vi.mock('@/electron-interop', () => {
@@ -44,7 +43,6 @@ describe('PremiumSettings.vue', () => {
     setActivePinia(pinia);
     return mount(PremiumSettings, {
       pinia,
-      store,
       vuetify,
       components: {
         Card

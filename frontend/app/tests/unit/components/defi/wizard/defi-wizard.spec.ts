@@ -5,17 +5,9 @@ import Vuetify from 'vuetify';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import store from '@/store/store';
 import '../../../i18n';
 import { FrontendSettings } from '@/types/frontend-settings';
 
-vi.mock('@/store/store', () => ({
-  default: {
-    getters: {
-      'balances/accounts': []
-    }
-  }
-}));
 vi.mock('@/services/rotkehlchen-api');
 
 Vue.use(Vuetify);
@@ -30,7 +22,6 @@ describe('DefiWizard.vue', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(DefiWizard, {
-      store,
       pinia,
       vuetify,
       stubs: ['v-tooltip', 'module-selector', 'module-address-selector', 'card']

@@ -83,11 +83,9 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import {
-  setupBlockchainAccounts,
-  setupGeneralBalances
-} from '@/composables/balances';
 import i18n from '@/i18n';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import {
   AccountWithBalance,
   BlockchainAccountWithBalance,
@@ -117,7 +115,7 @@ export default defineComponent({
 
     const { isTaskRunning } = useTasks();
     const { fetchLoopringBalances, fetchBlockchainBalances } =
-      setupGeneralBalances();
+      useBlockchainBalancesStore();
 
     const selectedAddresses = ref<string[]>([]);
     const visibleTags = ref<string[]>([]);
@@ -170,7 +168,7 @@ export default defineComponent({
     };
 
     const { deleteEth2Validators, removeAccount, deleteXpub } =
-      setupBlockchainAccounts();
+      useBlockchainAccountsStore();
 
     const deleteAccount = async () => {
       if (get(selectedAddresses).length > 0) {

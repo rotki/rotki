@@ -65,7 +65,7 @@
     />
 
     <account-balances
-      v-if="eth2Balances.length > 0"
+      v-if="eth2Accounts.length > 0"
       id="blockchain-balances-ETH2"
       v-intersect="{
         handler: observers.ETH2,
@@ -76,7 +76,7 @@
       class="mt-8"
       :title="$t('blockchain_balances.balances.eth2')"
       blockchain="ETH2"
-      :balances="eth2Balances"
+      :balances="eth2Accounts"
       data-cy="blockchain-balances-ETH2"
       @edit-account="editAccount($event)"
     />
@@ -116,7 +116,7 @@
     />
 
     <account-balances
-      v-if="kusamaBalances.length > 0"
+      v-if="ksmAccounts.length > 0"
       id="blockchain-balances-KSM"
       v-intersect="{
         handler: observers.KSM,
@@ -127,13 +127,13 @@
       class="mt-8"
       :title="$t('blockchain_balances.balances.ksm')"
       blockchain="KSM"
-      :balances="kusamaBalances"
+      :balances="ksmAccounts"
       data-cy="blockchain-balances-KSM"
       @edit-account="editAccount($event)"
     />
 
     <account-balances
-      v-if="polkadotBalances.length > 0"
+      v-if="dotAccounts.length > 0"
       id="blockchain-balances-DOT"
       v-intersect="{
         handler: observers.DOT,
@@ -144,7 +144,7 @@
       class="mt-8"
       :title="$t('blockchain_balances.balances.dot')"
       blockchain="DOT"
-      :balances="polkadotBalances"
+      :balances="dotAccounts"
       data-cy="blockchain-balances-DOT"
       @edit-account="editAccount($event)"
     />
@@ -189,6 +189,7 @@ import {
   ref
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm, {
   AccountFormType
@@ -196,15 +197,27 @@ import AccountForm, {
 import AssetBalances from '@/components/AssetBalances.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { BlockchainData, setupBlockchainData } from '@/composables/balances';
 import { useRoute, useRouter } from '@/composables/common';
 import i18n from '@/i18n';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { BlockchainAccountWithBalance } from '@/store/balances/types';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
 type Intersections = {
   [key in Blockchain]: boolean;
+};
+
+type BlockchainData = {
+  btcAccounts: Ref<BlockchainAccountWithBalance[]>;
+  bchAccounts: Ref<BlockchainAccountWithBalance[]>;
+  dotAccounts: Ref<BlockchainAccountWithBalance[]>;
+  ethAccounts: Ref<BlockchainAccountWithBalance[]>;
+  eth2Accounts: Ref<BlockchainAccountWithBalance[]>;
+  avaxAccounts: Ref<BlockchainAccountWithBalance[]>;
+  ksmAccounts: Ref<BlockchainAccountWithBalance[]>;
+  loopringAccounts: Ref<BlockchainAccountWithBalance[]>;
 };
 
 const BlockchainBalances = defineComponent({
@@ -299,7 +312,29 @@ const BlockchainBalances = defineComponent({
       });
     };
 
-    const blockchainData = setupBlockchainData();
+    const {
+      btcAccounts,
+      bchAccounts,
+      dotAccounts,
+      ethAccounts,
+      eth2Accounts,
+      avaxAccounts,
+      ksmAccounts,
+      loopringAccounts
+    } = storeToRefs(useBlockchainAccountsStore());
+
+    const blockchainData: BlockchainData = {
+      btcAccounts,
+      bchAccounts,
+      dotAccounts,
+      ethAccounts,
+      eth2Accounts,
+      avaxAccounts,
+      ksmAccounts,
+      loopringAccounts
+    };
+
+    const { blockchainAssets } = storeToRefs(useBlockchainBalancesStore());
 
     const getFirstContext = (data: BlockchainData) => {
       const hasData = (data: Ref<BlockchainAccountWithBalance[]>) => {
@@ -310,9 +345,9 @@ const BlockchainBalances = defineComponent({
         return Blockchain.BTC;
       } else if (hasData(data.bchAccounts)) {
         return Blockchain.BCH;
-      } else if (hasData(data.kusamaBalances)) {
+      } else if (hasData(data.ksmAccounts)) {
         return Blockchain.KSM;
-      } else if (hasData(data.polkadotBalances)) {
+      } else if (hasData(data.dotAccounts)) {
         return Blockchain.DOT;
       } else if (hasData(data.avaxAccounts)) {
         return Blockchain.AVAX;
@@ -376,6 +411,7 @@ const BlockchainBalances = defineComponent({
       saveAccount,
       observers,
       ...blockchainData,
+      blockchainAssets,
       threshold: [1]
     };
   }

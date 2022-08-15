@@ -19,7 +19,7 @@ import {
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
-import { useManualBalancesStore } from '@/store/balances/manual';
+import { useBalancesStore } from '@/store/balances';
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import { useHistory, useTransactions } from '@/store/history';
@@ -43,7 +43,6 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
-import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { getStatusUpdater, showError } from '@/store/utils';
@@ -99,7 +98,7 @@ export const useSessionStore = defineStore('session', () => {
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
   const { fetchCounterparties } = useTransactions();
   const { timeframe } = storeToRefs(useSessionSettingsStore());
-  const { fetchManualBalances } = useManualBalancesStore();
+  const { fetch, refreshPrices } = useBalancesStore();
 
   const periodicCheck = async () => {
     if (get(periodicRunning)) {
@@ -145,24 +144,16 @@ export const useSessionStore = defineStore('session', () => {
 
   const refreshData = async (exchanges: Exchange[]) => {
     logger.info('Refreshing data');
-    const { dispatch } = store;
-    const options = {
-      root: true
-    };
 
     const async = [
       fetchIgnored(),
       fetchIgnoredAssets(),
       fetchWatchers(),
-      fetchManualBalances(),
-      fetchNetValue(),
-      dispatch('balances/fetch', exchanges, options),
-      dispatch('balances/fetchLoopringBalances', false, options)
+      fetch(exchanges),
+      fetchNetValue()
     ];
 
-    Promise.all(async).then(() =>
-      dispatch('balances/refreshPrices', { ignoreCache: false }, options)
-    );
+    Promise.all(async).then(() => refreshPrices({ ignoreCache: false }));
   };
 
   const unlock = async ({
@@ -292,7 +283,7 @@ export const useSessionStore = defineStore('session', () => {
 
   async function stop() {
     monitor.stop();
-    store.commit('balances/reset', {}, { root: true });
+    useBalancesStore().reset();
     useMainStore().reset();
     reset();
     useSettingsStore().reset();

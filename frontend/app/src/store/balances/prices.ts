@@ -1,11 +1,12 @@
 import { BigNumber } from '@rotki/common';
 import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import { Balances } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import {
   AssetPriceResponse,
   AssetPrices,
@@ -17,7 +18,6 @@ import {
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
-import { useStore } from '@/store/utils';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates, PriceOracle } from '@/types/user';
@@ -31,8 +31,8 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   const { notify } = useNotifications();
 
   const fetchPrices = async (payload: FetchPricePayload) => {
-    const store = useStore();
-    const assets = store.getters['balances/aggregatedAssets'];
+    const { aggregatedAssets } = storeToRefs(useBlockchainBalancesStore());
+    const assets = get(aggregatedAssets);
 
     const taskType = TaskType.UPDATE_PRICES;
     if (get(isTaskRunning(taskType))) {

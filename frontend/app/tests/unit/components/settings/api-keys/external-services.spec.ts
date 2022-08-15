@@ -8,7 +8,6 @@ import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
-import store from '@/store/store';
 import { ExternalServiceKeys } from '@/types/user';
 import '../../../i18n';
 
@@ -33,7 +32,6 @@ describe('ExternalServices.vue', () => {
   function createWrapper(): Wrapper<ExternalServices> {
     const vuetify = new Vuetify();
     return mount(ExternalServices, {
-      store,
       pinia,
       vuetify,
       stubs: ['v-dialog', 'card-title', 'card'],
