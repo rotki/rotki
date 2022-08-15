@@ -1,5 +1,5 @@
 import { AssetBalanceWithPrice } from '@rotki/common';
-import { set } from '@vueuse/core';
+import { get, set } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
@@ -7,6 +7,7 @@ import { BalanceType, BtcBalances } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { BalanceGetters, getters } from '@/store/balances/getters';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { BalanceState } from '@/store/balances/types';
 import store from '@/store/store';
@@ -24,7 +25,6 @@ describe('balances:getters', () => {
     const { connectedExchanges, exchangeBalances } = storeToRefs(
       useExchangeBalancesStore()
     );
-    const { prices } = storeToRefs(useBalancePricesStore());
     set(connectedExchanges, [
       {
         location: SupportedExchange.KRAKEN,
@@ -53,6 +53,7 @@ describe('balances:getters', () => {
       }
     });
 
+    const { prices } = storeToRefs(useBalancePricesStore());
     set(prices, {
       DAI: bigNumberify(1),
       EUR: bigNumberify(1),
@@ -86,21 +87,20 @@ describe('balances:getters', () => {
       ]
     };
 
-    const state: BalanceState = stub<BalanceState>({
-      manualBalances: [
-        {
-          id: 1,
-          usdValue: bigNumberify(50),
-          amount: bigNumberify(50),
-          asset: 'DAI',
-          label: '123',
-          tags: [],
-          location: TRADE_LOCATION_BANKS,
-          balanceType: BalanceType.LIABILITY
-        }
-      ],
-      manualLiabilities: []
-    });
+    const { manualBalancesData } = storeToRefs(useManualBalancesStore());
+    set(manualBalancesData, [
+      {
+        id: 1,
+        usdValue: bigNumberify(50),
+        amount: bigNumberify(50),
+        asset: 'DAI',
+        label: '123',
+        tags: [],
+        location: TRADE_LOCATION_BANKS,
+        balanceType: BalanceType.ASSET
+      }
+    ]);
+    const state: BalanceState = stub<BalanceState>({});
 
     const actualResult = sortBy(
       getters.aggregatedBalances(
@@ -152,27 +152,34 @@ describe('balances:getters', () => {
   });
 
   test('manualLabels', () => {
+    const { manualBalancesData, manualLabels } = storeToRefs(
+      useManualBalancesStore()
+    );
+    set(manualBalancesData, [
+      {
+        id: 1,
+        usdValue: bigNumberify(50),
+        amount: bigNumberify(50),
+        asset: 'DAI',
+        label: 'My monero wallet',
+        tags: [],
+        location: TRADE_LOCATION_BANKS,
+        balanceType: BalanceType.ASSET
+      },
+      {
+        id: 2,
+        usdValue: bigNumberify(50),
+        amount: bigNumberify(50),
+        asset: 'EUR',
+        label: 'My Bank Account',
+        tags: [],
+        location: TRADE_LOCATION_BANKS,
+        balanceType: BalanceType.ASSET
+      }
+    ]);
     expect(
       // @ts-ignore
-      getters.manualLabels({
-        manualBalances: [
-          {
-            asset: 'XMR',
-            label: 'My monero wallet',
-            amount: '50.315',
-            tags: ['public'],
-            location: 'blockchain'
-          },
-          {
-            asset: 'EUR',
-            label: 'My Bank Account',
-            amount: '150',
-            tags: [],
-            location: 'banks'
-          }
-        ],
-        manualLiabilities: []
-      })
+      get(manualLabels)
     ).toMatchObject(['My monero wallet', 'My Bank Account']);
   });
 

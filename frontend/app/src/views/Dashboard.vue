@@ -158,6 +158,7 @@ import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { setupGeneralBalances } from '@/composables/balances';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -196,11 +197,13 @@ export default defineComponent({
       blockchainTotals,
       aggregatedBalances,
       liabilities,
-      manualBalanceByLocation,
       fetchBlockchainBalances,
-      fetchLoopringBalances,
-      fetchManualBalances
+      fetchLoopringBalances
     } = setupGeneralBalances();
+
+    const manualBalancesStore = useManualBalancesStore();
+    const { fetchManualBalances } = manualBalancesStore;
+    const { manualBalanceByLocation } = storeToRefs(manualBalancesStore);
 
     const exchangeStore = useExchangeBalancesStore();
     const { exchanges } = storeToRefs(exchangeStore);

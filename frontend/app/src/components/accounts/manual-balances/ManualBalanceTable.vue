@@ -118,10 +118,10 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 
-import { setupManualBalances } from '@/composables/balances';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { ManualBalance } from '@/services/balances/types';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { assert } from '@/utils/assertions';
@@ -197,7 +197,7 @@ const ManualBalanceTable = defineComponent({
     };
 
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-    const { deleteManualBalance } = setupManualBalances();
+    const { deleteManualBalance } = useManualBalancesStore();
 
     const deleteBalance = async () => {
       const id = get(pendingDeletion);

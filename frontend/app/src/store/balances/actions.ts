@@ -5,13 +5,7 @@ import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
-import {
-  BlockchainBalances,
-  BtcBalances,
-  ManualBalance,
-  ManualBalances,
-  ManualBalanceWithValue
-} from '@/services/balances/types';
+import { BlockchainBalances, BtcBalances } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -23,6 +17,7 @@ import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import { BalanceMutations } from '@/store/balances/mutation-types';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import {
@@ -49,15 +44,13 @@ import { useSettingsStore } from '@/store/settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus, RotkehlchenState } from '@/store/types';
+import { RotkehlchenState } from '@/store/types';
 import {
   getStatus,
   getStatusUpdater,
   isLoading,
-  setStatus,
-  showError
+  setStatus
 } from '@/store/utils';
-import { Writeable } from '@/types';
 import { Eth2Validator } from '@/types/balances';
 import { Exchange, ExchangeData } from '@/types/exchanges';
 import { Module } from '@/types/modules';
@@ -796,107 +789,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async fetchManualBalances({ commit }) {
-    const { awaitTask } = useTasks();
-    const currentStatus: Status = getStatus(Section.MANUAL_BALANCES);
-    const section = Section.MANUAL_BALANCES;
-    const newStatus =
-      currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-
-    try {
-      const taskType = TaskType.MANUAL_BALANCES;
-      const { taskId } = await api.balances.manualBalances();
-      const { result } = await awaitTask<ManualBalances, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n.tc('actions.manual_balances.task.title'),
-          numericKeys: balanceKeys
-        }
-      );
-
-      commit('manualBalances', result.balances);
-    } catch (e: any) {
-      const { notify } = useNotifications();
-      notify({
-        title: i18n
-          .t('actions.balances.manual_balances.error.title')
-          .toString(),
-        message: i18n
-          .t('actions.balances.manual_balances.error.message', {
-            message: e.message
-          })
-          .toString(),
-        display: true
-      });
-    } finally {
-      setStatus(Status.LOADED, section);
-    }
-  },
-
-  async addManualBalance(
-    { commit, dispatch },
-    balance: ManualBalance
-  ): Promise<ActionStatus> {
-    try {
-      const { balances } = await api.balances.addManualBalances([balance]);
-      commit('manualBalances', balances);
-      dispatch('refreshPrices', {
-        ignoreCache: false,
-        selectedAsset: balance.asset
-      });
-      return {
-        success: true
-      };
-    } catch (e: any) {
-      return {
-        success: false,
-        message: e.message
-      };
-    }
-  },
-
-  async editManualBalance(
-    { commit, dispatch },
-    balance: ManualBalance
-  ): Promise<ActionStatus> {
-    try {
-      const { balances } = await api.balances.editManualBalances([balance]);
-      commit('manualBalances', balances);
-      dispatch('refreshPrices', { ignoreCache: false });
-      return {
-        success: true
-      };
-    } catch (e: any) {
-      return {
-        success: false,
-        message: e.message
-      };
-    }
-  },
-
-  async deleteManualBalance({ commit }, id: number) {
-    try {
-      const { balances } = await api.balances.deleteManualBalances([id]);
-      commit('manualBalances', balances);
-    } catch (e: any) {
-      showError(
-        `${e.message}`,
-        i18n.t('actions.balances.manual_delete.error.title').toString()
-      );
-    }
-  },
-
   async adjustPrices({ commit, state }): Promise<void> {
     const pricesStore = useBalancePricesStore();
     const { prices } = storeToRefs(pricesStore);
     const { updateBalancesPrices } = pricesStore;
 
-    const manualBalances = [
-      ...state.manualBalances,
-      ...state.manualLiabilities
-    ];
+    const { manualBalancesData } = storeToRefs(useManualBalancesStore());
+
     const totals = { ...state.totals };
     const eth = { ...state.eth };
     const btc: BtcBalances = {
@@ -923,15 +822,18 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
     commit('updateTotals', totals);
 
-    for (let i = 0; i < manualBalances.length; i++) {
-      const balance: Writeable<ManualBalanceWithValue> = manualBalances[i];
-      const assetPrice = get(prices)[balance.asset];
+    const newManualBalancesData = get(manualBalancesData).map(item => {
+      const assetPrice = get(prices)[item.asset];
       if (!assetPrice) {
-        continue;
+        return item;
       }
-      balance.usdValue = balance.amount.times(assetPrice);
-    }
-    commit('manualBalances', manualBalances);
+      return {
+        ...item,
+        usdValue: item.amount.times(assetPrice)
+      };
+    });
+
+    set(manualBalancesData, newManualBalancesData);
 
     for (const address in eth) {
       const balances = eth[address];

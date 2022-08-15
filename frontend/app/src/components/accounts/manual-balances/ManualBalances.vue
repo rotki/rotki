@@ -75,14 +75,15 @@ import {
   ref
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
 import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
-import { setupManualBalances } from '@/composables/balances';
 import { useRouter } from '@/composables/common';
 import i18n from '@/i18n';
 import { BalanceType, ManualBalance } from '@/services/balances/types';
+import { useManualBalancesStore } from '@/store/balances/manual';
 
 const setupDialog = (balanceToEdit: Ref<ManualBalance | null>) => {
   const dialogTitle = ref('');
@@ -138,8 +139,10 @@ const ManualBalances = defineComponent({
     const loading = ref(false);
     const valid = ref(false);
     const dialog = setupDialog(balanceToEdit);
-    const { fetchManualBalances, manualBalances, manualLiabilities } =
-      setupManualBalances();
+
+    const store = useManualBalancesStore();
+    const { fetchManualBalances } = store;
+    const { manualBalances, manualLiabilities } = storeToRefs(store);
 
     const refresh = async () => {
       set(loading, true);

@@ -19,6 +19,7 @@ import { GeneralAccountData } from '@/services/types-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { samePriceAssets } from '@/store/balances/const';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import {
   AccountAssetBalances,
@@ -28,7 +29,6 @@ import {
   BlockchainAccountWithBalance,
   BlockchainTotal,
   SubBlockchainTotal,
-  LocationBalance,
   NonFungibleBalance
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
@@ -40,7 +40,6 @@ import { Writeable } from '@/types';
 import { ExchangeData, ExchangeInfo } from '@/types/exchanges';
 import { L2_LOOPRING } from '@/types/protocols';
 import { ReadOnlyTag } from '@/types/user';
-import { assert } from '@/utils/assertions';
 import { NoPrice, sortDesc, Zero } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
@@ -59,13 +58,11 @@ export interface BalanceGetters {
   aggregatedBalances: AssetBalanceWithPrice[];
   aggregatedAssets: string[];
   liabilities: AssetBalanceWithPrice[];
-  manualBalanceByLocation: LocationBalance[];
   blockchainTotal: BigNumber;
   blockchainTotals: BlockchainTotal[];
   accountAssets: (account: string) => AssetBalance[];
   accountLiabilities: (account: string) => AssetBalance[];
   hasDetails: (account: string) => boolean;
-  manualLabels: string[];
   accounts: GeneralAccount[];
   account: (address: string) => GeneralAccount | undefined;
   eth2Account: (publicKey: string) => GeneralAccount | undefined;
@@ -363,7 +360,7 @@ export const getters: Getters<
   },
 
   aggregatedBalances: (
-    { manualBalances, loopringBalances }: BalanceState,
+    { loopringBalances }: BalanceState,
     { totals }
   ): AssetBalanceWithPrice[] => {
     const { prices } = storeToRefs(useBalancePricesStore());
@@ -401,7 +398,8 @@ export const getters: Getters<
 
     totals.forEach((value: AssetBalance) => addToOwned(value));
 
-    manualBalances.forEach(value => addToOwned(value));
+    const { manualBalances } = storeToRefs(useManualBalancesStore());
+    get(manualBalances).forEach(value => addToOwned(value));
 
     for (const address in loopringBalances) {
       const balances = loopringBalances[address];
@@ -424,7 +422,7 @@ export const getters: Getters<
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
 
-  liabilities: ({ liabilities, manualLiabilities }) => {
+  liabilities: ({ liabilities }) => {
     const { prices } = storeToRefs(useBalancePricesStore());
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -450,7 +448,8 @@ export const getters: Getters<
       addToLiabilities({ asset, ...balance });
     });
 
-    manualLiabilities.forEach(balance => addToLiabilities(balance));
+    const { manualLiabilities } = storeToRefs(useManualBalancesStore());
+    get(manualLiabilities).forEach(balance => addToLiabilities(balance));
 
     return Object.keys(liabilitiesMerged)
       .filter(asset => !get(isAssetIgnored(asset)))
@@ -459,65 +458,6 @@ export const getters: Getters<
         amount: liabilitiesMerged[asset].amount,
         usdValue: liabilitiesMerged[asset].usdValue,
         usdPrice: (get(prices)[asset] as BigNumber) ?? NoPrice
-      }))
-      .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
-  },
-
-  // simplify the manual balances object so that we can easily reduce it
-  manualBalanceByLocation: (state: BalanceState): LocationBalance[] => {
-    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-    const mainCurrency = get(currencySymbol);
-    assert(mainCurrency, 'main currency was not properly set');
-
-    const manualBalances = state.manualBalances;
-    const { exchangeRate } = useBalancePricesStore();
-    const currentExchangeRate = get(exchangeRate(mainCurrency));
-    if (currentExchangeRate === undefined) {
-      return [];
-    }
-    const simplifyManualBalances = manualBalances.map(perLocationBalance => {
-      // because we mix different assets we need to convert them before they are aggregated
-      // thus in amount display we always pass the manualBalanceByLocation in the user's main currency
-      let convertedValue: BigNumber;
-      if (mainCurrency === perLocationBalance.asset) {
-        convertedValue = perLocationBalance.amount;
-      } else {
-        convertedValue =
-          perLocationBalance.usdValue.multipliedBy(currentExchangeRate);
-      }
-
-      // to avoid double-conversion, we take as usdValue the amount property when the original asset type and
-      // user's main currency coincide
-      const { location, usdValue }: LocationBalance = {
-        location: perLocationBalance.location,
-        usdValue: convertedValue
-      };
-      return { location, usdValue };
-    });
-
-    // Aggregate all balances per location
-    const aggregateManualBalancesByLocation: BalanceByLocation =
-      simplifyManualBalances.reduce(
-        (result: BalanceByLocation, manualBalance: LocationBalance) => {
-          if (result[manualBalance.location]) {
-            // if the location exists on the reduced object, add the usdValue of the current item to the previous total
-            result[manualBalance.location] = result[
-              manualBalance.location
-            ].plus(manualBalance.usdValue);
-          } else {
-            // otherwise create the location and initiate its value
-            result[manualBalance.location] = manualBalance.usdValue;
-          }
-
-          return result;
-        },
-        {}
-      );
-
-    return Object.keys(aggregateManualBalancesByLocation)
-      .map(location => ({
-        location,
-        usdValue: aggregateManualBalancesByLocation[location]
       }))
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
@@ -701,11 +641,6 @@ export const getters: Getters<
     return assetsCount + liabilitiesCount + loopringsCount > 1;
   },
 
-  manualLabels: ({ manualBalances, manualLiabilities }: BalanceState) => {
-    const balances = manualLiabilities.concat(manualBalances);
-    return balances.map(value => value.label);
-  },
-
   accounts: (
     _,
     {
@@ -796,7 +731,6 @@ export const getters: Getters<
         ksm,
         dot,
         avax,
-        manualBalances,
         loopringBalances
       },
       _
@@ -821,8 +755,10 @@ export const getters: Getters<
         });
       }
 
-      for (let i = 0; i < manualBalances.length; i++) {
-        const manualBalance = manualBalances[i];
+      const { manualBalances } = storeToRefs(useManualBalancesStore());
+
+      for (let i = 0; i < get(manualBalances).length; i++) {
+        const manualBalance = get(manualBalances)[i];
         if (manualBalance.asset !== asset) {
           continue;
         }
@@ -1116,7 +1052,7 @@ export const getters: Getters<
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   },
   locationBreakdown:
-    ({ manualBalances, loopringBalances }: BalanceState, { totals }) =>
+    ({ loopringBalances }: BalanceState, { totals }) =>
     identifier => {
       const { prices } = storeToRefs(useBalancePricesStore());
       const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
@@ -1163,7 +1099,9 @@ export const getters: Getters<
         }
       }
 
-      manualBalances.forEach(value => {
+      const { manualBalances } = storeToRefs(useManualBalancesStore());
+
+      get(manualBalances).forEach(value => {
         if (value.location === identifier) {
           addToOwned(value);
         }
@@ -1179,7 +1117,7 @@ export const getters: Getters<
         }))
         .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
     },
-  byLocation: (state, { blockchainTotal, manualBalanceByLocation: manual }) => {
+  byLocation: (state, { blockchainTotal }) => {
     const { exchangeRate } = useBalancePricesStore();
     const byLocations: Record<string, BigNumber> = {};
 
@@ -1189,7 +1127,9 @@ export const getters: Getters<
       byLocations[location] = !byLocation ? value : value.plus(byLocation);
     };
 
-    for (const { location, usdValue } of manual) {
+    const { manualBalanceByLocation } = storeToRefs(useManualBalancesStore());
+
+    for (const { location, usdValue } of get(manualBalanceByLocation)) {
       addToOwned(location, usdValue);
     }
 
