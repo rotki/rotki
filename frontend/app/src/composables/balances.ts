@@ -12,31 +12,21 @@ import {
   AddAccountsPayload,
   AllBalancePayload,
   AssetBreakdown,
-  AssetPrices,
   BalanceByLocation,
   BasicBlockchainAccountPayload,
   BlockchainAccountPayload,
   BlockchainAccountWithBalance,
   BlockchainBalancePayload,
   BlockchainTotal,
-  ExchangeRateGetter,
   FetchPricePayload,
-  HistoricPricePayload,
   LocationBalance,
   NonFungibleBalance,
-  OracleCachePayload,
   XpubPayload
 } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Eth2Validator } from '@/types/balances';
-import { PriceOracle } from '@/types/user';
 import { assert } from '@/utils/assertions';
-
-export const setupExchangeRateGetter = () => {
-  const store = useStore();
-  return store.getters['balances/exchangeRate'] as ExchangeRateGetter;
-};
 
 export const setupGeneralBalances = () => {
   const store = useStore();
@@ -108,12 +98,6 @@ export const setupGeneralBalances = () => {
     return await store.dispatch('balances/fetchManualBalances');
   };
 
-  const fetchHistoricPrice: (
-    payload: HistoricPricePayload
-  ) => Promise<BigNumber> = async payload => {
-    return await store.dispatch('balances/fetchHistoricPrice', payload);
-  };
-
   const refreshPrices: (
     payload: FetchPricePayload
   ) => Promise<void> = async payload => {
@@ -129,9 +113,6 @@ export const setupGeneralBalances = () => {
   const fetchTokenDetails = async (address: string) => {
     return await store.dispatch('balances/fetchTokenDetails', address);
   };
-
-  const exchangeRate = (currency: string) =>
-    computed<BigNumber>(() => store.getters['balances/exchangeRate'](currency));
 
   const nfBalances = computed<NonFungibleBalance[]>(() => {
     return store.getters['balances/nfBalances'];
@@ -161,9 +142,7 @@ export const setupGeneralBalances = () => {
     fetchBlockchainBalances,
     fetchLoopringBalances,
     fetchManualBalances,
-    fetchHistoricPrice,
-    refreshPrices,
-    exchangeRate
+    refreshPrices
   };
 };
 
@@ -362,37 +341,5 @@ export const setupBlockchainAccounts = () => {
     editEth2Validator,
     deleteEth2Validators,
     deleteXpub
-  };
-};
-
-export const usePrices = () => {
-  const store = useStore();
-
-  const prices = computed<AssetPrices>(() => {
-    const balances = store.state.balances;
-    return balances!!.prices;
-  });
-
-  const createOracleCache = async (payload: OracleCachePayload) => {
-    return await store.dispatch('balances/createOracleCache', payload);
-  };
-
-  const getPriceCache = async (source: PriceOracle) => {
-    return await api.balances.getPriceCache(source);
-  };
-
-  const deletePriceCache = async (
-    source: PriceOracle,
-    fromAsset: string,
-    toAsset: string
-  ) => {
-    return await api.balances.deletePriceCache(source, fromAsset, toAsset);
-  };
-
-  return {
-    prices,
-    createOracleCache,
-    getPriceCache,
-    deletePriceCache
   };
 };

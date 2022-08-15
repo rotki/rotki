@@ -87,10 +87,10 @@ import {
 import { get, set, useClipboard, useTimeoutFn } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
-import { setupExchangeRateGetter } from '@/composables/balances';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { findCurrency } from '@/data/currencies';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -154,7 +154,7 @@ export default defineComponent({
       useSessionSettingsStore()
     );
 
-    const exchangeRate = setupExchangeRateGetter();
+    const { exchangeRate } = useBalancePricesStore();
 
     const {
       thousandSeparator,
@@ -283,7 +283,7 @@ export default defineComponent({
     });
 
     const convertValue = (value: BigNumber): BigNumber => {
-      const rate = exchangeRate(get(currencySymbol));
+      const rate = get(exchangeRate(get(currencySymbol)));
       return rate ? value.multipliedBy(rate) : value;
     };
 

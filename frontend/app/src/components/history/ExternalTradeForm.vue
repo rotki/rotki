@@ -281,12 +281,12 @@ import {
 } from '@vue/composition-api';
 import { get, set, useTimeoutFn } from '@vueuse/core';
 import dayjs from 'dayjs';
-import { setupGeneralBalances } from '@/composables/balances';
 import i18n from '@/i18n';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { NewTrade, Trade, TradeType } from '@/services/history/types';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { TradeEntry } from '@/store/history/types';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
@@ -316,7 +316,7 @@ const ExternalTradeForm = defineComponent({
     const input = (valid: boolean) => emit('input', valid);
 
     const { isTaskRunning } = useTasks();
-    const { fetchHistoricPrice } = setupGeneralBalances();
+    const { getHistoricPrice } = useBalancePricesStore();
 
     const id = ref<string>('');
     const base = ref<string>('');
@@ -526,7 +526,7 @@ const ExternalTradeForm = defineComponent({
       const fromAsset = get(base);
       const toAsset = get(quote);
 
-      const rateFromHistoricPrice = await fetchHistoricPrice({
+      const rateFromHistoricPrice = await getHistoricPrice({
         timestamp,
         fromAsset,
         toAsset

@@ -1,14 +1,11 @@
-import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Message, Severity } from '@rotki/common/lib/messages';
 import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { ActionTree } from 'vuex';
-import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import {
-  Balances,
   BlockchainBalances,
   BtcBalances,
   ManualBalance,
@@ -27,23 +24,19 @@ import { chainSection } from '@/store/balances/const';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { BalanceMutations } from '@/store/balances/mutation-types';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import {
   AccountAssetBalances,
   AccountPayload,
   AddAccountsPayload,
   AllBalancePayload,
-  AssetPriceResponse,
-  AssetPrices,
   BalanceState,
   BasicBlockchainAccountPayload,
   BlockchainAccountPayload,
   BlockchainBalancePayload,
   ERC20Token,
   FetchPricePayload,
-  HistoricPricePayload,
-  HistoricPrices,
   NonFungibleBalances,
-  OracleCachePayload,
   XpubPayload
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
@@ -70,11 +63,7 @@ import { Exchange, ExchangeData } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 import { BlockchainMetadata, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { ExchangeRates } from '@/types/user';
 import { assert } from '@/utils/assertions';
-import { bigNumberify } from '@/utils/bignumbers';
-import { chunkArray } from '@/utils/data';
-import { convertFromTimestamp } from '@/utils/date';
 import { logger } from '@/utils/logging';
 
 function removeTag(tags: string[] | null, tagName: string): string[] | null {
@@ -112,24 +101,6 @@ function removeTags<T extends { tags: string[] | null }>(
   return accounts;
 }
 
-const updateBalancePrice: (
-  balances: Balances,
-  prices: AssetPrices
-) => Balances = (balances, assetPrices) => {
-  for (const asset in balances) {
-    const assetPrice = assetPrices[asset];
-    if (!assetPrice) {
-      continue;
-    }
-    const assetInfo = balances[asset];
-    balances[asset] = {
-      amount: assetInfo.amount,
-      usdValue: assetInfo.amount.times(assetPrice)
-    };
-  }
-  return balances;
-};
-
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async fetchBalances({ dispatch }, payload: Partial<AllBalancePayload> = {}) {
     const { addTask, isTaskRunning } = useTasks();
@@ -157,38 +128,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     await dispatch('accounts');
   },
 
-  async fetchExchangeRates({ commit }): Promise<void> {
-    try {
-      const { taskId } = await api.getFiatExchangeRates(
-        currencies.map(value => value.tickerSymbol)
-      );
-
-      const meta: TaskMeta = {
-        title: i18n.t('actions.balances.exchange_rates.task.title').toString(),
-        numericKeys: []
-      };
-
-      const { awaitTask } = useTasks();
-      const { result } = await awaitTask<ExchangeRates, TaskMeta>(
-        taskId,
-        TaskType.EXCHANGE_RATES,
-        meta
-      );
-
-      commit('usdToFiatExchangeRates', ExchangeRates.parse(result));
-    } catch (e: any) {
-      const { notify } = useNotifications();
-      notify({
-        title: i18n.t('actions.balances.exchange_rates.error.title').toString(),
-        message: i18n
-          .t('actions.balances.exchange_rates.error.message', {
-            message: e.message
-          })
-          .toString(),
-        display: true
-      });
-    }
-  },
   async fetchBlockchainBalances(
     { dispatch },
     payload: BlockchainBalancePayload = {
@@ -266,7 +205,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async fetch({ dispatch }, exchanges: Exchange[]): Promise<void> {
-    await dispatch('fetchExchangeRates');
+    const { fetchExchangeRates } = useBalancePricesStore();
+    await fetchExchangeRates();
     await dispatch('fetchBalances');
 
     if (exchanges && exchanges.length > 0) {
@@ -948,7 +888,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async updatePrices({ commit, state }, prices: AssetPrices): Promise<void> {
+  async adjustPrices({ commit, state }): Promise<void> {
+    const pricesStore = useBalancePricesStore();
+    const { prices } = storeToRefs(pricesStore);
+    const { updateBalancesPrices } = pricesStore;
+
     const manualBalances = [
       ...state.manualBalances,
       ...state.manualLiabilities
@@ -967,12 +911,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const polkadot = { ...state.dot };
     const avalanche = { ...state.avax };
 
-    const { exchangeBalances } = storeToRefs(useExchangeBalancesStore());
-
-    const exchanges = { ...(get(exchangeBalances) as ExchangeData) };
-
     for (const asset in totals) {
-      const assetPrice = prices[asset];
+      const assetPrice = get(prices)[asset];
       if (!assetPrice) {
         continue;
       }
@@ -985,7 +925,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     for (let i = 0; i < manualBalances.length; i++) {
       const balance: Writeable<ManualBalanceWithValue> = manualBalances[i];
-      const assetPrice = prices[balance.asset];
+      const assetPrice = get(prices)[balance.asset];
       if (!assetPrice) {
         continue;
       }
@@ -996,14 +936,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     for (const address in eth) {
       const balances = eth[address];
       eth[address] = {
-        assets: updateBalancePrice(balances.assets, prices),
-        liabilities: updateBalancePrice(balances.liabilities, prices)
+        assets: updateBalancesPrices(balances.assets),
+        liabilities: updateBalancesPrices(balances.liabilities)
       };
     }
 
     commit('updateEth', eth);
 
-    const btcPrice = prices[Blockchain.BTC];
+    const btcPrice = get(prices)[Blockchain.BTC];
     if (btcPrice) {
       for (const address in btc.standalone) {
         const balance = btc.standalone[address];
@@ -1029,7 +969,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     commit('updateBtc', btc);
 
-    const bchPrice = prices[Blockchain.BCH];
+    const bchPrice = get(prices)[Blockchain.BCH];
     if (bchPrice) {
       for (const address in bch.standalone) {
         const balance = bch.standalone[address];
@@ -1058,8 +998,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     for (const address in kusama) {
       const balances = kusama[address];
       kusama[address] = {
-        assets: updateBalancePrice(balances.assets, prices),
-        liabilities: updateBalancePrice(balances.liabilities, prices)
+        assets: updateBalancesPrices(balances.assets),
+        liabilities: updateBalancesPrices(balances.liabilities)
       };
     }
 
@@ -1068,8 +1008,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     for (const address in avalanche) {
       const balances = avalanche[address];
       avalanche[address] = {
-        assets: updateBalancePrice(balances.assets, prices),
-        liabilities: updateBalancePrice(balances.liabilities, prices)
+        assets: updateBalancesPrices(balances.assets),
+        liabilities: updateBalancesPrices(balances.liabilities)
       };
     }
 
@@ -1078,178 +1018,31 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     for (const address in polkadot) {
       const balances = polkadot[address];
       polkadot[address] = {
-        assets: updateBalancePrice(balances.assets, prices),
-        liabilities: updateBalancePrice(balances.liabilities, prices)
+        assets: updateBalancesPrices(balances.assets),
+        liabilities: updateBalancesPrices(balances.liabilities)
       };
     }
 
     commit('updateDot', polkadot);
 
+    const { exchangeBalances } = storeToRefs(useExchangeBalancesStore());
+
+    const exchanges = { ...(get(exchangeBalances) as ExchangeData) };
+
     for (const exchange in exchanges) {
-      exchanges[exchange] = updateBalancePrice(exchanges[exchange], prices);
+      exchanges[exchange] = updateBalancesPrices(exchanges[exchange]);
     }
 
     set(exchangeBalances, exchanges);
   },
 
-  async fetchPrices(
-    { state, commit, rootGetters: { 'balances/aggregatedAssets': assets } },
-    payload: FetchPricePayload
-  ): Promise<void> {
-    const { awaitTask, isTaskRunning } = useTasks();
-    const taskType = TaskType.UPDATE_PRICES;
-    if (get(isTaskRunning(taskType))) {
-      return;
-    }
-    const fetchPrices: (assets: string[]) => Promise<void> = async assets => {
-      const { taskId } = await api.balances.prices(
-        payload.selectedAsset ? [payload.selectedAsset] : assets,
-        CURRENCY_USD,
-        payload.ignoreCache
-      );
-      const { result } = await awaitTask<AssetPriceResponse, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n.t('actions.session.fetch_prices.task.title').toString(),
-          numericKeys: null
-        },
-        true
-      );
-
-      commit(BalanceMutations.UPDATE_PRICES, {
-        ...state.prices,
-        ...result.assets
-      });
-    };
-
-    try {
-      await Promise.all(
-        chunkArray<string>(assets, 100).map(value => fetchPrices(value))
-      );
-    } catch (e: any) {
-      const title = i18n
-        .t('actions.session.fetch_prices.error.title')
-        .toString();
-      const message = i18n
-        .t('actions.session.fetch_prices.error.message', {
-          error: e.message
-        })
-        .toString();
-      const { notify } = useNotifications();
-      notify({
-        title,
-        message,
-        display: true
-      });
-    }
-  },
-
-  async refreshPrices(
-    { dispatch, state },
-    payload: FetchPricePayload
-  ): Promise<void> {
+  async refreshPrices({ dispatch }, payload: FetchPricePayload): Promise<void> {
     setStatus(Status.LOADING, Section.PRICES);
-    await dispatch('fetchExchangeRates');
-    await dispatch('fetchPrices', payload);
-    await dispatch('updatePrices', state.prices);
+    const { fetchPrices, fetchExchangeRates } = useBalancePricesStore();
+    await fetchExchangeRates();
+    await fetchPrices(payload);
+    await dispatch('adjustPrices');
     setStatus(Status.LOADED, Section.PRICES);
-  },
-
-  async createOracleCache(
-    _,
-    { fromAsset, purgeOld, source, toAsset }: OracleCachePayload
-  ): Promise<ActionStatus> {
-    const { awaitTask, isTaskRunning } = useTasks();
-    const taskType = TaskType.CREATE_PRICE_CACHE;
-    if (get(isTaskRunning(taskType))) {
-      return {
-        success: false,
-        message: i18n
-          .t('actions.balances.create_oracle_cache.already_running')
-          .toString()
-      };
-    }
-    try {
-      const { taskId } = await api.balances.createPriceCache(
-        source,
-        fromAsset,
-        toAsset,
-        purgeOld
-      );
-      const { result } = await awaitTask<true, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n
-            .t('actions.balances.create_oracle_cache.task', {
-              fromAsset,
-              toAsset,
-              source
-            })
-            .toString(),
-          numericKeys: null
-        },
-        true
-      );
-
-      return {
-        success: result
-      };
-    } catch (e: any) {
-      return {
-        success: false,
-        message: i18n
-          .t('actions.balances.create_oracle_cache.failed', {
-            fromAsset,
-            toAsset,
-            source,
-            error: e.message
-          })
-          .toString()
-      };
-    }
-  },
-
-  async fetchHistoricPrice(
-    _,
-    { fromAsset, timestamp, toAsset }: HistoricPricePayload
-  ): Promise<BigNumber> {
-    const { awaitTask, isTaskRunning } = useTasks();
-    const taskType = TaskType.FETCH_HISTORIC_PRICE;
-    if (get(isTaskRunning(taskType))) {
-      return bigNumberify(-1);
-    }
-
-    try {
-      const { taskId } = await api.balances.fetchRate(
-        fromAsset,
-        toAsset,
-        timestamp
-      );
-      const { result } = await awaitTask<HistoricPrices, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n
-            .t('actions.balances.historic_fetch_price.task.title')
-            .toString(),
-          description: i18n
-            .t('actions.balances.historic_fetch_price.task.description', {
-              fromAsset,
-              toAsset,
-              date: convertFromTimestamp(timestamp)
-            })
-            .toString(),
-          numericKeys: null
-        },
-        true
-      );
-
-      return result.assets[fromAsset][timestamp];
-    } catch (e) {
-      return bigNumberify(-1);
-    }
   },
 
   async fetchLoopringBalances({ commit }, refresh: boolean) {

@@ -11,11 +11,12 @@ import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { bigNumberify, One, Zero } from '@/utils/bignumbers';
 
 export interface OverallPerformance {
   readonly period: string;
@@ -40,21 +41,17 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { currencySymbol, floatingPrecision } = storeToRefs(
     useGeneralSettingsStore()
   );
-  const {
-    aggregatedBalances,
-    liabilities,
-    nfBalances,
-    nfTotalValue,
-    exchangeRate
-  } = setupGeneralBalances();
+  const { aggregatedBalances, liabilities, nfBalances, nfTotalValue } =
+    setupGeneralBalances();
   const { timeframe } = storeToRefs(useSessionSettingsStore());
+  const { exchangeRate } = useBalancePricesStore();
 
   const totalNetWorth = computed(() => {
     const mainCurrency = get(currencySymbol);
     const balances = get(aggregatedBalances);
     const totalLiabilities = get(liabilities);
     const nfbs = get(nfBalances);
-    const rate = get(exchangeRate(mainCurrency));
+    const rate = get(exchangeRate(mainCurrency)) ?? One;
     let nftTotal = Zero;
 
     if (nftsInNetValue) {
@@ -90,7 +87,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const overall = computed(() => {
     const currency = get(currencySymbol);
-    const rate = get(exchangeRate(currency));
+    const rate = get(exchangeRate(currency)) ?? One;
     const selectedTimeframe = get(timeframe);
     const allTimeframes = timeframes((unit, amount) =>
       dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()
@@ -154,7 +151,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const getNetValue = (startingDate: number) =>
     computed(() => {
       const currency = get(currencySymbol);
-      const rate = get(exchangeRate(currency));
+      const rate = get(exchangeRate(currency)) ?? One;
 
       const convert = (value: string | number | BigNumber): number => {
         const bigNumber =

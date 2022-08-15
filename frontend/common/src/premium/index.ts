@@ -85,7 +85,7 @@ export type SushiApi = {
 export type BalancesApi = {
   byLocation: Ref<Record<string, BigNumber>>
   aggregatedBalances: Ref<AssetBalanceWithPrice[]>
-  exchangeRate: (currency: string) => Ref<number>
+  exchangeRate: (currency: string) => Ref<BigNumber>
 };
 
 export type AssetsApi = {

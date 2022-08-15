@@ -195,10 +195,6 @@ import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import {
-  setupExchangeRateGetter,
-  setupGeneralBalances
-} from '@/composables/balances';
 import { CURRENCY_USD } from '@/data/currencies';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
@@ -208,6 +204,7 @@ import {
   EthTransactionEvent,
   NewEthTransactionEvent
 } from '@/services/history/types';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import {
   historyEventSubTypeData,
   historyEventTypeData
@@ -258,9 +255,8 @@ const TransactionEventForm = defineComponent({
     const input = (valid: boolean) => emit('input', valid);
 
     const { isTaskRunning } = useTasks();
-    const { fetchHistoricPrice } = setupGeneralBalances();
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-    const exchangeRate = setupExchangeRateGetter();
+    const { exchangeRate, getHistoricPrice } = useBalancePricesStore();
 
     const lastLocation = useLocalStorage(
       'rotki.ledger_action.location',
@@ -368,7 +364,7 @@ const TransactionEventForm = defineComponent({
     };
 
     const fiatExchangeRate = computed<BigNumber>(() => {
-      return exchangeRate(get(currencySymbol)) ?? One;
+      return get(exchangeRate(get(currencySymbol))) ?? One;
     });
 
     const setEditMode = () => {
@@ -475,7 +471,7 @@ const TransactionEventForm = defineComponent({
       const fromAsset = get(asset);
       const toAsset = get(currencySymbol);
 
-      const rateFromHistoricPrice = await fetchHistoricPrice({
+      const rateFromHistoricPrice = await getHistoricPrice({
         timestamp,
         fromAsset,
         toAsset

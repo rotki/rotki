@@ -75,10 +75,10 @@ import {
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { setupExchangeRateGetter } from '@/composables/balances';
 import { CURRENCY_USD } from '@/data/currencies';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { BalanceSnapshot, LocationDataSnapshot } from '@/store/balances/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { bigNumberify, One, Zero } from '@/utils/bignumbers';
@@ -108,9 +108,9 @@ export default defineComponent({
     const total = ref<string>('');
     const valid = ref<boolean>(false);
 
-    const exchangeRate = setupExchangeRateGetter();
+    const { exchangeRate } = useBalancePricesStore();
     const fiatExchangeRate = computed<BigNumber>(() => {
-      return exchangeRate(get(currencySymbol)) ?? One;
+      return get(exchangeRate(get(currencySymbol))) ?? One;
     });
 
     const assetTotal = computed<BigNumber>(() => {

@@ -352,7 +352,7 @@ export const useAssetInfoRetrieval = defineStore(
           (value: AssetBalanceWithPrice) => value.asset === identifier
         );
         return {
-          usdPrice: store.state.balances!.prices[identifier] ?? Zero,
+          usdPrice: assetValue.usdPrice ?? Zero,
           amount: assetValue?.amount ?? Zero,
           usdValue: assetValue?.usdValue ?? Zero
         };

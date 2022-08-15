@@ -13,6 +13,7 @@ import Vuetify from 'vuetify';
 import { VTooltip } from 'vuetify/lib/components';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { currencies } from '@/data/currencies';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionStore } from '@/store/session';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -61,9 +62,10 @@ describe('AmountDisplay.vue', () => {
     const { uiFloatingPrecision, mainCurrency } = storeToRefs(
       useGeneralSettingsStore()
     );
+    const { exchangeRates } = storeToRefs(useBalancePricesStore());
     set(mainCurrency, currencies[1]);
     set(uiFloatingPrecision, 2);
-    store.commit('balances/usdToFiatExchangeRates', { EUR: 1.2 });
+    set(exchangeRates, { EUR: bigNumberify(1.2) });
   });
 
   afterEach(() => {

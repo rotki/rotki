@@ -96,9 +96,9 @@ import { DataTableHeader } from 'vuetify';
 import EditLocationDataSnapshotForm from '@/components/dashboard/EditLocationDataSnapshotForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import { setupExchangeRateGetter } from '@/composables/balances';
 import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import {
   LocationDataSnapshot,
   LocationDataSnapshotPayload
@@ -169,9 +169,9 @@ export default defineComponent({
     const loading = ref<boolean>(false);
     const excludedLocations = ref<string[]>([]);
 
-    const exchangeRate = setupExchangeRateGetter();
+    const { exchangeRate } = useBalancePricesStore();
     const fiatExchangeRate = computed<BigNumber>(() => {
-      return exchangeRate(get(currencySymbol)) ?? One;
+      return get(exchangeRate(get(currencySymbol))) ?? One;
     });
 
     const data = computed<IndexedLocationDataSnapshot[]>(() => {

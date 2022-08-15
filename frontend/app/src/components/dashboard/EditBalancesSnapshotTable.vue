@@ -129,10 +129,10 @@ import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBal
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import { setupExchangeRateGetter } from '@/composables/balances';
 import { CURRENCY_USD } from '@/data/currencies';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import {
   BalanceSnapshot,
   BalanceSnapshotPayload,
@@ -219,9 +219,9 @@ export default defineComponent({
     const loading = ref<boolean>(false);
     const excludedAssets = ref<string[]>([]);
 
-    const exchangeRate = setupExchangeRateGetter();
+    const { exchangeRate } = useBalancePricesStore();
     const fiatExchangeRate = computed<BigNumber>(() => {
-      return exchangeRate(get(currencySymbol)) ?? One;
+      return get(exchangeRate(get(currencySymbol))) ?? One;
     });
 
     const data = computed<IndexedBalanceSnapshot[]>(() => {

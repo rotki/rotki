@@ -135,10 +135,10 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import OracleEntry from '@/components/settings/OracleEntry.vue';
-import { usePrices } from '@/composables/balances';
 import i18n from '@/i18n';
 import { OracleCacheMeta } from '@/services/balances/types';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -178,7 +178,8 @@ export default defineComponent({
   },
   setup() {
     const { isTaskRunning } = useTasks();
-    const { createOracleCache, getPriceCache, deletePriceCache } = usePrices();
+    const { createOracleCache, getPriceCache, deletePriceCache } =
+      useBalancePricesStore();
 
     const oracles: PriceOracle[] = ['cryptocompare'];
 

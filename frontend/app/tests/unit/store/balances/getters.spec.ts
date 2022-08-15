@@ -7,6 +7,7 @@ import { BalanceType, BtcBalances } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { BalanceGetters, getters } from '@/store/balances/getters';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { BalanceState } from '@/store/balances/types';
 import store from '@/store/store';
 import { RotkehlchenState } from '@/store/types';
@@ -23,6 +24,7 @@ describe('balances:getters', () => {
     const { connectedExchanges, exchangeBalances } = storeToRefs(
       useExchangeBalancesStore()
     );
+    const { prices } = storeToRefs(useBalancePricesStore());
     set(connectedExchanges, [
       {
         location: SupportedExchange.KRAKEN,
@@ -49,6 +51,14 @@ describe('balances:getters', () => {
           usdValue: bigNumberify(50)
         }
       }
+    });
+
+    set(prices, {
+      DAI: bigNumberify(1),
+      EUR: bigNumberify(1),
+      SAI: bigNumberify(1),
+      ETH: bigNumberify(3000),
+      BTC: bigNumberify(40000)
     });
 
     const mockGetters = {
@@ -89,14 +99,7 @@ describe('balances:getters', () => {
           balanceType: BalanceType.LIABILITY
         }
       ],
-      manualLiabilities: [],
-      prices: {
-        DAI: bigNumberify(1),
-        EUR: bigNumberify(1),
-        SAI: bigNumberify(1),
-        ETH: bigNumberify(3000),
-        BTC: bigNumberify(40000)
-      }
+      manualLiabilities: []
     });
 
     const actualResult = sortBy(
