@@ -4,6 +4,7 @@ import PremiumLoading from '@/components/premium/PremiumLoading.vue';
 import PremiumLoadingError from '@/components/premium/PremiumLoadingError.vue';
 import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
 import { api } from '@/services/rotkehlchen-api';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
 function findComponents(): string[] {
   return Object.getOwnPropertyNames(window).filter(value =>
@@ -11,7 +12,7 @@ function findComponents(): string[] {
   );
 }
 
-if (process.env.NODE_ENV === 'development') {
+if (checkIfDevelopment()) {
   // @ts-ignore
   findComponents().forEach(component => (window[component] = undefined));
 }

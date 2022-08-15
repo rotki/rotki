@@ -41,8 +41,9 @@ import { debugSettings, getUserMenu, MenuActions } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
 import { TrayManager } from '@/electron-main/tray-manager';
 import PyHandler from '@/py-handler';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isDevelopment = checkIfDevelopment();
 
 type WindowProvider = () => BrowserWindow;
 

@@ -1,7 +1,8 @@
 import { BigNumber } from '@rotki/common';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
 export function setupFormatter() {
-  if (process.env.NODE_ENV !== 'development') {
+  if (!checkIfDevelopment()) {
     return;
   }
   // @ts-ignore

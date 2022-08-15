@@ -4,6 +4,7 @@ import { settingsManager } from '@/electron-main/app-settings';
 import { TrayUpdate } from '@/electron-main/ipc';
 import { Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
 type WindowProvider = () => BrowserWindow;
 const isMac = process.platform === 'darwin';
@@ -28,7 +29,7 @@ export class TrayManager {
   }
 
   private static get iconPath(): string {
-    return process.env.NODE_ENV !== 'production'
+    return checkIfDevelopment()
       ? path.join(__dirname, '..', 'public')
       : __dirname;
   }

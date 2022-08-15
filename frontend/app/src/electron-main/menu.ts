@@ -5,8 +5,9 @@ import {
   IPC_DEBUG_SETTINGS,
   IPC_REQUEST_RESTART
 } from '@/electron-main/ipc-commands';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isDevelopment = checkIfDevelopment();
 const isMac = process.platform === 'darwin';
 
 export type MenuActions = { displayTray: (display: boolean) => void };

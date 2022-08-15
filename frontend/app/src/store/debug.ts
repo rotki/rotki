@@ -55,7 +55,7 @@ function shouldPersistStore(): any {
   const debugSettings = window.interop?.debugSettings?.();
   const menuEnabled = debugSettings?.persistStore;
   const envEnabled = import.meta.env.VITE_PERSIST_STORE;
-  const isTest = process.env.VITE_TEST;
+  const isTest = import.meta.env.VITE_TEST;
   return (menuEnabled || envEnabled) && !isTest;
 }
 

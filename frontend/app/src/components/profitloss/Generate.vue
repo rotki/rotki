@@ -98,6 +98,7 @@ import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import { convertToTimestamp } from '@/utils/date';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
 export default defineComponent({
   name: 'Generate',
@@ -135,7 +136,7 @@ export default defineComponent({
       emit('import-data');
     };
 
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    const isDevelopment = checkIfDevelopment();
 
     return {
       isDevelopment,
