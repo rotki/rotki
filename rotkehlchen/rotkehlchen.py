@@ -746,35 +746,14 @@ class Rotkehlchen():
                 if len(loopring_balances) != 0:
                     balances[str(Location.LOOPRING)] = loopring_balances
 
-        # retrieve uniswap v3 & v2 lps
-        uniswap = self.chain_manager.get_module('uniswap')
         uniswap_v3_balances = None
-        if uniswap is not None:
-            try:
-                uniswap_v3_balances = uniswap.get_v3_balances(
-                    addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
-                )
-            except RemoteError as e:
-                log.error(
-                    f'At balance snapshot Uniswap V3 balances query failed due to {str(e)}. Error '
-                    f'is ignored and balance snapshot will still be saved.',
-                )
-            try:
-                uniswap_v2_balances = uniswap.get_balances(
-                    addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
-                )
-            except RemoteError as e:
-                log.error(
-                    f'At balance snapshot Uniswap V2 balances query failed due to {str(e)}. Error '
-                    f'is ignored and balance snapshot will still be saved.',
-                )
-            else:
-                if str(Location.BLOCKCHAIN) not in balances:
-                    balances[str(Location.BLOCKCHAIN)] = {}
-
-                for uniswap_v2_lps in uniswap_v2_balances.values():
-                    for lp in uniswap_v2_lps:
-                        balances[str(Location.BLOCKCHAIN)][Asset(lp.address)] = lp.user_balance
+        try:
+            uniswap_v3_balances = self.chain_manager.query_ethereum_lp_balances(balances=balances)
+        except RemoteError as e:
+            log.error(
+                f'At balance snapshot LP balances query failed due to {str(e)}. Error '
+                f'is ignored and balance snapshot will still be saved.',
+            )
 
         # retrieve nft balances if module is activated
         nfts = self.chain_manager.get_module('nfts')
@@ -796,7 +775,7 @@ class Rotkehlchen():
                     if str(Location.BLOCKCHAIN) not in balances:
                         balances[str(Location.BLOCKCHAIN)] = {}
 
-                    for _, nft_balances in nft_mapping.items():
+                    for nft_balances in nft_mapping.values():
                         for balance_entry in nft_balances:
                             balances[str(Location.BLOCKCHAIN)][Asset(
                                 balance_entry['id'])] = Balance(
