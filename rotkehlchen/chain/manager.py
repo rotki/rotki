@@ -1619,15 +1619,19 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         """Adds the liquidity pool balance(one of Uniswap, Sushiswap or Balancer) to the
         blockchain balances.
         """
-        if len(lp_balance) != 0:
-            if str(Location.BLOCKCHAIN) not in balances:
-                balances[str(Location.BLOCKCHAIN)] = {}
-                for lps in lp_balance.values():
-                    for lp in lps:
-                        if isinstance(lp, BalancerPoolBalance):
-                            balances[str(Location.BLOCKCHAIN)][lp.pool_token] = lp.user_balance
-                        else:
-                            balances[str(Location.BLOCKCHAIN)][EthereumToken(lp.address)] = lp.user_balance  # noqa: E501
+        if len(lp_balance) == 0:
+            return
+
+        loc_key = str(Location.BLOCKCHAIN)
+        if loc_key not in balances:
+            balances[loc_key] = {}
+
+        for lps in lp_balance.values():
+            for lp in lps:
+                if isinstance(lp, BalancerPoolBalance):
+                    balances[loc_key][lp.pool_token] = lp.user_balance
+                else:
+                    balances[loc_key][EthereumToken(lp.address)] = lp.user_balance
 
     def _add_protocol_balances(self) -> None:
         """Also count token balances that may come from various protocols"""
