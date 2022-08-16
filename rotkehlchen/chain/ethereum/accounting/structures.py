@@ -29,5 +29,4 @@ class TxEventSettings(NamedTuple):
     take: int
     method: Literal['acquisition', 'spend']
     multitake_treatment: Optional[TxMultitakeTreatment] = None
-    # accountant_cb: Optional[Callable[['AccountingPot', 'HistoryBaseEntry', List['HistoryBaseEntry']], None]] = None  # noqa: E501
     accountant_cb: Optional[AccountantCallback] = None

@@ -177,7 +177,7 @@ Create exchange module
 
 To add a new CEX you should create a new file with the name of the exchange all lowercase in `here <https://github.com/rotki/rotki/tree/develop/rotkehlchen/exchanges>`__.
 
-It should have a class which should be the exact same name as the file but with the first letter capitalized.
+It should have a class which should be the exact same name as the file but with the first letter capitalized. So if the module name is ``pinkunicorn.py`` the class name should be ``Pinkunicorn``.
 
 That class should inherit from the ``ExchangeInterface`` and implement all the required methods.
 
@@ -210,6 +210,112 @@ You will generally need to:
 - Touch ``rotkehlchen/tests/api/test_exchanges.py::pytest_setup_exchange()``
 - Add a new test module under ``rotkehlchen/tests/exchanges/``
 - Add a new fixture for the exchange at ``rotkehlchen/tests/fixtures/exchanges/mynewexchange.py`` and expose it in ``rotkehlchen/tests/fixtures/__init__.py``
+
+Adding new ethereum modules
+===================================
+
+This guide is to explain how to add a new ethereum module into rotki and its corresponding transaction decoder and accountant.
+
+Add new module directory
+--------------------------
+
+Each ethereum modules lives in `this <https://github.com/rotki/rotki/tree/develop/rotkehlchen/chain/ethereum/modules>`__ directory. To add a new module you should make sure the name is unique and create a new directory underneath.
+
+The directory should contain the following structure::
+
+  |
+  |--- __init__.py
+  |--- decoder.py
+  |--- constants.py
+  |--- accountant.py
+
+
+Almost all of the above are optional.
+
+The decoder
+--------------
+
+As an example decoder we can look at `makerdao <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/chain/ethereum/modules/makerdao/decoder.py>`__.
+
+It needs to contain a class that inherits from the ``DecoderInterface`` and is named as ``ModulenameDecoder``.
+
+Counterparties
+^^^^^^^^^^^^^^^^
+
+It needs to implement a method called ``counterparties()`` which returns a list of counterparties that can be associated with the transactions of this modules. Most of the times these are protocol names. Like ``uniswap-v1``, ``makerdao_dsr`` etc.
+
+These are defined in the ``constants.py`` file.
+
+Mappings and rules
+^^^^^^^^^^^^^^^^^^^
+
+The ``addresses_to_decoders()`` method maps any contract addresses that are identified in the transaction with the specific decoding function that can decode it. This is optional.
+
+The ``decoding_rules()`` defines any functions that should simply be used for all decoding so long as this module is active. This is optional.
+
+The ``enricher_rules()`` defies any functions that would be used for as long as this module is active to analyze already existing decoded events and enrich them with extra information we can decode thanks to this module. This is optional.
+
+Decoding explained
+^^^^^^^^^^^^^^^^^^
+
+In very simple terms the way the decoding works is that we go through all the transactions of the user and we apply all decoders to each transaction event that touches a tracked address. First decoder that matches, creates a decoded event.
+
+The event creation consists of creating a ``HistoryBaseEntry``. These are the most basic form of events in rotki and are used everywhere. The fields as far as decoded transactions are concerned are explained below:
+
+- ``event_identifier`` is always the transaction hash. This identifies history events in the same transaction.
+- ``sequence_index`` is the order of the event in the transaction. Many times this is the log index, but decoders tend to play with this to make events appear in a specific way.
+- ``asset`` is the asset involved in the event.
+- ``balance`` is the balance of the involved asset.
+- ``timestamp`` is the unix timestamp **in milliseconds**.
+- ``location`` is the location. Almost always ``Location.BLOCKCHAIN`` unless we got a specific location for the protocol of the transaction.
+- ``location_label`` is the initiator of the transaction.
+- ``notes`` is the human readable description to be seen by the user for the transaction.
+- ``event_type`` is the main type of the event. (see next section)
+- ``event_subtype`` is the subtype of the event. (see next section)
+- ``counterparty`` is the counterparty/target of the transaction. For transactions that interact with protocols we tend to use the ``CPT_XXX`` constants here.
+
+
+Event type/subtype and counterparty
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each combination of event type and subtype and counterparty creates a new unique event type. This is important as they are all treated differently in many parts of rotki, including the accounting. But most importantly this is what determines how they appear in the UI!
+
+The place where the UI mappings happen is `frontend/app/src/store/history/consts.ts <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/frontend/app/src/store/history/consts.ts>`__.
+
+The Accountant
+-----------------
+
+As an example accountant module we can look at `makerdao <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/chain/ethereum/modules/makerdao/accountant.py>`__.
+
+The ``accountant.py`` is optional but if existing should also be under the main directory. It should contain a class named ``ModuleNameAccountant`` and it should inherit the ``ModuleAccountantInterface``.
+
+What this class does is to map all the different decoded events to how they should be processed for accounting.
+
+These accountants are all loaded in during PnL reporting.
+
+Each accountant should implement the ``reset()`` method to reset its internal state between runs.
+
+
+Event Settings mapping
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Each accountant should implement the ``event_settings()`` method. That is a mapping between each unique decoded event type, identified by ``get_tx_event_type_identifier()`` and its ``TxEventSettings()``.
+
+So essentially determining whether:
+
+- ``taxable``: It's taxable
+- ``count_entire_amount_spend``: If it's a spending event if the entire amount should be counted as a spend which means an expense. Negative PnL.
+- ``count_cost_basis_pnl``: If true then we also count any profit/loss the asset may have had compared to when it was acquired.
+- ``take``: The number of events to take for processing together. This is useful for swaps, to identify we need to process multiple events together.
+- ``method``: Either an ``'acquisition'`` or a ``'spend'``.
+- ``multitake_treatment``: Optional. If ``take`` is not ``1``, then this defines how we treat it. It's always a swap for now, so ``TxMultitakeTreatment``.
+- ``accountant_cb``: Optional. A callback to a method of the specific module's accountant that will execute some extra module-specific pnl processing logic. The makerdao accountant linked above has some examples for this.
+
+Multiple submodules
+--------------------
+
+The modules system is hierachical and one module may contain multiple submodules. For example uniswap having both v1 and v3 each in their own subdirectories as seen `here <https://github.com/rotki/rotki/tree/develop/rotkehlchen/chain/ethereum/modules/uniswap>`__.
+
 
 Code Testing
 **************
