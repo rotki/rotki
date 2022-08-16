@@ -378,7 +378,7 @@ Finally open the svg with any compatible viewer and explore the flamegraph. It w
    :align: center
 
 Docker publishing (manual)
-*****************
+*****************************
 
 If a need exists to publish on hub.docker.com then the following steps need to be followed.
 

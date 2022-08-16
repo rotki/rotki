@@ -726,31 +726,31 @@ Getting backend arguments
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-    {
-      "result":{
-        "max_size_in_mb_all_logs":{
-          "value":300,
-          "is_default":true
-        },
-        "max_logfiles_num":{
-          "value":3,
-          "is_default":true
-        },
-        "sqlite_instructions":{
-          "value":5000,
-          "is_default":true
-        },
-        "sleep_secs":{
-          "value":60,
-          "is_default":false
-        }
-      },
-      "message":""
-    }
+      {
+           "result": {
+                   "max_size_in_mb_all_logs": {
+                           "value": 300,
+                           "is_default": true
+                   },
+                   "max_logfiles_num": {
+                           "value": 3,
+                           "is_default": true
+                   },
+                   "sqlite_instructions": {
+                           "value": 5000,
+                           "is_default": true
+                   },
+                   "sleep_secs": {
+                           "value": 60,
+                           "is_default": false
+                   }
+           },
+           "message": ""
+       }
 
    :resjson object max_size_in_mb_all_logs: Maximum size in megabytes that will be used for all rotki logs.
    :resjson object max_num_log_files: Maximum number of logfiles to keep.
-   :resjson object sqlite_instructions: Instructions per sqlite context switch. 0 means disabled. 
+   :resjson object sqlite_instructions: Instructions per sqlite context switch. 0 means disabled.
    :resjson object sleep_secs: Seconds to sleep during the main loop.
    :resjson int value: Value used for the configuration.
    :resjson bool is_default: `true` if the setting was not modified and `false` if it was.
@@ -5087,8 +5087,8 @@ Query saved PnL Reports
                   "calculate_past_cost_basis": true,
                   "include_gas_costs": true,
                   "account_for_assets_movements": true,
-                  "cost_basis_method": "fifo,
-		  "eth_staking_taxable_after_withdrawal_enabled": false
+                  "cost_basis_method": "fifo",
+                  "eth_staking_taxable_after_withdrawal_enabled": false
               },
               "overview": {
                   "trade": {"free": "0", "taxable": "60.1"},
@@ -5111,7 +5111,7 @@ Query saved PnL Reports
                   "include_gas_costs": true,
                   "account_for_assets_movements": true,
                   "cost_basis_method": "fifo",
-		  "eth_staking_taxable_after_withdrawal_enabled": false
+                  "eth_staking_taxable_after_withdrawal_enabled": false
               },
               "overview": {
                   "asset movement": {"free": "0", "taxable": "5"},
