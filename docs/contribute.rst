@@ -156,6 +156,61 @@ Helpful commands
     >>> to_checksum_address("0x9c78ee466d6cb57a4d01fd887d2b5dfb2d46288f")
     '0x9C78EE466D6Cb57A4d01Fd887D2b5dFb2D46288f'
 
+Adding new Centralized Exchanges (CEXes)
+============================================
+
+All centralized exchanges modules live in a separate python file under `here <https://github.com/rotki/rotki/tree/develop/rotkehlchen/exchanges>`__.
+
+As an example of how to add a new CEX you can check the `Bitpanda PR <https://github.com/rotki/rotki/pull/3696/files>`__.
+
+
+
+Add Location
+-----------------
+
+You should add a new value to the `location Enum <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/types.py#L387>`__ and also make sure that the value is mirrored in the DB's schema as seen `here <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/db/schema.py#L93-L94>`__. Add it also in the ``SUPPORTED_EXCHANGES`` list `here <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/exchanges/manager.py#L31>`__. Finally don't forget to add it in the latest DB upgrade as seen in the Bitpanda PR linked in the start of this section.
+
+
+
+Create exchange module
+--------------------------
+
+To add a new CEX you should create a new file with the name of the exchange all lowercase in `here <https://github.com/rotki/rotki/tree/develop/rotkehlchen/exchanges>`__.
+
+It should have a class which should be the exact same name as the file but with the first letter capitalized.
+
+That class should inherit from the ``ExchangeInterface`` and implement all the required methods.
+
+It should have an ``edit_exchange_credentials()`` and ``validate_api_key()`` to be able to validate and accept new credentials.
+
+It should have a ``query_balances()`` to return the current balances of the user in the exchange.
+
+It should have a ``query_online_trade_history()`` to query the trade history endpoint of the exchange for a given time range and save them in the database.
+
+It should have a ``query_online_deposits_withdrawals()`` to query the deposit/withdrawals history endpoint of the exchange for a given time range and save them in the database.
+
+Optionally it can have a ``query_online_income_loss_expense`` to parse any special data from the exchange that can create income/loss items for the user such as staking events.
+
+Add Asset Mappings
+-------------------
+
+Exchanges have assets listed by symbols. This is unfortunately inaccurate and has conflicts since there is no central crypto registry and there is way too many crypto assets using the same symbol.
+
+We tackle this by having special mapping such as this one `here <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/assets/asset.py#L501>`__. So you would add the mapping ``WORLD_TO_MYNEWEXCHANGE``. Then you would create an ``asset_from_mynewexchange()`` function like `this one <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/assets/converters.py#L885-L898>`__ for bittrex.
+
+To find any assets listed in the exchange that are not mapped perfectly you would need to find and call the endpoint of the exchange that queries all assets. Then you need to write a test like `this <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/tests/exchanges/test_bittrex.py#L37-L51>`__ which queries all assets and tries to call the ``asset_from_bittrex()`` function. If any asset is not mapped properly a warning should be raised so we the developers figure out a new asset is added and we need to map it.
+
+Add tests for the exchange
+-----------------------------
+
+You should write tests for all the endpoints of the exchange you implemented. To see what tests and how to write them check the bitpanda PR linked in the start of this section.
+
+You will generally need to:
+
+- Touch ``rotkehlchen/tests/api/test_exchanges.py::pytest_setup_exchange()``
+- Add a new test module under ``rotkehlchen/tests/exchanges/``
+- Add a new fixture for the exchange at ``rotkehlchen/tests/fixtures/exchanges/mynewexchange.py`` and expose it in ``rotkehlchen/tests/fixtures/__init__.py``
+
 Code Testing
 **************
 
