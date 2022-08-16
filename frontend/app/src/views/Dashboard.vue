@@ -7,14 +7,14 @@
         </v-col>
         <v-col cols="12" md="4" lg="4">
           <summary-card
-            :name="$t('dashboard.exchange_balances.title')"
+            :name="t('dashboard.exchange_balances.title')"
             can-refresh
             :is-loading="isExchangeLoading"
             navigates-to="/accounts-balances/exchange-balances/"
             @refresh="refreshBalance($event)"
           >
             <div slot="tooltip">
-              {{ $t('dashboard.exchange_balances.tooltip') }}
+              {{ t('dashboard.exchange_balances.tooltip') }}
             </div>
             <div v-if="exchanges.length < 1">
               <v-card-actions class="px-4">
@@ -28,7 +28,7 @@
                   <div class="d-flex flex-column align-center">
                     <v-icon class="mb-2">mdi-plus-circle-outline</v-icon>
                     <span>
-                      {{ $t('dashboard.exchange_balances.add') }}
+                      {{ t('dashboard.exchange_balances.add') }}
                     </span>
                   </div>
                 </v-btn>
@@ -46,14 +46,14 @@
         </v-col>
         <v-col cols="12" md="4" lg="4">
           <summary-card
-            :name="$tc('dashboard.blockchain_balances.title')"
+            :name="tc('dashboard.blockchain_balances.title')"
             :is-loading="isBlockchainLoading"
             can-refresh
             navigates-to="/accounts-balances/"
             @refresh="refreshBalance($event)"
           >
             <div slot="tooltip">
-              {{ $tc('dashboard.blockchain_balances.tooltip') }}
+              {{ tc('dashboard.blockchain_balances.tooltip') }}
             </div>
             <div v-if="blockchainTotals.length === 0">
               <v-card-actions class="px-4">
@@ -67,7 +67,7 @@
                   <div class="d-flex flex-column align-center">
                     <v-icon class="mb-2">mdi-plus-circle-outline</v-icon>
                     <span>
-                      {{ $tc('dashboard.blockchain_balances.add') }}
+                      {{ tc('dashboard.blockchain_balances.add') }}
                     </span>
                   </div>
                 </v-btn>
@@ -84,15 +84,15 @@
         </v-col>
         <v-col cols="12" md="4" lg="4">
           <summary-card
-            :name="$tc('dashboard.manual_balances.title')"
-            :tooltip="$tc('dashboard.manual_balances.card_tooltip')"
+            :name="tc('dashboard.manual_balances.title')"
+            :tooltip="tc('dashboard.manual_balances.card_tooltip')"
             :is-loading="isManualBalancesLoading"
             can-refresh
             navigates-to="/accounts-balances/manual-balances/"
             @refresh="fetchManualBalances"
           >
             <div slot="tooltip">
-              {{ $t('dashboard.manual_balances.tooltip') }}
+              {{ t('dashboard.manual_balances.tooltip') }}
             </div>
             <div v-if="manualBalanceByLocation.length < 1">
               <v-card-actions class="px-4">
@@ -106,7 +106,7 @@
                   <div class="d-flex flex-column align-center">
                     <v-icon class="mb-2">mdi-plus-circle-outline</v-icon>
                     <span>
-                      {{ $t('dashboard.manual_balances.add') }}
+                      {{ t('dashboard.manual_balances.add') }}
                     </span>
                   </div>
                 </v-btn>
@@ -129,7 +129,7 @@
         </v-col>
       </v-row>
       <dashboard-asset-table
-        :title="$tc('common.assets')"
+        :title="tc('common.assets')"
         table-type="ASSETS"
         :loading="isAnyLoading"
         :balances="aggregatedBalances"
@@ -139,7 +139,7 @@
         v-if="liabilities.length > 0"
         class="mt-8"
         table-type="LIABILITIES"
-        :title="$tc('dashboard.liabilities.title')"
+        :title="tc('dashboard.liabilities.title')"
         :loading="isAnyLoading"
         :balances="liabilities"
       />
@@ -148,14 +148,11 @@
   </div>
 </template>
 
-<script lang="ts">
-import {
-  computed,
-  defineAsyncComponent,
-  defineComponent
-} from '@vue/composition-api';
+<script setup lang="ts">
+import { computed, defineAsyncComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import { setupGeneralBalances } from '@/composables/balances';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
@@ -163,107 +160,89 @@ import { useUniswapStore } from '@/store/defi/uniswap';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
-export default defineComponent({
-  name: 'Dashboard',
-  components: {
-    PriceRefresh: defineAsyncComponent(
-      () => import('@/components/helper/PriceRefresh.vue')
-    ),
-    DashboardAssetTable: defineAsyncComponent(
-      () => import('@/components/dashboard/DashboardAssetTable.vue')
-    ),
-    OverallBalances: defineAsyncComponent(
-      () => import('@/components/dashboard/OverallBalances.vue')
-    ),
-    SummaryCard: defineAsyncComponent(
-      () => import('@/components/dashboard/SummaryCard.vue')
-    ),
-    ExchangeBox: defineAsyncComponent(
-      () => import('@/components/dashboard/ExchangeBox.vue')
-    ),
-    ManualBalanceCardList: defineAsyncComponent(
-      () => import('@/components/dashboard/ManualBalanceCardList.vue')
-    ),
-    BlockchainBalanceCardList: defineAsyncComponent(
-      () => import('@/components/dashboard/BlockchainBalanceCardList.vue')
-    ),
-    NftBalanceTable: defineAsyncComponent(
-      () => import('@/components/dashboard/NftBalanceTable.vue')
-    )
-  },
-  setup() {
-    const { isTaskRunning } = useTasks();
-    const {
-      blockchainTotals,
-      aggregatedBalances,
-      liabilities,
-      fetchBlockchainBalances,
-      fetchLoopringBalances
-    } = setupGeneralBalances();
+const PriceRefresh = defineAsyncComponent(
+  () => import('@/components/helper/PriceRefresh.vue')
+);
+const DashboardAssetTable = defineAsyncComponent(
+  () => import('@/components/dashboard/DashboardAssetTable.vue')
+);
+const OverallBalances = defineAsyncComponent(
+  () => import('@/components/dashboard/OverallBalances.vue')
+);
+const SummaryCard = defineAsyncComponent(
+  () => import('@/components/dashboard/SummaryCard.vue')
+);
+const ExchangeBox = defineAsyncComponent(
+  () => import('@/components/dashboard/ExchangeBox.vue')
+);
+const ManualBalanceCardList = defineAsyncComponent(
+  () => import('@/components/dashboard/ManualBalanceCardList.vue')
+);
+const BlockchainBalanceCardList = defineAsyncComponent(
+  () => import('@/components/dashboard/BlockchainBalanceCardList.vue')
+);
+const NftBalanceTable = defineAsyncComponent(
+  () => import('@/components/dashboard/NftBalanceTable.vue')
+);
+const LiquidityProviderBalanceTable = defineAsyncComponent(
+  () => import('@/components/dashboard/LiquidityProviderBalanceTable.vue')
+);
 
-    const manualBalancesStore = useManualBalancesStore();
-    const { fetchManualBalances } = manualBalancesStore;
-    const { manualBalanceByLocation } = storeToRefs(manualBalancesStore);
+const { t, tc } = useI18n();
+const { isTaskRunning } = useTasks();
+const {
+  blockchainTotals,
+  aggregatedBalances,
+  liabilities,
+  fetchBlockchainBalances,
+  fetchLoopringBalances
+} = setupGeneralBalances();
 
-    const exchangeStore = useExchangeBalancesStore();
-    const { exchanges } = storeToRefs(exchangeStore);
+const manualBalancesStore = useManualBalancesStore();
+const { fetchManualBalances } = manualBalancesStore;
+const { manualBalanceByLocation } = storeToRefs(manualBalancesStore);
 
-    const isQueryingBlockchain = isTaskRunning(
-      TaskType.QUERY_BLOCKCHAIN_BALANCES
-    );
-    const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
-    const isUniswapV3BalancesLoading = isTaskRunning(
-      TaskType.DEFI_UNISWAP_V3_BALANCES
-    );
-    const isBlockchainLoading = computed<boolean>(() => {
-      return (
-        get(isQueryingBlockchain) ||
-        get(isLoopringLoading) ||
-        get(isUniswapV3BalancesLoading)
-      );
-    });
+const exchangeStore = useExchangeBalancesStore();
+const { exchanges } = storeToRefs(exchangeStore);
 
-    const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
-
-    const isAllBalancesLoading = isTaskRunning(TaskType.QUERY_BALANCES);
-
-    const isManualBalancesLoading = isTaskRunning(TaskType.MANUAL_BALANCES);
-
-    const isAnyLoading = computed<boolean>(() => {
-      return (
-        get(isBlockchainLoading) ||
-        get(isExchangeLoading) ||
-        get(isAllBalancesLoading) ||
-        get(isUniswapV3BalancesLoading)
-      );
-    });
-
-    const refreshBalance = (balanceSource: string) => {
-      if (balanceSource === 'blockchain') {
-        fetchBlockchainBalances({
-          ignoreCache: true
-        });
-        fetchLoopringBalances(true);
-        const { fetchV3Balances } = useUniswapStore();
-        fetchV3Balances();
-      } else if (balanceSource === 'exchange') {
-        exchangeStore.fetchConnectedExchangeBalances(true);
-      }
-    };
-
-    return {
-      isExchangeLoading,
-      isBlockchainLoading,
-      isManualBalancesLoading,
-      isAnyLoading,
-      exchanges,
-      blockchainTotals,
-      manualBalanceByLocation,
-      aggregatedBalances,
-      liabilities,
-      refreshBalance,
-      fetchManualBalances
-    };
-  }
+const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
+const isUniswapV3BalancesLoading = isTaskRunning(
+  TaskType.DEFI_UNISWAP_V3_BALANCES
+);
+const isBlockchainLoading = computed<boolean>(() => {
+  return (
+    get(isQueryingBlockchain) ||
+    get(isLoopringLoading) ||
+    get(isUniswapV3BalancesLoading)
+  );
 });
+
+const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+
+const isAllBalancesLoading = isTaskRunning(TaskType.QUERY_BALANCES);
+
+const isManualBalancesLoading = isTaskRunning(TaskType.MANUAL_BALANCES);
+
+const isAnyLoading = computed<boolean>(() => {
+  return (
+    get(isBlockchainLoading) ||
+    get(isExchangeLoading) ||
+    get(isAllBalancesLoading) ||
+    get(isUniswapV3BalancesLoading)
+  );
+});
+
+const refreshBalance = (balanceSource: string) => {
+  if (balanceSource === 'blockchain') {
+    fetchBlockchainBalances({
+      ignoreCache: true
+    });
+    fetchLoopringBalances(true);
+    const { fetchV3Balances } = useUniswapStore();
+    fetchV3Balances();
+  } else if (balanceSource === 'exchange') {
+    exchangeStore.fetchConnectedExchangeBalances(true);
+  }
+};
 </script>

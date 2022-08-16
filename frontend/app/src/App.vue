@@ -34,12 +34,12 @@ import {
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import { useBackendManagement } from '@/composables/backend';
 import { useRoute, useRouter, useTheme } from '@/composables/common';
 import { useDarkMode } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
-import i18n from '@/i18n';
 import { ThemeChecker } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import { useMainStore } from '@/store/main';
@@ -91,6 +91,7 @@ const completeLogin = async (complete: boolean) => {
 };
 
 const { restartBackend } = useBackendManagement();
+const { t } = useI18n();
 
 onBeforeMount(async () => {
   setupListeners({
@@ -114,11 +115,9 @@ onBeforeMount(async () => {
     onProcessDetected: pids => {
       set(
         startupErrorMessage,
-        i18n
-          .t('error.process_running', {
-            pids: pids.join(', ')
-          })
-          .toString()
+        t('error.process_running', {
+          pids: pids.join(', ')
+        }).toString()
       );
     }
   });
