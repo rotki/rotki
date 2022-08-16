@@ -38,7 +38,7 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
+from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateChain
 from rotkehlchen.chain.substrate.utils import (
@@ -515,14 +515,13 @@ class Rotkehlchen():
             self,
             blockchain: SupportedBlockchain,
             account_data: List[BlockchainAccountData],
-    ) -> BlockchainBalancesUpdate:
+    ) -> None:
         """Adds new blockchain accounts
 
         Adds the accounts to the blockchain instance and queries them to get the
         updated balances. Also adds them in the DB
 
         May raise:
-        - EthSyncError from modify_blockchain_account
         - InputError if the given accounts list is empty.
         - TagConstraintError if any of the given account data contain unknown tags.
         - RemoteError if an external service such as Etherscan is queried and
@@ -536,7 +535,7 @@ class Rotkehlchen():
                 data_type='blockchain accounts',
             )
             address_type = blockchain.get_address_type()
-            updated_balances = self.chain_manager.add_blockchain_accounts(
+            self.chain_manager.add_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=[address_type(entry.address) for entry in account_data],
             )
@@ -545,8 +544,6 @@ class Rotkehlchen():
                 blockchain=blockchain,
                 account_data=account_data,
             )
-
-        return updated_balances
 
     def edit_blockchain_accounts(
             self,
@@ -591,18 +588,15 @@ class Rotkehlchen():
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
-    ) -> BlockchainBalancesUpdate:
+    ) -> None:
         """Removes blockchain accounts
 
-        Removes the accounts from the blockchain instance and queries them to get
-        the updated balances. Also removes them from the DB
+        Removes the accounts from the blockchain instance. Also removes them from the DB.
 
         May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
         - InputError if a non-existing account was given to remove
         """
-        balances_update = self.chain_manager.remove_blockchain_accounts(
+        self.chain_manager.remove_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
         )
@@ -614,8 +608,6 @@ class Rotkehlchen():
                 stack.enter_context(self.eth_transactions.missing_receipts_lock)
                 stack.enter_context(self.evm_tx_decoder.undecoded_tx_query_lock)
             self.data.db.remove_blockchain_accounts(cursor, blockchain, accounts)
-
-        return balances_update
 
     def get_history_query_status(self) -> Dict[str, str]:
         if self.events_historian.progress < FVal('100'):
