@@ -10,12 +10,13 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.filtering import AssetMovementsFilterQuery
+from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
@@ -42,6 +43,7 @@ from rotkehlchen.tests.utils.database import (
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import ChecksumEthAddress, make_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.hexbytes import HexBytes
 
 creation_patch = patch(
     'rotkehlchen.db.dbhandler.DB_SCRIPT_CREATE_TABLES',
@@ -2770,6 +2772,52 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument 
     # not all combined_trades_views have tx hash.
     assert_tx_hash_is_bytes(old=old_combined_trades_views[:1], new=new_combined_trades_views[:1], tx_hash_index=10)  # noqa: E501
     assert_tx_hash_is_bytes(old=old_history_events, new=new_history_events, tx_hash_index=1, is_history_event=True)  # noqa: E501
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
+    """Test upgrading the DB from version 33 to version 34.
+
+    - Change the combined_trades_view so a valid string is returned in the link field instead
+    of a blob.
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v33_rotkehlchen.db')
+    db_v33 = _init_db_with_target_version(
+        target_version=33,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    with db_v33.conn.read_ctx() as cursor:
+        trades, filter_total_found = db_v33.get_trades_and_limit_info(
+            cursor=cursor,
+            filter_query=TradesFilterQuery.make(),
+            has_premium=True,
+        )
+
+    assert filter_total_found == 7
+    with pytest.raises(UnicodeDecodeError):
+        for trade in trades:
+            TradeSchema().dump(trade)
+    assert HexBytes(trades[-1].link).hex() == '0xb1fcf4aef6af87a061ca03e92c4eb8039efe600d501ba288a8bae90f78c91db5'  # noqa: E501
+
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=34,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    with db.conn.read_ctx() as cursor:
+        trades, filter_total_found = db.get_trades_and_limit_info(
+            cursor=cursor,
+            filter_query=TradesFilterQuery.make(),
+            has_premium=True,
+        )
+
+    assert filter_total_found == 7
+    for trade in trades:
+        TradeSchema().dump(trade)
+    assert trades[-1].link == '0xb1fcf4aef6af87a061ca03e92c4eb8039efe600d501ba288a8bae90f78c91db5'
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

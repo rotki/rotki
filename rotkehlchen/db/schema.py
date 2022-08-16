@@ -791,7 +791,7 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
        rate,
        NULL AS fee, /* no fee */
        NULL AS fee_currency, /* no fee */
-       txhash AS link,
+       "0x" || lower(hex(txhash)) AS link,
        NULL AS notes /* no notes */
    FROM SWAPS
    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
