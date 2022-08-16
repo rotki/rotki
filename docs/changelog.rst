@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`4671` Fixes an issue with the auto-updater not working properly.
 * :bug:`4657` Now ens names are verified by forward resolution.
 * :feature:`4645` Support the new poloniex API. Note that with their "new and advanced" API we can't query trades history older than 90 days
 

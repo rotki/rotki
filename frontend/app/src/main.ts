@@ -14,6 +14,7 @@ import vuetify from '@/plugins/vuetify';
 import { setupPremium, usePremiumApi } from '@/premium/setup-interface';
 import { storePiniaPlugins } from '@/store/debug';
 import { setupDayjs } from '@/utils/date';
+import { checkIfDevelopment } from '@/utils/env-utils';
 import { setupFormatter } from '@/utils/setup-formatter';
 import i18n from './i18n';
 import router from './router';
@@ -21,8 +22,7 @@ import store from './store/store';
 import './utils/logging';
 
 Vue.config.productionTip = false;
-Vue.config.devtools =
-  process.env.NODE_ENV === 'development' && !process.env.VITE_TEST;
+Vue.config.devtools = checkIfDevelopment() && !import.meta.env.VITE_TEST;
 
 Vue.use(Api);
 Vue.use(Interop);

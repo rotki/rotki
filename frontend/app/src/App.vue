@@ -157,6 +157,7 @@ import { monitor } from '@/services/monitoring';
 import { OverallPerformance } from '@/store/statistics/types';
 import { useMainStore } from '@/store/store';
 import { useStore } from '@/store/utils';
+import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
 import 'chartjs-adapter-moment';
 
@@ -276,7 +277,7 @@ export default defineComponent({
       return canNavigateBack && window.history.length > 1;
     });
 
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    const isDevelopment = checkIfDevelopment();
     const isPlayground = computed(() => {
       return isDevelopment && get(route).name === 'playground';
     });

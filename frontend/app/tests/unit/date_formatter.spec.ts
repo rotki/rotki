@@ -9,7 +9,7 @@ describe('DateFormatter', function () {
     Date.prototype.getTimezoneOffset = () => offset;
   }
 
-  beforeEach(function () {
+  beforeEach(() => {
     originalOffset = Date.prototype.getTimezoneOffset;
     overrideTimezoneOffset(0);
     date = new Date(Date.parse('03 Feb 2019 13:09:09 UTC'));

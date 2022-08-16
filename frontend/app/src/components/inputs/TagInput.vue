@@ -97,9 +97,10 @@ import TagManager from '@/components/tags/TagManager.vue';
 import { setupTags } from '@/composables/session';
 import { Tag } from '@/types/user';
 import { invertColor, randomColor } from '@/utils/Color';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
 const valueValidator = (value: any) => {
-  if (process.env.NODE_ENV === 'production') {
+  if (!checkIfDevelopment()) {
     return true;
   }
   if (!Array.isArray(value)) {
