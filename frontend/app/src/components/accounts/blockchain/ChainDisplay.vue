@@ -16,7 +16,7 @@ export default defineComponent({
   props: {
     item: {
       required: true,
-      type: Object as PropType<{ symbol: Blockchain; name: String }>
+      type: Object as PropType<{ symbol: Blockchain; name: string }>
     }
   }
 });

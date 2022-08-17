@@ -1,6 +1,6 @@
 <template>
-  <stat-card :title="$t('loan_liquidation.title')">
-    <loan-row medium :title="$t('loan_collateral.liquidation_price')">
+  <stat-card :title="tc('loan_liquidation.title')">
+    <loan-row medium :title="tc('loan_collateral.liquidation_price')">
       <amount-display
         show-currency="ticker"
         fiat-currency="USD"
@@ -14,6 +14,7 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { defineComponent } from '@vue/composition-api';
+import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
 
@@ -31,8 +32,10 @@ export default defineComponent({
     }
   },
   setup() {
+    const { tc } = useI18n();
     return {
-      assetPadding: 5
+      assetPadding: 5,
+      tc
     };
   }
 });

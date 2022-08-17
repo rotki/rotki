@@ -1,6 +1,6 @@
 <template>
-  <stat-card :title="$t('loan_stake.title')">
-    <loan-row medium :title="$t('loan_stake.stake')">
+  <stat-card :title="tc('loan_stake.title')">
+    <loan-row medium :title="tc('loan_stake.stake')">
       <balance-display :asset="stake.asset" :value="stake" />
     </loan-row>
   </stat-card>
@@ -9,6 +9,7 @@
 <script lang="ts">
 import { AssetBalance } from '@rotki/common';
 import { defineComponent, PropType } from '@vue/composition-api';
+import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
 
@@ -22,8 +23,10 @@ export default defineComponent({
     }
   },
   setup() {
+    const { tc } = useI18n();
     return {
-      assetPadding: 5
+      assetPadding: 5,
+      tc
     };
   }
 });

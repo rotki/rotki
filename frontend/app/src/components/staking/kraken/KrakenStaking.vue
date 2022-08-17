@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, toRefs } from '@vue/composition-api';
+import { defineComponent, Ref, toRefs } from '@vue/composition-api';
 import Fragment from '@/components/helper/Fragment';
 import KrakenStakingEvents from '@/components/staking/kraken/KrakenStakingEvents.vue';
 import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
@@ -30,6 +30,7 @@ import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingRece
 import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
+import { KrakenStakingEvents as Events } from '@/types/staking';
 
 export default defineComponent({
   name: 'KrakenStaking',
@@ -48,7 +49,7 @@ export default defineComponent({
     const { load, updatePagination } = store;
     const refresh = () => load(true);
     return {
-      events,
+      events: events as Ref<Events>,
       loading: isSectionRefreshing(Section.STAKING_KRAKEN),
       refresh,
       updatePagination

@@ -5,6 +5,8 @@ import { VuetifyResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
 import ScriptSetup from 'unplugin-vue2-script-setup/vite';
 import { defineConfig, splitVendorChunkPlugin } from 'vite';
+
+import checker from 'vite-plugin-checker';
 // @ts-ignore
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -53,6 +55,7 @@ export default defineConfig({
     splitVendorChunkPlugin(),
     vue(),
     ScriptSetup(),
+    checker({ vueTsc: !process.env.CI }),
     Components({
       dts: true,
       include: [/\.vue$/, /\.vue\?vue/],

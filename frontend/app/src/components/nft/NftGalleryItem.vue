@@ -5,7 +5,6 @@
         v-if="isVideo"
         controls
         width="auto"
-        aspect-ratio="1"
         :src="imageUrl"
         :style="{
           'background-color': `#${item.backgroundColor}`

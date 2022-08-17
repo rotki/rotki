@@ -20,7 +20,7 @@
           dense
           class="ml-4"
           prepend-inner-icon="mdi-magnify"
-          :label="$t('notes_menu.search')"
+          :label="tc('notes_menu.search')"
           clearable
           hide-details
         />
@@ -42,8 +42,8 @@
           <template #limit>{{ itemsPerPage }}</template>
           <template #link>
             <base-external-link
-              :text="$t('upgrade_row.rotki_premium')"
-              :href="$interop.premiumURL"
+              :text="tc('upgrade_row.rotki_premium')"
+              :href="premiumURL"
             />
           </template>
         </i18n>
@@ -81,7 +81,7 @@
                 class="d-flex justify-space-between align-center pt-2"
               >
                 <div class="note__content font-italic">
-                  {{ $t('notes_menu.delete_confirmation') }}
+                  {{ tc('notes_menu.delete_confirmation') }}
                 </div>
                 <div>
                   <v-btn icon small @click="clearDeleteDialog">
@@ -127,15 +127,15 @@
         </div>
       </div>
 
-      <div v-else class="note__empty">{{ $t('notes_menu.empty_notes') }}</div>
+      <div v-else class="note__empty">{{ tc('notes_menu.empty_notes') }}</div>
     </div>
 
     <big-dialog
       :display="showForm"
       :title="
         editMode
-          ? $t('notes_menu.dialog.edit_title')
-          : $t('notes_menu.dialog.add_title')
+          ? tc('notes_menu.dialog.edit_title')
+          : tc('notes_menu.dialog.add_title')
       "
       :action-disabled="!valid"
       @confirm="save"
@@ -156,10 +156,12 @@ import {
   watch
 } from '@vue/composition-api';
 import { debouncedWatch, get, set } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import UserNoteForm from '@/components/UserNoteForm.vue';
 import { getPremium } from '@/composables/session';
+import { useInterop } from '@/electron-interop';
 import { useUserNotesApi } from '@/services/session/user-notes.api';
 import { Collection } from '@/types/collection';
 import { UserNote, UserNotesFilter } from '@/types/notes';
@@ -214,6 +216,9 @@ export default defineComponent({
       orderByAttributes: ['is_pinned', 'last_update_timestamp'],
       ascending: [false, false]
     });
+
+    const { tc } = useI18n();
+    const { premiumURL } = useInterop();
 
     const api = useUserNotesApi();
 
@@ -372,6 +377,7 @@ export default defineComponent({
       editMode,
       valid,
       form,
+      premiumURL,
       updateValid,
       save,
       resetForm,
@@ -379,7 +385,8 @@ export default defineComponent({
       editNote,
       clearDeleteDialog,
       confirmDelete,
-      deleteNote
+      deleteNote,
+      tc
     };
   }
 });

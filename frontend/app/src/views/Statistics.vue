@@ -2,7 +2,7 @@
   <v-container>
     <no-premium-placeholder
       v-if="!premium"
-      :text="$t('statistics.no_premium_label')"
+      :text="tc('statistics.no_premium_label')"
     />
     <premium-statistics v-else />
   </v-container>
@@ -10,6 +10,7 @@
 
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api';
+import { useI18n } from 'vue-i18n-composable';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { getPremium } from '@/composables/session';
 import { PremiumStatistics } from '@/premium/premium';
@@ -19,8 +20,10 @@ export default defineComponent({
   components: { NoPremiumPlaceholder, PremiumStatistics },
   setup() {
     const premium = getPremium();
+    const { tc } = useI18n();
     return {
-      premium
+      premium,
+      tc
     };
   }
 });

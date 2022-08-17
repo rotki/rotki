@@ -1,6 +1,6 @@
 <template>
   <progress-screen v-if="loading">
-    {{ $t('profit_loss_report.loading') }}
+    {{ tc('profit_loss_report.loading') }}
   </progress-screen>
   <v-container v-else>
     <report-header :period="report" />
@@ -20,8 +20,8 @@
       <i18n tag="div" path="profit_loss_report.upgrade2">
         <template #link>
           <base-external-link
-            :text="$t('upgrade_row.rotki_premium')"
-            :href="$interop.premiumURL"
+            :text="tc('upgrade_row.rotki_premium')"
+            :href="premiumURL"
           />
         </template>
       </i18n>
@@ -52,16 +52,11 @@
   </v-container>
 </template>
 
-<script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  onUnmounted,
-  ref
-} from '@vue/composition-api';
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
@@ -71,95 +66,73 @@ import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportActionable from '@/components/profitloss/ReportActionable.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
 import { useRoute, useRouter } from '@/composables/common';
+import { useInterop } from '@/electron-interop';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
 
-export default defineComponent({
-  name: 'ProfitLossReport',
-  components: {
-    ReportActionable,
-    ExportReportCsv,
-    ProgressScreen,
-    ReportHeader,
-    BaseExternalLink,
-    ProfitLossOverview,
-    ProfitLossEvents,
-    AccountingSettingsDisplay
-  },
-  setup() {
-    const loading = ref(true);
-    const refreshing = ref(false);
-    const reportsStore = useReports();
-    const { report, reports } = storeToRefs(reportsStore);
+const loading = ref(true);
+const refreshing = ref(false);
+const reportsStore = useReports();
+const { report, reports } = storeToRefs(reportsStore);
 
-    const { fetchReports, fetchReport, clearReport, isLatestReport } =
-      reportsStore;
-    const router = useRouter();
-    const route = useRoute();
-    let firstPage = true;
+const { fetchReports, fetchReport, clearReport, isLatestReport } = reportsStore;
+const { premiumURL } = useInterop();
+const router = useRouter();
+const route = useRoute();
+let firstPage = true;
 
-    const initialOpenReportActionable = ref<boolean>(false);
+const initialOpenReportActionable = ref<boolean>(false);
 
-    const currentRoute = get(route);
-    const reportId = parseInt(currentRoute.params.id);
-    const latest = isLatestReport(reportId);
+const currentRoute = get(route);
+const reportId = parseInt(currentRoute.params.id);
+const latest = isLatestReport(reportId);
 
-    onMounted(async () => {
-      if (get(reports).entries.length === 0) {
-        await fetchReports();
-      }
-      const success = await fetchReport(reportId);
-      if (!success) {
-        router.push(Routes.PROFIT_LOSS_REPORTS.route);
-      }
+const { tc } = useI18n();
 
-      if (get(route).query.openReportActionable) {
-        set(initialOpenReportActionable, true);
-        router.replace({ query: {} });
-      }
-
-      if (get(route).query.openReportActionable) {
-        set(initialOpenReportActionable, true);
-        router.replace({ query: {} });
-      }
-      set(loading, false);
-    });
-
-    const showUpgradeMessage = computed(
-      () =>
-        get(report).entriesLimit > 0 &&
-        get(report).entriesLimit < get(report).entriesFound
-    );
-
-    onUnmounted(() => clearReport());
-
-    const onPage = async ({
-      limit,
-      offset,
-      reportId
-    }: {
-      reportId: number;
-      limit: number;
-      offset: number;
-    }) => {
-      if (firstPage) {
-        firstPage = false;
-        return;
-      }
-      set(refreshing, true);
-      await fetchReport(reportId, { limit, offset });
-      set(refreshing, false);
-    };
-
-    return {
-      initialOpenReportActionable,
-      loading,
-      refreshing,
-      report,
-      showUpgradeMessage,
-      latest,
-      onPage
-    };
+onMounted(async () => {
+  if (get(reports).entries.length === 0) {
+    await fetchReports();
   }
+  const success = await fetchReport(reportId);
+  if (!success) {
+    router.push(Routes.PROFIT_LOSS_REPORTS.route);
+  }
+
+  if (get(route).query.openReportActionable) {
+    set(initialOpenReportActionable, true);
+    router.replace({ query: {} });
+  }
+
+  if (get(route).query.openReportActionable) {
+    set(initialOpenReportActionable, true);
+    router.replace({ query: {} });
+  }
+  set(loading, false);
 });
+
+const showUpgradeMessage = computed(
+  () =>
+    get(report).entriesLimit > 0 &&
+    get(report).entriesLimit < get(report).entriesFound
+);
+
+onUnmounted(() => clearReport());
+
+const onPage = async ({
+  limit,
+  offset,
+  reportId
+}: {
+  reportId: number;
+  limit: number;
+  offset: number;
+}) => {
+  if (firstPage) {
+    firstPage = false;
+    return;
+  }
+  set(refreshing, true);
+  await fetchReport(reportId, { limit, offset });
+  set(refreshing, false);
+};
 </script>

@@ -20,5 +20,6 @@ export const getNftBalance = (
 ): NonFungibleBalance | null => {
   const { nfBalances } = storeToRefs(useBalancesStore());
 
-  return get(nfBalances).find(item => item.id === identifier) || null;
+  const balances = get(nfBalances) as NonFungibleBalance[];
+  return balances.find(item => item.id === identifier) || null;
 };

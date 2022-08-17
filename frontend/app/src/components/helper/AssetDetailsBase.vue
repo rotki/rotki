@@ -39,7 +39,9 @@ const AssetDetailsBase = defineComponent({
   props: {
     asset: {
       required: true,
-      type: Object as PropType<SupportedAsset>
+      type: Object as PropType<
+        SupportedAsset | { identifier: string; symbol?: string; name?: string }
+      >
     },
     opensDetails: { required: false, type: Boolean, default: false },
     changeable: { required: false, type: Boolean, default: false },

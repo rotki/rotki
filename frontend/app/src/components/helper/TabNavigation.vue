@@ -21,7 +21,7 @@
       </v-tab>
       <v-tab-item
         v-for="tab of tabContents"
-        :key="tab.id"
+        :key="tab.route"
         :value="tab.route"
         :class="
           !noContentMargin

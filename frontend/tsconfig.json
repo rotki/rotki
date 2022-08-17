@@ -1,18 +1,21 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "target": "es2018",
     "module": "esnext",
     "strict": true,
+    "esModuleInterop": true,
     "jsx": "preserve",
-    "importHelpers": true,
+    "skipLibCheck": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
     "experimentalDecorators": true,
-    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "allowJs": false,
+    "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
-    "baseUrl": ".",
     "types": [
       "vuetify",
       "vue-i18n",
@@ -32,9 +35,6 @@
       "dom",
       "dom.iterable",
       "scripthost"
-    ],
-    "typeRoots": [
-      "node_modules/@types"
     ]
   },
   "references": [
@@ -50,6 +50,7 @@
   ],
   "exclude": [
     "node_modules",
-    "common/lib"
+    "common/lib",
+    "cypress"
   ]
 }

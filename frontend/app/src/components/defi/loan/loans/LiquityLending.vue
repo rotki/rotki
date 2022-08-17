@@ -2,7 +2,7 @@
   <v-row>
     <v-col cols="12">
       <loan-header class="mt-8 mb-6" :owner="loan.owner">
-        {{ $t('liquity_lending.header', { troveId: loan.balance.troveId }) }}
+        {{ tc('liquity_lending.header', 0, { troveId: loan.balance.troveId }) }}
       </loan-header>
       <v-row no-gutters>
         <v-col cols="12" md="6" class="pe-md-4">
@@ -35,7 +35,7 @@
         <v-col cols="12">
           <premium-card
             v-if="!premium"
-            :title="$t('liquity_lending.trove_events')"
+            :title="tc('liquity_lending.trove_events')"
           />
           <liquity-trove-events
             v-else
@@ -57,6 +57,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
@@ -94,13 +95,15 @@ export default defineComponent({
     const liquidationPrice = computed(() => get(loan).balance.liquidationPrice);
     const premium = getPremium();
     const loadingEvents = isSectionLoading(Section.DEFI_LIQUITY_EVENTS);
+    const { tc } = useI18n();
     return {
       debt,
       collateral,
       ratio,
       liquidationPrice,
       premium,
-      loadingEvents
+      loadingEvents,
+      tc
     };
   }
 });

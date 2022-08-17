@@ -1,7 +1,7 @@
 <template>
   <card contained>
-    <template #title>{{ $t('backend_settings.title') }}</template>
-    <template #subtitle>{{ $t('backend_settings.subtitle') }}</template>
+    <template #title>{{ tc('backend_settings.title') }}</template>
+    <template #subtitle>{{ tc('backend_settings.subtitle') }}</template>
 
     <v-text-field
       v-model="userDataDirectory"
@@ -12,10 +12,10 @@
       persistent-hint
       :hint="
         !!fileConfig.dataDirectory
-          ? $t('backend_settings.config_file_disabled')
-          : $t('backend_settings.settings.data_directory.hint')
+          ? tc('backend_settings.config_file_disabled')
+          : tc('backend_settings.settings.data_directory.hint')
       "
-      :label="$t('backend_settings.settings.data_directory.label')"
+      :label="tc('backend_settings.settings.data_directory.label')"
       readonly
       @click="selectDataDirectory"
     >
@@ -33,11 +33,11 @@
         :persistent-hint="!!fileConfig.logDirectory"
         :hint="
           !!fileConfig.logDirectory
-            ? $t('backend_settings.config_file_disabled')
+            ? tc('backend_settings.config_file_disabled')
             : null
         "
         outlined
-        :label="$t('backend_settings.settings.log_directory.label')"
+        :label="tc('backend_settings.settings.log_directory.label')"
         readonly
         @click="selectLogsDirectory"
       >
@@ -52,11 +52,11 @@
         v-model="logLevel"
         :items="levels"
         :disabled="!!fileConfig.loglevel"
-        :label="$t('backend_settings.settings.log_level.label')"
+        :label="tc('backend_settings.settings.log_level.label')"
         :persistent-hint="!!fileConfig.loglevel"
         :hint="
           !!fileConfig.loglevel
-            ? $t('backend_settings.config_file_disabled')
+            ? tc('backend_settings.config_file_disabled')
             : null
         "
         outlined
@@ -82,7 +82,7 @@
       <v-expansion-panels flat>
         <v-expansion-panel>
           <v-expansion-panel-header>
-            {{ $t('backend_settings.advanced') }}
+            {{ tc('backend_settings.advanced') }}
           </v-expansion-panel-header>
           <v-expansion-panel-content>
             <v-text-field
@@ -90,10 +90,10 @@
               outlined
               :hint="
                 !!fileConfig.maxSizeInMbAllLogs
-                  ? $t('backend_settings.config_file_disabled')
-                  : $t('backend_settings.max_log_size.hint')
+                  ? tc('backend_settings.config_file_disabled')
+                  : tc('backend_settings.max_log_size.hint')
               "
-              :label="$t('backend_settings.max_log_size.label')"
+              :label="tc('backend_settings.max_log_size.label')"
               :disabled="fileConfig.maxSizeInMbAllLogs"
               :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
               :clearable="!isDefault(configuration?.maxSizeInMbAllLogs)"
@@ -104,11 +104,11 @@
             <v-text-field
               v-model="maxLogFiles"
               outlined
-              :hint="$t('backend_settings.max_log_files.hint')"
+              :hint="tc('backend_settings.max_log_files.hint')"
               :label="
                 !!fileConfig.maxLogfilesNum
-                  ? $t('backend_settings.config_file_disabled')
-                  : $t('backend_settings.max_log_files.label')
+                  ? tc('backend_settings.config_file_disabled')
+                  : tc('backend_settings.max_log_files.label')
               "
               :disabled="fileConfig.maxLogfilesNum"
               :persistent-hint="!!fileConfig.maxLogfilesNum"
@@ -123,10 +123,10 @@
               outlined
               :hint="
                 !!fileConfig.sqliteInstructions
-                  ? $t('backend_settings.config_file_disabled')
-                  : $t('backend_settings.sqlite_instructions.hint')
+                  ? tc('backend_settings.config_file_disabled')
+                  : tc('backend_settings.sqlite_instructions.hint')
               "
-              :label="$t('backend_settings.sqlite_instructions.label')"
+              :label="tc('backend_settings.sqlite_instructions.label')"
               :disabled="fileConfig.sqliteInstructions"
               :persistent-hint="!!fileConfig.sqliteInstructions"
               :clearable="!isDefault(configuration?.sqliteInstructions)"
@@ -137,13 +137,13 @@
 
             <v-checkbox
               v-model="logFromOtherModules"
-              :label="$t('backend_settings.log_from_other_modules.label')"
+              :label="tc('backend_settings.log_from_other_modules.label')"
               :disabled="!!fileConfig.logFromOtherModules"
               persistent-hint
               :hint="
                 !!fileConfig.logFromOtherModules
-                  ? $t('backend_settings.config_file_disabled')
-                  : $t('backend_settings.log_from_other_modules.hint')
+                  ? tc('backend_settings.config_file_disabled')
+                  : tc('backend_settings.log_from_other_modules.hint')
               "
             />
           </v-expansion-panel-content>
@@ -154,10 +154,10 @@
     <template #buttons>
       <v-spacer />
       <v-btn depressed @click="dismiss()">
-        {{ $t('common.actions.cancel') }}
+        {{ tc('common.actions.cancel') }}
       </v-btn>
       <v-btn depressed @click="confirmReset = true">
-        {{ $t('backend_settings.actions.reset') }}
+        {{ tc('backend_settings.actions.reset') }}
       </v-btn>
       <v-btn
         depressed
@@ -165,15 +165,15 @@
         :disabled="!valid || !formValid"
         @click="save()"
       >
-        {{ $t('common.actions.save') }}
+        {{ tc('common.actions.save') }}
       </v-btn>
     </template>
 
     <confirm-dialog
       v-if="confirmReset"
-      :message="$t('backend_settings.confirm.message')"
+      :message="tc('backend_settings.confirm.message')"
       :display="confirmReset"
-      :title="$t('backend_settings.confirm.title')"
+      :title="tc('backend_settings.confirm.title')"
       @confirm="reset"
       @cancel="confirmReset = false"
     />
@@ -190,11 +190,11 @@ import {
 } from '@vue/composition-api';
 import { asyncComputed, get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import {
   BackendConfiguration,
@@ -242,6 +242,8 @@ export default defineComponent({
     const configuration = asyncComputed<BackendConfiguration>(() =>
       api.backendSettings()
     );
+
+    const { tc } = useI18n();
 
     const loaded = async () => {
       const config = get(configuration);
@@ -336,11 +338,9 @@ export default defineComponent({
 
     const nonNegativeNumberRules = computed(() => {
       return [
+        (v: string) => !!v || tc('backend_settings.errors.non_empty'),
         (v: string) =>
-          !!v || i18n.t('backend_settings.errors.non_empty').toString(),
-        (v: string) =>
-          parseInt(v) >= 0 ||
-          i18n.t('backend_settings.errors.min', { min: 0 }).toString()
+          parseInt(v) >= 0 || tc('backend_settings.errors.min', 0, { min: 0 })
       ];
     });
 
@@ -375,7 +375,7 @@ export default defineComponent({
       }
 
       try {
-        let title = i18n.t('backend_settings.data_directory.select').toString();
+        let title = tc('backend_settings.data_directory.select');
         const directory = await openDirectory(title);
         if (directory) {
           set(userDataDirectory, directory);
@@ -397,7 +397,7 @@ export default defineComponent({
       set(selecting, true);
       try {
         const directory = await openDirectory(
-          i18n.t('backend_settings.log_directory.select').toString()
+          tc('backend_settings.log_directory.select')
         );
         if (directory) {
           set(userLogDirectory, directory);
@@ -437,7 +437,8 @@ export default defineComponent({
       isDefault,
       selectDataDirectory,
       selectLogsDirectory,
-      save
+      save,
+      tc
     };
   }
 });

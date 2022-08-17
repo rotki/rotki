@@ -1,35 +1,25 @@
 <template>
   <error-screen
     class="macos-unsupported"
-    :header="$t('macos_unsupported.header')"
-    :alternative="$t('macos_unsupported.message')"
+    :header="tc('macos_unsupported.header')"
+    :alternative="tc('macos_unsupported.message')"
   >
     <v-btn
       depressed
       color="primary"
-      @click="terminate()"
-      v-text="$t('macos_unsupported.terminate')"
+      @click="closeApp()"
+      v-text="tc('macos_unsupported.terminate')"
     />
   </error-screen>
 </template>
 
-<script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
+import { useInterop } from '@/electron-interop';
 
-import { interop } from '@/electron-interop';
-
-export default defineComponent({
-  name: 'StartupErrorScreen',
-  components: { ErrorScreen },
-  setup() {
-    const terminate = () => {
-      interop.closeApp();
-    };
-
-    return { terminate };
-  }
-});
+const { tc } = useI18n();
+const { closeApp } = useInterop();
 </script>
 
 <style scoped lang="scss">

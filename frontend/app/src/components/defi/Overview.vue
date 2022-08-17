@@ -10,18 +10,18 @@
       <span
         class="text-subtitle-1 font-weight-bold pb-2 d-flex flex-row justify-space-between"
       >
-        {{ $t('overview.stat_card.headers.borrowing') }}
+        {{ tc('overview.stat_card.headers.borrowing') }}
         <v-btn :to="summary.liabilitiesUrl" icon small color="primary">
           <v-icon small color="primary">mdi-launch</v-icon>
         </v-btn>
       </span>
       <info-row
-        :title="$t('overview.stat_card.content.labels.total_collateral')"
+        :title="tc('overview.stat_card.content.labels.total_collateral')"
         fiat
         :value="summary.totalCollateralUsd"
       />
       <info-row
-        :title="$t('overview.stat_card.content.labels.total_debt')"
+        :title="tc('overview.stat_card.content.labels.total_debt')"
         fiat
         :value="summary.totalDebtUsd"
       />
@@ -31,7 +31,7 @@
       <div
         class="pb-2 d-flex flex-row justify-space-between text-subtitle-1 font-weight-medium"
       >
-        {{ $t('common.deposits') }}
+        {{ tc('common.deposits') }}
         <v-btn
           v-if="summary.depositsUrl"
           :to="summary.depositsUrl"
@@ -43,7 +43,7 @@
         </v-btn>
       </div>
       <info-row
-        :title="$t('overview.stat_card.content.labels.total_deposited')"
+        :title="tc('overview.stat_card.content.labels.total_deposited')"
         fiat
         :value="summary.totalLendingDepositUsd"
       />
@@ -56,15 +56,18 @@
     :protocol-icon="icon"
     :class="$style.overview"
   >
-    <span class="text-subtitle-1 font-weight-bold pb-2">
+    <span
+      v-if="summary.tokenInfo"
+      class="text-subtitle-1 font-weight-bold pb-2"
+    >
       {{ summary.tokenInfo.tokenName }}
     </span>
-    <info-row :title="$t('common.balance')" fiat :value="summary.balanceUsd" />
+    <info-row :title="tc('common.balance')" fiat :value="summary.balanceUsd" />
     <v-divider class="my-4" />
     <v-dialog v-model="details" scrollable max-width="450px">
       <template #activator="{ on, attrs }">
         <v-btn small v-bind="attrs" block text class="justify-end" v-on="on">
-          {{ $t('common.details') }}
+          {{ tc('common.details') }}
           <v-icon color="primary" right>mdi-launch</v-icon>
         </v-btn>
       </template>
@@ -82,7 +85,7 @@
           </span>
         </v-card-title>
         <v-card-subtitle>
-          {{ $t('overview.details_dialog.subtitle') }}
+          {{ tc('overview.details_dialog.subtitle') }}
         </v-card-subtitle>
         <v-card-text :class="$style.details">
           <div v-for="(asset, index) in assets" :key="index">
@@ -104,6 +107,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import DefiAsset from '@/components/defi/DefiAsset.vue';
 import InfoRow from '@/components/defi/display/InfoRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
@@ -121,6 +125,7 @@ export default defineComponent({
   setup(props) {
     const details = ref(false);
     const { summary } = toRefs(props);
+    const { tc } = useI18n();
     const icon = computed(() => {
       const { protocol } = get(summary);
       if (!protocol.icon) {
@@ -147,7 +152,8 @@ export default defineComponent({
     return {
       details,
       icon,
-      assets
+      assets,
+      tc
     };
   }
 });

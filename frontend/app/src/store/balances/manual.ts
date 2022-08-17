@@ -1,5 +1,5 @@
 import { BigNumber } from '@rotki/common';
-import { computed, ref } from '@vue/composition-api';
+import { computed, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import i18n from '@/i18n';
@@ -26,7 +26,7 @@ import { assert } from '@/utils/assertions';
 import { sortDesc } from '@/utils/bignumbers';
 
 export const useManualBalancesStore = defineStore('balances/manual', () => {
-  const manualBalancesData = ref<ManualBalanceWithValue[]>([]);
+  const manualBalancesData: Ref<ManualBalanceWithValue[]> = ref([]);
 
   const manualBalances = computed(() => {
     return get(manualBalancesData).filter(

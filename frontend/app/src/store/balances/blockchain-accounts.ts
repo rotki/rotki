@@ -26,7 +26,10 @@ import { useBalancesStore } from '@/store/balances';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import {
+  AccountAssetBalances,
   AccountPayload,
+  AccountWithBalance,
+  AccountWithBalanceAndSharedOwnership,
   AddAccountsPayload,
   BasicBlockchainAccountPayload,
   BlockchainAccountPayload,
@@ -54,6 +57,18 @@ import { sortDesc, Zero, zeroBalance } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
+
+const chains = [
+  Blockchain.ETH,
+  Blockchain.AVAX,
+  Blockchain.DOT,
+  Blockchain.KSM
+] as const;
+type Chain = typeof chains[number];
+
+function isSupportedChain(blockchain: Blockchain): blockchain is Chain {
+  return blockchain in chains;
+}
 
 const removeTag = (tags: string[] | null, tagName: string): string[] | null => {
   if (!tags) {
@@ -94,8 +109,8 @@ const accountsWithBalances = (
   accounts: GeneralAccountData[],
   balances: BlockchainAssetBalances,
   blockchain: Exclude<Blockchain, 'BTC'>
-): BlockchainAccountWithBalance[] => {
-  const data: BlockchainAccountWithBalance[] = [];
+): AccountWithBalance[] => {
+  const data: AccountWithBalance[] = [];
   for (const account of accounts) {
     const accountAssets = balances[account.address];
 
@@ -176,23 +191,23 @@ const btcAccountsWithBalances = (
 export const useBlockchainAccountsStore = defineStore(
   'balances/blockchain/account',
   () => {
-    const ethAccountsState = ref<GeneralAccountData[]>([]);
-    const eth2ValidatorsState = ref<Eth2Validators>({
+    const ethAccountsState: Ref<GeneralAccountData[]> = ref([]);
+    const eth2ValidatorsState: Ref<Eth2Validators> = ref({
       entries: [],
       entriesFound: 0,
       entriesLimit: 0
     });
-    const btcAccountsState = ref<BtcAccountData>({
+    const btcAccountsState: Ref<BtcAccountData> = ref({
       standalone: [],
       xpubs: []
     });
-    const bchAccountsState = ref<BtcAccountData>({
+    const bchAccountsState: Ref<BtcAccountData> = ref({
       standalone: [],
       xpubs: []
     });
-    const ksmAccountsState = ref<GeneralAccountData[]>([]);
-    const dotAccountsState = ref<GeneralAccountData[]>([]);
-    const avaxAccountsState = ref<GeneralAccountData[]>([]);
+    const ksmAccountsState: Ref<GeneralAccountData[]> = ref([]);
+    const dotAccountsState: Ref<GeneralAccountData[]> = ref([]);
+    const avaxAccountsState: Ref<GeneralAccountData[]> = ref([]);
 
     const { awaitTask, isTaskRunning } = useTasks();
     const { notify } = useNotifications();
@@ -289,13 +304,18 @@ export const useBlockchainAccountsStore = defineStore(
         }
       };
 
-      [Blockchain.ETH, Blockchain.KSM, Blockchain.DOT, Blockchain.AVAX].forEach(
-        blockchain => {
-          addRequest(blockchain, chain => getAccounts(chain));
-        }
-      );
+      const nonBtcChain = [
+        Blockchain.ETH,
+        Blockchain.KSM,
+        Blockchain.DOT,
+        Blockchain.AVAX
+      ] as const;
+      nonBtcChain.forEach(blockchain => {
+        addRequest(blockchain, chain => getAccounts(chain));
+      });
 
-      [Blockchain.BTC, Blockchain.BCH].forEach(blockchain => {
+      const btcChains = [Blockchain.BTC, Blockchain.BCH] as const;
+      btcChains.forEach(blockchain => {
         addRequest(blockchain, chain => getBtcAccounts(chain));
       });
 
@@ -329,6 +349,8 @@ export const useBlockchainAccountsStore = defineStore(
         return;
       }
 
+      assert(blockchain in chains);
+
       // Check if accounts have already registered
       const listState = {
         [Blockchain.ETH]: ethAccountsState,
@@ -338,7 +360,11 @@ export const useBlockchainAccountsStore = defineStore(
       };
       let accountsToAdd = payload;
 
-      // @ts-ignore
+      assert(
+        isSupportedChain(blockchain),
+        `called with an unsupported chain: ${blockchain}`
+      );
+
       const existingAccounts = listState[blockchain];
       if (existingAccounts) {
         const existingAccountsVal = get(existingAccounts);
@@ -785,10 +811,10 @@ export const useBlockchainAccountsStore = defineStore(
       updateBtcNetworkTags(bchAccountsState);
     };
 
-    const ethAccounts = computed<BlockchainAccountWithBalance[]>(() => {
+    const ethAccounts = computed<AccountWithBalance[]>(() => {
       const accounts = accountsWithBalances(
         get(ethAccountsState),
-        get(ethBalancesState),
+        get(ethBalancesState) as BlockchainAssetBalances,
         Blockchain.ETH
       );
 
@@ -809,60 +835,63 @@ export const useBlockchainAccountsStore = defineStore(
       });
     });
 
-    const ksmAccounts = computed<BlockchainAccountWithBalance[]>(() => {
+    const ksmAccounts = computed<AccountWithBalance[]>(() => {
       return accountsWithBalances(
         get(ksmAccountsState),
-        get(ksmBalancesState),
+        get(ksmBalancesState) as BlockchainAssetBalances,
         Blockchain.KSM
       );
     });
 
-    const dotAccounts = computed<BlockchainAccountWithBalance[]>(() => {
+    const dotAccounts = computed<AccountWithBalance[]>(() => {
       return accountsWithBalances(
         get(dotAccountsState),
-        get(dotBalancesState),
+        get(dotBalancesState) as BlockchainAssetBalances,
         Blockchain.DOT
       );
     });
 
-    const avaxAccounts = computed<BlockchainAccountWithBalance[]>(() => {
+    const avaxAccounts = computed<AccountWithBalance[]>(() => {
       return accountsWithBalances(
         get(avaxAccountsState),
-        get(avaxBalancesState),
+        get(avaxBalancesState) as BlockchainAssetBalances,
         Blockchain.AVAX
       );
     });
 
-    const eth2Accounts = computed<BlockchainAccountWithBalance[]>(() => {
-      const balances: BlockchainAccountWithBalance[] = [];
-      for (const { publicKey, validatorIndex, ownershipPercentage } of get(
-        eth2ValidatorsState
-      ).entries) {
-        const validatorBalances = get(eth2BalancesState)[publicKey];
-        let balance: Balance = zeroBalance();
-        if (validatorBalances && validatorBalances.assets) {
-          const assets = validatorBalances.assets;
-          balance = {
-            amount: assets[Blockchain.ETH2].amount,
-            usdValue: assetSum(assets)
-          };
+    const eth2Accounts = computed<AccountWithBalanceAndSharedOwnership[]>(
+      () => {
+        const balances: AccountWithBalanceAndSharedOwnership[] = [];
+        for (const { publicKey, validatorIndex, ownershipPercentage } of get(
+          eth2ValidatorsState
+        ).entries) {
+          const state = get(eth2BalancesState) as BlockchainAssetBalances;
+          const validatorBalances = state[publicKey];
+          let balance: Balance = zeroBalance();
+          if (validatorBalances && validatorBalances.assets) {
+            const assets = validatorBalances.assets;
+            balance = {
+              amount: assets[Blockchain.ETH2].amount,
+              usdValue: assetSum(assets)
+            };
+          }
+          balances.push({
+            address: publicKey,
+            chain: Blockchain.ETH2,
+            balance,
+            label: validatorIndex.toString() ?? '',
+            tags: [],
+            ownershipPercentage
+          });
         }
-        balances.push({
-          address: publicKey,
-          chain: Blockchain.ETH2,
-          balance,
-          label: validatorIndex.toString() ?? '',
-          tags: [],
-          ownershipPercentage
-        });
+        return balances;
       }
-      return balances;
-    });
+    );
 
     const btcAccounts = computed<BlockchainAccountWithBalance[]>(() => {
       return btcAccountsWithBalances(
         get(btcAccountsState),
-        get(btcBalancesState),
+        get(btcBalancesState) as BtcBalances,
         Blockchain.BTC
       );
     });
@@ -870,14 +899,16 @@ export const useBlockchainAccountsStore = defineStore(
     const bchAccounts = computed<BlockchainAccountWithBalance[]>(() => {
       return btcAccountsWithBalances(
         get(bchAccountsState),
-        get(bchBalancesState),
+        get(bchBalancesState) as BtcBalances,
         Blockchain.BCH
       );
     });
 
     const loopringAccounts = computed<BlockchainAccountWithBalance[]>(() => {
       const accounts: BlockchainAccountWithBalance[] = [];
-      const loopringBalances = get(loopringBalancesState);
+      const loopringBalances = get(
+        loopringBalancesState
+      ) as AccountAssetBalances;
       for (const address in loopringBalances) {
         const assets = loopringBalances[address];
 
@@ -914,7 +945,7 @@ export const useBlockchainAccountsStore = defineStore(
       const getEthChildrenTotals = () => {
         const childrenTotals: SubBlockchainTotal[] = [];
 
-        const loopring = get(loopringBalancesState);
+        const loopring = get(loopringBalancesState) as AccountAssetBalances;
         if (Object.keys(loopring).length > 0) {
           const balances: { [asset: string]: HasBalance } = {};
           for (const address in loopring) {

@@ -1,6 +1,6 @@
 <template>
   <menu-tooltip-button
-    :tooltip="$t('notes_menu.tooltip')"
+    :tooltip="tc('notes_menu.tooltip')"
     class-name="secondary--text text--lighten-4"
     @click="toggleVisibility"
   >
@@ -11,6 +11,7 @@
 <script lang="ts">
 import { defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
 export default defineComponent({
@@ -22,13 +23,15 @@ export default defineComponent({
   emits: ['visible:update'],
   setup(props, { emit }) {
     const { visible } = toRefs(props);
+    const { tc } = useI18n();
 
     const toggleVisibility = () => {
       emit('visible:update', !get(visible));
     };
 
     return {
-      toggleVisibility
+      toggleVisibility,
+      tc
     };
   }
 });

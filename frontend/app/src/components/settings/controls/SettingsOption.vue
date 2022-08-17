@@ -12,7 +12,7 @@ import {
   useClearableMessages,
   useSettings
 } from '@/composables/settings';
-import { EditableSessionState } from '@/store/session/types';
+import { SessionSettings } from '@/store/settings/session';
 import { FrontendSettingsPayload } from '@/types/frontend-settings';
 import { SettingsUpdate } from '@/types/user';
 
@@ -24,7 +24,7 @@ export default defineComponent({
       type: String as PropType<
         | keyof SettingsUpdate
         | keyof FrontendSettingsPayload
-        | keyof EditableSessionState
+        | keyof SessionSettings
       >
     },
     frontendSetting: {

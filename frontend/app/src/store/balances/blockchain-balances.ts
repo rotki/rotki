@@ -5,7 +5,7 @@ import {
   BigNumber
 } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { computed, Ref, ref } from '@vue/composition-api';
+import { computed, Ref, ref, ComputedRef } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { forEach } from 'lodash';
 import cloneDeep from 'lodash/cloneDeep';
@@ -16,7 +16,8 @@ import i18n from '@/i18n';
 import {
   BlockchainAssetBalances,
   BlockchainBalances,
-  BtcBalances
+  BtcBalances,
+  ManualBalanceWithValue
 } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
@@ -48,18 +49,24 @@ import { logger } from '@/utils/logging';
 export const useBlockchainBalancesStore = defineStore(
   'balances/blockchain',
   () => {
-    const ethBalancesState = ref<BlockchainAssetBalances>({});
-    const eth2BalancesState = ref<BlockchainAssetBalances>({});
-    const btcBalancesState = ref<BtcBalances>({ standalone: {}, xpubs: [] });
-    const bchBalancesState = ref<BtcBalances>({ standalone: {}, xpubs: [] });
-    const ksmBalancesState = ref<BlockchainAssetBalances>({});
-    const dotBalancesState = ref<BlockchainAssetBalances>({});
-    const avaxBalancesState = ref<BlockchainAssetBalances>({});
+    const ethBalancesState: Ref<BlockchainAssetBalances> = ref({});
+    const eth2BalancesState: Ref<BlockchainAssetBalances> = ref({});
+    const btcBalancesState: Ref<BtcBalances> = ref({
+      standalone: {},
+      xpubs: []
+    });
+    const bchBalancesState: Ref<BtcBalances> = ref({
+      standalone: {},
+      xpubs: []
+    });
+    const ksmBalancesState: Ref<BlockchainAssetBalances> = ref({});
+    const dotBalancesState: Ref<BlockchainAssetBalances> = ref({});
+    const avaxBalancesState: Ref<BlockchainAssetBalances> = ref({});
 
-    const loopringBalancesState = ref<AccountAssetBalances>({});
+    const loopringBalancesState: Ref<AccountAssetBalances> = ref({});
 
-    const blockchainTotalsState = ref<AssetBalances>({});
-    const blockchainLiabilitiesState = ref<AssetBalances>({});
+    const blockchainTotalsState: Ref<AssetBalances> = ref({});
+    const blockchainLiabilitiesState: Ref<AssetBalances> = ref({});
 
     const { awaitTask } = useTasks();
     const { notify } = useNotifications();
@@ -382,59 +389,63 @@ export const useBlockchainBalancesStore = defineStore(
         .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
     });
 
-    const aggregatedBalances = computed(() => {
-      const ownedAssets: Record<string, Balance> = {};
+    const aggregatedBalances: ComputedRef<AssetBalanceWithPrice[]> = computed(
+      () => {
+        const ownedAssets: Record<string, Balance> = {};
 
-      const addToOwned = (value: AssetBalance) => {
-        const associatedAsset: string = get(
-          getAssociatedAssetIdentifier(value.asset)
+        const addToOwned = (value: AssetBalance) => {
+          const associatedAsset: string = get(
+            getAssociatedAssetIdentifier(value.asset)
+          );
+
+          const ownedAsset = ownedAssets[associatedAsset];
+
+          ownedAssets[associatedAsset] = !ownedAsset
+            ? {
+                ...value
+              }
+            : {
+                ...balanceSum(ownedAsset, value)
+              };
+        };
+
+        const exchanges = get(connectedExchanges)
+          .map(({ location }) => location)
+          .filter(uniqueStrings);
+
+        for (const exchange of exchanges) {
+          const balances = get(getExchangeBalances(exchange));
+          balances.forEach((value: AssetBalance) => addToOwned(value));
+        }
+
+        get(totals).forEach((value: AssetBalance) => addToOwned(value));
+
+        (get(manualBalances) as ManualBalanceWithValue[]).forEach(value =>
+          addToOwned(value)
         );
 
-        const ownedAsset = ownedAssets[associatedAsset];
-
-        ownedAssets[associatedAsset] = !ownedAsset
-          ? {
-              ...value
-            }
-          : {
-              ...balanceSum(ownedAsset, value)
-            };
-      };
-
-      const exchanges = get(connectedExchanges)
-        .map(({ location }) => location)
-        .filter(uniqueStrings);
-
-      for (const exchange of exchanges) {
-        const balances = get(getExchangeBalances(exchange));
-        balances.forEach((value: AssetBalance) => addToOwned(value));
-      }
-
-      get(totals).forEach((value: AssetBalance) => addToOwned(value));
-
-      get(manualBalances).forEach(value => addToOwned(value));
-
-      const loopringBalances = get(loopringBalancesState);
-      for (const address in loopringBalances) {
-        const balances = loopringBalances[address];
-        for (const asset in balances) {
-          addToOwned({
-            ...balances[asset],
-            asset
-          });
+        const loopringBalances = get(loopringBalancesState);
+        for (const address in loopringBalances) {
+          const balances = loopringBalances[address];
+          for (const asset in balances) {
+            addToOwned({
+              ...balances[asset],
+              asset
+            });
+          }
         }
-      }
 
-      return Object.keys(ownedAssets)
-        .filter(asset => !get(isAssetIgnored(asset)))
-        .map(asset => ({
-          asset,
-          amount: ownedAssets[asset].amount,
-          usdValue: ownedAssets[asset].usdValue,
-          usdPrice: (get(prices)[asset] as BigNumber) ?? NoPrice
-        }))
-        .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
-    });
+        return Object.keys(ownedAssets)
+          .filter(asset => !get(isAssetIgnored(asset)))
+          .map(asset => ({
+            asset,
+            amount: ownedAssets[asset].amount,
+            usdValue: ownedAssets[asset].usdValue,
+            usdPrice: (get(prices)[asset] as BigNumber) ?? NoPrice
+          }))
+          .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+      }
+    );
 
     const liabilities = computed<AssetBalanceWithPrice[]>(() => {
       const liabilitiesMerged: Record<string, Balance> = {};
@@ -462,7 +473,9 @@ export const useBlockchainBalancesStore = defineStore(
         }
       );
 
-      get(manualLiabilities).forEach(balance => addToLiabilities(balance));
+      (get(manualLiabilities) as ManualBalanceWithValue[]).forEach(balance =>
+        addToLiabilities(balance)
+      );
 
       return Object.keys(liabilitiesMerged)
         .filter(asset => !get(isAssetIgnored(asset)))

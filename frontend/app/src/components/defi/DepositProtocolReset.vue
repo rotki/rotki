@@ -2,7 +2,7 @@
   <confirmable-reset
     v-if="premium"
     :loading="loading"
-    :tooltip="$t('lending.reset_tooltip')"
+    :tooltip="tc('lending.reset_tooltip')"
     :disabled="resetSelection.length === 0"
     @reset="reset()"
   >
@@ -34,6 +34,7 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { defineComponent, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import ConfirmableReset from '@/components/helper/ConfirmableReset.vue';
 import { getPremium } from '@/composables/session';
 
@@ -54,6 +55,8 @@ export default defineComponent({
     const YEARN_VAULTS = DefiProtocol.YEARN_VAULTS;
     const YEARN_VAULTS_V2 = DefiProtocol.YEARN_VAULTS_V2;
 
+    const { tc } = useI18n();
+
     const reset = () => {
       emit('reset', get(resetSelection));
     };
@@ -64,7 +67,8 @@ export default defineComponent({
       AAVE,
       YEARN_VAULTS,
       YEARN_VAULTS_V2,
-      reset
+      reset,
+      tc
     };
   }
 });
