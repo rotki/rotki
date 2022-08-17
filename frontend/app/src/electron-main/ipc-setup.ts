@@ -196,7 +196,8 @@ export function ipcSetup(
   getWindow: WindowProvider,
   closeApp: () => Promise<void>,
   tray: TrayManager,
-  menuActions: MenuActions
+  menuActions: MenuActions,
+  ensureSafeUpdateRestart: () => void
 ) {
   ipcMain.on(IPC_GET_DEBUG, event => {
     event.returnValue = debugSettings;
@@ -243,18 +244,23 @@ export function ipcSetup(
 
   setupMetamaskImport();
   setupVersionInfo();
-  setupUpdaterInterop(pyHandler, getWindow);
+  setupUpdaterInterop(pyHandler, getWindow, ensureSafeUpdateRestart);
   setupSelectedTheme();
   setupBackendRestart(getWindow, pyHandler);
   setupTrayInterop(tray);
   setupPasswordStorage();
 }
 
-function setupInstallUpdate(pyHandler: PyHandler) {
+function setupInstallUpdate(
+  pyHandler: PyHandler,
+  ensureSafeUpdateRestart: () => void
+) {
   ipcMain.on(IPC_INSTALL_UPDATE, async event => {
     const quit = new Promise<void>((resolve, reject) => {
-      const quitAndInstall = () => {
+      const quitAndInstall = async () => {
         try {
+          ensureSafeUpdateRestart();
+          await pyHandler.exitPyProc();
           autoUpdater.quitAndInstall();
           resolve();
         } catch (e: any) {
@@ -316,7 +322,11 @@ function setupCheckForUpdates(pyHandler: PyHandler) {
   });
 }
 
-function setupUpdaterInterop(pyHandler: PyHandler, getWindow: WindowProvider) {
+function setupUpdaterInterop(
+  pyHandler: PyHandler,
+  getWindow: WindowProvider,
+  ensureSafeUpdateRestart: () => void
+) {
   autoUpdater.autoDownload = false;
   autoUpdater.logger = {
     error: (message?: any) => pyHandler.logToFile(`(error): ${message}`),
@@ -326,5 +336,5 @@ function setupUpdaterInterop(pyHandler: PyHandler, getWindow: WindowProvider) {
   };
   setupCheckForUpdates(pyHandler);
   setupDownloadUpdate(getWindow, pyHandler);
-  setupInstallUpdate(pyHandler);
+  setupInstallUpdate(pyHandler, ensureSafeUpdateRestart);
 }
