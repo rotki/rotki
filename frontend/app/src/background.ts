@@ -46,7 +46,14 @@ const onReady = async () => {
   };
 
   trayManager = new TrayManager(getWindow, closeApp);
-  ipcSetup(pyHandler, getWindow, closeApp, trayManager, menuActions);
+  ipcSetup(
+    pyHandler,
+    getWindow,
+    closeApp,
+    trayManager,
+    menuActions,
+    ensureSafeUpdateRestart
+  );
   await createWindow();
   trayManager.listen();
 
@@ -105,6 +112,15 @@ if (!lock) {
     forceQuit = true;
   });
 }
+
+const ensureSafeUpdateRestart = () => {
+  win?.removeAllListeners('close');
+  win?.removeAllListeners('closed');
+  app.removeAllListeners('close');
+  app.removeAllListeners('window-all-closed');
+  app.removeAllListeners('will-quit');
+  app.removeAllListeners('before-quit');
+};
 
 const menuActions = {
   displayTray: (display: boolean) => {
