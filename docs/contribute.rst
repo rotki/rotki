@@ -156,6 +156,167 @@ Helpful commands
     >>> to_checksum_address("0x9c78ee466d6cb57a4d01fd887d2b5dfb2d46288f")
     '0x9C78EE466D6Cb57A4d01Fd887D2b5dFb2D46288f'
 
+Adding new Centralized Exchanges (CEXes)
+============================================
+
+All centralized exchanges modules live in a separate python file under `here <https://github.com/rotki/rotki/tree/develop/rotkehlchen/exchanges>`__.
+
+As an example of how to add a new CEX you can check the `Bitpanda PR <https://github.com/rotki/rotki/pull/3696/files>`__.
+
+
+
+Add Location
+-----------------
+
+You should add a new value to the `location Enum <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/types.py#L387>`__ and also make sure that the value is mirrored in the DB's schema as seen `here <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/db/schema.py#L93-L94>`__. Add it also in the ``SUPPORTED_EXCHANGES`` list `here <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/exchanges/manager.py#L31>`__. Finally don't forget to add it in the latest DB upgrade as seen in the Bitpanda PR linked in the start of this section.
+
+
+
+Create exchange module
+--------------------------
+
+To add a new CEX you should create a new file with the name of the exchange all lowercase in `here <https://github.com/rotki/rotki/tree/develop/rotkehlchen/exchanges>`__.
+
+It should have a class which should be the exact same name as the file but with the first letter capitalized. So if the module name is ``pinkunicorn.py`` the class name should be ``Pinkunicorn``.
+
+That class should inherit from the ``ExchangeInterface`` and implement all the required methods.
+
+It should have an ``edit_exchange_credentials()`` and ``validate_api_key()`` to be able to validate and accept new credentials.
+
+It should have a ``query_balances()`` to return the current balances of the user in the exchange.
+
+It should have a ``query_online_trade_history()`` to query the trade history endpoint of the exchange for a given time range and save them in the database.
+
+It should have a ``query_online_deposits_withdrawals()`` to query the deposit/withdrawals history endpoint of the exchange for a given time range and save them in the database.
+
+Optionally it can have a ``query_online_income_loss_expense`` to parse any special data from the exchange that can create income/loss items for the user such as staking events.
+
+Add Asset Mappings
+-------------------
+
+Exchanges have assets listed by symbols. This is unfortunately inaccurate and has conflicts since there is no central crypto registry and there is way too many crypto assets using the same symbol.
+
+We tackle this by having special mapping such as this one `here <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/assets/asset.py#L501>`__. So you would add the mapping ``WORLD_TO_MYNEWEXCHANGE``. Then you would create an ``asset_from_mynewexchange()`` function like `this one <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/assets/converters.py#L885-L898>`__ for bittrex.
+
+To find any assets listed in the exchange that are not mapped perfectly you would need to find and call the endpoint of the exchange that queries all assets. Then you need to write a test like `this <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/tests/exchanges/test_bittrex.py#L37-L51>`__ which queries all assets and tries to call the ``asset_from_bittrex()`` function. If any asset is not mapped properly a warning should be raised so we the developers figure out a new asset is added and we need to map it.
+
+Add tests for the exchange
+-----------------------------
+
+You should write tests for all the endpoints of the exchange you implemented. To see what tests and how to write them check the bitpanda PR linked in the start of this section.
+
+You will generally need to:
+
+- Touch ``rotkehlchen/tests/api/test_exchanges.py::pytest_setup_exchange()``
+- Add a new test module under ``rotkehlchen/tests/exchanges/``
+- Add a new fixture for the exchange at ``rotkehlchen/tests/fixtures/exchanges/mynewexchange.py`` and expose it in ``rotkehlchen/tests/fixtures/__init__.py``
+
+Adding new ethereum modules
+===================================
+
+This guide is to explain how to add a new ethereum module into rotki and its corresponding transaction decoder and accountant.
+
+Add new module directory
+--------------------------
+
+Each ethereum modules lives in `this <https://github.com/rotki/rotki/tree/develop/rotkehlchen/chain/ethereum/modules>`__ directory. To add a new module you should make sure the name is unique and create a new directory underneath.
+
+The directory should contain the following structure::
+
+  |
+  |--- __init__.py
+  |--- decoder.py
+  |--- constants.py
+  |--- accountant.py
+
+
+Almost all of the above are optional.
+
+The decoder
+--------------
+
+As an example decoder we can look at `makerdao <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/chain/ethereum/modules/makerdao/decoder.py>`__.
+
+It needs to contain a class that inherits from the ``DecoderInterface`` and is named as ``ModulenameDecoder``.
+
+Counterparties
+^^^^^^^^^^^^^^^^
+
+It needs to implement a method called ``counterparties()`` which returns a list of counterparties that can be associated with the transactions of this modules. Most of the times these are protocol names. Like ``uniswap-v1``, ``makerdao_dsr`` etc.
+
+These are defined in the ``constants.py`` file.
+
+Mappings and rules
+^^^^^^^^^^^^^^^^^^^
+
+The ``addresses_to_decoders()`` method maps any contract addresses that are identified in the transaction with the specific decoding function that can decode it. This is optional.
+
+The ``decoding_rules()`` defines any functions that should simply be used for all decoding so long as this module is active. This is optional.
+
+The ``enricher_rules()`` defies any functions that would be used for as long as this module is active to analyze already existing decoded events and enrich them with extra information we can decode thanks to this module. This is optional.
+
+Decoding explained
+^^^^^^^^^^^^^^^^^^
+
+In very simple terms the way the decoding works is that we go through all the transactions of the user and we apply all decoders to each transaction event that touches a tracked address. First decoder that matches, creates a decoded event.
+
+The event creation consists of creating a ``HistoryBaseEntry``. These are the most basic form of events in rotki and are used everywhere. The fields as far as decoded transactions are concerned are explained below:
+
+- ``event_identifier`` is always the transaction hash. This identifies history events in the same transaction.
+- ``sequence_index`` is the order of the event in the transaction. Many times this is the log index, but decoders tend to play with this to make events appear in a specific way.
+- ``asset`` is the asset involved in the event.
+- ``balance`` is the balance of the involved asset.
+- ``timestamp`` is the unix timestamp **in milliseconds**.
+- ``location`` is the location. Almost always ``Location.BLOCKCHAIN`` unless we got a specific location for the protocol of the transaction.
+- ``location_label`` is the initiator of the transaction.
+- ``notes`` is the human readable description to be seen by the user for the transaction.
+- ``event_type`` is the main type of the event. (see next section)
+- ``event_subtype`` is the subtype of the event. (see next section)
+- ``counterparty`` is the counterparty/target of the transaction. For transactions that interact with protocols we tend to use the ``CPT_XXX`` constants here.
+
+
+Event type/subtype and counterparty
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each combination of event type and subtype and counterparty creates a new unique event type. This is important as they are all treated differently in many parts of rotki, including the accounting. But most importantly this is what determines how they appear in the UI!
+
+The place where the UI mappings happen is `frontend/app/src/store/history/consts.ts <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/frontend/app/src/store/history/consts.ts>`__.
+
+The Accountant
+-----------------
+
+As an example accountant module we can look at `makerdao <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/chain/ethereum/modules/makerdao/accountant.py>`__.
+
+The ``accountant.py`` is optional but if existing should also be under the main directory. It should contain a class named ``ModuleNameAccountant`` and it should inherit the ``ModuleAccountantInterface``.
+
+What this class does is to map all the different decoded events to how they should be processed for accounting.
+
+These accountants are all loaded in during PnL reporting.
+
+Each accountant should implement the ``reset()`` method to reset its internal state between runs.
+
+
+Event Settings mapping
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Each accountant should implement the ``event_settings()`` method. That is a mapping between each unique decoded event type, identified by ``get_tx_event_type_identifier()`` and its ``TxEventSettings()``.
+
+So essentially determining whether:
+
+- ``taxable``: It's taxable
+- ``count_entire_amount_spend``: If it's a spending event if the entire amount should be counted as a spend which means an expense. Negative PnL.
+- ``count_cost_basis_pnl``: If true then we also count any profit/loss the asset may have had compared to when it was acquired.
+- ``take``: The number of events to take for processing together. This is useful for swaps, to identify we need to process multiple events together.
+- ``method``: Either an ``'acquisition'`` or a ``'spend'``.
+- ``multitake_treatment``: Optional. If ``take`` is not ``1``, then this defines how we treat it. It's always a swap for now, so ``TxMultitakeTreatment``.
+- ``accountant_cb``: Optional. A callback to a method of the specific module's accountant that will execute some extra module-specific pnl processing logic. The makerdao accountant linked above has some examples for this.
+
+Multiple submodules
+--------------------
+
+The modules system is hierachical and one module may contain multiple submodules. For example uniswap having both v1 and v3 each in their own subdirectories as seen `here <https://github.com/rotki/rotki/tree/develop/rotkehlchen/chain/ethereum/modules/uniswap>`__.
+
+
 Code Testing
 **************
 
@@ -378,7 +539,7 @@ Finally open the svg with any compatible viewer and explore the flamegraph. It w
    :align: center
 
 Docker publishing (manual)
-*****************
+*****************************
 
 If a need exists to publish on hub.docker.com then the following steps need to be followed.
 

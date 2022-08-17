@@ -7,6 +7,7 @@ import http, {
 } from 'http';
 import path from 'path';
 import { assert } from '@/utils/assertions';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
 type Callback = (addresses: string[]) => void;
 
@@ -147,10 +148,9 @@ function handleRequests(
       return;
     }
   }
-  const basePath =
-    process.env.NODE_ENV === 'development'
-      ? path.join(__dirname, '..', 'public')
-      : __dirname;
+  const basePath = checkIfDevelopment()
+    ? path.join(__dirname, '..', 'public')
+    : __dirname;
   const url = req.url ?? '';
   if (url === '/') {
     okResponse(

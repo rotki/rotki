@@ -391,14 +391,6 @@ export default class PyHandler {
 
     defaultArgs.push('--logfile', this.backendLogFile);
 
-    if (process.env.ROTKEHLCHEN_ENVIRONMENT === 'test') {
-      const tempPath = path.join(this.app.getPath('temp'), 'rotkehlchen');
-      if (!fs.existsSync(tempPath)) {
-        fs.mkdirSync(tempPath);
-      }
-      defaultArgs.push('--data-dir', tempPath);
-    }
-
     if (!process.env.VIRTUAL_ENV) {
       this.logAndQuit(
         'ERROR: Running in development mode and not inside a python virtual environment'

@@ -391,8 +391,7 @@ works only for localhost access and a proxy might be needed to access it from a 
 
 Packaging
 -------------
-To package the application for your platform you need to run the packaging script. To do so you need to make sur
-that ``packaging`` and ``requests are installed in your virtual environment ::
+To package the application for your platform you need to run the packaging script. To do so you need to make sure that ``packaging`` and ``requests`` are installed in your virtual environment ::
 
     pip3 install packaging requests
     ./package.py --build full
@@ -483,8 +482,7 @@ You can now start rotki, still from the ``frontend`` directory::
 
 Packaging
 -------------
-To package the application for your platform you need to run the packaging script. To do so you need to make sur
-that ``packaging`` and ``requests are installed in your virtual environment ::
+To package the application for your platform you need to run the packaging script. To do so you need to make sure that ``packaging`` and ``requests`` are installed in your virtual environment ::
 
     pip3 install packaging requests
     ./package.py --build full

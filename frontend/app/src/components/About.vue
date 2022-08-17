@@ -133,9 +133,8 @@ export default defineComponent({
       return (get(versionInfo) && 'userAgent' in get(versionInfo)!) ?? false;
     });
 
-    const frontendVersion = computed<string>(() => {
-      return process.env.VERSION ?? '';
-    });
+    // eslint-disable-next-line no-undef
+    const frontendVersion = __APP_VERSION__;
 
     onMounted(async () => {
       set(versionInfo, await interop.version());
@@ -144,7 +143,7 @@ export default defineComponent({
     const copy = () => {
       let versionText = '';
       versionText += `App Version: ${get(version).version}\r\n`;
-      versionText += `Frontend Version: ${get(frontendVersion)}\r\n`;
+      versionText += `Frontend Version: ${frontendVersion}\r\n`;
       const versionInfoVal = get(versionInfo);
       if (versionInfoVal) {
         if ('userAgent' in versionInfoVal) {

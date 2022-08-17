@@ -47,7 +47,7 @@ export default defineConfig({
   },
   base: publicPath,
   define: {
-    'process.env': { ...process.env }
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
   },
   plugins: [
     splitVendorChunkPlugin(),

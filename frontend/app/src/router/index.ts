@@ -4,6 +4,7 @@ import Vue from 'vue';
 import Router from 'vue-router';
 import { Routes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
 Vue.use(Router);
 
@@ -387,7 +388,7 @@ export default new Router({
       },
       props: true
     },
-    ...(process.env.NODE_ENV === 'development'
+    ...(checkIfDevelopment()
       ? [
           {
             path: '/playground',

@@ -8,7 +8,7 @@ from rotkehlchen.db.filtering import TradesFilterQuery
 # from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Location, Price, TradeType
+from rotkehlchen.types import Location, Price, TradeType, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -70,9 +70,14 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
             notes=None,
         ),
     ]
+    swap_1_id = '0x90f68af0ebbbb8d4938a4fbd07a70862e806124abd907d1225f25a10afda0181'
+    swap_2_id = '0x90f68af0ebbbb8d4938a4fbd07a70862e806124abd907d1225f25a10afda0182'
+    swap_3_id = '0x90f68af0ebbbb8d4938a4fbd07a70862e806124abd907d1225f25a10afda0183'
+    swap_4_id = '0x90f68af0ebbbb8d4938a4fbd07a70862e806124abd907d1225f25a10afda0184'
+    swap_5_id = '0x90f68af0ebbbb8d4938a4fbd07a70862e806124abd907d1225f25a10afda0185'
     swaps = [
         AMMSwap(
-            tx_hash='0x1',
+            tx_hash=deserialize_evm_tx_hash(swap_1_id),
             log_index=1,
             address='0xfoo',
             from_address='0xfrom',
@@ -86,7 +91,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
             amount0_out=ZERO,
             amount1_out=FVal(2),
         ), AMMSwap(
-            tx_hash='0x2',
+            tx_hash=deserialize_evm_tx_hash(swap_2_id),
             log_index=2,
             address='0xfoo',
             from_address='0xfrom',
@@ -100,7 +105,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
             amount0_out=ZERO,
             amount1_out=FVal(1.5),
         ), AMMSwap(
-            tx_hash='0x2',
+            tx_hash=deserialize_evm_tx_hash(swap_2_id),
             log_index=3,
             address='0xfoo',
             from_address='0xfrom',
@@ -114,7 +119,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
             amount0_out=ZERO,
             amount1_out=FVal(3.5),
         ), AMMSwap(
-            tx_hash='0x3',
+            tx_hash=deserialize_evm_tx_hash(swap_3_id),
             log_index=1,
             address='0xfoo',
             from_address='0xfrom',
@@ -128,7 +133,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
             amount0_out=FVal(5),
             amount1_out=ZERO,
         ), AMMSwap(
-            tx_hash='0x3',
+            tx_hash=deserialize_evm_tx_hash(swap_3_id),
             log_index=2,
             address='0xfoo',
             from_address='0xfrom',
@@ -142,7 +147,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
             amount0_out=ZERO,
             amount1_out=FVal(4.95),
         ), AMMSwap(
-            tx_hash='0x3',
+            tx_hash=deserialize_evm_tx_hash(swap_3_id),
             log_index=3,
             address='0xfoo',
             from_address='0xfrom',
@@ -156,7 +161,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
             amount0_out=FVal(8.2),
             amount1_out=ZERO,
         ), AMMSwap(
-            tx_hash='0x4',
+            tx_hash=deserialize_evm_tx_hash(swap_4_id),
             log_index=5,
             address='0xfoo',
             from_address='0xfrom',
@@ -170,7 +175,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
             amount0_out=ZERO,
             amount1_out=FVal(4.95),
         ), AMMSwap(
-            tx_hash='0x4',
+            tx_hash=deserialize_evm_tx_hash(swap_4_id),
             log_index=10,
             address='0xfoo',
             from_address='0xfrom',
@@ -184,7 +189,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
             amount0_out=ZERO,
             amount1_out=FVal(5.4),
         ), AMMSwap(
-            tx_hash='0x5',
+            tx_hash=deserialize_evm_tx_hash(swap_5_id),
             log_index=1,
             address='0xfoo',
             from_address='0xfrom',
@@ -198,7 +203,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
             amount0_out=ZERO,
             amount1_out=FVal(3.2),
         ), AMMSwap(
-            tx_hash='0x5',
+            tx_hash=deserialize_evm_tx_hash(swap_5_id),
             log_index=3,
             address='0xfoo',
             from_address='0xfrom',
@@ -226,7 +231,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
         rate=swaps[0].amount0_in / swaps[0].amount1_out,
         fee=None,
         fee_currency=None,
-        link=swaps[0].tx_hash,
+        link=swaps[0].tx_hash.hex(),
         notes=None,
     )
     swap2_trade = Trade(
@@ -239,7 +244,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
         rate=swaps[1].amount0_in / swaps[2].amount1_out,
         fee=None,
         fee_currency=None,
-        link=swaps[1].tx_hash,
+        link=swaps[1].tx_hash.hex(),
         notes=None,
     )
     swap3_trade = Trade(
@@ -252,7 +257,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
         rate=swaps[3].amount1_in / swaps[5].amount0_out,
         fee=None,
         fee_currency=None,
-        link=swaps[3].tx_hash,
+        link=swaps[3].tx_hash.hex(),
         notes=None,
     )
     swap4_trade1 = Trade(
@@ -265,7 +270,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
         rate=swaps[6].amount0_in / (swaps[7].amount1_out / 2),
         fee=None,
         fee_currency=None,
-        link=swaps[6].tx_hash,
+        link=swaps[6].tx_hash.hex(),
         notes=None,
     )
     swap4_trade2 = Trade(
@@ -278,7 +283,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
         rate=swaps[6].amount1_in / (swaps[7].amount1_out / 2),
         fee=None,
         fee_currency=None,
-        link=swaps[6].tx_hash,
+        link=swaps[6].tx_hash.hex(),
         notes=None,
     )
     swap5_trade1 = Trade(
@@ -291,7 +296,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
         rate=swaps[8].amount1_in / swaps[9].amount1_out,
         fee=None,
         fee_currency=None,
-        link=swaps[8].tx_hash,
+        link=swaps[8].tx_hash.hex(),
         notes=None,
     )
     swap5_trade2 = Trade(
@@ -304,7 +309,7 @@ def test_query_trades_including_ammswaps(data_dir, username, sql_vm_instructions
         rate=swaps[8].amount0_in / swaps[9].amount0_out,
         fee=None,
         fee_currency=None,
-        link=swaps[8].tx_hash,
+        link=swaps[8].tx_hash.hex(),
         notes=None,
     )
 

@@ -13,9 +13,6 @@ export default defineConfig({
       '@': join(PACKAGE_ROOT, 'src') + '/'
     }
   },
-  define: {
-    'process.env': { ...process.env }
-  },
   build: {
     sourcemap: isDevelopment ? 'inline' : false,
     outDir: 'dist',

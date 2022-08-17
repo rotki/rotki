@@ -6,8 +6,12 @@ Changelog
 * :feature:`3249` Add Uniswap V3 LP Positions Functionality.
 * :feature:`4600` User will now be notified if a leftover backend process is running when starting rotki.
 
-* :bug:`4657` Fix an edge case at ENS reverse resolution making an address resolving to the zero address instead of a name.
-* :feature:`4645` Support the new poloniex API. Note that with their "new and advanced" API we can't query trades history older than 90 days
+* :release:`1.25.2 <2022-08-17>`
+* :feature:`-` The add button in blockchain accounts & balances is now bigger on larger screens.
+* :bug:`4671` Fixes an issue with the auto-updater not working properly.
+* :bug:`4657` Now ens names are verified by forward resolution.
+* :feature:`4645` Support the new poloniex API. Note that with their "new and advanced" API we can't query trades history older than 1 week.
+* :bug:`4682` Premium users will again be able to load the dex trades section correctly.
 
 * :release:`1.25.1 <2022-07-28>`
 * :bug:`-` Introduce an experimental approach to ignore uniswap v2 pool pricing for pools with single sided liquidity that is less than $5k. This is experimental and we will probably figure out a better way to filter spam assets in the future. Context: https://twitter.com/peter_szilagyi/status/1552532767790997504

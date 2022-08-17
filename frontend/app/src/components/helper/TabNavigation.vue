@@ -52,6 +52,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
 export interface TabContent {
   readonly text: string;
@@ -80,7 +81,7 @@ export default defineComponent({
     };
 
     return {
-      isDev: process.env.NODE_ENV === 'development',
+      isDev: checkIfDevelopment(),
       visibleTabs,
       selectedTab,
       getClass,

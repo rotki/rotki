@@ -18,6 +18,7 @@ import { storeToRefs } from 'pinia';
 import { useRoute } from '@/composables/common';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
 const DevApp = defineAsyncComponent(() => import('@/DevApp.vue'));
 
@@ -25,7 +26,7 @@ const { animationsEnabled } = storeToRefs(useSessionSettingsStore());
 const { language } = storeToRefs(useFrontendSettingsStore());
 const route = useRoute();
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = checkIfDevelopment();
 const isPlayground = computed(() => {
   return isDevelopment && get(route).name === 'playground';
 });

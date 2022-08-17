@@ -45,8 +45,9 @@ import Fragment from '@/components/helper/Fragment';
 import { useRoute, useTheme } from '@/composables/common';
 import { useDarkMode } from '@/composables/session';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { checkIfDevelopment } from '@/utils/env-utils';
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isDevelopment = checkIfDevelopment();
 
 const ThemeControl = defineAsyncComponent(
   () => import('@/components/premium/ThemeControl.vue')

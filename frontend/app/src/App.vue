@@ -46,6 +46,7 @@ import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
 import 'chartjs-adapter-moment';
 
@@ -83,7 +84,7 @@ const { updateDarkMode } = useDarkMode();
 const router = useRouter();
 const route = useRoute();
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = checkIfDevelopment();
 const loginIn = computed(() => get(logged) && get(loginComplete));
 
 const completeLogin = async (complete: boolean) => {

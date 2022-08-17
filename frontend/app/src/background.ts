@@ -6,11 +6,12 @@ import { ipcSetup } from '@/electron-main/ipc-setup';
 import { getUserMenu } from '@/electron-main/menu';
 import { TrayManager } from '@/electron-main/tray-manager';
 import { Nullable } from '@/types';
+import { checkIfDevelopment } from '@/utils/env-utils';
 import createProtocol from './create-protocol';
 import PyHandler from './py-handler';
 import { assert } from './utils/assertions';
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isDevelopment = checkIfDevelopment();
 
 let trayManager: Nullable<TrayManager> = null;
 let forceQuit: boolean = false;
@@ -29,7 +30,7 @@ const onActivate = async () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 const onReady = async () => {
-  if (isDevelopment && !process.env.IS_TEST) {
+  if (isDevelopment) {
     // Install Vue Devtools
     try {
       await installExtension(VUEJS_DEVTOOLS);
@@ -45,7 +46,14 @@ const onReady = async () => {
   };
 
   trayManager = new TrayManager(getWindow, closeApp);
-  ipcSetup(pyHandler, getWindow, closeApp, trayManager, menuActions);
+  ipcSetup(
+    pyHandler,
+    getWindow,
+    closeApp,
+    trayManager,
+    menuActions,
+    ensureSafeUpdateRestart
+  );
   await createWindow();
   trayManager.listen();
 
@@ -105,6 +113,15 @@ if (!lock) {
   });
 }
 
+const ensureSafeUpdateRestart = () => {
+  win?.removeAllListeners('close');
+  win?.removeAllListeners('closed');
+  app.removeAllListeners('close');
+  app.removeAllListeners('window-all-closed');
+  app.removeAllListeners('will-quit');
+  app.removeAllListeners('before-quit');
+};
+
 const menuActions = {
   displayTray: (display: boolean) => {
     const applicationMenu = Menu.getApplicationMenu();
@@ -161,7 +178,7 @@ async function createWindow() {
     pyHandler.setCorsURL(import.meta.env.VITE_DEV_SERVER_URL as string);
     // Load the url of the dev server if in development mode
     await win.loadURL(import.meta.env.VITE_DEV_SERVER_URL as string);
-    if (!process.env.IS_TEST) win.webContents.openDevTools();
+    win.webContents.openDevTools();
   } else {
     createProtocol('app');
     // Load the index.html when not in development
