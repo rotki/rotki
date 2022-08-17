@@ -20,6 +20,12 @@ body {
   }
 }
 
+.v-btn {
+  &--fixed {
+    z-index: 4;
+  }
+}
+
 .theme {
   &--light {
     /* stylelint-disable */
