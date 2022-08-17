@@ -53,10 +53,7 @@ from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
-from rotkehlchen.chain.substrate.utils import (
-    KUSAMA_NODE_CONNECTION_TIMEOUT,
-    POLKADOT_NODE_CONNECTION_TIMEOUT,
-)
+from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants.assets import (
     A_ADX,
     A_AVAX,
@@ -567,55 +564,43 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             totals=self.totals.copy(),
         )
 
-    def check_accounts_exist(
+    def check_accounts_existence(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
+            append_or_remove: Literal['append', 'remove'],
     ) -> None:
-        """Checks if any of the accounts already exist and if they do raises an input error"""
-        with self.database.conn.read_ctx() as cursor:
-            bch_accounts = self.database.get_blockchain_account_data(
-                cursor=cursor,
-                blockchain=blockchain,
-            )
-            forced_bch_legacy_addresses = {
-                force_address_to_legacy_address(account.address)
-                for account in bch_accounts
-            }
+        """Checks if any of the accounts already exist or don't exist
+        (depending on `append_or_remove`) and may raise an InputError"""
+        if blockchain == SupportedBlockchain.BITCOIN_CASH and append_or_remove == 'append':
+            with self.database.conn.read_ctx() as cursor:
+                bch_accounts = self.database.get_blockchain_account_data(
+                    cursor=cursor,
+                    blockchain=blockchain,
+                )
+                forced_bch_legacy_addresses = {
+                    force_address_to_legacy_address(account.address)
+                    for account in bch_accounts
+                }
 
-        existing_accounts = []
+        bad_accounts = []
         for account in accounts:
-            if blockchain == SupportedBlockchain.BITCOIN_CASH:
+            if blockchain == SupportedBlockchain.BITCOIN_CASH and append_or_remove == 'append':
                 # an already existing bch address can be added but in a different format
                 # so convert all bch addresses to the same format and compare.
                 existent = account in self.accounts.bch or force_address_to_legacy_address(account) in forced_bch_legacy_addresses  # noqa: E501
             else:
                 existent = account in self.accounts.get(blockchain)
 
-            if existent:
-                existing_accounts.append(account)
+            if existent is True and append_or_remove == 'append':
+                bad_accounts.append(account)
+            elif existent is False and append_or_remove == 'remove':
+                bad_accounts.append(account)
 
-        if len(existing_accounts) != 0:
+        if len(bad_accounts) != 0:
+            word = 'already' if append_or_remove == 'append' else 'don\'t'
             raise InputError(
-                f'Blockchain account/s {",".join(existing_accounts)} already exist',
-            )
-
-    def check_accounts_dont_exist(
-            self,
-            blockchain: SupportedBlockchain,
-            accounts: ListOfBlockchainAddresses,
-    ) -> None:
-        """Checks if any of the accounts doesn't exist and if they don't raises an input error"""
-        nonexistent_accounts = []
-        for account in accounts:
-            # We don't need any special BCH checks here since we can only remove account which
-            # exactly matches the stored one.
-            if account not in self.accounts.get(blockchain):
-                nonexistent_accounts.append(account)
-
-        if len(nonexistent_accounts) != 0:
-            raise InputError(
-                f'Blockchain account/s {",".join(nonexistent_accounts)} don\'t exist',
+                f'Blockchain account/s {",".join(bad_accounts)} {word} exist',
             )
 
     @protect_with_lock(arguments_matter=True)
@@ -663,7 +648,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if should_query_dot:
             self.query_polkadot_balances(ignore_cache=ignore_cache)
         if should_query_avax:
-            self.query_avalanche_balances(ignore_cache=ignore_cache)
+            self.query_avax_balances(ignore_cache=ignore_cache)
 
         self.totals = self.balances.recalculate_totals()
         return self.get_balances_update()
@@ -736,7 +721,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if wait_available_node:
             wait_until_a_node_is_available(
                 substrate_manager=self.kusama,
-                seconds=KUSAMA_NODE_CONNECTION_TIMEOUT,
+                seconds=SUBSTRATE_NODE_CONNECTION_TIMEOUT,
             )
 
         account_amount = self.kusama.get_accounts_balance(self.accounts.ksm)
@@ -751,7 +736,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_avalanche_balances(
+    def query_avax_balances(
             self,  # pylint: disable=unused-argument
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
@@ -792,7 +777,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if wait_available_node:
             wait_until_a_node_is_available(
                 substrate_manager=self.polkadot,
-                seconds=POLKADOT_NODE_CONNECTION_TIMEOUT,
+                seconds=SUBSTRATE_NODE_CONNECTION_TIMEOUT,
             )
 
         account_amount = self.polkadot.get_accounts_balance(self.accounts.dot)
@@ -892,14 +877,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             append_or_remove: Literal['append', 'remove'],
     ) -> None:
         """May raise:
-        - InputError if any accounts of the accounts exists while trying to append or any of the
-        accounts doesn't exist while trying to remove
         - RemoteError if we couldn't connect to any node"""
-        if blockchain == SupportedBlockchain.POLKADOT:
-            connection_timeout = POLKADOT_NODE_CONNECTION_TIMEOUT
-        else:  # Kusama
-            connection_timeout = KUSAMA_NODE_CONNECTION_TIMEOUT
-
         lock: Semaphore = getattr(self, f'{blockchain.value.lower()}_lock')
         address_type = blockchain.get_address_type()
         substrate_manager: 'SubstrateManager' = getattr(self, blockchain.name.lower())
@@ -912,16 +890,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self.flush_cache(f'query_{blockchain.name.lower()}_balances')
 
             if append_or_remove == 'append':
-                self.check_accounts_exist(blockchain, accounts)
                 # When adding account for the first time we should connect to the nodes
                 if len(substrate_manager.available_nodes_call_order) == 0:
                     substrate_manager.attempt_connections()
                     wait_until_a_node_is_available(
                         substrate_manager=substrate_manager,
-                        seconds=connection_timeout,
+                        seconds=SUBSTRATE_NODE_CONNECTION_TIMEOUT,
                     )
-            else:  # remove
-                self.check_accounts_dont_exist(blockchain, accounts)
 
             for account in accounts:
                 address = address_type(account)
@@ -941,21 +916,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             ],
             append_or_remove: Literal['append', 'remove'],
     ) -> None:
-        """May raise:
-        - InputError if any accounts of the accounts exists while trying to append or any of the
-        accounts doesn't exist while trying to remove"""
-        if append_or_remove == 'append':
-            self.check_accounts_exist(blockchain, accounts)
-        else:  # remove
-            self.check_accounts_dont_exist(blockchain, accounts)
-
         # we are adding/removing accounts, make sure query cache is flushed
-        if blockchain == SupportedBlockchain.BITCOIN:
-            self.flush_cache('query_btc_balances')
-        elif blockchain == SupportedBlockchain.BITCOIN_CASH:
-            self.flush_cache('query_bch_balances')
-        else:  # Avalanche
-            self.flush_cache('query_avalanche_balances')
+        self.flush_cache(f'query_{blockchain.value.lower()}_balances')
 
         address_type = blockchain.get_address_type()
         saved_accounts = self.accounts.get(blockchain=blockchain)
@@ -975,16 +937,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             append_or_remove: Literal['append', 'remove'],
     ) -> None:
         """May raise:
-        - InputError if any accounts of the accounts exists while trying to append or any of the
-        accounts doesn't exist while trying to remove
         - RemoteError if there is a problem querying an external service such
           as etherscan (from on_account_addition or on_account_removal callback)"""
         with self.eth_lock:
-            if append_or_remove == 'append':
-                self.check_accounts_exist(SupportedBlockchain.ETHEREUM, accounts)
-            else:  # remove
-                self.check_accounts_dont_exist(SupportedBlockchain.ETHEREUM, accounts)
-
             # we are adding/removing accounts, make sure query cache is flushed
             self.flush_cache('query_ethereum_balances')
 
@@ -1010,11 +965,17 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         """Add or remove a list of blockchain accounts.
 
        May raise:
-        - InputError if any accounts of the accounts exists while trying to append or any of the
+        - InputError if any of the accounts exists while trying to append or any of the
         accounts doesn't exist while trying to remove
         - RemoteError if there is a problem querying an external service such
           as etherscan or blockchain.info or couldn't connect to a node (for polkadot and kusama)
         """
+        self.check_accounts_existence(
+            blockchain=blockchain,
+            accounts=accounts,
+            append_or_remove=append_or_remove,
+        )
+
         if blockchain in {
             SupportedBlockchain.BITCOIN,
             SupportedBlockchain.BITCOIN_CASH,
@@ -1363,7 +1324,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 eth_balances[address].assets[A_LQTY] += deposited_lqty
 
         # Finally count the balances detected in various protocols in defi balances
-        self.add_defi_balances_to_token()
+        self.add_defi_balances_to_account()
 
     def _add_account_defi_balances_to_token(
             self,
@@ -1423,8 +1384,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 )
                 continue
 
-    def add_defi_balances_to_token(self) -> None:
-        """Take into account defi balances and add them to per account and totals"""
+    def add_defi_balances_to_account(self) -> None:
+        """Take into account defi balances and add them to the per account balances"""
         for account, defi_balances in self.defi_balances.items():
             self._add_account_defi_balances_to_token(
                 account=account,

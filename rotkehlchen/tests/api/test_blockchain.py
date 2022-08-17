@@ -1427,6 +1427,8 @@ def _remove_blockchain_accounts_test_start(
     token_balances_after_removal = {}
     starting_liabilities = {A_DAI: ['5555555', '1000000', '0', '99999999']}
     after_liabilities = {A_DAI: ['1000000', '99999999']}
+    # in this part of the test we also check that defi balances for a particular
+    # account are deleted when we remove the account
     defi_balances = {
         ethereum_accounts[0]: [
             DefiProtocolBalances(
@@ -1788,8 +1790,8 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
     # now remove one account
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
-        "blockchainsaccountsresource",
-        blockchain='BTC',
+        'blockchainsaccountsresource',
+        blockchain=SupportedBlockchain.BITCOIN.value,
     ), json={'accounts': [UNIT_BTC_ADDRESS1]})
     assert_proper_response(response)
 
@@ -1860,7 +1862,7 @@ def test_add_ksm_blockchain_account_invalid(rotkehlchen_api_server):
     )
 
 
-@flaky(max_runs=3, min_passes=1)  # Kusama open nodes sometimes time out
+@flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 def test_add_ksm_blockchain_account(rotkehlchen_api_server):
@@ -1898,7 +1900,7 @@ def test_add_ksm_blockchain_account(rotkehlchen_api_server):
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'named_blockchain_balances_resource',
-        blockchain='KSM',
+        blockchain=SupportedBlockchain.KUSAMA.value,
     ))
     result = assert_proper_response_with_result(response)
 
@@ -1916,7 +1918,7 @@ def test_add_ksm_blockchain_account(rotkehlchen_api_server):
     assert FVal(total_ksm['usd_value']) >= ZERO
 
 
-@flaky(max_runs=3, min_passes=1)  # Kusama open nodes sometimes time out
+@flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, SUBSTRATE_ACC2_KSM_ADDR]])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
@@ -1928,7 +1930,7 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server):
     async_query = random.choice([False, True])
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "blockchainbalancesresource",
+        'blockchainbalancesresource',
     ))  # to populate totals
     assert_proper_response(response)
     ksm_totals_beginning = rotki.chain_manager.totals.assets[A_KSM].amount
@@ -1936,7 +1938,7 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain=SupportedBlockchain.KUSAMA.value,
         ),
         json={
@@ -1993,7 +1995,7 @@ def test_add_ksm_blockchain_account_invalid_ens_domain(rotkehlchen_api_server):
     )
 
 
-@flaky(max_runs=3, min_passes=1)  # Kusama open nodes sometimes time out
+@flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
@@ -2025,7 +2027,7 @@ def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
     assert rotki.chain_manager.kusama.available_nodes_call_order != []
 
 
-@flaky(max_runs=3, min_passes=1)  # Kusama open nodes sometimes time out
+@flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, ENS_BRUNO_KSM_ADDR]])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
@@ -2203,12 +2205,12 @@ def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server):
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('avax_accounts', [[AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR]])
 def test_remove_avax_blockchain_account(rotkehlchen_api_server):
-    """Test removing a Avalanche blockchain account works as expected"""
+    """Test removing an Avalanche blockchain account works as expected"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     async_query = random.choice([False, True])
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "blockchainbalancesresource",
+        'blockchainbalancesresource',
     ))  # to populate totals
     assert_proper_response(response)
     avax_totals_beginning = rotki.chain_manager.totals.assets[A_AVAX].amount

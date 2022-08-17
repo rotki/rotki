@@ -82,7 +82,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         wraps=mock_query_defi_balances,
     )
 
-    def mock_add_defi_balances_to_token():
+    def mock_add_defi_balances_to_account():
         """This function will make sure all greenlets end up hitting the balance addition
         at the same time thus double +++ counting balance ... in the way the code
         was written before"""
@@ -96,8 +96,8 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
 
     add_defi_mock = patch.object(
         blockchain,
-        'add_defi_balances_to_token',
-        wraps=mock_add_defi_balances_to_token,
+        'add_defi_balances_to_account',
+        wraps=mock_add_defi_balances_to_account,
     )
 
     with etherscan_patch, ethtokens_max_chunks_patch:

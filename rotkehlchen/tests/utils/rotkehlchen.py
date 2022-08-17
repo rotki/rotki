@@ -140,7 +140,7 @@ def setup_balances(
 
     defi_balances_addition_method_patch = None
     if liabilities is not None:
-        def mock_add_defi_balances_to_token():
+        def mock_add_defi_balances_to_account():
             # super hacky way of mocking this but well fuck it
             if len(rotki.chain_manager.balances.eth) == 4:
                 d_liabilities = liabilities.copy()
@@ -162,7 +162,7 @@ def setup_balances(
                     account = ethereum_accounts[idx]
                     rotki.chain_manager.balances.eth[account].liabilities[token] = Balance(balance)
 
-            # need this to don't get randomized behaviour when defi balances are added or not
+            # need this to not get randomized behaviour when defi balances are added or not
             # depending on whether liabilities are mocked
             if rotki.chain_manager.defi_balances is not None:
                 for account, single_defi_balances in rotki.chain_manager.defi_balances.items():
@@ -173,14 +173,12 @@ def setup_balances(
 
         defi_balances_addition_method_patch = patch.object(
             rotki.chain_manager,
-            'add_defi_balances_to_token',
-            side_effect=mock_add_defi_balances_to_token,
+            'add_defi_balances_to_account',
+            side_effect=mock_add_defi_balances_to_account,
         )
 
     if defi_balances is not None:
         def mock_defichad_query_balances(addresses: List[ChecksumEthAddress]):
-            # we also mock add_defi_balances_to_token_and_totals, so these balances won't be
-            # added to accounts' balances and will be stored only in chain_manager.defi_balances
             result: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
             for addr in addresses:
                 if addr in defi_balances:  # type: ignore
