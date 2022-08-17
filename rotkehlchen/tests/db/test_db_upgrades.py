@@ -11,13 +11,11 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
-from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
@@ -2680,49 +2678,6 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
-    """Test upgrading the DB from version 33 to version 34.
-
-    - Check that expected information for the changes in timestamps exists and is correct
-    """
-    msg_aggregator = MessagesAggregator()
-    _use_prepared_db(user_data_dir, 'v33_rotkehlchen.db')
-    db_v33 = _init_db_with_target_version(
-        target_version=33,
-        user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
-    )
-    upgraded_tables = (
-        'timed_balances',
-        'timed_location_data',
-        'ethereum_accounts_details',
-        'trades',
-        'asset_movements',
-    )
-    expected_timestamps = (
-        [(1658564495,)],
-        [(1637574520,)],
-        [(1637574640,)],
-        [(1595640208,), (1595640208,), (1595640208,)],
-        [(1,)],
-    )
-    with db_v33.conn.read_ctx() as cursor:
-        for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
-            cursor.execute(f'SELECT time from {table_name}')
-            assert cursor.fetchall() == expected_result
-    # Migrate the database
-    db_v34 = _init_db_with_target_version(
-        target_version=34,
-        user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
-    )
-    with db_v34.conn.read_ctx() as cursor:
-        for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
-            cursor.execute(f'SELECT timestamp from {table_name}')
-            assert cursor.fetchall() == expected_result
-
-
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
     """Test upgrading the DB from version 32 to version 33.
     """
@@ -2849,17 +2804,10 @@ def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument 
         msg_aggregator=msg_aggregator,
     )
     with db_v33.conn.read_ctx() as cursor:
-        trades, filter_total_found = db_v33.get_trades_and_limit_info(
-            cursor=cursor,
-            filter_query=TradesFilterQuery.make(),
-            has_premium=True,
-        )
-
-    assert filter_total_found == 7
-    with pytest.raises(UnicodeDecodeError):
-        for trade in trades:
-            TradeSchema().dump(trade)
-    assert HexBytes(trades[-1].link).hex() == '0xb1fcf4aef6af87a061ca03e92c4eb8039efe600d501ba288a8bae90f78c91db5'  # noqa: E501
+        cursor.execute('SELECT * FROM combined_trades_view ORDER BY time ASC')
+        result = cursor.fetchall()
+        assert isinstance(result[-1][10], bytes)
+        assert HexBytes(result[-1][10]).hex() == '0xb1fcf4aef6af87a061ca03e92c4eb8039efe600d501ba288a8bae90f78c91db5'  # noqa: E501
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2868,16 +2816,53 @@ def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument 
         msg_aggregator=msg_aggregator,
     )
     with db.conn.read_ctx() as cursor:
-        trades, filter_total_found = db.get_trades_and_limit_info(
-            cursor=cursor,
-            filter_query=TradesFilterQuery.make(),
-            has_premium=True,
-        )
+        cursor.execute('SELECT * FROM combined_trades_view ORDER BY time ASC')
+        result = cursor.fetchall()
+        assert isinstance(result[-1][10], str)
+        assert result[-1][10] == '0xb1fcf4aef6af87a061ca03e92c4eb8039efe600d501ba288a8bae90f78c91db5'  # noqa: E501
 
-    assert filter_total_found == 7
-    for trade in trades:
-        TradeSchema().dump(trade)
-    assert trades[-1].link == '0xb1fcf4aef6af87a061ca03e92c4eb8039efe600d501ba288a8bae90f78c91db5'
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
+    """Test upgrading the DB from version 34 to version 35.
+
+    - Check that expected information for the changes in timestamps exists and is correct
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v34_rotkehlchen.db')
+    db_v34 = _init_db_with_target_version(
+        target_version=34,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    upgraded_tables = (
+        'timed_balances',
+        'timed_location_data',
+        'ethereum_accounts_details',
+        'trades',
+        'asset_movements',
+    )
+    expected_timestamps = (
+        [(1658564495,)],
+        [(1637574520,)],
+        [(1637574640,)],
+        [(1595640208,), (1595640208,), (1595640208,)],
+        [(1,)],
+    )
+    with db_v34.conn.read_ctx() as cursor:
+        for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
+            cursor.execute(f'SELECT time from {table_name}')
+            assert cursor.fetchall() == expected_result
+    # Migrate the database
+    db_v35 = _init_db_with_target_version(
+        target_version=35,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    with db_v35.conn.read_ctx() as cursor:
+        for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
+            cursor.execute(f'SELECT timestamp from {table_name}')
+            assert cursor.fetchall() == expected_result
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
@@ -2890,7 +2875,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     this is just to reminds us not to forget to add create table statements.
     """
     msg_aggregator = MessagesAggregator()
-    _use_prepared_db(user_data_dir, 'v32_rotkehlchen.db')
+    _use_prepared_db(user_data_dir, 'v34_rotkehlchen.db')
     last_db = _init_db_with_target_version(
         target_version=33,
         user_data_dir=user_data_dir,
@@ -2903,7 +2888,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     last_db.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=34,
+        target_version=35,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
