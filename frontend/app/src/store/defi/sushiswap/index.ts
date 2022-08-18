@@ -1,5 +1,5 @@
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
-import { computed, ref } from '@vue/composition-api';
+import { computed, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { getPremium, useModules } from '@/composables/session';
@@ -27,7 +27,7 @@ import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 
 export const useSushiswapStore = defineStore('defi/sushiswap', () => {
-  const balances = ref<XswapBalances>({});
+  const balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
   const events = ref<XswapEvents>({});
   const trades = ref<DexTrades>({});
 
@@ -36,7 +36,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
 
   const balanceList = (addresses: string[]) =>
-    computed(() => getBalances(get(balances) as XswapBalances, addresses));
+    computed(() => getBalances(get(balances), addresses, false));
   const poolProfit = (addresses: string[]) =>
     computed(() => getPoolProfit(get(events) as XswapEvents, addresses));
   const eventList = (addresses: string[]) =>
@@ -47,7 +47,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     )
   );
   const pools = computed(() =>
-    getPools(get(balances) as XswapBalances, get(events) as XswapEvents)
+    getPools(get(balances), get(events) as XswapEvents)
   );
 
   async function fetchBalances(refresh: boolean = false) {

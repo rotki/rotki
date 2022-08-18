@@ -7,6 +7,7 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { VDialog } from 'vuetify/lib/components';
 import AccountManagement from '@/components/AccountManagement.vue';
+import { setupLiquidityPosition } from '@/composables/defi';
 import { interop, useInterop } from '@/electron-interop';
 import { Api } from '@/plugins/api';
 import { Interop } from '@/plugins/interop';
@@ -14,9 +15,11 @@ import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
 import '../i18n';
+import { bigNumberify } from '@/utils/bignumbers';
 
 vi.mock('@/electron-interop');
 vi.mock('@/services/rotkehlchen-api');
+vi.mock('@/composables/defi');
 
 Vue.use(Vuetify);
 Vue.use(Api);
@@ -43,6 +46,11 @@ describe('AccountManagement.vue', () => {
     setActivePinia(testingPinia);
 
     useMainStore(testingPinia).connected = true;
+    (setupLiquidityPosition as any).mockImplementation(() => ({
+      lpTotal: () => bigNumberify(0),
+      lpAggregatedBalances: () => []
+    }));
+
     sessionStore = useSessionStore();
 
     wrapper = mount(AccountManagement, {

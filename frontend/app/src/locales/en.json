@@ -1373,9 +1373,9 @@
     "liabilities": {
       "title": "Liabilities"
     },
-    "liquidity_provider": {
-      "short": "LP Tokens",
-      "title": "Liqudity Provider Tokens"
+    "liquidity_position": {
+      "refresh_tooltip": "Refresh LP Tokens",
+      "title": "LP Tokens"
     },
     "manual_balances": {
       "add": "Add a manual balance",

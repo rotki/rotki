@@ -1,7 +1,12 @@
 <template>
-  <dashboard-expandable-table v-if="balances.length > 0">
+  <dashboard-expandable-table v-if="balances.length > 0 || loading">
     <template #title>
-      {{ $t('dashboard.liquidity_provider.title') }}
+      <refresh-button
+        :loading="loading"
+        :tooltip="$t('dashboard.liquidity_position.refresh_tooltip')"
+        @refresh="fetch(true)"
+      />
+      {{ $t('dashboard.liquidity_position.title') }}
       <v-btn :to="route" icon class="ml-2">
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
@@ -23,8 +28,8 @@
           </menu-tooltip-button>
         </template>
         <visible-columns-selector
-          group="LIQUIDITY_PROVIDER"
-          :group-label="$t('dashboard.liquidity_provider.short').toString()"
+          group="LIQUIDITY_POSITION"
+          :group-label="$t('dashboard.liquidity_position.title').toString()"
         />
       </v-menu>
     </template>
@@ -38,14 +43,22 @@
     <data-table
       :headers="tableHeaders"
       :items="balances"
-      item-key="nftId"
       sort-by="userBalance.usdValue"
       :loading="loading"
+      item-key="id"
       show-expand
       :expanded="expanded"
     >
       <template #item.name="{ item }">
-        <nft-details :identifier="item.nftId" />
+        <div v-if="item.type === 'nft'">
+          <nft-details :identifier="item.asset" />
+        </div>
+        <div v-else>
+          <asset-details
+            :asset="item.asset"
+            :asset-styled="{ padding: '2px 0.75rem' }"
+          />
+        </div>
       </template>
       <template #item.usdValue="{ item }">
         <amount-display :value="item.usdValue" fiat-currency="USD" />
@@ -60,6 +73,7 @@
         <liquidity-provider-balance-details
           :span="headers.length"
           :assets="item.assets"
+          :premium-only="item.premiumOnly"
         />
       </template>
       <template #body.append="{ isMobile }">
@@ -82,8 +96,9 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { computed, ref, Ref } from '@vue/composition-api';
+import { computed, onBeforeMount, ref, Ref, watch } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { isEqual } from 'lodash';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
@@ -91,22 +106,25 @@ import LiquidityProviderBalanceDetails from '@/components/dashboard/LiquidityPro
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { bigNumberSum } from '@/filters';
+import { isSectionLoading } from '@/composables/common';
+import { setupLiquidityPosition } from '@/composables/defi';
+import { getPremium } from '@/composables/session';
 import i18nFn from '@/i18n';
 import { Routes } from '@/router/routes';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
+import { Section } from '@/store/const';
+import { useBalancerStore } from '@/store/defi/balancer';
+import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { useTasks } from '@/store/tasks';
 import {
   DashboardTablesVisibleColumns,
   DashboardTableType
 } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
-import { TaskType } from '@/types/task-type';
 import { calculatePercentage } from '@/utils/calculation';
-import { getNftBalance } from '@/utils/nft';
 
 const createTableHeaders = (
   currency: Ref<string>,
@@ -114,14 +132,15 @@ const createTableHeaders = (
 ) => {
   return computed<DataTableHeader[]>(() => {
     const visibleColumns = get(dashboardTablesVisibleColumns)[
-      DashboardTableType.LIQUIDITY_PROVIDER
+      DashboardTableType.LIQUIDITY_POSITION
     ];
 
     const headers: DataTableHeader[] = [
       {
         text: i18nFn.t('common.name').toString(),
         value: 'name',
-        cellClass: 'text-no-wrap'
+        cellClass: 'text-no-wrap',
+        sortable: false
       },
       {
         text: i18nFn
@@ -155,7 +174,7 @@ const createTableHeaders = (
           .t(
             'dashboard_asset_table.headers.percentage_of_total_current_group',
             {
-              group: i18nFn.t('dashboard.liquidity_provider.short').toString()
+              group: i18nFn.t('dashboard.liquidity_position.title').toString()
             }
           )
           .toString(),
@@ -175,14 +194,17 @@ const createTableHeaders = (
 const route = Routes.DEFI_DEPOSITS_LIQUIDITY.route;
 const expanded = ref<XswapBalance[]>([]);
 
-const { uniswapV3Balances } = useUniswapStore();
-const balances = computed(() => {
-  return get(uniswapV3Balances([])).map(item => ({
-    ...item,
-    usdValue: item.userBalance.usdValue,
-    name: item.nftId ? getNftBalance(item.nftId)?.name ?? item.nftId : ''
-  }));
-});
+const {
+  fetchV2Balances: fetchUniswapV2Balances,
+  fetchV3Balances: fetchUniswapV3Balances
+} = useUniswapStore();
+
+const { fetchBalances: fetchSushiswapBalances } = useSushiswapStore();
+const { fetchBalances: fetchBalancerBalances } = useBalancerStore();
+
+const { lpAggregatedBalances, lpTotal } = setupLiquidityPosition();
+const balances = lpAggregatedBalances(true);
+const totalInUsd = lpTotal(true);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { dashboardTablesVisibleColumns } = storeToRefs(
@@ -194,12 +216,27 @@ const tableHeaders = createTableHeaders(
   dashboardTablesVisibleColumns
 );
 
-const totalInUsd = computed<BigNumber>(() =>
-  bigNumberSum(get(balances).map(item => item.usdValue))
+const uniswapV3BalancesLoading = isSectionLoading(
+  Section.DEFI_UNISWAP_V3_BALANCES
+);
+const uniswapV2BalancesLoading = isSectionLoading(
+  Section.DEFI_UNISWAP_V2_BALANCES
+);
+const balancerBalancesLoading = isSectionLoading(
+  Section.DEFI_BALANCER_BALANCES
+);
+const sushiswapBalancesLoading = isSectionLoading(
+  Section.DEFI_SUSHISWAP_BALANCES
 );
 
-const { isTaskRunning } = useTasks();
-const loading = isTaskRunning(TaskType.DEFI_UNISWAP_V3_BALANCES);
+const loading = computed<boolean>(() => {
+  return (
+    get(uniswapV3BalancesLoading) ||
+    get(uniswapV2BalancesLoading) ||
+    get(balancerBalancesLoading) ||
+    get(sushiswapBalancesLoading)
+  );
+});
 
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
@@ -213,4 +250,34 @@ const percentageOfTotalNetValue = (value: BigNumber) => {
 const percentageOfCurrentGroup = (value: BigNumber) => {
   return calculatePercentage(value, get(totalInUsd));
 };
+
+const premium = getPremium();
+
+const fetch = async (refresh: boolean = false) => {
+  await fetchUniswapV3Balances(refresh);
+  await fetchUniswapV2Balances(refresh);
+
+  if (get(premium)) {
+    await fetchSushiswapBalances(refresh);
+    await fetchBalancerBalances(refresh);
+  }
+};
+
+onBeforeMount(() => {
+  fetch();
+});
+
+const { ethAddresses } = storeToRefs(useBlockchainAccountsStore());
+
+watch(ethAddresses, (curr, prev) => {
+  if (!isEqual(curr, prev)) {
+    fetch(true);
+  }
+});
+
+watch(premium, (curr, prev) => {
+  if (prev !== curr) {
+    fetch(true);
+  }
+});
 </script>

@@ -11,6 +11,7 @@
       <asset-icon
         :changeable="changeable"
         size="26px"
+        :styled="assetStyled"
         :identifier="identifier"
         :symbol="symbol"
       />
@@ -43,6 +44,7 @@ const AssetDetailsBase = defineComponent({
         SupportedAsset | { identifier: string; symbol?: string; name?: string }
       >
     },
+    assetStyled: { required: false, type: Object, default: () => null },
     opensDetails: { required: false, type: Boolean, default: false },
     changeable: { required: false, type: Boolean, default: false },
     hideName: { required: false, type: Boolean, default: false },

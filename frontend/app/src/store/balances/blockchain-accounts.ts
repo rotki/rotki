@@ -40,6 +40,7 @@ import {
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
+import { useUniswapStore } from '@/store/defi/uniswap';
 import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
@@ -212,6 +213,7 @@ export const useBlockchainAccountsStore = defineStore(
     const { awaitTask, isTaskRunning } = useTasks();
     const { notify } = useNotifications();
     const { setMessage } = useMainStore();
+    const { fetchV3Balances } = useUniswapStore();
 
     const fetchAccounts = async (blockchains: Blockchain[] | null = null) => {
       const error = (error: any, blockchain: Blockchain) => {
@@ -439,6 +441,7 @@ export const useBlockchainAccountsStore = defineStore(
               enable: modules,
               addresses: [address]
             });
+            await fetchV3Balances();
           }
 
           const balances = BlockchainBalances.parse(result);
@@ -464,6 +467,7 @@ export const useBlockchainAccountsStore = defineStore(
             blockchain: Blockchain.ETH2,
             ignoreCache: false
           });
+          await fetchV3Balances();
         }
         await refreshPrices({ ignoreCache: false });
       } catch (e: any) {
@@ -617,6 +621,9 @@ export const useBlockchainAccountsStore = defineStore(
         useMainStore().resetDefiStatus();
         const { refreshPrices, fetchNfBalances } = useBalancesStore();
         fetchNfBalances();
+        if (blockchain === Blockchain.ETH) {
+          fetchV3Balances();
+        }
 
         await updateBlockchainBalances({ chain: blockchain, balances });
         await refreshPrices({ ignoreCache: false });

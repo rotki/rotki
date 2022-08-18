@@ -46,15 +46,11 @@ import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { storeToRefs } from 'pinia';
 import { useTheme } from '@/composables/common';
-import { getPremium } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
-import { Section, Status } from '@/store/const';
-import { useUniswapStore } from '@/store/defi/uniswap';
 import { useSessionStore } from '@/store/session';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
-import { getStatus } from '@/store/utils';
 
 export default defineComponent({
   name: 'AppCore',
@@ -86,10 +82,6 @@ export default defineComponent({
     const expanded = computed(
       () => get(showDrawer) && !get(isMini) && !get(isMobile)
     );
-    const premium = getPremium();
-
-    const { fetchV3Balances } = useUniswapStore();
-    const defiUniswapV3Section = Section.DEFI_UNISWAP_V3_BALANCES;
     const { language } = storeToRefs(useFrontendSettingsStore());
     const { overall } = storeToRefs(useStatisticsStore());
 
@@ -120,13 +112,6 @@ export default defineComponent({
 
     watch(language, language => {
       setLanguage(language);
-    });
-
-    watch(premium, (curr, prev) => {
-      const currentStatus = getStatus(defiUniswapV3Section);
-      if (prev !== curr && currentStatus !== Status.NONE) {
-        fetchV3Balances(true);
-      }
     });
 
     return {

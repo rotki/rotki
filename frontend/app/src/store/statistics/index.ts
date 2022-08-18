@@ -6,8 +6,8 @@ import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { setupLiquidityPosition } from '@/composables/defi';
 import { CURRENCY_USD } from '@/data/currencies';
-import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
@@ -18,15 +18,6 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { bigNumberify, One, Zero } from '@/utils/bignumbers';
-
-export interface OverallPerformance {
-  readonly period: string;
-  readonly currency: string;
-  readonly percentage: string;
-  readonly netWorth: string;
-  readonly delta: string;
-  readonly up?: boolean;
-}
 
 const defaultNetValue = () => ({
   times: [],
@@ -47,47 +38,42 @@ export const useStatisticsStore = defineStore('statistics', () => {
   );
   const balancesStore = useBalancesStore();
   const { nfTotalValue } = balancesStore;
-  const { nfBalances } = storeToRefs(balancesStore);
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { exchangeRate } = useBalancePricesStore();
 
+  const { lpTotal } = setupLiquidityPosition();
+
+  const calculateTotalValue = (includeNft: boolean = false) =>
+    computed(() => {
+      const balances = get(aggregatedBalances);
+      const totalLiabilities = get(liabilities);
+      const nftTotal = includeNft ? get(nfTotalValue()) : 0;
+      const lpTotalBalance = get(lpTotal(includeNft));
+
+      const assetValue = balances.reduce(
+        (sum, value) => sum.plus(value.usdValue),
+        Zero
+      );
+
+      const liabilityValue = totalLiabilities.reduce(
+        (sum, value) => sum.plus(value.usdValue),
+        Zero
+      );
+
+      return assetValue
+        .plus(nftTotal)
+        .plus(lpTotalBalance)
+        .minus(liabilityValue);
+    });
+
   const totalNetWorth = computed(() => {
     const mainCurrency = get(currencySymbol);
-    const balances = get(aggregatedBalances);
-    const totalLiabilities = get(liabilities);
-    const nfbs = get(nfBalances);
     const rate = get(exchangeRate(mainCurrency)) ?? One;
-    let nftTotal = Zero;
-
-    if (nftsInNetValue) {
-      nftTotal = nfbs.reduce((sum, balance) => {
-        return sum.plus(balance.usdPrice.multipliedBy(rate));
-      }, Zero);
-    }
-
-    const assetSum = aggregateTotal(balances, mainCurrency, rate).plus(
-      nftTotal
-    );
-    const liabilitySum = aggregateTotal(totalLiabilities, mainCurrency, rate);
-    return assetSum.minus(liabilitySum);
+    return get(calculateTotalValue(get(nftsInNetValue))).multipliedBy(rate);
   });
 
   const totalNetWorthUsd = computed(() => {
-    const balances = get(aggregatedBalances);
-    const totalLiabilities = get(liabilities);
-    const nftTotal = get(nfTotalValue(true));
-
-    const assetValue = balances.reduce(
-      (sum, value) => sum.plus(value.usdValue),
-      Zero
-    );
-
-    const liabilityValue = totalLiabilities.reduce(
-      (sum, value) => sum.plus(value.usdValue),
-      Zero
-    );
-
-    return assetValue.plus(nftTotal).minus(liabilityValue);
+    return get(calculateTotalValue(true));
   });
 
   const overall = computed(() => {

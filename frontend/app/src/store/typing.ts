@@ -29,6 +29,7 @@ export type FetchData<T extends TaskMeta, R> = {
     query: () => Promise<PendingTask>;
     parser?: (result: any) => R;
     onError: OnError;
+    checkLoading?: Record<string, any>;
   };
   state: {
     isPremium: Ref<boolean>;

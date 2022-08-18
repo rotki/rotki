@@ -19,6 +19,7 @@
         <asset-details
           v-if="!isNft(item.assetIdentifier)"
           :class="$style.asset"
+          :asset-styled="{ padding: '2px 0.75rem' }"
           :asset="item.assetIdentifier"
           :opens-details="false"
           :enable-association="false"

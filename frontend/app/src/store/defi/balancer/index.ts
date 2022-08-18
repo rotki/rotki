@@ -33,7 +33,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
 
   const { fetchSupportedAssets, assetSymbol } = useAssetInfoRetrieval();
   const { activeModules } = useModules();
-  const premium = getPremium();
+  const isPremium = getPremium();
 
   const addresses = computed(() => Object.keys(get(balances)));
 
@@ -152,15 +152,15 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
           section: Section.DEFI_BALANCER_BALANCES,
           query: async () => await api.defi.fetchBalancerBalances(),
           parser: data => BalancerBalances.parse(data),
-          meta: meta,
-          onError: onError
+          meta,
+          onError
         },
         requires: {
           premium: true,
           module: Module.BALANCER
         },
         state: {
-          isPremium: premium,
+          isPremium,
           activeModules: activeModules as Ref<string[]>
         },
         refresh
@@ -201,7 +201,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
           premium: true
         },
         state: {
-          isPremium: getPremium(),
+          isPremium,
           activeModules: activeModules as Ref<string[]>
         },
 
@@ -244,7 +244,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
           module: Module.BALANCER
         },
         state: {
-          isPremium: premium,
+          isPremium,
           activeModules: activeModules as Ref<string[]>
         },
         refresh

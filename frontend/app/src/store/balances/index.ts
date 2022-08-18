@@ -36,6 +36,7 @@ import {
   NonFungibleBalances
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
+import { useUniswapStore } from '@/store/defi/uniswap';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
@@ -113,6 +114,7 @@ export const useBalancesStore = defineStore('balances', () => {
     totals,
     blockchainTotal
   } = storeToRefs(blockchainBalancesStore);
+  const { fetchV3Balances } = useUniswapStore();
 
   const { awaitTask, addTask, isTaskRunning } = useTasks();
   const { notify } = useNotifications();
@@ -522,6 +524,7 @@ export const useBalancesStore = defineStore('balances', () => {
     await fetchBlockchainBalances();
     await fetchNfBalances();
     await fetchLoopringBalances(false);
+    await fetchV3Balances();
   };
 
   const nfBalances = computed<NonFungibleBalance[]>(() => {
