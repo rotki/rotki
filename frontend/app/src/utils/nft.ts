@@ -1,5 +1,6 @@
 import { get } from '@vueuse/core';
-import { setupGeneralBalances } from '@/composables/balances';
+import { storeToRefs } from 'pinia';
+import { useBalancesStore } from '@/store/balances';
 import { NonFungibleBalance } from '@/store/balances/types';
 
 export const isVideo = (url: string | null): boolean => {
@@ -17,7 +18,7 @@ export const isNft = (address?: string) => {
 export const getNftBalance = (
   identifier: string
 ): NonFungibleBalance | null => {
-  const { nfBalances } = setupGeneralBalances();
+  const { nfBalances } = storeToRefs(useBalancesStore());
 
   return get(nfBalances).find(item => item.id === identifier) || null;
 };

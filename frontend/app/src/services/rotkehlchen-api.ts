@@ -684,10 +684,9 @@ export class RotkehlchenApi {
   }
 
   async editBtcAccount(
-    payload: BlockchainAccountPayload,
-    blockchain: Blockchain.BTC | Blockchain.BCH = Blockchain.BTC
+    payload: BlockchainAccountPayload
   ): Promise<BtcAccountData> {
-    let url = `/blockchains/${blockchain}`;
+    let url = `/blockchains/${payload.blockchain}`;
     const { address, label, tags } = payload;
 
     let data: {};
@@ -728,7 +727,10 @@ export class RotkehlchenApi {
     payload: BlockchainAccountPayload
   ): Promise<GeneralAccountData[]> {
     const { address, label, tags, blockchain } = payload;
-    assert(blockchain !== Blockchain.BTC, 'call editBtcAccount for btc');
+    assert(
+      ![Blockchain.BTC, Blockchain.BCH].includes(blockchain),
+      'call editBtcAccount for btc'
+    );
     const response = await this.axios.patch<ActionResult<GeneralAccountData[]>>(
       `/blockchains/${blockchain}`,
       {

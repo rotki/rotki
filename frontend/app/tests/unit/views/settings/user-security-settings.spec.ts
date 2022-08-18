@@ -11,7 +11,6 @@ import Vuetify from 'vuetify';
 import { BackupApi } from '@/services/backup/backup-api';
 import { api } from '@/services/rotkehlchen-api';
 import { usePremiumStore } from '@/store/session/premium';
-import store from '@/store/store';
 import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
 import { stub } from '../../../common/utils';
 import '../../i18n';
@@ -33,11 +32,7 @@ describe('UserSecuritySettings.vue', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(UserSecuritySettings, {
-      store,
       pinia,
-      provide: {
-        'vuex-store': store
-      },
       vuetify,
       stubs: [
         'v-tooltip',

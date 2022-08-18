@@ -222,16 +222,6 @@
           "title": "Querying blockchain balances"
         }
       },
-      "blockchain_account_add": {
-        "error": {
-          "description": "Failed to add the account: {error}",
-          "title": "Adding {blockchain} account {address}"
-        },
-        "task": {
-          "description": "{address} is being added",
-          "title": "Adding {blockchain} account"
-        }
-      },
       "blockchain_account_removal": {
         "error": {
           "description": "Failed to remove the account: {error}",
@@ -311,12 +301,6 @@
       "manual_delete": {
         "error": {
           "title": "Deleting Manual Balance"
-        }
-      },
-      "net_value": {
-        "error": {
-          "message": "Failed to fetch net value data: {message}",
-          "title": "Retrieving net value data"
         }
       },
       "supported_assets": {

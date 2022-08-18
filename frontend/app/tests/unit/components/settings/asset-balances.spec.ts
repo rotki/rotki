@@ -4,7 +4,6 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AssetBalances from '@/components/AssetBalances.vue';
 import { useSessionStore } from '@/store/session';
-import store from '@/store/store';
 import '../../i18n';
 
 Vue.use(Vuetify);
@@ -18,11 +17,7 @@ describe('AssetBalances.vue', () => {
     setActivePinia(pinia);
     wrapper = mount(AssetBalances, {
       vuetify,
-      store,
       pinia,
-      provide: {
-        'vuex-store': store
-      },
       propsData: {
         balances: []
       }

@@ -43,7 +43,8 @@ import {
   toRefs
 } from '@vue/composition-api';
 import dayjs from 'dayjs';
-import { setupReports } from '@/composables/reports';
+import { storeToRefs } from 'pinia';
+import { useReports } from '@/store/reports';
 import { Task, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
@@ -61,7 +62,7 @@ export default defineComponent({
       () => task.value.type === TaskType.TRADE_HISTORY
     );
 
-    const { progress } = setupReports();
+    const { progress } = storeToRefs(useReports());
 
     const time = computed(() => {
       return dayjs(task.value.time).format('LLL');

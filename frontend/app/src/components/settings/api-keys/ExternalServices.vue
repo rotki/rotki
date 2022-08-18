@@ -144,9 +144,9 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import { setupGeneralBalances } from '@/composables/balances';
 import { default as i18nFn } from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useMainStore } from '@/store/main';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
@@ -170,7 +170,7 @@ const loading = ref(false);
 
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { setMessage } = useMainStore();
-const { fetchLoopringBalances } = setupGeneralBalances();
+const { fetchLoopringBalances } = useBlockchainBalancesStore();
 
 const isLoopringActive = computed(() => {
   return get(activeModules).includes(Module.LOOPRING);

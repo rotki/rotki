@@ -9,8 +9,8 @@ import { AssetBalanceWithPrice } from '@rotki/common';
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import AssetBalances from '@/components/AssetBalances.vue';
+import { useBalancesStore } from '@/store/balances';
 import { useTasks } from '@/store/tasks';
-import { useStore } from '@/store/utils';
 import { TaskType } from '@/types/task-type';
 
 export default defineComponent({
@@ -23,9 +23,9 @@ export default defineComponent({
     const { identifier } = toRefs(props);
     const { isTaskRunning } = useTasks();
 
-    const store = useStore();
+    const { locationBreakdown: breakdown } = useBalancesStore();
     const locationBreakdown = computed<AssetBalanceWithPrice[]>(() => {
-      return store.getters['balances/locationBreakdown'](get(identifier));
+      return get(breakdown(get(identifier)));
     });
 
     const loadingData = computed<boolean>(() => {

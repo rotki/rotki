@@ -102,16 +102,14 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { setupGeneralBalances } from '@/composables/balances';
 import { isSectionLoading } from '@/composables/common';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { BalanceActions } from '@/store/balances/action-types';
+import { useBalancesStore } from '@/store/balances';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { Section } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 import { isVideo } from '@/utils/nft';
@@ -225,8 +223,9 @@ export default defineComponent({
     }
   },
   setup() {
-    const store = useStore();
-    const { nfBalances: balances, nfTotalValue } = setupGeneralBalances();
+    const balancesStore = useBalancesStore();
+    const { nfTotalValue, fetchNfBalances } = balancesStore;
+    const { nfBalances } = storeToRefs(balancesStore);
 
     const total = nfTotalValue();
 
@@ -234,18 +233,15 @@ export default defineComponent({
 
     const setupRefresh = (ignoreCache: boolean = false) => {
       const payload = ignoreCache ? { ignoreCache: true } : undefined;
-      return async () =>
-        await store.dispatch(
-          `balances/${BalanceActions.FETCH_NF_BALANCES}`,
-          payload
-        );
+
+      return async () => await fetchNfBalances(payload);
     };
 
     const refresh = setupRefresh(true);
     const refreshBalances = setupRefresh();
 
     const mappedBalances = computed(() => {
-      return get(balances).map(balance => {
+      return get(nfBalances).map(balance => {
         return {
           ...balance,
           imageUrl: balance.imageUrl || '/assets/images/placeholder.svg',

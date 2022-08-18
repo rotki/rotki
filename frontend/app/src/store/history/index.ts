@@ -1,4 +1,4 @@
-import { computed, Ref, ref } from '@vue/composition-api';
+import { Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
@@ -27,6 +27,7 @@ import {
 } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { Section, Status } from '@/store/const';
 import {
@@ -43,7 +44,6 @@ import {
 import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { getStatusUpdater } from '@/store/utils';
@@ -620,11 +620,8 @@ export const useTransactions = defineStore('history/transactions', () => {
 
   const counterparties = ref<string[]>([]);
 
+  const { ethAddresses } = storeToRefs(useBlockchainAccountsStore());
   const fetchTransactions = async (refresh: boolean = false) => {
-    const ethAddresses = computed<string[]>(() => {
-      return store.getters['balances/ethAddresses'];
-    });
-
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad, resetStatus } = getStatusUpdater(
       Section.TX

@@ -2,7 +2,6 @@ import { BigNumber } from '@rotki/common';
 import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { setupGeneralBalances } from '@/composables/balances';
 import i18n from '@/i18n';
 import {
   BalanceType,
@@ -12,6 +11,7 @@ import {
 } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
+import { useBalancesStore } from '@/store/balances';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { BalanceByLocation, LocationBalance } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
@@ -147,7 +147,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     try {
       const { balances } = await api.balances.addManualBalances([balance]);
       set(manualBalancesData, balances);
-      const { refreshPrices } = setupGeneralBalances();
+      const { refreshPrices } = useBalancesStore();
       refreshPrices({
         ignoreCache: false,
         selectedAsset: balance.asset
@@ -169,7 +169,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     try {
       const { balances } = await api.balances.editManualBalances([balance]);
       set(manualBalancesData, balances);
-      const { refreshPrices } = setupGeneralBalances();
+      const { refreshPrices } = useBalancesStore();
       refreshPrices({
         ignoreCache: false,
         selectedAsset: balance.asset

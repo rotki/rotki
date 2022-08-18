@@ -6,7 +6,6 @@ import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Section, Status } from '@/store/const';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
-import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import '../../i18n';
@@ -22,12 +21,8 @@ describe('AccountBalances.vue', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     wrapper = mount(AccountBalances, {
-      store,
       vuetify,
       pinia,
-      provide: {
-        'vuex-store': store
-      },
       propsData: {
         blockchain: 'ETH',
         balances: [],

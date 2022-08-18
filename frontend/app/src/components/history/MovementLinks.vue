@@ -22,8 +22,8 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import HashLink from '@/components/helper/HashLink.vue';
-import { setupGeneralBalances } from '@/composables/balances';
 import { AssetMovement } from '@/services/history/types';
+import { useAssetInfoRetrieval } from '@/store/assets';
 
 export default defineComponent({
   name: 'MovementLinks',
@@ -34,7 +34,7 @@ export default defineComponent({
   setup(props) {
     const { item } = toRefs(props);
 
-    const { isEthereumToken } = setupGeneralBalances();
+    const { isEthereumToken } = useAssetInfoRetrieval();
 
     const chain = computed<string>(() => {
       if (

@@ -120,15 +120,14 @@ import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocationData } from '@/components/history/type';
-import {
-  setupGeneralBalances,
-  setupLocationInfo
-} from '@/composables/balances';
+import { setupLocationInfo } from '@/composables/balances';
 import { useRouter, useTheme } from '@/composables/common';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { routesRef } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { useBalancesStore } from '@/store/balances';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Exchange } from '@/types/exchanges';
@@ -170,7 +169,8 @@ export default defineComponent({
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const { assetSymbol } = useAssetInfoRetrieval();
     const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
-    const { aggregatedBalances, balancesByLocation } = setupGeneralBalances();
+    const { aggregatedBalances } = storeToRefs(useBlockchainBalancesStore());
+    const { balancesByLocation } = storeToRefs(useBalancesStore());
     const { getLocation } = setupLocationInfo();
     const { dark } = useTheme();
 

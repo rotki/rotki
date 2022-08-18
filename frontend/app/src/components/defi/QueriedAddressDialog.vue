@@ -112,7 +112,7 @@ import { storeToRefs } from 'pinia';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { setupBlockchainAccounts } from '@/composables/balances';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { Nullable } from '@/types';
 import { Module } from '@/types/modules';
@@ -138,7 +138,7 @@ export default defineComponent({
     const store = useQueriedAddressesStore();
     const { addQueriedAddress, deleteQueriedAddress } = store;
     let { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
-    const { accounts } = setupBlockchainAccounts();
+    const { accounts } = storeToRefs(useBlockchainAccountsStore());
 
     const moduleName = computed(() => {
       let currentModule = get(module);

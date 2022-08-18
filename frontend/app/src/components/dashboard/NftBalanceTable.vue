@@ -91,16 +91,14 @@ import {
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
-import { setupGeneralBalances } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
-import { BalanceActions } from '@/store/balances/action-types';
+import { useBalancesStore } from '@/store/balances';
 import { Section } from '@/store/const';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { useStore } from '@/store/utils';
 import {
   DashboardTablesVisibleColumns,
   DashboardTableType
@@ -195,10 +193,11 @@ export default defineComponent({
     )
   },
   setup() {
-    const store = useStore();
     const statistics = useStatisticsStore();
     const { totalNetWorthUsd } = storeToRefs(statistics);
-    const { nfBalances: balances, nfTotalValue } = setupGeneralBalances();
+    const balancesStore = useBalancesStore();
+    const { nfBalances: balances } = storeToRefs(balancesStore);
+    const { nfTotalValue, fetchNfBalances } = balancesStore;
 
     const { shouldShowLoadingScreen } = setupStatusChecking();
 
@@ -215,10 +214,7 @@ export default defineComponent({
     };
 
     const refresh = async () => {
-      return await store.dispatch(
-        `balances/${BalanceActions.FETCH_NF_BALANCES}`,
-        true
-      );
+      return await fetchNfBalances(true);
     };
 
     const { dashboardTablesVisibleColumns } = storeToRefs(

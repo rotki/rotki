@@ -16,15 +16,6 @@ import '../../i18n';
 import { useSessionStore } from '@/store/session';
 import { PrivacyMode } from '@/store/session/types';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import store from '@/store/store';
-
-vi.mock('@/store/store', () => ({
-  default: {
-    getters: {
-      'balances/accounts': []
-    }
-  }
-}));
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
@@ -43,7 +34,6 @@ describe('AccountDisplay.vue', () => {
   function createWrapper() {
     const vuetify = new Vuetify();
     return mount(AccountDisplay, {
-      store,
       pinia,
       vuetify,
       stubs: {

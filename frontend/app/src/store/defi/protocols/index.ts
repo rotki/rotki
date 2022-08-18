@@ -45,7 +45,7 @@ import { useYearnStore } from '@/store/defi/yearn';
 import { getStatus, isLoading, setStatus } from '@/store/utils';
 import { Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
-import { Zero } from '@/utils/bignumbers';
+import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 
 const isLendingEvent = (value: AaveHistoryEvents): value is AaveEvent => {
@@ -407,7 +407,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
           let selectedLoan = {
             stableApr: '-',
             variableApr: '-',
-            balance: { amount: Zero, usdValue: Zero }
+            balance: zeroBalance()
           };
 
           let lending: AaveLending = {};
@@ -499,7 +499,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
           const asset = loan.asset ?? '';
 
           let apy: string = '0%';
-          let debt: Balance = { amount: Zero, usdValue: Zero };
+          let debt: Balance = zeroBalance();
           let collateral: Collateral<string>[] = [];
 
           const compBalances = get(compoundBalances) as CompoundBalances;

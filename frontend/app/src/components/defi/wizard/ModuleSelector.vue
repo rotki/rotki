@@ -65,11 +65,9 @@ import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { BalanceActions } from '@/store/balances/action-types';
-import { BalanceMutations } from '@/store/balances/mutation-types';
+import { useBalancesStore } from '@/store/balances';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 
 const wasActivated = (
@@ -92,23 +90,24 @@ const autocomplete = ref();
 
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { update: updateSettings } = useSettingsStore();
-const { dispatch, commit } = useStore();
 
-const fetchNfBalances = () => {
-  const callback = () =>
-    dispatch(`balances/${BalanceActions.FETCH_NF_BALANCES}`).then();
+const balancesStore = useBalancesStore();
+const { nonFungibleBalancesState } = storeToRefs(balancesStore);
+const { fetchNfBalances } = balancesStore;
+
+const fetch = () => {
+  const callback = () => fetchNfBalances({ ignoreCache: false });
   setTimeout(callback, 800);
 };
 
 const clearNfBalances = () => {
-  const callback = () =>
-    commit(`balances/${BalanceMutations.UPDATE_NF_BALANCES}`, {});
+  const callback = () => set(nonFungibleBalancesState, {});
   setTimeout(callback, 800);
 };
 
 const onModuleActivation = (active: Module[]) => {
   if (wasActivated(active, get(selectedModules), Module.NFTS)) {
-    fetchNfBalances();
+    fetch();
   }
 };
 

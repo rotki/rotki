@@ -226,7 +226,9 @@ export default defineComponent({
       set(notes, await api.fetchUserNotes(get(filter)));
       if (loadingIndicator) set(loading, false);
       nextTick(() => {
-        get(wrapper).scrollTop = 0;
+        if (get(wrapper)) {
+          get(wrapper).scrollTop = 0;
+        }
       });
     };
 

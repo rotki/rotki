@@ -10,9 +10,10 @@
 
 <script lang="ts">
 import { computed, defineComponent } from '@vue/composition-api';
+import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { useStore } from '@/store/utils';
-import { assert } from '@/utils/assertions';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 
 export default defineComponent({
   name: 'Eth2ValidatorLimitRow',
@@ -24,12 +25,9 @@ export default defineComponent({
     }
   },
   setup() {
-    const store = useStore();
-
-    const balances = store.state.balances;
-    assert(balances);
-    const limit = computed(() => balances.eth2Validators.entriesLimit);
-    const total = computed(() => balances.eth2Validators.entriesFound);
+    const { eth2ValidatorsState } = storeToRefs(useBlockchainAccountsStore());
+    const limit = computed(() => get(eth2ValidatorsState).entriesLimit);
+    const total = computed(() => get(eth2ValidatorsState).entriesFound);
     const visible = computed(
       () => limit.value > 0 && limit.value <= total.value
     );

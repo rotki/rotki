@@ -12,7 +12,6 @@ import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import store from '@/store/store';
 import { Module } from '@/types/modules';
 import '../../../i18n';
 
@@ -29,7 +28,6 @@ describe('ModuleSelector.vue', () => {
   const createWrapper = () => {
     const vuetify = new Vuetify();
     return mount(ModuleSelector, {
-      store,
       pinia,
       vuetify,
       stubs: ['v-tooltip', 'card']

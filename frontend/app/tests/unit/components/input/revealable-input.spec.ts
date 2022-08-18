@@ -5,7 +5,6 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useSessionStore } from '@/store/session';
-import store from '@/store/store';
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
@@ -18,7 +17,6 @@ describe('RevealableInput.vue', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     wrapper = mount(RevealableInput, {
-      store,
       pinia,
       vuetify,
       propsData: {
