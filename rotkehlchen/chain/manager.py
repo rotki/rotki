@@ -1,5 +1,4 @@
 import logging
-import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
@@ -54,10 +53,7 @@ from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
-from rotkehlchen.chain.substrate.utils import (
-    KUSAMA_NODE_CONNECTION_TIMEOUT,
-    POLKADOT_NODE_CONNECTION_TIMEOUT,
-)
+from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants.assets import (
     A_ADX,
     A_AVAX,
@@ -213,6 +209,25 @@ class BlockchainBalances:
         self.dot = defaultdict(BalanceSheet)
         self.avax = defaultdict(BalanceSheet)
 
+    def recalculate_totals(self) -> BalanceSheet:
+        """Calculate and return new balance totals based on per-account data"""
+        new_totals = BalanceSheet()
+        for eth_balances in self.eth.values():
+            new_totals += eth_balances
+        for eth2_balances in self.eth2.values():
+            new_totals += eth2_balances
+        for btc_balance in self.btc.values():
+            new_totals.assets[A_BTC] += btc_balance
+        for bch_balance in self.bch.values():
+            new_totals.assets[A_BTC] += bch_balance
+        for ksm_balances in self.ksm.values():
+            new_totals += ksm_balances
+        for dot_balances in self.dot.values():
+            new_totals += dot_balances
+        for avax_balances in self.avax.values():
+            new_totals += avax_balances
+        return new_totals
+
     def serialize(self) -> Dict[str, Dict]:
         eth_balances = {k: v.serialize() for k, v in self.eth.items()}
         eth2_balances = {k: v.serialize() for k, v in self.eth2.items()}
@@ -271,45 +286,6 @@ class BlockchainBalances:
         if blockchain == SupportedBlockchain.AVALANCHE:
             return self.avax != {}
 
-        # else
-        raise AssertionError('Invalid blockchain value')
-
-    def account_exists(
-            self,
-            blockchain: SupportedBlockchain,
-            account: Union[
-                BTCAddress,
-                ChecksumEthAddress,
-                KusamaAddress,
-                PolkadotAddress,
-                Eth2PubKey,
-            ],
-    ) -> bool:
-        if blockchain == SupportedBlockchain.ETHEREUM:
-            return account in self.eth
-        if blockchain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
-            return account in self.eth2
-        if blockchain == SupportedBlockchain.BITCOIN:
-            return account in self.btc
-        if blockchain == SupportedBlockchain.BITCOIN_CASH:
-            # an already existing bch address can be added but in a different format
-            # so convert all bch addresses to the same format and compare.
-            with self.db.conn.read_ctx() as cursor:
-                bch_accounts = self.db.get_blockchain_account_data(
-                    cursor=cursor,
-                    blockchain=blockchain,
-                )
-                forced_bch_legacy_addresses = {
-                    force_address_to_legacy_address(account.address)
-                    for account in bch_accounts
-                }
-                return force_address_to_legacy_address(account) in forced_bch_legacy_addresses or account in self.bch  # noqa: E501
-        if blockchain == SupportedBlockchain.KUSAMA:
-            return account in self.ksm
-        if blockchain == SupportedBlockchain.POLKADOT:
-            return account in self.dot
-        if blockchain == SupportedBlockchain.AVALANCHE:
-            return account in self.avax
         # else
         raise AssertionError('Invalid blockchain value')
 
@@ -588,20 +564,43 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             totals=self.totals.copy(),
         )
 
-    def check_accounts_exist(
+    def check_accounts_existence(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
+            append_or_remove: Literal['append', 'remove'],
     ) -> None:
-        """Checks if any of the accounts already exist and if they do raises an input error"""
-        existing_accounts = []
-        for account in accounts:
-            if self.balances.account_exists(blockchain, account):
-                existing_accounts.append(account)
+        """Checks if any of the accounts already exist or don't exist
+        (depending on `append_or_remove`) and may raise an InputError"""
+        if blockchain == SupportedBlockchain.BITCOIN_CASH and append_or_remove == 'append':
+            with self.database.conn.read_ctx() as cursor:
+                bch_accounts = self.database.get_blockchain_account_data(
+                    cursor=cursor,
+                    blockchain=blockchain,
+                )
+                forced_bch_legacy_addresses = {
+                    force_address_to_legacy_address(account.address)
+                    for account in bch_accounts
+                }
 
-        if len(existing_accounts) != 0:
+        bad_accounts = []
+        for account in accounts:
+            if blockchain == SupportedBlockchain.BITCOIN_CASH and append_or_remove == 'append':
+                # an already existing bch address can be added but in a different format
+                # so convert all bch addresses to the same format and compare.
+                existent = account in self.accounts.bch or force_address_to_legacy_address(account) in forced_bch_legacy_addresses  # noqa: E501
+            else:
+                existent = account in self.accounts.get(blockchain)
+
+            if existent is True and append_or_remove == 'append':
+                bad_accounts.append(account)
+            elif existent is False and append_or_remove == 'remove':
+                bad_accounts.append(account)
+
+        if len(bad_accounts) != 0:
+            word = 'already' if append_or_remove == 'append' else 'don\'t'
             raise InputError(
-                f'Blockchain account/s {",".join(existing_accounts)} already exist',
+                f'Blockchain account/s {",".join(bad_accounts)} {word} exist',
             )
 
     @protect_with_lock(arguments_matter=True)
@@ -649,8 +648,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if should_query_dot:
             self.query_polkadot_balances(ignore_cache=ignore_cache)
         if should_query_avax:
-            self.query_avalanche_balances(ignore_cache=ignore_cache)
+            self.query_avax_balances(ignore_cache=ignore_cache)
 
+        self.totals = self.balances.recalculate_totals()
         return self.get_balances_update()
 
     @protect_with_lock()
@@ -670,15 +670,12 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         self.balances.btc = {}
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
-        total = ZERO
         balances = get_bitcoin_addresses_balances(self.accounts.btc)
         for account, balance in balances.items():
-            total += balance
             self.balances.btc[account] = Balance(
                 amount=balance,
                 usd_value=balance * btc_usd_price,
             )
-        self.totals.assets[A_BTC] = Balance(amount=total, usd_value=total * btc_usd_price)
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -697,15 +694,12 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         self.balances.bch = {}
         bch_usd_price = Inquirer().find_usd_price(A_BCH)
-        total = ZERO
         balances = get_bitcoin_cash_addresses_balances(self.accounts.bch)
         for account, balance in balances.items():
-            total += balance
             self.balances.bch[account] = Balance(
                 amount=balance,
                 usd_value=balance * bch_usd_price,
             )
-        self.totals.assets[A_BCH] = Balance(amount=total, usd_value=total * bch_usd_price)
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -727,11 +721,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if wait_available_node:
             wait_until_a_node_is_available(
                 substrate_manager=self.kusama,
-                seconds=KUSAMA_NODE_CONNECTION_TIMEOUT,
+                seconds=SUBSTRATE_NODE_CONNECTION_TIMEOUT,
             )
 
         account_amount = self.kusama.get_accounts_balance(self.accounts.ksm)
-        total_balance = Balance()
         for account, amount in account_amount.items():
             balance = Balance(
                 amount=amount,
@@ -740,12 +733,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self.balances.ksm[account] = BalanceSheet(
                 assets=defaultdict(Balance, {A_KSM: balance}),
             )
-            total_balance += balance
-        self.totals.assets[A_KSM] = total_balance
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_avalanche_balances(
+    def query_avax_balances(
             self,  # pylint: disable=unused-argument
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
@@ -760,18 +751,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         # Query avax balance
         avax_usd_price = Inquirer().find_usd_price(A_AVAX)
         account_amount = self.avalanche.get_multiavax_balance(self.accounts.avax)
-        avax_total = ZERO
         for account, amount in account_amount.items():
-            avax_total += amount
             usd_value = amount * avax_usd_price
             self.balances.avax[account] = BalanceSheet(
                 assets=defaultdict(Balance, {A_AVAX: Balance(amount, usd_value)}),
             )
-
-        self.totals.assets[A_AVAX] = Balance(
-            amount=avax_total,
-            usd_value=avax_total * avax_usd_price,
-        )
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -793,11 +777,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if wait_available_node:
             wait_until_a_node_is_available(
                 substrate_manager=self.polkadot,
-                seconds=POLKADOT_NODE_CONNECTION_TIMEOUT,
+                seconds=SUBSTRATE_NODE_CONNECTION_TIMEOUT,
             )
 
         account_amount = self.polkadot.get_accounts_balance(self.accounts.dot)
-        total_balance = Balance()
         for account, amount in account_amount.items():
             balance = Balance(
                 amount=amount,
@@ -806,8 +789,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self.balances.dot[account] = BalanceSheet(
                 assets=defaultdict(Balance, {A_DOT: balance}),
             )
-            total_balance += balance
-        self.totals.assets[A_DOT] = total_balance
 
     def sync_bitcoin_accounts_with_db(
             self,
@@ -829,384 +810,49 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             if account not in db_btc_accounts:
                 accounts_to_remove.append(account)
 
-        if blockchain == SupportedBlockchain.BITCOIN:
-            balances_mapping = get_bitcoin_addresses_balances(accounts_to_remove)
-        else:
-            balances_mapping = get_bitcoin_cash_addresses_balances(accounts_to_remove)
-        balances = [balances_mapping.get(x, ZERO) for x in accounts_to_remove]
         self.modify_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts_to_remove,
             append_or_remove='remove',
-            add_or_sub=operator.sub,
-            already_queried_balances=balances,
         )
-
-    def modify_btc_account(
-            self,
-            account: BTCAddress,
-            append_or_remove: str,
-            add_or_sub: AddOrSub,
-            already_queried_balance: Optional[FVal] = None,
-    ) -> None:
-        """Either appends or removes a BTC acccount.
-
-        If already_queried_balance is not None then instead of querying the balance
-        of the account we can use the already queried one.
-
-        Call with 'append', operator.add to add the account
-        Call with 'remove', operator.sub to remove the account
-
-        May raise:
-        - RemotError if there is a problem querying blockchain.info or cryptocompare
-        """
-        btc_usd_price = Inquirer().find_usd_price(A_BTC)
-        remove_with_populated_balance = (
-            append_or_remove == 'remove' and len(self.balances.btc) != 0
-        )
-        # Query the balance of the account except for the case when it's removed
-        # and there is no other account in the balances
-        if append_or_remove == 'append' or remove_with_populated_balance:
-            if already_queried_balance is None:
-                balances = get_bitcoin_addresses_balances([account])
-                balance = balances[account]
-            else:
-                balance = already_queried_balance
-            usd_balance = balance * btc_usd_price
-
-        if append_or_remove == 'append':
-            self.balances.btc[account] = Balance(amount=balance, usd_value=usd_balance)
-        elif append_or_remove == 'remove':
-            if account in self.balances.btc:
-                del self.balances.btc[account]
-        else:
-            raise AssertionError('Programmer error: Should be append or remove')
-
-        if len(self.balances.btc) == 0:
-            # If the last account was removed balance should be 0
-            self.totals.assets[A_BTC] = Balance()
-        else:
-            self.totals.assets[A_BTC] = add_or_sub(
-                self.totals.assets[A_BTC],
-                Balance(balance, usd_balance),
-            )
-
-        # At the very end add/remove it from the accounts
-        getattr(self.accounts.btc, append_or_remove)(account)
-
-    def modify_bch_account(
-            self,
-            account: BTCAddress,
-            append_or_remove: str,
-            add_or_sub: AddOrSub,
-            already_queried_balance: Optional[FVal] = None,
-    ) -> None:
-        """Either appends or removes a BCH acccount.
-
-        If already_queried_balance is not None then instead of querying the balance
-        of the account we can use the already queried one.
-
-        Call with 'append', operator.add to add the account
-        Call with 'remove', operator.sub to remove the account
-
-        May raise:
-        - RemotError if there is a problem querying blockchain.info or cryptocompare
-        """
-        bch_usd_price = Inquirer().find_usd_price(A_BCH)
-        remove_with_populated_balance = (
-            append_or_remove == 'remove' and len(self.balances.bch) != 0
-        )
-        # Query the balance of the account except for the case when it's removed
-        # and there is no other account in the balances
-        if append_or_remove == 'append' or remove_with_populated_balance:
-            if already_queried_balance is None:
-                balances = get_bitcoin_cash_addresses_balances([account])
-                balance = balances[account]
-            else:
-                balance = already_queried_balance
-            usd_balance = balance * bch_usd_price
-
-        if append_or_remove == 'append':
-            self.balances.bch[account] = Balance(amount=balance, usd_value=usd_balance)
-        elif append_or_remove == 'remove':
-            if account in self.balances.bch:
-                del self.balances.bch[account]
-        else:
-            raise AssertionError('Programmer error: Should be append or remove')
-
-        if len(self.balances.bch) == 0:
-            # If the last account was removed balance should be 0
-            self.totals.assets[A_BCH] = Balance()
-        else:
-            self.totals.assets[A_BCH] = add_or_sub(
-                self.totals.assets[A_BCH],
-                Balance(balance, usd_balance),
-            )
-
-        # At the very end add/remove it from the accounts
-        getattr(self.accounts.bch, append_or_remove)(account)
-
-    def modify_eth_account(
-            self,
-            account: ChecksumEthAddress,
-            append_or_remove: str,
-    ) -> None:
-        """Either appends or removes an ETH acccount.
-
-        Call with 'append' to add the account
-        Call with 'remove' remove the account
-
-        May raise:
-        - Input error if the given_account is not a valid ETH address
-        - BadFunctionCallOutput if a token is queried from a local chain
-        and the chain is not synced
-        - RemoteError if there is a problem with a query to an external
-        service such as Etherscan or cryptocompare
-        """
-        eth_usd_price = Inquirer().find_usd_price(A_ETH)
-        remove_with_populated_balance = (
-            append_or_remove == 'remove' and len(self.balances.eth) != 0
-        )
-        # Query the balance of the account except for the case when it's removed
-        # and there is no other account in the balances
-        if append_or_remove == 'append' or remove_with_populated_balance:
-            amount = self.ethereum.get_eth_balance(account)
-            usd_value = amount * eth_usd_price
-
-        if append_or_remove == 'append':
-            self.accounts.eth.append(account)
-            self.balances.eth[account] = BalanceSheet(
-                assets=defaultdict(Balance, {A_ETH: Balance(amount, usd_value)}),
-            )
-        elif append_or_remove == 'remove':
-            if account not in self.accounts.eth:
-                raise InputError('Tried to remove a non existing ETH account')
-            self.accounts.eth.remove(account)
-            balances = self.balances.eth.get(account, None)
-            if balances is not None:
-                for asset, balance in balances.assets.items():
-                    self.totals.assets[asset] -= balance
-                    if self.totals.assets[asset].amount <= ZERO:
-                        self.totals.assets[asset] = Balance()
-
-                for asset, balance in balances.liabilities.items():
-                    self.totals.liabilities[asset] -= balance
-                    if self.totals.liabilities[asset].amount <= ZERO:
-                        self.totals.assets[asset] = Balance()
-            self.balances.eth.pop(account, None)
-        else:
-            raise AssertionError('Programmer error: Should be append or remove')
-
-        if len(self.balances.eth) == 0:
-            # If the last account was removed balance should be 0
-            self.totals.assets[A_ETH] = Balance()
-        elif append_or_remove == 'append':
-            self.totals.assets[A_ETH] += Balance(amount, usd_value)
-            self._query_ethereum_tokens(
-                action=AccountAction.APPEND,
-                given_accounts=[account],
-            )
-
-    def modify_kusama_account(
-            self,
-            account: KusamaAddress,
-            append_or_remove: Literal['append', 'remove'],
-    ) -> None:
-        """Either appends or removes a kusama acccount.
-
-        Call with 'append' to add the account
-        Call with 'remove' remove the account
-
-        May raise:
-        - Input error if the given_account is not a valid kusama address
-        - RemoteError if there is a problem with a query to an external
-        service such as Kusama nodes or cryptocompare
-        """
-        if append_or_remove not in ('append', 'remove'):
-            raise AssertionError(f'Unexpected action: {append_or_remove}')
-        if append_or_remove == 'remove' and account not in self.accounts.ksm:
-            raise InputError('Tried to remove a non existing KSM account')
-
-        ksm_usd_price = Inquirer().find_usd_price(A_KSM)
-        if append_or_remove == 'append':
-            # Wait until a node is connected when adding a KSM address for the
-            # first time.
-            if len(self.kusama.available_nodes_call_order) == 0:
-                self.kusama.attempt_connections()
-                wait_until_a_node_is_available(
-                    substrate_manager=self.kusama,
-                    seconds=KUSAMA_NODE_CONNECTION_TIMEOUT,
-                )
-            amount = self.kusama.get_account_balance(account)
-            balance = Balance(amount=amount, usd_value=amount * ksm_usd_price)
-            self.accounts.ksm.append(account)
-            self.balances.ksm[account] = BalanceSheet(
-                assets=defaultdict(Balance, {A_KSM: balance}),
-            )
-            self.totals.assets[A_KSM] += balance
-        if append_or_remove == 'remove':
-            if len(self.balances.ksm) > 1:
-                if account in self.balances.ksm:
-                    self.totals.assets[A_KSM] -= self.balances.ksm[account].assets[A_KSM]
-            else:  # If the last account was removed balance should be 0
-                self.totals.assets[A_KSM] = Balance()
-            self.balances.ksm.pop(account, None)
-            self.accounts.ksm.remove(account)
-
-    def modify_avalanche_account(
-            self,
-            account: ChecksumEthAddress,
-            append_or_remove: Literal['append', 'remove'],
-    ) -> None:
-        """Either appends or removes a kusama acccount.
-        Call with 'append' to add the account
-        Call with 'remove' remove the account
-        May raise:
-        - Input error if the given_account is not a valid kusama address
-        - RemoteError if there is a problem with a query to an external
-        service such as Kusama nodes or cryptocompare
-        """
-        if append_or_remove not in ('append', 'remove'):
-            raise AssertionError(f'Unexpected action: {append_or_remove}')
-        if append_or_remove == 'remove' and account not in self.accounts.avax:
-            raise InputError('Tried to remove a non existing AVAX account')
-
-        avax_usd_price = Inquirer().find_usd_price(A_AVAX)
-        remove_with_populated_balance = (
-            append_or_remove == 'remove' and len(self.balances.avax) != 0
-        )
-        # Query the balance of the account except for the case when it's removed
-        # and there is no other account in the balances
-        if append_or_remove == 'append' or remove_with_populated_balance:
-            amount = self.avalanche.get_avax_balance(account)
-            usd_value = amount * avax_usd_price
-
-        if append_or_remove == 'append':
-            self.accounts.avax.append(account)
-            self.balances.avax[account] = BalanceSheet(
-                assets=defaultdict(Balance, {A_AVAX: Balance(amount, usd_value)}),
-            )
-
-        elif append_or_remove == 'remove':
-            if len(self.balances.avax) > 1:
-                if account in self.balances.avax:
-                    self.totals.assets[A_AVAX] -= self.balances.avax[account].assets[A_AVAX]
-            else:  # If the last account was removed balance should be 0
-                self.totals.assets[A_AVAX] = Balance()
-            self.balances.avax.pop(account, None)
-            self.accounts.avax.remove(account)
-
-        if len(self.balances.avax) == 0:
-            # If the last account was removed balance should be 0
-            self.totals.assets[A_AVAX] = Balance()
-        elif append_or_remove == 'append':
-            self.totals.assets[A_AVAX] += Balance(amount, usd_value)
-
-    def modify_polkadot_account(
-            self,
-            account: PolkadotAddress,
-            append_or_remove: Literal['append', 'remove'],
-    ) -> None:
-        """Either appends or removes a polkadot acccount.
-
-        Call with 'append' to add the account
-        Call with 'remove' remove the account
-
-        May raise:
-        - Input error if the given_account is not a valid polkadot address
-        - RemoteError if there is a problem with a query to an external
-        service such as Polkadot nodes or cryptocompare
-        """
-        if append_or_remove not in ('append', 'remove'):
-            raise AssertionError(f'Unexpected action: {append_or_remove}')
-        if append_or_remove == 'remove' and account not in self.accounts.dot:
-            raise InputError('Tried to remove a non existing DOT account')
-
-        dot_usd_price = Inquirer().find_usd_price(A_DOT)
-        if append_or_remove == 'append':
-            # Wait until a node is connected when adding a DOT address for the first time.
-            if len(self.polkadot.available_nodes_call_order) == 0:
-                self.polkadot.attempt_connections()
-                wait_until_a_node_is_available(
-                    substrate_manager=self.polkadot,
-                    seconds=POLKADOT_NODE_CONNECTION_TIMEOUT,
-                )
-            amount = self.polkadot.get_account_balance(account)
-            balance = Balance(amount=amount, usd_value=amount * dot_usd_price)
-            self.accounts.dot.append(account)
-            self.balances.dot[account] = BalanceSheet(
-                assets=defaultdict(Balance, {A_DOT: balance}),
-            )
-            self.totals.assets[A_DOT] += balance
-        if append_or_remove == 'remove':
-            if len(self.balances.dot) > 1:
-                if account in self.balances.dot:
-                    self.totals.assets[A_DOT] -= self.balances.dot[account].assets[A_DOT]
-            else:  # If the last account was removed balance should be 0
-                self.totals.assets[A_DOT] = Balance()
-            self.balances.dot.pop(account, None)
-            self.accounts.dot.remove(account)
 
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
-            already_queried_balances: Optional[List[FVal]] = None,
-    ) -> BlockchainBalancesUpdate:
-        """Adds new blockchain accounts and requeries all balances after the addition.
+    ) -> None:
+        """Adds new blockchain accounts.
         The accounts are added in the blockchain object and not in the database.
-        Returns the new total balances, the actually added accounts (some
-        accounts may have been invalid) and also any errors that occurred
-        during the addition.
 
         May Raise:
-        - EthSyncError from modify_blockchain_accounts
         - InputError if the given accounts list is empty, or if it contains invalid accounts,
           or if any account already exists.
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem
         """
         if len(accounts) == 0:
             raise InputError('Empty list of blockchain accounts to add was given')
 
-        # If no blockchain query has happened before then we need to query the relevant
-        # chain to populate the self.balances mapping.
-        if not self.balances.is_queried(blockchain):
-            self.query_balances(blockchain, ignore_cache=True)
-            self.flush_cache('query_balances', blockchain=blockchain, ignore_cache=True)  # noqa: E501
-
-        result = self.modify_blockchain_accounts(
+        self.modify_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
             append_or_remove='append',
-            add_or_sub=operator.add,
-            already_queried_balances=already_queried_balances,
         )
-
-        return result
 
     def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
-    ) -> BlockchainBalancesUpdate:
-        """Removes blockchain accounts and requeries all balances after the removal.
+    ) -> None:
+        """Removes blockchain accounts.
 
         The accounts are removed from the blockchain object and not from the database.
         Database removal happens afterwards at the caller.
-        Returns the new total balances, the actually removes accounts (some
-        accounts may have been invalid) and also any errors that occured
-        during the removal.
 
         If any of the given accounts are not known an inputError is raised and
         no account is modified.
 
         May Raise:
-        - EthSyncError from modify_blockchain_accounts
         - InputError if the given accounts list is empty, or if
         it contains an unknown account or invalid account
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem
         """
         if len(accounts) == 0:
             raise InputError('Empty list of blockchain accounts to remove was given')
@@ -1218,177 +864,144 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 f'accounts {",".join(unknown_accounts)}',
             )
 
-        # If no blockchain query has happened before then we need to query the relevant
-        # chain to populate the self.balances mapping. But query has to happen after
-        # account removal so as not to query unneeded accounts
-        balances_queried_before = True
-        if not self.balances.is_queried(blockchain):
-            balances_queried_before = False
-
         self.modify_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
             append_or_remove='remove',
-            add_or_sub=operator.sub,
         )
 
-        if not balances_queried_before:
-            self.query_balances(blockchain, ignore_cache=True)
+    def modify_dot_ksm_accounts(
+            self,
+            accounts: Union[List[PolkadotAddress], List[KusamaAddress]],
+            blockchain: Literal[SupportedBlockchain.POLKADOT, SupportedBlockchain.KUSAMA],
+            append_or_remove: Literal['append', 'remove'],
+    ) -> None:
+        """May raise:
+        - RemoteError if we couldn't connect to any node"""
+        lock: Semaphore = getattr(self, f'{blockchain.value.lower()}_lock')
+        address_type = blockchain.get_address_type()
+        substrate_manager: 'SubstrateManager' = getattr(self, blockchain.name.lower())
+        saved_accounts = self.accounts.get(blockchain=blockchain)
+        balances: Union[Dict[PolkadotAddress, BalanceSheet], Dict[KusamaAddress, BalanceSheet]]
+        balances = getattr(self.balances, blockchain.value.lower())
 
-        result = self.get_balances_update()
-        return result
+        with lock:
+            # we are adding/removing accounts, make sure query cache is flushed
+            self.flush_cache(f'query_{blockchain.name.lower()}_balances')
+
+            if append_or_remove == 'append':
+                # When adding account for the first time we should connect to the nodes
+                if len(substrate_manager.available_nodes_call_order) == 0:
+                    substrate_manager.attempt_connections()
+                    wait_until_a_node_is_available(
+                        substrate_manager=substrate_manager,
+                        seconds=SUBSTRATE_NODE_CONNECTION_TIMEOUT,
+                    )
+
+            for account in accounts:
+                address = address_type(account)
+                if append_or_remove == 'append':
+                    saved_accounts.append(address)
+                else:  # remove
+                    balances.pop(address, None)
+                    saved_accounts.remove(address)
+
+    def modify_btc_bch_avax_accounts(
+            self,
+            accounts: Union[List[BTCAddress], List[ChecksumEthAddress]],
+            blockchain: Literal[
+                SupportedBlockchain.BITCOIN,
+                SupportedBlockchain.BITCOIN_CASH,
+                SupportedBlockchain.AVALANCHE,
+            ],
+            append_or_remove: Literal['append', 'remove'],
+    ) -> None:
+        # we are adding/removing accounts, make sure query cache is flushed
+        self.flush_cache(f'query_{blockchain.value.lower()}_balances')
+
+        address_type = blockchain.get_address_type()
+        saved_accounts = self.accounts.get(blockchain=blockchain)
+        balances = getattr(self.balances, blockchain.value.lower())
+
+        for account in accounts:
+            address = address_type(account)
+            if append_or_remove == 'append':
+                saved_accounts.append(address)
+            else:  # remove
+                balances.pop(address, None)
+                saved_accounts.remove(address)
+
+    def modify_eth_accounts(
+            self,
+            accounts: List[ChecksumEthAddress],
+            append_or_remove: Literal['append', 'remove'],
+    ) -> None:
+        """May raise:
+        - RemoteError if there is a problem querying an external service such
+          as etherscan (from on_account_addition or on_account_removal callback)"""
+        with self.eth_lock:
+            # we are adding/removing accounts, make sure query cache is flushed
+            self.flush_cache('query_ethereum_balances')
+
+            for account in accounts:
+                address = string_to_ethereum_address(account)
+                if append_or_remove == 'append':
+                    self.accounts.eth.append(address)
+                    for _, module in self.iterate_modules():
+                        module.on_account_addition(address)
+                else:  # remove
+                    self.balances.eth.pop(address, None)
+                    self.accounts.eth.remove(address)
+                    self.defi_balances.pop(address, None)
+                    for _, module in self.iterate_modules():
+                        module.on_account_removal(address)
 
     def modify_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
             append_or_remove: Literal['append', 'remove'],
-            add_or_sub: AddOrSub,
-            already_queried_balances: Optional[List[FVal]] = None,
-    ) -> BlockchainBalancesUpdate:
-        """Add or remove a list of blockchain account
+    ) -> None:
+        """Add or remove a list of blockchain accounts.
 
-        May raise:
-
-        - InputError if accounts to remove do not exist.
-        - EthSyncError if there is a problem querying the ethereum chain
+       May raise:
+        - InputError if any of the accounts exists while trying to append or any of the
+        accounts doesn't exist while trying to remove
         - RemoteError if there is a problem querying an external service such
-          as etherscan or blockchain.info
+          as etherscan or blockchain.info or couldn't connect to a node (for polkadot and kusama)
         """
-        if blockchain == SupportedBlockchain.BITCOIN:
-            with self.btc_lock:
-                if append_or_remove == 'append':
-                    self.check_accounts_exist(blockchain, accounts)
+        self.check_accounts_existence(
+            blockchain=blockchain,
+            accounts=accounts,
+            append_or_remove=append_or_remove,
+        )
 
-                # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_btc_balances')
-                self.flush_cache('query_balances')
-                self.flush_cache('query_balances', blockchain=SupportedBlockchain.BITCOIN)
-                for idx, account in enumerate(accounts):
-                    a_balance = already_queried_balances[idx] if already_queried_balances else None
-                    self.modify_btc_account(
-                        BTCAddress(account),
-                        append_or_remove,
-                        add_or_sub,
-                        already_queried_balance=a_balance,
-                    )
-
-        elif blockchain == SupportedBlockchain.BITCOIN_CASH:
-            with self.bch_lock:
-                if append_or_remove == 'append':
-                    self.check_accounts_exist(blockchain, accounts)
-
-                # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_bch_balances')
-                self.flush_cache('query_balances')
-                self.flush_cache('query_balances', blockchain=SupportedBlockchain.BITCOIN_CASH)
-                for idx, account in enumerate(accounts):
-                    a_balance = already_queried_balances[idx] if already_queried_balances else None
-                    self.modify_bch_account(
-                        BTCAddress(account),
-                        append_or_remove,
-                        add_or_sub,
-                        already_queried_balance=a_balance,
-                    )
+        if blockchain in {
+            SupportedBlockchain.BITCOIN,
+            SupportedBlockchain.BITCOIN_CASH,
+            SupportedBlockchain.AVALANCHE,
+        }:
+            # we use `type: ignore` here and in other methods since mypy doesn't understand that
+            # types of `blockchain` and `accounts` can be narrowed after if checks
+            self.modify_btc_bch_avax_accounts(
+                accounts=accounts,  # type: ignore
+                blockchain=blockchain,  # type: ignore
+                append_or_remove=append_or_remove,
+            )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
-            with self.eth_lock:
-                if append_or_remove == 'append':
-                    self.check_accounts_exist(blockchain, accounts)
+            self.modify_eth_accounts(
+                accounts=accounts,  # type: ignore
+                append_or_remove=append_or_remove,
+            )
 
-                # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_ethereum_balances', force_token_detection=False)
-                self.flush_cache('query_ethereum_balances', force_token_detection=True)
-                self.flush_cache('query_balances')
-                self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM)
-                for account in accounts:
-                    # when the API adds or removes an address, the deserialize function at
-                    # EthereumAddressField is called, so we expect from the addresses retrieved by
-                    # this function to be already checksumed.
-                    address = string_to_ethereum_address(account)
-                    try:
-                        self.modify_eth_account(
-                            account=address,
-                            append_or_remove=append_or_remove,
-                        )
-                    except BadFunctionCallOutput as e:
-                        log.error(
-                            'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                            'exception: {}'.format(str(e)),
-                        )
-                        raise EthSyncError(
-                            'Tried to use the ethereum chain of a local client to edit '
-                            'an eth account but the chain is not synced.',
-                        ) from e
+        elif blockchain in {SupportedBlockchain.POLKADOT, SupportedBlockchain.KUSAMA}:
+            self.modify_dot_ksm_accounts(
+                accounts=accounts,  # type: ignore
+                blockchain=blockchain,  # type: ignore
+                append_or_remove=append_or_remove,
+            )
 
-                    # Also modify and take into account defi balances
-                    if append_or_remove == 'append':
-                        balances = self.defichad.query_defi_balances([address])
-                        address_balances = balances.get(address, [])
-                        if len(address_balances) != 0:
-                            self.defi_balances[address] = address_balances
-                            self._add_account_defi_balances_to_token_and_totals(
-                                account=address,
-                                balances=address_balances,
-                            )
-                    else:  # remove
-                        self.defi_balances.pop(address, None)
-                    # For each module run the corresponding callback for the address
-                    for _, module in self.iterate_modules():
-                        if append_or_remove == 'append':
-                            new_module_balances = module.on_account_addition(address)
-                            if new_module_balances:
-                                for entry in new_module_balances:
-                                    self.balances.eth[address].assets[entry.asset] += entry.balance
-                                    self.totals.assets[entry.asset] += entry.balance
-                        else:  # remove
-                            module.on_account_removal(address)
-
-        elif blockchain == SupportedBlockchain.KUSAMA:
-            with self.ksm_lock:
-                if append_or_remove == 'append':
-                    self.check_accounts_exist(blockchain, accounts)
-
-                # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_kusama_balances')
-                self.flush_cache('query_balances')
-                self.flush_cache('query_balances', blockchain=SupportedBlockchain.KUSAMA)
-                for account in accounts:
-                    self.modify_kusama_account(
-                        account=KusamaAddress(account),
-                        append_or_remove=append_or_remove,
-                    )
-
-        elif blockchain == SupportedBlockchain.POLKADOT:
-            with self.dot_lock:
-                if append_or_remove == 'append':
-                    self.check_accounts_exist(blockchain, accounts)
-
-                # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_polkadot_balances')
-                self.flush_cache('query_balances')
-                self.flush_cache('query_balances', blockchain=SupportedBlockchain.POLKADOT)
-                for account in accounts:
-                    self.modify_polkadot_account(
-                        account=PolkadotAddress(account),
-                        append_or_remove=append_or_remove,
-                    )
-
-        elif blockchain == SupportedBlockchain.AVALANCHE:
-            with self.avax_lock:
-                if append_or_remove == 'append':
-                    self.check_accounts_exist(blockchain, accounts)
-
-                # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_avalanche_balances')
-                self.flush_cache('query_balances')
-                self.flush_cache('query_balances', blockchain=SupportedBlockchain.AVALANCHE)  # noqa: E501
-                for account in accounts:
-                    address = string_to_ethereum_address(account)
-                    self.modify_avalanche_account(
-                        account=address,
-                        append_or_remove=append_or_remove,
-                    )
         else:
             # That should not happen. Should be checked by marshmallow
             raise AssertionError(
@@ -1396,7 +1009,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     blockchain),
             )
 
-        return self.get_balances_update()
+        # we are adding/removing accounts, make sure query cache is flushed
+        self.flush_cache('query_balances')
+        self.flush_cache('query_balances', blockchain=blockchain)
+
+        # recalculate totals
+        if append_or_remove == 'remove':  # at addition no balances are queried so no need
+            self.totals = self.balances.recalculate_totals()
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -1417,20 +1036,15 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             return  # no eth2 module active -- do nothing
 
         # Before querying the new balances, delete the ones in memory if any
-        self.totals.assets.pop(A_ETH2, None)
         self.balances.eth2.clear()
         balance_mapping = eth2.get_balances(
             addresses=self.queried_addresses_for_module('eth2'),
             fetch_validators_for_eth1=fetch_validators_for_eth1,
         )
-        total = Balance()
         for pubkey, balance in balance_mapping.items():
             self.balances.eth2[pubkey] = BalanceSheet(
                 assets=defaultdict(Balance, {A_ETH2: balance}),
             )
-            total += balance
-        if total.amount != ZERO:
-            self.totals.assets[A_ETH2] = total
 
     def _update_balances_after_token_query(
             self,
@@ -1438,12 +1052,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             balance_result: Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]],
             token_usd_price: Dict[EthereumToken, Price],
     ) -> None:
-        token_totals: Dict[EthereumToken, FVal] = defaultdict(FVal)
         # Update the per account token balance and usd value
         eth_balances = self.balances.eth
         for account, token_balances in balance_result.items():
             for token, token_balance in token_balances.items():
-                token_totals[token] += token_balance
                 balance = Balance(
                     amount=token_balance,
                     usd_value=token_balance * token_usd_price[token],
@@ -1452,17 +1064,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     eth_balances[account].assets[token] += balance
                 else:
                     eth_balances[account].assets[token] = balance
-
-        # Update the totals
-        for token, token_total_balance in token_totals.items():
-            balance = Balance(
-                amount=token_total_balance,
-                usd_value=token_total_balance * token_usd_price[token],
-            )
-            if action == AccountAction.QUERY:
-                self.totals.assets[token] = balance
-            else:  # addition
-                self.totals.assets[token] += balance
 
     def _query_ethereum_tokens(
             self,
@@ -1514,12 +1115,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        # Clear out all previous token balances
-        for token in [x for x, _ in self.totals.assets.items() if x.is_eth_token()]:
-            del self.totals.assets[token]
-        for token in [x for x, _ in self.totals.liabilities.items() if x.is_eth_token()]:
-            del self.totals.liabilities[token]
-
         self._query_ethereum_tokens(action=AccountAction.QUERY)
 
     def query_defi_balances(self) -> Dict[ChecksumEthAddress, List[DefiProtocolBalances]]:
@@ -1568,7 +1163,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self.balances.eth[account] = BalanceSheet(
                 assets=defaultdict(Balance, {A_ETH: Balance(balance, usd_value)}),
             )
-        self.totals.assets[A_ETH] = Balance(amount=eth_total, usd_value=eth_total * eth_usd_price)
 
         self.query_defi_balances()
         self.query_ethereum_tokens()
@@ -1639,7 +1233,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         eth_balances = self.balances.eth
         dsr_module = self.get_module('makerdao_dsr')
         if dsr_module is not None:
-            additional_total = Balance()
             current_dsr_report = dsr_module.get_current_dsr()
             for dsr_account, balance_entry in current_dsr_report.balances.items():
 
@@ -1647,10 +1240,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     continue
 
                 eth_balances[dsr_account].assets[A_DAI] += balance_entry
-                additional_total += balance_entry
-
-            if additional_total.amount != ZERO:
-                self.totals.assets[A_DAI] += additional_total
 
         # Also count the vault balance and defi saver wallets and add it to the totals
         vaults_module = self.get_module('makerdao_vaults')
@@ -1664,7 +1253,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     )
                 else:
                     eth_balances[address] += entry
-                    self.totals += entry
 
             proxy_mappings = vaults_module._get_accounts_having_proxy()
             proxy_to_address = {}
@@ -1698,7 +1286,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             # also query defi balances to get liabilities
             defi_balances_map = self.defichad.query_defi_balances(proxy_addresses)
             for proxy_address, defi_balances in defi_balances_map.items():
-                self._add_account_defi_balances_to_token_and_totals(
+                self._add_account_defi_balances_to_token(
                     account=proxy_to_address[proxy_address],
                     balances=defi_balances,
                 )
@@ -1708,7 +1296,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             adex_balances = adex_module.get_balances(addresses=self.queried_addresses_for_module('adex'))  # noqa: E501
             for address, balance in adex_balances.items():
                 eth_balances[address].assets[A_ADX] += balance
-                self.totals.assets[A_ADX] += balance
 
         pickle_module = self.get_module('pickle_finance')
         if pickle_module is not None:
@@ -1718,7 +1305,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             for address, pickle_balances in pickle_balances_per_address.items():
                 for asset_balance in pickle_balances:
                     eth_balances[address].assets[asset_balance.asset] += asset_balance.balance
-                    self.totals.assets[asset_balance.asset] += asset_balance.balance
 
         liquity_module = self.get_module('liquity')
         if liquity_module is not None:
@@ -1729,7 +1315,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             for address, deposits in liquity_balances.items():
                 collateral = deposits.collateral.balance
                 eth_balances[address].assets[A_ETH] += collateral
-                self.totals.assets[A_ETH] += collateral
             # Get staked amounts
             liquity_staked = liquity_module.liquity_staking_balances(
                 addresses=self.queried_addresses_for_module('liquity'),
@@ -1737,17 +1322,16 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             for address, staked_info in liquity_staked.items():
                 deposited_lqty = staked_info.staked.balance
                 eth_balances[address].assets[A_LQTY] += deposited_lqty
-                self.totals.assets[A_LQTY] += deposited_lqty
 
         # Finally count the balances detected in various protocols in defi balances
-        self.add_defi_balances_to_token_and_totals()
+        self.add_defi_balances_to_account()
 
-    def _add_account_defi_balances_to_token_and_totals(
+    def _add_account_defi_balances_to_token(
             self,
             account: ChecksumEthAddress,
             balances: List[DefiProtocolBalances],
     ) -> None:
-        """Add a single account's defi balances to per account and totals"""
+        """Add a single account's defi balances to per account"""
         for entry in balances:
             found_double_entry = False
             # filter our specific protocols for double entries
@@ -1790,11 +1374,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             if entry.balance_type == 'Asset':
                 log.debug(f'Adding DeFi asset balance for {token} {entry.base_balance.balance}')
                 eth_balances[account].assets[token] += entry.base_balance.balance
-                self.totals.assets[token] += entry.base_balance.balance
             elif entry.balance_type == 'Debt':
                 log.debug(f'Adding DeFi debt balance for {token} {entry.base_balance.balance}')
                 eth_balances[account].liabilities[token] += entry.base_balance.balance
-                self.totals.liabilities[token] += entry.base_balance.balance
             else:
                 log.warning(  # type: ignore # is an unreachable statement but we are defensive
                     f'Zerion Defi Adapter returned unknown asset type {entry.balance_type}. '
@@ -1802,10 +1384,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 )
                 continue
 
-    def add_defi_balances_to_token_and_totals(self) -> None:
-        """Take into account defi balances and add them to per account and totals"""
+    def add_defi_balances_to_account(self) -> None:
+        """Take into account defi balances and add them to the per account balances"""
         for account, defi_balances in self.defi_balances.items():
-            self._add_account_defi_balances_to_token_and_totals(
+            self._add_account_defi_balances_to_token(
                 account=account,
                 balances=defi_balances,
             )

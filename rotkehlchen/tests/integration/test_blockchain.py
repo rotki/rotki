@@ -1,4 +1,3 @@
-import operator
 from unittest.mock import patch
 
 import gevent
@@ -24,7 +23,7 @@ def test_query_btc_balances(blockchain):
     assert 'BTC' not in blockchain.totals.assets
 
     account = '3BZU33iFcAiyVyu2M2GhEpLNuh81GymzJ7'
-    blockchain.modify_btc_account(account, 'append', operator.add)
+    blockchain.add_blockchain_accounts(SupportedBlockchain.BITCOIN, accounts=[account])
 
     blockchain.query_btc_balances()
     assert blockchain.totals.assets[A_BTC].usd_value is not None
@@ -83,22 +82,22 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         wraps=mock_query_defi_balances,
     )
 
-    def mock_add_defi_balances_to_token_and_totals():
+    def mock_add_defi_balances_to_account():
         """This function will make sure all greenlets end up hitting the balance addition
         at the same time thus double +++ counting balance ... in the way the code
         was written before"""
         gevent.sleep(2)  # make sure all greenlets stop here
         # and then let them all go in the same time in the adding
         for account, defi_balances in blockchain.defi_balances.items():
-            blockchain._add_account_defi_balances_to_token_and_totals(
+            blockchain._add_account_defi_balances_to_token(
                 account=account,
                 balances=defi_balances,
             )
 
     add_defi_mock = patch.object(
         blockchain,
-        'add_defi_balances_to_token_and_totals',
-        wraps=mock_add_defi_balances_to_token_and_totals,
+        'add_defi_balances_to_account',
+        wraps=mock_add_defi_balances_to_account,
     )
 
     with etherscan_patch, ethtokens_max_chunks_patch:
@@ -115,9 +114,9 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     assert addr1 in blockchain.accounts.eth
 
     with etherscan_patch, ethtokens_max_chunks_patch, defi_balances_mock, add_defi_mock, beaconchain_patch:  # noqa: E501
-        blockchain.query_ethereum_balances(ignore_cache=True)
         greenlets = [
-            gevent.spawn_later(0.01 * x, blockchain.query_ethereum_balances)
+            # can't call query_ethereum_balances directly since we have to update totals
+            gevent.spawn_later(0.01 * x, blockchain.query_balances, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
             for x in range(5)
         ]
         gevent.joinall(greenlets)

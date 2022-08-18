@@ -18,7 +18,6 @@ KUSAMA_NODES_TO_CONNECT_AT_START = (
     KusamaNodeName.ELARA,
     KusamaNodeName.ONFINALITY,
 )
-KUSAMA_NODE_CONNECTION_TIMEOUT = 10
 
 POLKADOT_NODES_TO_CONNECT_AT_START = (
     PolkadotNodeName.OWN,
@@ -26,7 +25,8 @@ POLKADOT_NODES_TO_CONNECT_AT_START = (
     PolkadotNodeName.ELARA,
     PolkadotNodeName.ONFINALITY,
 )
-POLKADOT_NODE_CONNECTION_TIMEOUT = 10
+
+SUBSTRATE_NODE_CONNECTION_TIMEOUT = 10
 
 
 def is_valid_kusama_address(value: str) -> bool:

@@ -3,17 +3,20 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional
 
 from gevent.lock import Semaphore
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.bitcoin import have_bitcoin_transactions
 from rotkehlchen.chain.bitcoin.bch import have_bch_transactions
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
+from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.db.utils import insert_tag_mappings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import BlockchainAccountData, BTCAddress, SupportedBlockchain
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
+    from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
@@ -227,7 +230,6 @@ class XpubManager():
                 self.chain_manager.add_blockchain_accounts(
                     blockchain=blockchain,
                     accounts=new_addresses,
-                    already_queried_balances=new_balances,
                 )
                 self.db.add_blockchain_accounts(
                     write_cursor=cursor,
@@ -246,11 +248,27 @@ class XpubManager():
                 blockchain=blockchain,
             )
 
+        # also add queried balances
+        if blockchain == SupportedBlockchain.BITCOIN:
+            balances = self.chain_manager.balances.btc
+            asset_usd_price = Inquirer.find_usd_price(A_BTC)
+        else:  # BCH
+            balances = self.chain_manager.balances.bch
+            asset_usd_price = Inquirer.find_usd_price(A_BCH)
+
+        for entry in derived_addresses_data:
+            new_balance = Balance(
+                amount=entry.balance,
+                usd_value=entry.balance * asset_usd_price,
+            )
+            balances[entry.address] = new_balance
+        self.chain_manager.totals = self.chain_manager.balances.recalculate_totals()
+
     def add_bitcoin_xpub(
         self,
         xpub_data: XpubData,
         blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
-    ) -> 'BlockchainBalancesUpdate':
+    ) -> None:
         """
         May raise:
         - InputError: If the xpub already exists in the DB
@@ -271,16 +289,12 @@ class XpubManager():
                 )
                 self._derive_xpub_addresses(xpub_data, new_xpub=True, blockchain=blockchain)
 
-        if not self.chain_manager.balances.is_queried(blockchain):
-            self.chain_manager.query_balances(blockchain, ignore_cache=True)
-        return self.chain_manager.get_balances_update()
-
     def delete_bitcoin_xpub(
             self,
             write_cursor: 'DBCursor',
             xpub_data: XpubData,
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
-    ) -> 'BlockchainBalancesUpdate':
+    ) -> None:
         """
         Deletes an xpub from the DB, along with all derived addresses, xpub and tag mappings
         May raise:
@@ -291,13 +305,11 @@ class XpubManager():
             self.db.delete_bitcoin_xpub(write_cursor, xpub_data, blockchain)
             self.chain_manager.sync_bitcoin_accounts_with_db(write_cursor, blockchain)
 
-        return self.chain_manager.get_balances_update()
-
     def check_for_new_xpub_addresses(
         self,
         blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
-        """Checks all xpub addresseses and sees if new addresses got used.
+        """Checks all xpub addresses and sees if new addresses got used.
         If they did it adds them for tracking.
         """
         log.debug('Starting task for derivation of new xpub addresses')

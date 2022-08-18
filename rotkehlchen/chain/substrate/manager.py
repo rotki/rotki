@@ -47,7 +47,7 @@ from .types import (
     SubstrateChain,
     SubstrateChainId,
 )
-from .utils import KUSAMA_NODE_CONNECTION_TIMEOUT
+from .utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -302,7 +302,7 @@ class SubstrateManager():
             account=account,
         )
         try:
-            with gevent.Timeout(KUSAMA_NODE_CONNECTION_TIMEOUT):
+            with gevent.Timeout(SUBSTRATE_NODE_CONNECTION_TIMEOUT):
                 result = node_interface.query(
                     module='System',
                     storage_function='Account',

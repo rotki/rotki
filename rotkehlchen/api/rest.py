@@ -1773,7 +1773,7 @@ class RestAPI():
         blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Dict[str, Any]:
         try:
-            result = XpubManager(self.rotkehlchen.chain_manager).add_bitcoin_xpub(
+            XpubManager(self.rotkehlchen.chain_manager).add_bitcoin_xpub(
                 xpub_data=xpub_data,
                 blockchain=blockchain,
             )
@@ -1785,7 +1785,7 @@ class RestAPI():
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         # success
-        return {'result': result.serialize(), 'message': ''}
+        return OK_RESULT
 
     def add_xpub(
         self,
@@ -1819,7 +1819,7 @@ class RestAPI():
     ) -> Dict[str, Any]:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
-                result = XpubManager(self.rotkehlchen.chain_manager).delete_bitcoin_xpub(
+                XpubManager(self.rotkehlchen.chain_manager).delete_bitcoin_xpub(
                     write_cursor=cursor,
                     xpub_data=xpub_data,
                     blockchain=blockchain,
@@ -1828,7 +1828,7 @@ class RestAPI():
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
 
         # success
-        return {'result': result.serialize(), 'message': ''}
+        return OK_RESULT
 
     def delete_xpub(
         self,
@@ -1888,7 +1888,7 @@ class RestAPI():
         extra status code argument for errors
         """
         try:
-            result = self.rotkehlchen.add_blockchain_accounts(
+            self.rotkehlchen.add_blockchain_accounts(
                 blockchain=blockchain,
                 account_data=account_data,
             )
@@ -1902,7 +1902,7 @@ class RestAPI():
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         # success
-        return {'result': result.serialize(), 'message': ''}
+        return OK_RESULT
 
     def add_blockchain_accounts(
             self,
@@ -1960,7 +1960,7 @@ class RestAPI():
         extra status code argument for errors
         """
         try:
-            result = self.rotkehlchen.remove_blockchain_accounts(
+            self.rotkehlchen.remove_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=accounts,
             )
@@ -1971,7 +1971,7 @@ class RestAPI():
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        return {'result': result.serialize(), 'message': ''}
+        return OK_RESULT
 
     def remove_blockchain_accounts(
             self,
