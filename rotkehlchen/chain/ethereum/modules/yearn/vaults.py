@@ -110,6 +110,7 @@ from rotkehlchen.constants.ethereum import (
     YEARN_YFI_VAULT,
 )
 from rotkehlchen.constants.misc import EXP18, ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
@@ -439,8 +440,8 @@ class YearnVaults(EthereumModule):
                     continue
 
                 try:
-                    underlying_asset = EvmToken(underlying_address)
-                    vault_asset = EvmToken(vault_address)
+                    underlying_asset = EvmToken(ethaddress_to_identifier(underlying_address))
+                    vault_asset = EvmToken(ethaddress_to_identifier(vault_address))
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
                         f'Found unknown asset {e.asset_name} for yearn vault entry',

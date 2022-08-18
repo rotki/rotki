@@ -664,12 +664,12 @@ class Inquirer():
 
         globaldb = GlobalDBHandler()
         with globaldb.conn.read_ctx() as cursor:
-            maybe_underlying_token = globaldb.fetch_underlying_tokens(cursor, token.evm_address)  # noqa: E501
+            maybe_underlying_token = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(token.evm_address))  # noqa: E501
         if maybe_underlying_token is None or len(maybe_underlying_token) != 1:
             log.error(f'Yearn vault token {token} without an underlying asset')
             return None
 
-        underlying_token = EvmToken(maybe_underlying_token[0].address)
+        underlying_token = EvmToken(ethaddress_to_identifier(maybe_underlying_token[0].address))
         underlying_token_price = self.find_usd_price(underlying_token)
         # Get the price per share from the yearn contract
         contract = EthereumContract(

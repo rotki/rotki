@@ -642,8 +642,8 @@ def test_query_yearn_vault_v2_balances(rotkehlchen_api_server, ethereum_accounts
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
         token_balances={
-            EvmToken('0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9'): ['70000000'],
-            EvmToken('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'): ['2550000000000000000000'],  # noqa: E501
+            EvmToken('eip155:1/erc20:0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9'): ['70000000'],
+            EvmToken('eip155:1/erc20:0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'): ['2550000000000000000000'],  # noqa: E501
         },
     )
 
@@ -686,8 +686,8 @@ def test_query_yearn_vault_v2_history(rotkehlchen_api_server, ethereum_accounts)
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
         token_balances={
-            EvmToken('0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9'): ['70000000'],
-            EvmToken('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'): ['2550000000000000000000'],  # noqa: E501
+            EvmToken('eip155:1/erc20:0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9'): ['70000000'],
+            EvmToken('eip155:1/erc20:0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'): ['2550000000000000000000'],  # noqa: E501
         },
         original_queries=['blocknobytime'],
     )

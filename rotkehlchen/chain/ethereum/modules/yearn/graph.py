@@ -8,6 +8,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.graph import Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import get_usd_price_zero_if_error
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -118,11 +119,11 @@ class YearnVaultsV2Graph:
 
             try:
                 if event_type == 'deposit':
-                    from_asset = EvmToken(entry['vault']['token']['id'])
-                    to_asset = EvmToken(entry['vault']['shareToken']['id'])
+                    from_asset = EvmToken(ethaddress_to_identifier(entry['vault']['token']['id']))
+                    to_asset = EvmToken(ethaddress_to_identifier(entry['vault']['shareToken']['id']))  # noqa: E501
                 elif event_type == 'withdraw':
-                    from_asset = EvmToken(entry['vault']['shareToken']['id'])
-                    to_asset = EvmToken(entry['vault']['token']['id'])
+                    from_asset = EvmToken(ethaddress_to_identifier(entry['vault']['shareToken']['id']))  # noqa: E501
+                    to_asset = EvmToken(ethaddress_to_identifier(entry['vault']['token']['id']))
             except UnknownAsset:
                 if event_type == 'deposit':
                     from_str = entry['vault']['token']['symbol']

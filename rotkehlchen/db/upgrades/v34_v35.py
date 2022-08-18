@@ -47,7 +47,7 @@ def _rename_assets_identifiers(cursor: 'DBCursor') -> None:
             old_id_to_new[identifier] = strethaddress_to_identifier(identifier[6:])
 
     sqlite_tuples = [(new_id, old_id) for old_id, new_id in old_id_to_new.items()]
-    cursor.executemany('UPDATE assets SET identifier=? WHERE identifier=?', sqlite_tuples)
+    cursor.executemany('UPDATE OR IGNORE assets SET identifier=? WHERE identifier=?', sqlite_tuples)  # noqa: E501
 
 
 def upgrade_v34_to_v35(db: 'DBHandler') -> None:

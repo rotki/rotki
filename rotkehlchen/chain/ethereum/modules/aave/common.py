@@ -84,7 +84,7 @@ def atoken_to_asset(atoken: EvmToken) -> Optional[Asset]:
     cursor = GlobalDBHandler().conn.cursor()
     result = cursor.execute(
         'SELECT A.address from evm_tokens as A LEFT OUTER JOIN common_asset_details as B '
-        'WHERE A.identifier=B.identifier AND B.symbol=? COLLATE NOCASE',
+        'ON A.identifier=B.identifier WHERE A.chain="A" AND B.symbol=? COLLATE NOCASE',
         (asset_symbol,),
     ).fetchall()
     if len(result) != 1:

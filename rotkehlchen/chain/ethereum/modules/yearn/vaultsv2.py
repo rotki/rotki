@@ -13,6 +13,7 @@ from rotkehlchen.constants.ethereum import (
     YEARN_VAULTS_V2_PREFIX,
 )
 from rotkehlchen.constants.misc import EXP18, ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -113,11 +114,11 @@ class YearnVaultsV2(EthereumModule):
         with globaldb.conn.read_ctx() as cursor:
             for asset, balance in defi_balances.items():
                 if isinstance(asset, EvmToken) and asset.protocol == YEARN_VAULTS_V2_PROTOCOL:
-                    underlying = globaldb.fetch_underlying_tokens(cursor, asset.evm_address)
+                    underlying = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(asset.evm_address))  # noqa: E501
                     if underlying is None:
                         log.error(f'Found yearn asset {asset} without underlying asset')
                         continue
-                    underlying_token = EvmToken(underlying[0].address)
+                    underlying_token = EvmToken(ethaddress_to_identifier(underlying[0].address))
                     vault_address = asset.evm_address
 
                     roi = roi_cache.get(vault_address, None)
