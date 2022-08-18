@@ -1,25 +1,25 @@
 <template>
   <div v-if="displayed" class="create-account">
     <div class="text-h6 text--primary create-account__header">
-      {{ $t('create_account.title') }}
+      {{ tc('create_account.title') }}
     </div>
     <v-stepper v-model="step">
       <v-stepper-header>
         <v-stepper-step step="1" :complete="step > 1">
           <span v-if="step === 1">
-            {{ $t('create_account.premium.title') }}
+            {{ tc('create_account.premium.title') }}
           </span>
         </v-stepper-step>
         <v-divider />
         <v-stepper-step step="2" :complete="step > 2">
           <span v-if="step === 2">
-            {{ $t('create_account.select_credentials.title') }}
+            {{ tc('create_account.select_credentials.title') }}
           </span>
         </v-stepper-step>
         <v-divider />
         <v-stepper-step step="3">
           <span v-if="step === 3">
-            {{ $t('create_account.usage_analytics.title') }}
+            {{ tc('create_account.usage_analytics.title') }}
           </span>
         </v-stepper-step>
       </v-stepper-header>
@@ -32,7 +32,7 @@
                   <template #premiumLink>
                     <b>
                       <external-link url="https://rotki.com/products">
-                        {{ $t('create_account.premium.premium_link_text') }}
+                        {{ tc('create_account.premium.premium_link_text') }}
                       </external-link>
                     </b>
                   </template>
@@ -51,7 +51,7 @@
                   >
                     <v-icon small class="mr-2">mdi-close</v-icon>
                     <span>
-                      {{ $t('common.actions.no') }}
+                      {{ tc('common.actions.no') }}
                     </span>
                   </v-btn>
                   <v-btn
@@ -65,7 +65,7 @@
                   >
                     <v-icon small class="mr-2"> mdi-check</v-icon>
                     <span>
-                      {{ $t('create_account.premium.button_premium_approve') }}
+                      {{ tc('create_account.premium.button_premium_approve') }}
                     </span>
                   </v-btn>
                 </div>
@@ -93,7 +93,7 @@
               :disabled="loading || newUser"
               @click="cancel()"
             >
-              {{ $t('common.actions.cancel') }}
+              {{ tc('common.actions.cancel') }}
             </v-btn>
             <v-btn
               class="create-account__premium__button__continue"
@@ -104,7 +104,7 @@
               data-cy="create-account__premium__button__continue"
               @click="step = 2"
             >
-              {{ $t('common.actions.continue') }}
+              {{ tc('common.actions.continue') }}
             </v-btn>
           </v-card-actions>
         </v-stepper-content>
@@ -117,7 +117,7 @@
                 autofocus
                 single-line
                 class="create-account__fields__username"
-                :label="$t('create_account.select_credentials.label_username')"
+                :label="tc('create_account.select_credentials.label_username')"
                 prepend-inner-icon="mdi-account"
                 :rules="usernameRules"
                 :disabled="loading"
@@ -132,7 +132,7 @@
                 icon="mdi-information"
               >
                 {{
-                  $t(
+                  tc(
                     'create_account.select_credentials.password_sync_requirement'
                   )
                 }}
@@ -141,7 +141,7 @@
                 v-model="password"
                 outlined
                 class="create-account__fields__password"
-                :label="$t('create_account.select_credentials.label_password')"
+                :label="tc('create_account.select_credentials.label_password')"
                 prepend-icon="mdi-lock"
                 :rules="passwordRules"
                 :disabled="loading"
@@ -156,7 +156,7 @@
                 :rules="passwordConfirmRules"
                 :disabled="loading"
                 :label="
-                  $t('create_account.select_credentials.label_password_repeat')
+                  tc('create_account.select_credentials.label_password_repeat')
                 "
                 required
               />
@@ -164,7 +164,7 @@
                 v-model="userPrompted"
                 class="create-account__boxes__user-prompted"
                 :label="
-                  $t(
+                  tc(
                     'create_account.select_credentials.label_password_backup_reminder'
                   )
                 "
@@ -181,7 +181,7 @@
               outlined
               @click="back"
             >
-              {{ $t('common.actions.back') }}
+              {{ tc('common.actions.back') }}
             </v-btn>
             <v-btn
               class="create-account__credentials__button__continue"
@@ -191,7 +191,7 @@
               :loading="loading"
               @click="step = 3"
             >
-              {{ $t('common.actions.continue') }}
+              {{ tc('common.actions.continue') }}
             </v-btn>
           </v-card-actions>
         </v-stepper-content>
@@ -203,7 +203,7 @@
               color="primary"
               class="mx-auto text-justify text-body-2 create-account__analytics__content"
             >
-              {{ $t('create_account.usage_analytics.description') }}
+              {{ tc('create_account.usage_analytics.description') }}
             </v-alert>
             <v-alert v-if="error" type="error" outlined>
               {{ error }}
@@ -213,7 +213,7 @@
                 <v-checkbox
                   v-model="submitUsageAnalytics"
                   :disabled="loading"
-                  :label="$t('create_account.usage_analytics.label_confirm')"
+                  :label="tc('create_account.usage_analytics.label_confirm')"
                 />
               </v-col>
             </v-row>
@@ -228,7 +228,7 @@
               outlined
               @click="back"
             >
-              {{ $t('common.actions.back') }}
+              {{ tc('common.actions.back') }}
             </v-btn>
             <v-btn
               color="primary"
@@ -238,7 +238,7 @@
               class="create-account__analytics__button__confirm"
               @click="confirm()"
             >
-              {{ $t('common.actions.create') }}
+              {{ tc('common.actions.create') }}
             </v-btn>
           </v-card-actions>
         </v-stepper-content>
@@ -248,44 +248,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, toRefs, watch } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  ref,
+  Ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { setupNewUser } from '@/composables/common';
-import i18n from '@/i18n';
 import { CreateAccountPayload } from '@/types/login';
-
-const usernameRules = [
-  (v: string) =>
-    !!v ||
-    i18n
-      .t('create_account.select_credentials.validation.non_empty_username')
-      .toString(),
-  (v: string) =>
-    (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
-    i18n
-      .t('create_account.select_credentials.validation.valid_username')
-      .toString()
-];
-
-const passwordRules = [
-  (v: string) =>
-    !!v ||
-    i18n
-      .t('create_account.select_credentials.validation.non_empty_password')
-      .toString()
-];
-const passwordConfirmRules = [
-  (v: string) =>
-    !!v ||
-    i18n
-      .t(
-        'create_account.select_credentials.validation.non_empty_password_confirmation'
-      )
-      .toString()
-];
 
 export default defineComponent({
   name: 'CreateAccount',
@@ -319,17 +296,40 @@ export default defineComponent({
 
     const form: Ref<any> = ref(null);
 
+    const { tc } = useI18n();
+
+    const usernameRules = computed(() => [
+      (v: string) =>
+        !!v ||
+        tc('create_account.select_credentials.validation.non_empty_username'),
+
+      (v: string) =>
+        (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
+        tc('create_account.select_credentials.validation.valid_username')
+    ]);
+
+    const passwordRules = computed(() => [
+      (v: string) =>
+        !!v ||
+        tc('create_account.select_credentials.validation.non_empty_password')
+    ]);
+    const passwordConfirmRules = computed(() => [
+      (v: string) =>
+        !!v ||
+        tc(
+          'create_account.select_credentials.validation.non_empty_password_confirmation'
+        )
+    ]);
+
     const updateConfirmationError = () => {
       if (get(errorMessages).length > 0) {
         return;
       }
 
       get(errorMessages).push(
-        i18n
-          .t(
-            'create_account.select_credentials.validation.password_confirmation_mismatch'
-          )
-          .toString()
+        tc(
+          'create_account.select_credentials.validation.password_confirmation_mismatch'
+        )
       );
     };
 
@@ -404,7 +404,8 @@ export default defineComponent({
       passwordConfirmRules,
       confirm,
       cancel,
-      back
+      back,
+      tc
     };
   }
 });

@@ -1,9 +1,9 @@
 <template>
-  <no-premium-placeholder v-if="!premium" :text="$t('sushiswap.premium')" />
+  <no-premium-placeholder v-if="!premium" :text="tc('sushiswap.premium')" />
   <module-not-active v-else-if="!isEnabled" :modules="modules" />
   <progress-screen v-else-if="loading">
     <template #message>
-      {{ $t('sushiswap.loading') }}
+      {{ tc('sushiswap.loading') }}
     </template>
   </progress-screen>
   <div v-else>
@@ -21,6 +21,7 @@
 
 <script lang="ts">
 import { defineComponent, onMounted } from '@vue/composition-api';
+import { useI18n } from 'vue-i18n-composable';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -51,6 +52,7 @@ export default defineComponent({
     const { shouldShowLoadingScreen, isSectionRefreshing } =
       setupStatusChecking();
     const premium = getPremium();
+    const { tc } = useI18n();
 
     onMounted(async () => {
       await Promise.all([fetchBalances(false), fetchEvents(false)]);
@@ -63,7 +65,8 @@ export default defineComponent({
       primaryRefreshing: isSectionRefreshing(section),
       secondaryRefreshing: isSectionRefreshing(secondSection),
       loading: shouldShowLoadingScreen(section),
-      isEnabled: isModuleEnabled(modules[0])
+      isEnabled: isModuleEnabled(modules[0]),
+      tc
     };
   }
 });

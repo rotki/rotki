@@ -1,14 +1,14 @@
 <template>
   <fragment>
     <card v-if="!auto" class="mt-8">
-      <template #title>{{ $t('asset_update.manual.title') }}</template>
-      <template #subtitle>{{ $t('asset_update.manual.subtitle') }}</template>
+      <template #title>{{ tc('asset_update.manual.title') }}</template>
+      <template #subtitle>{{ tc('asset_update.manual.subtitle') }}</template>
       <div v-if="skipped" class="text-body-1">
-        {{ $t('asset_update.manual.skipped', { skipped }) }}
+        {{ tc('asset_update.manual.skipped', 0, { skipped }) }}
       </div>
       <template #buttons>
         <v-btn depressed color="primary" class="mt-2" @click="check">
-          {{ $t('asset_update.manual.check') }}
+          {{ tc('asset_update.manual.check') }}
         </v-btn>
       </template>
     </card>
@@ -19,7 +19,7 @@
       persistent
     >
       <card>
-        <template #title>{{ $t('asset_update.title') }}</template>
+        <template #title>{{ tc('asset_update.title') }}</template>
         <i18n class="text-body-1" tag="div" path="asset_update.description">
           <template #remote>
             <span class="font-weight-medium">{{ remoteVersion }}</span>
@@ -29,11 +29,11 @@
           </template>
         </i18n>
         <div class="text-body-1 mt-4">
-          {{ $t('asset_update.total_changes', { changes }) }}
+          {{ tc('asset_update.total_changes', 0, { changes }) }}
         </div>
 
         <div v-if="multiple" class="font-weight-medium text-body-1 mt-4">
-          {{ $t('asset_update.advanced') }}
+          {{ tc('asset_update.advanced') }}
         </div>
         <v-row v-if="multiple">
           <v-col>
@@ -41,7 +41,7 @@
               v-model="partial"
               class="asset-update__partial"
               dense
-              :label="$t('asset_update.partially_update')"
+              :label="tc('asset_update.partially_update')"
             />
           </v-col>
           <v-col cols="6">
@@ -53,7 +53,7 @@
               dense
               :min="localVersion"
               :max="remoteVersion"
-              :label="$t('asset_update.up_to_version')"
+              :label="tc('asset_update.up_to_version')"
               @change="onChange"
             />
           </v-col>
@@ -63,19 +63,19 @@
             v-if="auto"
             v-model="skipUpdate"
             dense
-            :label="$t('asset_update.skip_notification')"
+            :label="tc('asset_update.skip_notification')"
           />
         </template>
         <template #buttons>
           <v-row justify="end" no-gutters>
             <v-col cols="auto">
               <v-btn text @click="skip">
-                {{ $t('common.actions.skip') }}
+                {{ tc('common.actions.skip') }}
               </v-btn>
             </v-col>
             <v-col cols="auto">
               <v-btn text color="primary" @click="updateAssets()">
-                {{ $t('common.actions.update') }}
+                {{ tc('common.actions.update') }}
               </v-btn>
             </v-col>
           </v-row>
@@ -93,10 +93,10 @@
       v-if="done"
       single-action
       display
-      :title="$t('asset_update.success.title')"
-      :primary-action="$t('asset_update.success.ok')"
+      :title="tc('asset_update.success.title')"
+      :primary-action="tc('asset_update.success.ok')"
       :message="
-        $t('asset_update.success.description', {
+        tc('asset_update.success.description', 0, {
           remoteVersion
         })
       "
@@ -115,6 +115,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set, useLocalStorage } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
@@ -151,6 +152,8 @@ export default defineComponent({
     const { checkForUpdate, applyUpdates } = useAssets();
     const { connect, setConnected } = useMainStore();
     const { restartBackend } = useBackendManagement();
+
+    const { tc } = useI18n();
 
     const multiple = computed(() => {
       return get(remoteVersion) - get(localVersion) > 1;
@@ -245,7 +248,8 @@ export default defineComponent({
       skip,
       onChange,
       updateAssets,
-      updateComplete
+      updateComplete,
+      tc
     };
   }
 });

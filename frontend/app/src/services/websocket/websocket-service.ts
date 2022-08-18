@@ -17,13 +17,6 @@ import { Nullable } from '@/types';
 
 class WebsocketService {
   private _connection: Nullable<WebSocket> = null;
-  private _connected: boolean = false;
-  private readonly pathname: string;
-
-  constructor() {
-    const pathname = window.location.pathname;
-    this.pathname = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-  }
 
   get connected(): boolean {
     return false;
@@ -71,16 +64,13 @@ class WebsocketService {
       };
       this._connection.onopen = () => {
         logger.debug('websocket connected');
-        this._connected = true;
         resolve(true);
       };
       this._connection.onerror = () => {
         logger.error('websocket connection failed');
-        this._connected = false;
         resolve(false);
       };
       this._connection.onclose = event => {
-        this._connected = false;
         logger.debug('websocket connection closed');
         if (!event.wasClean) {
           logger.debug('Close was not clean attempting reconnect');

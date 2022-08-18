@@ -19,7 +19,8 @@ const mapping = {
   [LogLevel.ERROR]: logger.levels.ERROR,
   [LogLevel.WARNING]: logger.levels.WARN,
   [LogLevel.INFO]: logger.levels.INFO,
-  [LogLevel.DEBUG]: logger.levels.DEBUG
+  [LogLevel.DEBUG]: logger.levels.DEBUG,
+  [LogLevel.TRACE]: logger.levels.TRACE
 };
 
 export const mapToFrontendLogLevel = (logLevel?: LogLevel) => {

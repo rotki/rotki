@@ -1,22 +1,22 @@
 <template>
   <card>
     <template #title>
-      {{ $t('external_services.title') }}
+      {{ tc('external_services.title') }}
     </template>
     <template #subtitle>
-      {{ $t('external_services.subtitle') }}
+      {{ tc('external_services.subtitle') }}
     </template>
 
     <api-key-box>
       <service-key
         v-model="etherscanKey"
         class="external-services__etherscan-key"
-        :title="$t('external_services.etherscan.title')"
-        :description="$t('external_services.etherscan.description')"
-        :label="$t('external_services.etherscan.label')"
-        :hint="$t('external_services.etherscan.hint')"
+        :title="tc('external_services.etherscan.title')"
+        :description="tc('external_services.etherscan.description')"
+        :label="tc('external_services.etherscan.label')"
+        :hint="tc('external_services.etherscan.hint')"
         :loading="loading"
-        :tooltip="$t('external_services.etherscan.delete_tooltip')"
+        :tooltip="tc('external_services.etherscan.delete_tooltip')"
         @save="save('etherscan', $event)"
         @delete-key="deleteKey('etherscan')"
       />
@@ -26,12 +26,12 @@
       <service-key
         v-model="cryptocompareKey"
         class="external-services__cryptocompare-key"
-        :title="$t('external_services.cryptocompare.title')"
-        :description="$t('external_services.cryptocompare.description')"
-        :label="$t('external_services.cryptocompare.label')"
-        :hint="$t('external_services.cryptocompare.hint')"
+        :title="tc('external_services.cryptocompare.title')"
+        :description="tc('external_services.cryptocompare.description')"
+        :label="tc('external_services.cryptocompare.label')"
+        :hint="tc('external_services.cryptocompare.hint')"
         :loading="loading"
-        :tooltip="$t('external_services.cryptocompare.delete_tooltip')"
+        :tooltip="tc('external_services.cryptocompare.delete_tooltip')"
         @save="save('cryptocompare', $event)"
         @delete-key="deleteKey('cryptocompare')"
       />
@@ -41,12 +41,12 @@
       <service-key
         v-model="beaconchainKey"
         class="external-services__beaconchain-key"
-        :title="$t('external_services.beaconchain.title')"
-        :description="$t('external_services.beaconchain.description')"
-        :label="$t('external_services.beaconchain.label')"
-        :hint="$t('external_services.beaconchain.hint')"
+        :title="tc('external_services.beaconchain.title')"
+        :description="tc('external_services.beaconchain.description')"
+        :label="tc('external_services.beaconchain.label')"
+        :hint="tc('external_services.beaconchain.hint')"
         :loading="loading"
-        :tooltip="$t('external_services.beaconchain.delete_tooltip')"
+        :tooltip="tc('external_services.beaconchain.delete_tooltip')"
         @save="save('beaconchain', $event)"
         @delete-key="deleteKey('beaconchain')"
       />
@@ -56,12 +56,12 @@
       <service-key
         v-model="covalentKey"
         class="external-services__covalent-key"
-        :title="$t('external_services.covalent.title')"
-        :description="$t('external_services.covalent.description')"
-        :label="$t('external_services.covalent.label')"
-        :hint="$t('external_services.covalent.hint')"
+        :title="tc('external_services.covalent.title')"
+        :description="tc('external_services.covalent.description')"
+        :label="tc('external_services.covalent.label')"
+        :hint="tc('external_services.covalent.hint')"
         :loading="loading"
-        :tooltip="$t('external_services.covalent.delete_tooltip')"
+        :tooltip="tc('external_services.covalent.delete_tooltip')"
         @save="save('covalent', $event)"
         @delete-key="deleteKey('covalent')"
       />
@@ -71,12 +71,12 @@
       <service-key
         v-model="loopringKey"
         class="external-services__loopring_key"
-        :title="$t('external_services.loopring.title')"
-        :description="$t('external_services.loopring.description')"
-        :label="$t('external_services.loopring.label')"
-        :hint="$t('external_services.loopring.hint')"
+        :title="tc('external_services.loopring.title')"
+        :description="tc('external_services.loopring.description')"
+        :label="tc('external_services.loopring.label')"
+        :hint="tc('external_services.loopring.hint')"
         :loading="loading"
-        :tooltip="$t('external_services.loopring.delete_tooltip')"
+        :tooltip="tc('external_services.loopring.delete_tooltip')"
         @save="save('loopring', $event)"
         @delete-key="deleteKey('loopring')"
       />
@@ -90,11 +90,11 @@
       >
         <v-row align="center">
           <v-col class="grow">
-            {{ $t('external_services.loopring.not_enabled') }}
+            {{ tc('external_services.loopring.not_enabled') }}
           </v-col>
           <v-col class="shrink">
             <v-btn to="/settings/modules" color="primary">
-              {{ $t('external_services.loopring.settings') }}
+              {{ tc('external_services.loopring.settings') }}
             </v-btn>
           </v-col>
         </v-row>
@@ -105,12 +105,12 @@
       <service-key
         v-model="openseaKey"
         class="external-services__opensea-key"
-        :title="$t('external_services.opensea.title')"
-        :description="$t('external_services.opensea.description')"
-        :label="$t('external_services.opensea.label')"
-        :hint="$t('external_services.opensea.hint')"
+        :title="tc('external_services.opensea.title')"
+        :description="tc('external_services.opensea.description')"
+        :label="tc('external_services.opensea.label')"
+        :hint="tc('external_services.opensea.hint')"
         :loading="loading"
-        :tooltip="$t('external_services.opensea.delete_tooltip')"
+        :tooltip="tc('external_services.opensea.delete_tooltip')"
         @save="save('opensea', $event)"
         @delete-key="deleteKey('opensea')"
       >
@@ -119,7 +119,7 @@
             <external-link
               url="https://docs.opensea.io/reference/request-an-api-key"
             >
-              {{ $t('external_services.opensea.here') }}
+              {{ tc('external_services.opensea.here') }}
             </external-link>
           </template>
         </i18n>
@@ -127,8 +127,8 @@
     </api-key-box>
 
     <confirm-dialog
-      :title="$t('external_services.confirmation.title')"
-      :message="$t('external_services.confirmation.message')"
+      :title="tc('external_services.confirmation.title')"
+      :message="tc('external_services.confirmation.message')"
       :display="!!serviceToDelete"
       @confirm="confirmDelete"
       @cancel="serviceToDelete = ''"
@@ -140,6 +140,7 @@
 import { computed, onMounted, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
@@ -171,6 +172,8 @@ const loading = ref(false);
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { setMessage } = useMainStore();
 const { fetchLoopringBalances } = useBlockchainBalancesStore();
+
+const { tc } = useI18n();
 
 const isLoopringActive = computed(() => {
   return get(activeModules).includes(Module.LOOPRING);

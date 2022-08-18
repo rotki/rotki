@@ -18,11 +18,11 @@
         <refresh-button
           v-if="!locationOverview"
           :loading="loading"
-          :tooltip="$t('ledger_actions.refresh_tooltip')"
+          :tooltip="tc('ledger_actions.refresh_tooltip')"
           @refresh="fetch(true)"
         />
         <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
-          {{ $t('ledger_actions.title') }}
+          {{ tc('ledger_actions.title') }}
         </navigator-link>
       </template>
       <template #actions>
@@ -33,9 +33,9 @@
               @ignore="ignore"
             />
             <div v-if="selected.length > 0" class="mt-2 ms-1">
-              {{ $t('ledger_actions.selected', { count: selected.length }) }}
+              {{ tc('ledger_actions.selected', 0, { count: selected.length }) }}
               <v-btn small text @click="selected = []">
-                {{ $t('ledger_actions.clear_selection') }}
+                {{ tc('ledger_actions.clear_selection') }}
               </v-btn>
             </div>
           </v-col>
@@ -73,7 +73,7 @@
             <badge-display v-if="isMobile" color="grey">
               <v-icon small> mdi-eye-off </v-icon>
               <span class="ml-2">
-                {{ $t('common.ignored_in_accounting') }}
+                {{ tc('common.ignored_in_accounting') }}
               </span>
             </badge-display>
             <v-tooltip v-else bottom>
@@ -83,7 +83,7 @@
                 </badge-display>
               </template>
               <span>
-                {{ $t('common.ignored_in_accounting') }}
+                {{ tc('common.ignored_in_accounting') }}
               </span>
             </v-tooltip>
           </div>
@@ -116,8 +116,8 @@
         <template #item.actions="{ item }">
           <row-actions
             :disabled="loading"
-            :edit-tooltip="$t('ledger_actions.edit_tooltip')"
-            :delete-tooltip="$t('ledger_actions.delete_tooltip')"
+            :edit-tooltip="tc('ledger_actions.edit_tooltip')"
+            :delete-tooltip="tc('ledger_actions.delete_tooltip')"
             @edit-click="editLedgerActionHandler(item)"
             @delete-click="promptForDelete(item)"
           />
@@ -130,7 +130,7 @@
             :limit="limit"
             :total="total"
             :colspan="headers.length"
-            :label="$t('ledger_actions.label')"
+            :label="tc('ledger_actions.label')"
           />
         </template>
       </data-table>
@@ -139,7 +139,7 @@
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :primary-action="$t('common.actions.save')"
+      :primary-action="tc('common.actions.save')"
       :action-disabled="loading || !valid"
       @confirm="confirmSave()"
       @cancel="clearDialog()"
@@ -153,7 +153,7 @@
     </big-dialog>
     <confirm-dialog
       :display="ledgerActionToDelete !== null"
-      :title="$t('ledger_actions.delete.title')"
+      :title="tc('ledger_actions.delete.title')"
       confirm-type="warning"
       :message="confirmationMessage"
       @cancel="ledgerActionToDelete = null"
@@ -175,6 +175,7 @@ import {
 import { get, set } from '@vueuse/core';
 import { dropRight } from 'lodash';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -198,7 +199,6 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { isSectionLoading, useRoute, useRouter } from '@/composables/common';
 import { setupIgnore } from '@/composables/history';
-import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import {
   LedgerAction,
@@ -238,58 +238,6 @@ type PaginationOptions = {
   itemsPerPage: number;
   sortBy: (keyof LedgerAction)[];
   sortDesc: boolean[];
-};
-
-const tableHeaders = (locationOverview: string) => {
-  return computed<DataTableHeader[]>(() => {
-    const headers: DataTableHeader[] = [
-      {
-        text: '',
-        value: 'ignoredInAccounting',
-        sortable: false,
-        class: 'pa-0',
-        cellClass: 'pa-0'
-      },
-      {
-        text: i18n.t('common.location').toString(),
-        value: 'location',
-        width: '120px',
-        align: 'center'
-      },
-      {
-        text: i18n.t('common.type').toString(),
-        value: 'type'
-      },
-      {
-        text: i18n.t('common.asset').toString(),
-        value: 'asset',
-        sortable: false
-      },
-      {
-        text: i18n.t('common.amount').toString(),
-        value: 'amount'
-      },
-      {
-        text: i18n.t('common.datetime').toString(),
-        value: 'timestamp'
-      },
-      {
-        text: i18n.t('ledger_actions.headers.actions').toString(),
-        value: 'actions',
-        align: 'center',
-        sortable: false,
-        width: '50'
-      },
-      { text: '', value: 'data-table-expand', sortable: false }
-    ];
-
-    if (locationOverview) {
-      headers.splice(9, 1);
-      headers.splice(1, 1);
-    }
-
-    return headers;
-  });
 };
 
 export default defineComponent({
@@ -355,30 +303,23 @@ export default defineComponent({
     const valid: Ref<boolean> = ref(false);
     const form = ref<LedgerActionFormInstance | null>(null);
 
+    const { tc } = useI18n();
+
     const newLedgerAction = () => {
-      set(dialogTitle, i18n.t('ledger_actions.dialog.add.title').toString());
-      set(
-        dialogSubtitle,
-        i18n.t('ledger_actions.dialog.add.subtitle').toString()
-      );
+      set(dialogTitle, tc('ledger_actions.dialog.add.title'));
+      set(dialogSubtitle, tc('ledger_actions.dialog.add.subtitle'));
       set(openDialog, true);
     };
 
     const editLedgerActionHandler = (ledgerAction: LedgerActionEntry) => {
       set(editableItem, ledgerAction);
-      set(dialogTitle, i18n.t('ledger_actions.dialog.edit.title').toString());
-      set(
-        dialogSubtitle,
-        i18n.t('ledger_actions.dialog.edit.subtitle').toString()
-      );
+      set(dialogTitle, tc('ledger_actions.dialog.edit.title'));
+      set(dialogSubtitle, tc('ledger_actions.dialog.edit.subtitle'));
       set(openDialog, true);
     };
 
     const promptForDelete = (ledgerAction: LedgerActionEntry) => {
-      set(
-        confirmationMessage,
-        i18n.t('ledger_actions.delete.message').toString()
-      );
+      set(confirmationMessage, tc('ledger_actions.delete.message'));
       set(ledgerActionToDelete, ledgerAction);
     };
 
@@ -436,7 +377,7 @@ export default defineComponent({
       {
         key: LedgerActionFilterKeys.ASSET,
         keyValue: LedgerActionFilterValueKeys.ASSET,
-        description: i18n.t('ledger_actions.filter.asset').toString(),
+        description: tc('ledger_actions.filter.asset'),
         suggestions: () => get(supportedAssetsSymbol),
         validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
@@ -444,7 +385,7 @@ export default defineComponent({
       {
         key: LedgerActionFilterKeys.TYPE,
         keyValue: LedgerActionFilterValueKeys.TYPE,
-        description: i18n.t('ledger_actions.filter.action_type').toString(),
+        description: tc('ledger_actions.filter.action_type'),
         suggestions: () => [...Object.values(LedgerActionType)],
         validate: type =>
           ([...Object.values(LedgerActionType)] as string[]).includes(type)
@@ -452,13 +393,11 @@ export default defineComponent({
       {
         key: LedgerActionFilterKeys.START,
         keyValue: LedgerActionFilterValueKeys.START,
-        description: i18n.t('ledger_actions.filter.start_date').toString(),
+        description: tc('ledger_actions.filter.start_date'),
         suggestions: () => [],
-        hint: i18n
-          .t('ledger_actions.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
-          })
-          .toString(),
+        hint: tc('ledger_actions.filter.date_hint', 0, {
+          format: getDateInputISOFormat(get(dateInputFormat))
+        }).toString(),
         validate: value => {
           return (
             value.length > 0 &&
@@ -471,13 +410,11 @@ export default defineComponent({
       {
         key: LedgerActionFilterKeys.END,
         keyValue: LedgerActionFilterValueKeys.END,
-        description: i18n.t('ledger_actions.filter.end_date').toString(),
+        description: tc('ledger_actions.filter.end_date'),
         suggestions: () => [],
-        hint: i18n
-          .t('ledger_actions.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
-          })
-          .toString(),
+        hint: tc('ledger_actions.filter.date_hint', 0, {
+          format: getDateInputISOFormat(get(dateInputFormat))
+        }).toString(),
         validate: value => {
           return (
             value.length > 0 &&
@@ -490,7 +427,7 @@ export default defineComponent({
       {
         key: LedgerActionFilterKeys.LOCATION,
         keyValue: LedgerActionFilterValueKeys.LOCATION,
-        description: i18n.t('ledger_actions.filter.location').toString(),
+        description: tc('ledger_actions.filter.location'),
         suggestions: () => get(associatedLocations),
         validate: location => get(associatedLocations).includes(location as any)
       }
@@ -565,10 +502,60 @@ export default defineComponent({
       }
     });
 
+    let tableHeaders = computed<DataTableHeader[]>(() => {
+      const headers: DataTableHeader[] = [
+        {
+          text: '',
+          value: 'ignoredInAccounting',
+          sortable: false,
+          class: 'pa-0',
+          cellClass: 'pa-0'
+        },
+        {
+          text: tc('common.location'),
+          value: 'location',
+          width: '120px',
+          align: 'center'
+        },
+        {
+          text: tc('common.type'),
+          value: 'type'
+        },
+        {
+          text: tc('common.asset'),
+          value: 'asset',
+          sortable: false
+        },
+        {
+          text: tc('common.amount'),
+          value: 'amount'
+        },
+        {
+          text: tc('common.datetime'),
+          value: 'timestamp'
+        },
+        {
+          text: tc('ledger_actions.headers.actions'),
+          value: 'actions',
+          align: 'center',
+          sortable: false,
+          width: '50'
+        },
+        { text: '', value: 'data-table-expand', sortable: false }
+      ];
+
+      if (get(locationOverview)) {
+        headers.splice(9, 1);
+        headers.splice(1, 1);
+      }
+
+      return headers;
+    });
+
     return {
       pageRoute,
       selected,
-      tableHeaders: tableHeaders(get(locationOverview)),
+      tableHeaders,
       data,
       limit,
       found,
@@ -603,7 +590,8 @@ export default defineComponent({
         data,
         fetch,
         getId
-      )
+      ),
+      tc
     };
   }
 });

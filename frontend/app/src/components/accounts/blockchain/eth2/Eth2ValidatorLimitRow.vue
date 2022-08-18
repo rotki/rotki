@@ -3,7 +3,7 @@
     v-if="visible"
     :limit="limit"
     :total="total"
-    :label="$t('eth2_validator_limit_row.label')"
+    :label="tc('eth2_validator_limit_row.label')"
     :colspan="colspan"
   />
 </template>
@@ -12,6 +12,7 @@
 import { computed, defineComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 
@@ -31,7 +32,8 @@ export default defineComponent({
     const visible = computed(
       () => limit.value > 0 && limit.value <= total.value
     );
-    return { limit, total, visible };
+    const { tc } = useI18n();
+    return { limit, total, visible, tc };
   }
 });
 </script>

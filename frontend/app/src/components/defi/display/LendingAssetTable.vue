@@ -25,7 +25,7 @@
       <template #header.balance.usdValue>
         {{
           $t('lending_asset_table.headers.usd_value', {
-            currency: currency.tickerSymbol
+            currency: currencySymbol
           })
         }}
       </template>
@@ -36,47 +36,46 @@
 <script lang="ts">
 import { computed, defineComponent, PropType } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import i18n from '@/i18n';
-import { DefiBalance } from '@/store/defi/types';
+import { BaseDefiBalance } from '@/store/defi/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-
-const headers = computed<DataTableHeader[]>(() => [
-  {
-    text: i18n.t('common.asset').toString(),
-    value: 'asset'
-  },
-  {
-    text: i18n.t('common.amount').toString(),
-    value: 'balance.amount',
-    align: 'end'
-  },
-  { text: '', value: 'balance.usdValue', align: 'end' },
-  {
-    text: i18n
-      .t('lending_asset_table.headers.effective_interest_rate')
-      .toString(),
-    value: 'effectiveInterestRate',
-    align: 'end'
-  }
-]);
 
 export default defineComponent({
   name: 'LendingAssetTable',
   components: { DataTable, PercentageDisplay, AmountDisplay },
   props: {
-    assets: { required: true, type: Array as PropType<DefiBalance[]> },
-    loading: { reuirqed: false, type: Boolean, default: false }
+    assets: { required: true, type: Array as PropType<BaseDefiBalance[]> },
+    loading: { required: false, type: Boolean, default: false }
   },
   setup() {
-    const { currency } = storeToRefs(useGeneralSettingsStore());
+    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+    const { tc } = useI18n();
+
+    const headers = computed<DataTableHeader[]>(() => [
+      {
+        text: tc('common.asset'),
+        value: 'asset'
+      },
+      {
+        text: tc('common.amount'),
+        value: 'balance.amount',
+        align: 'end'
+      },
+      { text: '', value: 'balance.usdValue', align: 'end' },
+      {
+        text: tc('lending_asset_table.headers.effective_interest_rate'),
+        value: 'effectiveInterestRate',
+        align: 'end'
+      }
+    ]);
 
     return {
       headers,
-      currency
+      currencySymbol
     };
   }
 });

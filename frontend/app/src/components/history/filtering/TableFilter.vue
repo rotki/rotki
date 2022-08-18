@@ -61,7 +61,7 @@ export default defineComponent({
   props: {
     matchers: {
       required: true,
-      type: Array as PropType<SearchMatcher<any>[]>
+      type: Array as PropType<SearchMatcher<any, any>[]>
     }
   },
   emits: {

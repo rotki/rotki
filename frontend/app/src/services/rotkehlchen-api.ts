@@ -100,7 +100,6 @@ export class RotkehlchenApi {
   private _backups: BackupApi;
   private _serverUrl: string;
   private signal = axios.CancelToken.source();
-  private readonly baseTransformer = setupTransformer([]);
   private readonly pathname: string;
 
   get defaultServerUrl(): string {
@@ -150,7 +149,6 @@ export class RotkehlchenApi {
       timeout: 30000
     });
     this.setupCancellation();
-    this.baseTransformer = setupTransformer();
     ({
       defi: this._defi,
       balances: this._balances,

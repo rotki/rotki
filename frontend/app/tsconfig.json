@@ -1,9 +1,13 @@
 {
   "extends": "../tsconfig.json",
-  "compilerOptions": {},
+  "compilerOptions": {
+  },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue"
-  ]
+  ],
+  "vueCompilerOptions": {
+    "target": 2, // For Vue version <= 2.6.14
+  }
 }

@@ -1,6 +1,6 @@
 <template>
-  <stat-card :title="$t('loan_collateral.title')">
-    <loan-row :title="$t('loan_collateral.locked_collateral')">
+  <stat-card :title="tc('loan_collateral.title')">
+    <loan-row :title="tc('loan_collateral.locked_collateral')">
       <amount-display
         :asset-padding="assetPadding"
         :value="vault.collateral.amount"
@@ -15,7 +15,7 @@
       />
     </loan-row>
     <v-divider class="my-4" />
-    <loan-row :title="$t('loan_collateral.current_ratio')" class="mb-2">
+    <loan-row :title="tc('loan_collateral.current_ratio')" class="mb-2">
       <percentage-display :value="ratio" />
     </loan-row>
     <manage-watchers :vault="vault" />
@@ -30,6 +30,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import ManageWatchers from '@/components/defi/loan/loans/makerdao/ManageWatchers.vue';
 import StatCard from '@/components/display/StatCard.vue';
@@ -46,13 +47,15 @@ export default defineComponent({
   },
   setup(props) {
     const { vault } = toRefs(props);
+    const { tc } = useI18n();
     const ratio = computed(() => {
       const value = get(vault);
       return value.collateralizationRatio ? value.collateralizationRatio : null;
     });
     return {
       ratio,
-      assetPadding: 5
+      assetPadding: 5,
+      tc
     };
   }
 });

@@ -85,7 +85,7 @@ import { Routes } from '@/router/routes';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
 import { useReports } from '@/store/reports';
-import { useSessionStore } from '@/store/session';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useTasks } from '@/store/tasks';
 import { showError, showMessage } from '@/store/utils';
 import {
@@ -138,7 +138,7 @@ export default defineComponent({
       }
     });
 
-    const { pinned } = storeToRefs(useSessionStore());
+    const { pinned } = storeToRefs(useAreaVisibilityStore());
 
     const generate = async (period: ProfitLossReportPeriod) => {
       if (get(pinned)?.name === 'report-actionable-card') {

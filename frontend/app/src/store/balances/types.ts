@@ -1,7 +1,6 @@
 import { Balance, BigNumber, HasBalance, NumericString } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { SupportedAsset } from '@rotki/common/lib/data';
 import { z } from 'zod';
 import { PriceInformation } from '@/services/assets/types';
 import { Section } from '@/store/const';
@@ -112,11 +111,13 @@ interface XpubAccount extends GeneralAccount, XpubPayload {}
 
 export interface XpubAccountWithBalance extends XpubAccount, HasBalance {}
 
-export type BlockchainAccount = GeneralAccount | XpubAccount;
+export type AccountWithBalanceAndSharedOwnership = AccountWithBalance & {
+  ownershipPercentage?: string;
+};
 
 export type BlockchainAccountWithBalance =
   | XpubAccountWithBalance
-  | (AccountWithBalance & { ownershipPercentage?: string });
+  | AccountWithBalanceAndSharedOwnership;
 
 export type AddAccountsPayload = {
   readonly blockchain: Blockchain;
@@ -190,14 +191,6 @@ export interface ERC20Token {
   readonly symbol?: string;
 }
 
-export type ExchangeRateGetter = (currency: string) => BigNumber | undefined;
-export type AssetInfoGetter = (
-  identifier: string
-) => SupportedAsset | undefined;
-
-export type IdentifierForSymbolGetter = (symbol: string) => string | undefined;
-export type AssetSymbolGetter = (identifier: string) => string;
-
 export const NonFungibleBalance = PriceInformation.merge(
   z.object({
     name: z.string().nullable(),
@@ -258,6 +251,7 @@ export type BalanceSnapshotPayload = {
   assetIdentifier: string;
   amount: string;
   usdValue: string;
+  location: string;
 };
 
 export const LocationDataSnapshot = z.object({

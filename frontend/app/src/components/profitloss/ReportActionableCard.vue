@@ -258,8 +258,8 @@ import { useRouter } from '@/composables/common';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
-import { useSessionStore } from '@/store/session';
 import { Pinned } from '@/store/session/types';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { SelectedReport } from '@/types/reports';
 import { toSentenceCase } from '@/utils/text';
 
@@ -280,7 +280,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const { report, isPinned } = toRefs(props);
     const router = useRouter();
-    const { pinned } = storeToRefs(useSessionStore());
+    const { pinned } = storeToRefs(useAreaVisibilityStore());
 
     const setDialog = (dialog: boolean) => {
       emit('set-dialog', dialog);

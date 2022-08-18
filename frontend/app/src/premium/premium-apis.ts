@@ -1,3 +1,4 @@
+import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { ProfitLossModel } from '@rotki/common/lib/defi';
 import { BalancerBalanceWithOwner } from '@rotki/common/lib/defi/balancer';
 import {
@@ -119,8 +120,10 @@ export const balancesApi = (): BalancesApi => {
   const { balancesByLocation } = storeToRefs(useBalancesStore());
   const { aggregatedBalances } = storeToRefs(useBlockchainBalancesStore());
   return {
-    byLocation: balancesByLocation,
-    aggregatedBalances,
+    byLocation: balancesByLocation as ComputedRef<Record<string, BigNumber>>,
+    aggregatedBalances: aggregatedBalances as ComputedRef<
+      AssetBalanceWithPrice[]
+    >,
     exchangeRate: (currency: string) =>
       computed(() => get(exchangeRate(currency)) ?? One)
   };

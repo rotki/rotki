@@ -2,12 +2,12 @@
   <div>
     <no-premium-placeholder
       v-if="!premium"
-      :text="$t('liquity_page.no_premium')"
+      :text="tc('liquity_page.no_premium')"
     />
     <module-not-active v-else-if="!moduleEnabled" :modules="modules" />
     <progress-screen v-else-if="loading">
       <template #message>
-        {{ $t('liquity_page.loading') }}
+        {{ tc('liquity_page.loading') }}
       </template>
     </progress-screen>
     <div v-else>
@@ -22,6 +22,7 @@
 
 <script lang="ts">
 import { defineComponent, onMounted, watch } from '@vue/composition-api';
+import { useI18n } from 'vue-i18n-composable';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -61,11 +62,14 @@ export default defineComponent({
         await load();
       }
     });
+
+    const { tc } = useI18n();
     return {
       moduleEnabled: moduleEnabled,
       modules,
       loading: shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING),
-      premium: getPremium()
+      premium: getPremium(),
+      tc
     };
   }
 });

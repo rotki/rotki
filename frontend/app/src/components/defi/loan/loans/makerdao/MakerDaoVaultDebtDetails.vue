@@ -1,10 +1,10 @@
 <template>
   <fragment>
     <v-divider class="my-4" />
-    <loan-row :title="$t('makerdao_vault_debt.stability_fee')" class="mb-2">
+    <loan-row :title="tc('makerdao_vault_debt.stability_fee')" class="mb-2">
       <percentage-display :value="stabilityFee" :asset-padding="assetPadding" />
     </loan-row>
-    <loan-row :title="$t('makerdao_vault_debt.total_lost')">
+    <loan-row :title="tc('makerdao_vault_debt.total_lost')">
       <div v-if="premium">
         <amount-display
           :asset-padding="assetPadding"
@@ -24,6 +24,7 @@
 import { BigNumber } from '@rotki/common';
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
@@ -50,6 +51,7 @@ export default defineComponent({
   setup(props) {
     const premium = getPremium();
     const { totalInterestOwed } = toRefs(props);
+    const { tc } = useI18n();
     const interest = computed(() => {
       if (get(totalInterestOwed).isNegative()) {
         return Zero;
@@ -59,7 +61,8 @@ export default defineComponent({
     return {
       interest,
       premium,
-      assetPadding: 4
+      assetPadding: 4,
+      tc
     };
   }
 });

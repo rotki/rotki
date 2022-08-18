@@ -1,6 +1,6 @@
 import { AssetBalance } from '@rotki/common';
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { ManagedAsset } from '@/services/assets/types';
-import { AssetInfoGetter } from '@/store/balances/types';
 import { assert } from '@/utils/assertions';
 
 function levenshtein(a: string, b: string) {
@@ -122,7 +122,9 @@ export function compareAssets(
   return 0;
 }
 
-export const getSortItems = (getInfo: AssetInfoGetter) => {
+export const getSortItems = (
+  getInfo: (identifier: string) => SupportedAsset | undefined
+) => {
   return (
     items: AssetBalance[],
     sortBy: (keyof AssetBalance)[],

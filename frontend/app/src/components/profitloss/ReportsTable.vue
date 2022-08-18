@@ -1,7 +1,7 @@
 <template>
   <card outlined-body>
     <template #title>
-      {{ $t('profit_loss_reports.title') }}
+      {{ tc('profit_loss_reports.title') }}
     </template>
     <data-table
       :headers="tableHeaders"
@@ -15,7 +15,7 @@
           :total="limits.total"
           :limit="limits.limit"
           :colspan="headers.length"
-          :label="$t('profit_loss_reports.title')"
+          :label="tc('profit_loss_reports.title')"
         />
       </template>
       <template #item.timestamp="{ item }">
@@ -45,7 +45,7 @@
         {{ size(item.sizeOnDisk) }}
       </template>
       <template #item.actions="{ item }">
-        <export-report-csv v-if="isLatestReport(item.identifier)" icon />
+        <export-report-csv v-if="latestReport(item.identifier)" icon />
         <v-tooltip top open-delay="400">
           <template #activator="{ on, attrs }">
             <v-btn
@@ -58,7 +58,7 @@
               <v-icon small>mdi-open-in-app</v-icon>
             </v-btn>
           </template>
-          <span>{{ $t('reports_table.load.tooltip') }}</span>
+          <span>{{ tc('reports_table.load.tooltip') }}</span>
         </v-tooltip>
 
         <v-tooltip top open-delay="400">
@@ -73,7 +73,7 @@
               <v-icon small>mdi-delete</v-icon>
             </v-btn>
           </template>
-          <span>{{ $t('reports_table.delete.tooltip') }}</span>
+          <span>{{ tc('reports_table.delete.tooltip') }}</span>
         </v-tooltip>
       </template>
       <template #expanded-item="{ headers, item }">
@@ -95,15 +95,16 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import {
   computed,
-  defineComponent,
+  ComputedRef,
   onBeforeMount,
   ref
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -111,117 +112,79 @@ import RowExpander from '@/components/helper/RowExpander.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
-import { setupStatusChecking } from '@/composables/common';
-import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
-import { Section } from '@/store/const';
 import { useReports } from '@/store/reports';
 import { size } from '@/utils/data';
 import { calculateTotalProfitLoss } from '@/utils/report';
 
-const getHeaders: () => DataTableHeader[] = () => [
+const expanded = ref([]);
+const reportStore = useReports();
+const { fetchReports, deleteReport, isLatestReport } = reportStore;
+const { reports } = storeToRefs(reportStore);
+const { tc } = useI18n();
+
+const items = computed(() =>
+  get(reports).entries.map((value, index) => ({
+    ...value,
+    id: index
+  }))
+);
+
+const limits = computed(() => ({
+  total: get(reports).entriesFound,
+  limit: get(reports).entriesLimit
+}));
+
+const tableHeaders: ComputedRef<DataTableHeader[]> = computed(() => [
   {
-    text: i18n.t('profit_loss_reports.columns.start').toString(),
+    text: tc('profit_loss_reports.columns.start'),
     value: 'startTs'
   },
   {
-    text: i18n.t('profit_loss_reports.columns.end').toString(),
+    text: tc('profit_loss_reports.columns.end'),
     value: 'endTs'
   },
   {
-    text: i18n.t('profit_loss_reports.columns.taxfree_profit_loss').toString(),
+    text: tc('profit_loss_reports.columns.taxfree_profit_loss'),
     value: 'free',
     align: 'end'
   },
   {
-    text: i18n.t('profit_loss_reports.columns.taxable_profit_loss').toString(),
+    text: tc('profit_loss_reports.columns.taxable_profit_loss'),
     value: 'taxable',
     align: 'end'
   },
   {
-    text: i18n.t('profit_loss_reports.columns.size').toString(),
+    text: tc('profit_loss_reports.columns.size'),
     value: 'sizeOnDisk',
     align: 'end'
   },
   {
-    text: i18n.t('profit_loss_reports.columns.created').toString(),
+    text: tc('profit_loss_reports.columns.created'),
     value: 'timestamp',
     align: 'end'
   },
   {
-    text: i18n.t('profit_loss_reports.columns.actions').toString(),
+    text: tc('profit_loss_reports.columns.actions'),
     value: 'actions',
     align: 'end',
     width: 140
   },
   { text: '', value: 'expand', align: 'end', sortable: false }
-];
+]);
 
-export default defineComponent({
-  name: 'ReportsTable',
-  components: {
-    ExportReportCsv,
-    UpgradeRow,
-    RowExpander,
-    ProfitLossOverview,
-    DataTable,
-    DateDisplay
-  },
-  setup() {
-    const selected = ref<string[]>([]);
-    const expanded = ref([]);
-    const reportStore = useReports();
-    const { fetchReports, fetchReport, deleteReport, isLatestReport } =
-      reportStore;
-    const { reports } = storeToRefs(reportStore);
-    const items = computed(() =>
-      get(reports).entries.map((value, index) => ({
-        ...value,
-        id: index
-      }))
-    );
+onBeforeMount(async () => await fetchReports());
 
-    const limits = computed(() => ({
-      total: get(reports).entriesFound,
-      limit: get(reports).entriesLimit
-    }));
+const showUpgradeMessage = computed(
+  () =>
+    get(reports).entriesLimit > 0 &&
+    get(reports).entriesLimit < get(reports).entriesFound
+);
 
-    const refresh = async () => await fetchReports();
+const getReportUrl = (identifier: number) => {
+  const url = Routes.PROFIT_LOSS_REPORT.route;
+  return url.replace(':id', identifier.toString());
+};
 
-    onBeforeMount(async () => await fetchReports());
-
-    const { isSectionRefreshing, shouldShowLoadingScreen } =
-      setupStatusChecking();
-
-    const showUpgradeMessage = computed(
-      () =>
-        get(reports).entriesLimit > 0 &&
-        get(reports).entriesLimit < get(reports).entriesFound
-    );
-
-    const getReportUrl = (identifier: number) => {
-      const url = Routes.PROFIT_LOSS_REPORT.route;
-      return url.replace(':id', identifier.toString());
-    };
-
-    return {
-      items,
-      expanded,
-      limits,
-      tableHeaders: getHeaders(),
-      loading: shouldShowLoadingScreen(Section.REPORTS),
-      refreshing: isSectionRefreshing(Section.REPORTS),
-      showUpgradeMessage,
-      size,
-      refresh,
-      selected,
-      isLatestReport: (reportId: number) => get(isLatestReport(reportId)),
-      getReportUrl,
-      fetchReports,
-      fetchReport,
-      deleteReport,
-      calculateTotalProfitLoss
-    };
-  }
-});
+const latestReport = (reportId: number) => get(isLatestReport(reportId));
 </script>

@@ -105,7 +105,7 @@
   </v-dialog>
 </template>
 <script lang="ts">
-import { BigNumber } from '@rotki/common';
+import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import {
   computed,
   defineComponent,
@@ -374,24 +374,28 @@ export default defineComponent({
         }
       ];
 
-      const assetItems: SearchItemWithoutValue[] = get(aggregatedBalances).map(
-        balance => {
-          const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
-          const asset = balance.asset;
+      const assetItems: SearchItemWithoutValue[] = (
+        get(aggregatedBalances) as AssetBalanceWithPrice[]
+      ).map(balance => {
+        const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
+        const asset = balance.asset;
 
-          return {
-            route: Routes.ASSETS.route.replace(':identifier', asset),
-            texts: [i18n.t('common.asset').toString(), get(assetSymbol(asset))],
-            price,
-            asset
-          };
-        }
-      );
+        return {
+          route: Routes.ASSETS.route.replace(':identifier', asset),
+          texts: [i18n.t('common.asset').toString(), get(assetSymbol(asset))],
+          price,
+          asset
+        };
+      });
 
+      const locationBalances = get(balancesByLocation) as Record<
+        string,
+        BigNumber
+      >;
       const locationItems: SearchItemWithoutValue[] = Object.keys(
-        get(balancesByLocation)
+        locationBalances
       ).map(identifier => {
-        const total = get(balancesByLocation)?.[identifier] ?? undefined;
+        const total = locationBalances?.[identifier] ?? undefined;
 
         const location: TradeLocationData = getLocation(identifier);
 

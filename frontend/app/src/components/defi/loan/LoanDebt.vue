@@ -1,6 +1,6 @@
 <template>
-  <stat-card :title="$t('loan_debt.title')" :class="$style.debt">
-    <loan-row :title="$t('loan_debt.outstanding_debt')">
+  <stat-card :title="tc('loan_debt.title')" :class="$style.debt">
+    <loan-row :title="tc('loan_debt.outstanding_debt')">
       <amount-display
         :asset-padding="assetPadding"
         :value="debt.amount"
@@ -20,6 +20,7 @@
 <script lang="ts">
 import { Balance } from '@rotki/common';
 import { defineComponent, PropType } from '@vue/composition-api';
+import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
@@ -42,7 +43,9 @@ export default defineComponent({
     }
   },
   setup() {
+    const { tc } = useI18n();
     return {
+      tc,
       assetPadding: 4
     };
   }

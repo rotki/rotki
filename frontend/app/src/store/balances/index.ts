@@ -5,6 +5,7 @@ import {
   BigNumber
 } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { forEach } from 'lodash';
@@ -14,7 +15,8 @@ import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import {
   BlockchainAssetBalances,
-  BtcBalances
+  BtcBalances,
+  ManualBalanceWithValue
 } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
@@ -25,9 +27,11 @@ import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import {
+  AccountAssetBalances,
   AllBalancePayload,
   AssetBreakdown,
   FetchPricePayload,
+  LocationBalance,
   NonFungibleBalance,
   NonFungibleBalances
 } from '@/store/balances/types';
@@ -164,21 +168,23 @@ export const useBalancesStore = defineStore('balances', () => {
         });
       }
 
-      get(manualBalances).forEach(manualBalance => {
-        if (manualBalance.asset !== asset) {
-          return;
-        }
+      (get(manualBalances) as ManualBalanceWithValue[]).forEach(
+        manualBalance => {
+          if (manualBalance.asset !== asset) {
+            return;
+          }
 
-        breakdown.push({
-          address: '',
-          location: manualBalance.location,
-          balance: {
-            amount: manualBalance.amount,
-            usdValue: manualBalance.usdValue
-          },
-          tags: manualBalance.tags
-        });
-      });
+          breakdown.push({
+            address: '',
+            location: manualBalance.location,
+            balance: {
+              amount: manualBalance.amount,
+              usdValue: manualBalance.usdValue
+            },
+            tags: manualBalance.tags
+          });
+        }
+      );
 
       const addBlockchainToBreakdown = (
         blockchain: Blockchain,
@@ -207,22 +213,22 @@ export const useBalancesStore = defineStore('balances', () => {
       const list = [
         {
           blockchain: Blockchain.ETH,
-          balances: get(ethBalancesState),
+          balances: get(ethBalancesState) as BlockchainAssetBalances,
           accounts: get(ethAccountsState)
         },
         {
           blockchain: Blockchain.KSM,
-          balances: get(ksmBalancesState),
+          balances: get(ksmBalancesState) as BlockchainAssetBalances,
           accounts: get(ksmAccountsState)
         },
         {
           blockchain: Blockchain.DOT,
-          balances: get(dotBalancesState),
+          balances: get(dotBalancesState) as BlockchainAssetBalances,
           accounts: get(dotAccountsState)
         },
         {
           blockchain: Blockchain.AVAX,
-          balances: get(avaxBalancesState),
+          balances: get(avaxBalancesState) as BlockchainAssetBalances,
           accounts: get(avaxAccountsState)
         }
       ];
@@ -275,7 +281,7 @@ export const useBalancesStore = defineStore('balances', () => {
       if (asset === Blockchain.BTC) {
         addBlockchainBtcToBreakdown(
           Blockchain.BTC,
-          get(btcBalancesState),
+          get(btcBalancesState) as BtcBalances,
           get(btcAccountsState)
         );
       }
@@ -283,12 +289,14 @@ export const useBalancesStore = defineStore('balances', () => {
       if (asset === Blockchain.BCH) {
         addBlockchainBtcToBreakdown(
           Blockchain.BCH,
-          get(bchBalancesState),
+          get(bchBalancesState) as BtcBalances,
           get(bchAccountsState)
         );
       }
 
-      const loopringBalances = get(loopringBalancesState);
+      const loopringBalances = get(
+        loopringBalancesState
+      ) as AccountAssetBalances;
       for (const address in loopringBalances) {
         const existing: Writeable<AssetBreakdown> | undefined = breakdown.find(
           value => value.address === address
@@ -313,8 +321,10 @@ export const useBalancesStore = defineStore('balances', () => {
         asset === Blockchain.ETH2 ||
         (get(treatEth2AsEth) && asset === Blockchain.ETH)
       ) {
-        for (const { publicKey } of get(eth2ValidatorsState).entries) {
-          const validatorBalances = get(eth2BalancesState)[publicKey];
+        const validators = get(eth2ValidatorsState) as Eth2Validators;
+        for (const { publicKey } of validators.entries) {
+          const balances = get(eth2BalancesState) as BlockchainAssetBalances;
+          const validatorBalances = balances[publicKey];
           let balance: Balance = zeroBalance();
           if (validatorBalances && validatorBalances.assets) {
             const assets = validatorBalances.assets;
@@ -368,9 +378,13 @@ export const useBalancesStore = defineStore('balances', () => {
       }
 
       if (identifier === TRADE_LOCATION_BLOCKCHAIN) {
-        get(totals).forEach((value: AssetBalance) => addToOwned(value));
+        (get(totals) as AssetBalance[]).forEach((value: AssetBalance) =>
+          addToOwned(value)
+        );
 
-        const loopringBalances = get(loopringBalancesState);
+        const loopringBalances = get(
+          loopringBalancesState
+        ) as AccountAssetBalances;
         for (const address in loopringBalances) {
           const accountBalances = loopringBalances[address];
 
@@ -380,7 +394,7 @@ export const useBalancesStore = defineStore('balances', () => {
         }
       }
 
-      get(manualBalances).forEach(value => {
+      (get(manualBalances) as ManualBalanceWithValue[]).forEach(value => {
         if (value.location === identifier) {
           addToOwned(value);
         }
@@ -406,14 +420,18 @@ export const useBalancesStore = defineStore('balances', () => {
       byLocations[location] = !byLocation ? value : value.plus(byLocation);
     };
 
-    for (const { location, usdValue } of get(manualBalanceByLocation)) {
+    for (const { location, usdValue } of get(
+      manualBalanceByLocation
+    ) as LocationBalance[]) {
       addToOwned(location, usdValue);
     }
 
     const mainCurrency = get(currencySymbol);
-    const total = get(blockchainTotal);
+    const total = get(blockchainTotal) as BigNumber;
 
-    const currentExchangeRate = get(exchangeRate(mainCurrency));
+    const currentExchangeRate = get(exchangeRate(mainCurrency)) as
+      | BigNumber
+      | undefined;
     const blockchainTotalConverted = currentExchangeRate
       ? total.multipliedBy(currentExchangeRate)
       : total;
@@ -508,7 +526,9 @@ export const useBalancesStore = defineStore('balances', () => {
 
   const nfBalances = computed<NonFungibleBalance[]>(() => {
     const balances: NonFungibleBalance[] = [];
-    const nonFungibleBalances = get(nonFungibleBalancesState);
+    const nonFungibleBalances = get(
+      nonFungibleBalancesState
+    ) as NonFungibleBalances;
     for (const address in nonFungibleBalances) {
       const addressNfBalance = nonFungibleBalances[address];
       balances.push(...addressNfBalance);

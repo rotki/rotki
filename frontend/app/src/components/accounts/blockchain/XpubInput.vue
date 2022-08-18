@@ -176,7 +176,8 @@ export default defineComponent({
         payload = {
           xpub: xpub.trim(),
           derivationPath: path ?? undefined,
-          xpubType: getKeyType(prefix as XpubPrefix)
+          xpubType: getKeyType(prefix as XpubPrefix),
+          blockchain: get(blockchain)
         };
       }
       updateXpub(payload);

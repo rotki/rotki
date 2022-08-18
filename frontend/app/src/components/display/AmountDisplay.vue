@@ -214,8 +214,8 @@ export default defineComponent({
 
     const isRenderValueNaN = computed<boolean>(() => get(renderValue).isNaN());
 
-    const renderValueDecimalPlaces = computed<number>(() =>
-      get(renderValue).decimalPlaces()
+    const renderValueDecimalPlaces = computed<number>(
+      () => get(renderValue).decimalPlaces() ?? 0
     );
 
     const convertFiat = computed<boolean>(() => {
@@ -262,7 +262,8 @@ export default defineComponent({
         );
       }
 
-      const hiddenDecimals = price.decimalPlaces() > floatingPrecisionUsed;
+      const decimals = price.decimalPlaces() ?? 0;
+      const hiddenDecimals = decimals > floatingPrecisionUsed;
       if (hiddenDecimals && get(rounding) === BigNumber.ROUND_UP) {
         return `< ${formattedValue}`;
       } else if (
@@ -294,7 +295,8 @@ export default defineComponent({
     });
 
     const fullFormattedValue = computed<string>(() => {
-      return get(fullValue).toFormat(get(fullValue).decimalPlaces());
+      const value = get(fullValue);
+      return value.toFormat(value.decimalPlaces() ?? 0);
     });
 
     const rounding = computed<RoundingMode | undefined>(() => {

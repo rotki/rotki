@@ -2,7 +2,7 @@
   <v-row>
     <v-col cols="12">
       <loan-header class="mt-8 mb-6" :owner="loan.owner">
-        {{ $t('aave_lending.header', { asset: symbol }) }}
+        {{ tc('aave_lending.header', 0, { asset: symbol }) }}
       </loan-header>
       <v-row no-gutters>
         <v-col cols="12" md="6" class="pe-md-4">
@@ -15,7 +15,7 @@
       </v-row>
       <v-row no-gutters class="mt-8">
         <v-col cols="12">
-          <premium-card v-if="!premium" :title="$t('aave_lending.history')" />
+          <premium-card v-if="!premium" :title="tc('aave_lending.history')" />
           <aave-borrowing-details
             v-else
             :loading="aaveHistoryLoading"
@@ -38,6 +38,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import AaveCollateral from '@/components/defi/loan/loans/aave/AaveCollateral.vue';
@@ -69,6 +70,7 @@ export default defineComponent({
     const premium = getPremium();
     const aaveHistoryLoading = isSectionLoading(Section.DEFI_AAVE_HISTORY);
     const { getAssetSymbol } = useAssetInfoRetrieval();
+    const { tc } = useI18n();
     const symbol = computed(() => {
       const asset = get(loan).asset;
       return asset ? getAssetSymbol(asset) : '';
@@ -76,7 +78,8 @@ export default defineComponent({
     return {
       premium,
       aaveHistoryLoading,
-      symbol
+      symbol,
+      tc
     };
   }
 });

@@ -74,6 +74,10 @@ jobs:
       - name: Build
         working-directory: ./frontend
         run: npm run build
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: ./frontend/app
+        continue-on-error: true
       - name: Lint code
         working-directory: ./frontend
         run: npm run lint

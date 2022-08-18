@@ -356,9 +356,9 @@ export const useAssetInfoRetrieval = defineStore(
         const { aggregatedBalances } = storeToRefs(
           useBlockchainBalancesStore()
         );
-        const assetValue = get(aggregatedBalances).find(
-          (value: AssetBalanceWithPrice) => value.asset === identifier
-        );
+        const assetValue = (
+          get(aggregatedBalances) as AssetBalanceWithPrice[]
+        ).find((value: AssetBalanceWithPrice) => value.asset === identifier);
         return {
           usdPrice: assetValue?.usdPrice ?? Zero,
           amount: assetValue?.amount ?? Zero,
@@ -434,7 +434,8 @@ export const useAssetInfoRetrieval = defineStore(
       assetName,
       tokenAddress,
       assetPriceInfo,
-      getAssetInfo: (identifier: string) => get(assetInfo(identifier)),
+      getAssetInfo: (identifier: string) =>
+        get(assetInfo(identifier)) as SupportedAsset | undefined,
       getAssetSymbol: (identifier: string) => get(assetSymbol(identifier)),
       getAssetIdentifierForSymbol: (symbol: string) =>
         get(assetIdentifierForSymbol(symbol)),

@@ -1,8 +1,8 @@
 <template>
-  <maker-dao-vault-loan v-if="isVault" :vault="loan" />
-  <aave-lending v-else-if="isAave" :loan="loan" />
-  <compound-lending v-else-if="isCompound" :loan="loan" />
-  <liquity-lending v-else-if="isLiquity" :loan="loan" />
+  <maker-dao-vault-loan v-if="vault" :vault="vault" />
+  <aave-lending v-else-if="aaveLoan" :loan="aaveLoan" />
+  <compound-lending v-else-if="compoundLoan" :loan="compoundLoan" />
+  <liquity-lending v-else-if="liquityLoan" :loan="liquityLoan" />
 </template>
 
 <script lang="ts">
@@ -41,18 +41,25 @@ export default defineComponent({
   setup(props) {
     const { loan } = toRefs(props);
 
-    const create = (protocol: DefiProtocol) =>
-      computed(() => get(loan)?.protocol === protocol);
-    const isVault = create(DefiProtocol.MAKERDAO_VAULTS);
-    const isAave = create(DefiProtocol.AAVE);
-    const isCompound = create(DefiProtocol.COMPOUND);
-    const isLiquity = create(DefiProtocol.LIQUITY);
+    const create = <T extends Loan>(protocol: DefiProtocol) =>
+      computed<T | null>(() => {
+        let currentLoan = get(loan);
+        if (currentLoan.protocol === protocol) {
+          return currentLoan as T;
+        }
+        return null;
+      });
+
+    const vault = create<MakerDAOVaultModel>(DefiProtocol.MAKERDAO_VAULTS);
+    const aaveLoan = create<AaveLoan>(DefiProtocol.AAVE);
+    const compoundLoan = create<CompoundLoan>(DefiProtocol.COMPOUND);
+    const liquityLoan = create<LiquityLoan>(DefiProtocol.LIQUITY);
 
     return {
-      isVault,
-      isCompound,
-      isAave,
-      isLiquity
+      vault,
+      compoundLoan,
+      aaveLoan,
+      liquityLoan
     };
   }
 });

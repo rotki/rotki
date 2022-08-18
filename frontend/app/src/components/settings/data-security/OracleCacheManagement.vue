@@ -285,7 +285,7 @@ export default defineComponent({
         source
       });
 
-      if (!status.message) {
+      if (!('message' in status)) {
         await load();
       }
 

@@ -2,13 +2,13 @@
   <div class="exchange-settings" data-cy="exchanges">
     <card outlined-body>
       <template #title>
-        {{ $t('exchange_settings.title') }}
+        {{ tc('exchange_settings.title') }}
       </template>
       <template #subtitle>
         <i18n path="exchange_settings.subtitle" tag="div">
           <base-external-link
-            :text="$t('exchange_settings.usage_guide')"
-            :href="$interop.usageGuideURL + '#adding-an-exchange'"
+            :text="tc('exchange_settings.usage_guide')"
+            :href="usageGuideURL + '#adding-an-exchange'"
           />
         </i18n>
       </template>
@@ -41,8 +41,8 @@
         </template>
         <template #item.actions="{ item }">
           <row-actions
-            :delete-tooltip="$t('exchange_settings.delete.tooltip')"
-            :edit-tooltip="$t('exchange_settings.edit.tooltip')"
+            :delete-tooltip="tc('exchange_settings.delete.tooltip')"
+            :edit-tooltip="tc('exchange_settings.edit.tooltip')"
             @delete-click="confirmRemoval(item)"
             @edit-click="editExchange(item)"
           />
@@ -51,8 +51,8 @@
     </card>
     <confirm-dialog
       :display="confirmation"
-      :title="$t('exchange_settings.confirmation.title')"
-      :message="$t('exchange_settings.confirmation.message', message)"
+      :title="tc('exchange_settings.confirmation.title')"
+      :message="tc('exchange_settings.confirmation.message', 0, message)"
       @cancel="confirmation = false"
       @confirm="remove()"
     />
@@ -60,11 +60,11 @@
       :display="showForm"
       :title="
         edit
-          ? $tc('exchange_settings.dialog.edit.title')
-          : $tc('exchange_settings.dialog.add.title')
+          ? tc('exchange_settings.dialog.edit.title')
+          : tc('exchange_settings.dialog.add.title')
       "
-      :primary-action="$t('common.actions.save')"
-      :secondary-action="$t('common.actions.cancel')"
+      :primary-action="tc('common.actions.save')"
+      :secondary-action="tc('common.actions.cancel')"
       :action-disabled="!valid || pending"
       :loading="pending"
       @confirm="setup"
@@ -84,6 +84,7 @@
 import { computed, onBeforeMount, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -92,7 +93,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import { exchangeName } from '@/components/history/consts';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
 import { useRouter } from '@/composables/common';
-import i18nFn from '@/i18n';
+import { useInterop } from '@/electron-interop';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { ExchangePayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
@@ -132,6 +133,9 @@ const pending = ref<boolean>(false);
 const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
 const { update } = useSettingsStore();
 
+const { tc } = useI18n();
+const { usageGuideURL } = useInterop();
+
 const findNonSyncExchangeIndex = (exchange: Exchange) => {
   return get(nonSyncingExchanges).findIndex((item: Exchange) => {
     return item.name === exchange.name && item.location === exchange.location;
@@ -164,20 +168,18 @@ const toggleSync = async (exchange: Exchange) => {
     nonSyncingExchanges: data
   });
 
-  if ('error' in status) {
+  if ('message' in status) {
     const { notify } = useNotifications();
     notify({
-      title: i18nFn.t('exchange_settings.sync.messages.title').toString(),
-      message: i18nFn
-        .t('exchange_settings.sync.messages.description', {
-          action: enable
-            ? i18nFn.t('exchange_settings.sync.messages.enable')
-            : i18nFn.t('exchange_settings.sync.messages.disable'),
-          location: exchange.location,
-          name: exchange.name,
-          message: status.error
-        })
-        .toString(),
+      title: tc('exchange_settings.sync.messages.title'),
+      message: tc('exchange_settings.sync.messages.description', 0, {
+        action: enable
+          ? tc('exchange_settings.sync.messages.enable')
+          : tc('exchange_settings.sync.messages.disable'),
+        location: exchange.location,
+        name: exchange.name,
+        message: status.message
+      }),
       display: true
     });
   }
@@ -271,21 +273,21 @@ onMounted(() => {
 
 const headers: DataTableHeader[] = [
   {
-    text: i18nFn.t('common.location').toString(),
+    text: tc('common.location'),
     value: 'location',
     width: '120px',
     align: 'center'
   },
   {
-    text: i18nFn.t('common.name').toString(),
+    text: tc('common.name'),
     value: 'name'
   },
   {
-    text: i18nFn.t('exchange_settings.header.sync_enabled').toString(),
+    text: tc('exchange_settings.header.sync_enabled'),
     value: 'syncEnabled'
   },
   {
-    text: i18nFn.t('exchange_settings.header.actions').toString(),
+    text: tc('exchange_settings.header.actions'),
     value: 'actions',
     width: '105px',
     align: 'center',

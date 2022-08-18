@@ -19,12 +19,21 @@
   </tr>
 </template>
 <script lang="ts">
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 
 export default defineComponent({
   name: 'RowAppend',
   props: {
-    className: { required: false, type: [String, Object], default: '' },
+    className: {
+      required: false,
+      type: [String, Object] as PropType<string | Record<string, any>>,
+      default: ''
+    },
     label: { required: false, type: String, default: '' },
     labelColspan: { required: false, type: [Number, String], default: 1 },
     leftPatchColspan: { required: false, type: [Number, String], default: 0 },
