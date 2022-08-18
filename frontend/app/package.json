@@ -55,8 +55,6 @@
     "vue-i18n-composable": "1.0.0",
     "vue-router": "3.5.3",
     "vuetify": "2.6.3",
-    "vuex": "3.6.2",
-    "vuex-persistedstate": "3.2.1",
     "zod": "3.12.0"
   },
   "devDependencies": {
