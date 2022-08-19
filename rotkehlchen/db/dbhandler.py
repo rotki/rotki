@@ -260,7 +260,8 @@ class DBHandler:
 
         May raise:
         - DBUpgradeError if the rotki DB version is newer than the software or
-        there is a DB upgrade and there is an error.
+        there is a DB upgrade and there is an error or if the version is older
+        than the one supported.
         - AuthenticationError if SQLCipher version problems are detected
         - SystemPermissionError if the DB file's permissions are not correct
         """
@@ -306,7 +307,8 @@ class DBHandler:
 
         May raise:
         - AuthenticationError if a wrong password is given or if the DB is corrupt
-        - DBUpgradeError if there is a problem with DB upgrading
+        - DBUpgradeError if there is a problem with DB upgrading or if the version
+        is older than the one supported.
         """
         # Run upgrades if needed
         fresh_db = DBUpgradeManager(self).run_upgrades()
@@ -497,7 +499,8 @@ class DBHandler:
 
         May raise:
         - DBUpgradeError if the rotki DB version is newer than the software or
-        there is a DB upgrade and there is an error.
+        there is a DB upgrade and there is an error or if the version is older
+        than the one supported.
         - AuthenticationError if the wrong password is given
         """
         self.disconnect()

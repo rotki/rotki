@@ -182,7 +182,8 @@ class Rotkehlchen():
         - AuthenticationError if premium_credentials are given and are invalid
         or can't authenticate with the server
         - DBUpgradeError if the rotki DB version is newer than the software or
-        there is a DB upgrade and there is an error.
+        there is a DB upgrade and there is an error or if the version is older
+        than the one supported.
         - SystemPermissionError if the directory or DB file can not be accessed
         - sqlcipher.OperationalError: If some very weird error happens with the DB.
         For example unexpected schema.

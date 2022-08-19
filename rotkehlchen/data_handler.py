@@ -73,7 +73,8 @@ class DataHandler():
         - AuthenticationError if the given user does not exist, or if
         sqlcipher version problems are detected
         - DBUpgradeError if the rotki DB version is newer than the software or
-        there is a DB upgrade and there is an error.
+        there is a DB upgrade and there is an error or if the version is older
+        than the one supported.
         """
         user_data_dir = self.data_directory / username
         if create_new:
@@ -218,7 +219,8 @@ class DataHandler():
         May Raise:
         - UnableToDecryptRemoteData due to decrypt()
         - DBUpgradeError if the rotki DB version is newer than the software or
-        there is a DB upgrade and there is an error.
+        there is a DB upgrade and there is an error or if the version is older
+        than the one supported.
         - SystemPermissionError if the DB file permissions are not correct
         """
         log.info('Decompress and decrypt DB')

@@ -102,6 +102,25 @@ Bear in mind that in case of using multiple accounts/devices with the data sync 
 You can manually move the global DB that contains the assets from one system to the other too. Find the :ref:`rotki_data_directory` in the source system. Assuming it's linux it will be :file:`~/.local/share/rotki/data`. The global db is then :file:`~/.local/share/rotki/data/global_data/global.db`. Manually move it to the equivalent location in the new system.
 
 
+Upgrading rotki after a very long time
+========================================
+
+If you have not opened rotki for more than a year and a half and you have data you want to keep in your account then you will need to upgrade it with intermediate versions before being able to use the latest one. If this is the case you will see a notification when you try to start rotki. For now this will happen if the last version that you used with your database was ``1.17.x``.
+
+The steps to update your database if you get this error are the following:
+
+1. Download version `1.25.2 of rotki <https://github.com/rotki/rotki/releases/tag/v1.25.2>`__ from the release page and install it.
+2. Log into your account with rotki 1.25.2. The upgrade process should happens and your account's database should be updated. If the upgrade was successful in the settings :ref:`database-info` you will see that the ``Database version`` is now ``34``. You can now close rotki.
+3. Download the `latest version of rotki <https://github.com/rotki/rotki/releases/>`__ and install it.
+4. Open your database with the latest version.
+
+After completing these steps you should be good to go.
+
+The supported database versions per rotki version are:
+
+- ``rotki <= 1.25.2``: Version 1 to 34 of the database.
+- ``rotki >= 1.26.x``: Version >= 26 of the database.
+
 Customizing
 **************
 
@@ -425,6 +444,8 @@ By choosing the "user & security" section of the settings you can change the use
 .. image:: images/sc_user_password_change.png
    :alt: Changing the user's password
    :align: center
+
+.. _database-info:
 
 Database Info & User Database Backups
 -------------------------------------
