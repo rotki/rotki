@@ -1,13 +1,21 @@
 import hashlib
+from enum import Enum, auto
 from typing import Any, List, Tuple
 
 import base58check
 import bech32
+from bip_utils import Bech32ChecksumError, P2TRAddrEncoder, P2WPKHAddrEncoder, SegwitBech32Decoder
 
 from rotkehlchen.errors.serialization import EncodingError
 from rotkehlchen.types import BTCAddress
 
 BIP32_HARDEN: int = 0x80000000
+
+
+class WitnessVersion(Enum):
+    """This represents the version represents the version of the Segwit address."""
+    BECH32 = auto()  # version byte of 0
+    BECH32M = auto()  # version byte of 1
 
 
 class OpCodes:
@@ -22,15 +30,39 @@ class OpCodes:
 
 
 def is_valid_btc_address(value: str) -> bool:
-    return is_valid_base58_address(value) or is_valid_bech32_address(value)
+    """Validates a bitcoin address.
+
+    The major difference between `is_valid_bech32_address` and `is_valid_bech32_bech32m_address`
+    is that they validate two different BIPs specification and they're needed to maintain
+    backward compatibility.
+    """
+    return (
+        is_valid_base58_address(value) or
+        is_valid_bech32_address(value) or
+        is_valid_bech32_bip350_address(value)
+    )
 
 
 def is_valid_bech32_address(value: str) -> bool:
-    """Validates a bitcoin SegWit address for the mainnet
+    """Validates a bitcoin Segwit address using BIP-173
+    https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki
     """
-
     decoded = bech32.decode('bc', value)
     return decoded != (None, None)
+
+
+def is_valid_bech32_bip350_address(value: str) -> bool:
+    """Validates a bitcoin Segwit address using BIP-350.
+
+    This validation is based on BIP-350 which improves on a flaw in BIP-173
+    https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki
+    """
+    try:
+        SegwitBech32Decoder.Decode('bc', value)
+    except (ValueError, Bech32ChecksumError):
+        return False
+    else:
+        return True
 
 
 def is_valid_base58_address(value: str) -> bool:
@@ -105,22 +137,27 @@ def pubkey_to_p2sh_p2wpkh_address(data: bytes) -> BTCAddress:
     return BTCAddress(address.decode('ascii'))
 
 
-def pubkey_to_bech32_address(data: bytes, witver: int) -> BTCAddress:
+def pubkey_to_bech32_address(data: bytes, witver: WitnessVersion) -> BTCAddress:
     """
-    Bitcoin pubkey to bech32 address
+    Bitcoin pubkey to native Segwit(P2WPKH) & Taproot(P2TR) addresses.
+    `witver` represents the version of the Segwit address.
+    0 -> BECH32 addresses
+    >= 1 -> BECH32M addresses
 
     Source:
     https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki#witness-program
-    https://github.com/mcdallas/cryptotools/blob/master/btctools/address.py
+    https://github.com/bitcoin/bips/blob/master/bip-0086.mediawiki
 
     May raise:
     - EncodingError if address could not be derived from public key
     """
-    witprog = hash160(data)
-    result = bech32.encode('bc', witver, witprog)
-    if not result:
-        raise EncodingError('Could not derive bech32 address from given public key')
-
+    try:
+        if witver == WitnessVersion.BECH32:
+            result = P2WPKHAddrEncoder.EncodeKey(pub_key=data, hrp='bc')
+        else:
+            result = P2TRAddrEncoder.EncodeKey(pub_key=data, hrp='bc')
+    except ValueError as e:
+        raise EncodingError('Could not derive Bech32 address from given public key') from e
     return BTCAddress(result)
 
 

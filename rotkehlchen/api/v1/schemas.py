@@ -1244,11 +1244,7 @@ class XpubAddSchema(AsyncQueryArgumentSchema):
         required=True,
         exclude_types=NON_BITCOIN_CHAINS,
     )
-    xpub_type = fields.String(
-        required=False,
-        load_default=None,
-        validate=webargs.validate.OneOf(choices=('p2pkh', 'p2sh_p2wpkh', 'wpkh')),
-    )
+    xpub_type = SerializableEnumField(XpubType, load_default=None)
     tags = fields.List(fields.String(), load_default=None)
 
     @post_load
@@ -1257,11 +1253,11 @@ class XpubAddSchema(AsyncQueryArgumentSchema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
-        xpub_type_str = data.pop('xpub_type', None)
+        xpub_type = data.pop('xpub_type', None)
         try:
-            xpub_type = None if xpub_type_str is None else XpubType.deserialize(xpub_type_str)
-            xpub_hdkey = HDKey.from_xpub(data['xpub'], xpub_type=xpub_type, path='m')
-        except (DeserializationError, XPUBError) as e:
+            derivation_path = 'm' if data['derivation_path'] is None else data['derivation_path']
+            xpub_hdkey = HDKey.from_xpub(data['xpub'], xpub_type=xpub_type, path=derivation_path)
+        except XPUBError as e:
             raise ValidationError(
                 f'Failed to initialize an xpub due to {str(e)}',
                 field_name='xpub',
