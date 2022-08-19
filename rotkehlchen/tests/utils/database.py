@@ -5,8 +5,6 @@ from shutil import copyfile
 from typing import Any, Dict, List, Optional
 from unittest.mock import _patch, patch
 
-from pysqlcipher3 import dbapi2 as sqlcipher
-
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.dbhandler import DBHandler
@@ -146,12 +144,3 @@ def _use_prepared_db(user_data_dir: Path, filename: str) -> None:
         os.path.join(os.path.dirname(dir_path), 'data', filename),
         user_data_dir / 'rotkehlchen.db',
     )
-
-
-def _init_prepared_db(user_data_dir: Path, filename: str):
-    _use_prepared_db(user_data_dir, filename)
-    password = '123'
-    conn = sqlcipher.connect(str(user_data_dir / 'rotkehlchen.db'))  # pylint: disable=no-member
-    conn.executescript(f'PRAGMA key={password};')
-    conn.execute('PRAGMA foreign_keys=ON;')
-    return conn

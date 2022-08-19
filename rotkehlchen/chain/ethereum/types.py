@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, NamedTuple, Tuple, Type
+from typing import Any, Dict, NamedTuple, Tuple, Type
 
 from eth_typing import HexAddress, HexStr
 
@@ -33,15 +33,6 @@ class NodeName(NamedTuple):
             'endpoint': self.endpoint,
             'owned': self.owned,
         }
-
-
-class EnsContractParams(NamedTuple):
-    """Parameters for a contract"""
-
-    address: ChecksumEthAddress
-    abi: List[Any]
-    method_name: str
-    arguments: List[Any]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)

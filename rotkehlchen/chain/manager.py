@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     DefaultDict,
     Dict,
     Iterator,
@@ -168,14 +167,11 @@ DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
 
 
 T = TypeVar('T')
-AddOrSub = Callable[[T, T], T]
 
 
 class AccountAction(Enum):
     QUERY = 1
-    APPEND = 2
-    REMOVE = 3
-    DSR_PROXY_APPEND = 4
+    DSR_PROXY_APPEND = 2
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -269,25 +265,6 @@ class BlockchainBalances:
             blockchain_balances['AVAX'] = avax_balances
 
         return blockchain_balances
-
-    def is_queried(self, blockchain: SupportedBlockchain) -> bool:
-        if blockchain == SupportedBlockchain.ETHEREUM:
-            return self.eth != {}
-        if blockchain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
-            return self.eth2 != {}
-        if blockchain == SupportedBlockchain.BITCOIN:
-            return self.btc != {}
-        if blockchain == SupportedBlockchain.BITCOIN_CASH:
-            return self.bch != {}
-        if blockchain == SupportedBlockchain.KUSAMA:
-            return self.ksm != {}
-        if blockchain == SupportedBlockchain.POLKADOT:
-            return self.dot != {}
-        if blockchain == SupportedBlockchain.AVALANCHE:
-            return self.avax != {}
-
-        # else
-        raise AssertionError('Invalid blockchain value')
 
     def _serialize_bitcoin_balances(
         self,
@@ -1156,9 +1133,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         eth_accounts = self.accounts.eth
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
         balances = self.ethereum.get_multieth_balance(eth_accounts)
-        eth_total = ZERO
         for account, balance in balances.items():
-            eth_total += balance
             usd_value = balance * eth_usd_price
             self.balances.eth[account] = BalanceSheet(
                 assets=defaultdict(Balance, {A_ETH: Balance(balance, usd_value)}),
