@@ -993,11 +993,11 @@ class HasEvmToken(Asset):
 
         data = AssetResolver().get_asset_data(self.identifier)  # pylint: disable=no-member
 
-        if data.evm_address is None:
+        if data.address is None:
             raise DeserializationError(
                 'Tried to initialize a non Ethereum asset as Ethereum Token',
             )
-        object.__setattr__(self, 'evm_address', data.evm_address)
+        object.__setattr__(self, 'evm_address', data.address)
         object.__setattr__(self, 'chain', data.chain)
         object.__setattr__(self, 'token_kind', data.token_kind)
         object.__setattr__(self, 'decimals', data.decimals)

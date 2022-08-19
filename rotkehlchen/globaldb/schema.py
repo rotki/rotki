@@ -221,12 +221,12 @@ CREATE TABLE IF NOT EXISTS address_book (
 """
 
 DB_CREATE_CUSTOM_ASSET = """
-CREATE TABLE IF NOT EXISTS custom_asset(
+CREATE TABLE IF NOT EXISTS custom_assets(
     identifier INTEGER NOT NULL PRIMARY KEY,
     name TEXT NOT NULL,
     symbol TEXT,
     notes TEXT,
-    asset_type TEXT
+    type TEXT
 );
 """
 

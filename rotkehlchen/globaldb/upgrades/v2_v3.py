@@ -355,12 +355,12 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         );
         """)  # noqa: E501
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS custom_asset(
+        CREATE TABLE IF NOT EXISTS custom_assets(
             identifier INTEGER NOT NULL PRIMARY KEY,
             name TEXT NOT NULL,
             symbol TEXT,
             notes TEXT,
-            asset_type TEXT
+            type TEXT
         );
         """)
 

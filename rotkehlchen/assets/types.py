@@ -48,7 +48,7 @@ class AssetData(NamedTuple):
     started: Optional['Timestamp']
     forked: Optional[str]
     swapped_for: Optional[str]
-    evm_address: Optional['ChecksumEvmAddress']
+    address: Optional['ChecksumEvmAddress']
     chain: Optional[ChainID]
     token_kind: Optional[EvmTokenKind]
     decimals: Optional[int]

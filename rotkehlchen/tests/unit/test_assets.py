@@ -223,9 +223,9 @@ def test_all_assets_json_tokens_address_is_checksummed():
 
         msg = (
             f'Ethereum token\'s {asset_data.name} ethereum address '
-            f'is not checksummed {asset_data.evm_address}'
+            f'is not checksummed {asset_data.address}'
         )
-        assert is_checksum_address(asset_data.evm_address), msg
+        assert is_checksum_address(asset_data.address), msg
 
 
 def test_asset_identifiers_are_unique_all_lowercased():

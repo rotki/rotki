@@ -33,7 +33,7 @@ selfkey_asset_data = AssetData(
     started=Timestamp(1508803200),
     forked=None,
     swapped_for=None,
-    evm_address=selfkey_address,
+    address=selfkey_address,
     chain=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     decimals=18,
@@ -49,7 +49,7 @@ bidr_asset_data = AssetData(
     started=Timestamp(1593475200),
     forked=None,
     swapped_for=None,
-    evm_address=None,
+    address=None,
     chain=None,
     token_kind=None,
     decimals=None,
@@ -228,7 +228,7 @@ def test_get_asset_with_symbol(globaldb):
             started=1507822985,
             forked=None,
             swapped_for=None,
-            evm_address=bihukey_address,
+            address=bihukey_address,
             chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,
@@ -243,7 +243,7 @@ def test_get_asset_with_symbol(globaldb):
             started=1405382400,
             forked=None,
             swapped_for=None,
-            evm_address=None,
+            address=None,
             chain=None,
             token_kind=None,
             decimals=None,
@@ -262,7 +262,7 @@ def test_get_asset_with_symbol(globaldb):
         started=1600970788,
         forked=None,
         swapped_for=None,
-        evm_address=aave_address,
+        address=aave_address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -277,7 +277,7 @@ def test_get_asset_with_symbol(globaldb):
         started=None,
         forked=None,
         swapped_for=None,
-        evm_address='0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
+        address='0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
         chain=ChainID.MATIC,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -297,7 +297,7 @@ def test_get_asset_with_symbol(globaldb):
         started=1585090944,
         forked=None,
         swapped_for=None,
-        evm_address=renbtc_address,
+        address=renbtc_address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=8,
@@ -312,7 +312,7 @@ def test_get_asset_with_symbol(globaldb):
         started=None,
         forked=None,
         swapped_for=None,
-        evm_address='0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
+        address='0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
         chain=ChainID.MATIC,
         token_kind=EvmTokenKind.ERC20,
         decimals=8,
@@ -351,7 +351,7 @@ def test_get_all_asset_data_specific_ids(globaldb):
         started=Timestamp(1231006505),
         forked=None,
         swapped_for=None,
-        evm_address=None,
+        address=None,
         chain=None,
         token_kind=None,
         decimals=None,
@@ -367,7 +367,7 @@ def test_get_all_asset_data_specific_ids(globaldb):
         started=Timestamp(1438214400),
         forked=None,
         swapped_for=None,
-        evm_address=None,
+        address=None,
         chain=None,
         token_kind=None,
         decimals=None,
@@ -456,17 +456,22 @@ def test_globaldb_pragma_foreign_keys(globaldb):
 
     cursor.execute(
         """
-        INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES(
-        "0xD178b20c6007572bD1FD01D205cC20D32B4A6017", 18, NULL
-        );
+        INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES(
+        "eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "A", "A",
+        "0xD178b20c6007572bD1FD01D205cC20D32B4A6017", 18, NULL)
         """,
     )
     cursor.execute(
         """
-        INSERT INTO assets(identifier,type, name, symbol,
-        started, swapped_for, coingecko, cryptocompare, details_reference)
-        VALUES("_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "C", "Aidus", "AID"   ,
-        123, NULL,   NULL, "AIDU", "0xD178b20c6007572bD1FD01D205cC20D32B4A6017");
+        INSERT INTO assets(identifier,type, started, swapped_for) VALUES(
+        "eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "C", 123, NULL)
+        """,
+    )
+    cursor.execute(
+        """
+        INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare,
+        forked) VALUES("eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "Aidus",
+        NULL, "AIDU", "", NULL);
         """,
     )
     # activate them again should fail since we haven't finished

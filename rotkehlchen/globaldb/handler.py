@@ -292,7 +292,7 @@ class GlobalDBHandler():
                 data = AssetData(
                     identifier=entry[0],
                     asset_type=asset_type,
-                    evm_address=evm_address,
+                    address=evm_address,
                     chain=chain,
                     token_kind=token_kind,
                     decimals=entry[3],
@@ -391,7 +391,7 @@ class GlobalDBHandler():
             started=started,
             forked=forked,
             swapped_for=swapped_for,
-            evm_address=evm_address,
+            address=evm_address,
             chain=chain,
             token_kind=token_kind,
             decimals=decimals,
@@ -1005,7 +1005,7 @@ class GlobalDBHandler():
                 assets.append(AssetData(
                     identifier=entry[0],
                     asset_type=asset_type,
-                    evm_address=evm_address,
+                    address=evm_address,
                     chain=ChainID.deserialize_from_db(entry[3]) if entry[3] is not None else None,
                     token_kind=EvmTokenKind.deserialize_from_db(entry[4]) if entry[4] is not None else None,  # noqa: E501
                     decimals=entry[5],
@@ -1453,7 +1453,7 @@ def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
             object.__setattr__(entry, 'swapped_for', swapped_for)
             object.__setattr__(entry, 'cryptocompare', db_entry.cryptocompare)
             object.__setattr__(entry, 'coingecko', db_entry.coingecko)
-            object.__setattr__(entry, 'evm_address', db_entry.evm_address)
+            object.__setattr__(entry, 'evm_address', db_entry.address)
             object.__setattr__(entry, 'decimals', db_entry.decimals)
             object.__setattr__(entry, 'protocol', db_entry.protocol)
             # TODO: Not changing underlying tokens at the moment since none

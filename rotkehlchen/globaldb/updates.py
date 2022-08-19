@@ -112,8 +112,8 @@ class AssetsUpdater():
         self.local_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
         self.last_remote_checked_version = None
         self.conflicts: List[Tuple[AssetData, AssetData]] = []
-        self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *type *, *started *, *swapped_for *\) +VALUES\((.*?),(.*?),(.*?),(.*?)\).*?')  # noqa: E501
-        self.ethereum_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) +VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),(.*?)\).*')  # noqa: E501
+        self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *type *, *started *, *swapped_for *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?)\).*?')  # noqa: E501
+        self.ethereum_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?)\).*')  # noqa: E501
         self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *identifier *, *name *, *symbol *, *coingecko *, *cryptocompare *, *forked *\) +VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),(.*?)\).*')  # noqa: E501
         self.string_re = re.compile(r'.*"(.*?)".*')
         self.branch = 'master'
@@ -246,7 +246,7 @@ class AssetsUpdater():
         match = self.ethereum_tokens_re.match(insert_text)
         if match is None:
             raise DeserializationError(
-                f'At asset DB update could not parse ethereum token data out '
+                f'At asset DB update could not parse evm token data out '
                 f'of {insert_text}',
             )
 
@@ -305,7 +305,7 @@ class AssetsUpdater():
             started=asset_data.started,
             forked=asset_data.forked,
             swapped_for=asset_data.swapped_for,
-            evm_address=address,
+            address=address,
             chain=chain,
             token_kind=token_kind,
             decimals=decimals,
