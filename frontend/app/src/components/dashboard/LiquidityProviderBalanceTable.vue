@@ -106,7 +106,7 @@ import LiquidityProviderBalanceDetails from '@/components/dashboard/LiquidityPro
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { isSectionLoading } from '@/composables/common';
+import { setupStatusChecking } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { getPremium } from '@/composables/session';
 import i18nFn from '@/i18n';
@@ -216,16 +216,17 @@ const tableHeaders = createTableHeaders(
   dashboardTablesVisibleColumns
 );
 
-const uniswapV3BalancesLoading = isSectionLoading(
+const { isSectionRefreshing } = setupStatusChecking();
+const uniswapV3BalancesLoading = isSectionRefreshing(
   Section.DEFI_UNISWAP_V3_BALANCES
 );
-const uniswapV2BalancesLoading = isSectionLoading(
+const uniswapV2BalancesLoading = isSectionRefreshing(
   Section.DEFI_UNISWAP_V2_BALANCES
 );
-const balancerBalancesLoading = isSectionLoading(
+const balancerBalancesLoading = isSectionRefreshing(
   Section.DEFI_BALANCER_BALANCES
 );
-const sushiswapBalancesLoading = isSectionLoading(
+const sushiswapBalancesLoading = isSectionRefreshing(
   Section.DEFI_SUSHISWAP_BALANCES
 );
 
@@ -253,21 +254,23 @@ const percentageOfCurrentGroup = (value: BigNumber) => {
 
 const premium = getPremium();
 
-const fetch = async (refresh: boolean = false) => {
-  await fetchUniswapV3Balances(refresh);
-  await fetchUniswapV2Balances(refresh);
+const { ethAddresses } = storeToRefs(useBlockchainAccountsStore());
 
-  if (get(premium)) {
-    await fetchSushiswapBalances(refresh);
-    await fetchBalancerBalances(refresh);
+const fetch = async (refresh: boolean = false) => {
+  if (get(ethAddresses).length > 0) {
+    await fetchUniswapV3Balances(refresh);
+    await fetchUniswapV2Balances(refresh);
+
+    if (get(premium)) {
+      await fetchSushiswapBalances(refresh);
+      await fetchBalancerBalances(refresh);
+    }
   }
 };
 
 onBeforeMount(() => {
   fetch();
 });
-
-const { ethAddresses } = storeToRefs(useBlockchainAccountsStore());
 
 watch(ethAddresses, (curr, prev) => {
   if (!isEqual(curr, prev)) {

@@ -91,3 +91,20 @@ export type DataSourceMeta = {
   readonly id: string;
   readonly name: string;
 };
+
+export const EthDetectedTokens = z.object({
+  tokens: z.array(z.string()).nullish(),
+  lastUpdateTimestamp: z.number().nullish()
+});
+
+export type EthDetectedTokens = z.infer<typeof EthDetectedTokens>;
+
+export const EthDetectedTokensRecord = z.record(EthDetectedTokens);
+
+export type EthDetectedTokensRecord = z.infer<typeof EthDetectedTokensRecord>;
+
+export type EthDetectedTokensInfo = {
+  tokens: string[];
+  total: number;
+  timestamp: number | null;
+};
