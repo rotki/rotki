@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`4710` Fixes an issue where certain data importers were using outdated "source".
+
 * :release:`1.25.2 <2022-08-17>`
 * :feature:`-` The add button in blockchain accounts & balances is now bigger on larger screens.
 * :bug:`4671` Fixes an issue with the auto-updater not working properly.
