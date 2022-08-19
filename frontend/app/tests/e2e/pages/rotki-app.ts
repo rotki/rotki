@@ -1,4 +1,14 @@
 export class RotkiApp {
+  private loadEnv(): void {
+    const apiKey = Cypress.env('ETHERSCAN_API_KEY');
+    if (apiKey) {
+      cy.log('Using CYPRESS_ETHERSCAN_API_KEY env variable');
+      cy.addEtherscanKey(apiKey);
+    } else {
+      cy.log('CYPRESS_ETHERSCAN_API_KEY not set');
+    }
+  }
+
   visit() {
     cy.visit('/?skip_update=1');
   }
@@ -23,10 +33,12 @@ export class RotkiApp {
     cy.get('.create-account__analytics__button__confirm').click();
     cy.get('[data-cy=account-management__loading]').should('not.exist');
     cy.updateAssets();
+    this.loadEnv();
   }
 
   fasterLogin(username: string, password: string = '1234') {
     cy.createAccount(username, password);
+    this.loadEnv();
     this.visit();
     this.login(username, password);
     this.closePremiumOverlay();

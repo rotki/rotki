@@ -38,6 +38,7 @@ declare global {
       createAccount: (username: string, password?: string) => Chainable;
       addExternalTrade: (trade: ExternalTrade) => Chainable;
       addLedgerAction: (action: ExternalLedgerAction) => Chainable;
+      addEtherscanKey: (key: string) => Chainable;
     }
   }
 }
