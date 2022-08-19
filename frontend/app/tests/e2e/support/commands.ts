@@ -147,9 +147,25 @@ const addLedgerAction = (action: ExternalLedgerAction) => {
     .its('body');
 };
 
+const addEtherscanKey = (key: string) => {
+  return cy
+    .request({
+      url: 'http://localhost:22221/api/1/external_services/',
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8'
+      },
+      body: {
+        services: [{ name: 'etherscan', api_key: key }]
+      }
+    })
+    .its('status');
+};
+
 Cypress.Commands.add('logout', logout);
 Cypress.Commands.add('updateAssets', updateAssets);
 Cypress.Commands.add('disableModules', disableModules);
 Cypress.Commands.add('createAccount', createAccount);
 Cypress.Commands.add('addExternalTrade', addExternalTrade);
 Cypress.Commands.add('addLedgerAction', addLedgerAction);
+Cypress.Commands.add('addEtherscanKey', addEtherscanKey);
