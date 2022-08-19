@@ -2880,8 +2880,8 @@ Detecting owned ethereum tokens
 
    Doing POST on the detect tokens endpoint will detect ethereum tokens owned by the provided addresses. If no addresses provided, tokens for all user's ethereum addresses will be detected.
 
-.. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
+    .. note::
+          This endpoint can also be queried asynchronously by using ``"async_query": true``
 
   **Example Request**:
 

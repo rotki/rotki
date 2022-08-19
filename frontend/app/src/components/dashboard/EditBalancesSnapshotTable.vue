@@ -1,9 +1,11 @@
 <template>
   <div>
     <data-table
+      ref="tableRef"
       :class="$style.table"
       :headers="tableHeaders"
       :items="data"
+      :container="tableContainer"
       :mobile-breakpoint="0"
     >
       <template #item.category="{ item }">
@@ -482,7 +484,15 @@ export default defineComponent({
       clearDeleteDialog();
     };
 
+    const tableRef = ref<any>(null);
+
+    const tableContainer = computed(() => {
+      return get(tableRef)?.$el;
+    });
+
     return {
+      tableRef,
+      tableContainer,
       data,
       showForm,
       showDeleteConfirmation,

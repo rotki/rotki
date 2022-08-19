@@ -117,7 +117,10 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin-left: 16px;
+  margin-left: 1rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 
   @media (min-width: 700px) and (max-width: 1200px) {
     width: 100px;

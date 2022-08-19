@@ -55,6 +55,56 @@
       <template v-if="isEth2" #item.ownershipPercentage="{ item }">
         <percentage-display :value="item.ownershipPercentage" />
       </template>
+      <template v-if="isEth" #item.numOfDetectedTokens="{ item }">
+        <div class="d-flex align-center justify-end">
+          <account-detected-tokens-dialog
+            :info="getEthDetectedTokensInfo(item.address)"
+            :disabled="detectingTokens(item.address).value || loading"
+            :loading="detectingTokens(item.address).value"
+            @refresh="fetchDetectedTokens(item.address)"
+          />
+          <div>
+            <v-tooltip top>
+              <template #activator="{ on }">
+                <v-btn
+                  text
+                  icon
+                  :disabled="detectingTokens(item.address).value || loading"
+                  v-on="on"
+                  @click="fetchDetectedTokens(item.address)"
+                >
+                  <v-progress-circular
+                    v-if="detectingTokens(item.address).value"
+                    indeterminate
+                    color="primary"
+                    width="2"
+                    size="20"
+                  />
+                  <v-icon v-else small>mdi-refresh</v-icon>
+                </v-btn>
+              </template>
+              <div class="text-center">
+                <div>
+                  {{ $t('account_balances.detect_tokens.tooltip.redetect') }}
+                </div>
+                <div v-if="getEthDetectedTokensInfo(item.address).timestamp">
+                  <i18n
+                    path="account_balances.detect_tokens.tooltip.last_detected"
+                  >
+                    <template #time>
+                      <date-display
+                        :timestamp="
+                          getEthDetectedTokensInfo(item.address).timestamp
+                        "
+                      />
+                    </template>
+                  </i18n>
+                </div>
+              </div>
+            </v-tooltip>
+          </div>
+        </div>
+      </template>
       <template v-if="!loopring" #item.actions="{ item }">
         <row-actions
           class="account-balance-table__actions"
@@ -144,6 +194,7 @@ import { DataTableHeader } from 'vuetify';
 import { useTheme } from '@/composables/common';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
+import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { chainSection } from '@/store/balances/const';
 import {
@@ -194,6 +245,9 @@ export default defineComponent({
     ),
     RowExpander: defineAsyncComponent(
       () => import('@/components/helper/RowExpander.vue')
+    ),
+    AccountDetectedTokensDialog: defineAsyncComponent(
+      () => import('@/components/accounts/AccountDetectedTokensDialog.vue')
     )
   },
   props: {
@@ -492,6 +546,15 @@ export default defineComponent({
         });
       }
 
+      if (get(isEth)) {
+        headers.push({
+          text: i18n.tc('account_balances.headers.num_of_detected_tokens'),
+          value: 'numOfDetectedTokens',
+          align: 'end',
+          width: '150'
+        });
+      }
+
       headers.push({
         text: i18n.tc('account_balances.headers.actions'),
         value: 'actions',
@@ -539,6 +602,12 @@ export default defineComponent({
       }
     };
 
+    const { getEthDetectedTokensInfo, fetchDetectedTokens } =
+      useBlockchainAccountsStore();
+
+    const detectingTokens = (address: string) =>
+      isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, { address });
+
     const assets = (address: string) => {
       return get(accountAssets(address));
     };
@@ -575,7 +644,10 @@ export default defineComponent({
       expandXpub,
       deleteXpub,
       removeCollapsed,
-      get
+      get,
+      detectingTokens,
+      fetchDetectedTokens,
+      getEthDetectedTokensInfo
     };
   }
 });

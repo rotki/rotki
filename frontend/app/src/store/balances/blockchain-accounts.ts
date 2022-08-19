@@ -6,15 +6,17 @@ import {
   Eth2ValidatorEntry,
   Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
-import { computed, Ref, ref } from '@vue/composition-api';
+import { computed, Ref, ref, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import {
   BlockchainAssetBalances,
-  BlockchainBalances,
-  BtcBalances
+  BtcBalances,
+  EthDetectedTokensInfo,
+  EthDetectedTokensRecord
 } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -40,7 +42,6 @@ import {
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
-import { useUniswapStore } from '@/store/defi/uniswap';
 import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
@@ -68,7 +69,7 @@ const chains = [
 type Chain = typeof chains[number];
 
 function isSupportedChain(blockchain: Blockchain): blockchain is Chain {
-  return blockchain in chains;
+  return chains.includes(blockchain as Chain);
 }
 
 const removeTag = (tags: string[] | null, tagName: string): string[] | null => {
@@ -213,7 +214,6 @@ export const useBlockchainAccountsStore = defineStore(
     const { awaitTask, isTaskRunning } = useTasks();
     const { notify } = useNotifications();
     const { setMessage } = useMainStore();
-    const { fetchV3Balances } = useUniswapStore();
 
     const fetchAccounts = async (blockchains: Blockchain[] | null = null) => {
       const error = (error: any, blockchain: Blockchain) => {
@@ -338,8 +338,7 @@ export const useBlockchainAccountsStore = defineStore(
       loopringBalancesState
     } = storeToRefs(blockchainBalancesStore);
 
-    const { updateBlockchainBalances, fetchBlockchainBalances } =
-      blockchainBalancesStore;
+    const { fetchBlockchainBalances } = blockchainBalancesStore;
 
     const addAccounts = async ({
       blockchain,
@@ -350,34 +349,29 @@ export const useBlockchainAccountsStore = defineStore(
       if (get(isTaskRunning(taskType))) {
         return;
       }
-
-      assert(blockchain in chains);
-
-      // Check if accounts have already registered
-      const listState = {
-        [Blockchain.ETH]: ethAccountsState,
-        [Blockchain.AVAX]: avaxAccountsState,
-        [Blockchain.DOT]: dotAccountsState,
-        [Blockchain.KSM]: ksmAccountsState
-      };
       let accountsToAdd = payload;
 
-      assert(
-        isSupportedChain(blockchain),
-        `called with an unsupported chain: ${blockchain}`
-      );
+      if (isSupportedChain(blockchain)) {
+        // Check if accounts have already registered
+        const listState = {
+          [Blockchain.ETH]: ethAccountsState,
+          [Blockchain.AVAX]: avaxAccountsState,
+          [Blockchain.DOT]: dotAccountsState,
+          [Blockchain.KSM]: ksmAccountsState
+        };
 
-      const existingAccounts = listState[blockchain];
-      if (existingAccounts) {
-        const existingAccountsVal = get(existingAccounts);
+        const existingAccounts = listState[blockchain];
+        if (existingAccounts) {
+          const existingAccountsVal = get(existingAccounts);
 
-        const existingAddresses = existingAccountsVal.map(address =>
-          address.address.toLocaleLowerCase()
-        );
-        accountsToAdd = payload.filter(
-          value =>
-            !existingAddresses.includes(value.address.toLocaleLowerCase())
-        );
+          const existingAddresses = existingAccountsVal.map(address =>
+            address.address.toLocaleLowerCase()
+          );
+          accountsToAdd = payload.filter(
+            value =>
+              !existingAddresses.includes(value.address.toLocaleLowerCase())
+          );
+        }
       }
 
       if (accountsToAdd.length === 0) {
@@ -412,10 +406,7 @@ export const useBlockchainAccountsStore = defineStore(
             tags
           });
 
-          const { result } = await awaitTask<
-            BlockchainBalances,
-            BlockchainMetadata
-          >(
+          await awaitTask<boolean, BlockchainMetadata>(
             taskId,
             taskType,
             {
@@ -435,17 +426,21 @@ export const useBlockchainAccountsStore = defineStore(
             true
           );
 
-          if (modules && blockchain === Blockchain.ETH) {
-            const { enableModule } = useSettingsStore();
-            await enableModule({
-              enable: modules,
-              addresses: [address]
+          if (blockchain === Blockchain.ETH) {
+            if (modules) {
+              const { enableModule } = useSettingsStore();
+              await enableModule({
+                enable: modules,
+                addresses: [address]
+              });
+            }
+            await fetchDetectedTokens(address);
+          } else {
+            await fetchBlockchainBalances({
+              blockchain,
+              ignoreCache: true
             });
-            await fetchV3Balances();
           }
-
-          const balances = BlockchainBalances.parse(result);
-          await updateBlockchainBalances({ chain: blockchain, balances });
         } catch (e) {
           logger.error(e);
         }
@@ -467,7 +462,6 @@ export const useBlockchainAccountsStore = defineStore(
             blockchain: Blockchain.ETH2,
             ignoreCache: false
           });
-          await fetchV3Balances();
         }
         await refreshPrices({ ignoreCache: false });
       } catch (e: any) {
@@ -547,10 +541,7 @@ export const useBlockchainAccountsStore = defineStore(
           return;
         }
         const { taskId } = await api.deleteXpub(payload);
-        const { result } = await awaitTask<
-          BlockchainBalances,
-          BlockchainMetadata
-        >(taskId, taskType, {
+        await awaitTask<boolean, BlockchainMetadata>(taskId, taskType, {
           title: i18n.tc('actions.balances.xpub_removal.task.title'),
           description: i18n.tc(
             'actions.balances.xpub_removal.task.description',
@@ -562,10 +553,9 @@ export const useBlockchainAccountsStore = defineStore(
           blockchain: payload.blockchain,
           numericKeys: []
         } as BlockchainMetadata);
-        const balances = BlockchainBalances.parse(result);
-        await updateBlockchainBalances({
-          chain: payload.blockchain,
-          balances
+        await fetchBlockchainBalances({
+          blockchain: payload.blockchain,
+          ignoreCache: true
         });
       } catch (e: any) {
         logger.error(e);
@@ -595,10 +585,7 @@ export const useBlockchainAccountsStore = defineStore(
       );
       try {
         const taskType = TaskType.REMOVE_ACCOUNT;
-        const { result } = await awaitTask<
-          BlockchainBalances,
-          BlockchainMetadata
-        >(taskId, taskType, {
+        await awaitTask<boolean, BlockchainMetadata>(taskId, taskType, {
           title: i18n.tc(
             'actions.balances.blockchain_account_removal.task.title',
             0,
@@ -615,17 +602,15 @@ export const useBlockchainAccountsStore = defineStore(
           numericKeys: []
         } as BlockchainMetadata);
 
-        const balances = BlockchainBalances.parse(result);
-
         useDefiStore().reset();
         useMainStore().resetDefiStatus();
         const { refreshPrices, fetchNfBalances } = useBalancesStore();
         fetchNfBalances();
-        if (blockchain === Blockchain.ETH) {
-          fetchV3Balances();
-        }
 
-        await updateBlockchainBalances({ chain: blockchain, balances });
+        await fetchBlockchainBalances({
+          blockchain,
+          ignoreCache: true
+        });
         await refreshPrices({ ignoreCache: false });
       } catch (e: any) {
         logger.error(e);
@@ -649,16 +634,18 @@ export const useBlockchainAccountsStore = defineStore(
       }
     };
 
-    const addEth2Validator = async (payload: Eth2Validator) => {
+    const addEth2Validator = async (
+      payload: Eth2Validator
+    ): Promise<boolean> => {
       const { activeModules } = useGeneralSettingsStore();
       if (!activeModules.includes(Module.ETH2)) {
-        return;
+        return false;
       }
       const id = payload.publicKey || payload.validatorIndex;
       try {
         const taskType = TaskType.ADD_ETH2_VALIDATOR;
         const { taskId } = await api.balances.addEth2Validator(payload);
-        const { result } = await awaitTask<Boolean, TaskMeta>(
+        const { result } = await awaitTask<boolean, TaskMeta>(
           taskId,
           taskType,
           {
@@ -697,10 +684,12 @@ export const useBlockchainAccountsStore = defineStore(
       }
     };
 
-    const editEth2Validator = async (payload: Eth2Validator) => {
+    const editEth2Validator = async (
+      payload: Eth2Validator
+    ): Promise<boolean> => {
       const { activeModules } = useGeneralSettingsStore();
       if (!activeModules.includes(Module.ETH2)) {
-        return;
+        return false;
       }
 
       const id = payload.validatorIndex;
@@ -1091,6 +1080,79 @@ export const useBlockchainAccountsStore = defineStore(
         };
       });
 
+    const ethDetectedTokensRecord = ref<EthDetectedTokensRecord>({});
+
+    const fetchDetectedTokens = async (address?: string) => {
+      try {
+        if (address) {
+          const { awaitTask } = useTasks();
+          const taskType = TaskType.FETCH_DETECTED_TOKENS;
+
+          const { taskId } = await api.balances.fetchDetectedTokensTask([
+            address
+          ]);
+
+          const taskMeta = {
+            title: i18n
+              .t('actions.balances.detect_tokens.task.title')
+              .toString(),
+            description: i18n
+              .t('actions.balances.detect_tokens.task.description', {
+                address
+              })
+              .toString(),
+            numericKeys: [],
+            address
+          };
+
+          await awaitTask<EthDetectedTokensRecord, TaskMeta>(
+            taskId,
+            taskType,
+            taskMeta,
+            true
+          );
+
+          await fetchDetectedTokens();
+
+          fetchBlockchainBalances({
+            ignoreCache: true,
+            blockchain: Blockchain.ETH
+          });
+        } else {
+          set(
+            ethDetectedTokensRecord,
+            await api.balances.fetchDetectedTokens(get(ethAddresses))
+          );
+        }
+      } catch (e) {
+        logger.error(e);
+      }
+    };
+
+    const getEthDetectedTokensInfo = (
+      address: string
+    ): EthDetectedTokensInfo => {
+      const info = get(ethDetectedTokensRecord)?.[address] || null;
+      if (!info) {
+        return {
+          tokens: [],
+          total: 0,
+          timestamp: null
+        };
+      }
+      return {
+        tokens: info.tokens || [],
+        total: info.tokens ? info.tokens.length : 0,
+        timestamp: info.lastUpdateTimestamp || null
+      };
+    };
+
+    watch(ethAddresses, (curr, prev) => {
+      if (!isEqual(curr, prev)) {
+        fetchDetectedTokens();
+      }
+    });
+
     const reset = () => {
       set(ethAccountsState, []);
       set(eth2ValidatorsState, {
@@ -1109,6 +1171,7 @@ export const useBlockchainAccountsStore = defineStore(
       set(ksmAccountsState, []);
       set(dotAccountsState, []);
       set(avaxAccountsState, []);
+      set(ethDetectedTokensRecord, {});
     };
 
     return {
@@ -1141,6 +1204,9 @@ export const useBlockchainAccountsStore = defineStore(
       removeBlockchainTags,
       getAccountByAddress,
       getEth2Account,
+      ethDetectedTokensRecord,
+      getEthDetectedTokensInfo,
+      fetchDetectedTokens,
       reset
     };
   }
