@@ -8,7 +8,7 @@
   >
     <template #activator="{ on }">
       <menu-tooltip-button
-        :tooltip="$t('statistics_graph_settings.tooltip')"
+        :tooltip="tc('statistics_graph_settings.tooltip')"
         class-name="graph-period"
         :on-menu="on"
       >
@@ -16,19 +16,21 @@
       </menu-tooltip-button>
     </template>
     <card>
-      <template #title>{{ $t('statistics_graph_settings.title') }}</template>
+      <template #title>{{ tc('statistics_graph_settings.title') }}</template>
       <template #subtitle>
-        {{ $t('statistics_graph_settings.subtitle') }}
+        {{ tc('statistics_graph_settings.subtitle') }}
       </template>
       <v-text-field
         v-model="multiplier"
         type="number"
         outlined
-        :label="$t('statistics_graph_settings.label')"
+        :label="tc('statistics_graph_settings.label')"
       />
 
-      <span v-if="period === 0">{{ $t('statistics_graph_settings.off') }}</span>
-      <span v-else>{{ $t('statistics_graph_settings.on', { period }) }}</span>
+      <span v-if="period === 0">{{ tc('statistics_graph_settings.off') }}</span>
+      <span v-else>
+        {{ tc('statistics_graph_settings.on', 0, { period }) }}
+      </span>
 
       <template #buttons>
         <v-spacer />
@@ -38,7 +40,7 @@
           :disabled="invalid"
           @click="updateSetting"
         >
-          {{ $t('common.actions.save') }}
+          {{ tc('common.actions.save') }}
         </v-btn>
       </template>
     </card>
@@ -55,6 +57,7 @@ import {
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -79,6 +82,8 @@ export default defineComponent({
     const { ssf0graphMultiplier, balanceSaveFrequency } = storeToRefs(
       useGeneralSettingsStore()
     );
+
+    const { tc } = useI18n();
 
     const updateSetting = async () => {
       await update({
@@ -111,7 +116,8 @@ export default defineComponent({
       visible,
       multiplier,
       period,
-      updateSetting
+      updateSetting,
+      tc
     };
   }
 });

@@ -4,13 +4,13 @@
       <v-col>
         <refresh-header
           :loading="refreshing"
-          :title="$t('decentralized_overview.title')"
+          :title="tc('decentralized_overview.title')"
           @refresh="refresh()"
         />
       </v-col>
     </v-row>
     <progress-screen v-if="loading">
-      <template #message>{{ $t('decentralized_overview.loading') }}</template>
+      <template #message>{{ tc('decentralized_overview.loading') }}</template>
     </progress-screen>
     <no-data-screen
       v-else-if="overview.length === 0"
@@ -18,10 +18,10 @@
       class="mt-16"
     >
       <template #title>
-        {{ $t('decentralized_overview.empty_title') }}
+        {{ tc('decentralized_overview.empty_title') }}
       </template>
       <span class="text-subtitle-2 text--secondary">
-        {{ $t('decentralized_overview.empty_subtitle') }}
+        {{ tc('decentralized_overview.empty_subtitle') }}
       </span>
     </no-data-screen>
     <v-row class="mt-4">
@@ -37,10 +37,12 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, onMounted } from '@vue/composition-api';
+<script setup lang="ts">
+import { onMounted } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Overview from '@/components/defi/Overview.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
@@ -48,36 +50,22 @@ import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 
-export default defineComponent({
-  name: 'DecentralizedOverview',
-  components: {
-    NoDataScreen,
-    ProgressScreen,
-    Overview,
-    RefreshHeader
-  },
-  setup() {
-    const store = useDefiStore();
-    const { overview } = storeToRefs(store);
-    const section = Section.DEFI_OVERVIEW;
+const store = useDefiStore();
+const { overview } = storeToRefs(store);
+const section = Section.DEFI_OVERVIEW;
 
-    const refresh = async () => {
-      await store.fetchAllDefi(true);
-    };
+const { tc } = useI18n();
 
-    onMounted(async () => {
-      await store.fetchAllDefi(false);
-    });
+const refresh = async () => {
+  await store.fetchAllDefi(true);
+};
 
-    const { shouldShowLoadingScreen, isSectionRefreshing } =
-      setupStatusChecking();
-
-    return {
-      overview,
-      loading: shouldShowLoadingScreen(section),
-      refreshing: isSectionRefreshing(section),
-      refresh
-    };
-  }
+onMounted(async () => {
+  await store.fetchAllDefi(false);
 });
+
+const { shouldShowLoadingScreen, isSectionRefreshing } = setupStatusChecking();
+
+const loading = shouldShowLoadingScreen(section);
+const refreshing = isSectionRefreshing(section);
 </script>

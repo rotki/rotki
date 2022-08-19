@@ -3,7 +3,7 @@
     <v-avatar v-if="showIcon" size="24" class="mr-2">
       <v-img :src="makeBlockie(displayText)" />
     </v-avatar>
-    <span v-if="!linkOnly & !buttons">
+    <span v-if="!linkOnly && !buttons">
       <span v-if="fullAddress" :class="{ 'blur-content': !shouldShowAmount }">
         {{ displayText }}
       </span>

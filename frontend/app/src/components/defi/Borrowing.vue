@@ -1,12 +1,12 @@
 <template>
   <progress-screen v-if="loading">
-    <template #message>{{ $t('borrowing.loading') }}</template>
+    <template #message>{{ tc('borrowing.loading') }}</template>
   </progress-screen>
   <div v-else>
     <v-row class="mt-8">
       <v-col>
         <refresh-header
-          :title="$t('borrowing.header')"
+          :title="tc('borrowing.header')"
           :loading="refreshing"
           @refresh="refresh()"
         >
@@ -22,7 +22,7 @@
           <template #first-col>
             <stat-card-column>
               <template #title>
-                {{ $t('borrowing.total_collateral_locked') }}
+                {{ tc('borrowing.total_collateral_locked') }}
               </template>
               <amount-display
                 :value="summary.totalCollateralUsd"
@@ -34,7 +34,7 @@
           <template #second-col>
             <stat-card-column>
               <template #title>
-                {{ $t('borrowing.total_outstanding_debt') }}
+                {{ tc('borrowing.total_outstanding_debt') }}
               </template>
               <amount-display
                 :value="summary.totalDebt"
@@ -53,7 +53,7 @@
             <v-autocomplete
               v-model="selection"
               class="borrowing__vault-selection"
-              :label="$t('borrowing.select_loan')"
+              :label="tc('borrowing.select_loan')"
               chips
               dense
               outlined
@@ -72,7 +72,7 @@
               </template>
             </v-autocomplete>
           </div>
-          <v-card-text>{{ $t('borrowing.select_loan_hint') }}</v-card-text>
+          <v-card-text>{{ tc('borrowing.select_loan_hint') }}</v-card-text>
         </v-card>
       </v-col>
       <v-col cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
@@ -82,7 +82,7 @@
     <loan-info v-if="selection" :loan="loan" />
     <full-size-content v-else>
       <v-row align="center" justify="center">
-        <v-col class="text-h6">{{ $t('liabilities.no_selection') }}</v-col>
+        <v-col class="text-h6">{{ tc('liabilities.no_selection') }}</v-col>
       </v-row>
     </full-size-content>
   </div>
@@ -98,6 +98,7 @@ import {
   ref
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
@@ -135,6 +136,7 @@ export default defineComponent({
     const protocol = ref<DefiProtocol | null>(null);
     const store = useDefiSupportedProtocolsStore();
     const route = useRoute();
+    const { tc } = useI18n();
 
     const { shouldShowLoadingScreen, isSectionRefreshing } =
       setupStatusChecking();
@@ -189,7 +191,8 @@ export default defineComponent({
       summary,
       loading: shouldShowLoadingScreen(Section.DEFI_BORROWING),
       refreshing,
-      refresh
+      refresh,
+      tc
     };
   }
 });

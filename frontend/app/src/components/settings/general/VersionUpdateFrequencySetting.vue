@@ -5,9 +5,9 @@
         #default="{ error, success, update }"
         setting="versionUpdateCheckFrequency"
         frontend-setting
-        :transform="value => (value ? parseInt(value) : value)"
+        :transform="frequencyTransform"
         :error-message="
-          $t('general_settings.validation.version_update_check_frequency.error')
+          tc('general_settings.validation.version_update_check_frequency.error')
         "
         @finished="resetVersionUpdateCheckFrequency"
       >
@@ -18,9 +18,9 @@
           type="number"
           min="1"
           :max="maxVersionUpdateCheckFrequency"
-          :label="$t('general_settings.labels.version_update_check')"
+          :label="tc('general_settings.labels.version_update_check')"
           persistent-hint
-          :hint="$t('general_settings.version_update_check_hint')"
+          :hint="tc('general_settings.version_update_check_hint')"
           :success-messages="success"
           :error-messages="
             error || v$.versionUpdateCheckFrequency.$errors.map(e => e.$message)
@@ -34,13 +34,13 @@
         #default="{ update }"
         setting="versionUpdateCheckFrequency"
         frontend-setting
-        :transform="value => (value ? 24 : -1)"
+        :transform="switchTransform"
         @finished="resetVersionUpdateCheckFrequency"
       >
         <v-switch
           v-model="versionUpdateCheckEnabled"
           class="mt-3"
-          :label="$t('general_settings.labels.version_update_check_enabled')"
+          :label="tc('general_settings.labels.version_update_check_enabled')"
           @change="callIfValid($event, update)"
         />
       </settings-option>
@@ -54,9 +54,9 @@ import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import { useValidation } from '@/composables/validation';
 import { Constraints } from '@/data/constraints';
-import i18n from '@/i18n';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const versionUpdateCheckFrequency = ref<string>('');
@@ -67,27 +67,25 @@ const { versionUpdateCheckFrequency: existingFrequency } = storeToRefs(
 );
 
 const maxVersionUpdateCheckFrequency = Constraints.MAX_HOURS_DELAY;
+const { tc } = useI18n();
 
 const rules = {
   versionUpdateCheckFrequency: {
     required: helpers.withMessage(
-      i18n
-        .t(
-          'general_settings.validation.version_update_check_frequency.non_empty'
-        )
-        .toString(),
+      tc(
+        'general_settings.validation.version_update_check_frequency.non_empty'
+      ),
       required
     ),
     between: helpers.withMessage(
-      i18n
-        .t(
-          'general_settings.validation.version_update_check_frequency.invalid_frequency',
-          {
-            start: 1,
-            end: maxVersionUpdateCheckFrequency
-          }
-        )
-        .toString(),
+      tc(
+        'general_settings.validation.version_update_check_frequency.invalid_frequency',
+        0,
+        {
+          start: 1,
+          end: maxVersionUpdateCheckFrequency
+        }
+      ),
       between(1, Constraints.MAX_HOURS_DELAY)
     )
   }
@@ -108,6 +106,9 @@ const resetVersionUpdateCheckFrequency = () => {
     get(versionUpdateCheckEnabled) ? frequency.toString() : ''
   );
 };
+
+const frequencyTransform = (value: string) => (value ? parseInt(value) : value);
+const switchTransform = (value: boolean) => (value ? 24 : -1);
 
 onMounted(() => {
   resetVersionUpdateCheckFrequency();
