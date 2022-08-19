@@ -1,7 +1,6 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from enum import Enum
 from importlib import import_module
 from pathlib import Path
 from typing import (
@@ -167,11 +166,6 @@ DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
 
 
 T = TypeVar('T')
-
-
-class AccountAction(Enum):
-    QUERY = 1
-    DSR_PROXY_APPEND = 2
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -1025,7 +1019,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     def _update_balances_after_token_query(
             self,
-            action: AccountAction,
+            dsr_proxy_append: bool,
             balance_result: Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]],
             token_usd_price: Dict[EthereumToken, Price],
     ) -> None:
@@ -1037,20 +1031,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     amount=token_balance,
                     usd_value=token_balance * token_usd_price[token],
                 )
-                if action == AccountAction.DSR_PROXY_APPEND:
+                if dsr_proxy_append is True:
                     eth_balances[account].assets[token] += balance
                 else:
                     eth_balances[account].assets[token] = balance
 
-    def _query_ethereum_tokens(
-            self,
-            action: AccountAction,
-            given_accounts: Optional[List[ChecksumEthAddress]] = None,
-    ) -> None:
+    def query_ethereum_tokens(self) -> None:
         """Queries ethereum token balance via either etherscan or ethereum node
-
-        By default queries all accounts but can also be given a specific list of
-        accounts to query.
 
         Should come here during addition of a new account or querying of all token
         balances.
@@ -1061,15 +1048,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        if given_accounts is None:
-            accounts = self.accounts.eth
-        else:
-            accounts = given_accounts
-
         ethtokens = EthTokens(database=self.database, ethereum=self.ethereum)
         try:
             balance_result, token_usd_price = ethtokens.query_tokens_for_addresses(
-                addresses=accounts,
+                addresses=self.accounts.eth,
             )
         except BadFunctionCallOutput as e:
             log.error(
@@ -1081,18 +1063,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 'token balances but the chain is not synced.',
             ) from e
 
-        self._update_balances_after_token_query(action, balance_result, token_usd_price)  # noqa: E501
-
-    def query_ethereum_tokens(self) -> None:
-        """Queries the ethereum token balances and populates the state
-
-        May raise:
-        - RemoteError if an external service such as Etherscan or cryptocompare
-        is queried and there is a problem with its query.
-        - EthSyncError if querying the token balances through a provided ethereum
-        client and the chain is not synced
-        """
-        self._query_ethereum_tokens(action=AccountAction.QUERY)
+        self._update_balances_after_token_query(
+            dsr_proxy_append=False,
+            balance_result=balance_result,
+            token_usd_price=token_usd_price,
+        )
 
     def query_defi_balances(self) -> Dict[ChecksumEthAddress, List[DefiProtocolBalances]]:
         """Queries DeFi balances from Zerion contract and updates the state
@@ -1253,7 +1228,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
             new_result = {proxy_to_address[x]: v for x, v in balance_result.items()}
             self._update_balances_after_token_query(
-                action=AccountAction.DSR_PROXY_APPEND,
+                dsr_proxy_append=True,
                 balance_result=new_result,
                 token_usd_price=token_usd_price,
             )
