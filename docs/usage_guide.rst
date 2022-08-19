@@ -109,8 +109,8 @@ If you have not opened rotki for more than a year and a half and you have data y
 
 The steps to update your database if you get this error are the following:
 
-1. Download version `1.25.1 of rotki <https://github.com/rotki/rotki/releases/tag/v1.25.1>`__ from the release page and install it.
-2. Log into your account with rotki 1.25.1. The upgrade process should happens and your account's database should be updated. If the upgrade was successful in the settings :ref:`database-info` you will see that the ``Database version`` is now ``33``. You can now close rotki.
+1. Download version `1.25.2 of rotki <https://github.com/rotki/rotki/releases/tag/v1.25.2>`__ from the release page and install it.
+2. Log into your account with rotki 1.25.2. The upgrade process should happens and your account's database should be updated. If the upgrade was successful in the settings :ref:`database-info` you will see that the ``Database version`` is now ``34``. You can now close rotki.
 3. Download the `latest version of rotki <https://github.com/rotki/rotki/releases/>`__ and install it.
 4. Open your database with the latest version.
 
@@ -118,7 +118,7 @@ After completing these steps you should be good to go.
 
 The supported database versions per rotki version are:
 
-- ``rotki <= 1.25.x``: Version 1 to 33 of the database.
+- ``rotki <= 1.25.2``: Version 1 to 34 of the database.
 - ``rotki >= 1.26.x``: Version >= 26 of the database.
 
 Customizing

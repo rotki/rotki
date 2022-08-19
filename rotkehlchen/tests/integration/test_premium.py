@@ -25,6 +25,13 @@ from rotkehlchen.tests.utils.premium import (
 from rotkehlchen.utils.misc import ts_now
 
 
+@pytest.fixture(name='premium_remote_data')
+def fixture_load_remote_premium_data() -> bytes:
+    remote_db_path = Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.txt'  # noqa: E501
+    with open(remote_db_path, 'rb') as f:
+        return f.read()
+
+
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('db_settings', [
     {'premium_should_sync': True},
@@ -166,6 +173,7 @@ def test_try_premium_at_start_new_account_can_pull_data(
         username,
         db_password,
         rotki_premium_credentials,
+        premium_remote_data,
 ):
     # Test that even with can_sync False, at start of new account we attempt data pull
     setup_starting_environment(
@@ -177,6 +185,7 @@ def test_try_premium_at_start_new_account_can_pull_data(
         same_hash_with_remote=False,
         newer_remote_db=True,
         db_can_sync_setting=False,
+        remote_data=premium_remote_data,
     )
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
@@ -187,6 +196,7 @@ def test_try_premium_at_start_new_account_rejects_data(
         username,
         db_password,
         rotki_premium_credentials,
+        premium_remote_data,
 ):
     # Test that even with can_sync False, at start of new account we attempt data pull
     setup_starting_environment(
@@ -199,6 +209,7 @@ def test_try_premium_at_start_new_account_rejects_data(
         newer_remote_db=True,
         db_can_sync_setting=False,
         sync_database=False,
+        remote_data=premium_remote_data,
     )
     msg = 'Test default main currency should be different from the restored currency'
     assert DEFAULT_TESTS_MAIN_CURRENCY != A_GBP, msg
@@ -241,6 +252,7 @@ def test_try_premium_at_start_old_account_can_pull_data(
         username,
         db_password,
         rotki_premium_credentials,
+        premium_remote_data,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
@@ -251,6 +263,7 @@ def test_try_premium_at_start_old_account_can_pull_data(
         same_hash_with_remote=False,
         newer_remote_db=True,
         db_can_sync_setting=True,
+        remote_data=premium_remote_data,
     )
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
@@ -269,6 +282,7 @@ def test_try_premium_at_start_old_account_can_pull_old_data(
     """
     with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.txt', 'rb') as f:  # noqa: E501
         remote_data = f.read()
+
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
@@ -289,6 +303,7 @@ def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
         username,
         db_password,
         rotki_premium_credentials,
+        premium_remote_data,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
@@ -299,6 +314,7 @@ def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
         same_hash_with_remote=False,
         newer_remote_db=True,
         db_can_sync_setting=False,
+        remote_data=premium_remote_data,
     )
     # DB should not have changed
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
@@ -311,6 +327,7 @@ def test_try_premium_at_start_old_account_older_remote_ts_smaller_remote_size(
         username,
         db_password,
         rotki_premium_credentials,
+        premium_remote_data,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
@@ -321,6 +338,7 @@ def test_try_premium_at_start_old_account_older_remote_ts_smaller_remote_size(
         same_hash_with_remote=False,
         newer_remote_db=False,
         db_can_sync_setting=True,
+        remote_data=premium_remote_data,
     )
     # DB should not have changed
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
@@ -333,6 +351,7 @@ def test_try_premium_at_start_old_account_newer_remote_ts_smaller_remote_size(
         username,
         db_password,
         rotki_premium_credentials,
+        premium_remote_data,
 ):
     """Assure that newer remote ts and smaller remote size asks the user for sync"""
     with pytest.raises(RotkehlchenPermissionError):
@@ -346,6 +365,7 @@ def test_try_premium_at_start_old_account_newer_remote_ts_smaller_remote_size(
             newer_remote_db=True,
             db_can_sync_setting=True,
             sync_approval='unknown',
+            remote_data=premium_remote_data,
         )
 
 
@@ -356,6 +376,7 @@ def test_try_premium_at_start_new_account_different_password_than_remote_db(
         username,
         db_password,
         rotki_premium_credentials,
+        premium_remote_data,
 ):
     """
     If we make a new account with api keys and provide a password different than
@@ -372,15 +393,18 @@ def test_try_premium_at_start_new_account_different_password_than_remote_db(
             same_hash_with_remote=False,
             newer_remote_db=False,
             db_can_sync_setting=True,
+            remote_data=premium_remote_data,
         )
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('premium_remote_data', [None])
 def test_try_premium_at_start_first_time_no_previous_db(
         rotkehlchen_instance,
         username,
         db_password,
         rotki_premium_credentials,
+        premium_remote_data,
 ):
     """Regression test for:
     - https://github.com/rotki/rotki/issues/1571
@@ -395,7 +419,7 @@ def test_try_premium_at_start_first_time_no_previous_db(
         same_hash_with_remote=False,
         newer_remote_db=False,
         db_can_sync_setting=True,
-        remote_data=None,
+        remote_data=premium_remote_data,
     )
     # DB should not have changed and no exception raised
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:

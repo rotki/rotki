@@ -2,7 +2,6 @@ import base64
 import json
 import os
 from http import HTTPStatus
-from pathlib import Path
 from typing import Literal, Optional
 from unittest.mock import patch
 
@@ -12,8 +11,6 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
 
-# Constant to use default data in files
-DEFAULT_DATA = b'USE_DEFAULT_DATA'
 # Valid format but not "real" premium api key and secret
 VALID_PREMIUM_KEY = (
     'kWT/MaPHwM2W1KUEl2aXtkKG6wJfMW9KxI7SSerI6/QzchC45/GebPV9xYZy7f+VKBeh5nDRBJBCYn7WofMO4Q=='
@@ -138,7 +135,7 @@ def setup_starting_environment(
         newer_remote_db: bool,
         db_can_sync_setting: bool,
         premium_credentials: PremiumCredentials,
-        remote_data: Optional[bytes] = DEFAULT_DATA,
+        remote_data: Optional[bytes],
         sync_approval: Literal['yes', 'no', 'unknown'] = 'yes',
         sync_database: bool = True,
 ):
@@ -147,11 +144,6 @@ def setup_starting_environment(
     starts up his node either for the first time or logs in an already
     existing account
     """
-    if remote_data == DEFAULT_DATA:
-        remote_db_path = Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.txt'  # noqa: E501
-        with open(remote_db_path, 'rb') as f:
-            remote_data = f.read()
-
     with rotkehlchen_instance.data.db.user_write() as cursor:
         if not first_time:
             # Emulate already having the api keys in the DB
