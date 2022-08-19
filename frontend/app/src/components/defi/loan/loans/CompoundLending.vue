@@ -1,7 +1,7 @@
 <template>
   <v-row>
     <v-col cols="12">
-      <loan-header class="mt-8 mb-6" :owner="loan.owner">
+      <loan-header v-if="loan.owner" class="mt-8 mb-6" :owner="loan.owner">
         {{ $t('compound_lending.header', { asset: symbol }) }}
       </loan-header>
       <v-row no-gutters>

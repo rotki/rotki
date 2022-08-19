@@ -2,19 +2,9 @@
   <settings-option
     #default="{ error, success, update }"
     setting="uiFloatingPrecision"
-    :transform="value => (value ? parseInt(value) : value)"
-    :error-message="
-      precision =>
-        tc('general_settings.validation.floating_precision.error', 0, {
-          precision
-        })
-    "
-    :success-message="
-      precision =>
-        tc('general_settings.validation.floating_precision.success', 0, {
-          precision
-        })
-    "
+    :transform="transform"
+    :error-message="errorMessage"
+    :success-message="successMessage"
     @finished="resetFloatingPrecision"
   >
     <v-text-field
@@ -63,6 +53,16 @@ const { callIfValid } = useValidation(v$);
 const resetFloatingPrecision = () => {
   set(floatingPrecision, get(current).toString());
 };
+
+const transform = (value?: string) => (value ? parseInt(value) : value);
+const errorMessage = (precision: string) =>
+  tc('general_settings.validation.floating_precision.error', 0, {
+    precision
+  });
+const successMessage = (precision: string) =>
+  tc('general_settings.validation.floating_precision.success', 0, {
+    precision
+  });
 
 onMounted(() => {
   resetFloatingPrecision();

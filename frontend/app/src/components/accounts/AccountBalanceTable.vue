@@ -5,7 +5,7 @@
       :headers="tableHeaders"
       :items="visibleBalances"
       :loading="accountOperation || loading"
-      :loading-text="$t('account_balances.data_table.loading')"
+      :loading-text="tc('account_balances.data_table.loading')"
       single-expand
       item-key="index"
       :expanded.sync="expanded"
@@ -85,7 +85,7 @@
               </template>
               <div class="text-center">
                 <div>
-                  {{ $t('account_balances.detect_tokens.tooltip.redetect') }}
+                  {{ tc('account_balances.detect_tokens.tooltip.redetect') }}
                 </div>
                 <div v-if="getEthDetectedTokensInfo(item.address).timestamp">
                   <i18n
@@ -109,14 +109,14 @@
         <row-actions
           class="account-balance-table__actions"
           :no-delete="true"
-          :edit-tooltip="$t('account_balances.edit_tooltip')"
+          :edit-tooltip="tc('account_balances.edit_tooltip')"
           :disabled="accountOperation || loading"
           @edit-click="editClick(item)"
         />
       </template>
       <template v-if="balances.length > 0" #body.append="{ isMobile }">
         <row-append
-          :label="$t('common.total')"
+          :label="tc('common.total')"
           :class-name="{ 'flex-column': isMobile }"
           :left-patch-colspan="1"
           :is-mobile="isMobile"
@@ -190,10 +190,10 @@ import { get } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import { useTheme } from '@/composables/common';
 import { bigNumberSum } from '@/filters';
-import i18n from '@/i18n';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { chainSection } from '@/store/balances/const';
@@ -271,6 +271,8 @@ export default defineComponent({
     );
     const { hasDetails, accountAssets, accountLiabilities, loopringBalances } =
       useBlockchainBalancesStore();
+
+    const { tc } = useI18n();
 
     const editClick = (account: BlockchainAccountWithBalance) => {
       emit('edit-click', account);
@@ -515,16 +517,16 @@ export default defineComponent({
       const currency = { symbol: get(currencySymbol) };
 
       const currencyHeader = get(isEth)
-        ? i18n.t('account_balances.headers.usd_value_eth', currency)
-        : i18n.t('account_balances.headers.usd_value', currency);
+        ? tc('account_balances.headers.usd_value_eth', 0, currency)
+        : tc('account_balances.headers.usd_value', 0, currency);
 
       const accountHeader = get(isEth2)
-        ? i18n.t('account_balances.headers.validator')
-        : i18n.t('common.account');
+        ? tc('account_balances.headers.validator')
+        : tc('common.account');
 
       const headers: DataTableHeader[] = [
         { text: '', value: 'accountSelection', width: '34px', sortable: false },
-        { text: accountHeader.toString(), value: 'label' },
+        { text: accountHeader, value: 'label' },
         {
           text: get(isEth2) && get(treatEth2AsEth) ? 'ETH' : get(blockchain),
           value: 'balance.amount',
@@ -539,7 +541,7 @@ export default defineComponent({
 
       if (get(isEth2)) {
         headers.push({
-          text: i18n.t('account_balances.headers.ownership').toString(),
+          text: tc('account_balances.headers.ownership'),
           value: 'ownershipPercentage',
           align: 'end',
           width: '28'
@@ -548,7 +550,7 @@ export default defineComponent({
 
       if (get(isEth)) {
         headers.push({
-          text: i18n.tc('account_balances.headers.num_of_detected_tokens'),
+          text: tc('account_balances.headers.num_of_detected_tokens'),
           value: 'numOfDetectedTokens',
           align: 'end',
           width: '150'
@@ -556,7 +558,7 @@ export default defineComponent({
       }
 
       headers.push({
-        text: i18n.tc('account_balances.headers.actions'),
+        text: tc('account_balances.headers.actions'),
         value: 'actions',
         align: 'center',
         sortable: false,
@@ -576,12 +578,14 @@ export default defineComponent({
     });
 
     const getItems = (xpub: string, derivationPath?: string) => {
-      return get(balances).filter(
-        value =>
-          'xpub' in value &&
-          xpub === value.xpub &&
-          derivationPath === value?.derivationPath
-      );
+      const isXpub = (
+        value: BlockchainAccountWithBalance
+      ): value is XpubAccountWithBalance =>
+        'xpub' in value &&
+        xpub === value.xpub &&
+        derivationPath === value?.derivationPath;
+
+      return get(balances).filter(isXpub);
     };
 
     const accountOperation = computed<boolean>(() => {
@@ -647,7 +651,8 @@ export default defineComponent({
       get,
       detectingTokens,
       fetchDetectedTokens,
-      getEthDetectedTokensInfo
+      getEthDetectedTokensInfo,
+      tc
     };
   }
 });

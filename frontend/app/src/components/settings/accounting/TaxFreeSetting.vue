@@ -4,12 +4,7 @@
       #default="{ error, success, update }"
       setting="taxfreeAfterPeriod"
       :transform="getTaxFreePeriod"
-      :success-message="
-        enabled =>
-          $tc('account_settings.messages.tax_free', 0, {
-            enabled: enabled ? 'enabled' : 'disabled'
-          })
-      "
+      :success-message="switchSuccess"
       @finished="resetTaxFreePeriod"
     >
       <v-switch
@@ -17,7 +12,7 @@
         class="accounting-settings__taxfree-period"
         :success-messages="success"
         :error-messages="error"
-        :label="$tc('accounting_settings.labels.tax_free')"
+        :label="tc('accounting_settings.labels.tax_free')"
         color="primary"
         @change="update"
       />
@@ -26,13 +21,8 @@
     <settings-option
       #default="{ error, success, update }"
       setting="taxfreeAfterPeriod"
-      :transform="value => (value ? convertPeriod(value, 'days') : -1)"
-      :success-message="
-        period =>
-          $tc('account_settings.messages.tax_free_period', 0, {
-            period
-          })
-      "
+      :transform="getPeriod"
+      :success-message="numberSuccess"
       @finished="resetTaxFreePeriod"
     >
       <v-text-field
@@ -44,7 +34,7 @@
           error || v$.taxFreeAfterPeriod.$errors.map(e => e.$message)
         "
         :disabled="!taxFreePeriod"
-        :label="$tc('accounting_settings.labels.tax_free_period')"
+        :label="tc('accounting_settings.labels.tax_free_period')"
         type="number"
         @change="callIfValid($event, update)"
       />
@@ -58,11 +48,13 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import i18n from '@/i18n';
+import { useI18n } from 'vue-i18n-composable';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const taxFreeAfterPeriod = ref<number | null>(null);
 const taxFreePeriod = ref(false);
+
+const { tc } = useI18n();
 
 const { taxfreeAfterPeriod: period } = storeToRefs(
   useAccountingSettingsStore()
@@ -71,11 +63,11 @@ const { taxfreeAfterPeriod: period } = storeToRefs(
 const rules = {
   taxFreeAfterPeriod: {
     required: helpers.withMessage(
-      i18n.tc('account_settings.validation.tax_free_days'),
+      tc('account_settings.validation.tax_free_days'),
       required
     ),
     minValue: helpers.withMessage(
-      i18n.tc('account_settings.validation.tax_free_days_gt_zero'),
+      tc('account_settings.validation.tax_free_days_gt_zero'),
       minValue(1)
     )
   }
@@ -118,6 +110,19 @@ const callIfValid = <T = unknown>(value: T, method: (e: T) => void) => {
     method(value);
   }
 };
+
+const switchSuccess = (enabled: boolean) =>
+  tc('account_settings.messages.tax_free', 0, {
+    enabled: enabled ? 'enabled' : 'disabled'
+  });
+
+const numberSuccess = (period: number) =>
+  tc('account_settings.messages.tax_free_period', 0, {
+    period
+  });
+
+const getPeriod = (value: number) =>
+  value ? convertPeriod(value, 'days') : -1;
 
 onMounted(() => {
   resetTaxFreePeriod();

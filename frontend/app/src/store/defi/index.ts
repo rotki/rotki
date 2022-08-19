@@ -220,7 +220,7 @@ export const useDefiStore = defineStore('defi', () => {
       return Object.values(accounts);
     });
 
-  const overview = computed(() => {
+  const overview: ComputedRef<DefiProtocolSummary[]> = computed(() => {
     const shouldDisplay = (summary: DefiProtocolSummary) => {
       const lending = summary.totalLendingDepositUsd.gt(0);
       const debt = summary.totalDebtUsd.gt(0);

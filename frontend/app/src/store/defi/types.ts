@@ -120,7 +120,7 @@ export interface MakerDAOVaultDetails {
   readonly events: MakerDAOVaultEvent[];
 }
 
-interface MakerDAOVaultEvent {
+export interface MakerDAOVaultEvent {
   readonly eventType: MakerDAOVaultEventType;
   readonly value: Balance;
   readonly timestamp: number;

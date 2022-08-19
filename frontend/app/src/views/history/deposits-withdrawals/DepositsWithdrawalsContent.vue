@@ -4,7 +4,7 @@
       <refresh-button
         v-if="!locationOverview"
         :loading="loading"
-        :tooltip="$t('deposits_withdrawals.refresh_tooltip')"
+        :tooltip="tc('deposits_withdrawals.refresh_tooltip')"
         @refresh="fetch(true)"
       />
       <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
@@ -134,6 +134,7 @@ import {
 import { get, set } from '@vueuse/core';
 import { dropRight } from 'lodash';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -151,7 +152,6 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { isSectionLoading } from '@/composables/common';
 import { setupIgnore } from '@/composables/history';
-import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import {
   AssetMovement,
@@ -194,59 +194,6 @@ type PaginationOptions = {
   itemsPerPage: number;
   sortBy: (keyof AssetMovement)[];
   sortDesc: boolean[];
-};
-
-const tableHeaders = (locationOverview: string) => {
-  return computed<DataTableHeader[]>(() => {
-    const headers: DataTableHeader[] = [
-      {
-        text: '',
-        value: 'ignoredInAccounting',
-        sortable: false,
-        class: !locationOverview ? 'pa-0' : 'pr-0',
-        cellClass: !locationOverview ? 'pa-0' : 'pr-0'
-      },
-      {
-        text: i18n.t('common.location').toString(),
-        value: 'location',
-        width: '120px',
-        align: 'center'
-      },
-      {
-        text: i18n.t('deposits_withdrawals.headers.action').toString(),
-        value: 'category',
-        align: 'center',
-        class: `text-no-wrap ${locationOverview ? 'pl-0' : ''}`,
-        cellClass: locationOverview ? 'pl-0' : ''
-      },
-      {
-        text: i18n.t('common.asset').toString(),
-        value: 'asset',
-        sortable: false
-      },
-      {
-        text: i18n.t('common.amount').toString(),
-        value: 'amount',
-        align: 'end'
-      },
-      {
-        text: i18n.t('deposits_withdrawals.headers.fee').toString(),
-        value: 'fee',
-        align: 'end'
-      },
-      {
-        text: i18n.t('common.datetime').toString(),
-        value: 'timestamp'
-      },
-      { text: '', value: 'data-table-expand', sortable: false }
-    ];
-
-    if (locationOverview) {
-      headers.splice(1, 1);
-    }
-
-    return headers;
-  });
 };
 
 export default defineComponent({
@@ -301,13 +248,66 @@ export default defineComponent({
     const options: Ref<PaginationOptions | null> = ref(null);
     const filters: Ref<MatchedKeyword<AssetMovementFilterValueKeys>> = ref({});
 
+    const { tc } = useI18n();
+
+    const tableHeaders = computed<DataTableHeader[]>(() => {
+      const headers: DataTableHeader[] = [
+        {
+          text: '',
+          value: 'ignoredInAccounting',
+          sortable: false,
+          class: !locationOverview ? 'pa-0' : 'pr-0',
+          cellClass: !locationOverview ? 'pa-0' : 'pr-0'
+        },
+        {
+          text: tc('common.location'),
+          value: 'location',
+          width: '120px',
+          align: 'center'
+        },
+        {
+          text: tc('deposits_withdrawals.headers.action'),
+          value: 'category',
+          align: 'center',
+          class: `text-no-wrap ${locationOverview ? 'pl-0' : ''}`,
+          cellClass: locationOverview ? 'pl-0' : ''
+        },
+        {
+          text: tc('common.asset'),
+          value: 'asset',
+          sortable: false
+        },
+        {
+          text: tc('common.amount'),
+          value: 'amount',
+          align: 'end'
+        },
+        {
+          text: tc('deposits_withdrawals.headers.fee'),
+          value: 'fee',
+          align: 'end'
+        },
+        {
+          text: tc('common.datetime'),
+          value: 'timestamp'
+        },
+        { text: '', value: 'data-table-expand', sortable: false }
+      ];
+
+      if (get(locationOverview)) {
+        headers.splice(1, 1);
+      }
+
+      return headers;
+    });
+
     const matchers = computed<
       SearchMatcher<AssetMovementFilterKeys, AssetMovementFilterValueKeys>[]
     >(() => [
       {
         key: AssetMovementFilterKeys.ASSET,
         keyValue: AssetMovementFilterValueKeys.ASSET,
-        description: i18n.t('deposit_withdrawals.filter.asset').toString(),
+        description: tc('deposit_withdrawals.filter.asset'),
         suggestions: () => get(supportedAssetsSymbol),
         validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
@@ -315,20 +315,18 @@ export default defineComponent({
       {
         key: AssetMovementFilterKeys.ACTION,
         keyValue: AssetMovementFilterValueKeys.ACTION,
-        description: i18n.t('deposit_withdrawals.filter.action').toString(),
+        description: tc('deposit_withdrawals.filter.action'),
         suggestions: () => MovementCategory.options,
         validate: type => (MovementCategory.options as string[]).includes(type)
       },
       {
         key: AssetMovementFilterKeys.START,
         keyValue: AssetMovementFilterValueKeys.START,
-        description: i18n.t('deposit_withdrawals.filter.start_date').toString(),
+        description: tc('deposit_withdrawals.filter.start_date'),
         suggestions: () => [],
-        hint: i18n
-          .t('deposit_withdrawals.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
-          })
-          .toString(),
+        hint: tc('deposit_withdrawals.filter.date_hint', 0, {
+          format: getDateInputISOFormat(get(dateInputFormat))
+        }),
         validate: value => {
           return (
             value.length > 0 &&
@@ -341,13 +339,11 @@ export default defineComponent({
       {
         key: AssetMovementFilterKeys.END,
         keyValue: AssetMovementFilterValueKeys.END,
-        description: i18n.t('deposit_withdrawals.filter.end_date').toString(),
+        description: tc('deposit_withdrawals.filter.end_date'),
         suggestions: () => [],
-        hint: i18n
-          .t('deposit_withdrawals.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
-          })
-          .toString(),
+        hint: tc('deposit_withdrawals.filter.date_hint', 0, {
+          format: getDateInputISOFormat(get(dateInputFormat))
+        }),
         validate: value => {
           return (
             value.length > 0 &&
@@ -360,7 +356,7 @@ export default defineComponent({
       {
         key: AssetMovementFilterKeys.LOCATION,
         keyValue: AssetMovementFilterValueKeys.LOCATION,
-        description: i18n.t('deposit_withdrawals.filter.location').toString(),
+        description: tc('deposit_withdrawals.filter.location'),
         suggestions: () => get(associatedLocations),
         validate: location => get(associatedLocations).includes(location as any)
       }
@@ -425,7 +421,7 @@ export default defineComponent({
     return {
       pageRoute,
       selected,
-      tableHeaders: tableHeaders(get(locationOverview)),
+      tableHeaders,
       data,
       limit,
       found,
@@ -439,7 +435,8 @@ export default defineComponent({
       matchers,
       updatePaginationHandler,
       updateFilterHandler,
-      ...setupIgnore(IgnoreActionType.MOVEMENTS, selected, data, fetch, getId)
+      ...setupIgnore(IgnoreActionType.MOVEMENTS, selected, data, fetch, getId),
+      tc
     };
   }
 });

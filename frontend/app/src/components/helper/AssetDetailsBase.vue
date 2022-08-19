@@ -20,6 +20,7 @@
 </template>
 
 <script lang="ts">
+import { Nullable } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import {
   computed,
@@ -41,7 +42,12 @@ const AssetDetailsBase = defineComponent({
     asset: {
       required: true,
       type: Object as PropType<
-        SupportedAsset | { identifier: string; symbol?: string; name?: string }
+        | SupportedAsset
+        | {
+            identifier: string;
+            symbol?: Nullable<string>;
+            name?: Nullable<string>;
+          }
       >
     },
     assetStyled: { required: false, type: Object, default: () => null },

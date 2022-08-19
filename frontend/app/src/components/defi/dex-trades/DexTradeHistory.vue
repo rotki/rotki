@@ -3,7 +3,7 @@
     <module-not-active v-if="!isEnabled" :modules="modules" />
     <no-premium-placeholder
       v-else-if="!premium"
-      :text="$t('dex_trade.title')"
+      :text="tc('dex_trade.title')"
     />
     <progress-screen v-else-if="loading">
       <template #message>{{ $t('dex_trades.loading') }}</template>
@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -67,6 +68,8 @@ const refreshing = computed(() => {
 });
 
 const isEnabled = isAnyModuleEnabled(modules);
+
+const { tc } = useI18n();
 
 onMounted(async () => {
   await Promise.allSettled([

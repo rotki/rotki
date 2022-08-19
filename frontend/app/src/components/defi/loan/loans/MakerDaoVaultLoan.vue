@@ -1,7 +1,7 @@
 <template>
   <v-row>
     <v-col cols="12">
-      <loan-header class="mt-8 mb-6" :owner="vault.owner">
+      <loan-header v-if="vault.owner" class="mt-8 mb-6" :owner="vault.owner">
         {{
           $t('maker_dao_vault_loan.header', {
             identifier: scrambleData ? '-' : vault.identifier,
@@ -17,10 +17,10 @@
           <maker-dao-vault-liquidation :vault="vault" />
         </v-col>
         <v-col cols="12" class="pt-8 pt-md-8">
-          <loan-debt :debt="vault.debt" :asset="vault.collateralAsset">
+          <loan-debt :debt="vault.debt" :asset="vault.collateral.asset">
             <maker-dao-vault-debt-details
               :total-interest-owed="totalInterestOwed"
-              :loading="!vault.totalInterestOwed"
+              :loading="!totalInterestOwed"
               :stability-fee="vault.stabilityFee"
             />
           </loan-debt>
@@ -35,8 +35,8 @@
           <vault-events-list
             v-else
             :asset="vault.collateral.asset"
-            :events="vault.events"
-            :creation="vault.creationTs"
+            :events="events"
+            :creation="creation"
             @open-link="openLink($event)"
           />
         </v-col>
@@ -65,6 +65,7 @@ import { VaultEventsList } from '@/premium/premium';
 import {
   MakerDAOVault,
   MakerDAOVaultDetails,
+  MakerDAOVaultEvent,
   MakerDAOVaultModel
 } from '@/store/defi/types';
 import { usePremiumStore } from '@/store/session/premium';
@@ -99,17 +100,36 @@ export default defineComponent({
     };
 
     const totalInterestOwed = computed(() => {
-      if ('totalInterestOwed' in get(vault)) {
+      const makerVault = get(vault);
+      if ('totalInterestOwed' in makerVault) {
         return (get(vault) as MakerDAOVault & MakerDAOVaultDetails)
           .totalInterestOwed;
       }
       return Zero;
     });
 
+    const events = computed<MakerDAOVaultEvent[] | undefined>(() => {
+      const makerVault = get(vault);
+      if ('totalInterestOwed' in makerVault) {
+        return makerVault.events;
+      }
+      return undefined;
+    });
+
+    const creation = computed(() => {
+      const makerVault = get(vault);
+      if ('totalInterestOwed' in makerVault) {
+        return makerVault.creationTs;
+      }
+      return undefined;
+    });
+
     return {
       scrambleData,
       totalInterestOwed,
       premium,
+      events,
+      creation,
       openLink
     };
   }
