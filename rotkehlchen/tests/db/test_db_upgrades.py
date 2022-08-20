@@ -9,7 +9,6 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import MIN_SUPPORTED_USER_DB_VERSION, UPGRADES_LIST
@@ -22,12 +21,6 @@ from rotkehlchen.tests.utils.database import (
 from rotkehlchen.types import make_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import HexBytes
-
-
-creation_patch = patch(
-    'rotkehlchen.db.dbhandler.DB_SCRIPT_CREATE_TABLES',
-    new=OLD_DB_SCRIPT_CREATE_TABLES,
-)
 
 
 def assert_tx_hash_is_bytes(

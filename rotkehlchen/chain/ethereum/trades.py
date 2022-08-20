@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, NamedTuple, Tuple
+from typing import Any, Dict, List, NamedTuple, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants.assets import A_DAI
@@ -22,8 +22,6 @@ from rotkehlchen.types import (
 )
 
 # Quick lookup for AMMTrade locations
-AMMTradeLocations = {Location.BALANCER, Location.UNISWAP, Location.SUSHISWAP}
-AMMTRADE_LOCATION_NAMES = Literal['balancer', 'uniswap', 'sushiswap']
 AMMSwapDBTuple = (
     Tuple[
         bytes,  # tx_hash
