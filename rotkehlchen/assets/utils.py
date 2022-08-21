@@ -117,14 +117,12 @@ def get_asset_by_symbol(
     if symbol == 'ETH':
         return A_ETH  # ETH can be ETH and ETH2 in the DB
 
-    assets_data = GlobalDBHandler().get_assets_with_symbol(symbol, asset_type)
-    if (
-        len(assets_data) != 1 and
-        all((asset.asset_type == AssetType.EVM_TOKEN for asset in assets_data))
-    ):
-        for token in assets_data:
-            if preferred_chain == token.chain:
-                return Asset(token.identifier)
+    assets_data = GlobalDBHandler().get_assets_with_symbol(
+        symbol=symbol,
+        asset_type=asset_type,
+        chain=preferred_chain,
+    )
+    if len(assets_data) != 1:
         return None
 
     return Asset(assets_data[0].identifier)

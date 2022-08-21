@@ -83,7 +83,7 @@ def test_upgrade_v1_v2(globaldb):
 @pytest.mark.parametrize('globaldb_version', [2])
 @pytest.mark.parametrize('target_globaldb_version', [3])
 def test_upgrade_v2_v3(globaldb):
-    # at this point upgrade should have happened
+    """At the start of this test global DB is upgraded to v3"""
     assert globaldb.get_setting_value('version', None) == 3
     with globaldb.conn.read_ctx() as cursor:
         # test that we have the same number of assets before and after the migration

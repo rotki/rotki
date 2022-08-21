@@ -2766,7 +2766,7 @@ The details of each asset can contain the following keys:
 - **evm_address**: If the type is ``ethereum_token`` then this will be the hexadecimal address of the token's contract.
 - **chain**: If the type is ``ethereum_token`` then this will be the chain in which the token is.
 - **token_kind**:  If the type is ``ethereum_token`` then this will be the token type, for example ``erc20``.
-- **decimals**: If the type is ``ethereum_token`` then this will be the number of decimals the token has
+- **decimals**: If the type is ``ethereum_token`` then this will be the number of decimals the token has.
 - **cryptocompare**: The cryptocompare identifier for the asset. can be missing if not known. If missing the symbol is attempted to be queried.
 - **coingecko**: The coingecko identifier for the asset. can be missing if not known.
 - **protocol**: An optional string for ethereum tokens denoting the protocol they belong to. For example uniswap, for uniswap LP tokens.
@@ -2994,9 +2994,9 @@ Getting custom EVM tokens
 
    :resjson list result: A list of ethereum tokens
    :resjsonarr string identifier: The rotki identifier of the token. This is only returned from the GET endpoint and not input from the add/edit one.
-   :resjsonarr string address: The address of the token. Can not be optional.
-   :resjsonarr string chain: The chain where the token is deployed. Can not be optional.
-   :resjsonarr string token_kind: The kind of the token. Can not be optional.
+   :resjsonarr string address: The address of the token. This is a required field.
+   :resjsonarr string chain: The chain where the token is deployed. This is a required field.
+   :resjsonarr string token_kind: The kind of the token. This is a required field.
    :resjsonarr integer decimals: Ethereum token decimals. Can be missing if not known.
    :resjsonarr string name: Asset name. Can be missing if not known.
    :resjsonarr string symbol: Asset symbol. Can be missing if not known.

@@ -204,7 +204,6 @@ class AssetsUpdater():
 
     def _parse_asset_data(self, insert_text: str) -> ParsedAssetData:
         match = self.assets_re.match(insert_text)
-
         if match is None:
             raise DeserializationError(
                 f'At asset DB update could not parse asset data out of {insert_text}',

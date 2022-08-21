@@ -54,6 +54,7 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     """Upgrades the DB from v34 to v35
     - Change tables where time is used as column name to timestamp
     - Add user_notes table
+    - Renames the asset identifiers to use CAIPS
     """
     with db.user_write() as cursor:
         _rename_assets_identifiers(cursor)

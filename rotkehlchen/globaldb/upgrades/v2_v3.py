@@ -93,7 +93,16 @@ ASSET_CREATION_TYPE = (
 )
 
 
-def upgrade_ethereum_assets(query: List[Any]) -> EVM_TUPLES_CREATION_TYPE:
+def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYPE:
+    """Query all the information available from ethereum tokens in
+    the v2 schema to be used in v3"""
+    result = cursor.execute(
+        'SELECT A.address, A.decimals, A.protocol, B.identifier, B.name, B.symbol, B.started, '
+        'B.swapped_for, B.coingecko, B.cryptocompare FROM assets '
+        'AS B JOIN ethereum_tokens '
+        'AS A ON A.address = B.details_reference WHERE B.type="C";',
+    )  # noqa: E501
+    query = result.fetchall()
     old_ethereum_data = []
     old_ethereum_id_to_new = {}
     evm_tuples = []
@@ -148,19 +157,6 @@ def upgrade_ethereum_assets(query: List[Any]) -> EVM_TUPLES_CREATION_TYPE:
         assets_tuple,
         common_asset_details,
     )
-
-
-def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYPE:
-    """Query all the information available from ethereum tokens in
-    the v2 schema to be used in v3"""
-    result = cursor.execute(
-        'SELECT A.address, A.decimals, A.protocol, B.identifier, B.name, B.symbol, B.started, '
-        'B.swapped_for, B.coingecko, B.cryptocompare FROM assets '
-        'AS B JOIN ethereum_tokens '
-        'AS A ON A.address = B.details_reference WHERE B.type="C";',
-    )  # noqa: E501
-
-    return upgrade_ethereum_assets(result.fetchall())
 
 
 def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
@@ -376,6 +372,9 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         cursor.executemany(UNDERLYING_TOKEN_INSERT, mappings)
 
         dir_path = Path(__file__).resolve().parent.parent.parent
+        # This file contains the EVM version of the assets that are currently in the
+        # database and are not EVM (matic tokens, Otimism tokens, etc) + their variants in
+        # other chains. And populates them properly via sql statements
         with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql', 'r') as f:
             sql_sentences = f.read()
             cursor.executescript(sql_sentences)

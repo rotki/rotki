@@ -45,8 +45,7 @@ class ChainID(DBEnumMixIn):
                 f'Failed to deserialize ChainID DB value from non string value: {value}',
             )
 
-        symbol_to_chain = {v: k for k, v in CHAINS_TO_DB_SYMBOL.items()}
-        chain = symbol_to_chain.get(value)
+        chain = SYMBOL_TO_CHAIN.get(value)
         if chain is None:
             raise DeserializationError(
                 f'Failed to deserialize ChainID DB value from invalid value: {value}',
@@ -64,6 +63,7 @@ CHAINS_TO_DB_SYMBOL: Final = {
     ChainID.ARBITRUM: 'G',
     ChainID.AVALANCHE: 'H',
 }
+SYMBOL_TO_CHAIN = {v: k for k, v in CHAINS_TO_DB_SYMBOL.items()}
 
 
 def evm_address_to_identifier(
@@ -72,7 +72,7 @@ def evm_address_to_identifier(
         token_type: EvmTokenKind,
         collectible_id: Optional[str] = None,
 ) -> str:
-    """Format a EVM token information into the CAIPs identifier format"""
+    """Format EVM token information into the CAIPs identifier format"""
     ident = f'{EVM_CHAIN_DIRECTIVE}:{chain.value}/{str(token_type)}:{address}'
     if collectible_id is not None:
         return ident + f'/{collectible_id}'

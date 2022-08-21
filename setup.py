@@ -37,6 +37,7 @@ setup(
             'data/uniswapv2_lp_tokens.json',
             'data/uniswapv2_lp_tokens.meta',
             'data/global.db',
+            'data/globaldb_v2_v3_assets.sql',
             'data/curve_pools.json',
             'data/nodes.json',
             'chain/ethereum/modules/dxdaomesa/data/contracts.json',
