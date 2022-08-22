@@ -57,6 +57,7 @@
 </template>
 
 <script lang="ts">
+import dayjs from 'dayjs';
 import {
   computed,
   defineComponent,
@@ -64,8 +65,7 @@ import {
   PropType,
   toRefs,
   watch
-} from '@vue/composition-api';
-import dayjs from 'dayjs';
+} from 'vue';
 import i18n from '@/i18n';
 import { Quarter } from '@/types/frontend-settings';
 

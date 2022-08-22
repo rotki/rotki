@@ -8,7 +8,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { computed, defineComponent, PropType } from 'vue';
 import i18n from '@/i18n';
 import { BalanceType } from '@/services/balances/types';
 

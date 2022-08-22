@@ -83,16 +83,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import TagManager from '@/components/tags/TagManager.vue';
 import { useTagStore } from '@/store/session/tags';

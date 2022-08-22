@@ -72,8 +72,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { defineComponent } from 'vue';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 import { routesRef } from '@/router/routes';
 

@@ -1,5 +1,5 @@
-import { reactive, toRefs } from '@vue/composition-api';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { reactive, toRefs } from 'vue';
 import { defaultAccountingSettings } from '@/data/factories';
 import { AccountingSettings } from '@/types/user';
 

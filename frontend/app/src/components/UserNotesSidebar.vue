@@ -45,8 +45,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, ref, watch } from 'vue';
 import UserNotesList from '@/components/UserNotesList.vue';
 import { useRoute } from '@/composables/common';
 import { routesRef } from '@/router/routes';

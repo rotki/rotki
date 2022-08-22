@@ -23,7 +23,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRefs } from '@vue/composition-api';
+import { defineComponent, ref, toRefs } from 'vue';
 import BackendSettings from '@/components/settings/BackendSettings.vue';
 import { useMainStore } from '@/store/main';
 

@@ -35,7 +35,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import i18n from '@/i18n';
 

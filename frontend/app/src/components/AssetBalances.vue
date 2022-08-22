@@ -50,15 +50,9 @@
 
 <script lang="ts">
 import { AssetBalanceWithPrice } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  Ref,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, Ref, toRefs } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';

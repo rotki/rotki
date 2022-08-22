@@ -65,14 +65,9 @@
 
 <script lang="ts">
 import { Message } from '@rotki/common/lib/messages';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  ref
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, onMounted, ref } from 'vue';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import FileUpload from '@/components/import/FileUpload.vue';

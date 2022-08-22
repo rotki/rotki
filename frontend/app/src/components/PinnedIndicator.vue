@@ -14,9 +14,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { defineComponent, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';

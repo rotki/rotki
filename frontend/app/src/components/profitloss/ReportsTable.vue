@@ -96,14 +96,9 @@
 </template>
 
 <script setup lang="ts">
-import {
-  computed,
-  ComputedRef,
-  onBeforeMount,
-  ref
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, ComputedRef, onBeforeMount, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';

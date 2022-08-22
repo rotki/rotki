@@ -1,6 +1,6 @@
-import { ref } from '@vue/composition-api';
 import { set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref } from 'vue';
 import i18n from '@/i18n';
 import { useQueriedAddressApi } from '@/services/session/queried-addresses-api';
 import {

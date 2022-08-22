@@ -1,7 +1,7 @@
 import { BigNumber } from '@rotki/common';
-import { computed } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
 import { bigNumberSum } from '@/filters';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useSushiswapStore } from '@/store/defi/sushiswap';

@@ -58,15 +58,8 @@
 
 <script lang="ts">
 import { Nullable } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import FilterEntry from '@/components/history/filtering/FilterEntry.vue';
 import {
   SearchMatcher,

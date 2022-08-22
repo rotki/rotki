@@ -48,14 +48,14 @@
 </template>
 
 <script lang="ts">
+import { set } from '@vueuse/core';
 import {
   defineComponent,
   getCurrentInstance,
   onMounted,
   PropType,
   ref
-} from '@vue/composition-api';
-import { set } from '@vueuse/core';
+} from 'vue';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import { Module } from '@/types/modules';
 import { assert } from '@/utils/assertions';

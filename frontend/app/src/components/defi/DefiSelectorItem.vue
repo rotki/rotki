@@ -13,15 +13,10 @@
 </template>
 <script lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import i18n from '@/i18n';
 import { useSessionSettingsStore } from '@/store/settings/session';
 

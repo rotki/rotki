@@ -1,8 +1,8 @@
 import { AssetBalanceWithPrice } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { computed, ref } from 'vue';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { AssetUpdatePayload } from '@/services/assets/types';

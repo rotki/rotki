@@ -42,8 +42,8 @@
 
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { useBackendManagement } from '@/composables/backend';
 import i18n from '@/i18n';

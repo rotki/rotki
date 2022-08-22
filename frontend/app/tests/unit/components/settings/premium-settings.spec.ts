@@ -52,6 +52,7 @@ describe('PremiumSettings.vue', () => {
   }
 
   beforeEach(() => {
+    document.body.setAttribute('data-app', 'true');
     wrapper = createWrapper();
   });
 
@@ -82,7 +83,10 @@ describe('PremiumSettings.vue', () => {
     await wrapper.vm.$nextTick();
     api.deletePremiumCredentials = vi.fn().mockResolvedValue({ result: true });
 
-    await (wrapper.vm as any).remove();
+    await wrapper.find('.premium-settings__button__delete').trigger('click');
+    await wrapper.vm.$nextTick();
+    await flushPromises();
+    await wrapper.find('[data-cy=button-confirm]').trigger('click');
     await wrapper.vm.$nextTick();
     await flushPromises();
 

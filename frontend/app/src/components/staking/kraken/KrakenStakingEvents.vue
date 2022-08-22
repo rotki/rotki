@@ -65,6 +65,8 @@
 </template>
 
 <script lang="ts">
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineComponent,
@@ -73,9 +75,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import { DataTableHeader } from 'vuetify';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';

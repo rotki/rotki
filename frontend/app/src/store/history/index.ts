@@ -1,7 +1,7 @@
-import { Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { Ref, ref } from 'vue';
 import { exchangeName } from '@/components/history/consts';
 import i18n from '@/i18n';
 import { IgnoredActions } from '@/services/history/const';

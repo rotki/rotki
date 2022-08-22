@@ -192,6 +192,9 @@
 </template>
 
 <script lang="ts">
+import { get, set } from '@vueuse/core';
+import { dropRight } from 'lodash';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineComponent,
@@ -200,10 +203,7 @@ import {
   Ref,
   ref,
   toRefs
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
-import { dropRight } from 'lodash';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';

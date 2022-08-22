@@ -54,7 +54,7 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import StatCardColumn from '@/components/display/StatCardColumn.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';

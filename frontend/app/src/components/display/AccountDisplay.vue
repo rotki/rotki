@@ -33,15 +33,15 @@
 
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
+import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineAsyncComponent,
   defineComponent,
   PropType,
   toRefs
-} from '@vue/composition-api';
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import { truncateAddress } from '@/filters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useSessionSettingsStore } from '@/store/settings/session';

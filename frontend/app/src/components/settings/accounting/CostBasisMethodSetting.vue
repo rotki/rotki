@@ -28,9 +28,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { onMounted, ref } from 'vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { CostBasisMethod } from '@/types/user';

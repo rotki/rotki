@@ -3,7 +3,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import EthAddressBookManagement from '@/components/eth-address-book-manager/EthAddressBookManagement.vue';
 
 export default defineComponent({

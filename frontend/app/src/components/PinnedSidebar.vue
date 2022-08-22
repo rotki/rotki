@@ -15,8 +15,8 @@
   </v-navigation-drawer>
 </template>
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
+import { defineComponent } from 'vue';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 

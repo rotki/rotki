@@ -135,10 +135,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { omit } from 'lodash';
 import { storeToRefs } from 'pinia';
+import { defineComponent, onMounted, ref } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RpcNodeForm from '@/components/settings/general/rpc/RpcNodeForm.vue';

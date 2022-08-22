@@ -35,10 +35,10 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent } from 'vue';
 import ReportPeriodSelector, {
   PeriodChangedEvent,
   SelectionChangedEvent

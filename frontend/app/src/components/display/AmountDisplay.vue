@@ -77,15 +77,9 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set, useClipboard, useTimeoutFn } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { findCurrency } from '@/data/currencies';

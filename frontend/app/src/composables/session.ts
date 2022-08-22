@@ -1,6 +1,6 @@
-import { computed } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
 import { useGeneralSettingsStore } from '@/store/settings/general';

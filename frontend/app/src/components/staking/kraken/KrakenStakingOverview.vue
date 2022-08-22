@@ -70,14 +70,9 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { ReceivedAmount } from '@/types/staking';

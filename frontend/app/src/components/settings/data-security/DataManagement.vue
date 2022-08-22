@@ -30,8 +30,8 @@
   </setting-category>
 </template>
 <script setup lang="ts">
-import { ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { ref } from 'vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import PurgeSelector, {
   PurgeParams

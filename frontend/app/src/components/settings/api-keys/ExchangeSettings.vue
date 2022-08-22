@@ -81,9 +81,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, onBeforeMount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';

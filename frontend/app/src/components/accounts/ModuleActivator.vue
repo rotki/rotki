@@ -43,15 +43,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  Ref,
-  ref
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, onMounted, Ref, ref } from 'vue';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';

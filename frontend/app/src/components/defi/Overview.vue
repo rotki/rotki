@@ -99,14 +99,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import DefiAsset from '@/components/defi/DefiAsset.vue';
 import InfoRow from '@/components/defi/display/InfoRow.vue';

@@ -1,7 +1,7 @@
 import { Message, Severity } from '@rotki/common/lib/messages';
-import { Ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import * as logger from 'loglevel';
+import { Ref } from 'vue';
 import i18n from '@/i18n';
 import { Section, Status } from '@/store/const';
 import { useMainStore } from '@/store/main';

@@ -18,7 +18,7 @@
 
 <script lang="ts">
 import { AssetBalance } from '@rotki/common';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from 'vue';
 
 export default defineComponent({
   name: 'AccountBalanceDetails',

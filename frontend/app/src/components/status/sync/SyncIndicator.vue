@@ -211,9 +211,9 @@
   </fragment>
 </template>
 <script lang="ts">
-import { computed, defineComponent, ref, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, ref, watch } from 'vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import Fragment from '@/components/helper/Fragment';

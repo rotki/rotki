@@ -77,15 +77,10 @@
 <script setup lang="ts">
 import { TimeUnit } from '@rotki/common/lib/settings';
 import { TimeFramePeriod, timeframes } from '@rotki/common/lib/settings/graphs';
-import {
-  computed,
-  defineAsyncComponent,
-  onMounted,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
+import { computed, onMounted, watch } from 'vue';
 import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
 import { usePremiumStore } from '@/store/session/premium';
@@ -95,20 +90,6 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { isPeriodAllowed } from '@/store/settings/utils';
 import { useStatisticsStore } from '@/store/statistics';
 import { bigNumberify } from '@/utils/bignumbers';
-
-const TimeframeSelector = defineAsyncComponent(
-  () => import('@/components/helper/TimeframeSelector.vue')
-);
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const Loading = defineAsyncComponent(
-  () => import('@/components/helper/Loading.vue')
-);
-const AmountDisplay = defineAsyncComponent(
-  () => import('@/components/display/AmountDisplay.vue')
-);
-const NetWorthChart = defineAsyncComponent(
-  () => import('@/components/dashboard/NetWorthChart.vue')
-);
 
 const { currencySymbol, floatingPrecision } = storeToRefs(
   useGeneralSettingsStore()
@@ -123,13 +104,10 @@ const { visibleTimeframes } = storeToRefs(frontendStore);
 
 const { isSectionRefreshing } = setupStatusChecking();
 const loading = computed(() => {
-  const sections = [Section.BLOCKCHAIN_ETH, Section.BLOCKCHAIN_BTC];
-  for (const section of sections) {
-    if (get(isSectionRefreshing(section))) {
-      return true;
-    }
-  }
-  return false;
+  return (
+    get(isSectionRefreshing(Section.BLOCKCHAIN_ETH)) ||
+    get(isSectionRefreshing(Section.BLOCKCHAIN_BTC))
+  );
 });
 
 const startingValue = computed(() => {
@@ -202,7 +180,9 @@ const setTimeframe = (value: TimeFramePeriod) => {
 watch(premium, async () => fetchNetValue());
 
 onMounted(() => {
-  if (get(premium) && !isPeriodAllowed(get(timeframe))) {
+  const isPremium = get(premium);
+  const selectedTimeframe = get(timeframe);
+  if (isPremium && !isPeriodAllowed(selectedTimeframe)) {
     set(timeframe, TimeFramePeriod.TWO_WEEKS);
   }
 });

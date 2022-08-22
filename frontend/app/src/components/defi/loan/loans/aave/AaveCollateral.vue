@@ -34,7 +34,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, toRefs } from '@vue/composition-api';
+import { defineComponent, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import { totalCollateral } from '@/components/defi/loan/loans/total-collateral';

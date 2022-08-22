@@ -27,10 +27,10 @@
           :connected="connected && !autolog"
         />
         <connection-failure v-else />
-        <v-slide-y-transition>
+        <div v-if="connected" data-cy="account-management-forms">
           <login
+            v-if="!accountCreation"
             :loading="loading"
-            :displayed="!accountCreation && connected"
             :sync-conflict="syncConflict"
             :errors="errors"
             @touched="errors = []"
@@ -38,17 +38,15 @@
             @backend-changed="backendChanged($event)"
             @new-account="accountCreation = true"
           />
-        </v-slide-y-transition>
-        <v-slide-y-transition>
           <create-account
+            v-else
             :loading="loading"
-            :displayed="accountCreation && connected"
             :error="accountCreationError"
             @error:clear="accountCreationError = ''"
             @cancel="accountCreation = false"
             @confirm="createNewAccount($event)"
           />
-        </v-slide-y-transition>
+        </div>
       </v-card>
       <div :class="`${$style.icon} ${$style['icon--left']}`">
         <v-tooltip open-delay="400" top>
@@ -109,6 +107,8 @@
 </template>
 
 <script lang="ts">
+import { get, set, useLocalStorage } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineAsyncComponent,
@@ -117,9 +117,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set, useLocalStorage } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import {

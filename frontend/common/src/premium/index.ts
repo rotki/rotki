@@ -1,4 +1,4 @@
-import { Ref } from "@vue/composition-api";
+import { Ref } from "vue";
 import VueI18n from 'vue-i18n';
 import { SupportedAsset } from "../data";
 import { ProfitLossModel } from "../defi";
@@ -13,7 +13,7 @@ import { LocationData, NetValue, OwnedAssets, TimedAssetBalances, TimedBalances 
 export interface PremiumInterface {
   readonly useHostComponents: boolean;
   readonly version: number;
-  readonly api: PremiumApi;
+  readonly api: () => PremiumApi;
   readonly debug?: DebugSettings;
 }
 

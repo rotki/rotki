@@ -106,15 +106,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  ref,
-  Ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set, useLocalStorage } from '@vueuse/core';
+import { computed, defineComponent, onMounted, ref, Ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Fragment from '@/components/helper/Fragment';

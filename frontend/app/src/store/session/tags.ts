@@ -1,7 +1,7 @@
-import { computed, ComputedRef, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import logger from 'loglevel';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, ComputedRef, ref } from 'vue';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';

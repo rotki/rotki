@@ -51,9 +51,9 @@
 <script lang="ts">
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { XswapAsset } from '@rotki/common/lib/defi/xswap';
-import { computed, defineComponent, PropType, Ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';

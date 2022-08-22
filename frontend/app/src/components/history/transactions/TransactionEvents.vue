@@ -70,6 +70,7 @@
 </template>
 
 <script lang="ts">
+import { get } from '@vueuse/core';
 import {
   computed,
   defineAsyncComponent,
@@ -78,8 +79,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get } from '@vueuse/core';
+} from 'vue';
 import { DataTableHeader } from 'vuetify';
 import { useProxy } from '@/composables/common';
 import i18n from '@/i18n';

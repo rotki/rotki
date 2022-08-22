@@ -69,8 +69,8 @@
 
 <script lang="ts">
 import { XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { defineComponent, PropType, ref } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
+import { defineComponent, PropType, ref } from 'vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 export default defineComponent({

@@ -19,16 +19,10 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  onMounted,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import Cleave from 'cleave.js';
 import { storeToRefs } from 'pinia';
+import { defineComponent, onMounted, ref, toRefs, watch } from 'vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 /**

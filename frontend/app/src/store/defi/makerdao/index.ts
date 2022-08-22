@@ -1,7 +1,7 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { ref, Ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref, Ref } from 'vue';
 import { getPremium, useModules } from '@/composables/session';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';

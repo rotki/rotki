@@ -63,6 +63,8 @@
 </template>
 
 <script lang="ts">
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineComponent,
@@ -71,9 +73,7 @@ import {
   ref,
   Ref,
   toRefs
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';

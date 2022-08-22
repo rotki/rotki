@@ -20,7 +20,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted } from '@vue/composition-api';
+import { defineComponent, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';

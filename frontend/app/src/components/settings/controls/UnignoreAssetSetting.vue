@@ -29,9 +29,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { defineComponent, ref } from 'vue';
 import { useClearableMessages } from '@/composables/settings';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';

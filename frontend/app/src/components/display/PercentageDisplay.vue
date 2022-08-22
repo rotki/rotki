@@ -29,14 +29,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
 export default defineComponent({

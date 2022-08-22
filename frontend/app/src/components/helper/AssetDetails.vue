@@ -12,8 +12,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, toRefs } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import { useAssetInfoRetrieval } from '@/store/assets';
 

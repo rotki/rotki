@@ -28,8 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, toRefs } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
+import { defineAsyncComponent, toRefs } from 'vue';
 import { useTheme } from '@/composables/common';
 import { useMainStore } from '@/store/main';
 import { useAreaVisibilityStore } from '@/store/session/visibility';

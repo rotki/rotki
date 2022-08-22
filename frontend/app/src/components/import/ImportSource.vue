@@ -73,8 +73,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, toRefs } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, ref, toRefs } from 'vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { interop } from '@/electron-interop';

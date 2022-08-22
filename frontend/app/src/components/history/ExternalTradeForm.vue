@@ -269,6 +269,8 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
+import { get, set, useTimeoutFn } from '@vueuse/core';
+import dayjs from 'dayjs';
 import {
   computed,
   defineComponent,
@@ -278,9 +280,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set, useTimeoutFn } from '@vueuse/core';
-import dayjs from 'dayjs';
+} from 'vue';
 import i18n from '@/i18n';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';

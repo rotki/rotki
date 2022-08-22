@@ -26,9 +26,9 @@
   </v-form>
 </template>
 <script lang="ts">
-import { defineComponent, PropType, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { defineComponent, PropType, toRefs } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { LocationDataSnapshotPayload } from '@/store/balances/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';

@@ -181,6 +181,9 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
+import { get, set, useLocalStorage } from '@vueuse/core';
+import dayjs from 'dayjs';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineComponent,
@@ -189,10 +192,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set, useLocalStorage } from '@vueuse/core';
-import dayjs from 'dayjs';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { CURRENCY_USD } from '@/data/currencies';

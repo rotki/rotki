@@ -1,5 +1,5 @@
-import { Ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { Ref } from 'vue';
 import i18n from '@/i18n';
 import { EntryMeta } from '@/services/history/types';
 import { useHistory } from '@/store/history';

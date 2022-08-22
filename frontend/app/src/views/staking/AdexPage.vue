@@ -18,8 +18,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { defineComponent, onBeforeMount } from 'vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';

@@ -87,15 +87,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  Ref
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, ref, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import { CURRENCY_USD } from '@/data/currencies';

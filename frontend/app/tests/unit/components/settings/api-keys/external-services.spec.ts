@@ -163,9 +163,6 @@ describe('ExternalServices.vue', () => {
         .trigger('click');
       await wrapper.vm.$nextTick();
 
-      // @ts-ignore
-      expect(wrapper.vm.serviceToDelete).toBe('etherscan');
-
       wrapper
         .find('[data-cy="confirm-dialog"] [data-cy="button-confirm"]')
         .trigger('click');
@@ -173,9 +170,7 @@ describe('ExternalServices.vue', () => {
       await flushPromises();
 
       expect(deleteService).toHaveBeenCalledWith('etherscan');
-
-      // @ts-ignore
-      expect(wrapper.vm.serviceToDelete).toBe('');
+      expect(wrapper.find('[data-cy="confirm-dialog"]').exists()).toBeFalsy();
     });
 
     test('delete cryptocompare fails', async () => {
@@ -188,9 +183,6 @@ describe('ExternalServices.vue', () => {
         .trigger('click');
       await wrapper.vm.$nextTick();
 
-      // @ts-ignore
-      expect(wrapper.vm.serviceToDelete).toBe('cryptocompare');
-
       wrapper
         .find('[data-cy="confirm-dialog"] [data-cy="button-confirm"]')
         .trigger('click');
@@ -199,8 +191,8 @@ describe('ExternalServices.vue', () => {
 
       expect(deleteService).toHaveBeenCalledWith('cryptocompare');
 
-      // @ts-ignore
-      expect(wrapper.vm.serviceToDelete).toBe('');
+      expect(wrapper.find('[data-cy="confirm-dialog"]').exists()).toBeFalsy();
+
       const store = useMainStore();
       expect(store.message.description).toMatch('mock failure');
     });

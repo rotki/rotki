@@ -42,7 +42,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
+} from 'vue';
 import i18n from '@/i18n';
 import { Eth2Validator } from '@/types/balances';
 

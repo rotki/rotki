@@ -37,9 +37,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { onMounted, ref } from 'vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';

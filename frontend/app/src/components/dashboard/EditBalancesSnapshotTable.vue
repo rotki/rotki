@@ -116,15 +116,9 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import EditBalancesSnapshotForm from '@/components/dashboard/EditBalancesSnapshotForm.vue';

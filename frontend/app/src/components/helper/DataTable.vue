@@ -42,9 +42,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref, toRefs } from '@vue/composition-api';
 import { get, useElementBounding } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { defineComponent, PropType, ref, toRefs } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import { footerProps } from '@/config/datatable.common';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

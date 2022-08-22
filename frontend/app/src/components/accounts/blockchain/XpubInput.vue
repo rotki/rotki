@@ -68,6 +68,7 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { get, set } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -76,8 +77,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+} from 'vue';
 import {
   getKeyType,
   getPrefix,

@@ -1,6 +1,6 @@
-import { ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref } from 'vue';
 import {
   EthereumTransactionQueryData,
   EthereumTransactionsQueryStatus

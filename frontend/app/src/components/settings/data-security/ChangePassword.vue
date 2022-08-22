@@ -49,11 +49,11 @@
   </card>
 </template>
 <script setup lang="ts">
-import { ref } from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { ref } from 'vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import i18n from '@/i18n';
 import { useSessionStore } from '@/store/session';

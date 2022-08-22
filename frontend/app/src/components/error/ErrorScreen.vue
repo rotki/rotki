@@ -44,8 +44,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, toRefs } from 'vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 
 export default defineComponent({

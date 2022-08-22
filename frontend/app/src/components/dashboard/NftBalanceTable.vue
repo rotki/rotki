@@ -82,14 +82,9 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineAsyncComponent,
-  defineComponent,
-  Ref
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineAsyncComponent, defineComponent, Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import { setupStatusChecking } from '@/composables/common';
 import i18n from '@/i18n';

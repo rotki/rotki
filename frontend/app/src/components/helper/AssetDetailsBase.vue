@@ -22,13 +22,8 @@
 <script lang="ts">
 import { Nullable } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import ListItem from '@/components/helper/ListItem.vue';
 import { useRouter } from '@/composables/common';

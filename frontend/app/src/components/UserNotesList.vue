@@ -146,6 +146,7 @@
   </fragment>
 </template>
 <script lang="ts">
+import { debouncedWatch, get, set } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -154,8 +155,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { debouncedWatch, get, set } from '@vueuse/core';
+} from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';

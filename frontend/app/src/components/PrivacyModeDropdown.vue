@@ -48,7 +48,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { usePrivacyMode } from '@/composables/privacy';
 import i18n from '@/i18n';

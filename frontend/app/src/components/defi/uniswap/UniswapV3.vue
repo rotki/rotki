@@ -165,8 +165,8 @@
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { XswapAsset } from '@rotki/common/lib/defi/xswap';
-import { computed, onMounted, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';

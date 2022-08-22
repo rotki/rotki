@@ -50,13 +50,8 @@
 
 <script lang="ts">
 import { AssetBalance } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';

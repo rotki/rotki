@@ -18,7 +18,7 @@
   </v-app>
 </template>
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 
 const DevApp = defineComponent({
   name: 'DevApp',

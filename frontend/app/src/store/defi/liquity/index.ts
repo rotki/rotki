@@ -4,9 +4,9 @@ import {
   LiquityStakingEvents,
   TroveEvents
 } from '@rotki/common/lib/liquity';
-import { Ref, ref } from '@vue/composition-api';
 import { set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { Ref, ref } from 'vue';
 import { getPremium, useModules } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';

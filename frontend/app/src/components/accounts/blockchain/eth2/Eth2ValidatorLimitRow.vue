@@ -9,9 +9,9 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';

@@ -95,13 +95,8 @@ import {
   TimeFramePersist,
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { getPremium } from '@/composables/session';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

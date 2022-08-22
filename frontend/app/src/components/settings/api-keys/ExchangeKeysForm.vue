@@ -149,6 +149,7 @@
 </template>
 
 <script lang="ts">
+import { get, set } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -156,8 +157,7 @@ import {
   PropType,
   ref,
   toRefs
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+} from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';

@@ -26,6 +26,7 @@
 </template>
 <script lang="ts">
 import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import { get, set } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -34,8 +35,7 @@ import {
   Ref,
   ref,
   toRefs
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+} from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';

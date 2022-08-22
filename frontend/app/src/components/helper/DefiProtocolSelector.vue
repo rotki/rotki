@@ -39,14 +39,8 @@
 
 <script lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import DefiProtocolDetails from '@/components/helper/DefiProtocolDetails.vue';
 
 export interface Protocol {

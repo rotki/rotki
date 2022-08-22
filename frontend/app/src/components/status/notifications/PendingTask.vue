@@ -36,14 +36,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useReports } from '@/store/reports';
 import { Task, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

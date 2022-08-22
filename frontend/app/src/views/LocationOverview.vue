@@ -22,14 +22,9 @@
   </v-container>
 </template>
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onBeforeMount,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, onBeforeMount, toRefs } from 'vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocationData } from '@/components/history/type';

@@ -90,14 +90,8 @@
 
 <script lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  PropType,
-  ref
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, onMounted, PropType, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';

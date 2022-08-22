@@ -95,9 +95,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from '@vue/composition-api';
 import { set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { onMounted, ref } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import { useInterop } from '@/electron-interop';
 import { default as i18nFn } from '@/i18n';

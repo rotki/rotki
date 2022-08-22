@@ -23,7 +23,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 
 export default defineComponent({

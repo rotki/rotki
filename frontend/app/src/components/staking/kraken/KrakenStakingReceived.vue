@@ -38,9 +38,9 @@
 
 <script lang="ts">
 import { Balance } from '@rotki/common';
-import { computed, defineComponent, PropType, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, ref } from 'vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { ReceivedAmount } from '@/types/staking';

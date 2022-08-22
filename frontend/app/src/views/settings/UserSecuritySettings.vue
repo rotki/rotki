@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import BackupManager from '@/components/settings/data-security/backups/BackupManager.vue';
 import ManageCustomAssets from '@/components/settings/data-security/backups/ManageCustomAssets.vue';
 import ChangePassword from '@/components/settings/data-security/ChangePassword.vue';

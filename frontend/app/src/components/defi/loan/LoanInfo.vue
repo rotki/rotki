@@ -7,13 +7,8 @@
 
 <script lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import AaveLending from '@/components/defi/loan/loans/AaveLending.vue';
 import CompoundLending from '@/components/defi/loan/loans/CompoundLending.vue';
 import LiquityLending from '@/components/defi/loan/loans/LiquityLending.vue';

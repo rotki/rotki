@@ -12,8 +12,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { defineComponent, onMounted, ref } from 'vue';
 
 export default defineComponent({
   name: 'FrontendUpdateNotifier',

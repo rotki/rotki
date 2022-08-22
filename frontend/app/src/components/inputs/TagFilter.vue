@@ -46,14 +46,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
 import { Tag } from '@/types/user';

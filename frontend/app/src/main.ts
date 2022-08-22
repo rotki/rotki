@@ -1,8 +1,7 @@
 /* istanbul ignore file */
 
-import VueCompositionAPI, { provide } from '@vue/composition-api';
 import { createPinia, PiniaVuePlugin } from 'pinia';
-import Vue from 'vue';
+import Vue, { provide } from 'vue';
 import App from '@/App.vue';
 import '@/filters';
 import '@/main.scss';
@@ -20,12 +19,12 @@ import i18n from './i18n';
 import router from './router';
 import './utils/logging';
 
+const isDevelopment = checkIfDevelopment() && !import.meta.env.VITE_TEST;
 Vue.config.productionTip = false;
-Vue.config.devtools = checkIfDevelopment() && !import.meta.env.VITE_TEST;
+Vue.config.devtools = isDevelopment;
 
 Vue.use(Api);
 Vue.use(Interop);
-Vue.use(VueCompositionAPI);
 Vue.use(PiniaVuePlugin);
 
 Vue.directive('blur', {
@@ -40,7 +39,9 @@ Vue.directive('blur', {
 });
 
 const pinia = createPinia();
-pinia.use(storePiniaPlugins);
+if (isDevelopment) {
+  pinia.use(storePiniaPlugins);
+}
 
 new Vue({
   setup() {

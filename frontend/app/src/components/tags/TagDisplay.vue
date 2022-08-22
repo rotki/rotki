@@ -16,8 +16,8 @@
   </span>
 </template>
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
+import { defineComponent, PropType } from 'vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
 

@@ -94,14 +94,8 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set, useCounter } from '@vueuse/core';
+import { defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import i18n from '@/i18n';
 

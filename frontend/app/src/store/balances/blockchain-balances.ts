@@ -5,12 +5,12 @@ import {
   BigNumber
 } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { computed, Ref, ref, ComputedRef } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { forEach } from 'lodash';
 import cloneDeep from 'lodash/cloneDeep';
 import isEmpty from 'lodash/isEmpty';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { computed, Ref, ref, ComputedRef } from 'vue';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import {

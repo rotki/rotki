@@ -12,8 +12,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent } from 'vue';
 import { setupStatusChecking } from '@/composables/common';
 import { useBalancesStore } from '@/store/balances';
 import { Section } from '@/store/const';

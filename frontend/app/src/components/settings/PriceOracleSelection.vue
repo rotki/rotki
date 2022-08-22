@@ -115,14 +115,8 @@
   </div>
 </template>
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import OracleEntry from '@/components/settings/OracleEntry.vue';
 import { BaseMessage } from '@/components/settings/utils';

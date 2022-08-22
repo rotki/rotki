@@ -111,16 +111,9 @@
 
 <script lang="ts">
 import { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  Ref,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, Ref, ref, toRefs } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';

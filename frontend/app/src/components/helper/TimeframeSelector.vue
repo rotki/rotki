@@ -32,8 +32,8 @@ import {
   TimeFramePersist,
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { defineComponent, PropType, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { defineComponent, PropType, toRefs } from 'vue';
 import { getPremium } from '@/composables/session';
 
 import { isPeriodAllowed } from '@/store/settings/utils';

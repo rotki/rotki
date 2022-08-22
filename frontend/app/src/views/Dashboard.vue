@@ -73,7 +73,7 @@
                 </v-btn>
               </v-card-actions>
             </div>
-            <div v-else>
+            <div v-else data-cy="blockchain-balances">
               <blockchain-balance-card-list
                 v-for="total in blockchainSummary"
                 :key="total.chain"
@@ -112,7 +112,7 @@
                 </v-btn>
               </v-card-actions>
             </div>
-            <div v-else>
+            <div v-else data-cy="manual-balances">
               <manual-balance-card-list
                 v-for="manualBalance in manualBalanceByLocation"
                 :key="manualBalance.location"
@@ -149,9 +149,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineAsyncComponent } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';

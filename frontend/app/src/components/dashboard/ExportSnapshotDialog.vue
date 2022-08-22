@@ -60,10 +60,10 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { Message } from '@rotki/common/lib/messages';
-import { computed, defineComponent, ref, toRefs } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, ref, toRefs } from 'vue';
 import EditSnapshotDialog from '@/components/dashboard/EditSnapshotDialog.vue';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
