@@ -868,7 +868,6 @@ class Balancer(EthereumModule):
                     underlying_tokens = [
                         UnderlyingToken(
                             address=x.token.evm_address,
-                            chain=ChainID.ETHEREUM,
                             token_kind=EvmTokenKind.ERC20,
                             weight=x.weight / FVal(100),
                         ) for x in bpt_event.pool_tokens

@@ -294,9 +294,9 @@ def test_price_underlying_tokens(inquirer, globaldb):
         name='Test',
         symbol='YAB',
         underlying_tokens=[
-            UnderlyingToken(address=A_AAVE.evm_address, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=aave_weight),  # noqa: E501
-            UnderlyingToken(address=A_LINK.evm_address, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=link_weight),  # noqa: E501
-            UnderlyingToken(address=A_CRV.evm_address, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=crv_weight),  # noqa: E501
+            UnderlyingToken(address=A_AAVE.evm_address, token_kind=EvmTokenKind.ERC20, weight=aave_weight),  # noqa: E501
+            UnderlyingToken(address=A_LINK.evm_address, token_kind=EvmTokenKind.ERC20, weight=link_weight),  # noqa: E501
+            UnderlyingToken(address=A_CRV.evm_address, token_kind=EvmTokenKind.ERC20, weight=crv_weight),  # noqa: E501
         ],
     )
     globaldb.add_asset(

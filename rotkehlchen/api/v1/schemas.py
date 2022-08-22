@@ -1676,7 +1676,9 @@ class OptionalEvmTokenInformationSchema(Schema):
     token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=False)
 
 
-class UnderlyingTokenInfoSchema(EvmTokenInformationSchema):
+class UnderlyingTokenInfoSchema(Schema):
+    address = EthereumAddressField(required=True)
+    token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
     weight = FloatingPercentageField(required=True)
 
 
@@ -1809,7 +1811,6 @@ class EvmTokenSchema(RequiredEthereumAddressSchema):
             for entry in given_underlying_tokens:
                 underlying_tokens.append(UnderlyingToken(
                     address=entry['address'],
-                    chain=entry['chain'],
                     token_kind=entry['token_kind'],
                     weight=entry['weight'],
                 ))

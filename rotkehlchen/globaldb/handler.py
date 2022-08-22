@@ -407,7 +407,7 @@ class GlobalDBHandler():
     ) -> Optional[List[UnderlyingToken]]:
         """Fetch underlying tokens for a token address if they exist"""
         cursor.execute(
-            'SELECT B.address, B.chain, B.token_kind, A.weight FROM underlying_tokens_list AS A JOIN evm_tokens as B WHERE A.identifier=B.identifier AND parent_token_entry=?;',  # noqa: E501
+            'SELECT B.address, B.token_kind, A.weight FROM underlying_tokens_list AS A JOIN evm_tokens as B WHERE A.identifier=B.identifier AND parent_token_entry=?;',  # noqa: E501
             (parent_token_identifier,),
         )
         results = cursor.fetchall()
@@ -422,6 +422,7 @@ class GlobalDBHandler():
             write_cursor: 'DBCursor',
             parent_token_identifier: str,
             underlying_tokens: List[UnderlyingToken],
+            chain: ChainID,
     ) -> None:
         """Add the underlying tokens for the parent token
 
@@ -432,25 +433,24 @@ class GlobalDBHandler():
             asset_id = GlobalDBHandler.get_evm_token_identifier(
                 cursor=write_cursor,
                 address=underlying_token.address,
-                chain=underlying_token.chain,
+                chain=chain,
             )
             if asset_id is None:
                 try:  # underlying token does not exist. Track it
-                    asset_id = underlying_token.get_identifier()
+                    asset_id = underlying_token.get_identifier(parent_chain=chain)
                     write_cursor.execute(
                         'INSERT INTO evm_tokens(identifier, address, chain, token_kind)'
                         'VALUES(?, ?, ?, ?)',
                         (
                             asset_id,
                             underlying_token.address,
-                            underlying_token.chain.serialize_for_db(),
                             underlying_token.token_kind.serialize_for_db(),
                         ),
                     )
                     write_cursor.execute(
                         """INSERT INTO assets(identifier, type, started, swapped_for)
                         VALUES(?, ?, ?, ?)""",
-                        (asset_id, underlying_token.chain.serialize_for_db(), None, None),
+                        (asset_id, chain.serialize_for_db(), None, None),
                     )
                     write_cursor.execute(
                         """INSERT INTO common_asset_details(identifier, name, symbol,
@@ -669,6 +669,7 @@ class GlobalDBHandler():
                 write_cursor=write_cursor,
                 parent_token_identifier=entry.identifier,
                 underlying_tokens=entry.underlying_tokens,
+                chain=entry.chain,
             )
 
     @staticmethod
@@ -728,6 +729,7 @@ class GlobalDBHandler():
                         write_cursor=write_cursor,
                         parent_token_identifier=entry.identifier,
                         underlying_tokens=entry.underlying_tokens,
+                        chain=entry.chain,
                     )
 
                 rotki_id = GlobalDBHandler().get_evm_token_identifier(write_cursor, entry.evm_address, entry.chain)  # noqa: E501

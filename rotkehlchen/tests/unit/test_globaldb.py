@@ -543,7 +543,6 @@ def test_global_db_restore(globaldb, database):
         started=0,
         underlying_tokens=[UnderlyingToken(
             address=address_to_delete,
-            chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             weight=1,
         )],
@@ -681,7 +680,6 @@ def test_global_db_reset(globaldb):
         started=0,
         underlying_tokens=[UnderlyingToken(
             address=address_to_delete,
-            chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             weight=1,
         )],

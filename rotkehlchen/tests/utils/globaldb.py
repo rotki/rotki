@@ -25,9 +25,9 @@ INITIAL_TOKENS = [
         cryptocompare='ICP',
         protocol='uniswap',
         underlying_tokens=[
-            UnderlyingToken(address=underlying_address1, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal('0.5055')),  # noqa: E501
-            UnderlyingToken(address=underlying_address2, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal('0.1545')),  # noqa: E501
-            UnderlyingToken(address=underlying_address3, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal('0.34')),  # noqa: E501
+            UnderlyingToken(address=underlying_address1, token_kind=EvmTokenKind.ERC20, weight=FVal('0.5055')),  # noqa: E501
+            UnderlyingToken(address=underlying_address2, token_kind=EvmTokenKind.ERC20, weight=FVal('0.1545')),  # noqa: E501
+            UnderlyingToken(address=underlying_address3, token_kind=EvmTokenKind.ERC20, weight=FVal('0.34')),  # noqa: E501
         ],
     ),
     EvmToken.initialize(
@@ -59,7 +59,7 @@ CUSTOM_TOKEN3 = EvmToken.initialize(
     cryptocompare='ICP',
     protocol='aave',
     underlying_tokens=[
-        UnderlyingToken(address=custom_address1, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal('0.55')),  # noqa: E501
-        UnderlyingToken(address=underlying_address4, chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20, weight=FVal('0.45')),  # noqa: E501
+        UnderlyingToken(address=custom_address1, token_kind=EvmTokenKind.ERC20, weight=FVal('0.55')),  # noqa: E501
+        UnderlyingToken(address=underlying_address4, token_kind=EvmTokenKind.ERC20, weight=FVal('0.45')),  # noqa: E501
     ],
 )

@@ -43,7 +43,6 @@ class AssetDataSchema(OptionalEvmTokenInformationSchema):
                 underlying_tokens.append(UnderlyingToken(
                     address=entry['address'],
                     weight=entry['weight'],
-                    chain=data['chain'],
                     token_kind=data['token_kind'],
                 ))
 

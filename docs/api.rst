@@ -3039,9 +3039,9 @@ Adding custom ethereum tokens
           "cryptocompare": "FOO",
           "protocol": "uniswap",
           "underlying_tokens": [
-              {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "chain":"ethereum", "token_kind":"erc20", "weight": "15.45"},
-              {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "chain":"ethereum", "token_kind":"erc20", "weight": "35.65"},
-              {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "chain":"ethereum", "token_kind":"erc20", "weight": "39"}
+              {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "token_kind":"erc20", "weight": "15.45"},
+              {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "token_kind":"erc20", "weight": "35.65"},
+              {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "token_kind":"erc20", "weight": "39"}
          ]
        }}
 

@@ -20,7 +20,7 @@ from .types import AssetType
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-UnderlyingTokenDBTuple = Tuple[str, str, str, str]
+UnderlyingTokenDBTuple = Tuple[str, str, str]
 
 
 class UnderlyingToken(NamedTuple):
@@ -29,14 +29,12 @@ class UnderlyingToken(NamedTuple):
     Is used for pool tokens, tokensets etc.
     """
     address: ChecksumEvmAddress
-    chain: ChainID
     token_kind: EvmTokenKind
     weight: FVal  # Floating percentage from 0 to 1
 
     def serialize(self) -> Dict[str, Any]:
         return {
             'address': self.address,
-            'chain': self.chain.serialize(),
             'token_kind': self.token_kind.serialize(),
             'weight': str(self.weight * 100),
         }
@@ -45,15 +43,14 @@ class UnderlyingToken(NamedTuple):
     def deserialize_from_db(cls, entry: UnderlyingTokenDBTuple) -> 'UnderlyingToken':
         return UnderlyingToken(
             address=entry[0],  # type: ignore
-            chain=ChainID.deserialize_from_db(entry[1]),
-            token_kind=EvmTokenKind.deserialize_from_db(entry[2]),
-            weight=FVal(entry[3]),
+            token_kind=EvmTokenKind.deserialize_from_db(entry[1]),
+            weight=FVal(entry[2]),
         )
 
-    def get_identifier(self) -> str:
+    def get_identifier(self, parent_chain: ChainID) -> str:
         return evm_address_to_identifier(
             address=str(self.address),
-            chain=self.chain,
+            chain=parent_chain,
             token_type=self.token_kind,
         )
 

@@ -97,7 +97,6 @@ def deserialize_bpt_event(
         )
         underlying_tokens.append(UnderlyingToken(
             address=token.evm_address,
-            chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             weight=token_weight / total_weight,
         ))
@@ -231,7 +230,6 @@ def deserialize_pool_share(
         pool_token_balances.append(pool_token_balance)
         pool_token = UnderlyingToken(
             address=token.evm_address,
-            chain=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             weight=weight / 100,
         )

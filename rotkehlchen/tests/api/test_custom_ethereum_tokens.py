@@ -169,8 +169,8 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         name='foo',
         symbol='BBB',
         underlying_tokens=[
-            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.5055'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20),  # noqa: E501
-            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.7055'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.5055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.7055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
         ],
     )
     serialized_token = bad_token.serialize_all_info()
@@ -200,8 +200,8 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         name='foo',
         symbol='BBB',
         underlying_tokens=[
-            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.1055'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20),  # noqa: E501
-            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.2055'), chain=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.1055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
+            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.2055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
         ],
     )
     serialized_token = bad_token.serialize_all_info()
