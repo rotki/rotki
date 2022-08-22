@@ -68,7 +68,7 @@
                   icon
                   :disabled="detectingTokens(item.address).value || loading"
                   v-on="on"
-                  @click="fetchDetectedTokens(item.address)"
+                  @click="fetchDetectedTokensAndQueryBalance(item.address)"
                 >
                   <v-progress-circular
                     v-if="detectingTokens(item.address).value"
@@ -570,8 +570,18 @@ const accountOperation = computed<boolean>(() => {
 const { getEthDetectedTokensInfo, fetchDetectedTokens } =
   useBlockchainAccountsStore();
 
+const { fetchBlockchainBalances } = useBlockchainBalancesStore();
+
 const detectingTokens = (address: string) =>
   isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, { address });
+
+const fetchDetectedTokensAndQueryBalance = async (address: string) => {
+  await fetchDetectedTokens(address);
+  await fetchBlockchainBalances({
+    blockchain: Blockchain.ETH,
+    ignoreCache: true
+  });
+};
 
 const assets = (address: string) => {
   return get(accountAssets(address));

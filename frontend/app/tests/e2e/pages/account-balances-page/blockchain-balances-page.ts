@@ -88,7 +88,8 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
       cy.get('body').then($body => {
         if ($body.find(tableClass).length > 0) {
           cy.get(
-            `${tableClass} tr:contains(${blockchainBalance.symbol}) td:nth-child(4) [data-cy="display-amount"]`
+            `${tableClass} tr:contains(${blockchainBalance.symbol}) td:nth-child(4) [data-cy="display-amount"]`,
+            { timeout: 120000 }
           ).each($amount => {
             blockchainBalance.renderedValue =
               blockchainBalance.renderedValue.plus(
@@ -111,7 +112,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
       .find('tr')
       .eq(position + (this.isGroupped(balance) ? 0 : 1))
       .find('button.actions__edit')
-      .click();
+      .click({ timeout: 240000 });
 
     cy.get('[data-cy="blockchain-balance-form"]').as('edit-form');
     cy.get('@edit-form')
@@ -131,7 +132,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
 
     cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"]`)
       .find('[data-cy="account-balances__delete-button"]')
-      .click();
+      .click({ timeout: 120000 });
 
     this.confirmDelete();
 

@@ -347,7 +347,7 @@ export const useAssetInfoRetrieval = defineStore(
     ) => {
       return computed<string>(() => {
         if (!identifier) return '';
-        return get(assetInfo(identifier, enableAssociation))?.evmAddress ?? '';
+        return get(assetInfo(identifier, enableAssociation))?.address ?? '';
       });
     };
 

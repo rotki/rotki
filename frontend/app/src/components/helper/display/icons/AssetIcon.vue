@@ -90,9 +90,12 @@ const url = computed<string>(() => {
   if (get(symbol) === 'WETH' || get(assetIdentifierForSymbol('WETH')) === id) {
     return `/assets/images/defi/weth.svg`;
   }
-  const url = `${api.serverUrl}/api/1/assets/${encodeURIComponent(id)}/icon`;
   const currentTimestamp = get(timestamp) || Date.now();
-  return get(changeable) ? `${url}?t=${currentTimestamp}` : url;
+
+  return api.assets.assetImageUrl(
+    id,
+    get(changeable) ? currentTimestamp : undefined
+  );
 });
 
 const { t } = useI18n();

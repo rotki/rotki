@@ -36,6 +36,16 @@ export class AssetApi {
     this.baseTransformer = setupTransformer([]);
   }
 
+  assetImageUrl(identifier: string, randomString?: string | number): string {
+    let url = `${
+      this.axios.defaults.baseURL
+    }assets/icon?asset=${encodeURIComponent(identifier)}`;
+
+    if (randomString) url += `&t=${randomString}`;
+
+    return url;
+  }
+
   ethereumTokens(): Promise<EthereumToken[]> {
     return this.axios
       .get<ActionResult<EthereumToken[]>>('/assets/ethereum', {
@@ -87,35 +97,30 @@ export class AssetApi {
   uploadIcon(identifier: string, file: File): Promise<boolean> {
     const data = new FormData();
     data.append('file', file);
+    data.append('asset', identifier);
     return this.axios
-      .post<ActionResult<boolean>>(
-        `/assets/${encodeURIComponent(identifier)}/icon`,
-        data,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+      .post<ActionResult<boolean>>(`/assets/icon`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
         }
-      )
+      })
       .then(handleResponse);
   }
 
-  setIcon(identifier: string, file: string): Promise<boolean> {
+  setIcon(asset: string, file: string): Promise<boolean> {
     return this.axios
-      .put<ActionResult<boolean>>(
-        `/assets/${encodeURIComponent(identifier)}/icon`,
-        {
-          file
-        }
-      )
+      .put<ActionResult<boolean>>(`/assets/icon`, {
+        file,
+        asset
+      })
       .then(handleResponse);
   }
 
-  refreshIcon(identifier: string): Promise<boolean> {
+  refreshIcon(asset: string): Promise<boolean> {
     return this.axios
-      .patch<ActionResult<boolean>>(
-        `/assets/${encodeURIComponent(identifier)}/icon`
-      )
+      .patch<ActionResult<boolean>>(`/assets/icon`, {
+        asset
+      })
       .then(handleResponse);
   }
 

@@ -450,13 +450,14 @@ export class RotkehlchenApi {
     fromTimestamp: number,
     toTimestamp: number
   ): Promise<TimedBalances> {
-    const balances = await this.axios.get<ActionResult<TimedBalances>>(
-      `/statistics/balance/${asset}`,
+    const balances = await this.axios.post<ActionResult<TimedBalances>>(
+      `/statistics/balance`,
+      axiosSnakeCaseTransformer({
+        fromTimestamp,
+        toTimestamp,
+        asset
+      }),
       {
-        params: axiosSnakeCaseTransformer({
-          fromTimestamp,
-          toTimestamp
-        }),
         validateStatus: validStatus,
         transformResponse: basicAxiosTransformer
       }

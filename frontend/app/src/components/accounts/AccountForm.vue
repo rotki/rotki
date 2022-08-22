@@ -267,7 +267,7 @@ const AccountForm = defineComponent({
         address: get(addresses)[0],
         label: get(label),
         tags: get(tags),
-        xpub: get(xpub) ?? undefined,
+        xpub: get(inputMode) === XPUB_ADD ? get(xpub) ?? undefined : undefined,
         modules: get(isEth) ? get(selectedModules) : undefined
       };
     });

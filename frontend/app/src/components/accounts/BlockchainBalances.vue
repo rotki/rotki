@@ -48,7 +48,10 @@
     </card>
 
     <account-balances
-      v-if="ethAccounts.length > 0"
+      v-if="
+        ethAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.ETH).value
+      "
       id="blockchain-balances-ETH"
       v-intersect="{
         handler: observers.ETH,
@@ -65,7 +68,10 @@
     />
 
     <account-balances
-      v-if="eth2Accounts.length > 0"
+      v-if="
+        eth2Accounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.ETH2).value
+      "
       id="blockchain-balances-ETH2"
       v-intersect="{
         handler: observers.ETH2,
@@ -82,7 +88,10 @@
     />
 
     <account-balances
-      v-if="btcAccounts.length > 0"
+      v-if="
+        btcAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.BTC).value
+      "
       id="blockchain-balances-BTC"
       v-intersect="{
         handler: observers.BTC,
@@ -99,7 +108,10 @@
     />
 
     <account-balances
-      v-if="bchAccounts.length > 0"
+      v-if="
+        bchAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.BCH).value
+      "
       id="blockchain-balances-BCH"
       v-intersect="{
         handler: observers.BCH,
@@ -116,7 +128,10 @@
     />
 
     <account-balances
-      v-if="ksmAccounts.length > 0"
+      v-if="
+        ksmAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.KSM).value
+      "
       id="blockchain-balances-KSM"
       v-intersect="{
         handler: observers.KSM,
@@ -133,7 +148,10 @@
     />
 
     <account-balances
-      v-if="dotAccounts.length > 0"
+      v-if="
+        dotAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.DOT).value
+      "
       id="blockchain-balances-DOT"
       v-intersect="{
         handler: observers.DOT,
@@ -150,7 +168,10 @@
     />
 
     <account-balances
-      v-if="avaxAccounts.length > 0"
+      v-if="
+        avaxAccounts.length > 0 ||
+        isAccountOperationRunning(Blockchain.AVAX).value
+      "
       id="blockchain-balances-AVAX"
       v-intersect="{
         handler: observers.AVAX,
@@ -372,6 +393,14 @@ const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
 const isBlockchainLoading = computed<boolean>(() => {
   return get(isQueryingBlockchain) || get(isLoopringLoading);
 });
+
+const isAccountOperationRunning = (blockchain: Blockchain) =>
+  computed<boolean>(() => {
+    return (
+      get(isTaskRunning(TaskType.ADD_ACCOUNT, { blockchain })) ||
+      get(isTaskRunning(TaskType.REMOVE_ACCOUNT, { blockchain }))
+    );
+  });
 
 const threshold = [0];
 </script>

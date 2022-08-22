@@ -179,7 +179,11 @@ import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances
 import { useMainStore } from '@/store/main';
 import { ActionStatus } from '@/store/types';
 import { Nullable } from '@/types';
-import { compareAssets, getAddressFromEvmIdentifier } from '@/utils/assets';
+import {
+  compareAssets,
+  getAddressFromEvmIdentifier,
+  isEvmIdentifier
+} from '@/utils/assets';
 import { uniqueStrings } from '@/utils/data';
 import { toSentenceCase } from '@/utils/text';
 
@@ -325,7 +329,11 @@ const formatType = (string?: string) => {
 
 const getAsset = (item: EthereumToken) => {
   const name =
-    item.name ?? item.symbol ?? getAddressFromEvmIdentifier(item.identifier);
+    item.name ??
+    item.symbol ??
+    (isEvmIdentifier(item.identifier)
+      ? getAddressFromEvmIdentifier(item.identifier)
+      : item.identifier);
   return {
     name,
     symbol: item.symbol ?? '',

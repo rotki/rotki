@@ -12,7 +12,7 @@ export const useLinks = (url?: Ref<string>) => {
     return get(targetUrl);
   });
 
-  const onLinkClick = isPackaged
+  const onLinkClick = !isPackaged
     ? undefined
     : () => {
         openUrl(get(targetUrl));

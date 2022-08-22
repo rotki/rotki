@@ -16,6 +16,7 @@
 
         <revealable-input
           v-model="apiKey"
+          outlined
           class="premium-settings__fields__api-key"
           :disabled="premium && !edit"
           :error-messages="errorMessages"
@@ -24,6 +25,7 @@
         />
         <revealable-input
           v-model="apiSecret"
+          outlined
           class="premium-settings__fields__api-secret"
           prepend-icon="mdi-lock"
           :disabled="premium && !edit"
