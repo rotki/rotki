@@ -134,7 +134,7 @@ import TableExpandContainer from '@/components/helper/table/TableExpandContainer
 import i18n from '@/i18n';
 import { EthereumToken, ManagedAsset } from '@/services/assets/types';
 import { Nullable } from '@/types';
-import { compareAssets } from '@/utils/assets';
+import { compareAssets, getAddressFromEvmIdentifier } from '@/utils/assets';
 import { toSentenceCase } from '@/utils/text';
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
@@ -244,12 +244,14 @@ export default defineComponent({
     };
 
     const formatType = (string?: string) => {
-      return toSentenceCase(string ?? 'ethereum token');
+      return toSentenceCase(string ?? 'EVM token');
     };
 
     const getAsset = (item: EthereumToken) => {
       const name =
-        item.name ?? item.symbol ?? item.identifier?.replace('_ceth_', '');
+        item.name ??
+        item.symbol ??
+        getAddressFromEvmIdentifier(item.identifier);
       return {
         name,
         symbol: item.symbol ?? '',

@@ -75,10 +75,10 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  deleteEthereumToken(address: string): Promise<boolean> {
+  deleteEthereumToken(address: string, chain: string): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>('/assets/ethereum', {
-        data: axiosSnakeCaseTransformer({ address }),
+        data: axiosSnakeCaseTransformer({ address, chain }),
         validateStatus: validStatus
       })
       .then(handleResponse);
@@ -88,25 +88,34 @@ export class AssetApi {
     const data = new FormData();
     data.append('file', file);
     return this.axios
-      .post<ActionResult<boolean>>(`/assets/${identifier}/icon`, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      .post<ActionResult<boolean>>(
+        `/assets/${encodeURIComponent(identifier)}/icon`,
+        data,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         }
-      })
+      )
       .then(handleResponse);
   }
 
   setIcon(identifier: string, file: string): Promise<boolean> {
     return this.axios
-      .put<ActionResult<boolean>>(`/assets/${identifier}/icon`, {
-        file
-      })
+      .put<ActionResult<boolean>>(
+        `/assets/${encodeURIComponent(identifier)}/icon`,
+        {
+          file
+        }
+      )
       .then(handleResponse);
   }
 
   refreshIcon(identifier: string): Promise<boolean> {
     return this.axios
-      .patch<ActionResult<boolean>>(`/assets/${identifier}/icon`)
+      .patch<ActionResult<boolean>>(
+        `/assets/${encodeURIComponent(identifier)}/icon`
+      )
       .then(handleResponse);
   }
 

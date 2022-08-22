@@ -105,7 +105,9 @@ export default defineComponent({
       ) {
         return `/assets/images/defi/weth.svg`;
       }
-      const url = `${api.serverUrl}/api/1/assets/${id}/icon`;
+      const url = `${api.serverUrl}/api/1/assets/${encodeURIComponent(
+        id
+      )}/icon`;
       const currentTimestamp = get(timestamp) || Date.now();
       return get(changeable) ? `${url}?t=${currentTimestamp}` : url;
     });

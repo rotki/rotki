@@ -58,11 +58,9 @@ const AssetDetailsBase = defineComponent({
 
     const identifier = computed(() => {
       const supportedAsset = get(asset);
-      if ('ethereumAddress' in supportedAsset) {
-        return `_ceth_${supportedAsset.ethereumAddress}`;
-      }
       return supportedAsset.identifier;
     });
+
     const symbol = computed(() =>
       get(assetSymbol(get(identifier), get(enableAssociation)))
     );

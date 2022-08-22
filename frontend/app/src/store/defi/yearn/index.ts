@@ -27,6 +27,7 @@ import {
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { isEvmIdentifier } from '@/utils/assets';
 import { zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 
@@ -70,7 +71,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
 
           if (!yearnVaultsProfit[vault]) {
             let vaultName = vault;
-            if (vault.startsWith('_ceth_')) {
+            if (isEvmIdentifier(vault)) {
               vaultName = `${get(assetSymbol(vault))} Vault`;
             }
 

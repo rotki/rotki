@@ -20,7 +20,9 @@ export const setupLocationInfo = () => {
         identifier: identifier,
         exchange: false,
         imageIcon: true,
-        icon: `${api.serverUrl}/api/1/assets/${identifier}/icon`,
+        icon: `${api.serverUrl}/api/1/assets/${encodeURIComponent(
+          identifier
+        )}/icon`,
         detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}#blockchain-balances-${identifier}`
       };
     }

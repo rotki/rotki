@@ -908,6 +908,7 @@
     "identifier_copy": "Copy the identifier",
     "labels": {
       "asset_type": "Asset Type",
+      "chain": "Chain",
       "coingecko": "CoinGecko",
       "coingecko_hint": "The identifier of the asset on CoinGecko. If not set rotki will not be able to retrieve prices for the asset from CoinGecko.",
       "cryptocompare": "CryptoCompare",
@@ -916,7 +917,8 @@
       "forked": "Forked",
       "started": "Started",
       "swapped_for": "Swapped for",
-      "symbol": "Symbol"
+      "symbol": "Symbol",
+      "token_kind": "Token Kind"
     },
     "optional": "Optional Fields",
     "oracle_disable": "Disable/Enable the price fetching from the price oracle. If the oracle is not disabled, and there is no value specified, rotki will attempt to fetch a price using the asset symbol.",
