@@ -2,7 +2,7 @@ import logging
 import os
 import shutil
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -19,6 +19,7 @@ from rotkehlchen.db.upgrades.v34_v35 import upgrade_v34_to_v35
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.upgrades import UpgradeRecord
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -27,12 +28,6 @@ MIN_SUPPORTED_USER_DB_VERSION = 26
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-class UpgradeRecord(NamedTuple):
-    from_version: int
-    function: Callable
-    kwargs: Optional[Dict[str, Any]] = None
 
 
 UPGRADES_LIST = [

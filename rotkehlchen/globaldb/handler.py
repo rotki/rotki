@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Final,
     List,
     Literal,
     Optional,
@@ -31,38 +30,19 @@ from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCurs
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
-from rotkehlchen.globaldb.upgrades.v2_v3 import migrate_to_v3
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Timestamp
-from rotkehlchen.utils.misc import ts_now
 
 from .schema import DB_SCRIPT_CREATE_TABLES
+from .upgrades.manager import maybe_upgrade_globaldb
+from .utils import GLOBAL_DB_VERSION, _get_setting_value
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-GLOBAL_DB_VERSION = 3
-DB_UPGRADES: Final = {
-    1: upgrade_ethereum_asset_ids,
-    2: migrate_to_v3,
-}
-
-
-def _get_setting_value(cursor: DBCursor, name: str, default_value: int) -> int:
-    query = cursor.execute(
-        'SELECT value FROM settings WHERE name=?;', (name,),
-    )
-    result = query.fetchall()
-    # If setting is not set, it's the default
-    if len(result) == 0:
-        return default_value
-
-    return int(result[0][0])
 
 
 def initialize_globaldb(dbpath: Path, sql_vm_instructions_cb: int) -> DBConnection:
@@ -71,27 +51,9 @@ def initialize_globaldb(dbpath: Path, sql_vm_instructions_cb: int) -> DBConnecti
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
+    connection = maybe_upgrade_globaldb(connection=connection, dbpath=dbpath)
+
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
-    cursor = connection.cursor()
-    db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
-    if db_version > GLOBAL_DB_VERSION:
-        raise ValueError(
-            f'Tried to open a rotki version intended to work with GlobalDB v{GLOBAL_DB_VERSION} '
-            f'but the GlobalDB found in the system is v{db_version}. Bailing ...',
-        )
-
-    upgrade_function = DB_UPGRADES.get(db_version)
-    if upgrade_function is not None:
-        # Create a backup
-        new_db_filename = f'{ts_now()}_global_db_v{db_version}.backup'
-        new_db_path = dbpath.parent / new_db_filename
-        shutil.copyfile(dbpath, new_db_path)
-        upgrade_function(connection)
-
-    cursor.execute(
-        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('version', str(GLOBAL_DB_VERSION)),
-    )
     connection.commit()
     return connection
 
@@ -402,7 +364,7 @@ class GlobalDBHandler():
 
     @staticmethod
     def fetch_underlying_tokens(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             parent_token_identifier: str,
     ) -> Optional[List[UnderlyingToken]]:
         """Fetch underlying tokens for a token address if they exist"""
@@ -419,7 +381,7 @@ class GlobalDBHandler():
 
     @staticmethod
     def _add_underlying_tokens(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             parent_token_identifier: str,
             underlying_tokens: List[UnderlyingToken],
             chain: ChainID,
@@ -481,7 +443,7 @@ class GlobalDBHandler():
 
     @staticmethod
     def get_evm_token_identifier(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             address: ChecksumEvmAddress,
             chain: ChainID,
     ) -> Optional[str]:
@@ -633,7 +595,7 @@ class GlobalDBHandler():
         return mappings
 
     @staticmethod
-    def add_evm_token_data(write_cursor: 'DBCursor', entry: EvmToken) -> None:
+    def add_evm_token_data(write_cursor: DBCursor, entry: EvmToken) -> None:
         """Adds ethereum token specific information into the global DB
 
         May raise InputError if the token already exists
@@ -750,7 +712,7 @@ class GlobalDBHandler():
 
     @staticmethod
     def delete_evm_token(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             address: ChecksumEvmAddress,
             chain: ChainID,
     ) -> str:
@@ -872,7 +834,7 @@ class GlobalDBHandler():
                 ) from e
 
     @staticmethod
-    def add_common_asset_details(write_cursor: 'DBCursor', data: Dict[str, Any]) -> None:
+    def add_common_asset_details(write_cursor: DBCursor, data: Dict[str, Any]) -> None:
         """Adds a new row in common asset details
 
         The data should already be typed (as given in by marshmallow).
@@ -890,7 +852,7 @@ class GlobalDBHandler():
         )
 
     @staticmethod
-    def delete_custom_asset(write_cursor: 'DBCursor', identifier: str) -> None:
+    def delete_custom_asset(write_cursor: DBCursor, identifier: str) -> None:
         """Deletes an asset (non-ethereum token) from the global DB
 
         May raise InputError if the asset does not exist in the DB or
@@ -1400,8 +1362,8 @@ class GlobalDBHandler():
 
     @staticmethod
     def get_user_added_assets(
-            cursor: 'DBCursor',
-            user_db_write_cursor: 'DBCursor',
+            cursor: DBCursor,
+            user_db_write_cursor: DBCursor,
             user_db: 'DBHandler',
             only_owned: bool = False,
     ) -> Set[str]:

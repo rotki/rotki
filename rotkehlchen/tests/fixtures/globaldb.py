@@ -1,6 +1,6 @@
 from pathlib import Path
 from shutil import copyfile
-from typing import TYPE_CHECKING, Callable, List, Mapping, Optional
+from typing import TYPE_CHECKING, List, Optional
 from unittest.mock import patch
 
 import pytest
@@ -10,12 +10,13 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
-from rotkehlchen.globaldb.handler import DB_UPGRADES, GLOBAL_DB_VERSION
+from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
+from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.utils.upgrades import UpgradeRecord
 
 
 @pytest.fixture(name='custom_ethereum_tokens')
@@ -33,9 +34,9 @@ def fixture_target_globaldb_version() -> int:
     return GLOBAL_DB_VERSION
 
 
-@pytest.fixture(name='db_upgrades')
-def fixture_db_upgrades() -> Mapping[int, Callable[['DBConnection'], None]]:
-    return DB_UPGRADES
+@pytest.fixture(name='globaldb_upgrades')
+def fixture_globaldb_upgrades() -> List['UpgradeRecord']:
+    return UPGRADES_LIST
 
 
 def create_globaldb(
@@ -57,7 +58,7 @@ def fixture_globaldb(
         sql_vm_instructions_cb,
         reaload_custom_assets,
         target_globaldb_version,
-        db_upgrades,
+        globaldb_upgrades,
 ):
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -74,8 +75,8 @@ def fixture_globaldb(
     if reaload_custom_assets is False:
         with (
             patch('rotkehlchen.globaldb.handler._reload_constant_assets', lambda *a, **k: None),
-            patch('rotkehlchen.globaldb.handler.DB_UPGRADES', db_upgrades),
-            patch('rotkehlchen.globaldb.handler.GLOBAL_DB_VERSION', target_globaldb_version),
+            patch('rotkehlchen.globaldb.upgrades.manager.UPGRADES_LIST', globaldb_upgrades),
+            patch('rotkehlchen.globaldb.utils.GLOBAL_DB_VERSION', target_globaldb_version),
         ):
             return create_globaldb(new_data_dir, sql_vm_instructions_cb)
     return create_globaldb(new_data_dir, sql_vm_instructions_cb)

@@ -18,44 +18,112 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 OTHER_EVM_CHAINS_ASSETS = {
-    'SHA',
-    'WRX',
-    'BAN',
-    'WXT',
-    'ROCO',
-    'NHCT',
-    'VOXEL',
-    'FEVR',
-    'BIFI',
-    'GBYTE',
-    'BLOK',
-    'IDIA',
-    'POLYDOGE',
-    'JOE',
-    'IQ',
-    'ANY',
-    'EWT',
-    'UPO',
-    'H3RO3S',
-    'UBQ',
-    'XAVA',
-    'FLAME',
-    'OP',
-    'PLATO',
-    'USDN',
-    'TIME',
-    'MV',
-    'COVAL',
+    'WAL',
+    'EPX',
+    'H2O',
+    'GSPI',
+    'PORTO',
     'KLIMA',
-    'POT',
-    'FITFI',
-    'PNG',
-    'DINO',
-    'GAME',
-    'AVAX',
-    'ETHO',
-    'POLX',
+    'OP',
+    'ERTHA',
+    'BLOK',
+    'SIN',
+    'JOE',
+    'MDX',
+    'AUSD',
+    'DAR',
+    'BRISE',
+    'TIME',
+    'RD',
+    'SMG',
+    'ROSN',
+    'LAZIO',
+    'BURGER',
+    'SSG',
+    'XVS',
     'QI',
+    'H3RO3S',
+    'ELV',
+    'NFTB',
+    'DREAMS',
+    'SFP',
+    'BIFI',
+    'BSW',
+    'TKO',
+    'CATE',
+    'ARV',
+    'MNST',
+    'CAKE',
+    'KARA',
+    'DLTA',
+    'SPARTA',
+    'VAI',
+    'FLAME',
+    'LACE',
+    'UPO',
+    'CRFI',
+    'HERO',
+    'RACA',
+    'TWT',
+    'CHMB',
+    'NRV',
+    'bDOT',
+    'WOOP',
+    'PLGR',
+    'GODZ',
+    'MV',
+    'LAVAX',
+    'SURV',
+    'PNG',
+    'SFUND',
+    'DINO',
+    'GMM',
+    'OPS',
+    'WSB',
+    'YEFI',
+    'SCLP',
+    'SON',
+    'REV3L',
+    'IDIA',
+    'MONI',
+    'PLATO',
+    'VOXEL',
+    'BMON',
+    'SANTOS',
+    'ANI',
+    'ZPTC',
+    'POSI',
+    'GGG',
+    'NBT',
+    'MQST',
+    'MTRG',
+    'EPS',
+    'FALCONS',
+    'LATTE',
+    'GAFI',
+    'FEVR',
+    'ALPACA',
+    'BNX',
+    'IHC',
+    'ETHO',
+    'STARLY',
+    'ITAMCUBE',
+    'CHESS',
+    'NHCT',
+    'TAUM',
+    'FITFI',
+    'XEP',
+    'ALPINE',
+    'SWINGBY',
+    'POLYDOGE',
+    'ROCO',
+    'DPET',
+    'ARKER',
+    'MBOX',
+    'XWG',
+    'XAVA',
+    'BAKE',
+    'WRX',
 }
 COMMON_ASSETS_INSERT = """INSERT OR IGNORE INTO common_asset_details(
     identifier, name, symbol, coingecko, cryptocompare, forked
@@ -75,6 +143,7 @@ UNDERLYING_TOKEN_INSERT = """INSERT OR IGNORE INTO
 """
 OWNED_ASSETS_INSERT = 'INSERT OR IGNORE INTO user_owned_assets(asset_id) VALUES (?);'
 PRICES_INSERT = 'INSERT INTO price_history(from_asset, to_asset, source_type, timestamp, price) VALUES (?, ?, ?, ?, ?)'  # noqa: E501
+BINANCE_INSERT = 'INSERT INTO binance_pairs(pair, base_asset, quote_asset, location) VALUES(?, ?, ?, ?)'  # noqa: E501
 
 
 EVM_TUPLES_CREATION_TYPE = (
@@ -160,7 +229,7 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
 
 
 def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
-    """Create the bindings typle for the assets and common_asset_details tables using the
+    """Create the bindings tuple for the assets and common_asset_details tables using the
     information from the V2 tables for non ethereum assets"""
     chains = ",".join([f'"{x}"' for x in ('C',)])
     result = cursor.execute(
@@ -231,9 +300,33 @@ def translate_owned_assets(cursor: 'DBCursor') -> List[Tuple[str]]:
     return owned_assets
 
 
+def translate_binance_pairs(cursor: 'DBCursor') -> List[Tuple[str, str, str, str]]:
+    """Collect and update assets in the binance_pairs tables to use the new id format"""
+    cursor.execute('SELECT pair, base_asset, quote_asset, location from binance_pairs;')
+    binance_pairs = []
+    for entry in cursor:
+        new_base = entry[1]
+        if new_base.startswith(ETHEREUM_DIRECTIVE):
+            new_base = strethaddress_to_identifier(new_base[ETHEREUM_DIRECTIVE_LENGTH:])
+        new_quote = entry[2]
+        if new_quote.startswith(ETHEREUM_DIRECTIVE):
+            new_quote = strethaddress_to_identifier(new_quote[ETHEREUM_DIRECTIVE_LENGTH:])
+        binance_pairs.append((entry[0], new_base, new_quote, entry[3]))
+
+    return binance_pairs
+
+
 def translate_assets_in_price_table(cursor: 'DBCursor') -> List[Tuple[str, str, str, int, str]]:
+    """
+    Translate the asset ids in the price table.
+
+    Also drop all non manually input asset prices since otherwise this upgrade
+    will take forever. A heavily used globaldb
+    """
+    # cursor.execute('DELETE from price_history WHERE source_type!="A"')
     cursor.execute(
-        'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history',
+        'SELECT from_asset, to_asset, source_type, timestamp, price FROM '
+        'price_history WHERE source_type=="A"',
     )
     updated_rows = []
     for (from_asset, to_asset, source_type, timestamp, price) in cursor:
@@ -249,7 +342,6 @@ def translate_assets_in_price_table(cursor: 'DBCursor') -> List[Tuple[str, str, 
 
 def migrate_to_v3(connection: 'DBConnection') -> None:
     """Upgrade assets information and migrate globaldb to version 3"""
-
     with connection.read_ctx() as cursor:
         # Obtain information for ethereum assets
         evm_tuples, assets_tuple, common_asset_details = upgrade_ethereum_asset_ids_v3(cursor)
@@ -258,9 +350,12 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         assets_tuple_others, common_asset_details_others = upgrade_other_assets(cursor)
         owned_assets = translate_owned_assets(cursor)
         updated_prices = translate_assets_in_price_table(cursor)
+        updated_binance_pairs = translate_binance_pairs(cursor)
 
     with connection.write_ctx() as cursor:
-        # Purge or delete tables with outdated information
+        # Purge or delete tables with outdated information. Some of these tables
+        # like user_owned_assets are recreated in an identical state but are dropped
+        # and recreated since they have references to a table that is dropped and modified
         cursor.executescript("""
         PRAGMA foreign_keys=off;
         DROP TABLE IF EXISTS user_owned_assets;
@@ -270,10 +365,54 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         DROP TABLE IF EXISTS common_asset_details;
         DROP TABLE IF EXISTS underlying_tokens_list;
         DROP TABLE IF EXISTS price_history;
+        DROP TABLE IF EXISTS binance_pairs;
         PRAGMA foreign_keys=on;
         """)
 
         # Create new tables
+        cursor.executescript("""
+        CREATE TABLE IF NOT EXISTS chain_ids (
+          chain    CHAR(1)       PRIMARY KEY NOT NULL,
+          seq     INTEGER UNIQUE
+        );
+        /* ETHEREUM */
+        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('A', 1);
+        /* OPTIMISM */
+        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('B', 2);
+        /* BINANCE */
+        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('C', 3);
+        /* GNOSIS */
+        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('D', 4);
+        /* MATIC */
+        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('E', 5);
+        /* FANTOM */
+        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('F', 6);
+        /* ARBITRUM */
+        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('G', 7);
+        /* AVALANCHE */
+        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('H', 8);
+        """)
+        cursor.executescript("""
+        CREATE TABLE IF NOT EXISTS token_kinds (
+          token_kind    CHAR(1)       PRIMARY KEY NOT NULL,
+          seq     INTEGER UNIQUE
+        );
+        /* ERC20 */
+        INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('A', 1);
+        /* ERC721 */
+        INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('B', 2);
+        /* UNKNOWN */
+        INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('C', 3);
+        """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS assets (
+            identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+            type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type),
+            started INTEGER,
+            swapped_for TEXT,
+            FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE
+        );
+        """)
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS common_asset_details(
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
@@ -283,15 +422,6 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             cryptocompare TEXT,
             forked TEXT,
             FOREIGN KEY(forked) REFERENCES assets(identifier) ON UPDATE CASCADE
-        );
-        """)
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS assets (
-            identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
-            type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type),
-            started INTEGER,
-            swapped_for TEXT,
-            FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE
         );
         """)
         cursor.execute("""
@@ -359,7 +489,19 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             type TEXT
         );
         """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS binance_pairs (
+        pair TEXT NOT NULL,
+        base_asset TEXT NOT NULL,
+        quote_asset TEXT NOT NULL,
+        location TEXT NOT NULL,
+        FOREIGN KEY(base_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+        FOREIGN KEY(quote_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+        PRIMARY KEY(pair, location)
+        );
+        """)
 
+        # And now input the modified data back to the new tables
         cursor.executescript('PRAGMA foreign_keys=off;')
         cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details)
         cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details_others)
@@ -367,6 +509,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         cursor.executemany(ASSETS_INSERT, assets_tuple_others)
         cursor.executemany(OWNED_ASSETS_INSERT, owned_assets)
         cursor.executemany(PRICES_INSERT, updated_prices)
+        cursor.executemany(BINANCE_INSERT, updated_binance_pairs)
         cursor.executescript('PRAGMA foreign_keys=on;')
         cursor.executemany(EVM_TOKEN_INSERT, evm_tuples)
         cursor.executemany(UNDERLYING_TOKEN_INSERT, mappings)
