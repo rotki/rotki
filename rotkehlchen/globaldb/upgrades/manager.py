@@ -1,5 +1,6 @@
 import logging
 import shutil
+import sqlite3
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -25,9 +26,17 @@ UPGRADES_LIST = [
 ]
 
 
-def maybe_upgrade_globaldb(connection: 'DBConnection', dbpath: Path) -> 'DBConnection':
-    cursor = connection.cursor()
-    db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+def maybe_upgrade_globaldb(connection: 'DBConnection', dbpath: Path) -> bool:
+    """Maybe upgrade the global DB. Returns True if this is a fresh DB. In that
+    case the caller should make sure to input the latest version in the settings.
+    In all other cases returns False"""
+
+    try:
+        with connection.read_ctx() as cursor:
+            db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+    except sqlite3.OperationalError:  # pylint: disable=no-member
+        return True  # fresh DB -- nothing to upgrade
+
     if db_version < MIN_SUPPORTED_GLOBAL_DB_VERSION:
         raise ValueError(
             f'Your account was last opened by a very old version of rotki and its '
@@ -64,9 +73,11 @@ def maybe_upgrade_globaldb(connection: 'DBConnection', dbpath: Path) -> 'DBConne
             shutil.copyfile(tmp_db_path, dbpath)
             raise ValueError(error_message) from e
 
-    # success
-    cursor.execute(
-        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('version', str(GLOBAL_DB_VERSION)),
-    )
-    return connection
+        # single upgrade succesfull
+        with connection.write_ctx() as cursor:
+            cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                ('version', str(GLOBAL_DB_VERSION)),
+            )
+
+    return False  # not fresh DB

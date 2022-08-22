@@ -51,9 +51,14 @@ def initialize_globaldb(dbpath: Path, sql_vm_instructions_cb: int) -> DBConnecti
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
-    connection = maybe_upgrade_globaldb(connection=connection, dbpath=dbpath)
-
+    is_fresh_db = maybe_upgrade_globaldb(connection=connection, dbpath=dbpath)
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
+    if is_fresh_db is True:
+        with connection.write_ctx() as cursor:
+            cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                ('version', str(GLOBAL_DB_VERSION)),
+            )
     connection.commit()
     return connection
 
@@ -406,6 +411,7 @@ class GlobalDBHandler():
                         (
                             asset_id,
                             underlying_token.address,
+                            chain.serialize_for_db(),
                             underlying_token.token_kind.serialize_for_db(),
                         ),
                     )
@@ -946,25 +952,27 @@ class GlobalDBHandler():
     ) -> List[AssetData]:
         """Find all asset entries that have the given symbol"""
         eth_token_type = AssetType.EVM_TOKEN.serialize_for_db()    # pylint: disable=no-member
-        extra_check = ''
-        query_list = [symbol, eth_token_type, symbol, eth_token_type]
-        if asset_type is not None:
-            extra_check += ' AND A.type=? '
-            query_list.append(asset_type.serialize_for_db())
-
+        extra_check_evm = ''
+        evm_query_list = [symbol, eth_token_type]
         if chain is not None:
-            extra_check += ' AND B.chain=? '
-            query_list.append(chain.serialize_for_db())
+            extra_check_evm += ' AND B.chain=? '
+            evm_query_list.append(chain.serialize_for_db())
+
+        extra_check_common = ''
+        common_query_list = [symbol, eth_token_type]
+        if asset_type is not None:
+            extra_check_common += ' AND A.type=? '
+            common_query_list.append(asset_type.serialize_for_db())
 
         querystr = f"""
         SELECT A.identifier, A.type, B.address, B.chain, B.token_kind, B.decimals, C.name, C.symbol, A.started, null, A.swapped_for, C.coingecko, C.cryptocompare, B.protocol FROM assets as A LEFT OUTER JOIN evm_tokens as B
-        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE C.symbol=? COLLATE NOCASE AND A.type=?
+        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE C.symbol=? COLLATE NOCASE AND A.type=?{extra_check_evm}
         UNION ALL
         SELECT A.identifier, A.type, null, null, null, null, B.name, B.symbol, A.started, B.forked, A.swapped_for, B.coingecko, B.cryptocompare, null FROM assets as A JOIN common_asset_details as B
-        ON B.identifier = A.identifier WHERE B.symbol=? COLLATE NOCASE AND A.type!=?{extra_check};
+        ON B.identifier = A.identifier WHERE B.symbol=? COLLATE NOCASE AND A.type!=?{extra_check_common};
         """  # noqa: E501
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(querystr, query_list)
+            cursor.execute(querystr, evm_query_list + common_query_list)
             assets = []
             for entry in cursor:
                 asset_type = AssetType.deserialize_from_db(entry[1])

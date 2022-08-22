@@ -1,7 +1,10 @@
+from pathlib import Path
+
 import pytest
 
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE, ChainID
+from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
 
 
@@ -13,17 +16,38 @@ def _old_strethaddress_to_identifier(address: str) -> str:
     return ETHEREUM_DIRECTIVE + address
 
 
+# TODO: Perhaps have a saved version of that global DB for the tests and query it too?
+ASSETS_IN_V2_GLOBALDB = 3095
+
+
+def _count_v2_v3_assets_inserted() -> int:
+    """Counts and returns how many assets are to be inserted by globaldb_v2_v3_assets.sql"""
+    assets_inserted_by_update = 0
+    start_counting = False
+    dir_path = Path(__file__).resolve().parent.parent.parent
+    with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql', 'r') as f:
+        line = ' '
+        while line:
+            line = f.readline()
+            if start_counting:
+                assets_inserted_by_update += 1
+            if 'INSERT INTO assets' in line:
+                start_counting = True
+
+    return assets_inserted_by_update - 1
+
+
 @pytest.mark.parametrize('globaldb_version', [2])
 @pytest.mark.parametrize('target_globaldb_version', [3])
 def test_upgrade_v2_v3(globaldb):
     """At the start of this test global DB is upgraded to v3"""
     assert globaldb.get_setting_value('version', None) == 3
+    assets_inserted_by_update = _count_v2_v3_assets_inserted()
     with globaldb.conn.read_ctx() as cursor:
         # test that we have the same number of assets before and after the migration
-        # 367 are the new assets from other chains that are evm and currently they are
-        # marked with the OTHER asset type or that are missing the different chains versions.
-        # 38 are the assets with type OTHER that will be replaced
-        assert cursor.execute('SELECT COUNT(*) from assets').fetchone()[0] == 3095 + 720 - 106
+        # So same assets as before plus the new ones we add via the sql file minus the ones we skip
+        actual_assets_num = cursor.execute('SELECT COUNT(*) from assets').fetchone()[0]
+        assert actual_assets_num == ASSETS_IN_V2_GLOBALDB + assets_inserted_by_update - len(OTHER_EVM_CHAINS_ASSETS)  # noqa: E501
 
         # Check that the properties of LUSD (ethereum token) have been correctly translated
         weth_token_data = cursor.execute('SELECT identifier, token_kind, chain, address, decimals, protocol FROM evm_tokens WHERE address = "0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"').fetchone()  # noqa: E501
