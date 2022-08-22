@@ -11,7 +11,13 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, CovalentTransaction, ExternalService, Timestamp
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    CovalentTransaction,
+    EVMTxHash,
+    ExternalService,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import create_timestamp, ts_now
 
@@ -220,14 +226,14 @@ class Covalent(ExternalServiceWithApiKey):
 
         return transactions
 
-    def get_transaction_receipt(self, tx_hash: str) -> Optional[Dict[str, Any]]:
+    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> Optional[Dict[str, Any]]:
         """Gets the receipt for the given transaction hash
 
         May raise:
         - RemoteError due to self._query().
         """
         result = self._query(
-            module=tx_hash,
+            module=tx_hash.hex(),
             action='transaction_v2',
         )
         if result is None:
