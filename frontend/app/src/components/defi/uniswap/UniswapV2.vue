@@ -2,12 +2,12 @@
   <module-not-active v-if="!enabled" :modules="modules" />
   <progress-screen v-else-if="loading">
     <template #message>
-      {{ $t('uniswap.loading') }}
+      {{ tc('uniswap.loading') }}
     </template>
     <template v-if="!premium" #default>
       <i18n tag="div" path="uniswap.loading_non_premium">
         <base-external-link
-          :text="$t('uniswap.premium')"
+          :text="tc('uniswap.premium')"
           :href="$interop.premiumURL"
         />
       </i18n>
@@ -15,7 +15,7 @@
   </progress-screen>
   <div v-else class="uniswap">
     <refresh-header
-      :title="$t('uniswap.title', { v: 2 })"
+      :title="tc('uniswap.title', 0, { v: 2 })"
       class="mt-4"
       :loading="primaryRefreshing || secondaryRefreshing"
       @refresh="refresh()"
@@ -48,16 +48,12 @@
         />
       </v-col>
     </v-row>
-    <paginated-cards
-      :identifier="item => item.address"
-      :items="balances"
-      class="mt-4"
-    >
+    <paginated-cards :identifier="getIdentifier" :items="balances" class="mt-4">
       <template #item="{ item }">
         <card>
           <template v-if="item.assets.length > 0" #title>
             {{
-              $t('uniswap.pool_header', {
+              tc('uniswap.pool_header', 0, {
                 version: '2',
                 asset1: getSymbol(item.assets[0].asset),
                 asset2: getSymbol(item.assets[1].asset)
@@ -71,15 +67,13 @@
             <hash-link :text="item.address" />
           </template>
           <template #icon>
-            <uniswap-pool-asset
-              :assets="item.assets.map(({ asset }) => asset)"
-            />
+            <uniswap-pool-asset :assets="getAssets(item.assets)" />
           </template>
 
           <div class="mt-4">
             <div>
               <div class="text--secondary text-body-2">
-                {{ $t('common.balance') }}
+                {{ tc('common.balance') }}
               </div>
               <div class="d-flex text-h6">
                 <balance-display
@@ -93,7 +87,7 @@
 
             <div class="mt-6">
               <div class="text--secondary text-body-2">
-                {{ $t('common.assets') }}
+                {{ tc('common.assets') }}
               </div>
               <div>
                 <v-row
@@ -137,6 +131,7 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { XswapAsset, XswapBalance } from '@rotki/common/lib/defi/xswap';
 import {
   computed,
   defineComponent,
@@ -144,6 +139,7 @@ import {
   ref
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -191,6 +187,8 @@ export default defineComponent({
       useAssetInfoRetrieval();
     const { isSectionRefreshing, shouldShowLoadingScreen } =
       setupStatusChecking();
+
+    const { tc } = useI18n();
 
     const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_V2_BALANCES);
     const primaryRefreshing = isSectionRefreshing(
@@ -240,6 +238,14 @@ export default defineComponent({
       await Promise.all([fetchBalances(true), fetchEvents(true)]);
     };
 
+    const getIdentifier = (item: XswapBalance) => {
+      return item.address;
+    };
+
+    const getAssets = (assets: XswapAsset[]) => {
+      return assets.map(({ asset }) => asset);
+    };
+
     const uniswap = Module.UNISWAP;
     return {
       selectedAccount,
@@ -259,7 +265,10 @@ export default defineComponent({
       enabled: isModuleEnabled(uniswap),
       refresh,
       getSymbol,
-      getTokenAddress
+      getTokenAddress,
+      getIdentifier,
+      getAssets,
+      tc
     };
   }
 });

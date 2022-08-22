@@ -10,7 +10,7 @@
     >
       <template #activator="{ on }">
         <menu-tooltip-button
-          :tooltip="$t('currency_drop_down.profit_currency')"
+          :tooltip="tc('currency_drop_down.profit_currency')"
           class-name="currency-dropdown secondary--text text--lighten-4"
           :on-menu="on"
         >
@@ -44,7 +44,7 @@
               <v-list-item-title>
                 {{ item.name }}
               </v-list-item-title>
-              <v-list-item-subtitle v-text="$t('currency_drop_down.hint')" />
+              <v-list-item-subtitle v-text="tc('currency_drop_down.hint')" />
             </v-list-item-content>
           </v-list-item>
         </v-list>
@@ -57,6 +57,7 @@
 import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get, set, useTimeoutFn } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { currencies } from '@/data/currencies';
 import { useSettingsStore } from '@/store/settings';
@@ -72,6 +73,8 @@ export default defineComponent({
 
     const filter = ref<string>('');
     const visible = ref<boolean>(false);
+
+    const { tc } = useI18n();
 
     const filteredCurrencies = computed<Currency[]>(() => {
       const filterValue = get(filter).toLocaleLowerCase();
@@ -123,7 +126,8 @@ export default defineComponent({
       currency,
       selectFirst,
       filteredCurrencies,
-      onSelected
+      onSelected,
+      tc
     };
   }
 });

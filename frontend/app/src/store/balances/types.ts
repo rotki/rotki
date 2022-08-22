@@ -3,6 +3,7 @@ import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { z } from 'zod';
 import { PriceInformation } from '@/services/assets/types';
+import { BalanceType } from '@/services/balances/types';
 import { Section } from '@/store/const';
 import { Nullable } from '@/types';
 import {
@@ -247,7 +248,7 @@ export type BalanceSnapshot = z.infer<typeof BalanceSnapshot>;
 
 export type BalanceSnapshotPayload = {
   timestamp: number;
-  category: string;
+  category: BalanceType;
   assetIdentifier: string;
   amount: string;
   usdValue: string;

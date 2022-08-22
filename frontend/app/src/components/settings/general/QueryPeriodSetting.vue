@@ -1,15 +1,15 @@
 <template>
   <div class="mt-8">
     <div class="text-h6">
-      {{ $t('frontend_settings.subtitle.query') }}
+      {{ tc('frontend_settings.subtitle.query') }}
     </div>
     <settings-option
       #default="{ error, success, update }"
       class="mt-1"
       setting="queryPeriod"
       frontend-setting
-      :transform="value => (value ? parseInt(value) : value)"
-      :error-message="$tc('frontend_settings.validation.periodic_query.error')"
+      :transform="transform"
+      :error-message="tc('frontend_settings.validation.periodic_query.error')"
       @updated="restartMonitor"
       @finished="resetQueryPeriod"
     >
@@ -17,8 +17,8 @@
         v-model="queryPeriod"
         outlined
         class="general-settings__fields__periodic-client-query-period"
-        :label="$t('frontend_settings.label.query_period')"
-        :hint="$t('frontend_settings.label.query_period_hint')"
+        :label="tc('frontend_settings.label.query_period')"
+        :hint="tc('frontend_settings.label.query_period_hint')"
         type="number"
         :min="minQueryPeriod"
         :max="maxQueryPeriod"
@@ -36,6 +36,7 @@ import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import { useValidation } from '@/composables/validation';
 import i18n from '@/i18n';
 import { monitor } from '@/services/monitoring';
@@ -66,6 +67,7 @@ const rules = {
 };
 
 const { queryPeriod: currentPeriod } = storeToRefs(useFrontendSettingsStore());
+const { tc } = useI18n();
 
 const resetQueryPeriod = () => {
   set(queryPeriod, get(currentPeriod).toString());
@@ -77,6 +79,8 @@ const { callIfValid } = useValidation(v$);
 const restartMonitor = () => {
   monitor.restart();
 };
+
+const transform = (value: string) => (value ? parseInt(value) : value);
 
 onMounted(() => {
   resetQueryPeriod();

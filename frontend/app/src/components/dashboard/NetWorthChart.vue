@@ -551,14 +551,14 @@ export default defineComponent({
 
     const mouseDownCoor = ref<{ x: number; y: number }>({ x: 0, y: 0 });
 
-    const canvasMouseDown = (event: PointerEvent) => {
+    const canvasMouseDown = (event: MouseEvent) => {
       set(mouseDownCoor, {
         x: event.x,
         y: event.y
       });
     };
 
-    const canvasMouseUp = (event: PointerEvent) => {
+    const canvasMouseUp = (event: MouseEvent) => {
       const { x, y } = get(mouseDownCoor);
 
       if (event.x === x && event.y === y) {
@@ -566,7 +566,7 @@ export default defineComponent({
       }
     };
 
-    const canvasClicked = (event: PointerEvent) => {
+    const canvasClicked = (event: MouseEvent) => {
       set(isDblClick, false);
       setTimeout(() => {
         if (get(isDblClick)) return;

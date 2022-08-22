@@ -5,21 +5,16 @@
       setting="thousandSeparator"
       frontend-setting
       :error-message="
-        $tc('general_settings.validation.thousand_separator.error')
+        tc('general_settings.validation.thousand_separator.error')
       "
-      :success-message="
-        thousandSeparator =>
-          $tc('general_settings.validation.thousand_separator.success', 0, {
-            thousandSeparator
-          })
-      "
+      :success-message="thousandsSuccessMessage"
     >
       <v-text-field
         v-model="thousandSeparator"
         outlined
         maxlength="1"
         class="general-settings__fields__thousand-separator"
-        :label="$t('general_settings.amount.label.thousand_separator')"
+        :label="tc('general_settings.amount.label.thousand_separator')"
         type="text"
         :success-messages="success"
         :error-messages="
@@ -33,22 +28,15 @@
       #default="{ error, success, update }"
       setting="decimalSeparator"
       frontend-setting
-      :error-message="
-        $tc('general_settings.validation.decimal_separator.error')
-      "
-      :success-message="
-        decimalSeparator =>
-          $tc('general_settings.validation.decimal_separator.success', 0, {
-            decimalSeparator
-          })
-      "
+      :error-message="tc('general_settings.validation.decimal_separator.error')"
+      :success-message="decimalsSuccessMessage"
     >
       <v-text-field
         v-model="decimalSeparator"
         outlined
         maxlength="1"
         class="general-settings__fields__decimal-separator"
-        :label="$t('general_settings.amount.label.decimal_separator')"
+        :label="tc('general_settings.amount.label.decimal_separator')"
         type="text"
         :success-messages="success"
         :error-messages="
@@ -66,8 +54,8 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import { useValidation } from '@/composables/validation';
-import i18n from '@/i18n';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const thousandSeparator = ref<string>('');
@@ -76,44 +64,38 @@ const decimalSeparator = ref<string>('');
 const { thousandSeparator: thousands, decimalSeparator: decimals } =
   storeToRefs(useFrontendSettingsStore());
 
+const { tc } = useI18n();
+
 const rules = {
   thousandSeparator: {
     required: helpers.withMessage(
-      i18n.t('general_settings.thousand_separator.validation.empty').toString(),
+      tc('general_settings.thousand_separator.validation.empty'),
       required
     ),
     notANumber: helpers.withMessage(
-      i18n
-        .t(
-          'general_settings.thousand_separator.validation.cannot_be_numeric_character'
-        )
-        .toString(),
+      tc(
+        'general_settings.thousand_separator.validation.cannot_be_numeric_character'
+      ),
       not(numeric)
     ),
     notTheSame: helpers.withMessage(
-      i18n
-        .t('general_settings.thousand_separator.validation.cannot_be_the_same')
-        .toString(),
+      tc('general_settings.thousand_separator.validation.cannot_be_the_same'),
       not(sameAs(decimalSeparator))
     )
   },
   decimalSeparator: {
     required: helpers.withMessage(
-      i18n.t('general_settings.decimal_separator.validation.empty').toString(),
+      tc('general_settings.decimal_separator.validation.empty'),
       required
     ),
     notANumber: helpers.withMessage(
-      i18n
-        .t(
-          'general_settings.decimal_separator.validation.cannot_be_numeric_character'
-        )
-        .toString(),
+      tc(
+        'general_settings.decimal_separator.validation.cannot_be_numeric_character'
+      ),
       not(numeric)
     ),
     notTheSame: helpers.withMessage(
-      i18n
-        .t('general_settings.decimal_separator.validation.cannot_be_the_same')
-        .toString(),
+      tc('general_settings.decimal_separator.validation.cannot_be_the_same'),
       not(sameAs(thousandSeparator))
     )
   }
@@ -142,6 +124,16 @@ const callIfDecimalsValid = (
   let validator = get(v$);
   callIfValid(value, method, () => validator.decimalSeparator.$error);
 };
+
+const thousandsSuccessMessage = (thousandSeparator: string) =>
+  tc('general_settings.validation.thousand_separator.success', 0, {
+    thousandSeparator
+  });
+
+const decimalsSuccessMessage = (decimalSeparator: string) =>
+  tc('general_settings.validation.decimal_separator.success', 0, {
+    decimalSeparator
+  });
 
 onMounted(() => {
   set(thousandSeparator, get(thousands));
