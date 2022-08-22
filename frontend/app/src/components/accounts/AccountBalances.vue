@@ -6,7 +6,7 @@
           <refresh-button
             class="account-balances__refresh"
             :loading="isLoading"
-            :tooltip="$t('account_balances.refresh_tooltip', { blockchain })"
+            :tooltip="tc('account_balances.refresh_tooltip', 0, { blockchain })"
             @refresh="refresh"
           />
         </v-col>
@@ -34,11 +34,11 @@
                   @click="confirmDelete = true"
                 >
                   <v-icon> mdi-delete-outline </v-icon>
-                  <span>{{ $tc('common.actions.delete') }}</span>
+                  <span>{{ tc('common.actions.delete') }}</span>
                 </v-btn>
               </span>
             </template>
-            <span>{{ $tc('account_balances.delete_tooltip') }}</span>
+            <span>{{ tc('account_balances.delete_tooltip') }}</span>
           </v-tooltip>
         </v-col>
         <v-col v-if="!isEth2" cols="12" sm="6">
@@ -59,7 +59,7 @@
       />
       <confirm-dialog
         :display="deleteConfirmed"
-        :title="$tc('account_balances.confirm_delete.title')"
+        :title="tc('account_balances.confirm_delete.title')"
         :message="deleteDescription"
         @cancel="cancelDelete()"
         @confirm="deleteAccount()"
@@ -78,12 +78,12 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import i18n from '@/i18n';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import {
@@ -124,6 +124,8 @@ export default defineComponent({
     const xpubToDelete = ref<XpubPayload | null>(null);
     const balanceTable = ref<any>(null);
 
+    const { tc } = useI18n();
+
     const isEth2 = computed<boolean>(() => {
       return get(blockchain) === Blockchain.ETH2;
     });
@@ -153,11 +155,11 @@ export default defineComponent({
 
     const deleteDescription = computed<string>(() => {
       if (get(xpubToDelete)) {
-        return i18n.tc('account_balances.confirm_delete.description_xpub', 0, {
+        return tc('account_balances.confirm_delete.description_xpub', 0, {
           address: get(xpubToDelete)!.xpub
         });
       }
-      return i18n.tc('account_balances.confirm_delete.description_address', 0, {
+      return tc('account_balances.confirm_delete.description_address', 0, {
         count: get(selectedAddresses).length
       });
     });
@@ -221,7 +223,8 @@ export default defineComponent({
       deleteDescription,
       deleteConfirmed,
       cancelDelete,
-      deleteAccount
+      deleteAccount,
+      tc
     };
   }
 });

@@ -1,4 +1,4 @@
-import { computed, ref } from '@vue/composition-api';
+import { computed, ComputedRef, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import logger from 'loglevel';
 import { acceptHMRUpdate, defineStore } from 'pinia';
@@ -16,7 +16,7 @@ export const useTagStore = defineStore('session/tags', () => {
     return Object.values(get(allTags));
   });
 
-  const availableTags = computed(() => {
+  const availableTags: ComputedRef<Record<string, Tag>> = computed(() => {
     return { ...get(allTags), ...READ_ONLY_TAGS };
   });
 

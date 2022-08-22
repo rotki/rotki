@@ -16,7 +16,7 @@
   </span>
 </template>
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent, PropType } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
@@ -27,7 +27,11 @@ export default defineComponent({
     TagIcon
   },
   props: {
-    tags: { required: false, type: Array, default: () => [] },
+    tags: {
+      required: false,
+      type: Array as PropType<string[]>,
+      default: () => []
+    },
     small: { required: false, type: Boolean, default: false },
     wrapperClass: { required: false, type: String, default: '' }
   },

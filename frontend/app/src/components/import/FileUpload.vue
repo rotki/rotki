@@ -26,7 +26,7 @@
           <v-progress-circular indeterminate color="primary" />
 
           <div class="pt-4">
-            {{ $t('file_upload.loading') }}
+            {{ tc('file_upload.loading') }}
           </div>
         </div>
         <div
@@ -61,14 +61,14 @@
                   small
                   text
                   outlined
-                  @click="$refs.select.click()"
-                  v-text="$t('file_upload.change_file')"
+                  @click="clickSelect"
+                  v-text="tc('file_upload.change_file')"
                 />
               </div>
             </div>
             <div v-else>
               <div class="text-caption text--secondary">
-                {{ $t('file_upload.drop_area') }}
+                {{ tc('file_upload.drop_area') }}
               </div>
               <div>
                 <v-btn
@@ -77,8 +77,8 @@
                   small
                   text
                   outlined
-                  @click="$refs.select.click()"
-                  v-text="$t('file_upload.select_file')"
+                  @click="clickSelect"
+                  v-text="tc('file_upload.select_file')"
                 />
               </div>
             </div>
@@ -86,7 +86,7 @@
         </div>
         <div v-else class="d-flex flex-column align-center justify-center">
           <v-icon x-large color="primary">mdi-check-circle</v-icon>
-          <div class="mt-2" v-text="$t('file_upload.import_complete')" />
+          <div class="mt-2" v-text="tc('file_upload.import_complete')" />
         </div>
       </div>
     </v-col>
@@ -102,6 +102,7 @@ import {
   watch
 } from '@vue/composition-api';
 import { get, set, useCounter } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import i18n from '@/i18n';
 
 const SOURCES = [
@@ -144,6 +145,7 @@ export default defineComponent({
     const file = ref<File | null>(null);
     const select = ref<HTMLInputElement>();
     const { count, inc, dec, reset } = useCounter(0, { min: 0 });
+    const { tc } = useI18n();
 
     const onDrop = (event: DragEvent) => {
       event.preventDefault();
@@ -233,6 +235,10 @@ export default defineComponent({
       emit('update:uploaded', value);
     };
 
+    const clickSelect = () => {
+      get(select)?.click();
+    };
+
     watch(file, file => {
       selected(file);
     });
@@ -258,7 +264,9 @@ export default defineComponent({
       onEnter,
       onLeave,
       onSelect,
-      removeFile
+      removeFile,
+      clickSelect,
+      tc
     };
   }
 });

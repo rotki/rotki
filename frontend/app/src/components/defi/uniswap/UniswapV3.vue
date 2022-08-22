@@ -2,20 +2,17 @@
   <module-not-active v-if="!enabled" :modules="modules" />
   <progress-screen v-else-if="loading">
     <template #message>
-      {{ $t('uniswap.loading') }}
+      {{ tc('uniswap.loading') }}
     </template>
     <template v-if="!premium" #default>
       <i18n tag="div" path="uniswap.loading_non_premium">
-        <base-external-link
-          :text="$t('uniswap.premium')"
-          :href="$interop.premiumURL"
-        />
+        <base-external-link :text="tc('uniswap.premium')" :href="premiumURL" />
       </i18n>
     </template>
   </progress-screen>
   <div v-else class="uniswap">
     <refresh-header
-      :title="$t('uniswap.title', { v: 3 })"
+      :title="tc('uniswap.title', 0, { v: 3 })"
       class="mt-4"
       :loading="primaryRefreshing || secondaryRefreshing"
       @refresh="refresh()"
@@ -57,7 +54,7 @@
         <card>
           <template v-if="item.assets.length > 0" #title>
             {{
-              $t('uniswap.pool_header', {
+              tc('uniswap.pool_header', 0, {
                 version: '3',
                 asset1: getSymbol(item.assets[0].asset),
                 asset2: getSymbol(item.assets[1].asset)
@@ -71,9 +68,7 @@
             <hash-link :text="item.address" />
           </template>
           <template #icon>
-            <uniswap-pool-asset
-              :assets="item.assets.map(({ asset }) => asset)"
-            />
+            <uniswap-pool-asset :assets="getAssets(item.assets)" />
           </template>
 
           <div>
@@ -86,7 +81,7 @@
             <div class="d-flex flex-wrap">
               <div class="mt-6 mr-16">
                 <div class="text--secondary text-body-2">
-                  {{ $t('common.balance') }}
+                  {{ tc('common.balance') }}
                 </div>
                 <div class="d-flex text-h6">
                   <amount-display
@@ -101,7 +96,7 @@
                 :class="$style['price-range']"
               >
                 <div class="text--secondary text-body-2">
-                  {{ $t('uniswap.price_range') }}
+                  {{ tc('uniswap.price_range') }}
                 </div>
                 <div class="d-flex text-h6">
                   <amount-display
@@ -119,7 +114,7 @@
 
             <div class="mt-6">
               <div class="text--secondary text-body-2">
-                {{ $t('common.assets') }}
+                {{ tc('common.assets') }}
               </div>
               <div v-if="premium">
                 <v-row
@@ -152,8 +147,8 @@
                 <div class="ml-4">
                   <i18n tag="div" path="uniswap.assets_non_premium">
                     <base-external-link
-                      :text="$t('uniswap.premium')"
-                      :href="$interop.premiumURL"
+                      :text="tc('uniswap.premium')"
+                      :href="premiumURL"
                     />
                   </i18n>
                 </div>
@@ -166,16 +161,13 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  ref
-} from '@vue/composition-api';
+import { XswapAsset } from '@rotki/common/lib/defi/xswap';
+import { computed, onMounted, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -188,96 +180,65 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking, useTheme } from '@/composables/common';
 import { getPremium, useModules } from '@/composables/session';
+import { useInterop } from '@/electron-interop';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';
 
-export default defineComponent({
-  components: {
-    NftDetails,
-    PaginatedCards,
-    ActiveModules,
-    UniswapPoolDetails,
-    UniswapPoolFilter,
-    BaseExternalLink,
-    ModuleNotActive,
-    ProgressScreen,
-    UniswapPoolAsset,
-    BlockchainAccountSelector
-  },
-  setup() {
-    const selectedAccount = ref<GeneralAccount | null>(null);
-    const selectedPools = ref<string[]>([]);
-    const {
-      fetchV3Balances: fetchBalances,
-      uniswapV3Addresses: addresses,
-      uniswapV3Balances: uniswapBalances,
-      uniswapV3PoolAssets: poolAssets
-    } = useUniswapStore();
-    const { isModuleEnabled } = useModules();
-    const { getAssetSymbol: getSymbol, getTokenAddress } =
-      useAssetInfoRetrieval();
-    const { isSectionRefreshing, shouldShowLoadingScreen } =
-      setupStatusChecking();
+const uniswap = Module.UNISWAP;
+const chains = [Blockchain.ETH];
+const modules = [uniswap];
 
-    const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_V3_BALANCES);
-    const primaryRefreshing = isSectionRefreshing(
-      Section.DEFI_UNISWAP_V3_BALANCES
-    );
-    const secondaryRefreshing = isSectionRefreshing(
-      Section.DEFI_UNISWAP_EVENTS
-    );
+const selectedAccount = ref<GeneralAccount | null>(null);
+const selectedPools = ref<string[]>([]);
+const {
+  fetchV3Balances: fetchBalances,
+  uniswapV3Addresses: addresses,
+  uniswapV3Balances: uniswapBalances,
+  uniswapV3PoolAssets: poolAssets
+} = useUniswapStore();
+const { isModuleEnabled } = useModules();
+const { getAssetSymbol: getSymbol, getTokenAddress } = useAssetInfoRetrieval();
+const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
+const { tc } = useI18n();
 
-    const selectedAddresses = computed(() => {
-      let account = get(selectedAccount);
-      return account ? [account.address] : [];
-    });
+const { premiumURL } = useInterop();
 
-    const balances = computed(() => {
-      const addresses = get(selectedAddresses);
-      const pools = get(selectedPools);
-      const balances = get(uniswapBalances(addresses));
+const enabled = isModuleEnabled(uniswap);
+const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_V3_BALANCES);
+const primaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_V3_BALANCES);
+const secondaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_EVENTS);
 
-      return pools.length === 0
-        ? balances
-        : balances.filter(({ address }) => pools.includes(address));
-    });
+const selectedAddresses = computed(() => {
+  let account = get(selectedAccount);
+  return account ? [account.address] : [];
+});
 
-    onMounted(async () => {
-      await fetchBalances(false);
-    });
+const balances = computed(() => {
+  const addresses = get(selectedAddresses);
+  const pools = get(selectedPools);
+  const balances = get(uniswapBalances(addresses));
 
-    const refresh = async () => {
-      await fetchBalances(true);
-    };
+  return pools.length === 0
+    ? balances
+    : balances.filter(({ address }) => pools.includes(address));
+});
 
-    const uniswap = Module.UNISWAP;
+const premium = getPremium();
 
-    const premium = getPremium();
+const { dark } = useTheme();
 
-    const { dark } = useTheme();
+const refresh = async () => {
+  await fetchBalances(true);
+};
 
-    return {
-      dark,
-      premium,
-      selectedAccount,
-      selectedPools,
-      selectedAddresses,
-      addresses,
-      balances,
-      poolAssets,
-      loading,
-      primaryRefreshing,
-      secondaryRefreshing,
-      chains: [Blockchain.ETH],
-      modules: [uniswap],
-      enabled: isModuleEnabled(uniswap),
-      refresh,
-      getSymbol,
-      getTokenAddress
-    };
-  }
+const getAssets = (assets: XswapAsset[]) => {
+  return assets.map(({ asset }) => asset);
+};
+
+onMounted(async () => {
+  await fetchBalances(false);
 });
 </script>
 

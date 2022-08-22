@@ -8,16 +8,16 @@
       <template #item.actions="{ item }">
         <row-actions
           :disabled="loading"
-          :delete-tooltip="$t('eth_address_book.actions.delete.tooltip')"
-          :edit-tooltip="$t('eth_address_book.actions.edit.tooltip')"
+          :delete-tooltip="tc('eth_address_book.actions.delete.tooltip')"
+          :edit-tooltip="tc('eth_address_book.actions.edit.tooltip')"
           @delete-click="pending = item"
-          @edit-click="$emit('edit', item)"
+          @edit-click="edit(item)"
         />
       </template>
     </data-table>
     <confirm-dialog
-      :title="$t('eth_address_book.actions.delete.dialog.title')"
-      :message="$t('eth_address_book.actions.delete.dialog.message')"
+      :title="tc('eth_address_book.actions.delete.dialog.title')"
+      :message="tc('eth_address_book.actions.delete.dialog.message')"
       :display="showConfirmation"
       @confirm="deleteAddressBook"
       @cancel="dismiss"
@@ -36,6 +36,7 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
 import i18n from '@/i18n';
@@ -71,8 +72,8 @@ const addressBookDeletion = (location: Ref<EthAddressBookLocation>) => {
     set(pending, null);
   };
 
+  const { tc } = useI18n();
   const { notify } = useNotifications();
-
   const { deleteEthAddressBook } = useEthNamesStore();
 
   const deleteAddressBook = async () => {
@@ -84,12 +85,10 @@ const addressBookDeletion = (location: Ref<EthAddressBookLocation>) => {
       await deleteEthAddressBook(get(location), [address]);
     } catch (e: any) {
       const notification: NotificationPayload = {
-        title: i18n.t('eth_address_book.actions.delete.error.title').toString(),
-        message: i18n
-          .t('eth_address_book.actions.delete.error.description', {
-            message: e.message
-          })
-          .toString(),
+        title: tc('eth_address_book.actions.delete.error.title'),
+        message: tc('eth_address_book.actions.delete.error.description', 0, {
+          message: e.message
+        }).toString(),
         display: true,
         severity: Severity.ERROR
       };
@@ -115,12 +114,15 @@ export default defineComponent({
     },
     search: { required: false, type: String, default: '' }
   },
-  setup(props) {
+  emits: ['edit'],
+  setup(props, { emit }) {
     const { location, search } = toRefs(props);
     const ethNamesStore = useEthNamesStore();
     const { fetchEthAddressBook } = ethNamesStore;
     const { ethAddressBook } = toRefs(ethNamesStore);
     const loading = ref<boolean>(false);
+
+    const { tc } = useI18n();
 
     const data = computed<EthNamesEntries>(() => {
       return get(ethAddressBook)[get(location)];
@@ -136,6 +138,10 @@ export default defineComponent({
       );
     });
 
+    const edit = (item: EthNamesEntry) => {
+      emit('edit', item);
+    };
+
     onBeforeMount(async () => {
       set(loading, true);
       await fetchEthAddressBook(get(location));
@@ -146,7 +152,9 @@ export default defineComponent({
       loading,
       tableHeaders,
       filteredData,
-      ...addressBookDeletion(location)
+      ...addressBookDeletion(location),
+      edit,
+      tc
     };
   }
 });

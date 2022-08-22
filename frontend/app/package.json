@@ -29,7 +29,7 @@
   "main": "dist/background.js",
   "dependencies": {
     "@rotki/common": "1.0.0",
-    "@vue/composition-api": "1.4.6",
+    "@vue/composition-api": "1.7.0",
     "@vuelidate/core": "2.0.0-alpha.43",
     "@vuelidate/validators": "2.0.0-alpha.31",
     "@vueuse/core": "9.0.1",

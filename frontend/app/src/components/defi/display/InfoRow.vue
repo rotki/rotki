@@ -5,7 +5,7 @@
     </div>
     <slot>
       <amount-display
-        :fiat-currency="fiat ? 'USD' : null"
+        :fiat-currency="fiat ? 'USD' : undefined"
         :value="value"
         :loading="loading"
         :show-currency="fiat ? 'none' : 'ticker'"
