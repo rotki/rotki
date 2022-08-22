@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :bug:`4710` Fixes an issue where certain data importers were using outdated "source".
+* :bug:`4710` Users will again be able to import CSV from certain importers.
+* :bug:`824` Bisq importer will now use the correct amount in all the imported trades.
 
 * :release:`1.25.2 <2022-08-17>`
 * :feature:`-` The add button in blockchain accounts & balances is now bigger on larger screens.
