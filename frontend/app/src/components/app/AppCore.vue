@@ -33,18 +33,12 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { storeToRefs } from 'pinia';
-import {
-  computed,
-  defineAsyncComponent,
-  defineComponent,
-  onBeforeMount,
-  watch
-} from 'vue';
+import { computed, defineAsyncComponent, onBeforeMount, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useTheme } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
@@ -53,78 +47,66 @@ import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
 
-export default defineComponent({
-  name: 'AppCore',
-  components: {
-    AppDrawer: defineAsyncComponent(
-      () => import('@/components/app/AppDrawer.vue')
-    ),
-    AppSidebars: defineAsyncComponent(
-      () => import('@/components/app/AppSidebars.vue')
-    ),
-    AppIndicators: defineAsyncComponent(
-      () => import('@/components/app/AppIndicators.vue')
-    ),
-    AssetUpdate: defineAsyncComponent(
-      () => import('@/components/status/update/AssetUpdate.vue')
-    ),
-    NotificationPopup: defineAsyncComponent(
-      () => import('@/components/status/notifications/NotificationPopup.vue')
-    )
-  },
-  setup() {
-    const { loginComplete } = storeToRefs(useSessionStore());
-    const visibilityStore = useAreaVisibilityStore();
-    const { showDrawer, isMini } = storeToRefs(visibilityStore);
+const AppDrawer = defineAsyncComponent(
+  () => import('@/components/app/AppDrawer.vue')
+);
+const AppSidebars = defineAsyncComponent(
+  () => import('@/components/app/AppSidebars.vue')
+);
+const AppIndicators = defineAsyncComponent(
+  () => import('@/components/app/AppIndicators.vue')
+);
+const AssetUpdate = defineAsyncComponent(
+  () => import('@/components/status/update/AssetUpdate.vue')
+);
+const NotificationPopup = defineAsyncComponent(
+  () => import('@/components/status/notifications/NotificationPopup.vue')
+);
 
-    const { isMobile, appBarColor } = useTheme();
+const { loginComplete } = storeToRefs(useSessionStore());
+const visibilityStore = useAreaVisibilityStore();
+const { showDrawer, isMini } = storeToRefs(visibilityStore);
 
-    const small = computed(() => get(showDrawer) && get(isMini));
-    const expanded = computed(
-      () => get(showDrawer) && !get(isMini) && !get(isMobile)
-    );
-    const { language } = storeToRefs(useFrontendSettingsStore());
-    const { overall } = storeToRefs(useStatisticsStore());
+const { isMobile, appBarColor } = useTheme();
 
-    const { updateTray } = useInterop();
+const small = computed(() => get(showDrawer) && get(isMini));
+const expanded = computed(
+  () => get(showDrawer) && !get(isMini) && !get(isMobile)
+);
+const { language } = storeToRefs(useFrontendSettingsStore());
+const { overall } = storeToRefs(useStatisticsStore());
 
-    watch(overall, overall => {
-      if (overall.percentage === '-') {
-        return;
-      }
-      updateTray(overall);
-    });
+const { updateTray } = useInterop();
 
-    onBeforeMount(() => {
-      Chart.defaults.font.family = 'Roboto';
-      Chart.register(...registerables);
-      Chart.register(zoomPlugin);
-    });
+const toggleDrawer = visibilityStore.toggleDrawer;
 
-    const { locale } = useI18n();
-
-    onBeforeMount(() => {
-      if (get(language) !== get(locale)) {
-        setLanguage(get(language));
-      }
-    });
-
-    const setLanguage = (language: string) => {
-      set(locale, language);
-    };
-
-    watch(language, language => {
-      setLanguage(language);
-    });
-
-    return {
-      small,
-      expanded,
-      appBarColor,
-      loginComplete,
-      toggleDrawer: visibilityStore.toggleDrawer
-    };
+watch(overall, overall => {
+  if (overall.percentage === '-') {
+    return;
   }
+  updateTray(overall);
+});
+
+onBeforeMount(() => {
+  Chart.defaults.font.family = 'Roboto';
+  Chart.register(...registerables);
+  Chart.register(zoomPlugin);
+});
+
+const { locale } = useI18n();
+
+onBeforeMount(() => {
+  if (get(language) !== get(locale)) {
+    setLanguage(get(language));
+  }
+});
+
+const setLanguage = (language: string) => {
+  set(locale, language);
+};
+
+watch(language, language => {
+  setLanguage(language);
 });
 </script>
 

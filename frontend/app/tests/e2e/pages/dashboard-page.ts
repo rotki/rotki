@@ -28,6 +28,8 @@ export class DashboardPage {
   }
 
   getBlockchainBalances() {
+    cy.get('.dashboard__summary-card__blockchain').should('be.visible');
+    cy.get('[data-cy=blockchain-balances]').should('not.be.empty');
     const blockchainBalances = [
       { blockchain: 'Ethereum', symbol: Blockchain.ETH, renderedValue: Zero },
       { blockchain: 'Bitcoin', symbol: Blockchain.BTC, renderedValue: Zero }
@@ -69,6 +71,8 @@ export class DashboardPage {
   }
 
   getLocationBalances() {
+    cy.get('.dashboard__summary-card__manual').should('be.visible');
+    cy.get('[data-cy=manual-balances]').should('not.be.empty');
     const balanceLocations = [
       { location: 'blockchain', renderedValue: Zero },
       { location: 'banks', renderedValue: Zero },

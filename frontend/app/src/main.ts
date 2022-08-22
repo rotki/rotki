@@ -19,8 +19,9 @@ import i18n from './i18n';
 import router from './router';
 import './utils/logging';
 
+const isDevelopment = checkIfDevelopment() && !import.meta.env.VITE_TEST;
 Vue.config.productionTip = false;
-Vue.config.devtools = checkIfDevelopment() && !import.meta.env.VITE_TEST;
+Vue.config.devtools = isDevelopment;
 
 Vue.use(Api);
 Vue.use(Interop);
@@ -38,7 +39,9 @@ Vue.directive('blur', {
 });
 
 const pinia = createPinia();
-pinia.use(storePiniaPlugins);
+if (isDevelopment) {
+  pinia.use(storePiniaPlugins);
+}
 
 new Vue({
   setup() {

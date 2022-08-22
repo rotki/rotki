@@ -1,4 +1,5 @@
 import { set } from '@vueuse/core';
+import * as VueUse from '@vueuse/core';
 import * as BigNumber from 'bignumber.js';
 import * as Chart from 'chart.js';
 import ChartJsPluginZoom from 'chartjs-plugin-zoom';
@@ -9,6 +10,7 @@ import { usePremiumStore } from '@/store/session/premium';
 
 export const setupPremium = async () => {
   window.Vue = Vue;
+  window.VueUse = VueUse;
   window.Chart = Chart;
   window['chartjs-plugin-zoom'] = ChartJsPluginZoom;
   window.Chart = Chart;

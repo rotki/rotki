@@ -73,7 +73,7 @@
                 </v-btn>
               </v-card-actions>
             </div>
-            <div v-else>
+            <div v-else data-cy="blockchain-balances">
               <blockchain-balance-card-list
                 v-for="total in blockchainSummary"
                 :key="total.chain"
@@ -112,7 +112,7 @@
                 </v-btn>
               </v-card-actions>
             </div>
-            <div v-else>
+            <div v-else data-cy="manual-balances">
               <manual-balance-card-list
                 v-for="manualBalance in manualBalanceByLocation"
                 :key="manualBalance.location"

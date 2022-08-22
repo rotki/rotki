@@ -1,10 +1,11 @@
 import * as Chart from 'chart.js';
-import Vue, { VueConstructor } from 'vue';
+import Vue from 'vue';
 import PremiumLoading from '@/components/premium/PremiumLoading.vue';
 import PremiumLoadingError from '@/components/premium/PremiumLoadingError.vue';
 import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
 import { api } from '@/services/rotkehlchen-api';
 import { checkIfDevelopment } from '@/utils/env-utils';
+import { logger } from '@/utils/logging';
 
 function findComponents(): string[] {
   return Object.getOwnPropertyNames(window).filter(value =>
@@ -54,21 +55,23 @@ async function loadLibrary() {
   return library;
 }
 
-function load(name: string): Promise<VueConstructor> {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async resolve => {
+const load = async (name: string) => {
+  const error = PremiumLoadingError;
+  try {
     const library = await loadLibrary();
     if (library[name]) {
-      resolve(library[name]);
-    } else {
-      resolve(PremiumLoadingError as VueConstructor);
+      return library[name];
     }
-  });
-}
+    return error;
+  } catch (e: any) {
+    logger.error(e);
+    return error;
+  }
+};
 
 const createFactory = (
-  component: Promise<VueConstructor>,
-  options?: { loading?: VueConstructor; error?: VueConstructor }
+  component: Promise<any>,
+  options?: { loading?: any; error?: any }
 ) => ({
   component: component,
   loading: options?.loading ?? PremiumLoading,

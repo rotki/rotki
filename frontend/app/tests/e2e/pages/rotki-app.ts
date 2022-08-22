@@ -15,12 +15,14 @@ export class RotkiApp {
 
   createAccount(username: string, password: string = '1234') {
     cy.logout();
-    // simulate high scaling / low res by making a very small viewpoirt
+    // simulate high scaling / low res by making a very small viewport
     cy.get('.connection-loading__content').should('not.exist');
+    cy.get('[data-cy=account-management-forms]').should('be.visible');
+
     cy.get('[data-cy=account-management]').then($body => {
-      const button = $body.find('.login__button__new-account');
+      const button = $body.find('[data-cy=new-account]');
       if (button.length > 0) {
-        cy.get('.login__button__new-account').click();
+        cy.get('[data-cy=new-account]').scrollIntoView().click();
       }
     });
 
