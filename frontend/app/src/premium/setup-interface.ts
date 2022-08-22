@@ -101,9 +101,9 @@ const settings = (): SettingsApi => {
 export const usePremiumApi = (): PremiumInterface => ({
   useHostComponents: true,
   version: 16,
-  api: {
+  api: () => ({
     date,
     data: data(),
     settings: settings()
-  }
+  })
 });

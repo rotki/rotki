@@ -13,7 +13,7 @@ import { LocationData, NetValue, OwnedAssets, TimedAssetBalances, TimedBalances 
 export interface PremiumInterface {
   readonly useHostComponents: boolean;
   readonly version: number;
-  readonly api: PremiumApi;
+  readonly api: () => PremiumApi;
   readonly debug?: DebugSettings;
 }
 

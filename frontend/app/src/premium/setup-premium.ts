@@ -3,7 +3,7 @@ import * as BigNumber from 'bignumber.js';
 import * as Chart from 'chart.js';
 import ChartJsPluginZoom from 'chartjs-plugin-zoom';
 import { storeToRefs } from 'pinia';
-import Vue from 'vue';
+import * as Vue from 'vue';
 import * as zod from 'zod';
 import { usePremiumStore } from '@/store/session/premium';
 
