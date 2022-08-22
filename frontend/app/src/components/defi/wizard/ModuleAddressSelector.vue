@@ -69,9 +69,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from '@vue/composition-api';
 import { get, useCounter } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, onMounted } from 'vue';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleQueriedAddress from '@/components/defi/wizard/ModuleQueriedAddress.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';

@@ -101,14 +101,9 @@
 </template>
 <script lang="ts">
 import { Balance, BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';

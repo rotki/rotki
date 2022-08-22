@@ -38,8 +38,8 @@
   </card>
 </template>
 <script setup lang="ts">
-import { computed, ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, ref } from 'vue';
 
 const expanded = ref<boolean>(true);
 

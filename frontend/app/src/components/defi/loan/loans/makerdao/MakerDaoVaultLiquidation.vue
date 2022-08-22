@@ -62,13 +62,8 @@
   </stat-card>
 </template>
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';

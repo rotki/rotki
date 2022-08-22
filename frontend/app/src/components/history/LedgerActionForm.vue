@@ -140,16 +140,9 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  onMounted,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set, useLocalStorage } from '@vueuse/core';
 import dayjs from 'dayjs';
+import { defineComponent, onMounted, PropType, ref, toRefs, watch } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';

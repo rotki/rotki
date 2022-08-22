@@ -19,8 +19,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';

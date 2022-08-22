@@ -72,13 +72,8 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { EthTransactionEntry } from '@/store/history/types';
 import { toUnit, Unit } from '@/utils/calculation';
 

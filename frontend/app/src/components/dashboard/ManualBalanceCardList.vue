@@ -28,8 +28,8 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineAsyncComponent, defineComponent } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
+import { defineAsyncComponent, defineComponent } from 'vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toSentenceCase } from '@/utils/text';
 

@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
+import { computed, defineComponent } from 'vue';
 import { useInterop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';

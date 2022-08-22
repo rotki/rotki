@@ -26,8 +26,8 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { defineComponent } from 'vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { bigNumberify } from '@/utils/bignumbers';

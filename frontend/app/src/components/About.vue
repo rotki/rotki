@@ -105,8 +105,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { asyncComputed, get, useClipboard } from '@vueuse/core';
+import { computed, defineComponent, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';

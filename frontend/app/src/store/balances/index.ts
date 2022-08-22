@@ -6,10 +6,10 @@ import {
 } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
-import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { forEach } from 'lodash';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { computed, ref } from 'vue';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';

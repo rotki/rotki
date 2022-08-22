@@ -27,7 +27,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import { costBasisMethodData } from '@/store/reports/consts';
 export default defineComponent({
   name: 'CostBasisMethodSettings',

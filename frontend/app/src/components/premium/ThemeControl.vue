@@ -10,8 +10,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
+import { defineComponent } from 'vue';
 import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
 import { ThemeSwitch } from '@/premium/premium';
 import { usePremiumStore } from '@/store/session/premium';

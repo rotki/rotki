@@ -47,15 +47,10 @@
 
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useTheme } from '@/composables/common';
 import { truncateAddress, truncationPoints } from '@/filters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';

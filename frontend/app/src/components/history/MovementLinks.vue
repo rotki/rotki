@@ -12,13 +12,8 @@
 </template>
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import HashLink from '@/components/helper/HashLink.vue';
 import { AssetMovement } from '@/services/history/types';

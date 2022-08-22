@@ -65,6 +65,8 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineComponent,
@@ -72,9 +74,7 @@ import {
   PropType,
   ref,
   toRefs
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';

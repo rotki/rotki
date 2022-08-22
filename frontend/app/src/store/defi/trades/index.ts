@@ -1,8 +1,8 @@
 import { DexTrade } from '@rotki/common/lib/defi/dex';
-import { computed, ComputedRef } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { computed, ComputedRef } from 'vue';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { DexTrades } from '@/store/defi/types';

@@ -39,14 +39,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, ref, toRefs, watch } from 'vue';
 
 export default defineComponent({
   name: 'MessageDialog',

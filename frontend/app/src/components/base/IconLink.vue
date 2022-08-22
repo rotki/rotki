@@ -23,8 +23,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, toRefs } from 'vue';
 import { useTheme } from '@/composables/common';
 import { interop } from '@/electron-interop';
 

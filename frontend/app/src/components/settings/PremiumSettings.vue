@@ -101,9 +101,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { onMounted, Ref, ref } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';

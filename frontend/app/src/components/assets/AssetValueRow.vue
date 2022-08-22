@@ -46,8 +46,8 @@
   </v-row>
 </template>
 <script lang="ts">
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, toRefs } from 'vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { AssetPriceInfo } from '@/store/balances/types';

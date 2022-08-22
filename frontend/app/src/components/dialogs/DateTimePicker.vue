@@ -62,6 +62,9 @@
 </template>
 
 <script lang="ts">
+import { get, set } from '@vueuse/core';
+import dayjs from 'dayjs';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineComponent,
@@ -71,10 +74,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
-import dayjs from 'dayjs';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import { timezones } from '@/data/timezones';
 import i18n from '@/i18n';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

@@ -1,8 +1,8 @@
 import { AssetBalanceWithPrice, Balance, BigNumber } from '@rotki/common';
-import { computed, ComputedRef, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { forEach } from 'lodash';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { computed, ComputedRef, Ref, ref } from 'vue';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';

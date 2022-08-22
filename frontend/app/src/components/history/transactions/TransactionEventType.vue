@@ -53,13 +53,8 @@
   </div>
 </template>
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useTheme } from '@/composables/common';
 import { EthTransactionEventEntry } from '@/store/history/types';
 import { ActionDataEntry } from '@/store/types';

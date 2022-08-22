@@ -1,10 +1,10 @@
 import { AddressIndexed } from '@rotki/common';
 import { DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
-import { computed, ComputedRef, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { computed, ComputedRef, Ref, ref } from 'vue';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';

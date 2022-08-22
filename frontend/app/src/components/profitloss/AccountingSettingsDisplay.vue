@@ -116,13 +116,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import i18n from '@/i18n';
 import { costBasisMethodData } from '@/store/reports/consts';
 import { ActionDataEntry } from '@/store/types';

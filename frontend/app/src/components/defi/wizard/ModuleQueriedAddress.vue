@@ -15,16 +15,9 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  defineComponent,
-  PropType,
-  Ref,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';

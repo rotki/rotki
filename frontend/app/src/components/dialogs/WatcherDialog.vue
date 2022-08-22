@@ -154,6 +154,8 @@
 </template>
 
 <script lang="ts">
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineComponent,
@@ -162,9 +164,7 @@ import {
   Ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import i18n from '@/i18n';
 import {
   WatcherOpTypes,

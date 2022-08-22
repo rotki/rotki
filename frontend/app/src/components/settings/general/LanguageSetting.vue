@@ -21,9 +21,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { onMounted, ref } from 'vue';
 import { supportedLanguages } from '@/data/supported-language';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { SupportedLanguage } from '@/types/frontend-settings';

@@ -18,7 +18,7 @@
   </import-source>
 </template>
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import ImportSource from '@/components/import/ImportSource.vue';
 
 export default defineComponent({

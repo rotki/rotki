@@ -11,14 +11,14 @@
 </template>
 
 <script lang="ts">
+import { get, useIntervalFn } from '@vueuse/core';
 import {
   defineAsyncComponent,
   defineComponent,
   onBeforeMount,
   onUnmounted,
   watch
-} from '@vue/composition-api';
-import { get, useIntervalFn } from '@vueuse/core';
+} from 'vue';
 import { isSectionLoading, setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useTransactions } from '@/store/history';

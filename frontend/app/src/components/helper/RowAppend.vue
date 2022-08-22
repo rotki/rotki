@@ -19,12 +19,7 @@
   </tr>
 </template>
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 
 export default defineComponent({
   name: 'RowAppend',

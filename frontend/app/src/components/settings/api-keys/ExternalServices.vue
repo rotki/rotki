@@ -137,15 +137,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, onMounted, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import { default as i18nFn } from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useMainStore } from '@/store/main';
@@ -204,12 +203,10 @@ const save = async (serviceName: ExternalServiceName, key: string) => {
     set(loading, true);
     updateKeys(await api.setExternalServices(keys));
     setMessage({
-      title: i18nFn.t('external_services.set.success.title').toString(),
-      description: i18nFn
-        .t('external_services.set.success.message', {
-          serviceName
-        })
-        .toString(),
+      title: tc('external_services.set.success.title'),
+      description: tc('external_services.set.success.message', 0, {
+        serviceName
+      }),
       success: true
     });
     if (serviceName === 'loopring') {
@@ -217,12 +214,10 @@ const save = async (serviceName: ExternalServiceName, key: string) => {
     }
   } catch (e: any) {
     setMessage({
-      title: i18nFn.t('external_services.set.error.title').toString(),
-      description: i18nFn
-        .t('external_services.set.error.message', {
-          error: e.message
-        })
-        .toString(),
+      title: tc('external_services.set.error.title'),
+      description: tc('external_services.set.error.message', 0, {
+        error: e.message
+      }),
       success: false
     });
   }
@@ -241,12 +236,10 @@ const confirmDelete = async () => {
     updateKeys(await api.deleteExternalServices(exchangeName));
   } catch (e: any) {
     setMessage({
-      title: i18nFn.t('external_services.delete_error.title').toString(),
-      description: i18nFn
-        .t('external_services.delete_error.description', {
-          message: e.message
-        })
-        .toString(),
+      title: tc('external_services.delete_error.title'),
+      description: tc('external_services.delete_error.description', 0, {
+        message: e.message
+      }),
       success: false
     });
   }

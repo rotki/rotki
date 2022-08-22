@@ -34,17 +34,18 @@
 </template>
 
 <script lang="ts">
+import { get, set } from '@vueuse/core';
+import { Chart, registerables } from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineAsyncComponent,
   defineComponent,
   onBeforeMount,
   watch
-} from '@vue/composition-api';
-import { get } from '@vueuse/core';
-import { Chart, registerables } from 'chart.js';
-import zoomPlugin from 'chartjs-plugin-zoom';
-import { storeToRefs } from 'pinia';
+} from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useTheme } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
@@ -71,7 +72,7 @@ export default defineComponent({
       () => import('@/components/status/notifications/NotificationPopup.vue')
     )
   },
-  setup(_, { root }) {
+  setup() {
     const { loginComplete } = storeToRefs(useSessionStore());
     const visibilityStore = useAreaVisibilityStore();
     const { showDrawer, isMini } = storeToRefs(visibilityStore);
@@ -100,14 +101,16 @@ export default defineComponent({
       Chart.register(zoomPlugin);
     });
 
+    const { locale } = useI18n();
+
     onBeforeMount(() => {
-      if (get(language) !== root.$i18n.locale) {
+      if (get(language) !== get(locale)) {
         setLanguage(get(language));
       }
     });
 
     const setLanguage = (language: string) => {
-      root.$i18n.locale = language;
+      set(locale, language);
     };
 
     watch(language, language => {

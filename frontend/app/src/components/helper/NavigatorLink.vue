@@ -9,7 +9,7 @@
   </component>
 </template>
 <script lang="ts">
-import { defineComponent, PropType, toRefs } from '@vue/composition-api';
+import { defineComponent, PropType, toRefs } from 'vue';
 import { RawLocation } from 'vue-router';
 import { useRouter } from '@/composables/common';
 

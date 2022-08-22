@@ -16,13 +16,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useInterop } from '@/electron-interop';
 import { truncateAddress } from '@/filters';
 import { assert } from '@/utils/assertions';

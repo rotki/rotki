@@ -44,14 +44,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
 export interface TabContent {

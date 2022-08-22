@@ -51,6 +51,7 @@
   </div>
 </template>
 <script lang="ts">
+import { get, set } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -59,8 +60,7 @@ import {
   Ref,
   ref,
   toRefs
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+} from 'vue';
 import { DataTableHeader } from 'vuetify';
 import i18n from '@/i18n';
 import {

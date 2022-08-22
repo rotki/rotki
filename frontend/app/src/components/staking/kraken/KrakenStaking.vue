@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, Ref, toRefs } from '@vue/composition-api';
+import { defineComponent, Ref, toRefs } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import KrakenStakingEvents from '@/components/staking/kraken/KrakenStakingEvents.vue';
 import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';

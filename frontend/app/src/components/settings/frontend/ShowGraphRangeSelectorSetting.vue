@@ -16,9 +16,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { onMounted, ref } from 'vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const showGraphRangeSelector = ref<boolean>(true);

@@ -1,6 +1,6 @@
 import { BigNumber } from '@rotki/common';
-import { reactive, toRefs } from '@vue/composition-api';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { reactive, toRefs } from 'vue';
 import { getBnFormat } from '@/data/amount_formatter';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';

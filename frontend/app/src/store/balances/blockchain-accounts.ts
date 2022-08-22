@@ -6,10 +6,10 @@ import {
   Eth2ValidatorEntry,
   Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
-import { computed, Ref, ref, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { computed, Ref, ref, watch } from 'vue';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import {

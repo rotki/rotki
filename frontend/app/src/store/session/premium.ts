@@ -1,7 +1,7 @@
 import { Severity } from '@rotki/common/lib/messages';
-import { ref, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref, watch } from 'vue';
 import i18n from '@/i18n';
 import { setupPremium } from '@/premium/setup-premium';
 import { balanceKeys } from '@/services/consts';

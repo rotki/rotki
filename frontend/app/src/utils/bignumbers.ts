@@ -1,6 +1,6 @@
 import { Balance, BigNumber } from '@rotki/common';
-import { computed, Ref } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, Ref } from 'vue';
 
 export function bigNumberify(value: string | number) {
   return new BigNumber(value);

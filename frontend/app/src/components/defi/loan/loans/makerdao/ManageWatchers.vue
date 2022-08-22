@@ -36,15 +36,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';

@@ -85,9 +85,9 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get, set, useLocalStorage } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, ref } from 'vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import ThemeControl from '@/components/premium/ThemeControl.vue';

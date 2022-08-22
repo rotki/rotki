@@ -41,13 +41,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { tradeLocations } from '@/components/history/consts';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocationData } from '@/components/history/type';

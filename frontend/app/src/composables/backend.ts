@@ -1,5 +1,5 @@
-import { computed, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, onMounted, ref } from 'vue';
 import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/main';

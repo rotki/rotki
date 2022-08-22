@@ -17,8 +17,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { onMounted, ref } from 'vue';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
 const { scrambleData: enabled } = useSessionSettingsStore();

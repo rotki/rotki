@@ -109,6 +109,8 @@
 </template>
 
 <script lang="ts">
+import { get, set, useLocalStorage } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineAsyncComponent,
@@ -117,9 +119,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set, useLocalStorage } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import {

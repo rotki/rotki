@@ -1,9 +1,9 @@
 import { BigNumber } from '@rotki/common';
 import { ActionResult } from '@rotki/common/lib/data';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
-import { ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { ref } from 'vue';
 import { lastLogin } from '@/components/account-management/utils';
 import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';

@@ -57,11 +57,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { onMounted, ref } from 'vue';
 import { useValidation } from '@/composables/validation';
 import { Constraints } from '@/data/constraints';
 import i18n from '@/i18n';

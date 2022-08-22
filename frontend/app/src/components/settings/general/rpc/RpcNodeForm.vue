@@ -70,6 +70,9 @@
 </template>
 
 <script lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { between, required, requiredIf } from '@vuelidate/validators';
+import { get } from '@vueuse/core';
 import {
   defineComponent,
   onMounted,
@@ -77,10 +80,7 @@ import {
   reactive,
   toRefs,
   watch
-} from '@vue/composition-api';
-import useVuelidate from '@vuelidate/core';
-import { between, required, requiredIf } from '@vuelidate/validators';
-import { get } from '@vueuse/core';
+} from 'vue';
 import { EthereumRpcNode, getPlaceholderNode } from '@/types/settings';
 
 export default defineComponent({

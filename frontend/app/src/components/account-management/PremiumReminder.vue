@@ -36,12 +36,7 @@
   </v-card>
 </template>
 <script lang="ts">
-import {
-  defineComponent,
-  onBeforeMount,
-  onBeforeUnmount,
-  toRefs
-} from '@vue/composition-api';
+import { defineComponent, onBeforeMount, onBeforeUnmount, toRefs } from 'vue';
 
 export default defineComponent({
   name: 'PremiumReminder',

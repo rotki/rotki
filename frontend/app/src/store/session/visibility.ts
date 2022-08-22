@@ -1,7 +1,7 @@
 import { Nullable } from '@rotki/common';
-import { ref, watch } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref, watch } from 'vue';
 import { Pinned } from '@/store/session/types';
 
 export const useAreaVisibilityStore = defineStore('session/visibility', () => {

@@ -86,15 +86,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  Ref,
-  ref
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';

@@ -122,14 +122,8 @@
 
 <script lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  ref,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, onMounted, ref, watch } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';

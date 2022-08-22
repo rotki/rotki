@@ -77,15 +77,10 @@
 <script setup lang="ts">
 import { TimeUnit } from '@rotki/common/lib/settings';
 import { TimeFramePeriod, timeframes } from '@rotki/common/lib/settings/graphs';
-import {
-  computed,
-  defineAsyncComponent,
-  onMounted,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
+import { computed, defineAsyncComponent, onMounted, watch } from 'vue';
 import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
 import { usePremiumStore } from '@/store/session/premium';

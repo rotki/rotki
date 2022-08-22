@@ -28,8 +28,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
+import { defineComponent } from 'vue';
 import { useIgnoredAssetsStore } from '@/store/assets';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';

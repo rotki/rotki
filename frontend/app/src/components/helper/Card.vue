@@ -59,14 +59,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, onMounted, ref, toRefs } from 'vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 
 const Card = defineComponent({

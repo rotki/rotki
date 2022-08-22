@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount } from '@vue/composition-api';
+import { defineComponent, onBeforeMount } from 'vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';

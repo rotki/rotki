@@ -58,14 +58,8 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  onMounted,
-  reactive,
-  Ref,
-  ref
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { defineComponent, onMounted, reactive, Ref, ref } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceForm from '@/components/price-manager/PriceForm.vue';
 import PriceTable from '@/components/price-manager/PriceTable.vue';

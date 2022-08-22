@@ -17,11 +17,7 @@
 </template>
 
 <script lang="ts">
-import {
-  defineAsyncComponent,
-  defineComponent,
-  toRefs
-} from '@vue/composition-api';
+import { defineAsyncComponent, defineComponent, toRefs } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { useMainStore } from '@/store/main';
 

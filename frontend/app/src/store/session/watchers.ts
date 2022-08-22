@@ -1,6 +1,6 @@
-import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { computed, ref } from 'vue';
 import i18n from '@/i18n';
 import { Watcher, WatcherTypes } from '@/services/session/types';
 import { useWatchersApi } from '@/services/session/watchers-api';

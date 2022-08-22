@@ -48,9 +48,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { defineComponent, onMounted, ref } from 'vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { Defaults } from '@/data/defaults';
 import i18n from '@/i18n';

@@ -28,8 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { onMounted, ref } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useRoute } from '@/composables/common';
 import { routesRef } from '@/router/routes';

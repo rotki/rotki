@@ -12,9 +12,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineAsyncComponent } from 'vue';
 import { useRoute } from '@/composables/common';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';

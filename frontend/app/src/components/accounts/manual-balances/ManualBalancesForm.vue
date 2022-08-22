@@ -64,15 +64,8 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  PropType,
-  Ref,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue';
 import { IVueI18n } from 'vue-i18n';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';

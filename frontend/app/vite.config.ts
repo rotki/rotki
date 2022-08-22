@@ -1,16 +1,15 @@
 /// <reference types="vitest" />
 import { builtinModules } from 'module';
 import { join, resolve } from 'path';
+import vue from '@vitejs/plugin-vue2';
 import { VuetifyResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
-import ScriptSetup from 'unplugin-vue2-script-setup/vite';
 import { defineConfig, splitVendorChunkPlugin } from 'vite';
 
 import checker from 'vite-plugin-checker';
 // @ts-ignore
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
-import { createVuePlugin as vue } from 'vite-plugin-vue2';
 
 const PACKAGE_ROOT = __dirname;
 const envPath = process.env.VITE_PUBLIC_PATH;
@@ -30,7 +29,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(PACKAGE_ROOT, 'src'),
-      '~@': resolve(PACKAGE_ROOT, 'src')
+      '~@': resolve(PACKAGE_ROOT, 'src'),
+      ...(process.env.VITEST
+        ? {
+            vue: 'vue/dist/vue.runtime.mjs'
+          }
+        : {})
     }
   },
   // @ts-ignore
@@ -54,8 +58,9 @@ export default defineConfig({
   plugins: [
     splitVendorChunkPlugin(),
     vue(),
-    ScriptSetup(),
-    checker({ vueTsc: !process.env.CI }),
+    checker({
+      vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST)
+    }),
     Components({
       dts: true,
       include: [/\.vue$/, /\.vue\?vue/],

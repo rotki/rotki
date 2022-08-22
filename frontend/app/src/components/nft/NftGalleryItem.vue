@@ -83,13 +83,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import IconLink from '@/components/base/IconLink.vue';
 import { GalleryNft } from '@/store/session/types';

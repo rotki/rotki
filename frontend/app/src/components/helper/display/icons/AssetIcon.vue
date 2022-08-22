@@ -30,6 +30,7 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { get, set } from '@vueuse/core';
 import {
   computed,
   defineAsyncComponent,
@@ -37,8 +38,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+} from 'vue';
 import { currencies } from '@/data/currencies';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';

@@ -20,9 +20,9 @@ import {
   TimedAssetBalances,
   TimedBalances
 } from '@rotki/common/lib/statistics';
-import { computed, ComputedRef, Ref } from '@vue/composition-api';
 import { get, toRefs } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, ComputedRef, Ref } from 'vue';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';

@@ -82,16 +82,9 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  Ref,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, Ref, ref, toRefs } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import EditLocationDataSnapshotForm from '@/components/dashboard/EditLocationDataSnapshotForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';

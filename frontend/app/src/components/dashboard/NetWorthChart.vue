@@ -98,6 +98,15 @@ import {
   Timeframes
 } from '@rotki/common/lib/settings/graphs';
 import { NetValue } from '@rotki/common/lib/statistics';
+import { get, set } from '@vueuse/core';
+import {
+  Chart,
+  ChartConfiguration,
+  ChartOptions,
+  TooltipOptions
+} from 'chart.js';
+import dayjs from 'dayjs';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineAsyncComponent,
@@ -109,16 +118,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
-import {
-  Chart,
-  ChartConfiguration,
-  ChartOptions,
-  TooltipOptions
-} from 'chart.js';
-import dayjs from 'dayjs';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import { useTheme } from '@/composables/common';
 import { useGraph, useTooltip } from '@/composables/graphs';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

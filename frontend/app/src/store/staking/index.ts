@@ -5,11 +5,11 @@ import {
   Eth2Deposits,
   Eth2Details
 } from '@rotki/common/lib/staking/eth2';
-import { ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { omitBy } from 'lodash';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref } from 'vue';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';

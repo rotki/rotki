@@ -228,6 +228,8 @@
 
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineAsyncComponent,
@@ -236,9 +238,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import { DataTableHeader } from 'vuetify';
 import {
   MatchedKeyword,

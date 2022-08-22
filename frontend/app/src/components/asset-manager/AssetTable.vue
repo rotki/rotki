@@ -122,8 +122,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, ref } from '@vue/composition-api';
 import { get, set, useTimeoutFn } from '@vueuse/core';
+import { computed, defineComponent, PropType, ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';

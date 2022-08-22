@@ -72,8 +72,8 @@
   </v-dialog>
 </template>
 <script lang="ts">
-import { defineComponent, onMounted, ref, toRefs } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { defineComponent, onMounted, ref, toRefs } from 'vue';
 import EditBalancesSnapshotTable from '@/components/dashboard/EditBalancesSnapshotTable.vue';
 import EditLocationDataSnapshotTable from '@/components/dashboard/EditLocationDataSnapshotTable.vue';
 import EditSnapshotTotal from '@/components/dashboard/EditSnapshotTotal.vue';

@@ -1,4 +1,4 @@
-import { Ref } from '@vue/composition-api';
+import { Ref } from 'vue';
 import { PendingTask } from '@/services/types-api';
 import { Section } from '@/store/const';
 import { Module } from '@/types/modules';

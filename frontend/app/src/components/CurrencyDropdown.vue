@@ -54,9 +54,9 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get, set, useTimeoutFn } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { currencies } from '@/data/currencies';

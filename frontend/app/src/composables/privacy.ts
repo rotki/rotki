@@ -1,6 +1,6 @@
-import { computed } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
 import { PrivacyMode } from '@/store/session/types';
 import { useSessionSettingsStore } from '@/store/settings/session';
 

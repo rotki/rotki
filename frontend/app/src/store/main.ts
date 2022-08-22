@@ -1,8 +1,8 @@
 import { SemiPartial } from '@rotki/common';
 import { Message } from '@rotki/common/lib/messages';
-import { computed, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, ref } from 'vue';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { defiSections, Section, Status } from '@/store/const';

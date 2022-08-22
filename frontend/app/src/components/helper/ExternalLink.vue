@@ -3,8 +3,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { defineComponent, toRefs } from 'vue';
 import { interop } from '@/electron-interop';
 
 export default defineComponent({

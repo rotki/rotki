@@ -38,8 +38,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
+import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

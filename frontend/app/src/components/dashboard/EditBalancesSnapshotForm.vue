@@ -82,6 +82,8 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import {
   defineComponent,
   onBeforeMount,
@@ -89,9 +91,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import i18n from '@/i18n';

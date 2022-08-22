@@ -28,7 +28,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { setupNotifications } from '@/composables/notifications';
 import { setupTaskStatus } from '@/composables/tasks';

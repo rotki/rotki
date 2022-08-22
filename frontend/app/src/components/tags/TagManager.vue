@@ -78,9 +78,9 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';

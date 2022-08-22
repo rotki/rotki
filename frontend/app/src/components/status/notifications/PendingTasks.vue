@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+import { defineComponent, ref } from 'vue';
 import CollapsedPendingTasks from '@/components/status/notifications/CollapsedPendingTasks.vue';
 import NoTasksRunning from '@/components/status/notifications/NoTasksRunning.vue';
 import PendingTask from '@/components/status/notifications/PendingTask.vue';

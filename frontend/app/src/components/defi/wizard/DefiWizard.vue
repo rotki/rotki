@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from '@vue/composition-api';
+import { ref } from 'vue';
 import ModuleAddressSelector from '@/components/defi/wizard/ModuleAddressSelector.vue';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

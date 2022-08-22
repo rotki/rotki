@@ -1,6 +1,6 @@
-import { computed, reactive, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, reactive, toRefs } from 'vue';
 import { defaultGeneralSettings } from '@/data/factories';
 import { GeneralSettings } from '@/types/user';
 

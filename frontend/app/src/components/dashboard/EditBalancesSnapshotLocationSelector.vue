@@ -48,7 +48,7 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from 'vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 
 export default defineComponent({

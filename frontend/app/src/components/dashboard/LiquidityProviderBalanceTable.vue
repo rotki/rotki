@@ -96,10 +96,10 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { computed, onBeforeMount, ref, Ref, watch } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { isEqual } from 'lodash';
 import { storeToRefs } from 'pinia';
+import { computed, onBeforeMount, ref, Ref, watch } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import LiquidityProviderBalanceDetails from '@/components/dashboard/LiquidityProviderBalanceDetails.vue';

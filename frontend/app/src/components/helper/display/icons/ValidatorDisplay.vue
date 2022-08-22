@@ -20,13 +20,8 @@
 
 <script lang="ts">
 import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { truncateAddress } from '@/filters';
 
 export default defineComponent({

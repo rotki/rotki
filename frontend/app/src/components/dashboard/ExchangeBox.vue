@@ -27,11 +27,7 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import {
-  defineAsyncComponent,
-  defineComponent,
-  PropType
-} from '@vue/composition-api';
+import { defineAsyncComponent, defineComponent, PropType } from 'vue';
 import { exchangeName } from '@/components/history/consts';
 import { TradeLocation } from '@/services/history/types';
 

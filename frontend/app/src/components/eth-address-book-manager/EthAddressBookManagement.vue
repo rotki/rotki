@@ -97,8 +97,8 @@
   </v-container>
 </template>
 <script lang="ts">
-import { computed, defineComponent, ref } from '@vue/composition-api';
 import { get, set, useTimeoutFn } from '@vueuse/core';
+import { computed, defineComponent, ref } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import EthAddressBookForm from '@/components/eth-address-book-manager/EthAddressBookForm.vue';
 import EthAddressBookTable from '@/components/eth-address-book-manager/EthAddressBookTable.vue';

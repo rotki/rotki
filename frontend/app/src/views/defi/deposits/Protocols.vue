@@ -4,7 +4,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import Deposits from '@/components/defi/Deposits.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import { useModules } from '@/composables/session';

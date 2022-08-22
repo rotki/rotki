@@ -149,9 +149,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineAsyncComponent } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';

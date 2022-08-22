@@ -113,6 +113,7 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
+import { get, set } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -121,8 +122,7 @@ import {
   Ref,
   ref,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+} from 'vue';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';

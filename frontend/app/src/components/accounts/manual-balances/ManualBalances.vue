@@ -67,15 +67,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  Ref,
-  ref
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, onMounted, Ref, ref } from 'vue';
 import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
 import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';

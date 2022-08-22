@@ -178,18 +178,18 @@
 <script lang="ts">
 import { Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
-import { defineAsyncComponent } from '@vue/runtime-dom';
 import { get } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { storeToRefs } from 'pinia';
+import {
+  computed,
+  defineComponent,
+  defineAsyncComponent,
+  PropType,
+  ref,
+  toRefs
+} from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import { useTheme } from '@/composables/common';

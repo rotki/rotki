@@ -1,4 +1,3 @@
-import * as CompositionAPI from '@vue/composition-api';
 import { set } from '@vueuse/core';
 import * as BigNumber from 'bignumber.js';
 import * as Chart from 'chart.js';
@@ -13,7 +12,6 @@ export const setupPremium = async () => {
   window.Chart = Chart;
   window['chartjs-plugin-zoom'] = ChartJsPluginZoom;
   window.Chart = Chart;
-  window['@vue/composition-api'] = CompositionAPI;
   window.zod = zod;
   window.bn = BigNumber;
   const { componentsLoaded } = storeToRefs(usePremiumStore());

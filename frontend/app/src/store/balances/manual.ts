@@ -1,7 +1,7 @@
 import { BigNumber } from '@rotki/common';
-import { computed, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { computed, Ref, ref } from 'vue';
 import i18n from '@/i18n';
 import {
   BalanceType,

@@ -106,6 +106,8 @@
 </template>
 <script lang="ts">
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import {
   computed,
   defineComponent,
@@ -113,9 +115,7 @@ import {
   onBeforeMount,
   ref,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
+} from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';

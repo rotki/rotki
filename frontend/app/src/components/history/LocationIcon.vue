@@ -31,13 +31,8 @@
   </span>
 </template>
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { TradeLocationData } from '@/components/history/type';
 

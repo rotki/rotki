@@ -81,7 +81,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import i18n from '@/i18n';
 import { useNotifications } from '@/store/notifications';
 import { downloadFileByUrl } from '@/utils/download';

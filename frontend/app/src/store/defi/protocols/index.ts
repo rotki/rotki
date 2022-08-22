@@ -11,10 +11,10 @@ import {
   AaveLendingEventType,
   isAaveLiquidationEvent
 } from '@rotki/common/lib/defi/aave';
-import { computed, ComputedRef } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { computed, ComputedRef } from 'vue';
 import { getPremium } from '@/composables/session';
 import { truncateAddress } from '@/filters';
 import { ProtocolVersion } from '@/services/defi/consts';

@@ -100,16 +100,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  Ref,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, Ref, ref, toRefs } from 'vue';
 import { IVueI18n } from 'vue-i18n';
 import { DataTableHeader } from 'vuetify';
 import RefreshButton from '@/components/helper/RefreshButton.vue';

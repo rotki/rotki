@@ -29,13 +29,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';

@@ -1,4 +1,4 @@
-import { Ref } from "@vue/composition-api";
+import { Ref } from "vue";
 import VueI18n from 'vue-i18n';
 import { SupportedAsset } from "../data";
 import { ProfitLossModel } from "../defi";

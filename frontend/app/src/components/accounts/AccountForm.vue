@@ -72,6 +72,7 @@
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
+import { get, set } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -80,8 +81,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+} from 'vue';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';

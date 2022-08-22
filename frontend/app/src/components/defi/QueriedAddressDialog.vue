@@ -99,16 +99,9 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  Ref,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { set, get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, Ref, ref, toRefs } from 'vue';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';

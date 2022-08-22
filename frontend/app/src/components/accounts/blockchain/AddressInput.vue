@@ -49,6 +49,7 @@
 </template>
 
 <script lang="ts">
+import { get, set } from '@vueuse/core';
 import {
   computed,
   defineComponent,
@@ -57,8 +58,7 @@ import {
   ref,
   toRefs,
   watch
-} from '@vue/composition-api';
-import { get, set } from '@vueuse/core';
+} from 'vue';
 import i18n from '@/i18n';
 import { trimOnPaste } from '@/utils/event';
 

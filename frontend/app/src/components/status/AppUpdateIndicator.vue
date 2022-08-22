@@ -10,14 +10,9 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  watch
-} from '@vue/composition-api';
 import { get, set, useIntervalFn } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, onMounted, watch } from 'vue';
 import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';

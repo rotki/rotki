@@ -1,4 +1,4 @@
-import { Ref } from '@vue/composition-api';
+import { Ref } from 'vue';
 import { UserDbBackup } from '@/services/backup/types';
 
 export const getFilepath = (db: UserDbBackup, directory: Ref<string>) => {

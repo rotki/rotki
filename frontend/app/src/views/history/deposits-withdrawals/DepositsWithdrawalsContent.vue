@@ -123,17 +123,10 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  Ref,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { dropRight } from 'lodash';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, PropType, Ref, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';

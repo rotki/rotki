@@ -53,14 +53,8 @@
 
 <script lang="ts">
 import { SupportedAsset } from '@rotki/common/lib/data';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
 import { get, set, useTimeoutFn } from '@vueuse/core';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';

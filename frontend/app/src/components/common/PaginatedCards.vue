@@ -17,15 +17,8 @@
 </template>
 
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import { useTheme } from '@/composables/common';
 
 type GetKey = (item: any) => string;

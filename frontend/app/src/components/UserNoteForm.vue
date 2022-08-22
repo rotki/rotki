@@ -20,17 +20,10 @@
   </v-form>
 </template>
 <script lang="ts">
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from '@vue/composition-api';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
+import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import { useValidation } from '@/composables/validation';
 import i18n from '@/i18n';
 import { UserNote } from '@/types/notes';

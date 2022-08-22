@@ -1,5 +1,4 @@
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
-import { computed, reactive, toRefs } from '@vue/composition-api';
 import {
   createSharedComposable,
   get,
@@ -7,6 +6,7 @@ import {
   useLocalStorage
 } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, reactive, toRefs } from 'vue';
 import { PrivacyMode } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
 

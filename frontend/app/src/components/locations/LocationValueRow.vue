@@ -21,9 +21,9 @@
 </template>
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, toRefs } from 'vue';
 import { useBalancesStore } from '@/store/balances';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Zero } from '@/utils/bignumbers';

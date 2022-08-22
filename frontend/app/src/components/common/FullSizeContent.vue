@@ -12,8 +12,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
 import { set } from '@vueuse/core';
+import { defineComponent, onMounted, ref } from 'vue';
 import { useProxy } from '@/composables/common';
 
 export default defineComponent({

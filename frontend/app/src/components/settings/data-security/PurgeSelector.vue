@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from 'vue';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import { tradeLocations } from '@/components/history/consts';

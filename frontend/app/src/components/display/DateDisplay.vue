@@ -5,9 +5,9 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, defineComponent, toRefs } from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
