@@ -249,8 +249,7 @@ const TransactionEventForm = defineComponent({
   },
   emits: ['input'],
   setup(props, { emit }) {
-    const { edit, transaction } = toRefs(props);
-    const { saveData } = props;
+    const { edit, transaction, saveData } = toRefs(props);
 
     const input = (valid: boolean) => emit('input', valid);
 
@@ -425,9 +424,10 @@ const TransactionEventForm = defineComponent({
         counterparty: get(counterparty) ? get(counterparty) : undefined
       };
 
+      const save = get(saveData);
       const result = !get(identifier)
-        ? await saveData(transactionEventPayload)
-        : await saveData({
+        ? await save(transactionEventPayload)
+        : await save({
             ...transactionEventPayload,
             identifier: get(identifier)!
           });

@@ -6,12 +6,9 @@
     :subtitle="tc('error_screen.message')"
     :message="message"
   >
-    <v-btn
-      depressed
-      color="primary"
-      @click="terminate()"
-      v-text="tc('error_screen.terminate')"
-    />
+    <v-btn depressed color="primary" @click="terminate()">
+      {{ tc('error_screen.terminate') }}
+    </v-btn>
   </error-screen>
 </template>
 

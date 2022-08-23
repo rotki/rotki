@@ -16,7 +16,7 @@
         {{ title }}
         <v-spacer />
         <copy-button
-          :tooltip="$t('error_screen.copy_tooltip')"
+          :tooltip="tc('error_screen.copy_tooltip')"
           :value="errorText"
         />
       </v-card-title>
@@ -46,6 +46,7 @@
 <script lang="ts">
 import { get } from '@vueuse/core';
 import { computed, defineComponent, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import CopyButton from '@/components/helper/CopyButton.vue';
 
 export default defineComponent({
@@ -62,6 +63,8 @@ export default defineComponent({
   setup(props) {
     const { error, message } = toRefs(props);
 
+    const { tc } = useI18n();
+
     const errorText = computed(() => {
       const errorText = get(error);
       const errorMessage = get(message);
@@ -69,7 +72,8 @@ export default defineComponent({
     });
 
     return {
-      errorText
+      errorText,
+      tc
     };
   }
 });

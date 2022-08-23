@@ -105,7 +105,7 @@ export default defineComponent({
   components: {
     RangeSelector
   },
-  emits: ['generate'],
+  emits: ['generate', 'export-data', 'import-data'],
   setup(_, { emit }) {
     const range = ref({ start: '', end: '' });
     const valid = ref<boolean>(false);

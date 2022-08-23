@@ -12,10 +12,10 @@
           @click="action(UPLOAD)"
         >
           <v-icon>mdi-cloud-upload</v-icon>
-          <span class="ml-2">{{ $t('common.actions.push') }}</span>
+          <span class="ml-2">{{ tc('common.actions.push') }}</span>
         </v-btn>
       </template>
-      <span>{{ $t('sync_buttons.upload_tooltip') }}</span>
+      <span>{{ tc('sync_buttons.upload_tooltip') }}</span>
     </v-tooltip>
 
     <v-tooltip top open-delay="400">
@@ -31,43 +31,36 @@
           @click="action(DOWNLOAD)"
         >
           <v-icon>mdi-cloud-download</v-icon>
-          <span class="ml-2">{{ $t('common.actions.pull') }}</span>
+          <span class="ml-2">{{ tc('common.actions.pull') }}</span>
         </v-btn>
       </template>
-      <span>{{ $t('sync_buttons.download_tooltip') }}</span>
+      <span>{{ tc('sync_buttons.download_tooltip') }}</span>
     </v-tooltip>
   </fragment>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import Fragment from '@/components/helper/Fragment';
-import { getPremium } from '@/composables/session';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
+import { usePremiumStore } from '@/store/session/premium';
 
-export default defineComponent({
-  name: 'SyncButtons',
-  components: { Fragment },
-  props: {
-    pending: { required: true, type: Boolean }
-  },
-  emits: ['action'],
-  setup(_, { emit }) {
-    const premium = getPremium();
-
-    const UPLOAD = SYNC_UPLOAD;
-    const DOWNLOAD = SYNC_DOWNLOAD;
-
-    const action = (_action: SyncAction) => {
-      emit('action', _action);
-    };
-
-    return {
-      premium,
-      UPLOAD,
-      DOWNLOAD,
-      action
-    };
-  }
+defineProps({
+  pending: { required: true, type: Boolean }
 });
+
+const emit = defineEmits<{
+  (event: 'action', action: SyncAction): void;
+}>();
+
+const { tc } = useI18n();
+
+const { premium } = storeToRefs(usePremiumStore());
+const UPLOAD: SyncAction = SYNC_UPLOAD;
+const DOWNLOAD: SyncAction = SYNC_DOWNLOAD;
+
+const action = (action: SyncAction) => {
+  emit('action', action);
+};
 </script>

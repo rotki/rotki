@@ -47,7 +47,9 @@
       </template>
       <template #item="{ item }">
         <template v-if="typeof item !== 'object'">
-          <v-list-item-content v-text="item" />
+          <v-list-item-content>
+            {{ item }}
+          </v-list-item-content>
         </template>
         <template v-else>
           <div>

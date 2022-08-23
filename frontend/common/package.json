@@ -41,6 +41,6 @@
     "zod": "3.12.0"
   },
   "peerDependencies": {
-    "vue": "2.7.9"
+    "vue": "2.7.10"
   }
 }

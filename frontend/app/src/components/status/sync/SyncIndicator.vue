@@ -33,7 +33,6 @@
             <div>
               <sync-buttons
                 :pending="pending"
-                :sync-action="syncAction"
                 @action="showConfirmation($event)"
               />
             </div>

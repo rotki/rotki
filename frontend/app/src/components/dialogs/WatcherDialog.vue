@@ -15,11 +15,11 @@
           <v-col cols="12">
             {{ message }}
           </v-col>
-          <v-col v-if="preselectWatcherType === ''" cols="12">
+          <v-col v-if="!preselectWatcherType" cols="12">
             <v-select
               v-model="watcherType"
               :items="watcherTypes"
-              :label="$t('watcher_dialog.labels.type')"
+              :label="tc('watcher_dialog.labels.type')"
               dense
               outlined
               required
@@ -30,11 +30,9 @@
               <v-col cols="5">
                 <v-divider />
               </v-col>
-              <v-col
-                class="pa-0 text-center"
-                cols="2"
-                v-text="$t('watcher_dialog.edit')"
-              />
+              <v-col class="pa-0 text-center" cols="2">
+                {{ tc('watcher_dialog.edit') }}
+              </v-col>
               <v-col cols="5">
                 <v-divider />
               </v-col>
@@ -48,7 +46,7 @@
                 <v-select
                   :filled="!existingWatchersEdit[watcher.identifier]"
                   :items="watcherOperations[watcherType]"
-                  :label="$t('watcher_dialog.labels.operation')"
+                  :label="tc('watcher_dialog.labels.operation')"
                   :readonly="!existingWatchersEdit[watcher.identifier]"
                   :value="loadedWatchers[key].args.op"
                   dense
@@ -73,10 +71,9 @@
               </v-col>
               <v-col class="d-flex align-center justify-space-between" cols="2">
                 <v-btn icon @click="editWatcher(loadedWatchers[key])">
-                  <v-icon
-                    small
-                    v-text="existingWatchersIcon(watcher.identifier)"
-                  />
+                  <v-icon small>
+                    {{ existingWatchersIcon(watcher.identifier) }}
+                  </v-icon>
                 </v-btn>
                 <v-btn icon @click="deleteWatcher(watcher.identifier)">
                   <v-icon small> mdi-delete </v-icon>
@@ -89,11 +86,9 @@
               <v-col cols="5">
                 <v-divider />
               </v-col>
-              <v-col
-                class="pa-0 text-center justify-center"
-                cols="2"
-                v-text="$t('watcher_dialog.add_watcher')"
-              />
+              <v-col class="pa-0 text-center justify-center" cols="2">
+                {{ tc('watcher_dialog.add_watcher') }}
+              </v-col>
               <v-col cols="5">
                 <v-divider />
               </v-col>
@@ -104,7 +99,7 @@
                   v-model="watcherOperation"
                   :disabled="!watcherType"
                   :items="watcherOperations[watcherType]"
-                  :label="$t('watcher_dialog.labels.operation')"
+                  :label="tc('watcher_dialog.labels.operation')"
                   dense
                   hide-details
                   outlined
@@ -146,294 +141,249 @@
           color="primary"
           class="watcher-dialog__buttons__close"
           @click="cancel()"
-          v-text="$t('common.actions.close')"
-        />
+        >
+          {{ tc('common.actions.close') }}
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
+import { computed, PropType, ref, Ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  Ref,
-  toRefs,
-  watch
-} from 'vue';
-import i18n from '@/i18n';
-import {
-  WatcherOpTypes,
   Watcher,
+  WatcherOpTypes,
   WatcherType,
   WatcherTypes
 } from '@/services/session/types';
 import { useWatchersStore } from '@/store/session/watchers';
 
-export default defineComponent({
-  name: 'WatcherDialog',
-  props: {
-    title: { required: true, type: String },
-    message: { required: true, type: String },
-    display: { required: true, type: Boolean },
-    watcherValueLabel: {
-      required: false,
-      type: String,
-      default: 'Watcher Value'
-    },
-    watcherContentId: {
-      required: false,
-      type: String,
-      default: null
-    },
-    preselectWatcherType: {
-      required: false,
-      type: String as PropType<WatcherTypes>,
-      default: ''
-    },
-    existingWatchers: {
-      required: false,
-      type: Array as PropType<Watcher<WatcherType>[]>,
-      default: () => []
-    }
+const props = defineProps({
+  title: { required: true, type: String },
+  message: { required: true, type: String },
+  display: { required: true, type: Boolean },
+  watcherValueLabel: {
+    required: false,
+    type: String,
+    default: 'Watcher Value'
   },
-  emits: ['cancel'],
-  setup(props, { emit }) {
-    const {
-      display,
-      preselectWatcherType,
-      existingWatchers,
-      watcherContentId
-    } = toRefs(props);
-    const watcherType: Ref<WatcherTypes | null> = ref(null);
-    const watcherOperation: Ref<WatcherOpTypes | null> = ref(null);
-    const watcherValue: Ref<string | null> = ref(null);
-    const validationMessage: Ref<string> = ref('');
-    const validationStatus: Ref<'success' | 'error' | ''> = ref('');
-    const existingWatchersEdit: Ref<Record<string, boolean>> = ref({});
-
-    let store = useWatchersStore();
-    const { watchers } = storeToRefs(store);
-    const { addWatchers, editWatchers, deleteWatchers } = store;
-
-    const loadedWatchers = computed(() => {
-      const id = get(watcherContentId)?.toString();
-      return get(watchers).filter(watcher => watcher.args.vault_id === id);
-    });
-
-    const watcherTypes = computed(() => [
-      {
-        text: i18n
-          .t('watcher_dialog.types.make_collateralization_ratio')
-          .toString(),
-        type: 'makervault_collateralization_ratio',
-        value: 'makervault_collateralization_ratio'
-      }
-    ]);
-
-    const watcherOperations = computed(() => ({
-      makervault_collateralization_ratio: [
-        {
-          op: 'gt',
-          value: 'gt',
-          text: i18n.t('watcher_dialog.ratio.gt').toString()
-        },
-        {
-          op: 'ge',
-          value: 'ge',
-          text: i18n.t('watcher_dialog.ratio.ge').toString()
-        },
-        {
-          op: 'lt',
-          value: 'lt',
-          text: i18n.t('watcher_dialog.ratio.lt').toString()
-        },
-        {
-          op: 'le',
-          value: 'le',
-          text: i18n.t('watcher_dialog.ratio.le').toString()
-        }
-      ]
-    }));
-
-    const existingWatchersIcon = (identifier: string): string => {
-      const edit = get(existingWatchersEdit);
-      return edit[identifier] ? 'mdi-check' : 'mdi-pencil';
-    };
-
-    const validateSettingChange = (
-      targetState: string,
-      message: string = '',
-      timeOut: number = 5500
-    ) => {
-      if (targetState === 'success' || targetState === 'error') {
-        setTimeout(() => {
-          set(validationMessage, message);
-          set(validationStatus, targetState);
-        }, 200);
-        setTimeout(() => {
-          set(validationMessage, '');
-          set(validationStatus, '');
-        }, timeOut);
-      }
-    };
-
-    const changeEditMode = (identifier: string) => {
-      const edit = get(existingWatchersEdit);
-      set(existingWatchersEdit, {
-        ...edit,
-        [identifier]: !edit[identifier]
-      });
-    };
-
-    const addWatcher = async () => {
-      const type = get(watcherType);
-      const value = get(watcherValue);
-      const operation = get(watcherOperation);
-      const contentId = get(watcherContentId);
-      if (!(type && value && operation && contentId)) {
-        return;
-      }
-
-      const watcherData: Omit<Watcher<WatcherType>, 'identifier'> = {
-        type: type,
-        args: {
-          ratio: value,
-          op: operation,
-          vault_id: contentId.toString()
-        }
-      };
-
-      try {
-        await addWatchers([watcherData]);
-        validateSettingChange(
-          'success',
-          i18n.t('watcher_dialog.add_success').toString()
-        );
-        clear();
-      } catch (e: any) {
-        validateSettingChange(
-          'error',
-          i18n.t('watcher_dialog.add_error', { message: e.message }).toString()
-        );
-      }
-    };
-
-    const editWatcher = async (watcher: Watcher<WatcherType>) => {
-      const edit = get(existingWatchersEdit);
-      if (!edit[watcher.identifier]) {
-        // If we're not in edit mode, just go into edit mode
-        changeEditMode(watcher.identifier);
-      } else {
-        // If we're in edit mode, check to see if the values have changed before
-        // sending an API call
-        const existingWatcherArgs = get(existingWatchers).find(
-          existingWatcher => existingWatcher.identifier === watcher.identifier
-        )!.args;
-        const modifiedWatcherArgs = watcher.args;
-
-        if (
-          existingWatcherArgs.op !== modifiedWatcherArgs.op ||
-          existingWatcherArgs.ratio !== modifiedWatcherArgs.ratio
-        ) {
-          try {
-            await editWatchers([watcher]);
-            validateSettingChange(
-              'success',
-              i18n.t('watcher_dialog.edit_success').toString()
-            );
-            changeEditMode(watcher.identifier);
-          } catch (e: any) {
-            validateSettingChange(
-              'error',
-              i18n
-                .t('watcher_dialog.edit_error', {
-                  message: e.message
-                })
-                .toString()
-            );
-          }
-        } else {
-          changeEditMode(watcher.identifier);
-        }
-      }
-    };
-
-    const deleteWatcher = async (identifier: string) => {
-      try {
-        await deleteWatchers([identifier]);
-        validateSettingChange(
-          'success',
-          i18n.t('watcher_dialog.delete_success').toString()
-        );
-        clear();
-      } catch (e: any) {
-        validateSettingChange(
-          'error',
-          i18n
-            .t('watcher_dialog.delete_error', {
-              message: e.message
-            })
-            .toString()
-        );
-      }
-    };
-
-    const clear = () => {
-      set(watcherValue, null);
-      set(watcherOperation, null);
-    };
-
-    watch(display, display => {
-      if (display) {
-        set(watcherType, get(preselectWatcherType));
-
-        const edit = { ...get(existingWatchersEdit) };
-        get(loadedWatchers).forEach(watcher => {
-          edit[watcher.identifier] = false;
-        });
-        set(existingWatchersEdit, edit);
-      } else {
-        set(watcherType, null);
-        set(existingWatchersEdit, {});
-      }
-    });
-
-    const cancel = () => {
-      emit('cancel');
-      const edit = { ...get(existingWatchersEdit) };
-      for (const index in edit) {
-        // Reset edit mode on all fields
-        edit[index] = false;
-      }
-      // Reset unsaved changes to the current saved state
-      set(existingWatchersEdit, edit);
-      clear();
-    };
-
-    return {
-      loadedWatchers,
-      watcherValue,
-      watcherType,
-      watcherTypes,
-      watcherOperation,
-      watcherOperations,
-      validationMessage,
-      validationStatus,
-      existingWatchersEdit,
-      addWatcher,
-      editWatcher,
-      deleteWatcher,
-      existingWatchersIcon,
-      clear,
-      cancel
-    };
+  watcherContentId: {
+    required: false,
+    type: String,
+    default: null
+  },
+  preselectWatcherType: {
+    required: false,
+    type: String as PropType<WatcherTypes>,
+    default: null
+  },
+  existingWatchers: {
+    required: false,
+    type: Array as PropType<Watcher<WatcherType>[]>,
+    default: () => []
   }
 });
+
+const emit = defineEmits(['cancel']);
+
+const { display, preselectWatcherType, existingWatchers, watcherContentId } =
+  toRefs(props);
+const watcherType: Ref<WatcherTypes | null> = ref(null);
+const watcherOperation: Ref<WatcherOpTypes | null> = ref(null);
+const watcherValue: Ref<string | null> = ref(null);
+const validationMessage: Ref<string> = ref('');
+const validationStatus: Ref<'success' | 'error' | ''> = ref('');
+const existingWatchersEdit: Ref<Record<string, boolean>> = ref({});
+
+const { tc } = useI18n();
+
+let store = useWatchersStore();
+const { watchers } = storeToRefs(store);
+const { addWatchers, editWatchers, deleteWatchers } = store;
+
+const loadedWatchers = computed(() => {
+  const id = get(watcherContentId)?.toString();
+  return get(watchers).filter(watcher => watcher.args.vault_id === id);
+});
+
+const watcherTypes = computed(() => [
+  {
+    text: tc('watcher_dialog.types.make_collateralization_ratio'),
+    type: 'makervault_collateralization_ratio',
+    value: 'makervault_collateralization_ratio'
+  }
+]);
+
+const watcherOperations = computed(() => ({
+  makervault_collateralization_ratio: [
+    {
+      op: 'gt',
+      value: 'gt',
+      text: tc('watcher_dialog.ratio.gt')
+    },
+    {
+      op: 'ge',
+      value: 'ge',
+      text: tc('watcher_dialog.ratio.ge')
+    },
+    {
+      op: 'lt',
+      value: 'lt',
+      text: tc('watcher_dialog.ratio.lt')
+    },
+    {
+      op: 'le',
+      value: 'le',
+      text: tc('watcher_dialog.ratio.le')
+    }
+  ]
+}));
+
+const existingWatchersIcon = (identifier: string): string => {
+  const edit = get(existingWatchersEdit);
+  return edit[identifier] ? 'mdi-check' : 'mdi-pencil';
+};
+
+const validateSettingChange = (
+  targetState: string,
+  message: string = '',
+  timeOut: number = 5500
+) => {
+  if (targetState === 'success' || targetState === 'error') {
+    setTimeout(() => {
+      set(validationMessage, message);
+      set(validationStatus, targetState);
+    }, 200);
+    setTimeout(() => {
+      set(validationMessage, '');
+      set(validationStatus, '');
+    }, timeOut);
+  }
+};
+
+const changeEditMode = (identifier: string) => {
+  const edit = get(existingWatchersEdit);
+  set(existingWatchersEdit, {
+    ...edit,
+    [identifier]: !edit[identifier]
+  });
+};
+
+const addWatcher = async () => {
+  const type = get(watcherType);
+  const value = get(watcherValue);
+  const operation = get(watcherOperation);
+  const contentId = get(watcherContentId);
+  if (!(type && value && operation && contentId)) {
+    return;
+  }
+
+  const watcherData: Omit<Watcher<WatcherType>, 'identifier'> = {
+    type: type,
+    args: {
+      ratio: value,
+      op: operation,
+      vault_id: contentId.toString()
+    }
+  };
+
+  try {
+    await addWatchers([watcherData]);
+    validateSettingChange('success', tc('watcher_dialog.add_success'));
+    clear();
+  } catch (e: any) {
+    validateSettingChange(
+      'error',
+      tc('watcher_dialog.add_error', 0, { message: e.message })
+    );
+  }
+};
+
+const editWatcher = async (watcher: Watcher<WatcherType>) => {
+  const edit = get(existingWatchersEdit);
+  if (!edit[watcher.identifier]) {
+    // If we're not in edit mode, just go into edit mode
+    changeEditMode(watcher.identifier);
+  } else {
+    // If we're in edit mode, check to see if the values have changed before
+    // sending an API call
+    const existingWatcherArgs = get(existingWatchers).find(
+      existingWatcher => existingWatcher.identifier === watcher.identifier
+    )!.args;
+    const modifiedWatcherArgs = watcher.args;
+
+    if (
+      existingWatcherArgs.op !== modifiedWatcherArgs.op ||
+      existingWatcherArgs.ratio !== modifiedWatcherArgs.ratio
+    ) {
+      try {
+        await editWatchers([watcher]);
+        validateSettingChange('success', tc('watcher_dialog.edit_success'));
+        changeEditMode(watcher.identifier);
+      } catch (e: any) {
+        validateSettingChange(
+          'error',
+          tc('watcher_dialog.edit_error', 0, {
+            message: e.message
+          })
+        );
+      }
+    } else {
+      changeEditMode(watcher.identifier);
+    }
+  }
+};
+
+const deleteWatcher = async (identifier: string) => {
+  try {
+    await deleteWatchers([identifier]);
+    validateSettingChange('success', tc('watcher_dialog.delete_success'));
+    clear();
+  } catch (e: any) {
+    validateSettingChange(
+      'error',
+      tc('watcher_dialog.delete_error', 0, {
+        message: e.message
+      })
+    );
+  }
+};
+
+const clear = () => {
+  set(watcherValue, null);
+  set(watcherOperation, null);
+};
+
+watch(display, display => {
+  if (display) {
+    set(watcherType, get(preselectWatcherType));
+
+    const edit = { ...get(existingWatchersEdit) };
+    get(loadedWatchers).forEach(watcher => {
+      edit[watcher.identifier] = false;
+    });
+    set(existingWatchersEdit, edit);
+  } else {
+    set(watcherType, null);
+    set(existingWatchersEdit, {});
+  }
+});
+
+const cancel = () => {
+  emit('cancel');
+  const edit = { ...get(existingWatchersEdit) };
+  for (const index in edit) {
+    // Reset edit mode on all fields
+    edit[index] = false;
+  }
+  // Reset unsaved changes to the current saved state
+  set(existingWatchersEdit, edit);
+  clear();
+};
 </script>
 
 <style lang="scss" scoped>

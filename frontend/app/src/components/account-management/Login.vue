@@ -2,7 +2,7 @@
   <v-slide-y-transition>
     <div class="login">
       <v-card-title>
-        {{ $t('login.title') }}
+        {{ tc('login.title') }}
       </v-card-title>
       <v-card-text class="pb-2">
         <v-form ref="form" v-model="valid">
@@ -13,7 +13,7 @@
             color="secondary"
             outlined
             single-line
-            :label="$t('login.label_username')"
+            :label="tc('login.label_username')"
             prepend-inner-icon="mdi-account"
             :rules="usernameRules"
             :disabled="
@@ -35,7 +35,7 @@
             required
             class="login__fields__password"
             color="secondary"
-            :label="$t('login.label_password')"
+            :label="tc('login.label_password')"
             prepend-icon="mdi-lock"
             @keypress.enter="login()"
           />
@@ -48,9 +48,9 @@
                 color="primary"
                 hide-details
                 class="mt-2 remember"
-                :label="$t('login.remember_username')"
+                :label="tc('login.remember_username')"
               />
-              <v-row v-if="$interop.isPackaged" class="pt-2" no-gutters>
+              <v-row v-if="isPackaged" class="pt-2" no-gutters>
                 <v-col cols="auto">
                   <v-checkbox
                     v-model="rememberPassword"
@@ -58,7 +58,7 @@
                     color="primary"
                     hide-details
                     class="mt-0 pt-0 remember"
-                    :label="$t('login.remember_password')"
+                    :label="tc('login.remember_password')"
                   />
                 </v-col>
                 <v-col>
@@ -67,7 +67,7 @@
                       <v-icon small v-on="on"> mdi-help-circle </v-icon>
                     </template>
                     <div class="remember__tooltip">
-                      {{ $t('login.remember_password_tooltip') }}
+                      {{ tc('login.remember_password_tooltip') }}
                     </div>
                   </v-tooltip>
                 </v-col>
@@ -86,7 +86,7 @@
                     <v-icon>mdi-server</v-icon>
                   </v-btn>
                 </template>
-                <span v-text="$t('login.custom_backend.tooltip')" />
+                <span v-text="tc('login.custom_backend.tooltip')" />
               </v-tooltip>
             </v-col>
           </v-row>
@@ -102,9 +102,9 @@
                     prepend-inner-icon="mdi-server"
                     :rules="customBackendRules"
                     :disabled="customBackendSaved"
-                    :label="$t('login.custom_backend.label')"
-                    :placeholder="$t('login.custom_backend.placeholder')"
-                    :hint="$t('login.custom_backend.hint')"
+                    :label="tc('login.custom_backend.label')"
+                    :placeholder="tc('login.custom_backend.placeholder')"
+                    :hint="tc('login.custom_backend.hint')"
                     @keypress.enter="saveCustomBackend"
                   />
                 </v-col>
@@ -129,7 +129,7 @@
                     class="mt-0"
                     hide-details
                     :disabled="customBackendSaved"
-                    :label="$t('login.custom_backend.session_only')"
+                    :label="tc('login.custom_backend.session_only')"
                   />
                 </v-col>
               </v-row>
@@ -146,7 +146,7 @@
               icon="mdi-cloud-download"
             >
               <div class="login__sync-error__header text-h6">
-                {{ $t('login.sync_error.title') }}
+                {{ tc('login.sync_error.title') }}
               </div>
               <div class="login__sync-error__body mt-2">
                 <div>
@@ -168,18 +168,18 @@
                     </li>
                   </ul>
                 </div>
-                <div class="mt-2">{{ $t('login.sync_error.question') }}</div>
+                <div class="mt-2">{{ tc('login.sync_error.question') }}</div>
               </div>
 
               <v-row no-gutters justify="end" class="mt-2">
                 <v-col cols="3" class="shrink">
                   <v-btn color="error" depressed @click="login('no')">
-                    {{ $t('common.actions.no') }}
+                    {{ tc('common.actions.no') }}
                   </v-btn>
                 </v-col>
                 <v-col cols="3" class="shrink">
                   <v-btn color="success" depressed @click="login('yes')">
-                    {{ $t('common.actions.yes') }}
+                    {{ tc('common.actions.yes') }}
                   </v-btn>
                 </v-col>
               </v-row>
@@ -205,7 +205,7 @@
                     color="primary"
                     @click="logout"
                   >
-                    {{ $t('login.logout') }}
+                    {{ tc('login.logout') }}
                   </v-btn>
                 </v-col>
               </v-row>
@@ -228,7 +228,7 @@
             :loading="loading"
             @click="login()"
           >
-            {{ $t('login.button_signin') }}
+            {{ tc('login.button_signin') }}
           </v-btn>
         </span>
         <v-divider class="my-4" />
@@ -238,7 +238,7 @@
             class="login__button__new-account font-weight-bold secondary--text"
             @click="newAccount()"
           >
-            {{ $t('login.button_new_account') }}
+            {{ tc('login.button_new_account') }}
           </a>
         </span>
       </v-card-actions>
@@ -258,14 +258,14 @@ import {
   toRefs,
   watch
 } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import {
   deleteBackendUrl,
   getBackendUrl,
   saveBackendUrl
 } from '@/components/account-management/utils';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { interop } from '@/electron-interop';
-import i18n from '@/i18n';
+import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
 import { SyncConflict } from '@/store/session/types';
 import { LoginCredentials, SyncApproval } from '@/types/login';
@@ -273,29 +273,6 @@ import { LoginCredentials, SyncApproval } from '@/types/login';
 const KEY_REMEMBER_USERNAME = 'rotki.remember_username';
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 const KEY_USERNAME = 'rotki.username';
-
-const customBackendRules = [
-  (v: string) =>
-    !!v || i18n.t('login.custom_backend.validation.non_empty').toString(),
-  (v: string) =>
-    (v &&
-      v.length < 300 &&
-      /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/.test(
-        v
-      )) ||
-    i18n.t('login.custom_backend.validation.url').toString()
-];
-
-const usernameRules = [
-  (v: string) => !!v || i18n.t('login.validation.non_empty_username'),
-  (v: string) =>
-    (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
-    i18n.t('login.validation.valid_username').toString()
-];
-
-const passwordRules = [
-  (v: string) => !!v || i18n.t('login.validation.non_empty_password').toString()
-];
 
 export default defineComponent({
   name: 'Login',
@@ -332,6 +309,33 @@ export default defineComponent({
     const savedRememberUsername = useLocalStorage(KEY_REMEMBER_USERNAME, null);
     const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
     const savedUsername = useLocalStorage(KEY_USERNAME, '');
+
+    const { tc } = useI18n();
+
+    const customBackendRules = computed(() => [
+      (v: string) => !!v || tc('login.custom_backend.validation.non_empty'),
+      (v: string) =>
+        (v &&
+          v.length < 300 &&
+          /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/.test(
+            v
+          )) ||
+        tc('login.custom_backend.validation.url')
+    ]);
+
+    const usernameRules = computed(() => [
+      (v: string) => !!v || tc('login.validation.non_empty_username'),
+      (v: string) =>
+        (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
+        tc('login.validation.valid_username')
+    ]);
+
+    const passwordRules = computed(() => [
+      (v: string) => !!v || tc('login.validation.non_empty_password')
+    ]);
+
+    const { clearPassword, getPassword, isPackaged, storePassword } =
+      useInterop();
 
     watch(username, () => {
       touched();
@@ -422,8 +426,8 @@ export default defineComponent({
       set(customBackendSessionOnly, sessionOnly);
       set(customBackendSaved, !!url);
 
-      if (interop.isPackaged && get(rememberPassword) && get(username)) {
-        const savedPassword = await interop.getPassword(get(username));
+      if (isPackaged && get(rememberPassword) && get(username)) {
+        const savedPassword = await getPassword(get(username));
 
         if (savedPassword) {
           set(password, savedPassword);
@@ -457,8 +461,8 @@ export default defineComponent({
 
       if (!remember) {
         set(savedRememberPassword, null);
-        if (interop.isPackaged) {
-          interop.clearPassword();
+        if (isPackaged) {
+          clearPassword();
         }
       } else {
         set(savedRememberPassword, 'true');
@@ -478,8 +482,8 @@ export default defineComponent({
         set(savedUsername, get(username));
       }
 
-      if (get(rememberPassword) && interop.isPackaged) {
-        interop.storePassword(get(username), get(password));
+      if (get(rememberPassword) && isPackaged) {
+        storePassword(get(username), get(password));
       }
     };
 
@@ -508,7 +512,9 @@ export default defineComponent({
       remoteLastModified,
       serverColor,
       saveCustomBackend,
-      clearCustomBackend
+      clearCustomBackend,
+      isPackaged,
+      tc
     };
   }
 });

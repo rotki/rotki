@@ -1,23 +1,23 @@
 <template>
   <card outlined-body class="mt-8">
-    <template #title> {{ $tc('ethereum_rpc_node_manager.title') }} </template>
+    <template #title> {{ tc('ethereum_rpc_node_manager.title') }} </template>
     <v-list max-height="300px" :class="$style.list" three-line class="py-0">
       <template v-for="(item, index) in nodes">
         <v-divider v-if="index !== 0" :key="index" />
-        <v-list-item :key="item.node" data-cy="ethereum-node" class="px-2">
+        <v-list-item :key="item.name" data-cy="ethereum-node" class="px-2">
           <div class="mr-2 pa-4 text-center d-flex flex-column align-center">
             <div>
               <v-tooltip v-if="!item.owned" top open-delay="400">
                 <template #activator="{ on, attrs }">
                   <v-icon v-bind="attrs" v-on="on"> mdi-earth </v-icon>
                 </template>
-                <span>{{ $tc('ethereum_rpc_node_manager.public_node') }}</span>
+                <span>{{ tc('ethereum_rpc_node_manager.public_node') }}</span>
               </v-tooltip>
               <v-tooltip v-else>
                 <template #activator="{ on, attrs }">
                   <v-icon v-bind="attrs" v-on="on">mdi-account-network</v-icon>
                 </template>
-                <span>{{ $tc('ethereum_rpc_node_manager.private_node') }}</span>
+                <span>{{ tc('ethereum_rpc_node_manager.private_node') }}</span>
               </v-tooltip>
             </div>
 
@@ -29,7 +29,7 @@
                   </v-icon>
                 </template>
                 <span>
-                  {{ $tc('ethereum_rpc_node_manager.connected.true') }}
+                  {{ tc('ethereum_rpc_node_manager.connected.true') }}
                 </span>
               </v-tooltip>
               <v-tooltip v-else top open-delay="400">
@@ -39,7 +39,7 @@
                   </v-icon>
                 </template>
                 <span>
-                  {{ $tc('ethereum_rpc_node_manager.connected.false') }}
+                  {{ tc('ethereum_rpc_node_manager.connected.false') }}
                 </span>
               </v-tooltip>
             </div>
@@ -53,17 +53,17 @@
               <div v-if="!isEtherscan(item)">
                 {{ item.endpoint }}
               </div>
-              <div v-else>{{ $t('ethereum_rpc_node_manager.etherscan') }}</div>
+              <div v-else>{{ tc('ethereum_rpc_node_manager.etherscan') }}</div>
               <div class="mt-1" :class="$style.weight">
                 <span v-if="!item.owned">
                   {{
-                    $tc('ethereum_rpc_node_manager.weight', 0, {
+                    tc('ethereum_rpc_node_manager.weight', 0, {
                       weight: item.weight
                     })
                   }}
                 </span>
                 <span v-else>
-                  {{ $t('ethereum_rpc_node_manager.private_node_hint') }}
+                  {{ tc('ethereum_rpc_node_manager.private_node_hint') }}
                 </span>
               </div>
             </v-list-item-subtitle>
@@ -79,10 +79,10 @@
               <v-col>
                 <row-action
                   :delete-tooltip="
-                    $tc('ethereum_rpc_node_manager.delete_tooltip')
+                    tc('ethereum_rpc_node_manager.delete_tooltip')
                   "
                   :delete-disabled="isEtherscan(item)"
-                  :edit-tooltip="$tc('ethereum_rpc_node_manager.edit_tooltip')"
+                  :edit-tooltip="tc('ethereum_rpc_node_manager.edit_tooltip')"
                   @edit-click="edit(item)"
                   @delete-click="confirmDelete = item"
                 />
@@ -99,14 +99,14 @@
         data-cy="add-node"
         @click="showForm = true"
       >
-        {{ $tc('ethereum_rpc_node_manager.add_button') }}
+        {{ tc('ethereum_rpc_node_manager.add_button') }}
       </v-btn>
     </template>
     <big-dialog
       :display="showForm"
-      :title="$tc('ethereum_rpc_node_manager.add_dialog.title')"
-      :primary-action="$tc('common.actions.save')"
-      :secondary-action="$tc('common.actions.cancel')"
+      :title="tc('ethereum_rpc_node_manager.add_dialog.title')"
+      :primary-action="tc('common.actions.save')"
+      :secondary-action="tc('common.actions.cancel')"
       :action-disabled="!valid || loading"
       :loading="loading"
       @confirm="save()"
@@ -120,10 +120,10 @@
       />
     </big-dialog>
     <confirm-dialog
-      :title="$tc('ethereum_rpc_node_manager.confirm.title')"
+      :title="tc('ethereum_rpc_node_manager.confirm.title')"
       :display="!!confirmDelete"
       :message="
-        $tc('ethereum_rpc_node_manager.confirm.message', 0, {
+        tc('ethereum_rpc_node_manager.confirm.message', 0, {
           node: confirmDelete?.name,
           endpoint: confirmDelete?.endpoint
         })
@@ -139,11 +139,11 @@ import { get, set } from '@vueuse/core';
 import { omit } from 'lodash';
 import { storeToRefs } from 'pinia';
 import { defineComponent, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RpcNodeForm from '@/components/settings/general/rpc/RpcNodeForm.vue';
 import { setupMessages } from '@/composables/common';
-import i18n from '@/i18n';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
@@ -170,6 +170,7 @@ export default defineComponent({
 
     const { notify } = useNotifications();
     const { setMessage } = setupMessages();
+    const { tc } = useI18n();
 
     const { connectedEthNodes } = storeToRefs(useSessionStore());
 
@@ -178,7 +179,7 @@ export default defineComponent({
         set(nodes, await api.fetchEthereumNodes());
       } catch (e: any) {
         notify({
-          title: i18n.tc('ethereum_rpc_node_manager.loading_error.title'),
+          title: tc('ethereum_rpc_node_manager.loading_error.title'),
           message: e.message
         });
       }
@@ -201,8 +202,8 @@ export default defineComponent({
         await loadNodes();
       } catch (e: any) {
         const errorTitle = editing
-          ? i18n.tc('ethereum_rpc_node_manager.edit_error.title')
-          : i18n.tc('ethereum_rpc_node_manager.add_error.title');
+          ? tc('ethereum_rpc_node_manager.edit_error.title')
+          : tc('ethereum_rpc_node_manager.add_error.title');
         const messages = deserializeApiErrorMessage(e.message);
         if (messages) {
           set(errors, messages);
@@ -255,7 +256,7 @@ export default defineComponent({
         await loadNodes();
       } catch (e: any) {
         setMessage({
-          title: i18n.tc('ethereum_rpc_node_manager.delete_error.title'),
+          title: tc('ethereum_rpc_node_manager.delete_error.title'),
           description: e.message,
           success: false
         });
@@ -274,7 +275,7 @@ export default defineComponent({
         await loadNodes();
       } catch (e: any) {
         setMessage({
-          title: i18n.tc('ethereum_rpc_node_manager.activate_error.title', 0, {
+          title: tc('ethereum_rpc_node_manager.activate_error.title', 0, {
             node: node.name
           }),
           description: e.message,
@@ -305,7 +306,8 @@ export default defineComponent({
       save,
       edit,
       deleteNode,
-      clear
+      clear,
+      tc
     };
   }
 });

@@ -54,18 +54,18 @@
         color="primary"
         :disabled="(editMode && currentValue === '') || loading"
         @click="saveHandler()"
-        v-text="
-          editMode ? $t('common.actions.save') : $t('common.actions.edit')
-        "
-      />
+      >
+        {{ editMode ? $t('common.actions.save') : $t('common.actions.edit') }}
+      </v-btn>
       <v-btn
         v-if="editMode && cancellable"
         class="service-key__buttons__cancel"
         depressed
         color="primary"
         @click="cancel()"
-        v-text="$t('common.actions.cancel')"
-      />
+      >
+        {{ $t('common.actions.cancel') }}
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>

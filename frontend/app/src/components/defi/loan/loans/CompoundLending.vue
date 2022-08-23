@@ -2,7 +2,7 @@
   <v-row>
     <v-col cols="12">
       <loan-header v-if="loan.owner" class="mt-8 mb-6" :owner="loan.owner">
-        {{ $t('compound_lending.header', { asset: symbol }) }}
+        {{ tc('compound_lending.header', 0, { asset: symbol }) }}
       </loan-header>
       <v-row no-gutters>
         <v-col cols="12" md="6" class="pe-md-4">
@@ -16,7 +16,7 @@
         <v-col cols="12">
           <premium-card
             v-if="!premium"
-            :title="$t('compound_lending.history')"
+            :title="tc('compound_lending.history')"
           />
           <compound-borrowing-details
             v-else
@@ -33,6 +33,7 @@
 <script lang="ts">
 import { get } from '@vueuse/core';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import CompoundCollateral from '@/components/defi/loan/loans/compound/CompoundCollateral.vue';
@@ -81,10 +82,13 @@ export default defineComponent({
       return asset ? getAssetSymbol(asset) : '';
     });
 
+    const { tc } = useI18n();
+
     return {
       premium,
       assets,
-      symbol
+      symbol,
+      tc
     };
   }
 });

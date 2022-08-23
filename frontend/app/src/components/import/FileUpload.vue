@@ -62,8 +62,9 @@
                   text
                   outlined
                   @click="clickSelect"
-                  v-text="tc('file_upload.change_file')"
-                />
+                >
+                  {{ tc('file_upload.change_file') }}
+                </v-btn>
               </div>
             </div>
             <div v-else>
@@ -78,8 +79,9 @@
                   text
                   outlined
                   @click="clickSelect"
-                  v-text="tc('file_upload.select_file')"
-                />
+                >
+                  {{ tc('file_upload.select_file') }}
+                </v-btn>
               </div>
             </div>
           </div>
@@ -130,7 +132,7 @@ export default defineComponent({
     uploaded: { required: false, type: Boolean, default: false },
     errorMessage: { required: false, type: String, default: '' }
   },
-  emits: ['selected'],
+  emits: ['selected', 'update:uploaded'],
   setup(props, { emit }) {
     const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
 

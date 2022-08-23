@@ -1,7 +1,7 @@
 <template>
   <div class="mt-12">
     <div class="text-h6">
-      {{ $t('frontend_settings.subtitle.refresh') }}
+      {{ tc('frontend_settings.subtitle.refresh') }}
     </div>
     <v-row class="mt-1">
       <v-col class="grow">
@@ -9,9 +9,9 @@
           #default="{ error, success, update }"
           setting="refreshPeriod"
           frontend-setting
-          :transform="value => (value ? parseInt(value) : value)"
+          :transform="transform"
           :error-message="
-            $tc('frontend_settings.validation.refresh_period.error')
+            tc('frontend_settings.validation.refresh_period.error')
           "
           @finished="resetRefreshPeriod"
         >
@@ -22,9 +22,9 @@
             type="number"
             :min="minRefreshPeriod"
             :max="maxRefreshPeriod"
-            :label="$t('frontend_settings.label.refresh')"
+            :label="tc('frontend_settings.label.refresh')"
             persistent-hint
-            :hint="$t('frontend_settings.hint.refresh')"
+            :hint="tc('frontend_settings.hint.refresh')"
             :success-messages="success"
             :error-messages="
               error || v$.refreshPeriod.$errors.map(e => e.$message)
@@ -38,16 +38,16 @@
           #default="{ update }"
           setting="refreshPeriod"
           frontend-setting
-          :transform="value => (value ? 30 : -1)"
+          :transform="transformSwitch"
           :error-message="
-            $tc('frontend_settings.validation.refresh_period.error')
+            tc('frontend_settings.validation.refresh_period.error')
           "
           @finished="resetRefreshPeriod"
         >
           <v-switch
             v-model="refreshEnabled"
             class="mt-3"
-            :label="$t('frontend_settings.label.refresh_enabled')"
+            :label="tc('frontend_settings.label.refresh_enabled')"
             @change="update"
           />
         </settings-option>
@@ -62,9 +62,9 @@ import { between, helpers, required } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useValidation } from '@/composables/validation';
 import { Constraints } from '@/data/constraints';
-import i18n from '@/i18n';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const refreshPeriod = ref<string>('');
@@ -73,21 +73,19 @@ const refreshEnabled = ref<boolean>(false);
 const minRefreshPeriod = 30;
 const maxRefreshPeriod = Constraints.MAX_MINUTES_DELAY;
 
+const { tc } = useI18n();
+
 const rules = {
   refreshPeriod: {
     required: helpers.withMessage(
-      i18n
-        .t('frontend_settings.validation.refresh_period.non_empty')
-        .toString(),
+      tc('frontend_settings.validation.refresh_period.non_empty'),
       required
     ),
     between: helpers.withMessage(
-      i18n
-        .t('frontend_settings.validation.refresh_period.invalid_period', {
-          start: minRefreshPeriod,
-          end: maxRefreshPeriod
-        })
-        .toString(),
+      tc('frontend_settings.validation.refresh_period.invalid_period', 0, {
+        start: minRefreshPeriod,
+        end: maxRefreshPeriod
+      }),
       between(minRefreshPeriod, maxRefreshPeriod)
     )
   }
@@ -105,6 +103,9 @@ const resetRefreshPeriod = () => {
   set(refreshEnabled, period > 0);
   set(refreshPeriod, get(refreshEnabled) ? period.toString() : '');
 };
+
+const transform = (value: string) => (value ? parseInt(value) : value);
+const transformSwitch = (value: boolean) => (value ? 30 : -1);
 
 onMounted(() => {
   resetRefreshPeriod();

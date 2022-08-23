@@ -11,9 +11,7 @@
         <v-col cols="auto" class="px-1">
           <refresh-button
             :loading="loading"
-            :tooltip="
-              $t('helpers.refresh_header.tooltip', { title: lowercaseTitle })
-            "
+            :tooltip="tc('helpers.refresh_header.tooltip', 0, tooltip)"
             @refresh="refresh()"
           />
         </v-col>
@@ -25,36 +23,27 @@
   </v-row>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, toRefs } from 'vue';
+import { computed, defineEmits, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 
-export default defineComponent({
-  name: 'RefreshHeader',
-  components: { RefreshButton },
-  props: {
-    title: { required: true, type: String },
-    loading: { required: true, type: Boolean }
-  },
-  emits: ['refresh'],
-  setup(props, { emit }) {
-    const { title } = toRefs(props);
-    const refresh = () => {
-      emit('refresh');
-    };
-    const lowercaseTitle = computed(() => {
-      return get(title).toLocaleLowerCase();
-    });
-    return {
-      refresh,
-      lowercaseTitle
-    };
-  },
-  computed: {
-    xsOnly(): boolean {
-      return this.$vuetify.breakpoint.xsOnly;
-    }
-  }
+const props = defineProps({
+  title: { required: true, type: String },
+  loading: { required: true, type: Boolean }
 });
+
+const emit = defineEmits(['refresh']);
+
+const { title } = toRefs(props);
+const { tc } = useI18n();
+
+const tooltip = computed(() => ({
+  title: get(title).toLocaleLowerCase()
+}));
+
+const refresh = () => {
+  emit('refresh');
+};
 </script>
