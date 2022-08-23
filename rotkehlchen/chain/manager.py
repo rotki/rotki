@@ -210,7 +210,7 @@ class BlockchainBalances:
         for btc_balance in self.btc.values():
             new_totals.assets[A_BTC] += btc_balance
         for bch_balance in self.bch.values():
-            new_totals.assets[A_BTC] += bch_balance
+            new_totals.assets[A_BCH] += bch_balance
         for ksm_balances in self.ksm.values():
             new_totals += ksm_balances
         for dot_balances in self.dot.values():
