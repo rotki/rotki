@@ -163,6 +163,13 @@ export const getAddressFromEvmIdentifier = (identifier?: string) => {
   return identifier.split(':')[2] ?? '';
 };
 
-export const createEvmIdentifierFromAddress = (address: string) => {
-  return `eip155:1/erc20:${address}`;
+export const createEvmIdentifierFromAddress = (
+  address: string,
+  chain: string = '1'
+) => {
+  return `eip155:${chain}/erc20:${address}`;
+};
+
+export const getValidSelectorFromEvmAddress = (address: string) => {
+  return address.replace(/[^a-z0-9]/gi, '');
 };

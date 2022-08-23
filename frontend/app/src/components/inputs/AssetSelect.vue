@@ -41,7 +41,11 @@
           :symbol="item.symbol"
         />
       </div>
-      <v-list-item-content :id="`asset-${item.identifier.toLocaleLowerCase()}`">
+      <v-list-item-content
+        :id="`asset-${getValidSelectorFromEvmAddress(
+          item.identifier.toLocaleLowerCase()
+        )}`"
+      >
         <v-list-item-title class="font-weight-medium">
           {{ item.symbol }}
         </v-list-item-title>
@@ -58,7 +62,7 @@ import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
-import { compareAssets } from '@/utils/assets';
+import { compareAssets, getValidSelectorFromEvmAddress } from '@/utils/assets';
 
 export default defineComponent({
   name: 'AssetSelect',
@@ -174,7 +178,8 @@ export default defineComponent({
       customFilter,
       search,
       assetText,
-      input
+      input,
+      getValidSelectorFromEvmAddress
     };
   }
 });

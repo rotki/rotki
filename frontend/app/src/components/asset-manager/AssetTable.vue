@@ -90,6 +90,7 @@
             <thead>
               <tr>
                 <th>{{ $t('common.address') }}</th>
+                <th>{{ $t('underlying_token_manager.tokens.token_kind') }}</th>
                 <th>{{ $t('underlying_token_manager.tokens.weight') }}</th>
               </tr>
             </thead>
@@ -98,6 +99,7 @@
                 <td class="grow">
                   <hash-link :text="token.address" full-address />
                 </td>
+                <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
                 <td class="shrink">
                   {{
                     $t('underlying_token_manager.tokens.weight_percentage', {

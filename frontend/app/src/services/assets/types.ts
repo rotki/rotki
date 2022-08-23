@@ -1,10 +1,15 @@
 import { AssetEntry, NumericString, BigNumber } from '@rotki/common';
-import { BaseAsset, SupportedAsset } from '@rotki/common/lib/data';
+import {
+  BaseAsset,
+  EvmTokenKindEnum,
+  SupportedAsset
+} from '@rotki/common/lib/data';
 import { z } from 'zod';
 import { CONFLICT_RESOLUTION } from '@/services/assets/consts';
 
 export const UnderlyingToken = z.object({
   address: z.string(),
+  tokenKind: EvmTokenKindEnum,
   weight: z.string()
 });
 
