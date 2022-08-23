@@ -26,7 +26,7 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
-from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubManager
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.modules import (
@@ -621,9 +621,26 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self.query_polkadot_balances(ignore_cache=ignore_cache)
         if should_query_avax:
             self.query_avax_balances(ignore_cache=ignore_cache)
+        if ignore_cache is True:
+            self.derive_new_addresses_from_xpubs(
+                should_derive_bch_xpubs=should_query_bch,
+                should_derive_btc_xpubs=should_query_btc,
+            )
 
         self.totals = self.balances.recalculate_totals()
         return self.get_balances_update()
+
+    def derive_new_addresses_from_xpubs(
+            self,
+            should_derive_btc_xpubs: bool = False,
+            should_derive_bch_xpubs: bool = False,
+    ) -> None:
+        """Derive new addresses from xpubs."""
+        xpub_manager = XpubManager(chain_manager=self)
+        if should_derive_btc_xpubs is True:
+            xpub_manager.check_for_new_xpub_addresses(blockchain=SupportedBlockchain.BITCOIN)
+        if should_derive_bch_xpubs is True:
+            xpub_manager.check_for_new_xpub_addresses(blockchain=SupportedBlockchain.BITCOIN_CASH)
 
     @protect_with_lock()
     @cache_response_timewise()

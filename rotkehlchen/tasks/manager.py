@@ -8,7 +8,6 @@ import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
@@ -28,14 +27,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-    ExchangeLocationID,
-    Location,
-    Optional,
-    SupportedBlockchain,
-    Timestamp,
-)
+from rotkehlchen.types import ChecksumEvmAddress, ExchangeLocationID, Location, Optional, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
@@ -226,17 +218,11 @@ class TaskManager():
         log.debug('Scheduling task for Xpub derivation')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
-            task_name='Derive new xpub addresses for BTC',
+            task_name='Derive new xpub addresses for BTC & BCH',
             exception_is_error=True,
-            method=XpubManager(self.chain_manager).check_for_new_xpub_addresses,
-            blockchain=SupportedBlockchain.BITCOIN,
-        )
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='Derive new xpub addresses for BCH',
-            exception_is_error=True,
-            method=XpubManager(self.chain_manager).check_for_new_xpub_addresses,
-            blockchain=SupportedBlockchain.BITCOIN_CASH,
+            method=self.chain_manager.derive_new_addresses_from_xpubs,
+            should_derive_btc_xpubs=True,
+            should_derive_bch_xpubs=True,
         )
         self.last_xpub_derivation_ts = now
 
