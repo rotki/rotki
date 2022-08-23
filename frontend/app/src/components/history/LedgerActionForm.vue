@@ -176,8 +176,7 @@ const LedgerActionForm = defineComponent({
   },
   emits: ['input'],
   setup(props, { emit }) {
-    const { edit } = toRefs(props);
-    const { saveData } = props;
+    const { edit, saveData } = toRefs(props);
 
     const input = (valid: boolean) => emit('input', valid);
 
@@ -266,9 +265,10 @@ const LedgerActionForm = defineComponent({
         notes: get(notes) ? get(notes) : undefined
       };
 
+      const save = get(saveData);
       const result = !get(id)
-        ? await saveData(ledgerActionPayload)
-        : await saveData({ ...ledgerActionPayload, identifier: get(id)! });
+        ? await save(ledgerActionPayload)
+        : await save({ ...ledgerActionPayload, identifier: get(id)! });
 
       if (result.success) {
         reset();

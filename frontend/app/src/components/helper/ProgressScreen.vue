@@ -8,8 +8,9 @@
           justify="center"
           class="font-weight-light"
           :class="$style.percentage"
-          v-text="$t('progress_screen.progress', { progress: percentage })"
-        />
+        >
+          {{ $t('progress_screen.progress', { progress: percentage }) }}
+        </v-row>
         <v-row align="center" justify="center" :class="$style.loader">
           <v-col cols="10">
             <v-progress-linear

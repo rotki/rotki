@@ -1,7 +1,7 @@
 <template>
   <tr class="tr">
     <td
-      :colspan="$vuetify.breakpoint.xsOnly ? 2 : colspan"
+      :colspan="currentBreakpoint.xsOnly ? 2 : colspan"
       class="upgrade-row font-weight-medium"
     >
       <i18n
@@ -22,8 +22,8 @@
         <template #link>
           <base-external-link
             class="ml-1"
-            :text="$t('upgrade_row.rotki_premium')"
-            :href="$interop.premiumURL"
+            :text="tc('upgrade_row.rotki_premium')"
+            :href="premiumURL"
           />
         </template>
         <template #from>
@@ -51,33 +51,33 @@
         <template #link>
           <base-external-link
             class="ml-1"
-            :text="$t('upgrade_row.rotki_premium')"
-            :href="$interop.premiumURL"
+            :text="tc('upgrade_row.rotki_premium')"
+            :href="premiumURL"
           />
         </template>
       </i18n>
     </td>
   </tr>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import { useTheme } from '@/composables/common';
+import { useInterop } from '@/electron-interop';
 
-export default defineComponent({
-  name: 'UpgradeRow',
-  components: {
-    BaseExternalLink
-  },
-  props: {
-    colspan: { required: true, type: Number },
-    label: { required: true, type: String },
-    total: { required: true, type: Number },
-    limit: { required: true, type: Number },
-    events: { required: false, type: Boolean, default: false },
-    timeStart: { required: false, type: Number, default: 0 },
-    timeEnd: { required: false, type: Number, default: 0 }
-  }
+defineProps({
+  colspan: { required: true, type: Number },
+  label: { required: true, type: String },
+  total: { required: true, type: Number },
+  limit: { required: true, type: Number },
+  events: { required: false, type: Boolean, default: false },
+  timeStart: { required: false, type: Number, default: 0 },
+  timeEnd: { required: false, type: Number, default: 0 }
 });
+
+const { tc } = useI18n();
+const { premiumURL } = useInterop();
+const { currentBreakpoint } = useTheme();
 </script>
 
 <style>

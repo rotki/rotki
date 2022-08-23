@@ -29,14 +29,14 @@
               </template>
               <span v-if="module.enabled">
                 {{
-                  $t('active_modules.view_addresses', {
+                  tc('active_modules.view_addresses', 0, {
                     name: name(module.identifier)
                   })
                 }}
               </span>
               <span v-else>
                 {{
-                  $t('active_modules.activate', {
+                  tc('active_modules.activate', 0, {
                     name: name(module.identifier)
                   })
                 }}
@@ -50,9 +50,11 @@
         @close="manageModule = null"
       />
       <confirm-dialog
-        :title="$t('active_modules.enable.title')"
+        :title="tc('active_modules.enable.title')"
         :message="
-          $t('active_modules.enable.description', { name: name(confirmEnable) })
+          tc('active_modules.enable.description', 0, {
+            name: name(confirmEnable)
+          })
         "
         :display="!!confirmEnable"
         @cancel="confirmEnable = null"
@@ -74,6 +76,7 @@ import {
   Ref,
   toRefs
 } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -150,6 +153,8 @@ export default defineComponent({
       return data?.icon ?? '';
     };
 
+    const { tc } = useI18n();
+
     onMounted(async () => {
       await fetchQueriedAddresses();
     });
@@ -162,7 +167,8 @@ export default defineComponent({
       onModulePress,
       enableModule,
       name,
-      icon
+      icon,
+      tc
     };
   }
 });

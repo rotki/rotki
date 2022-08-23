@@ -1,10 +1,10 @@
 <template>
   <setting-category>
     <template #title>
-      {{ $t('data_management.title') }}
+      {{ tc('data_management.title') }}
     </template>
     <template #subtitle>
-      {{ $t('data_management.subtitle') }}
+      {{ tc('data_management.subtitle') }}
     </template>
 
     <v-form ref="form">
@@ -22,8 +22,10 @@
     <confirm-dialog
       v-if="confirm"
       display
-      :title="$t('data_management.confirm.title')"
-      :message="$t('data_management.confirm.message', { source: sourceLabel })"
+      :title="tc('data_management.confirm.title')"
+      :message="
+        tc('data_management.confirm.message', 0, { source: sourceLabel })
+      "
       @confirm="purge(source)"
       @cancel="confirm = false"
     />
@@ -32,6 +34,7 @@
 <script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import PurgeSelector, {
   PurgeParams
@@ -39,7 +42,6 @@ import PurgeSelector, {
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { BaseMessage } from '@/components/settings/utils';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import {
   ALL_CENTRALIZED_EXCHANGES,
@@ -60,6 +62,8 @@ const pending = ref<boolean>(false);
 const sourceLabel = ref<string>('');
 
 const { purgeCache } = useSessionStore();
+
+const { tc } = useI18n();
 
 const showConfirmation = (source: PurgeParams) => {
   set(sourceLabel, source.text);
@@ -97,21 +101,17 @@ const purge = async (source: string) => {
     set(pending, true);
     await purgeSource(source);
     set(status, {
-      success: i18n
-        .t('data_management.success', {
-          source: get(sourceLabel)
-        })
-        .toString(),
+      success: tc('data_management.success', 0, {
+        source: get(sourceLabel)
+      }),
       error: ''
     });
     setTimeout(() => set(status, null), 5000);
   } catch (e: any) {
     set(status, {
-      error: i18n
-        .t('data_management.error', {
-          source: get(sourceLabel)
-        })
-        .toString(),
+      error: tc('data_management.error', 0, {
+        source: get(sourceLabel)
+      }),
       success: ''
     });
   } finally {

@@ -1,6 +1,6 @@
 <template>
   <card>
-    <template #title>{{ $t('change_password.title') }}</template>
+    <template #title>{{ tc('change_password.title') }}</template>
 
     <v-form ref="form">
       <v-alert
@@ -9,26 +9,27 @@
         type="warning"
         prominent
         outlined
-        v-text="$t('change_password.sync_warning')"
-      />
+      >
+        {{ tc('change_password.sync_warning') }}
+      </v-alert>
       <revealable-input
         v-model="currentPassword"
         class="user-security-settings__fields__current-password"
-        :label="$t('change_password.labels.password')"
+        :label="tc('change_password.labels.password')"
         :error-messages="v$.currentPassword.$errors.map(e => e.$message)"
         outlined
       />
       <revealable-input
         v-model="newPassword"
         class="user-security-settings__fields__new-password"
-        :label="$t('change_password.labels.new_password')"
+        :label="tc('change_password.labels.new_password')"
         :error-messages="v$.newPassword.$errors.map(e => e.$message)"
         outlined
       />
       <revealable-input
         v-model="newPasswordConfirm"
         class="user-security-settings__fields__new-password-confirm"
-        :label="$t('change_password.labels.confirm_password')"
+        :label="tc('change_password.labels.confirm_password')"
         prepend-icon="mdi-repeat"
         :error-messages="v$.newPasswordConfirm.$errors.map(e => e.$message)"
         outlined
@@ -43,8 +44,9 @@
         :loading="loading"
         :disabled="v$.$invalid || loading"
         @click="change()"
-        v-text="$t('change_password.button')"
-      />
+      >
+        {{ tc('change_password.button') }}
+      </v-btn>
     </template>
   </card>
 </template>
@@ -54,8 +56,8 @@ import { helpers, required, sameAs } from '@vuelidate/validators';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import i18n from '@/i18n';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
 
@@ -69,26 +71,28 @@ const newPasswordConfirm = ref('');
 const loading = ref(false);
 const form = ref();
 
+const { tc } = useI18n();
+
 const rules = {
   currentPassword: {
     required: helpers.withMessage(
-      i18n.t('change_password.validation.empty_password').toString(),
+      tc('change_password.validation.empty_password'),
       required
     )
   },
   newPassword: {
     required: helpers.withMessage(
-      i18n.t('change_password.validation.empty_password').toString(),
+      tc('change_password.validation.empty_password'),
       required
     )
   },
   newPasswordConfirm: {
     required: helpers.withMessage(
-      i18n.t('change_password.validation.empty_confirmation').toString(),
+      tc('change_password.validation.empty_confirmation'),
       required
     ),
     same: helpers.withMessage(
-      i18n.t('change_password.validation.password_mismatch').toString(),
+      tc('change_password.validation.password_mismatch'),
       sameAs(newPassword)
     )
   }

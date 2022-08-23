@@ -1,6 +1,6 @@
 <template>
   <td v-if="!group" class="font-weight-medium" colspan="5" :class="mobileClass">
-    {{ $t('account_group_header.standalone') }}
+    {{ tc('account_group_header.standalone') }}
   </td>
   <fragment v-else>
     <td
@@ -25,7 +25,7 @@
         </v-btn>
         <v-btn v-else small icon disabled />
         <span class="font-weight-medium">
-          {{ $t('account_group_header.xpub') }}
+          {{ tc('account_group_header.xpub') }}
         </span>
         <span :class="{ 'blur-content': !shouldShowAmount }">
           <v-tooltip top open-delay="400">
@@ -37,14 +37,14 @@
         </span>
         <copy-button
           :value="xpub.xpub"
-          :tooltip="$t('account_group_header.copy_tooltip')"
+          :tooltip="tc('account_group_header.copy_tooltip')"
         />
         <span
           v-if="xpub.derivationPath"
           :class="{ 'blur-content': !shouldShowAmount }"
         >
           <span class="font-weight-medium">
-            {{ $t('account_group_header.derivation_path') }}
+            {{ tc('account_group_header.derivation_path') }}
           </span>
           {{ xpub.derivationPath }}
         </span>
@@ -85,7 +85,7 @@
               <v-icon small> mdi-pencil-outline </v-icon>
             </v-btn>
           </template>
-          <span>{{ $t('account_group_header.edit_tooltip') }}</span>
+          <span>{{ tc('account_group_header.edit_tooltip') }}</span>
         </v-tooltip>
         <v-tooltip top open-delay="400">
           <template #activator="{ on }">
@@ -93,7 +93,7 @@
               <v-icon small>mdi-delete-outline</v-icon>
             </v-btn>
           </template>
-          <span> {{ $t('account_group_header.delete_tooltip') }} </span>
+          <span> {{ tc('account_group_header.delete_tooltip') }} </span>
         </v-tooltip>
       </div>
     </td>
@@ -104,6 +104,7 @@ import { Balance, BigNumber } from '@rotki/common';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
@@ -179,6 +180,8 @@ export default defineComponent({
     const editClicked = (_payload: XpubAccountWithBalance) =>
       emit('edit-clicked', _payload);
 
+    const { tc } = useI18n();
+
     return {
       mobileClass,
       xsOnly,
@@ -192,7 +195,8 @@ export default defineComponent({
       deleteClicked,
       expandClicked,
       editClicked,
-      shouldShowAmount
+      shouldShowAmount,
+      tc
     };
   }
 });

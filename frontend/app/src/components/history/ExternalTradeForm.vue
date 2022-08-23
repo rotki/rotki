@@ -309,8 +309,7 @@ const ExternalTradeForm = defineComponent({
   },
   emits: ['input'],
   setup(props, { emit }) {
-    const { edit } = toRefs(props);
-    const { saveData } = props;
+    const { edit, saveData } = toRefs(props);
 
     const { getAssetSymbol } = useAssetInfoRetrieval();
     const input = (valid: boolean) => emit('input', valid);
@@ -460,9 +459,10 @@ const ExternalTradeForm = defineComponent({
         tradeType: get(type)
       };
 
+      const save = get(saveData);
       const result = !get(id)
-        ? await saveData(tradePayload)
-        : await saveData({ ...tradePayload, tradeId: get(id) });
+        ? await save(tradePayload)
+        : await save({ ...tradePayload, tradeId: get(id) });
 
       if (result.success) {
         reset();

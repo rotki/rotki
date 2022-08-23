@@ -4,12 +4,9 @@
     :header="tc('macos_unsupported.header')"
     :alternative="tc('macos_unsupported.message')"
   >
-    <v-btn
-      depressed
-      color="primary"
-      @click="closeApp()"
-      v-text="tc('macos_unsupported.terminate')"
-    />
+    <v-btn depressed color="primary" @click="closeApp()">
+      {{ tc('macos_unsupported.terminate') }}
+    </v-btn>
   </error-screen>
 </template>
 

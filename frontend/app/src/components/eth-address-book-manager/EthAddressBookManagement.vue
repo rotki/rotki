@@ -204,10 +204,10 @@ export default defineComponent({
         set(showForm, false);
       } catch (e: any) {
         const values = { message: e.message };
-        const title = editMode
+        const title = get(editMode)
           ? i18n.t('eth_address_book.actions.edit.error.title')
           : i18n.t('eth_address_book.actions.add.error.title');
-        const description = editMode
+        const description = get(editMode)
           ? i18n.t('eth_address_book.actions.edit.error.description', values)
           : i18n.t('eth_address_book.actions.add.error.description', values);
         setMessage({

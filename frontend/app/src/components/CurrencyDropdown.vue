@@ -44,7 +44,9 @@
               <v-list-item-title>
                 {{ item.name }}
               </v-list-item-title>
-              <v-list-item-subtitle v-text="tc('currency_drop_down.hint')" />
+              <v-list-item-subtitle>
+                {{ tc('currency_drop_down.hint') }}
+              </v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
         </v-list>

@@ -11,12 +11,12 @@
       class="mt-12"
       :message="reportError.message"
       :error="reportError.error"
-      :title="$t('profit_loss_report.error.title')"
-      :subtitle="$t('profit_loss_report.error.subtitle')"
+      :title="tc('profit_loss_report.error.title')"
+      :subtitle="tc('profit_loss_report.error.subtitle')"
     >
       <template #bottom>
         <v-btn text class="mt-2" @click="clearError()">
-          {{ $t('common.actions.close') }}
+          {{ tc('common.actions.close') }}
         </v-btn>
       </template>
     </error-screen>
@@ -26,14 +26,14 @@
         <div v-if="processingState" class="medium text-h6 mb-4">
           {{ processingState }}
         </div>
-        {{ $t('profit_loss_report.loading_message') }}
+        {{ tc('profit_loss_report.loading_message') }}
       </template>
-      {{ $t('profit_loss_report.loading_hint') }}
+      {{ tc('profit_loss_report.loading_hint') }}
     </progress-screen>
     <v-dialog v-model="importDataDialog" max-width="600">
       <card>
         <template #title>
-          {{ $t('profit_loss_reports.debug.import_data_dialog.title') }}
+          {{ tc('profit_loss_reports.debug.import_data_dialog.title') }}
         </template>
         <div>
           <div class="py-2">
@@ -46,7 +46,7 @@
           </div>
           <div class="mt-2 d-flex justify-end">
             <v-btn class="mr-4" @click="importDataDialog = false">
-              {{ $t('common.actions.cancel') }}
+              {{ tc('common.actions.cancel') }}
             </v-btn>
             <v-btn
               color="primary"
@@ -54,7 +54,7 @@
               :loading="importDataLoading"
               @click="importData"
             >
-              {{ $t('common.actions.import') }}
+              {{ tc('common.actions.import') }}
             </v-btn>
           </div>
         </div>
@@ -68,6 +68,7 @@ import { Message } from '@rotki/common/lib/messages';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, defineComponent, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
@@ -75,7 +76,6 @@ import Generate from '@/components/profitloss/Generate.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
 import { useRoute, useRouter } from '@/composables/common';
 import { interop } from '@/electron-interop';
-import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
@@ -113,6 +113,8 @@ export default defineComponent({
 
     const router = useRouter();
     const route = useRoute();
+
+    const { tc } = useI18n();
 
     onMounted(() => {
       const query = get(route).query;
@@ -169,7 +171,7 @@ export default defineComponent({
         if (isLocal) {
           const directoryPath =
             (await interop.openDirectory(
-              i18n.t('profit_loss_reports.debug.select_directory').toString()
+              tc('profit_loss_reports.debug.select_directory')
             )) || '';
           if (!directoryPath) return;
           payload['directoryPath'] = directoryPath;
@@ -179,16 +181,10 @@ export default defineComponent({
 
         if (isLocal) {
           message = {
-            title: i18n
-              .t('profit_loss_reports.debug.export_message.title')
-              .toString(),
+            title: tc('profit_loss_reports.debug.export_message.title'),
             description: result
-              ? i18n
-                  .t('profit_loss_reports.debug.export_message.success')
-                  .toString()
-              : i18n
-                  .t('profit_loss_reports.debug.export_message.failure')
-                  .toString(),
+              ? tc('profit_loss_reports.debug.export_message.success')
+              : tc('profit_loss_reports.debug.export_message.failure'),
             success: !!result
           };
         } else {
@@ -200,9 +196,7 @@ export default defineComponent({
         }
       } catch (e: any) {
         message = {
-          title: i18n
-            .t('profit_loss_reports.debug.export_message.title')
-            .toString(),
+          title: tc('profit_loss_reports.debug.export_message.title'),
           description: e.message,
           success: false
         };
@@ -232,9 +226,7 @@ export default defineComponent({
           taskId,
           taskType,
           {
-            title: i18n
-              .t('profit_loss_reports.debug.import_message.title')
-              .toString(),
+            title: tc('profit_loss_reports.debug.import_message.title'),
             numericKeys: []
           }
         );
@@ -246,21 +238,17 @@ export default defineComponent({
 
       if (!success) {
         showError(
-          i18n
-            .t('profit_loss_reports.debug.import_message.failure', {
-              message
-            })
-            .toString(),
-          i18n.t('profit_loss_reports.debug.import_message.title').toString()
+          tc('profit_loss_reports.debug.import_message.failure', 0, {
+            message
+          }),
+          tc('profit_loss_reports.debug.import_message.title')
         );
       } else {
         showMessage(
-          i18n
-            .t('profit_loss_reports.debug.import_message.success', {
-              message
-            })
-            .toString(),
-          i18n.t('profit_loss_reports.debug.import_message.title').toString()
+          tc('profit_loss_reports.debug.import_message.success', 0, {
+            message
+          }),
+          tc('profit_loss_reports.debug.import_message.title')
         );
       }
 
@@ -281,7 +269,8 @@ export default defineComponent({
       reportError,
       clearError,
       generate,
-      exportData
+      exportData,
+      tc
     };
   }
 });
