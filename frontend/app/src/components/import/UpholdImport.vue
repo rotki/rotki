@@ -1,5 +1,5 @@
 <template>
-  <import-source source="uphold">
+  <import-source source="uphold_transactions">
     <template #upload-title>
       <i18n tag="span" path="import_data.uphold.import">
         <strong>{{ $t('import_data.uphold.import_trade') }}</strong>

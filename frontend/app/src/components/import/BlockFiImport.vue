@@ -2,7 +2,7 @@
   <div>
     <v-row>
       <v-col>
-        <import-source source="blockfi-trades">
+        <import-source source="blockfi_trades">
           <template #upload-title>
             <i18n tag="span" path="import_data.blockfi.import">
               <strong> {{ $t('import_data.blockfi.import_trade') }}</strong>
@@ -11,7 +11,7 @@
         </import-source>
       </v-col>
       <v-col>
-        <import-source source="blockfi-transactions">
+        <import-source source="blockfi_transactions">
           <template #upload-title>
             <i18n tag="span" path="import_data.blockfi.import">
               <strong>
