@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import A_COMP, A_ETH
 from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.fval import FVal
@@ -124,9 +125,9 @@ def _compound_symbol_to_token(symbol: str, timestamp: Timestamp) -> EvmToken:
     """
     if symbol == 'cWBTC':
         if timestamp >= Timestamp(1615751087):
-            return EvmToken('0xccF4429DB6322D5C611ee964527D42E5d685DD6a')
+            return EvmToken('eip155:1/erc20:0xccF4429DB6322D5C611ee964527D42E5d685DD6a')
         # else
-        return EvmToken('0xC11b1268C1A384e55C48c2391d8d480264A3A7F4')
+        return EvmToken('eip155:1/erc20:0xC11b1268C1A384e55C48c2391d8d480264A3A7F4')
     # else
     return symbol_to_ethereum_token(symbol)
 
@@ -200,7 +201,7 @@ class Compound(EthereumModule):
                     asset = A_ETH  # hacky way to specify ETH in compound
                 else:
                     try:
-                        asset = EvmToken(entry.token_address)
+                        asset = EvmToken(ethaddress_to_identifier(entry.token_address))
                     except UnknownAsset:
                         log.error(
                             f'Encountered unknown asset {entry.token_symbol} with address '
@@ -224,7 +225,7 @@ class Compound(EthereumModule):
                     # Get the underlying balance
                     underlying_token_address = balance_entry.underlying_balances[0].token_address
                     try:
-                        underlying_asset = EvmToken(underlying_token_address)
+                        underlying_asset = EvmToken(ethaddress_to_identifier(underlying_token_address))  # noqa: E501
                     except UnknownAsset:
                         log.error(
                             f'Encountered unknown token with address '
