@@ -5,6 +5,7 @@ import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
+import { EVM_TOKEN } from '@/services/assets/consts';
 import { AssetUpdatePayload } from '@/services/assets/types';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
@@ -29,6 +30,7 @@ import {
 } from '@/types/assets';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 import { getNftBalance, isNft } from '@/utils/nft';
@@ -301,9 +303,9 @@ export const useAssetInfoRetrieval = defineStore(
 
         if (symbol) return symbol;
 
-        if (identifier.startsWith('_ceth_')) {
-          const address = identifier.slice(6);
-          return `Ethereum Token: ${address}`;
+        if (isEvmIdentifier(identifier)) {
+          const address = getAddressFromEvmIdentifier(identifier);
+          return `EVM Token: ${address}`;
         }
 
         return '';
@@ -330,9 +332,9 @@ export const useAssetInfoRetrieval = defineStore(
         const name = get(assetInfo(identifier, enableAssociation))?.name;
         if (name) return name;
 
-        if (identifier.startsWith('_ceth_')) {
-          const address = identifier.slice(5);
-          return `Ethereum Token: ${address}`;
+        if (isEvmIdentifier(identifier)) {
+          const address = getAddressFromEvmIdentifier(identifier);
+          return `EVM Token: ${address}`;
         }
 
         return '';
@@ -345,9 +347,7 @@ export const useAssetInfoRetrieval = defineStore(
     ) => {
       return computed<string>(() => {
         if (!identifier) return '';
-        return (
-          get(assetInfo(identifier, enableAssociation))?.ethereumAddress ?? ''
-        );
+        return get(assetInfo(identifier, enableAssociation))?.evmAddress ?? '';
       });
     };
 
@@ -413,7 +413,7 @@ export const useAssetInfoRetrieval = defineStore(
       computed<boolean>(() => {
         const match = get(assetInfo(asset));
         if (match) {
-          return match.assetType === 'ethereum token';
+          return match.assetType === EVM_TOKEN;
         }
         return false;
       });

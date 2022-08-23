@@ -8,7 +8,7 @@ from pysqlcipher3 import dbapi2
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb import GlobalDBHandler
-from rotkehlchen.types import AddressbookEntry, AddressbookType, ChecksumEthAddress
+from rotkehlchen.types import AddressbookEntry, AddressbookType, ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -42,7 +42,7 @@ class DBAddressbook:
     def get_addressbook_entries(  # pylint: disable=no-self-use
             self,
             cursor: 'DBCursor',
-            addresses: Optional[List[ChecksumEthAddress]] = None,
+            addresses: Optional[List[ChecksumEvmAddress]] = None,
     ) -> List[AddressbookEntry]:
         if addresses is None:
             cursor.execute('SELECT address, name FROM address_book')
@@ -55,7 +55,7 @@ class DBAddressbook:
 
         entries = []
         for address, name in cursor:
-            entries.append(AddressbookEntry(address=ChecksumEthAddress(address), name=name))
+            entries.append(AddressbookEntry(address=ChecksumEvmAddress(address), name=name))
 
         return entries
 
@@ -100,7 +100,7 @@ class DBAddressbook:
     def delete_addressbook_entries(
             self,
             book_type: AddressbookType,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> None:
         with self.write_ctx(book_type) as write_cursor:
             for address in addresses:

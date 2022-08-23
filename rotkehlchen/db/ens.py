@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.types import ChecksumEthAddress, EnsMapping, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, EnsMapping, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ class DBEns:
     def add_ens_mapping(    # pylint: disable=no-self-use
             self,
             write_cursor: 'DBCursor',
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             name: Optional[str],
             now: Timestamp,
     ) -> None:
@@ -39,8 +39,8 @@ class DBEns:
     def get_reverse_ens(    # pylint: disable=no-self-use
             self,
             cursor: 'DBCursor',
-            addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, Union[EnsMapping, Timestamp]]:
+            addresses: List[ChecksumEvmAddress],
+    ) -> Dict[ChecksumEvmAddress, Union[EnsMapping, Timestamp]]:
         """Returns a mapping of addresses to ens mappings if found in the DB
 
         - If the address has a name mapping in the DB it is returned as part of the dict
@@ -53,7 +53,7 @@ class DBEns:
         )
         result = {}
         for ens_name, raw_address, last_update in cursor:
-            address = ChecksumEthAddress(raw_address)
+            address = ChecksumEvmAddress(raw_address)
             if ens_name is None:
                 result[address] = last_update
             else:
@@ -68,9 +68,9 @@ class DBEns:
     def update_values(
             self,
             write_cursor: 'DBCursor',
-            ens_lookup_results: Dict[ChecksumEthAddress, Optional[str]],
-            mappings_to_send: Dict[ChecksumEthAddress, str],
-    ) -> Dict[ChecksumEthAddress, str]:
+            ens_lookup_results: Dict[ChecksumEvmAddress, Optional[str]],
+            mappings_to_send: Dict[ChecksumEvmAddress, str],
+    ) -> Dict[ChecksumEvmAddress, str]:
         """Update the ENS mapping values in the DB and return updates mappings to return via api"""
         now = ts_now()
         for address, name in ens_lookup_results.items():

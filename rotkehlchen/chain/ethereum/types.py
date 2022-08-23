@@ -4,17 +4,17 @@ from typing import Any, Dict, NamedTuple, Tuple, Type
 from eth_typing import HexAddress, HexStr
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 ETHERSCAN_NODE_NAME = 'etherscan'
 
 
-def string_to_ethereum_address(value: str) -> ChecksumEthAddress:
+def string_to_evm_address(value: str) -> ChecksumEvmAddress:
     """This is a conversion without any checks of a string to ethereum address
 
     Is only used for typing.
     """
-    return ChecksumEthAddress(HexAddress(HexStr(value)))
+    return ChecksumEvmAddress(HexAddress(HexStr(value)))
 
 
 class NodeName(NamedTuple):

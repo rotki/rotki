@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Dict, List
 
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZerionSDK
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -29,8 +29,8 @@ class DefiChad():
 
     def query_defi_balances(
             self,
-            addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, List[DefiProtocolBalances]]:
+            addresses: List[ChecksumEvmAddress],
+    ) -> Dict[ChecksumEvmAddress, List[DefiProtocolBalances]]:
         defi_balances = defaultdict(list)
         for account in addresses:
             balances = self.zerion_sdk.all_balances_for_account(account)

@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
@@ -11,11 +11,12 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
-from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode, string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS, ZERION_ABI
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -23,7 +24,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.types import ChecksumEthAddress, Price
+from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 
@@ -151,7 +152,7 @@ WEIGHTED_NODES_WITH_HIGH_GAS_LIMIT = (
 )
 
 
-def _is_token_non_standard(symbol: str, address: ChecksumEthAddress) -> bool:
+def _is_token_non_standard(symbol: str, address: ChecksumEvmAddress) -> bool:
     """ignore some assets we do not query directly as token balances
 
     UNI-V2 is queried from the uniswap pairs code
@@ -177,7 +178,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
     if 'DAI' in token_name:
         dai_price = Inquirer.find_usd_price(A_DAI)
         return DefiBalance(
-            token_address=string_to_ethereum_address('0x49d716DFe60b37379010A75329ae09428f17118d'),
+            token_address=string_to_evm_address('0x49d716DFe60b37379010A75329ae09428f17118d'),
             token_name='Pool Together DAI token',
             token_symbol='plDAI',
             balance=Balance(
@@ -188,7 +189,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
     if 'USDC' in token_name:
         usdc_price = Inquirer.find_usd_price(A_USDC)
         return DefiBalance(
-            token_address=string_to_ethereum_address('0xBD87447F48ad729C5c4b8bcb503e1395F62e8B98'),
+            token_address=string_to_evm_address('0xBD87447F48ad729C5c4b8bcb503e1395F62e8B98'),
             token_name='Pool Together USDC token',
             token_symbol='plUSDC',
             balance=Balance(
@@ -201,7 +202,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
 
 
 # supported zerion adapter address
-ZERION_ADAPTER_ADDRESS = string_to_ethereum_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')
+ZERION_ADAPTER_ADDRESS = string_to_evm_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')
 
 
 class ZerionSDK():
@@ -243,7 +244,7 @@ class ZerionSDK():
         self.protocol_names = protocol_names
         return protocol_names
 
-    def _query_chain_for_all_balances(self, account: ChecksumEthAddress) -> List:
+    def _query_chain_for_all_balances(self, account: ChecksumEvmAddress) -> List:
         if (own_node_info := self.ethereum.get_own_node_info()) is not None:
             try:
                 # In this case we don't care about the gas limit
@@ -286,7 +287,7 @@ class ZerionSDK():
 
         return result
 
-    def all_balances_for_account(self, account: ChecksumEthAddress) -> List[DefiProtocolBalances]:
+    def all_balances_for_account(self, account: ChecksumEvmAddress) -> List[DefiProtocolBalances]:
         """Calls the contract's getBalances() to get all protocol balances for account
 
         https://docs.zerion.io/smart-contracts/adapterregistry-v3#getbalances
@@ -370,7 +371,8 @@ class ZerionSDK():
             return special_handling
 
         try:
-            token = EthereumToken(token_address)
+            identifier = ethaddress_to_identifier(token_address)
+            token = EvmToken(identifier)
             usd_price = Inquirer().find_usd_price(token)
         except (UnknownAsset, UnsupportedAsset):
             if not _is_token_non_standard(token_symbol, token_address):
@@ -410,7 +412,7 @@ class ZerionSDK():
         if asset is None:
             return None
 
-        token = EthereumToken.from_asset(asset)
+        token = EvmToken.from_asset(asset)
         if token is None:
             return None
         underlying_asset_price = get_underlying_asset_price(token)

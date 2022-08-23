@@ -20,7 +20,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     EthereumInternalTransaction,
     EthereumTransaction,
     EVMTxHash,
@@ -50,7 +50,7 @@ class DBEthTx():
             self,
             write_cursor: 'DBCursor',
             ethereum_transactions: List[EthereumTransaction],
-            relevant_address: Optional[ChecksumEthAddress],
+            relevant_address: Optional[ChecksumEvmAddress],
     ) -> None:
         """Adds ethereum transactions to the database"""
         tx_tuples: List[Tuple[Any, ...]] = []
@@ -96,7 +96,7 @@ class DBEthTx():
             self,
             write_cursor: 'DBCursor',
             transactions: List[EthereumInternalTransaction],
-            relevant_address: ChecksumEthAddress,
+            relevant_address: ChecksumEvmAddress,
     ) -> None:
         """Adds ethereum transactions to the database"""
         tx_tuples: List[Tuple[Any, ...]] = []
@@ -374,7 +374,7 @@ class DBEthTx():
 
         return tx_receipt
 
-    def delete_transactions(self, write_cursor: 'DBCursor', address: ChecksumEthAddress) -> None:
+    def delete_transactions(self, write_cursor: 'DBCursor', address: ChecksumEvmAddress) -> None:
         """Delete all transactions related data to the given address from the DB
 
         So transactions, receipts, logs and decoded events
@@ -409,7 +409,7 @@ class DBEthTx():
             [(x, 'ETH', HISTORY_MAPPING_DECODED) for x in tx_hashes],
         )
 
-    def get_queried_range(self, cursor: 'DBCursor', address: ChecksumEthAddress) -> Tuple[Timestamp, Timestamp]:  # noqa: E501
+    def get_queried_range(self, cursor: 'DBCursor', address: ChecksumEvmAddress) -> Tuple[Timestamp, Timestamp]:  # noqa: E501
         """Gets the most conservative range that was queried for the ethereum
         transactions of an address.
 
@@ -439,7 +439,7 @@ class DBEthTx():
 
     def get_or_create_genesis_transaction(
             self,
-            account: ChecksumEthAddress,
+            account: ChecksumEvmAddress,
     ) -> EthereumTransaction:
         with self.db.conn.read_ctx() as cursor:
             tx_in_db = self.get_ethereum_transactions(

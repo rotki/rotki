@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple
 
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
@@ -24,7 +24,7 @@ class DecoderInterface(metaclass=ABCMeta):
         decoder to choose what to keep"""
         return None
 
-    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
+    def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
         """Subclasses may implement this to return the mappings of addresses to decode functions"""
         return {}
 

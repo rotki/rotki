@@ -54,7 +54,7 @@ export async function fetchDataAsync<T extends TaskMeta, R>(
   setStatus(Status.LOADED);
 }
 
-export function showError(description: string, title?: string) {
+export function showError(description: string, title: string = '') {
   const { setMessage } = useMainStore();
   setMessage({
     title: title,

@@ -2,10 +2,10 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import multicall, token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.db.dbhandler import DBHandler
@@ -13,7 +13,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Price, Timestamp
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
 if TYPE_CHECKING:
@@ -23,13 +23,13 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 TokenBalancesType = Tuple[
-    Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]],
-    Dict[EthereumToken, Price],
+    Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]],
+    Dict[EvmToken, Price],
 ]
 
 DetectedTokensType = Dict[
-    ChecksumEthAddress,
-    Tuple[Optional[List[EthereumToken]], Optional[Timestamp]],
+    ChecksumEvmAddress,
+    Tuple[Optional[List[EvmToken]], Optional[Timestamp]],
 ]
 
 # 08/08/2020
@@ -71,8 +71,8 @@ PURE_TOKENS_BALANCE_ARGUMENTS = 7
 
 def generate_multicall_chunks(
         chunk_length: int,
-        addresses_to_tokens: Dict[ChecksumEthAddress, List[EthereumToken]],
-) -> List[List[Tuple[ChecksumEthAddress, List[EthereumToken]]]]:
+        addresses_to_tokens: Dict[ChecksumEvmAddress, List[EvmToken]],
+) -> List[List[Tuple[ChecksumEvmAddress, List[EvmToken]]]]:
     """Generate appropriate num of chunks for multicall address->tokens, address->tokens query"""
     multicall_chunks = []
     free_space = chunk_length
@@ -103,10 +103,10 @@ class EthTokens():
 
     def _get_token_balances(
             self,
-            address: ChecksumEthAddress,
-            tokens: List[EthereumToken],
+            address: ChecksumEvmAddress,
+            tokens: List[EvmToken],
             call_order: Optional[Sequence[WeightedNode]],
-    ) -> Dict[EthereumToken, FVal]:
+    ) -> Dict[EvmToken, FVal]:
         """Queries the balances of multiple tokens for an address
 
         May raise:
@@ -123,17 +123,17 @@ class EthTokens():
         result = ETH_SCAN.call(
             ethereum=self.ethereum,
             method_name='tokensBalance',
-            arguments=[address, [x.ethereum_address for x in tokens]],
+            arguments=[address, [x.evm_address for x in tokens]],
             call_order=call_order,
         )
-        balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
+        balances: Dict[EvmToken, FVal] = defaultdict(FVal)
         for token_balance, token in zip(result, tokens):
             if token_balance == 0:
                 continue
 
             normalized_balance = token_normalized_value(token_balance, token)
             log.debug(
-                f'Found {token.symbol}({token.ethereum_address}) token balance for '
+                f'Found {token.symbol}({token.evm_address}) token balance for '
                 f'{address} and balance {normalized_balance}',
             )
             balances[token] += normalized_balance
@@ -141,17 +141,17 @@ class EthTokens():
 
     def _get_multicall_token_balances(
             self,
-            chunk: List[Tuple[ChecksumEthAddress, List[EthereumToken]]],
+            chunk: List[Tuple[ChecksumEvmAddress, List[EvmToken]]],
             call_order: Optional[Sequence['WeightedNode']] = None,
-    ) -> Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]]:
+    ) -> Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]]:
         """Gets token balances from a chunk of address -> token address
 
         May raise:
         - RemoteError if no result is queried in multicall
         """
-        calls: List[Tuple[ChecksumEthAddress, str]] = []
+        calls: List[Tuple[ChecksumEvmAddress, str]] = []
         for address, tokens in chunk:
-            tokens_addrs = [token.ethereum_address for token in tokens]
+            tokens_addrs = [token.evm_address for token in tokens]
             calls.append(
                 (
                     ETH_SCAN.address,
@@ -166,12 +166,12 @@ class EthTokens():
             calls=calls,
             call_order=call_order,
         )
-        balances: Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
+        balances: Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
         for (address, tokens), result in zip(chunk, results):
             decoded_result = ETH_SCAN.decode(  # pylint: disable=unsubscriptable-object
                 result=result,
                 method_name='tokensBalance',
-                arguments=[address, [token.ethereum_address for token in tokens]],
+                arguments=[address, [token.evm_address for token in tokens]],
             )[0]
             for token, token_balance in zip(tokens, decoded_result):
                 if token_balance == 0:
@@ -179,7 +179,7 @@ class EthTokens():
 
                 normalized_balance = token_normalized_value(token_balance, token)
                 log.debug(
-                    f'Found {token.symbol}({token.ethereum_address}) token balance for '
+                    f'Found {token.symbol}({token.evm_address}) token balance for '
                     f'{address} and balance {normalized_balance}',
                 )
                 balances[address][token] += normalized_balance
@@ -187,12 +187,12 @@ class EthTokens():
 
     def _query_chunks(
             self,
-            address: ChecksumEthAddress,
-            tokens: List[EthereumToken],
+            address: ChecksumEvmAddress,
+            tokens: List[EvmToken],
             chunk_size: int,
             call_order: List[WeightedNode],
-    ) -> Dict[EthereumToken, FVal]:
-        total_token_balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
+    ) -> Dict[EvmToken, FVal]:
+        total_token_balances: Dict[EvmToken, FVal] = defaultdict(FVal)
         chunks = get_chunks(tokens, n=chunk_size)
         for chunk in chunks:
             new_token_balances = self._get_token_balances(
@@ -206,7 +206,7 @@ class EthTokens():
     def detect_tokens(
             self,
             only_cache: bool,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> DetectedTokensType:
         """
         Detect tokens for the given addresses.
@@ -236,7 +236,7 @@ class EthTokens():
     def _detect_tokens(
             self,
             cursor: 'DBCursor',
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> None:
         """
         Detect tokens for the given addresses.
@@ -252,13 +252,13 @@ class EthTokens():
             # defi SDK as part of locked CRV in Vote Escrowed CRV. Which is the right way
             # to approach it as there is no way to assign a price to 1 veCRV. It
             # can be 1 CRV locked for 4 years or 4 CRV locked for 1 year etc.
-            string_to_ethereum_address('0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2'),
+            string_to_evm_address('0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2'),
             # Ignore for now xsushi since is queried by defi SDK. We'll do it for now
             # since the SDK entry might return other tokens from sushi and we don't
             # fully support sushi now.
-            string_to_ethereum_address('0x8798249c2E607446EfB7Ad49eC89dD1865Ff4272'),
+            string_to_evm_address('0x8798249c2E607446EfB7Ad49eC89dD1865Ff4272'),
             # Ignore stkAave since it's queried by defi SDK.
-            string_to_ethereum_address('0x4da27a545c0c5B758a6BA100e3a049001de870f5'),
+            string_to_evm_address('0x4da27a545c0c5B758a6BA100e3a049001de870f5'),
             # Ignore the following tokens. They are old tokens of upgraded contracts which
             # duplicated the balances at upgrade instead of doing a token swap.
             # e.g.: https://github.com/rotki/rotki/issues/3548
@@ -266,12 +266,12 @@ class EthTokens():
             # upgrade possible occurences in the user DB
             #
             # Old contract of Fetch.ai
-            string_to_ethereum_address('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'),
+            string_to_evm_address('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'),
         ]
         ignored_assets = self.db.get_ignored_assets(cursor=cursor)
         for asset in ignored_assets:  # don't query for the ignored tokens
-            if asset.is_eth_token():  # type ignore since we know asset is a token
-                exceptions.append(EthereumToken.from_asset(asset).ethereum_address)  # type: ignore
+            if asset.is_evm_token():  # type ignore since we know asset is a token
+                exceptions.append(EvmToken.from_asset(asset).evm_address)  # type: ignore
         all_tokens = GlobalDBHandler().get_ethereum_tokens(
             exceptions=exceptions,
             except_protocols=['balancer'],
@@ -296,7 +296,7 @@ class EthTokens():
 
     def query_tokens_for_addresses(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> TokenBalancesType:
         """Queries token balances for a list of addresses
         Returns the token balances of each address and the usd prices of the tokens.
@@ -307,9 +307,9 @@ class EthTokens():
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        addresses_to_balances: Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]] = {}
+        addresses_to_balances: Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]] = {}
         all_tokens = set()
-        addresses_to_tokens: Dict[ChecksumEthAddress, List[EthereumToken]] = {}
+        addresses_to_tokens: Dict[ChecksumEvmAddress, List[EvmToken]] = {}
 
         if self.ethereum.connected_to_any_web3():
             chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
@@ -337,7 +337,7 @@ class EthTokens():
                 call_order=call_order,
             ))
 
-        token_usd_price: Dict[EthereumToken, Price] = {}
+        token_usd_price: Dict[EvmToken, Price] = {}
         for token in all_tokens:
             token_usd_price[token] = Inquirer.find_usd_price(asset=token)
 

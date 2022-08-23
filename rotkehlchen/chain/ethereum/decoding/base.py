@@ -4,13 +4,13 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants import ONE
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.types import EthereumTransaction, Location
@@ -49,13 +49,13 @@ class BaseDecoderTools():
     def refresh_tracked_accounts(self, cursor: 'DBCursor') -> None:
         self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
 
-    def is_tracked(self, adddress: ChecksumEthAddress) -> bool:
+    def is_tracked(self, adddress: ChecksumEvmAddress) -> bool:
         return adddress in self.tracked_accounts.eth
 
     def decode_direction(
             self,
-            from_address: ChecksumEthAddress,
-            to_address: Optional[ChecksumEthAddress],
+            from_address: ChecksumEvmAddress,
+            to_address: Optional[ChecksumEvmAddress],
     ) -> Optional[Tuple[HistoryEventType, Optional[str], str, str]]:
         """Depending on addresses, if they are tracked by the user or not, if they
         are an exchange address etc. determine the type of event to classify the transfer as"""
@@ -100,7 +100,7 @@ class BaseDecoderTools():
 
     def decode_erc20_721_transfer(
             self,
-            token: EthereumToken,
+            token: EvmToken,
             tx_log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,
     ) -> Optional[HistoryBaseEntry]:
@@ -112,7 +112,7 @@ class BaseDecoderTools():
         - DeserializationError
         - ConversionError
         """
-        if token.ethereum_address in NAUGHTY_ERC721:
+        if token.evm_address in NAUGHTY_ERC721:
             token_type = 'erc721'
         elif len(tx_log.topics) == 3:  # typical ERC20 has 2 indexed args
             token_type = 'erc20'

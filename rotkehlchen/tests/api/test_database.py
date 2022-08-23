@@ -31,7 +31,7 @@ def test_query_db_info(rotkehlchen_api_server, data_dir, username, start_with_lo
     response = requests.get(api_url_for(rotkehlchen_api_server, 'databaseinforesource'))
     result = assert_proper_response_with_result(response)
     assert len(result) == 2
-    assert result['globaldb'] == {'globaldb_assets_version': 14, 'globaldb_schema_version': 2}
+    assert result['globaldb'] == {'globaldb_assets_version': 14, 'globaldb_schema_version': 3}
 
     if start_with_logged_in_user:
         userdb = result['userdb']

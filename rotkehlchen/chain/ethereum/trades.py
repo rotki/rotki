@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, NamedTuple, Tuple
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.serialization.deserialize import (
@@ -11,7 +11,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     AssetAmount,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     EVMTxHash,
     Fee,
     Location,
@@ -48,13 +48,13 @@ class AMMSwap(NamedTuple):
     """
     tx_hash: EVMTxHash
     log_index: int
-    address: ChecksumEthAddress
-    from_address: ChecksumEthAddress
-    to_address: ChecksumEthAddress
+    address: ChecksumEvmAddress
+    from_address: ChecksumEvmAddress
+    to_address: ChecksumEvmAddress
     timestamp: Timestamp
     location: Location
-    token0: EthereumToken
-    token1: EthereumToken
+    token0: EvmToken
+    token1: EvmToken
     amount0_in: AssetAmount
     amount1_in: AssetAmount
     amount0_out: AssetAmount
@@ -156,8 +156,8 @@ class AMMTrade(NamedTuple):
     in AMMs protocols.
     """
     trade_type: TradeType
-    base_asset: EthereumToken
-    quote_asset: EthereumToken
+    base_asset: EvmToken
+    quote_asset: EvmToken
     amount: AssetAmount
     rate: Price
     swaps: List[AMMSwap]
@@ -177,7 +177,7 @@ class AMMTrade(NamedTuple):
         return self.swaps[0].location
 
     @property
-    def address(self) -> ChecksumEthAddress:
+    def address(self) -> ChecksumEvmAddress:
         return self.swaps[0].address
 
     @property
@@ -195,7 +195,7 @@ class AMMTrade(NamedTuple):
         return self.identifier
 
     @property
-    def fee_currency(self) -> EthereumToken:
+    def fee_currency(self) -> EvmToken:
         # always 0 DAI, super hacky -- just to satisfy the "Trade" interface for
         # use in accounting module. We need to fix these stuff ...
         return A_DAI

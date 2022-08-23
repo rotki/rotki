@@ -19,7 +19,7 @@ import requests
 from cryptography.fernet import Fernet
 from eth_utils import to_checksum_address
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
@@ -32,7 +32,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_optional_to_optional_fval
-from rotkehlchen.types import ChecksumEthAddress, ExternalService
+from rotkehlchen.types import ChecksumEvmAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -227,7 +227,7 @@ class Opensea(ExternalServiceWithApiKey):
     def _deserialize_nft(
             self,
             entry: Dict[str, Any],
-            owner_address: ChecksumEthAddress,
+            owner_address: ChecksumEvmAddress,
             eth_usd_price: FVal,
     ) -> 'NFT':
         """May raise:
@@ -246,7 +246,7 @@ class Opensea(ExternalServiceWithApiKey):
                 if last_sale['payment_token']['symbol'] in ('ETH', 'WETH'):
                     payment_token = A_ETH
                 else:
-                    payment_token = EthereumToken(
+                    payment_token = EvmToken(
                         to_checksum_address(last_sale['payment_token']['address']),
                     )
 
@@ -299,7 +299,7 @@ class Opensea(ExternalServiceWithApiKey):
         except KeyError as e:
             raise DeserializationError(f'Could not find key {str(e)} when processing Opensea NFT data') from e  # noqa: E501
 
-    def gather_account_collections(self, account: ChecksumEthAddress) -> None:
+    def gather_account_collections(self, account: ChecksumEvmAddress) -> None:
         """Gathers account collection information and keeps them in memory"""
         offset = 0
         options = {'offset': offset, 'limit': CONTRACTS_MAX_LIMIT, 'asset_owner': account}  # noqa: E501
@@ -338,7 +338,7 @@ class Opensea(ExternalServiceWithApiKey):
                 floor_price=floor_price,
             )
 
-    def get_account_nfts(self, account: ChecksumEthAddress) -> List[NFT]:
+    def get_account_nfts(self, account: ChecksumEvmAddress) -> List[NFT]:
         """May raise RemoteError"""
         offset = 0
         options = {'order_direction': 'desc', 'offset': offset, 'limit': ASSETS_MAX_LIMIT, 'owner': account}  # noqa: E501

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import symbol_to_asset_or_token, symbol_to_ethereum_token
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import A_COMP, A_ETH
 from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.fval import FVal
@@ -19,7 +20,7 @@ from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import ChecksumEthAddress, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import hexstr_to_int, ts_now
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
-ADDRESS_TO_ASSETS = Dict[ChecksumEthAddress, Dict[Asset, Balance]]
+ADDRESS_TO_ASSETS = Dict[ChecksumEvmAddress, Dict[Asset, Balance]]
 BLOCKS_PER_DAY = 4 * 60 * 24
 DAYS_PER_YEAR = 365
 ETH_MANTISSA = 10**18
@@ -79,7 +80,7 @@ class CompoundBalance(NamedTuple):
 
 class CompoundEvent(NamedTuple):
     event_type: Literal['mint', 'redeem', 'borrow', 'repay', 'liquidation', 'comp']
-    address: ChecksumEthAddress
+    address: ChecksumEvmAddress
     block_number: int
     timestamp: Timestamp
     asset: Asset
@@ -116,7 +117,7 @@ def _get_txhash_and_logidx(identifier: str) -> Optional[Tuple[str, int]]:
     return result[0], log_index
 
 
-def _compound_symbol_to_token(symbol: str, timestamp: Timestamp) -> EthereumToken:
+def _compound_symbol_to_token(symbol: str, timestamp: Timestamp) -> EvmToken:
     """
     Turns a compound symbol to an ethereum token.
 
@@ -124,9 +125,9 @@ def _compound_symbol_to_token(symbol: str, timestamp: Timestamp) -> EthereumToke
     """
     if symbol == 'cWBTC':
         if timestamp >= Timestamp(1615751087):
-            return EthereumToken('0xccF4429DB6322D5C611ee964527D42E5d685DD6a')
+            return EvmToken('eip155:1/erc20:0xccF4429DB6322D5C611ee964527D42E5d685DD6a')
         # else
-        return EthereumToken('0xC11b1268C1A384e55C48c2391d8d480264A3A7F4')
+        return EvmToken('eip155:1/erc20:0xC11b1268C1A384e55C48c2391d8d480264A3A7F4')
     # else
     return symbol_to_ethereum_token(symbol)
 
@@ -160,7 +161,7 @@ class Compound(EthereumModule):
                 f'Probably will get fixed with time. If not report it to rotkis support channel ',
             )
 
-    def _get_apy(self, address: ChecksumEthAddress, supply: bool) -> Optional[FVal]:
+    def _get_apy(self, address: ChecksumEvmAddress, supply: bool) -> Optional[FVal]:
         method_name = 'supplyRatePerBlock' if supply else 'borrowRatePerBlock'
 
         try:
@@ -179,7 +180,7 @@ class Compound(EthereumModule):
     def get_balances(
             self,
             given_defi_balances: GIVEN_DEFI_BALANCES,
-    ) -> Dict[ChecksumEthAddress, Dict[str, Dict[Asset, CompoundBalance]]]:
+    ) -> Dict[ChecksumEvmAddress, Dict[str, Dict[Asset, CompoundBalance]]]:
         compound_balances = {}
         now = ts_now()
         if isinstance(given_defi_balances, dict):
@@ -200,7 +201,7 @@ class Compound(EthereumModule):
                     asset = A_ETH  # hacky way to specify ETH in compound
                 else:
                     try:
-                        asset = EthereumToken(entry.token_address)
+                        asset = EvmToken(ethaddress_to_identifier(entry.token_address))
                     except UnknownAsset:
                         log.error(
                             f'Encountered unknown asset {entry.token_symbol} with address '
@@ -209,7 +210,7 @@ class Compound(EthereumModule):
                         continue
 
                 unclaimed_comp_rewards = (
-                    entry.token_address == A_COMP.ethereum_address and
+                    entry.token_address == A_COMP.evm_address and
                     balance_entry.protocol.name == 'Compound Governance'
                 )
                 if unclaimed_comp_rewards:
@@ -224,7 +225,7 @@ class Compound(EthereumModule):
                     # Get the underlying balance
                     underlying_token_address = balance_entry.underlying_balances[0].token_address
                     try:
-                        underlying_asset = EthereumToken(underlying_token_address)
+                        underlying_asset = EvmToken(ethaddress_to_identifier(underlying_token_address))  # noqa: E501
                     except UnknownAsset:
                         log.error(
                             f'Encountered unknown token with address '
@@ -253,7 +254,7 @@ class Compound(EthereumModule):
                     borrowing_map[asset] = CompoundBalance(
                         balance_type=BalanceType.LIABILITY,
                         balance=entry.balance,
-                        apy=self._get_apy(ctoken.ethereum_address, supply=False),
+                        apy=self._get_apy(ctoken.evm_address, supply=False),
                     )
 
             if lending_map == {} and borrowing_map == {} and rewards_map == {}:
@@ -271,7 +272,7 @@ class Compound(EthereumModule):
     def _get_borrow_events(
             self,
             event_type: Literal['borrow', 'repay'],
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
@@ -338,7 +339,7 @@ class Compound(EthereumModule):
 
     def _get_liquidation_events(
             self,
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
@@ -429,7 +430,7 @@ class Compound(EthereumModule):
     def _get_lend_events(
             self,
             event_type: Literal['mint', 'redeem'],
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
@@ -515,7 +516,7 @@ class Compound(EthereumModule):
 
     def _get_comp_events(
             self,
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[CompoundEvent]:
@@ -529,7 +530,7 @@ class Compound(EthereumModule):
             'to': address,
         }
         comp_events = self.ethereum.get_logs(
-            contract_address=A_COMP.ethereum_address,
+            contract_address=A_COMP.evm_address,
             abi=ERC20TOKEN_ABI,
             event_name='Transfer',
             argument_filters=argument_filters,
@@ -680,7 +681,7 @@ class Compound(EthereumModule):
     def get_history(
             self,
             given_defi_balances: GIVEN_DEFI_BALANCES,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             reset_db_data: bool,  # pylint: disable=unused-argument
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -730,7 +731,7 @@ class Compound(EthereumModule):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> List[DefiEvent]:
         history = self.get_history(
             given_defi_balances={},
@@ -800,10 +801,10 @@ class Compound(EthereumModule):
         return events
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List[AssetBalance]]:
         pass
 
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         pass
 
     def deactivate(self) -> None:

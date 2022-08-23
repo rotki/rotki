@@ -400,13 +400,13 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     except UnsupportedAsset as e:
                         self.msg_aggregator.add_warning(
                             f'Found unsupported poloniex asset {e.asset_name}. '
-                            f' Ignoring its balance query.',
+                            f'Ignoring its balance query.',
                         )
                         continue
                     except UnknownAsset as e:
                         self.msg_aggregator.add_warning(
                             f'Found unknown poloniex asset {e.asset_name}. '
-                            f' Ignoring its balance query.',
+                            f'Ignoring its balance query.',
                         )
                         continue
                     except DeserializationError:
@@ -416,7 +416,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         )
                         self.msg_aggregator.add_error(
                             'Found poloniex asset entry with non-string type. '
-                            ' Ignoring its balance query.',
+                            'Ignoring its balance query.',
                         )
                         continue
 

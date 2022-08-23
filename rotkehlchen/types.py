@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 from typing import (
     Any,
     Callable,
@@ -125,10 +125,10 @@ class ExternalServiceApiCredentials(NamedTuple):
 T_TradePair = str
 TradePair = NewType('TradePair', T_TradePair)
 
-T_EthAddres = str
-EthAddress = NewType('EthAddress', T_EthAddres)
+T_EvmAddres = str
+EvmAddress = NewType('EvmAddress', T_EvmAddres)
 
-ChecksumEthAddress = ChecksumAddress
+ChecksumEvmAddress = ChecksumAddress
 
 T_EVMTxHash = HexBytes
 EVMTxHash = NewType('EVMTxHash', T_EVMTxHash)
@@ -165,16 +165,16 @@ T_Eth2PubKey = str
 Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)
 
 BlockchainAddress = Union[
-    EthAddress,
+    EvmAddress,
     BTCAddress,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     KusamaAddress,
     PolkadotAddress,
     str,
 ]
 ListOfBlockchainAddresses = Union[
     List[BTCAddress],
-    List[ChecksumEthAddress],
+    List[ChecksumEvmAddress],
     List[KusamaAddress],
     List[PolkadotAddress],
 ]
@@ -198,8 +198,8 @@ class EthereumTransaction(NamedTuple):
     tx_hash: EVMTxHash
     timestamp: Timestamp
     block_number: int
-    from_address: ChecksumEthAddress
-    to_address: Optional[ChecksumEthAddress]
+    from_address: ChecksumEvmAddress
+    to_address: Optional[ChecksumEvmAddress]
     value: int
     gas: int
     gas_price: int
@@ -239,8 +239,8 @@ class EthereumInternalTransaction(NamedTuple):
     trace_id: int
     timestamp: Timestamp
     block_number: int
-    from_address: ChecksumEthAddress
-    to_address: Optional[ChecksumEthAddress]
+    from_address: ChecksumEvmAddress
+    to_address: Optional[ChecksumEvmAddress]
     value: int
 
     def serialize(self) -> Dict[str, Any]:
@@ -268,8 +268,8 @@ class CovalentTransaction(NamedTuple):
     tx_hash: str
     timestamp: Timestamp
     block_number: int
-    from_address: ChecksumEthAddress
-    to_address: Optional[ChecksumEthAddress]
+    from_address: ChecksumEvmAddress
+    to_address: Optional[ChecksumEvmAddress]
     value: int
     gas: int
     gas_price: int
@@ -321,7 +321,7 @@ class SupportedBlockchain(Enum):
 
     def get_address_type(self) -> Callable:
         if self in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
-            return ChecksumEthAddress
+            return ChecksumEvmAddress
         if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
             return Eth2PubKey
         if self in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
@@ -482,7 +482,7 @@ class ExchangeLocationID(NamedTuple):
 
 
 class EnsMapping(NamedTuple):
-    address: ChecksumEthAddress
+    address: ChecksumEvmAddress
     name: str
     last_update: Timestamp = Timestamp(0)
 
@@ -493,7 +493,7 @@ class CostBasisMethod(SerializableEnumMixin):
 
 
 class AddressbookEntry(NamedTuple):
-    address: ChecksumEthAddress
+    address: ChecksumEvmAddress
     name: str
 
     def serialize(self) -> Dict[str, Any]:
@@ -560,3 +560,9 @@ class UserNote(NamedTuple):
             last_update_timestamp=Timestamp(entry[4]),
             is_pinned=bool(entry[5]),
         )
+
+
+class EvmTokenKind(DBEnumMixIn):
+    ERC20 = auto()
+    ERC721 = auto()
+    UNKNOWN = auto()

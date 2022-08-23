@@ -5,7 +5,7 @@ import pytest
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.tests.utils.ens import (
     ENS_BRUNO,
@@ -112,7 +112,7 @@ def test_ens_reverse_lookup(ethereum_manager):
         reversed_addr_2 = ethereum_manager.ens_lookup('abc.eth')
         reversed_addr_3 = ethereum_manager.ens_lookup('rotki.eth')
         # reversed_addr_4 has not configured ens name resolution properly
-        reversed_addr_4 = string_to_ethereum_address('0x5b2Ed2eF8F480cC165A600aC451D9D9Ebf521e94')
+        reversed_addr_4 = string_to_evm_address('0x5b2Ed2eF8F480cC165A600aC451D9D9Ebf521e94')
         expected = {reversed_addr_2: 'abc.eth', reversed_addr_3: 'rotki.eth', reversed_addr_4: None}  # noqa: E501
         queried_ens_names = ethereum_manager.ens_reverse_lookup(
             [reversed_addr_2, reversed_addr_3, reversed_addr_4],

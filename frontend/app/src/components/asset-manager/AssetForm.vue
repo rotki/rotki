@@ -18,17 +18,48 @@
     </v-row>
     <v-form :value="value" class="pt-2" @input="input">
       <v-row>
-        <v-col>
+        <v-col cols="12">
           <v-select
             v-model="assetType"
             outlined
             :label="$t('asset_form.labels.asset_type')"
             :disabled="types.length === 1 || !!edit"
             :items="types"
+          >
+            <template #item="{ item }">{{ toSentenceCase(item) }}</template>
+            <template #selection="{ item }">
+              {{ toSentenceCase(item) }}
+            </template>
+          </v-select>
+        </v-col>
+        <v-col md="6">
+          <v-select
+            v-model="chain"
+            outlined
+            :label="$t('asset_form.labels.chain')"
+            :disabled="!isEvmToken || !!edit"
+            :items="evmChainsData"
+            item-text="label"
+            item-value="identifier"
+            :error-messages="errors['chain']"
+            @focus="delete errors['chain']"
+          />
+        </v-col>
+        <v-col md="6">
+          <v-select
+            v-model="tokenKind"
+            outlined
+            :label="$t('asset_form.labels.token_kind')"
+            :disabled="!isEvmToken || !!edit"
+            :items="evmTokenKindsData"
+            item-text="label"
+            item-value="identifier"
+            :error-messages="errors['token_kind']"
+            @focus="delete errors['token_kind']"
           />
         </v-col>
       </v-row>
-      <v-row v-if="isEthereumToken">
+      <v-row v-if="isEvmToken">
         <v-col>
           <v-text-field
             v-model="address"
@@ -36,7 +67,7 @@
             :loading="fetching"
             :error-messages="errors['address']"
             :label="$t('common.address')"
-            :disabled="saving || fetching"
+            :disabled="saving || fetching || !!edit"
             @keydown.space.prevent
             @focus="delete errors['address']"
           />
@@ -54,7 +85,7 @@
             @focus="delete errors['name']"
           />
         </v-col>
-        <v-col cols="12" :md="isEthereumToken ? 3 : 6">
+        <v-col cols="12" :md="isEvmToken ? 3 : 6">
           <v-text-field
             v-model="symbol"
             outlined
@@ -64,7 +95,7 @@
             @focus="delete errors['symbol']"
           />
         </v-col>
-        <v-col v-if="isEthereumToken" cols="12" md="3">
+        <v-col v-if="isEvmToken" cols="12" md="3">
           <v-text-field
             v-model="decimals"
             type="number"
@@ -157,7 +188,7 @@
               @focus="delete errors['started']"
             />
             <v-row>
-              <v-col v-if="isEthereumToken" cols="12" md="6">
+              <v-col v-if="isEvmToken" cols="12" md="6">
                 <v-text-field
                   v-model="protocol"
                   outlined
@@ -183,7 +214,7 @@
                   @focus="delete errors['swapped_for']"
                 />
               </v-col>
-              <v-col v-if="!isEthereumToken" cols="12" md="6">
+              <v-col v-if="!isEvmToken" cols="12" md="6">
                 <asset-select
                   v-if="assetType"
                   v-model="forked"
@@ -198,7 +229,7 @@
               </v-col>
             </v-row>
             <underlying-token-manager
-              v-if="isEthereumToken"
+              v-if="isEvmToken"
               v-model="underlyingTokens"
             />
           </v-expansion-panel-content>
@@ -256,7 +287,7 @@
 </template>
 
 <script lang="ts">
-import { SupportedAsset } from '@rotki/common/lib/data';
+import { EvmChain, EvmTokenKind, SupportedAsset } from '@rotki/common/lib/data';
 import { get, set } from '@vueuse/core';
 import {
   computed,
@@ -276,6 +307,11 @@ import FileUpload from '@/components/import/FileUpload.vue';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import {
+  EVM_TOKEN,
+  evmChainsData,
+  evmTokenKindsData
+} from '@/services/assets/consts';
+import {
   EthereumToken,
   ManagedAsset,
   UnderlyingToken
@@ -286,7 +322,11 @@ import { useAssetInfoRetrieval } from '@/store/assets';
 import { useNotifications } from '@/store/notifications';
 import { showError } from '@/store/utils';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { isValidEthAddress, sanitizeAddress } from '@/utils/text';
+import {
+  isValidEthAddress,
+  sanitizeAddress,
+  toSentenceCase
+} from '@/utils/text';
 
 function value<T>(t: T): T | undefined {
   return t ? t : undefined;
@@ -295,8 +335,6 @@ function value<T>(t: T): T | undefined {
 function time(t: string): number | undefined {
   return t ? convertToTimestamp(t) : undefined;
 }
-
-const ETHEREUM_TOKEN = 'ethereum token';
 
 export default defineComponent({
   name: 'AssetForm',
@@ -332,8 +370,10 @@ export default defineComponent({
     const started = ref<string>('');
     const coingecko = ref<string>('');
     const cryptocompare = ref<string>('');
-    const assetType = ref<string>(ETHEREUM_TOKEN);
-    const types = ref<string[]>([ETHEREUM_TOKEN]);
+    const assetType = ref<string>(EVM_TOKEN);
+    const chain = ref<string>();
+    const tokenKind = ref<string>();
+    const types = ref<string[]>([EVM_TOKEN]);
     const identifier = ref<string>('');
     const protocol = ref<string>('');
     const swappedFor = ref<string>('');
@@ -350,8 +390,8 @@ export default defineComponent({
 
     const errors = ref<{ [key: string]: string[] }>({});
 
-    const isEthereumToken = computed<boolean>(() => {
-      return get(assetType) === ETHEREUM_TOKEN;
+    const isEvmToken = computed<boolean>(() => {
+      return get(assetType) === EVM_TOKEN;
     });
 
     watch(address, async () => {
@@ -396,7 +436,9 @@ export default defineComponent({
         started: time(get(started)),
         underlyingTokens: ut.length > 0 ? ut : undefined,
         swappedFor: value(get(swappedFor)),
-        protocol: value(get(protocol))
+        protocol: value(get(protocol)),
+        chain: (get(chain) as EvmChain) || null,
+        tokenKind: (get(tokenKind) as EvmTokenKind) || null
       };
     });
 
@@ -454,7 +496,9 @@ export default defineComponent({
         set(decimals, token.decimals ? token.decimals.toString() : '');
         set(protocol, token.protocol ?? '');
         set(underlyingTokens, token.underlyingTokens ?? []);
-        set(assetType, ETHEREUM_TOKEN);
+        set(assetType, EVM_TOKEN);
+        set(chain, token.chain);
+        set(tokenKind, token.tokenKind);
       }
     });
 
@@ -554,7 +598,7 @@ export default defineComponent({
 
     const save = async () => {
       try {
-        const newIdentifier = get(isEthereumToken)
+        const newIdentifier = get(isEvmToken)
           ? await saveEthereumToken()
           : await saveAsset();
         set(identifier, newIdentifier);
@@ -624,11 +668,16 @@ export default defineComponent({
       preview,
       icon,
       input,
-      isEthereumToken,
+      isEvmToken,
       save,
       refreshIcon,
       timestamp,
-      refreshIconLoading
+      refreshIconLoading,
+      toSentenceCase,
+      chain,
+      tokenKind,
+      evmChainsData,
+      evmTokenKindsData
     };
   }
 });

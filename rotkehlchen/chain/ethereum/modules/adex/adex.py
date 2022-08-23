@@ -33,7 +33,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.types import ChecksumEthAddress, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
@@ -302,9 +302,9 @@ class Adex(EthereumModule):
                 'Failed to deserialize an AdEx channel withdraw event. Check logs for more details',  # noqa: E501
             )
 
-        if token_address == A_ADX.ethereum_address:
+        if token_address == A_ADX.evm_address:
             token = A_ADX
-        elif token_address == A_DAI.ethereum_address:
+        elif token_address == A_DAI.evm_address:
             token = A_DAI
         else:
             log.error(
@@ -459,7 +459,7 @@ class Adex(EthereumModule):
 
     def _get_staking_events(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -477,8 +477,8 @@ class Adex(EthereumModule):
         - RemoteError: when there is a problem either querying the subgraph or
         deserializing the events.
         """
-        new_addresses: List[ChecksumEthAddress] = []
-        existing_addresses: List[ChecksumEthAddress] = []
+        new_addresses: List[ChecksumEvmAddress] = []
+        existing_addresses: List[ChecksumEvmAddress] = []
         min_from_timestamp: Timestamp = to_timestamp
 
         # Get addresses' last used query range for AdEx events
@@ -538,7 +538,7 @@ class Adex(EthereumModule):
     @overload
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
             event_type: Literal[AdexEventType.BOND],
             from_timestamp: Optional[Timestamp] = None,
@@ -549,7 +549,7 @@ class Adex(EthereumModule):
     @overload
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
             event_type: Literal[AdexEventType.UNBOND],
             from_timestamp: Optional[Timestamp] = None,
@@ -560,7 +560,7 @@ class Adex(EthereumModule):
     @overload
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
             event_type: Literal[AdexEventType.UNBOND_REQUEST],
             from_timestamp: Optional[Timestamp] = None,
@@ -571,7 +571,7 @@ class Adex(EthereumModule):
     @overload
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
             event_type: Literal[AdexEventType.CHANNEL_WITHDRAW],
             from_timestamp: Optional[Timestamp] = None,
@@ -581,7 +581,7 @@ class Adex(EthereumModule):
 
     def _get_staking_events_graph(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
             event_type: AdexEventType,
             from_timestamp: Optional[Timestamp] = None,
@@ -716,7 +716,7 @@ class Adex(EthereumModule):
 
     def _get_identity_address_map(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> Dict[ChecksumAddress, ChecksumAddress]:
         """Returns a map between the user identity address in the protocol and
         the EOA/contract address.
@@ -725,7 +725,7 @@ class Adex(EthereumModule):
 
     def _get_new_staking_events_graph(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -764,7 +764,7 @@ class Adex(EthereumModule):
         return all_events
 
     @staticmethod
-    def _get_user_identity(address: ChecksumAddress) -> ChecksumEthAddress:
+    def _get_user_identity(address: ChecksumAddress) -> ChecksumEvmAddress:
         """Given an address (signer) returns its protocol user identity"""
         return generate_address_via_create2(
             address=IDENTITY_FACTORY_ADDR,
@@ -881,7 +881,7 @@ class Adex(EthereumModule):
 
     def get_history(
             self,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
@@ -914,7 +914,7 @@ class Adex(EthereumModule):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> List[DefiEvent]:
         if len(addresses) == 0:
             return []
@@ -962,7 +962,7 @@ class Adex(EthereumModule):
         return events
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List[AssetBalance]]:
         """When an account is added for adex check its balances"""
         balance = self.staking_pool.call(self.ethereum, 'balanceOf', arguments=[address])
         if balance == 0:
@@ -976,7 +976,7 @@ class Adex(EthereumModule):
         )
         return [AssetBalance(asset=A_ADX, balance=Balance(amount=amount, usd_value=amount * usd_price))]  # noqa: E501
 
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         pass
 
     def deactivate(self) -> None:

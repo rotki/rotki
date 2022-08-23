@@ -2,17 +2,17 @@ import dataclasses
 from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.constants.ethereum import EthereumContract
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import (
     deserialize_optional_to_fval,
     deserialize_timestamp,
 )
-from rotkehlchen.types import ChecksumEthAddress, EVMTxHash, Timestamp, make_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, make_evm_tx_hash
 
 YEARN_EVENT_DB_TUPLE = Tuple[
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     Literal['deposit', 'withdraw'],  # event_type
     str,  # from_asset identifier
     str,  # from_value amount
@@ -60,7 +60,7 @@ class YearnVaultEvent:
             'log_index': self.log_index,
         }
 
-    def serialize_for_db(self, address: ChecksumEthAddress) -> YEARN_EVENT_DB_TUPLE:
+    def serialize_for_db(self, address: ChecksumEvmAddress) -> YEARN_EVENT_DB_TUPLE:
         pnl_amount = None
         pnl_usd_value = None
         if self.realized_pnl:
@@ -157,5 +157,5 @@ class YearnVaultEvent:
 class YearnVault(NamedTuple):
     name: str
     contract: EthereumContract
-    underlying_token: EthereumToken
-    token: EthereumToken
+    underlying_token: EvmToken
+    token: EvmToken

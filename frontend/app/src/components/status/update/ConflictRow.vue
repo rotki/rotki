@@ -31,7 +31,7 @@ const ConflictRow = defineComponent({
     const { field } = toRefs(props);
 
     const isStarted = computed(() => get(field) === 'started');
-    const isAddress = computed(() => get(field) === 'ethereumAddress');
+    const isAddress = computed(() => get(field) === 'evmAddress');
 
     return {
       isStarted,

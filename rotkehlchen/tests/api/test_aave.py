@@ -164,7 +164,7 @@ def _query_simple_aave_history_test(
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
             server,
-            "aavehistoryresource",
+            'aavehistoryresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -228,9 +228,9 @@ def _query_simple_aave_history_test_v2(
     assert len(total_lost) == 1
     assert len(total_earned_liquidations) == 0
     assert len(total_earned_interest) == 1
-    assert len(total_earned_interest['_ceth_0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0']) == 2
-    assert FVal(total_earned_interest['_ceth_0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0']['amount']) >= FVal('0.09')  # noqa: E501
-    assert FVal(total_earned_interest['_ceth_0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0']['usd_value']) >= FVal('0.09248')  # noqa: E501
+    assert len(total_earned_interest['eip155:1/erc20:0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0']) == 2  # noqa: 501
+    assert FVal(total_earned_interest['eip155:1/erc20:0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0']['amount']) >= FVal('0.09')  # noqa: E501
+    assert FVal(total_earned_interest['eip155:1/erc20:0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0']['usd_value']) >= FVal('0.09248')  # noqa: E501
 
     assert_serialized_lists_equal(
         a=events[:len(expected_aave_v2_events)],

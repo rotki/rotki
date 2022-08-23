@@ -90,6 +90,7 @@
             <thead>
               <tr>
                 <th>{{ $t('common.address') }}</th>
+                <th>{{ $t('underlying_token_manager.tokens.token_kind') }}</th>
                 <th>{{ $t('underlying_token_manager.tokens.weight') }}</th>
               </tr>
             </thead>
@@ -98,6 +99,7 @@
                 <td class="grow">
                   <hash-link :text="token.address" full-address />
                 </td>
+                <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
                 <td class="shrink">
                   {{
                     $t('underlying_token_manager.tokens.weight_percentage', {
@@ -134,7 +136,7 @@ import TableExpandContainer from '@/components/helper/table/TableExpandContainer
 import i18n from '@/i18n';
 import { EthereumToken, ManagedAsset } from '@/services/assets/types';
 import { Nullable } from '@/types';
-import { compareAssets } from '@/utils/assets';
+import { compareAssets, getAddressFromEvmIdentifier } from '@/utils/assets';
 import { toSentenceCase } from '@/utils/text';
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
@@ -244,12 +246,14 @@ export default defineComponent({
     };
 
     const formatType = (string?: string) => {
-      return toSentenceCase(string ?? 'ethereum token');
+      return toSentenceCase(string ?? 'EVM token');
     };
 
     const getAsset = (item: EthereumToken) => {
       const name =
-        item.name ?? item.symbol ?? item.identifier?.replace('_ceth_', '');
+        item.name ??
+        item.symbol ??
+        getAddressFromEvmIdentifier(item.identifier);
       return {
         name,
         symbol: item.symbol ?? '',

@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDailyStats,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.utils import scrape_validator_daily_stats
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
@@ -23,9 +23,9 @@ from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
-ADDR1 = string_to_ethereum_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
-ADDR2 = string_to_ethereum_address('0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19')
-ADDR3 = string_to_ethereum_address('0x3266F3546a1e5Dc6A15588f3324741A0E20a3B6c')
+ADDR1 = string_to_evm_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
+ADDR2 = string_to_evm_address('0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19')
+ADDR3 = string_to_evm_address('0x3266F3546a1e5Dc6A15588f3324741A0E20a3B6c')
 
 # List of ADDR1, ADDR2 and ADDR3 deposit events from 1604506685 to 1605044577
 # sorted by (timestamp, log_index).

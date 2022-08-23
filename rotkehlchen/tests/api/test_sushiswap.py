@@ -6,7 +6,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType
 from rotkehlchen.chain.ethereum.modules.sushiswap import (
     SUSHISWAP_EVENTS_PREFIX,
@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.modules.sushiswap import (
     SushiswapPoolEventsBalance,
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -36,7 +36,7 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 
-SWAP_ADDRESS = string_to_ethereum_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121')
+SWAP_ADDRESS = string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121')
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[SWAP_ADDRESS]])
@@ -115,7 +115,7 @@ def test_get_balances(
 
             # Unknown asset, at least contains token address
             if lp_asset_type is dict:
-                assert lp_asset['asset']['ethereum_address'].startswith('0x')
+                assert lp_asset['asset']['evm_address'].startswith('0x')
             # Known asset, contains identifier
             else:
                 assert not lp_asset['asset'].startswith('0x')
@@ -132,11 +132,11 @@ def test_get_balances(
 
 def get_expected_trades():
     """Function so no price (unknown) assets can be resolved only when existing in the DB"""
-    address = string_to_ethereum_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121')
+    address = string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121')
     return [AMMTrade(
         trade_type=TradeType.BUY,
-        base_asset=EthereumToken('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
-        quote_asset=EthereumToken('0x4b4D2e899658FB59b1D518b68fe836B100ee8958'),
+        base_asset=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+        quote_asset=EvmToken('eip155:1/erc20:0x4b4D2e899658FB59b1D518b68fe836B100ee8958'),
         amount=AssetAmount(FVal('796.857811')),
         rate=Price(FVal('0.0008323741932057006980885326353')),
         trade_index=0,
@@ -146,12 +146,12 @@ def get_expected_trades():
             ),
             log_index=141,
             address=address,
-            from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-            to_address=string_to_ethereum_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121'),
+            from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            to_address=string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121'),
             timestamp=Timestamp(1609308616),
             location=Location.SUSHISWAP,
-            token0=EthereumToken('0x4b4D2e899658FB59b1D518b68fe836B100ee8958'),
-            token1=EthereumToken('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+            token0=EvmToken('eip155:1/erc20:0x4b4D2e899658FB59b1D518b68fe836B100ee8958'),
+            token1=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
             amount0_in=AssetAmount(FVal('0.663283877530785731')),
             amount1_in=AssetAmount(ZERO),
             amount0_out=AssetAmount(ZERO),
@@ -159,8 +159,8 @@ def get_expected_trades():
         )],
     ), AMMTrade(
         trade_type=TradeType.BUY,
-        base_asset=EthereumToken('0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
-        quote_asset=EthereumToken('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+        base_asset=EvmToken('eip155:1/erc20:0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
+        quote_asset=EvmToken('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
         amount=AssetAmount(FVal('2.223721994593087248')),
         rate=Price(FVal('1124.241252314216598775470692')),
         trade_index=0,
@@ -170,12 +170,12 @@ def get_expected_trades():
             ),
             log_index=26,
             address=address,
-            from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-            to_address=string_to_ethereum_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
+            from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            to_address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
             timestamp=Timestamp(1609303966),
             location=Location.SUSHISWAP,
-            token0=EthereumToken('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
-            token1=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            token0=EvmToken('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+            token1=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
             amount0_in=AssetAmount(FVal('2500')),
             amount1_in=AssetAmount(ZERO),
             amount0_out=AssetAmount(ZERO),
@@ -186,12 +186,12 @@ def get_expected_trades():
             ),
             log_index=29,
             address=address,
-            from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-            to_address=string_to_ethereum_address('0xC9cB53B48A2f3A9e75982685644c1870F1405CCb'),
+            from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            to_address=string_to_evm_address('0xC9cB53B48A2f3A9e75982685644c1870F1405CCb'),
             timestamp=Timestamp(1609303966),
             location=Location.SUSHISWAP,
-            token0=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-            token1=EthereumToken('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+            token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            token1=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
             amount0_in=AssetAmount(FVal('3.410623314913014194')),
             amount1_in=AssetAmount(ZERO),
             amount0_out=AssetAmount(ZERO),
@@ -202,12 +202,12 @@ def get_expected_trades():
             ),
             log_index=32,
             address=address,
-            from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-            to_address=string_to_ethereum_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121'),
+            from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            to_address=string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121'),
             timestamp=Timestamp(1609303966),
             location=Location.SUSHISWAP,
-            token0=EthereumToken('0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
-            token1=EthereumToken('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+            token0=EvmToken('eip155:1/erc20:0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
+            token1=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
             amount0_in=AssetAmount(ZERO),
             amount1_in=AssetAmount(FVal('2474.601464')),
             amount0_out=AssetAmount(FVal('2.223721994593087248')),
@@ -215,8 +215,8 @@ def get_expected_trades():
         )],
     ), AMMTrade(
         trade_type=TradeType.BUY,
-        base_asset=EthereumToken('0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
-        quote_asset=EthereumToken('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+        base_asset=EvmToken('eip155:1/erc20:0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
+        quote_asset=EvmToken('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
         amount=AssetAmount(FVal('1.925851508322134245')),
         rate=Price(FVal('1012.539124420295894184748806')),
         trade_index=0,
@@ -226,12 +226,12 @@ def get_expected_trades():
             ),
             log_index=205,
             address=address,
-            from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-            to_address=string_to_ethereum_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
+            from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            to_address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
             timestamp=Timestamp(1609301469),
             location=Location.SUSHISWAP,
-            token0=EthereumToken('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
-            token1=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            token0=EvmToken('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+            token1=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
             amount0_in=AssetAmount(FVal('1950')),
             amount1_in=AssetAmount(ZERO),
             amount0_out=AssetAmount(ZERO),
@@ -242,12 +242,12 @@ def get_expected_trades():
             ),
             log_index=208,
             address=address,
-            from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-            to_address=string_to_ethereum_address('0xC9cB53B48A2f3A9e75982685644c1870F1405CCb'),
+            from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            to_address=string_to_evm_address('0xC9cB53B48A2f3A9e75982685644c1870F1405CCb'),
             timestamp=Timestamp(1609301469),
             location=Location.SUSHISWAP,
-            token0=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-            token1=EthereumToken('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+            token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            token1=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
             amount0_in=AssetAmount(FVal('2.6455727132446468')),
             amount1_in=AssetAmount(ZERO),
             amount0_out=AssetAmount(ZERO),
@@ -258,12 +258,12 @@ def get_expected_trades():
             ),
             log_index=211,
             address=address,
-            from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-            to_address=string_to_ethereum_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121'),
+            from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            to_address=string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121'),
             timestamp=Timestamp(1609301469),
             location=Location.SUSHISWAP,
-            token0=EthereumToken('0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
-            token1=EthereumToken('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+            token0=EvmToken('eip155:1/erc20:0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
+            token1=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
             amount0_in=AssetAmount(ZERO),
             amount1_in=AssetAmount(FVal('1936.810111')),
             amount0_out=AssetAmount(FVal('1.925851508322134245')),
@@ -271,8 +271,8 @@ def get_expected_trades():
         )],
     ), AMMTrade(
         trade_type=TradeType.BUY,
-        base_asset=EthereumToken('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
-        quote_asset=EthereumToken('0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
+        base_asset=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+        quote_asset=EvmToken('eip155:1/erc20:0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
         amount=AssetAmount(FVal('951.611472')),
         rate=Price(FVal('0.001050849038104071952592013309')),
         trade_index=0,
@@ -282,12 +282,12 @@ def get_expected_trades():
             ),
             log_index=9,
             address=address,
-            from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-            to_address=string_to_ethereum_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121'),
+            from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            to_address=string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121'),
             timestamp=Timestamp(1609296759),
             location=Location.SUSHISWAP,
-            token0=EthereumToken('0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
-            token1=EthereumToken('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+            token0=EvmToken('eip155:1/erc20:0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
+            token1=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
             amount0_in=AssetAmount(FVal('1')),
             amount1_in=AssetAmount(ZERO),
             amount0_out=AssetAmount(ZERO),
@@ -295,8 +295,8 @@ def get_expected_trades():
         )],
     ), AMMTrade(
         trade_type=TradeType.BUY,
-        base_asset=EthereumToken('0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
-        quote_asset=EthereumToken('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+        base_asset=EvmToken('eip155:1/erc20:0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
+        quote_asset=EvmToken('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
         amount=AssetAmount(FVal('1')),
         rate=Price(FVal('511.20342')),
         trade_index=0,
@@ -306,12 +306,12 @@ def get_expected_trades():
             ),
             log_index=242,
             address=address,
-            from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-            to_address=string_to_ethereum_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
+            from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            to_address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
             timestamp=Timestamp(1609294923),
             location=Location.SUSHISWAP,
-            token0=EthereumToken('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
-            token1=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            token0=EvmToken('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+            token1=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
             amount0_in=AssetAmount(FVal('511.20342')),
             amount1_in=AssetAmount(ZERO),
             amount0_out=AssetAmount(ZERO),
@@ -322,12 +322,12 @@ def get_expected_trades():
             ),
             log_index=245,
             address=address,
-            from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-            to_address=string_to_ethereum_address('0xC9cB53B48A2f3A9e75982685644c1870F1405CCb'),
+            from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            to_address=string_to_evm_address('0xC9cB53B48A2f3A9e75982685644c1870F1405CCb'),
             timestamp=Timestamp(1609294923),
             location=Location.SUSHISWAP,
-            token0=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-            token1=EthereumToken('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+            token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            token1=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
             amount0_in=AssetAmount(FVal('0.690577933591789501')),
             amount1_in=AssetAmount(ZERO),
             amount0_out=AssetAmount(ZERO),
@@ -338,12 +338,12 @@ def get_expected_trades():
             ),
             log_index=248,
             address=address,
-            from_address=string_to_ethereum_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-            to_address=string_to_ethereum_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121'),
+            from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            to_address=string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121'),
             timestamp=Timestamp(1609294923),
             location=Location.SUSHISWAP,
-            token0=EthereumToken('0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
-            token1=EthereumToken('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+            token0=EvmToken('eip155:1/erc20:0x368B3a58B5f49392e5C9E4C998cb0bB966752E51'),
+            token1=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
             amount0_in=AssetAmount(ZERO),
             amount1_in=AssetAmount(FVal('506.399839')),
             amount0_out=AssetAmount(FVal('1')),
@@ -410,22 +410,22 @@ def test_get_sushiswap_trades_history(
 TEST_EVENTS_ADDRESS_1 = '0xE11fc0B43ab98Eb91e9836129d1ee7c3Bc95df50'
 EXPECTED_EVENTS_BALANCES_1 = [
     SushiswapPoolEventsBalance(
-        address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
-        pool_address=string_to_ethereum_address("0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8"),
-        token0=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-        token1=EthereumToken('0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
+        address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
+        pool_address=string_to_evm_address("0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8"),
+        token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+        token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
         events=[
             SushiswapPoolEvent(
                 tx_hash=deserialize_evm_tx_hash(
                     '0xb226ddb8cbb286a7a998a35263ad258110eed5f923488f03a8d890572cd4608e',
                 ),
                 log_index=137,
-                address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                address=string_to_evm_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1627401170),
                 event_type=EventType.MINT_SUSHISWAP,
-                pool_address=string_to_ethereum_address("0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8"),  # noqa: E501
-                token0=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                token1=EthereumToken('0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
+                pool_address=string_to_evm_address("0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8"),  # noqa: E501
+                token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+                token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
                 amount0=AssetAmount(FVal('0.192426688761441618')),
                 amount1=AssetAmount(FVal('1.498665931466140813')),
                 usd_price=Price(FVal('874.684787927721190125529172850727')),

@@ -1,21 +1,42 @@
 from pathlib import Path
 from shutil import copyfile
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
+from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
+from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.types import Price, Timestamp
 
+if TYPE_CHECKING:
+    from rotkehlchen.utils.upgrades import UpgradeRecord
+
 
 @pytest.fixture(name='custom_ethereum_tokens')
-def fixture_custom_ethereum_tokens() -> Optional[List[EthereumToken]]:
+def fixture_custom_ethereum_tokens() -> Optional[List[EvmToken]]:
     return None
+
+
+@pytest.fixture(name='reaload_custom_assets')
+def fixture_reaload_custom_assets() -> bool:
+    return True
+
+
+@pytest.fixture(name='target_globaldb_version')
+def fixture_target_globaldb_version() -> int:
+    return GLOBAL_DB_VERSION
+
+
+@pytest.fixture(name='globaldb_upgrades')
+def fixture_globaldb_upgrades() -> List['UpgradeRecord']:
+    return UPGRADES_LIST
 
 
 def create_globaldb(
@@ -31,7 +52,14 @@ def create_globaldb(
 
 
 @pytest.fixture(name='globaldb')
-def fixture_globaldb(globaldb_version, tmpdir_factory, sql_vm_instructions_cb):
+def fixture_globaldb(
+        globaldb_version,
+        tmpdir_factory,
+        sql_vm_instructions_cb,
+        reaload_custom_assets,
+        target_globaldb_version,
+        globaldb_upgrades,
+):
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
     AssetResolver().clean_memory_cache()
@@ -44,6 +72,13 @@ def fixture_globaldb(globaldb_version, tmpdir_factory, sql_vm_instructions_cb):
     new_global_dir = new_data_dir / 'global_data'
     new_global_dir.mkdir(parents=True, exist_ok=True)
     copyfile(source_db_path, new_global_dir / 'global.db')
+    if reaload_custom_assets is False:
+        with (
+            patch('rotkehlchen.globaldb.handler._reload_constant_assets', lambda *a, **k: None),
+            patch('rotkehlchen.globaldb.upgrades.manager.UPGRADES_LIST', globaldb_upgrades),
+            patch('rotkehlchen.globaldb.utils.GLOBAL_DB_VERSION', target_globaldb_version),
+        ):
+            return create_globaldb(new_data_dir, sql_vm_instructions_cb)
     return create_globaldb(new_data_dir, sql_vm_instructions_cb)
 
 

@@ -5,14 +5,14 @@ from shutil import copyfile
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_PICKLE
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
@@ -21,19 +21,21 @@ from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import INITIAL_TOKENS
-from rotkehlchen.types import Location, Price, Timestamp, TradeType
+from rotkehlchen.types import EvmTokenKind, Location, Price, Timestamp, TradeType
 
-selfkey_address = string_to_ethereum_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
+selfkey_address = string_to_evm_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
 selfkey_id = ethaddress_to_identifier(selfkey_address)
 selfkey_asset_data = AssetData(
     identifier=selfkey_id,
     name='Selfkey',
     symbol='KEY',
-    asset_type=AssetType.ETHEREUM_TOKEN,
+    asset_type=AssetType.EVM_TOKEN,
     started=Timestamp(1508803200),
     forked=None,
     swapped_for=None,
-    ethereum_address=selfkey_address,
+    address=selfkey_address,
+    chain=ChainID.ETHEREUM,
+    token_kind=EvmTokenKind.ERC20,
     decimals=18,
     cryptocompare=None,
     coingecko='selfkey',
@@ -47,7 +49,9 @@ bidr_asset_data = AssetData(
     started=Timestamp(1593475200),
     forked=None,
     swapped_for=None,
-    ethereum_address=None,
+    address=None,
+    chain=None,
+    token_kind=None,
     decimals=None,
     cryptocompare=None,
     coingecko='binanceidr',
@@ -59,9 +63,17 @@ bidr_asset_data = AssetData(
 @pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
 def test_get_ethereum_token_identifier(globaldb):
     with globaldb.conn.read_ctx() as cursor:
-        assert globaldb.get_ethereum_token_identifier(cursor, '0xnotexistingaddress') is None
-        token_0_id = globaldb.get_ethereum_token_identifier(cursor, INITIAL_TOKENS[0].ethereum_address)  # noqa: E501
-    assert token_0_id == ethaddress_to_identifier(INITIAL_TOKENS[0].ethereum_address)
+        assert globaldb.get_evm_token_identifier(
+            cursor=cursor,
+            address='0xnotexistingaddress',
+            chain=ChainID.ETHEREUM,
+        ) is None
+        token_0_id = globaldb.get_evm_token_identifier(
+            cursor=cursor,
+            address=INITIAL_TOKENS[0].evm_address,
+            chain=ChainID.ETHEREUM,
+        )
+    assert token_0_id == INITIAL_TOKENS[0].identifier
 
 
 def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb):
@@ -94,39 +106,49 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
     """
     # To unit test it we need to even hack it a bit. Make a new token, add it in the DB
     # then delete it and then try to add a new one referencing the old one. Since we
-    # need to obtain a valid EthereumToken object
+    # need to obtain a valid EvmToken object
     address_to_delete = make_ethereum_address()
-    token_to_delete = EthereumToken.initialize(
+    token_to_delete = EvmToken.initialize(
         address=address_to_delete,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='willdell',
         symbol='DELME',
     )
-    token_to_delete_id = 'DELMEID1'
+    token_to_delete_id = token_to_delete.identifier
     globaldb.add_asset(
         asset_id=token_to_delete_id,
-        asset_type=AssetType.ETHEREUM_TOKEN,
+        asset_type=AssetType.EVM_TOKEN,
         data=token_to_delete,
     )
     asset_to_delete = Asset(token_to_delete_id)
     with globaldb.conn.write_ctx() as cursor:
-        assert globaldb.delete_ethereum_token(cursor, address_to_delete) == token_to_delete_id
+        assert globaldb.delete_evm_token(
+            write_cursor=cursor,
+            address=address_to_delete,
+            chain=ChainID.ETHEREUM,
+        ) == token_to_delete_id
 
     # now try to add a new token with swapped_for pointing to a non existing token in the DB
     with pytest.raises(InputError):
         globaldb.add_asset(
             asset_id='NEWID',
-            asset_type=AssetType.ETHEREUM_TOKEN,
-            data=EthereumToken.initialize(
+            asset_type=AssetType.EVM_TOKEN,
+            data=EvmToken.initialize(
                 address=make_ethereum_address(),
+                chain=ChainID.ETHEREUM,
+                token_kind=EvmTokenKind.ERC20,
                 swapped_for=asset_to_delete,
             ),
         )
 
     # now edit a new token with swapped_for pointing to a non existing token in the DB
-    bat_custom = globaldb.get_ethereum_token(A_BAT.ethereum_address)
-    bat_custom = EthereumToken.initialize(
-        address=A_BAT.ethereum_address,
+    bat_custom = globaldb.get_evm_token(address=A_BAT.evm_address, chain=ChainID.ETHEREUM)
+    bat_custom = EvmToken.initialize(
+        address=A_BAT.evm_address,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         decimals=A_BAT.decimals,
         name=A_BAT.name,
         symbol=A_BAT.symbol,
@@ -138,7 +160,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         underlying_tokens=None,
     )
     with pytest.raises(InputError):
-        globaldb.edit_ethereum_token(bat_custom)
+        globaldb.edit_evm_token(bat_custom)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -193,20 +215,22 @@ def test_check_asset_exists(globaldb):
 def test_get_asset_with_symbol(globaldb):
     # both categories of assets
     asset_data = globaldb.get_assets_with_symbol('KEY')
-    bihukey_address = string_to_ethereum_address('0x4Cd988AfBad37289BAAf53C13e98E2BD46aAEa8c')
-    aave_address = string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9')
-    renbtc_address = string_to_ethereum_address('0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D')
+    bihukey_address = string_to_evm_address('0x4Cd988AfBad37289BAAf53C13e98E2BD46aAEa8c')
+    aave_address = string_to_evm_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9')
+    renbtc_address = string_to_evm_address('0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D')
     assert asset_data == [
         selfkey_asset_data,
         AssetData(
             identifier=ethaddress_to_identifier(bihukey_address),
             name='Bihu KEY',
             symbol='KEY',
-            asset_type=AssetType.ETHEREUM_TOKEN,
+            asset_type=AssetType.EVM_TOKEN,
             started=1507822985,
             forked=None,
             swapped_for=None,
-            ethereum_address=bihukey_address,
+            address=bihukey_address,
+            chain=ChainID.ETHEREUM,
+            token_kind=EvmTokenKind.ERC20,
             decimals=18,
             cryptocompare='BIHU',
             coingecko='key',
@@ -219,7 +243,9 @@ def test_get_asset_with_symbol(globaldb):
             started=1405382400,
             forked=None,
             swapped_for=None,
-            ethereum_address=None,
+            address=None,
+            chain=None,
+            token_kind=None,
             decimals=None,
             cryptocompare='KEYC',
             coingecko='',
@@ -232,13 +258,30 @@ def test_get_asset_with_symbol(globaldb):
         identifier=ethaddress_to_identifier(aave_address),
         name='Aave Token',
         symbol='AAVE',
-        asset_type=AssetType.ETHEREUM_TOKEN,
+        asset_type=AssetType.EVM_TOKEN,
         started=1600970788,
         forked=None,
         swapped_for=None,
-        ethereum_address=aave_address,
+        address=aave_address,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         decimals=18,
         cryptocompare=None,
+        coingecko='aave',
+        protocol=None,
+    ), AssetData(
+        identifier='eip155:137/erc20:0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
+        name='Aave (PoS)',
+        symbol='AAVE',
+        asset_type=AssetType.EVM_TOKEN,
+        started=None,
+        forked=None,
+        swapped_for=None,
+        address='0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
+        chain=ChainID.MATIC,
+        token_kind=EvmTokenKind.ERC20,
+        decimals=18,
+        cryptocompare='',
         coingecko='aave',
         protocol=None,
     )]
@@ -250,17 +293,34 @@ def test_get_asset_with_symbol(globaldb):
         identifier=ethaddress_to_identifier(renbtc_address),
         name='renBTC',
         symbol='renBTC',
-        asset_type=AssetType.ETHEREUM_TOKEN,
+        asset_type=AssetType.EVM_TOKEN,
         started=1585090944,
         forked=None,
         swapped_for=None,
-        ethereum_address=renbtc_address,
+        address=renbtc_address,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         decimals=8,
         cryptocompare=None,
         coingecko='renbtc',
         protocol=None,
+    ), AssetData(
+        identifier='eip155:137/erc20:0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
+        name='renBTC',
+        symbol='renBTC',
+        asset_type=AssetType.EVM_TOKEN,
+        started=None,
+        forked=None,
+        swapped_for=None,
+        address='0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
+        chain=ChainID.MATIC,
+        token_kind=EvmTokenKind.ERC20,
+        decimals=8,
+        cryptocompare='',
+        coingecko='renbtc',
+        protocol=None,
     )]
-    for x in itertools.product(('ReNbTc', 'renbtc', 'RENBTC', 'rEnBTc'), (None, AssetType.ETHEREUM_TOKEN)):  # noqa: E501
+    for x in itertools.product(('ReNbTc', 'renbtc', 'RENBTC', 'rEnBTc'), (None, AssetType.EVM_TOKEN)):  # noqa: E501
         assert globaldb.get_assets_with_symbol(*x) == expected_renbtc
 
 
@@ -291,7 +351,9 @@ def test_get_all_asset_data_specific_ids(globaldb):
         started=Timestamp(1231006505),
         forked=None,
         swapped_for=None,
-        ethereum_address=None,
+        address=None,
+        chain=None,
+        token_kind=None,
         decimals=None,
         cryptocompare=None,
         coingecko='bitcoin',
@@ -305,7 +367,9 @@ def test_get_all_asset_data_specific_ids(globaldb):
         started=Timestamp(1438214400),
         forked=None,
         swapped_for=None,
-        ethereum_address=None,
+        address=None,
+        chain=None,
+        token_kind=None,
         decimals=None,
         cryptocompare=None,
         coingecko='ethereum',
@@ -392,17 +456,22 @@ def test_globaldb_pragma_foreign_keys(globaldb):
 
     cursor.execute(
         """
-        INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES(
-        "0xD178b20c6007572bD1FD01D205cC20D32B4A6017", 18, NULL
-        );
+        INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES(
+        "eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "A", "A",
+        "0xD178b20c6007572bD1FD01D205cC20D32B4A6017", 18, NULL)
         """,
     )
     cursor.execute(
         """
-        INSERT INTO assets(identifier,type, name, symbol,
-        started, swapped_for, coingecko, cryptocompare, details_reference)
-        VALUES("_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "C", "Aidus", "AID"   ,
-        123, NULL,   NULL, "AIDU", "0xD178b20c6007572bD1FD01D205cC20D32B4A6017");
+        INSERT INTO assets(identifier,type, started, swapped_for) VALUES(
+        "eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "C", 123, NULL)
+        """,
+    )
+    cursor.execute(
+        """
+        INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare,
+        forked) VALUES("eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "Aidus",
+        NULL, "AIDU", "", NULL);
         """,
     )
     # activate them again should fail since we haven't finished
@@ -449,33 +518,38 @@ def test_global_db_restore(globaldb, database):
     """
     # Add a custom eth token
     address_to_delete = make_ethereum_address()
-    token_to_delete = EthereumToken.initialize(
+    token_to_delete = EvmToken.initialize(
         address=address_to_delete,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='willdell',
         symbol='DELME',
     )
     globaldb.add_asset(
         asset_id='DELMEID1',
-        asset_type=AssetType.ETHEREUM_TOKEN,
+        asset_type=AssetType.EVM_TOKEN,
         data=token_to_delete,
     )
     # Add a token with underlying token
     with_underlying_address = make_ethereum_address()
-    with_underlying = EthereumToken.initialize(
+    with_underlying = EvmToken.initialize(
         address=with_underlying_address,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name="Not a scam",
         symbol="NSCM",
         started=0,
         underlying_tokens=[UnderlyingToken(
             address=address_to_delete,
+            token_kind=EvmTokenKind.ERC20,
             weight=1,
         )],
     )
     globaldb.add_asset(
         asset_id='xDELMEID1',
-        asset_type=AssetType.ETHEREUM_TOKEN,
+        asset_type=AssetType.EVM_TOKEN,
         data=with_underlying,
     )
     # Add asset that is not a token
@@ -533,19 +607,19 @@ def test_global_db_restore(globaldb, database):
     status, msg = GlobalDBHandler().hard_reset_assets_list(database, True)
     assert status, msg
     cursor = globaldb.conn.cursor()
-    query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{address_to_delete}";'
+    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{address_to_delete}";'
     r = cursor.execute(query)
     assert r.fetchone() == (0,), 'Ethereum token should have been deleted'
-    query = f'SELECT COUNT(*) FROM assets where details_reference == "{address_to_delete}";'
+    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{address_to_delete}";'
     r = cursor.execute(query)
     assert r.fetchone() == (0,), 'Ethereum token should have been deleted from assets'
-    query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{with_underlying_address}";'
+    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{with_underlying_address}";'
     r = cursor.execute(query)
     assert r.fetchone() == (0,), 'Token with underlying token should have been deleted from assets'
-    query = f'SELECT COUNT(*) FROM assets where details_reference == "{with_underlying_address}";'
+    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{with_underlying_address}";'
     r = cursor.execute(query)
     assert r.fetchone() == (0,)
-    query = f'SELECT COUNT(*) FROM underlying_tokens_list where address == "{address_to_delete}";'
+    query = f'SELECT COUNT(*) FROM underlying_tokens_list where identifier == "{ethaddress_to_identifier(address_to_delete)}";'  # noqa: E501
     r = cursor.execute(query)
     assert r.fetchone() == (0,)
     query = 'SELECT COUNT(*) FROM assets where identifier == "1";'
@@ -581,33 +655,38 @@ def test_global_db_reset(globaldb):
     """
     # Add a custom eth token
     address_to_delete = make_ethereum_address()
-    token_to_delete = EthereumToken.initialize(
+    token_to_delete = EvmToken.initialize(
         address=address_to_delete,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='willdell',
         symbol='DELME',
     )
     globaldb.add_asset(
         asset_id='DELMEID1',
-        asset_type=AssetType.ETHEREUM_TOKEN,
+        asset_type=AssetType.EVM_TOKEN,
         data=token_to_delete,
     )
     # Add a token with underlying token
     with_underlying_address = make_ethereum_address()
-    with_underlying = EthereumToken.initialize(
+    with_underlying = EvmToken.initialize(
         address=with_underlying_address,
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name="Not a scam",
         symbol="NSCM",
         started=0,
         underlying_tokens=[UnderlyingToken(
             address=address_to_delete,
+            token_kind=EvmTokenKind.ERC20,
             weight=1,
         )],
     )
     globaldb.add_asset(
         asset_id='xDELMEID1',
-        asset_type=AssetType.ETHEREUM_TOKEN,
+        asset_type=AssetType.EVM_TOKEN,
         data=with_underlying,
     )
     # Add asset that is not a token
@@ -621,35 +700,39 @@ def test_global_db_reset(globaldb):
         },
     )
     # Edit one token
-    one_inch_update = EthereumToken.initialize(
+    one_inch_update = EvmToken.initialize(
         address='0x111111111117dC0aa78b770fA6A738034120C302',
+        chain=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
         name='1inch boi',
+        symbol='1INCH',
+        decimals=18,
     )
-    GlobalDBHandler().edit_ethereum_token(one_inch_update)
+    GlobalDBHandler().edit_evm_token(one_inch_update)
 
     status, _ = GlobalDBHandler().soft_reset_assets_list()
     assert status
     cursor = globaldb.conn.cursor()
-    query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{address_to_delete}";'
+    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{address_to_delete}";'
     r = cursor.execute(query)
     assert r.fetchone() == (1,), 'Custom ethereum tokens should not been deleted'
-    query = f'SELECT COUNT(*) FROM assets where details_reference == "{address_to_delete}";'
+    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{address_to_delete}";'
     r = cursor.execute(query)
     assert r.fetchone() == (1,)
-    query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{with_underlying_address}";'
+    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{with_underlying_address}";'
     r = cursor.execute(query)
     assert r.fetchone() == (1,), 'Ethereum token with underlying token should not be deleted'
-    query = f'SELECT COUNT(*) FROM assets where details_reference == "{with_underlying_address}";'
+    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{with_underlying_address}";'
     r = cursor.execute(query)
     assert r.fetchone() == (1,)
-    query = f'SELECT COUNT(*) FROM underlying_tokens_list where address == "{address_to_delete}";'
+    query = f'SELECT COUNT(*) FROM underlying_tokens_list where identifier == "{ethaddress_to_identifier(address_to_delete)}";'  # noqa: E501
     r = cursor.execute(query)
     assert r.fetchone() == (1,)
     query = 'SELECT COUNT(*) FROM assets where identifier == "1";'
     r = cursor.execute(query)
     assert r.fetchone() == (1,), 'Non ethereum token added should be in the db'
     # Check that the 1inch token was correctly fixed
-    assert EthereumToken('0x111111111117dC0aa78b770fA6A738034120C302').name != '1inch boi'
+    assert EvmToken('eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302').name != '1inch boi'  # noqa: E501
 
     # Check that the number of assets is the expected
     root_dir = Path(__file__).resolve().parent.parent.parent

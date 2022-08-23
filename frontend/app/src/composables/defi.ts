@@ -6,6 +6,7 @@ import { bigNumberSum } from '@/filters';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswapStore } from '@/store/defi/uniswap';
+import { createEvmIdentifierFromAddress } from '@/utils/assets';
 import { sortDesc } from '@/utils/bignumbers';
 
 export const setupLiquidityPosition = () => {
@@ -26,7 +27,7 @@ export const setupLiquidityPosition = () => {
       const mappedUniswapV2Balances = get(uniswapV2Balances([])).map(item => ({
         ...item,
         usdValue: item.userBalance.usdValue,
-        asset: `_ceth_${item.address}`,
+        asset: createEvmIdentifierFromAddress(item.address),
         premiumOnly: false,
         type: 'token'
       }));
@@ -34,7 +35,7 @@ export const setupLiquidityPosition = () => {
       const mappedSushiswapBalances = get(sushiswapBalances([])).map(item => ({
         ...item,
         usdValue: item.userBalance.usdValue,
-        asset: `_ceth_${item.address}`,
+        asset: createEvmIdentifierFromAddress(item.address),
         premiumOnly: true,
         type: 'token'
       }));
@@ -42,7 +43,7 @@ export const setupLiquidityPosition = () => {
       const mappedBalancerBalances = get(balancerBalances).map(item => ({
         ...item,
         usdValue: item.userBalance.usdValue as BigNumber,
-        asset: `_ceth_${item.address}`,
+        asset: createEvmIdentifierFromAddress(item.address),
         premiumOnly: true,
         assets: item.tokens.map(asset => ({
           ...asset,

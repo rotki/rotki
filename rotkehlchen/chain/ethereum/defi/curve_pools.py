@@ -3,18 +3,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
 
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class CurvePool:
     """Represent a curve pool contract with the position token and the assets in the pool"""
-    lp: ChecksumEthAddress
-    assets: List[ChecksumEthAddress]
-    pool_address: ChecksumEthAddress
+    lp: ChecksumEvmAddress
+    assets: List[ChecksumEvmAddress]
+    pool_address: ChecksumEvmAddress
 
 
-def get_curve_pools() -> Dict[ChecksumEthAddress, CurvePool]:
+def get_curve_pools() -> Dict[ChecksumEvmAddress, CurvePool]:
     """Get pools in a CurvePool structure from information file"""
     pools = {}
     dir_path = Path(__file__).resolve().parent.parent.parent.parent

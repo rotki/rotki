@@ -802,7 +802,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v34_rotkehlchen.db')
     last_db = _init_db_with_target_version(
-        target_version=33,
+        target_version=34,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )

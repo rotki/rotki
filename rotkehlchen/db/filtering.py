@@ -11,7 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     AssetMovementCategory,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     EVMTxHash,
     Location,
     Timestamp,
@@ -97,7 +97,7 @@ class DBETHTransactionJoinsFilter(DBFilter):
     2. If join_events is True, join history_events which makes it possible to apply
     filters by history_events' properties
     """
-    addresses: Optional[List[ChecksumEthAddress]]
+    addresses: Optional[List[ChecksumEvmAddress]]
     should_join_events: bool = False
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
@@ -306,7 +306,7 @@ class FilterWithLocation():
 class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
-    def addresses(self) -> Optional[List[ChecksumEthAddress]]:
+    def addresses(self) -> Optional[List[ChecksumEvmAddress]]:
         if self.join_clause is None:
             return None
 
@@ -320,7 +320,7 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             order_by_rules: Optional[List[Tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
-            addresses: Optional[List[ChecksumEthAddress]] = None,  # noqa: E501
+            addresses: Optional[List[ChecksumEvmAddress]] = None,  # noqa: E501
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,

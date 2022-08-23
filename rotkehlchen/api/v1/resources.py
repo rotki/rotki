@@ -89,7 +89,7 @@ from rotkehlchen.api.v1.schemas import (
     ManualPriceDeleteSchema,
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
-    ModifyEthereumTokenSchema,
+    ModifyEvmTokenSchema,
     NameDeleteSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
@@ -130,11 +130,12 @@ from rotkehlchen.api.v1.schemas import (
     XpubAddSchema,
     XpubPatchSchema,
 )
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -156,7 +157,7 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     BlockchainAccountData,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     Eth2PubKey,
     EVMTxHash,
     ExternalService,
@@ -696,29 +697,29 @@ class EthereumAssetsResource(BaseMethodView):
     get_schema = OptionalEthereumAddressSchema()
     delete_schema = RequiredEthereumAddressSchema()
 
-    def make_edit_schema(self) -> ModifyEthereumTokenSchema:
-        return ModifyEthereumTokenSchema(
+    def make_edit_schema(self) -> ModifyEvmTokenSchema:
+        return ModifyEvmTokenSchema(
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, address: Optional[ChecksumEthAddress]) -> Response:
-        return self.rest_api.get_custom_ethereum_tokens(address=address)
+    def get(self, address: Optional[ChecksumEvmAddress], chain: Optional[ChainID]) -> Response:
+        return self.rest_api.get_custom_ethereum_tokens(address=address, chain=chain)
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_edit_schema, location='json')
-    def put(self, token: EthereumToken) -> Response:
+    def put(self, token: EvmToken) -> Response:
         return self.rest_api.add_custom_ethereum_token(token=token)
 
     @resource_parser.use_kwargs(make_edit_schema, location='json')
-    def patch(self, token: EthereumToken) -> Response:
+    def patch(self, token: EvmToken) -> Response:
         return self.rest_api.edit_custom_ethereum_token(token=token)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, address: ChecksumEthAddress) -> Response:
-        return self.rest_api.delete_custom_ethereum_token(address)
+    def delete(self, address: ChecksumEvmAddress, chain: ChainID) -> Response:
+        return self.rest_api.delete_custom_ethereum_token(address, chain)
 
 
 class AssetUpdatesResource(BaseMethodView):
@@ -1507,12 +1508,12 @@ class QueriedAddressesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(modify_schema, location='json')
-    def put(self, module: ModuleName, address: ChecksumEthAddress) -> Response:
+    def put(self, module: ModuleName, address: ChecksumEvmAddress) -> Response:
         return self.rest_api.add_queried_address_per_module(module=module, address=address)
 
     @require_loggedin_user()
     @use_kwargs(modify_schema, location='json')
-    def delete(self, module: ModuleName, address: ChecksumEthAddress) -> Response:
+    def delete(self, module: ModuleName, address: ChecksumEvmAddress) -> Response:
         return self.rest_api.remove_queried_address_per_module(module=module, address=address)
 
 
@@ -2347,7 +2348,7 @@ class ERC20TokenInfo(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, address: ChecksumEthAddress, async_query: bool) -> Response:
+    def get(self, address: ChecksumEvmAddress, async_query: bool) -> Response:
         return self.rest_api.get_token_information(address, async_query)
 
 
@@ -2377,7 +2378,7 @@ class AvalancheTransactionsResource(BaseMethodView):
     def get(
         self,
         async_query: bool,
-        address: ChecksumEthAddress,
+        address: ChecksumEvmAddress,
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> Response:
@@ -2394,7 +2395,7 @@ class ERC20TokenInfoAVAX(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, address: ChecksumEthAddress, async_query: bool) -> Response:
+    def get(self, address: ChecksumEvmAddress, async_query: bool) -> Response:
         return self.rest_api.get_avax_token_information(address, async_query)
 
 
@@ -2557,7 +2558,7 @@ class ReverseEnsResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            ethereum_addresses: List[ChecksumEthAddress],
+            ethereum_addresses: List[ChecksumEvmAddress],
             ignore_cache: bool,
             async_query: bool,
     ) -> Response:
@@ -2582,7 +2583,7 @@ class AddressbookResource(BaseMethodView):
     def post(
         self,
         book_type: AddressbookType,
-        addresses: Optional[List[ChecksumEthAddress]],
+        addresses: Optional[List[ChecksumEvmAddress]],
     ) -> Response:
         return self.rest_api.get_addressbook_entries(
             book_type=book_type,
@@ -2601,7 +2602,7 @@ class AddressbookResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_delete_schema, location='json_and_view_args')
-    def delete(self, book_type: AddressbookType, addresses: List[ChecksumEthAddress]) -> Response:
+    def delete(self, book_type: AddressbookType, addresses: List[ChecksumEvmAddress]) -> Response:
         return self.rest_api.delete_addressbook_entries(book_type=book_type, addresses=addresses)
 
 
@@ -2610,7 +2611,7 @@ class AllNamesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, addresses: List[ChecksumEthAddress]) -> Response:
+    def post(self, addresses: List[ChecksumEvmAddress]) -> Response:
         return self.rest_api.search_for_names_everywhere(addresses=addresses)
 
 
@@ -2623,7 +2624,7 @@ class DetectTokensResource(BaseMethodView):
             self,
             async_query: bool,
             only_cache: bool,
-            addresses: Optional[List[ChecksumEthAddress]],
+            addresses: Optional[List[ChecksumEvmAddress]],
     ) -> Response:
         return self.rest_api.detect_ethereum_tokens(
             async_query=async_query,

@@ -2,8 +2,8 @@ import logging
 from typing import TYPE_CHECKING, NamedTuple, Set, Tuple, Union
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.utils import get_or_create_ethereum_token
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AddressToLPBalances,
     AssetToPrice,
@@ -12,9 +12,10 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, Price
+from rotkehlchen.types import ChecksumEvmAddress, Price
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
@@ -33,7 +34,7 @@ SUBGRAPH_REMOTE_ERROR_MSG = (
 
 
 class TokenDetails(NamedTuple):
-    address: ChecksumEthAddress
+    address: ChecksumEvmAddress
     name: str
     symbol: str
     decimals: int
@@ -54,8 +55,8 @@ def _decode_token(entry: Tuple) -> TokenDetails:
 def _decode_result(
         userdb: 'DBHandler',
         data: Tuple,
-        known_assets: Set[EthereumToken],
-        unknown_assets: Set[EthereumToken],
+        known_assets: Set[EvmToken],
+        unknown_assets: Set[EvmToken],
 ) -> LiquidityPool:
     pool_token = _decode_token(data[0])
     token0 = _decode_token(data[1][0])
@@ -63,10 +64,11 @@ def _decode_result(
 
     assets = []
     for token in (token0, token1):
-        asset = get_or_create_ethereum_token(
+        asset = get_or_create_evm_token(
             userdb=userdb,
             symbol=token.symbol,
-            ethereum_address=token.address,
+            evm_address=token.address,
+            chain=ChainID.ETHEREUM,
             name=token.name,
             decimals=token.decimals,
         )
@@ -104,7 +106,7 @@ def update_asset_price_in_lp_balances(
             # Otherwise keep existing price (zero)
             total_user_balance = ZERO
             for asset in lp.assets:
-                asset_ethereum_address = asset.asset.ethereum_address
+                asset_ethereum_address = asset.asset.evm_address
                 asset_usd_price = known_asset_price.get(
                     asset_ethereum_address,
                     unknown_asset_price.get(asset_ethereum_address, Price(ZERO)),

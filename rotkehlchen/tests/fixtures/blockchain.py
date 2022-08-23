@@ -26,7 +26,7 @@ from rotkehlchen.tests.utils.substrate import (
     POLKADOT_SS58_FORMAT,
     wait_until_all_substrate_nodes_connected,
 )
-from rotkehlchen.types import BTCAddress, ChecksumEthAddress
+from rotkehlchen.types import BTCAddress, ChecksumEvmAddress
 
 
 @pytest.fixture(name='number_of_eth_accounts')
@@ -35,7 +35,7 @@ def fixture_number_of_eth_accounts():
 
 
 @pytest.fixture(name='ethereum_accounts')
-def fixture_ethereum_accounts(number_of_eth_accounts) -> List[ChecksumEthAddress]:
+def fixture_ethereum_accounts(number_of_eth_accounts) -> List[ChecksumEvmAddress]:
     return [make_ethereum_address() for x in range(number_of_eth_accounts)]
 
 
@@ -70,18 +70,18 @@ def fixture_dot_accounts() -> List[PolkadotAddress]:
 
 
 @pytest.fixture(name='avax_accounts')
-def fixture_avax_accounts() -> List[ChecksumEthAddress]:
+def fixture_avax_accounts() -> List[ChecksumEvmAddress]:
     return []
 
 
 @pytest.fixture(name='blockchain_accounts')
 def fixture_blockchain_accounts(
-        ethereum_accounts: List[ChecksumEthAddress],
+        ethereum_accounts: List[ChecksumEvmAddress],
         btc_accounts: List[BTCAddress],
         bch_accounts: List[BTCAddress],
         ksm_accounts: List[KusamaAddress],
         dot_accounts: List[PolkadotAddress],
-        avax_accounts: List[ChecksumEthAddress],
+        avax_accounts: List[ChecksumEvmAddress],
 ) -> BlockchainAccounts:
     return BlockchainAccounts(
         eth=ethereum_accounts,

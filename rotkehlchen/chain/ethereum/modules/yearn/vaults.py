@@ -4,7 +4,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import (
@@ -110,6 +110,7 @@ from rotkehlchen.constants.ethereum import (
     YEARN_YFI_VAULT,
 )
 from rotkehlchen.constants.misc import EXP18, ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
@@ -117,7 +118,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     YEARN_VAULTS_V2_PROTOCOL,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     Price,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -373,7 +374,7 @@ def get_usd_price_zero_if_error(
     inquirer = Inquirer()
     if (
         asset in inquirer.special_tokens or
-        isinstance(asset, EthereumToken) and asset.protocol == YEARN_VAULTS_V2_PROTOCOL
+        isinstance(asset, EvmToken) and asset.protocol == YEARN_VAULTS_V2_PROTOCOL
     ):
         return inquirer.find_usd_price(asset)
 
@@ -439,8 +440,8 @@ class YearnVaults(EthereumModule):
                     continue
 
                 try:
-                    underlying_asset = EthereumToken(underlying_address)
-                    vault_asset = EthereumToken(vault_address)
+                    underlying_asset = EvmToken(ethaddress_to_identifier(underlying_address))
+                    vault_asset = EvmToken(ethaddress_to_identifier(vault_address))
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
                         f'Found unknown asset {e.asset_name} for yearn vault entry',
@@ -465,7 +466,7 @@ class YearnVaults(EthereumModule):
     def get_balances(
             self,
             given_defi_balances: 'GIVEN_DEFI_BALANCES',
-    ) -> Dict[ChecksumEthAddress, Dict[str, YearnVaultBalance]]:
+    ) -> Dict[ChecksumEvmAddress, Dict[str, YearnVaultBalance]]:
         if isinstance(given_defi_balances, dict):
             defi_balances = given_defi_balances
         else:
@@ -483,7 +484,7 @@ class YearnVaults(EthereumModule):
     def _get_vault_deposit_events(
             self,
             vault: YearnVault,
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             from_block: int,
             to_block: int,
     ) -> List[YearnVaultEvent]:
@@ -495,7 +496,7 @@ class YearnVaults(EthereumModule):
         events: List[YearnVaultEvent] = []
         argument_filters = {'from': address, 'to': vault.contract.address}
         deposit_events = self.ethereum.get_logs(
-            contract_address=vault.underlying_token.ethereum_address,
+            contract_address=vault.underlying_token.evm_address,
             abi=ERC20TOKEN_ABI,
             event_name='Transfer',
             argument_filters=argument_filters,
@@ -569,7 +570,7 @@ class YearnVaults(EthereumModule):
     def _get_vault_withdraw_events(
             self,
             vault: YearnVault,
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             from_block: int,
             to_block: int,
     ) -> List[YearnVaultEvent]:
@@ -581,7 +582,7 @@ class YearnVaults(EthereumModule):
         events: List[YearnVaultEvent] = []
         argument_filters = {'from': vault.contract.address, 'to': address}
         withdraw_events = self.ethereum.get_logs(
-            contract_address=vault.underlying_token.ethereum_address,
+            contract_address=vault.underlying_token.evm_address,
             abi=ERC20TOKEN_ABI,
             event_name='Transfer',
             argument_filters=argument_filters,
@@ -688,7 +689,7 @@ class YearnVaults(EthereumModule):
             write_cursor: 'DBCursor',
             defi_balances: List['DefiProtocolBalances'],
             vault: YearnVault,
-            address: ChecksumEthAddress,
+            address: ChecksumEvmAddress,
             from_block: int,
             to_block: int,
     ) -> Optional[YearnVaultHistory]:
@@ -762,11 +763,11 @@ class YearnVaults(EthereumModule):
     def get_history(
             self,
             given_defi_balances: 'GIVEN_DEFI_BALANCES',
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
             reset_db_data: bool,
             from_timestamp: Timestamp,  # pylint: disable=unused-argument
             to_timestamp: Timestamp,  # pylint: disable=unused-argument
-    ) -> Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]]:
+    ) -> Dict[ChecksumEvmAddress, Dict[str, YearnVaultHistory]]:
         with self.history_lock:
             with self.database.user_write() as cursor:
                 if reset_db_data is True:
@@ -779,7 +780,7 @@ class YearnVaults(EthereumModule):
 
                 from_block = self.ethereum.get_blocknumber_by_time(from_timestamp)
                 to_block = self.ethereum.get_blocknumber_by_time(to_timestamp)
-                history: Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]] = {}
+                history: Dict[ChecksumEvmAddress, Dict[str, YearnVaultHistory]] = {}
 
                 for address in addresses:
                     history[address] = {}
@@ -804,7 +805,7 @@ class YearnVaults(EthereumModule):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            addresses: List[ChecksumEthAddress],
+            addresses: List[ChecksumEvmAddress],
     ) -> List[DefiEvent]:
         """Gets the history events from maker vaults for accounting
 
@@ -868,10 +869,10 @@ class YearnVaults(EthereumModule):
         return events
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List[AssetBalance]]:
         pass
 
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         pass
 
     def deactivate(self) -> None:

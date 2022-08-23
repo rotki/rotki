@@ -100,6 +100,7 @@ a = Entrypoint(
         ('rotkehlchen/data/uniswapv2_lp_tokens.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/uniswapv2_lp_tokens.meta', 'rotkehlchen/data'),
         ('rotkehlchen/data/global.db', 'rotkehlchen/data'),
+        ('rotkehlchen/data/globaldb_v2_v3_assets.sql', 'rotkehlchen/data'),
         ('rotkehlchen/data/curve_pools.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/nodes.json', 'rotkehlchen/data'),
         # TODO

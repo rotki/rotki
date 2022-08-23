@@ -60,6 +60,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
 )
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
@@ -72,6 +73,7 @@ from rotkehlchen.types import (
     BlockchainAccountData,
     CostBasisMethod,
     EthereumTransaction,
+    EvmTokenKind,
     ExchangeLocationID,
     Location,
     TradeType,
@@ -124,6 +126,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             Eth2Deposit,
             StakingEvent,
             NodeName,
+            NodeName,
+            ChainID,
     )):
         return entry.serialize()
     if isinstance(entry, (
@@ -195,7 +199,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             LiquityStakeEventType,
             BalanceType,
             CostBasisMethod,
-            NodeName,
+            EvmTokenKind,
     )):
         return str(entry)
 

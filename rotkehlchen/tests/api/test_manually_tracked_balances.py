@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.constants.assets import A_BNB
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -239,7 +239,7 @@ def test_add_and_query_manually_tracked_balances(
         }
 
 
-A_CYFM = EthereumToken('0x3f06B5D78406cD97bdf10f5C420B241D32759c80')
+A_CYFM = EvmToken('eip155:1/erc20:0x3f06B5D78406cD97bdf10f5C420B241D32759c80')
 
 
 @pytest.mark.parametrize('mocked_current_prices', [{A_CYFM.identifier: ZERO}])

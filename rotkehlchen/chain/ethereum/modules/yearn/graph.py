@@ -4,15 +4,16 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.graph import Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import get_usd_price_zero_if_error
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import ChecksumEthAddress, EthAddress, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, EvmAddress, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 
 from .structures import YearnVaultEvent
@@ -118,11 +119,11 @@ class YearnVaultsV2Graph:
 
             try:
                 if event_type == 'deposit':
-                    from_asset = EthereumToken(entry['vault']['token']['id'])
-                    to_asset = EthereumToken(entry['vault']['shareToken']['id'])
+                    from_asset = EvmToken(ethaddress_to_identifier(entry['vault']['token']['id']))
+                    to_asset = EvmToken(ethaddress_to_identifier(entry['vault']['shareToken']['id']))  # noqa: E501
                 elif event_type == 'withdraw':
-                    from_asset = EthereumToken(entry['vault']['shareToken']['id'])
-                    to_asset = EthereumToken(entry['vault']['token']['id'])
+                    from_asset = EvmToken(ethaddress_to_identifier(entry['vault']['shareToken']['id']))  # noqa: E501
+                    to_asset = EvmToken(ethaddress_to_identifier(entry['vault']['token']['id']))
             except UnknownAsset:
                 if event_type == 'deposit':
                     from_str = entry['vault']['token']['symbol']
@@ -214,10 +215,10 @@ class YearnVaultsV2Graph:
 
     def get_all_events(
         self,
-        addresses: List[EthAddress],
+        addresses: List[EvmAddress],
         from_block: int,
         to_block: int,
-    ) -> Dict[ChecksumEthAddress, Dict[str, List[YearnVaultEvent]]]:
+    ) -> Dict[ChecksumEvmAddress, Dict[str, List[YearnVaultEvent]]]:
 
         param_types = {
             '$from_block': 'BigInt!',
@@ -237,7 +238,7 @@ class YearnVaultsV2Graph:
             param_values=param_values,
         )
 
-        result: Dict[ChecksumEthAddress, Dict[str, List[YearnVaultEvent]]] = {}
+        result: Dict[ChecksumEvmAddress, Dict[str, List[YearnVaultEvent]]] = {}
 
         for account in query['accounts']:
             account_id = to_checksum_address(account['id'])

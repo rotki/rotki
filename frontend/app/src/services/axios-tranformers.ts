@@ -1,5 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { AxiosRequestTransformer, AxiosResponseTransformer } from 'axios';
+import { isEvmIdentifier } from '@/utils/assets';
 
 const isNumber = /^-?\d+(\.\d+)?((\d(.\d+)?)?[Ee][-+]\d+)?$/;
 
@@ -71,7 +72,7 @@ export const convertKeys = (
   const converted: { [key: string]: any } = {};
   Object.keys(data).map(key => {
     const datum = data[key];
-    const skipConversion = skipKey || key.startsWith('_ceth_');
+    const skipConversion = skipKey || isEvmIdentifier(key);
     const updatedKey = skipConversion ? key : getUpdatedKey(key, camelCase);
 
     converted[updatedKey] = isObject(datum)

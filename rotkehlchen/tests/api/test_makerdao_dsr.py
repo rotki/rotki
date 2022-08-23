@@ -33,7 +33,7 @@ from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.makerdao import mock_proxies
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 
 mocked_prices = {
     'DAI': {
@@ -69,14 +69,14 @@ def int_to_32byteshexstr(value: int) -> str:
     return '0x' + value.to_bytes(32, byteorder='big').hex()
 
 
-def address_to_32byteshexstr(address: ChecksumEthAddress) -> str:
+def address_to_32byteshexstr(address: ChecksumEvmAddress) -> str:
     return '0x' + '0' * 24 + address[2:].lower()
 
 
 class DSRTestSetup(NamedTuple):
     etherscan_patch: _patch
     dsr_balance_response: Dict[str, Any]
-    dsr_history_response: Dict[ChecksumEthAddress, Dict[str, Any]]
+    dsr_history_response: Dict[ChecksumEvmAddress, Dict[str, Any]]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -106,9 +106,9 @@ def blocknumber_to_timestamp(num: int) -> int:
 
 def mock_etherscan_for_dsr(
         etherscan: Etherscan,
-        account1: ChecksumEthAddress,
-        account2: ChecksumEthAddress,
-        account3: ChecksumEthAddress,
+        account1: ChecksumEvmAddress,
+        account2: ChecksumEvmAddress,
+        account3: ChecksumEvmAddress,
         original_requests_get,
         params: DSRMockParameters,
 ) -> _patch:
@@ -138,7 +138,7 @@ def mock_etherscan_for_dsr(
     account2_join1_deposit = params.account2_join1_normalized_balance * params.account2_join1_chi
     account2_join1_move_event = f"""{{"address": "{MAKERDAO_VAT.address}", "topics": ["0xbb35783b00000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy2)}", "{MAKERDAO_POT.address}", "{int_to_32byteshexstr(account2_join1_deposit // 10 ** 27)}"], "data": "0x1", "blockNumber": "{hex(params.account2_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account2_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xd81bddb97599cfab91b9ee52b5c505ffa730b71f1e484dc46d0f4ecb57893d2f", "transactionIndex": "0x79"}}"""  # noqa: E501
 
-    # Not sure how to convince pylint that this ChecksumEthAddress IS a subscriptable object
+    # Not sure how to convince pylint that this ChecksumEvmAddress IS a subscriptable object
     proxy1_contents = proxy1[2:].lower()  # pylint: disable=unsubscriptable-object
     proxy2_contents = proxy2[2:].lower()  # pylint: disable=unsubscriptable-object
 
@@ -290,7 +290,7 @@ def mock_etherscan_for_dsr(
 
 def setup_tests_for_dsr(
         etherscan: Etherscan,
-        accounts: List[ChecksumEthAddress],
+        accounts: List[ChecksumEvmAddress],
         original_requests_get,
 ) -> DSRTestSetup:
     account1 = accounts[0]

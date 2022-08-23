@@ -29,7 +29,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     BlockchainAccountData,
     BTCAddress,
-    ChecksumEthAddress,
+    ChecksumEvmAddress,
     HexColorCode,
     ListOfBlockchainAddresses,
     Location,
@@ -123,12 +123,12 @@ def need_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate[
 
 
 class BlockchainAccounts(NamedTuple):
-    eth: List[ChecksumEthAddress]
+    eth: List[ChecksumEvmAddress]
     btc: List[BTCAddress]
     bch: List[BTCAddress]
     ksm: List[KusamaAddress]
     dot: List[PolkadotAddress]
-    avax: List[ChecksumEthAddress]
+    avax: List[ChecksumEvmAddress]
 
     def get(self, blockchain: SupportedBlockchain) -> ListOfBlockchainAddresses:
         if blockchain == SupportedBlockchain.BITCOIN:

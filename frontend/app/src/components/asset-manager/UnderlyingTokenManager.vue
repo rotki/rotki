@@ -4,7 +4,7 @@
       {{ $t('underlying_token_manager.labels.tokens') }}
     </div>
     <v-row class="mt-2">
-      <v-col cols="12" md="8">
+      <v-col cols="12" md="7">
         <v-text-field
           v-model="underlyingAddress"
           :rules="addressRules"
@@ -12,7 +12,17 @@
           :label="$t('common.address')"
         />
       </v-col>
-      <v-col cols="12" md="4">
+      <v-col cols="12" md="2">
+        <v-select
+          v-model="tokenKind"
+          outlined
+          :label="$t('asset_form.labels.token_kind')"
+          :items="evmTokenKindsData"
+          item-text="label"
+          item-value="identifier"
+        />
+      </v-col>
+      <v-col cols="12" md="3">
         <v-text-field
           v-model="underlyingWeight"
           type="number"
@@ -25,7 +35,7 @@
           :label="$t('underlying_token_manager.labels.weight')"
         >
           <template #append-outer>
-            <v-btn icon :disabled="!valid" class="pb-2" @click="addToken">
+            <v-btn icon :disabled="!valid" class="mt-n2" @click="addToken">
               <v-icon>mdi-plus</v-icon>
             </v-btn>
           </template>
@@ -33,10 +43,11 @@
       </v-col>
     </v-row>
     <v-sheet outlined rounded class="underlying-tokens">
-      <v-simple-table>
+      <v-simple-table fixed-header height="200px">
         <thead>
           <tr>
             <th>{{ $t('common.address') }}</th>
+            <th>{{ $t('underlying_token_manager.tokens.token_kind') }}</th>
             <th>{{ $t('underlying_token_manager.tokens.weight') }}</th>
             <th />
           </tr>
@@ -44,6 +55,7 @@
         <tbody>
           <tr v-for="token in value" :key="token.address">
             <td class="grow">{{ token.address }}</td>
+            <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
             <td class="shrink text-no-wrap">
               {{
                 $t('underlying_token_manager.tokens.weight_percentage', {
@@ -67,10 +79,12 @@
 </template>
 
 <script lang="ts">
+import { EvmTokenKind } from '@rotki/common/lib/data';
 import { get, set } from '@vueuse/core';
 import { defineComponent, PropType, ref, toRefs } from 'vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import i18n from '@/i18n';
+import { evmTokenKindsData } from '@/services/assets/consts';
 import { UnderlyingToken } from '@/services/assets/types';
 
 export default defineComponent({
@@ -87,6 +101,7 @@ export default defineComponent({
 
     const valid = ref<boolean>(false);
     const underlyingAddress = ref<string>('');
+    const tokenKind = ref<EvmTokenKind>(EvmTokenKind.ERC20);
     const underlyingWeight = ref<string>('');
     const form = ref<any>(null);
 
@@ -130,6 +145,7 @@ export default defineComponent({
 
       const token = {
         address: get(underlyingAddress),
+        tokenKind: get(tokenKind),
         weight: get(underlyingWeight)
       };
 
@@ -145,6 +161,7 @@ export default defineComponent({
 
     const editToken = (token: UnderlyingToken) => {
       set(underlyingAddress, token.address);
+      set(tokenKind, token.tokenKind);
       set(underlyingWeight, token.weight);
     };
 
@@ -161,9 +178,11 @@ export default defineComponent({
       form,
       valid,
       underlyingAddress,
+      tokenKind,
       underlyingWeight,
       addressRules,
       weightRules,
+      evmTokenKindsData,
       addToken,
       editToken,
       deleteToken
@@ -171,27 +190,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style scoped lang="scss">
-.underlying-tokens {
-  ::v-deep {
-    tbody {
-      height: 200px;
-      overflow-y: scroll;
-      overflow-x: hidden;
-    }
-
-    thead,
-    tbody {
-      display: block;
-    }
-  }
-
-  td,
-  th {
-    &:first-child {
-      width: 100%;
-    }
-  }
-}
-</style>

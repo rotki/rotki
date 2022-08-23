@@ -28,7 +28,7 @@ def test_half_asset_prices_are_updated(mock_uniswap):
         - Liquidity pool only counts USDT USD value
     """
     address_balances = {TEST_ADDRESS_2: [EXP_LIQUIDITY_POOL_2]}
-    known_asset_price = {A_USDT.ethereum_address: USD_PRICE_USDT}
+    known_asset_price = {A_USDT.evm_address: USD_PRICE_USDT}
     unknown_asset_price = {}  # CAR not in it
 
     # Main call
@@ -55,12 +55,12 @@ def test_all_asset_prices_are_updated(mock_uniswap):
         TEST_ADDRESS_2: [EXP_LIQUIDITY_POOL_2],
     }
     known_asset_price = {
-        A_WETH.ethereum_address: USD_PRICE_WETH,
-        A_USDT.ethereum_address: USD_PRICE_USDT,
+        A_WETH.evm_address: USD_PRICE_WETH,
+        A_USDT.evm_address: USD_PRICE_USDT,
     }
     unknown_asset_price = {
-        A_SHL.ethereum_address: USD_PRICE_SHL,
-        A_CAR.ethereum_address: USD_PRICE_CAR,
+        A_SHL.evm_address: USD_PRICE_SHL,
+        A_CAR.evm_address: USD_PRICE_CAR,
     }
 
     # Main call

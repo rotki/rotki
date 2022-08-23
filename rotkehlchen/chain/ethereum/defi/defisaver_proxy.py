@@ -8,7 +8,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.types import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
@@ -41,15 +41,15 @@ class HasDSProxy(EthereumModule):
         self.ethereum = ethereum_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
-        self.address_to_proxy: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
-        self.proxy_to_address: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
+        self.address_to_proxy: Dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
+        self.proxy_to_address: Dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
         self.reset_last_query_ts()
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
         self.last_proxy_mapping_query_ts = 0
 
-    def _get_account_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
+    def _get_account_proxy(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
         """Checks if a DS proxy exists for the given address and returns it if it does
 
         May raise:
@@ -71,8 +71,8 @@ class HasDSProxy(EthereumModule):
 
     def _get_accounts_proxy(
         self,
-        addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
+        addresses: List[ChecksumEvmAddress],
+    ) -> Dict[ChecksumEvmAddress, ChecksumEvmAddress]:
         """
         Returns DSProxy if it exists for a list of addresses using only one call
         to the chain.
@@ -104,7 +104,7 @@ class HasDSProxy(EthereumModule):
                     log.error(msg)
         return mapping
 
-    def _get_accounts_having_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
+    def _get_accounts_having_proxy(self) -> Dict[ChecksumEvmAddress, ChecksumEvmAddress]:
         """Returns a mapping of accounts that have DS proxies to their proxies
 
         If the proxy mappings have been queried in the past REQUERY_PERIOD
@@ -131,7 +131,7 @@ class HasDSProxy(EthereumModule):
         return mapping
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
         self.reset_last_query_ts()
         # Get the proxy of the account
         proxy_result = self._get_account_proxy(address)
@@ -142,7 +142,7 @@ class HasDSProxy(EthereumModule):
         self.address_to_proxy[address] = proxy_result
         return None
 
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         self.reset_last_query_ts()
 
     def deactivate(self) -> None:

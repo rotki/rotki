@@ -4,7 +4,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.types import ChecksumEthAddress, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 from .types import BalancerEvent
@@ -58,7 +58,7 @@ def get_balancer_events(
         msg_aggregator: MessagesAggregator,
         from_timestamp: Optional[Timestamp] = None,
         to_timestamp: Optional[Timestamp] = None,
-        address: Optional[ChecksumEthAddress] = None,
+        address: Optional[ChecksumEvmAddress] = None,
 ) -> List[BalancerEvent]:
     """Returns a list of Balancer events optionally filtered by time and address"""
     query = 'SELECT * FROM balancer_events '

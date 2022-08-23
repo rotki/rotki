@@ -1,10 +1,10 @@
-from copy import deepcopy
 from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.types import AssetData
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DOGE, A_ETH, A_LINK, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.defi import DefiPoolError
@@ -36,7 +36,7 @@ def test_uniswap_oracles_asset_to_asset(inquirer_defi):
         defi_price = inquirer_defi.find_usd_price(A_LINK, ignore_cache=True)
         assert abs(defi_price - link_price) / link_price < FVal(0.1), f'{defi_price=} and {link_price=} have more than 10% difference'  # noqa: E501
 
-        # test with ethereum tokens but as assets instead of instance of the EthereumToken class
+        # test with ethereum tokens but as assets instead of instance of the EvmToken class
         a1inch = Asset(A_1INCH.identifier)
         alink = Asset(A_LINK.identifier)
         price_as_assets = price_instance.query_current_price(a1inch, alink)
@@ -76,14 +76,28 @@ def test_uniswap_no_decimals(inquirer_defi):
         """
         def mocked_asset_getter(asset_identifier: str, form_with_incomplete_data: bool = False):
             if asset_identifier == A_WETH.identifier:
-                fake_weth = deepcopy(A_WETH)
-                object.__setattr__(fake_weth, 'decimals', None)
+                fake_weth = AssetData(
+                    identifier=A_WETH.identifier,
+                    asset_type=A_WETH.asset_type,
+                    address=A_WETH.evm_address,
+                    chain=A_WETH.chain,
+                    token_kind=A_WETH.token_kind,
+                    decimals=None,
+                    name=A_WETH.name,
+                    symbol=A_WETH.symbol,
+                    started=A_WETH.started,
+                    forked=A_WETH.forked.identifier if A_WETH.forked is not None else None,
+                    swapped_for=A_WETH.swapped_for.identifier if A_WETH.swapped_for is not None else None,  # noqa: E501
+                    coingecko=A_WETH.coingecko,
+                    cryptocompare=A_WETH.cryptocompare,
+                    protocol=A_WETH.protocol,
+                )
                 return fake_weth
             return original_getter(asset_identifier, form_with_incomplete_data)
         return patch.object(asset_resolver, 'get_asset_data', wraps=mocked_asset_getter)
 
     with fake_weth_token():
-        weth = EthereumToken(A_WETH.ethereum_address)
+        weth = EvmToken(A_WETH.identifier)
         assert weth.decimals is None
         with pytest.raises(DefiPoolError):
             inquirer_defi._uniswapv2.query_current_price(weth, A_USDC)
