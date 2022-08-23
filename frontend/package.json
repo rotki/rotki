@@ -17,6 +17,7 @@
   "scripts": {
     "preinstall": "node check-versions.js",
     "electron:build": "npm run build -w common && npm run electron:build -w app",
+    "electron:package": "npm run electron:package -w app",
     "build": "npm run build -w common && npm run build -w app",
     "docker:build": "npm run build -w common && npm run build -w app -- --mode docker",
     "lint": "npm run lint -w common && npm run lint:check -w app && npm run lint:style -w app",
