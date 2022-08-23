@@ -105,18 +105,18 @@ import { get, set, useCounter } from '@vueuse/core';
 import i18n from '@/i18n';
 
 const SOURCES = [
-  'cointracking.info',
+  'cointracking',
   'cryptocom',
   'icon',
   'zip',
   'csv',
   'json',
   'nexo',
-  'blockfi-transactions',
-  'blockfi-trades',
-  'shapeshift-trades',
-  'uphold',
-  'bisq',
+  'blockfi_transactions',
+  'blockfi_trades',
+  'shapeshift_trades',
+  'uphold_transactions',
+  'bisq_trades',
   'binance'
 ] as const;
 
