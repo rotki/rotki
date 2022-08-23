@@ -353,11 +353,9 @@ export const useAssetInfoRetrieval = defineStore(
 
     const assetPriceInfo = (identifier: string) => {
       return computed<AssetPriceInfo>(() => {
-        const { aggregatedBalances } = storeToRefs(
-          useBlockchainBalancesStore()
-        );
+        const { aggregatedBalances } = useBlockchainBalancesStore();
         const assetValue = (
-          get(aggregatedBalances) as AssetBalanceWithPrice[]
+          get(aggregatedBalances()) as AssetBalanceWithPrice[]
         ).find((value: AssetBalanceWithPrice) => value.asset === identifier);
         return {
           usdPrice: assetValue?.usdPrice ?? Zero,
@@ -450,6 +448,7 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
   const ignoredAssets = ref<string[]>([]);
 
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
+  const { notify } = useNotifications();
 
   const fetchIgnoredAssets = async (): Promise<void> => {
     try {
@@ -464,7 +463,6 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
           error: e.message
         }
       );
-      const { notify } = useNotifications();
       notify({
         title,
         message,
@@ -473,22 +471,52 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
     }
   };
 
-  const ignoreAsset = async (asset: string): Promise<ActionStatus> => {
+  const ignoreAsset = async (
+    assets: string[] | string
+  ): Promise<ActionStatus> => {
     try {
-      const ignored = await api.assets.modifyAsset(true, asset);
+      const ignored = await api.assets.modifyAsset(
+        true,
+        Array.isArray(assets) ? assets : [assets]
+      );
       set(ignoredAssets, ignored);
       return { success: true };
     } catch (e: any) {
+      notify({
+        title: i18n.t('ignore.failed.ignore_title').toString(),
+        message: i18n
+          .t('ignore.failed.ignore_message', {
+            length: Array.isArray(assets) ? assets.length : 1,
+            message: e.message
+          })
+          .toString(),
+        display: true
+      });
       return { success: false, message: e.message };
     }
   };
 
-  const unignoreAsset = async (asset: string): Promise<ActionStatus> => {
+  const unignoreAsset = async (
+    assets: string[] | string
+  ): Promise<ActionStatus> => {
     try {
-      const ignored = await api.assets.modifyAsset(false, asset);
+      const ignored = await api.assets.modifyAsset(
+        false,
+        Array.isArray(assets) ? assets : [assets]
+      );
       set(ignoredAssets, ignored);
       return { success: true };
     } catch (e: any) {
+      notify({
+        title: i18n.t('ignore.failed.unignore_title').toString(),
+        message: i18n
+          .t('ignore.failed.unignore_message', {
+            length: Array.isArray(assets) ? assets.length : 1,
+            message: e.message
+          })
+          .toString(),
+        display: true
+      });
       return { success: false, message: e.message };
     }
   };

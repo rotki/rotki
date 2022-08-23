@@ -35,7 +35,7 @@
             <div v-if="selected.length > 0" class="mt-2 ms-1">
               {{ tc('closed_trades.selected', 0, { count: selected.length }) }}
               <v-btn small text @click="selected = []">
-                {{ tc('closed_trades.clear_selection') }}
+                {{ tc('common.actions.clear_selection') }}
               </v-btn>
             </div>
           </v-col>

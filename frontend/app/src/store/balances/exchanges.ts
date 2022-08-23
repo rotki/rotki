@@ -65,7 +65,8 @@ export const useExchangeBalancesStore = defineStore(
       });
 
     const getBalances = (
-      exchange: SupportedExchange
+      exchange: SupportedExchange,
+      hideIgnored: boolean = true
     ): ComputedRef<AssetBalanceWithPrice[]> =>
       computed(() => {
         const { prices } = storeToRefs(useBalancePricesStore());
@@ -89,7 +90,7 @@ export const useExchangeBalancesStore = defineStore(
         });
 
         return Object.keys(ownedAssets)
-          .filter(asset => !get(isAssetIgnored(asset)))
+          .filter(asset => !hideIgnored || !get(isAssetIgnored(asset)))
           .map(asset => ({
             asset,
             amount: ownedAssets[asset].amount,

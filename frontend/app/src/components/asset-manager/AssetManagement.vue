@@ -8,6 +8,25 @@
 
     <v-row class="mt-2" justify="space-between">
       <v-col cols="auto">
+        <v-btn
+          class="mr-4 mb-sm-0 mb-4"
+          color="primary"
+          depressed
+          :loading="isUpdateIgnoredAssetsLoading"
+          :disabled="isUpdateIgnoredAssetsLoading"
+          @click="updateIgnoredAssets"
+        >
+          <v-icon class="mr-2">mdi-sync</v-icon>
+          {{ $t('asset_management.sync_ignored_assets_list') }}
+          <v-chip
+            small
+            class="ml-2 px-2 asset_management__ignored-assets__chip"
+            color="white"
+            text-color="primary"
+          >
+            {{ ignoredAssets.length }}
+          </v-chip>
+        </v-btn>
         <v-tooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
             <v-btn
@@ -87,9 +106,11 @@ import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/services/assets/consts';
 import { ManagedAsset } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useTasks } from '@/store/tasks';
 import { showError } from '@/store/utils';
 import { Nullable } from '@/types';
+import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 
 export default defineComponent({
@@ -245,6 +266,15 @@ export default defineComponent({
       editAsset(identifier);
     });
 
+    const ignoredAssetsStore = useIgnoredAssetsStore();
+    const { ignoredAssets } = storeToRefs(ignoredAssetsStore);
+    const { updateIgnoredAssets } = ignoredAssetsStore;
+
+    const { isTaskRunning } = useTasks();
+    const isUpdateIgnoredAssetsLoading = isTaskRunning(
+      TaskType.UPDATE_IGNORED_ASSETS
+    );
+
     return {
       loading,
       refresh,
@@ -263,7 +293,11 @@ export default defineComponent({
       save,
       closeDialog,
       deleteAssetSymbol,
-      confirmDelete
+      confirmDelete,
+
+      ignoredAssets,
+      isUpdateIgnoredAssetsLoading,
+      updateIgnoredAssets
     };
   }
 });

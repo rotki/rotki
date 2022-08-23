@@ -10,7 +10,8 @@ import { forEach } from 'lodash';
 import cloneDeep from 'lodash/cloneDeep';
 import isEmpty from 'lodash/isEmpty';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { computed, Ref, ref, ComputedRef } from 'vue';
+import { computed, Ref, ref } from 'vue';
+import { setupLiquidityPosition } from '@/composables/defi';
 import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import {
@@ -360,37 +361,38 @@ export const useBlockchainBalancesStore = defineStore(
 
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
-    const totals = computed<AssetBalance[]>(() => {
-      const ownedAssets: Record<string, Balance> = {};
+    const totals = (hideIgnored: boolean = true) =>
+      computed<AssetBalance[]>(() => {
+        const ownedAssets: Record<string, Balance> = {};
 
-      forEach(get(blockchainTotalsState), (value: Balance, asset: string) => {
-        const associatedAsset: string = get(
-          getAssociatedAssetIdentifier(asset)
-        );
+        forEach(get(blockchainTotalsState), (value: Balance, asset: string) => {
+          const associatedAsset: string = get(
+            getAssociatedAssetIdentifier(asset)
+          );
 
-        const ownedAsset = ownedAssets[associatedAsset];
+          const ownedAsset = ownedAssets[associatedAsset];
 
-        ownedAssets[associatedAsset] = !ownedAsset
-          ? {
-              ...value
-            }
-          : {
-              ...balanceSum(ownedAsset, value)
-            };
+          ownedAssets[associatedAsset] = !ownedAsset
+            ? {
+                ...value
+              }
+            : {
+                ...balanceSum(ownedAsset, value)
+              };
+        });
+
+        return Object.keys(ownedAssets)
+          .filter(asset => !hideIgnored || !get(isAssetIgnored(asset)))
+          .map(asset => ({
+            asset,
+            amount: ownedAssets[asset].amount,
+            usdValue: ownedAssets[asset].usdValue
+          }))
+          .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
       });
 
-      return Object.keys(ownedAssets)
-        .filter(asset => !get(isAssetIgnored(asset)))
-        .map(asset => ({
-          asset,
-          amount: ownedAssets[asset].amount,
-          usdValue: ownedAssets[asset].usdValue
-        }))
-        .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
-    });
-
-    const aggregatedBalances: ComputedRef<AssetBalanceWithPrice[]> = computed(
-      () => {
+    const aggregatedBalances = (hideIgnored: boolean = true) =>
+      computed(() => {
         const ownedAssets: Record<string, Balance> = {};
 
         const addToOwned = (value: AssetBalance) => {
@@ -414,11 +416,13 @@ export const useBlockchainBalancesStore = defineStore(
           .filter(uniqueStrings);
 
         for (const exchange of exchanges) {
-          const balances = get(getExchangeBalances(exchange));
+          const balances = get(getExchangeBalances(exchange, hideIgnored));
           balances.forEach((value: AssetBalance) => addToOwned(value));
         }
 
-        get(totals).forEach((value: AssetBalance) => addToOwned(value));
+        get(totals(hideIgnored)).forEach((value: AssetBalance) =>
+          addToOwned(value)
+        );
 
         (get(manualBalances) as ManualBalanceWithValue[]).forEach(value =>
           addToOwned(value)
@@ -436,7 +440,7 @@ export const useBlockchainBalancesStore = defineStore(
         }
 
         return Object.keys(ownedAssets)
-          .filter(asset => !get(isAssetIgnored(asset)))
+          .filter(asset => !hideIgnored || !get(isAssetIgnored(asset)))
           .map(asset => ({
             asset,
             amount: ownedAssets[asset].amount,
@@ -444,52 +448,52 @@ export const useBlockchainBalancesStore = defineStore(
             usdPrice: (get(prices)[asset] as BigNumber) ?? NoPrice
           }))
           .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
-      }
-    );
+      });
 
-    const liabilities = computed<AssetBalanceWithPrice[]>(() => {
-      const liabilitiesMerged: Record<string, Balance> = {};
+    const liabilities = (hideIgnored: boolean = true) =>
+      computed<AssetBalanceWithPrice[]>(() => {
+        const liabilitiesMerged: Record<string, Balance> = {};
 
-      const addToLiabilities = (value: AssetBalance) => {
-        const associatedAsset: string = get(
-          getAssociatedAssetIdentifier(value.asset)
+        const addToLiabilities = (value: AssetBalance) => {
+          const associatedAsset: string = get(
+            getAssociatedAssetIdentifier(value.asset)
+          );
+
+          const liability = liabilitiesMerged[associatedAsset];
+
+          liabilitiesMerged[associatedAsset] = !liability
+            ? {
+                ...value
+              }
+            : {
+                ...balanceSum(liability, value)
+              };
+        };
+
+        forEach(
+          get(blockchainLiabilitiesState),
+          (balance: Balance, asset: string) => {
+            addToLiabilities({ asset, ...balance });
+          }
         );
 
-        const liability = liabilitiesMerged[associatedAsset];
+        (get(manualLiabilities) as ManualBalanceWithValue[]).forEach(balance =>
+          addToLiabilities(balance)
+        );
 
-        liabilitiesMerged[associatedAsset] = !liability
-          ? {
-              ...value
-            }
-          : {
-              ...balanceSum(liability, value)
-            };
-      };
-
-      forEach(
-        get(blockchainLiabilitiesState),
-        (balance: Balance, asset: string) => {
-          addToLiabilities({ asset, ...balance });
-        }
-      );
-
-      (get(manualLiabilities) as ManualBalanceWithValue[]).forEach(balance =>
-        addToLiabilities(balance)
-      );
-
-      return Object.keys(liabilitiesMerged)
-        .filter(asset => !get(isAssetIgnored(asset)))
-        .map(asset => ({
-          asset,
-          amount: liabilitiesMerged[asset].amount,
-          usdValue: liabilitiesMerged[asset].usdValue,
-          usdPrice: (get(prices)[asset] as BigNumber) ?? NoPrice
-        }))
-        .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
-    });
+        return Object.keys(liabilitiesMerged)
+          .filter(asset => !hideIgnored || !get(isAssetIgnored(asset)))
+          .map(asset => ({
+            asset,
+            amount: liabilitiesMerged[asset].amount,
+            usdValue: liabilitiesMerged[asset].usdValue,
+            usdPrice: (get(prices)[asset] as BigNumber) ?? NoPrice
+          }))
+          .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+      });
 
     const blockchainTotal = computed<BigNumber>(() => {
-      return bigNumberSum(get(totals).map(asset => asset.usdValue));
+      return bigNumberSum(get(totals()).map(asset => asset.usdValue));
     });
 
     const accountAssets = (account: string) =>
@@ -544,22 +548,31 @@ export const useBlockchainBalancesStore = defineStore(
       return assetsCount + liabilitiesCount + loopringsCount > 1;
     };
 
-    const aggregatedAssets = computed<string[]>(() => {
-      const additional: string[] = [];
-      const liabilitiesAsset = get(liabilities).map(({ asset }) => {
-        const samePrices = samePriceAssets[asset];
-        if (samePrices) additional.push(...samePrices);
-        return asset;
-      });
-      const assets = get(aggregatedBalances).map(({ asset }) => {
-        const samePrices = samePriceAssets[asset];
-        if (samePrices) additional.push(...samePrices);
-        return asset;
-      });
+    const aggregatedAssets = (hideIgnored: boolean = true) =>
+      computed<string[]>(() => {
+        const additional: string[] = [];
+        const liabilitiesAsset = get(liabilities(hideIgnored)).map(
+          ({ asset }) => {
+            const samePrices = samePriceAssets[asset];
+            if (samePrices) additional.push(...samePrices);
+            return asset;
+          }
+        );
+        const assets = get(aggregatedBalances(hideIgnored)).map(({ asset }) => {
+          const samePrices = samePriceAssets[asset];
+          if (samePrices) additional.push(...samePrices);
+          return asset;
+        });
 
-      assets.push(...liabilitiesAsset, ...additional);
-      return assets.filter(uniqueStrings);
-    });
+        const { lpAggregatedBalances } = setupLiquidityPosition();
+        const lpBalances = get(lpAggregatedBalances(false));
+        const lpAssets = lpBalances
+          .map(item => item.asset)
+          .filter(item => !!item) as string[];
+
+        assets.push(...liabilitiesAsset, ...lpAssets, ...additional);
+        return assets.filter(uniqueStrings);
+      });
 
     const loopringBalances = (address: string) =>
       computed<AssetBalance[]>(() => {
@@ -619,7 +632,7 @@ export const useBlockchainBalancesStore = defineStore(
             };
       };
 
-      get(totals).forEach(total => addToOwned(total));
+      get(totals()).forEach(total => addToOwned(total));
 
       const loopringBalances = get(loopringBalancesState);
       for (const address in loopringBalances) {

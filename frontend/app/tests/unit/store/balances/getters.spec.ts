@@ -73,9 +73,9 @@ describe('balances:getters', () => {
       }
     ]);
 
-    const { blockchainTotalsState, aggregatedBalances } = storeToRefs(
-      useBlockchainBalancesStore()
-    );
+    const blockchainBalancesStore = useBlockchainBalancesStore();
+    const { aggregatedBalances } = blockchainBalancesStore;
+    const { blockchainTotalsState } = storeToRefs(blockchainBalancesStore);
 
     const mockBlockchainTotalsState = {
       DAI: {
@@ -98,7 +98,7 @@ describe('balances:getters', () => {
 
     set(blockchainTotalsState, mockBlockchainTotalsState);
 
-    const actualResult = sortBy(get(aggregatedBalances), 'asset');
+    const actualResult = sortBy(get(aggregatedBalances()), 'asset');
 
     const expectedResult = sortBy(
       [

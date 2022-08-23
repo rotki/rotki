@@ -169,7 +169,7 @@ export default defineComponent({
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const { assetSymbol } = useAssetInfoRetrieval();
     const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
-    const { aggregatedBalances } = storeToRefs(useBlockchainBalancesStore());
+    const { aggregatedBalances } = useBlockchainBalancesStore();
     const { balancesByLocation } = storeToRefs(useBalancesStore());
     const { getLocation } = setupLocationInfo();
     const { dark } = useTheme();
@@ -375,7 +375,7 @@ export default defineComponent({
       ];
 
       const assetItems: SearchItemWithoutValue[] = (
-        get(aggregatedBalances) as AssetBalanceWithPrice[]
+        get(aggregatedBalances()) as AssetBalanceWithPrice[]
       ).map(balance => {
         const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
         const asset = balance.asset;

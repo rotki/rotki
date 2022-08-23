@@ -135,19 +135,19 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  modifyAsset(add: boolean, asset: string): Promise<string[]> {
+  modifyAsset(add: boolean, assets: string[]): Promise<string[]> {
     if (add) {
-      return this.addIgnoredAsset(asset);
+      return this.addIgnoredAsset(assets);
     }
-    return this.removeIgnoredAsset(asset);
+    return this.removeIgnoredAsset(assets);
   }
 
-  addIgnoredAsset(asset: string): Promise<string[]> {
+  addIgnoredAsset(assets: string[]): Promise<string[]> {
     return this.axios
       .put<ActionResult<string[]>>(
         '/assets/ignored',
         {
-          assets: [asset]
+          assets
         },
         {
           validateStatus: validStatus
@@ -156,11 +156,11 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  removeIgnoredAsset(asset: string): Promise<string[]> {
+  removeIgnoredAsset(assets: string[]): Promise<string[]> {
     return this.axios
       .delete<ActionResult<string[]>>('/assets/ignored', {
         data: {
-          assets: [asset]
+          assets
         },
         validateStatus: validStatus
       })

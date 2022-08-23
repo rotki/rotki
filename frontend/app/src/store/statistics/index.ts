@@ -33,9 +33,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { currencySymbol, floatingPrecision } = storeToRefs(
     useGeneralSettingsStore()
   );
-  const { aggregatedBalances, liabilities } = storeToRefs(
-    useBlockchainBalancesStore()
-  );
+  const { aggregatedBalances, liabilities } = useBlockchainBalancesStore();
+
   const balancesStore = useBalancesStore();
   const { nfTotalValue } = balancesStore;
   const { timeframe } = storeToRefs(useSessionSettingsStore());
@@ -45,8 +44,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const calculateTotalValue = (includeNft: boolean = false) =>
     computed(() => {
-      const balances = get(aggregatedBalances);
-      const totalLiabilities = get(liabilities);
+      const balances = get(aggregatedBalances());
+      const totalLiabilities = get(liabilities());
       const nftTotal = includeNft ? get(nfTotalValue()) : 0;
       const lpTotalBalance = get(lpTotal(includeNft));
 

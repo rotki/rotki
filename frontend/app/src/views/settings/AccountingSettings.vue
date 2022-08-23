@@ -13,15 +13,6 @@
       <eth-staking-taxable-after-withdrawal-setting />
       <cost-basis-method-setting />
     </setting-category>
-    <setting-category>
-      <template #title>
-        {{ $t('account_settings.asset_settings.title') }}
-      </template>
-
-      <ignore-asset-setting />
-      <unignore-asset-setting />
-      <update-ignored-assets-setting />
-    </setting-category>
     <ledger-action-settings />
     <setting-category>
       <template #title>
@@ -45,8 +36,5 @@ import LedgerActionSettings from '@/components/settings/accounting/LedgerActionS
 import PnlCsvSummarySetting from '@/components/settings/accounting/PnlCsvSummarySetting.vue';
 import PnlCsvWithFormulasSetting from '@/components/settings/accounting/PnlCsvWithFormulasSetting.vue';
 import TaxFreeSetting from '@/components/settings/accounting/TaxFreeSetting.vue';
-import IgnoreAssetSetting from '@/components/settings/controls/IgnoreAssetSetting.vue';
-import UnignoreAssetSetting from '@/components/settings/controls/UnignoreAssetSetting.vue';
-import UpdateIgnoredAssetsSetting from '@/components/settings/controls/UpdateIgnoredAssetsSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 </script>
