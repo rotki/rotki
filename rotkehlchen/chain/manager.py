@@ -210,7 +210,7 @@ class BlockchainBalances:
         for btc_balance in self.btc.values():
             new_totals.assets[A_BTC] += btc_balance
         for bch_balance in self.bch.values():
-            new_totals.assets[A_BTC] += bch_balance
+            new_totals.assets[A_BCH] += bch_balance
         for ksm_balances in self.ksm.values():
             new_totals += ksm_balances
         for dot_balances in self.dot.values():
@@ -984,6 +984,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         # we are adding/removing accounts, make sure query cache is flushed
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=blockchain)
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=blockchain, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
 
         # recalculate totals
         if append_or_remove == 'remove':  # at addition no balances are queried so no need
@@ -1457,6 +1459,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('query_ethereum_beaconchain_balances')
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
 
     def add_eth2_validator(
             self,
@@ -1486,6 +1490,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('query_ethereum_beaconchain_balances')
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, beaconchain_fetch_eth1=False)  # noqa: E501
 
     def delete_eth2_validator(
             self,

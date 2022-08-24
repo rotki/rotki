@@ -9073,7 +9073,7 @@ Adding blockchain accounts
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PUT on the the blockchains endpoint with a specific blockchain URL and a list of account data in the json data will add these accounts to the tracked accounts for the given blockchain and the current user. The updated balances after the account additions are returned.
+   Doing a PUT on the blockchains endpoint with a specific blockchain URL and a list of account data in the json data will add these accounts to the tracked accounts for the given blockchain and the current user. A list of accounts that are in rotki is returned.
    If one of the given accounts to add is invalid the entire request will fail.
 
 
@@ -9108,72 +9108,20 @@ Adding blockchain accounts
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      {
-          "result": {
-              "per_account": {
-                  "BTC": {
-                      "standalone": {
-                          "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
-                              "amount": "0.5", "usd_value": "3770.075"
-                          }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
-                              "amount": "0.5", "usd_value": "3770.075"
-                      }},
-                      "xpubs": [{
-                              "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
-                              "derivation_path": "m/0/0",
-                              "addresses": {
-                                  "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
-                                      "amount": "0.5", "usd_value": "3770.075"
-                                  },
-                                  "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
-                                      "amount": "0.5", "usd_value": "3770.075"
-                                  }
-                          }}, {
-                              "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
-                              "derivation_path": "m",
-                              "addresses": {
-                                  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
-                                      "amount": "0.5", "usd_value": "3770.075"
-                                  },
-                                  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
-                                      "amount": "0.5", "usd_value": "3770.075"
-                                  }
-                          }}]
-                   },
-                   "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
-                       "assets": {
-                           "ETH": {"amount": "10", "usd_value": "1755.53"},
-                           "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96": {"amount": "1", "usd_value": "50"},
-                           "eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6": {"amount": "1", "usd_value": "1.5"}
-                       },
-                       "liabilities": {}
-                   },
-                   "KSM": { "G7UkJAutjbQyZGRiP8z5bBSBPBJ66JbTKAkFDq3cANwENyX": {
-                       "assets": {
-                           "KSM": {"amount": "12", "usd_value": "894.84"}
-                        },
-                       "liabilities": {}
-                    }
-              },
-              "totals": {
-                  "assets": {
-                      "BTC": {"amount": "1", "usd_value": "7540.15"},
-                      "ETH": {"amount": "10", "usd_value": "1650.53"},
-                      "KSM": {"amount": "12", "usd_value": "894.84"},
-                      "eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6": {"amount": "1", "usd_value": "1.5"},
-                      "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96": {"amount": "1", "usd_value": "50"}
-                  },
-                  "liabilities": {}
-          },
-          "message": ""
-      }
+    {
+        "result": [
+            "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+            "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"
+        ],
+        "message": ""
+    }
 
-   :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
+   :resjson list result: A list containing the blockchain account data as also defined `here <blockchain_accounts_result_>`_. Result is different depending on the blockchain type.
    :statuscode 200: Accounts successfully added
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
-   :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Provided tags do not exist. Check message for details.
+   :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
-   :statuscode 502: Error occurred with some external service query such as Etherscan. Check message for details.
+   :statuscode 502: Remote error occured when attempted to connect to a node (Avalanche or Polkadot). Check message for details.
 
 
 Adding BTC/BCH xpubs
