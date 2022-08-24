@@ -12,7 +12,7 @@
       outlined
       data-cy="location"
       :rules="locationRules"
-      :label="$t('common.location')"
+      :label="tc('common.location')"
       :error-messages="errorMessages['location']"
       @focus="delete errorMessages['location']"
     />
@@ -20,13 +20,13 @@
     <date-time-picker
       v-model="datetime"
       outlined
-      :label="$t('ledger_action_form.date.label')"
+      :label="tc('ledger_action_form.date.label')"
       persistent-hint
       required
       seconds
       limit-now
       data-cy="datetime"
-      :hint="$t('ledger_action_form.date.hint')"
+      :hint="tc('ledger_action_form.date.hint')"
       :error-messages="errorMessages['timestamp']"
       @focus="delete errorMessages['timestamp']"
     />
@@ -58,7 +58,7 @@
           :rules="amountRules"
           required
           data-cy="amount"
-          :label="$t('common.amount')"
+          :label="tc('common.amount')"
           :error-messages="errorMessages['amount']"
           @focus="delete errorMessages['amount']"
         />
@@ -68,7 +68,7 @@
         <v-select
           v-model="actionType"
           outlined
-          :label="$t('common.type')"
+          :label="tc('common.type')"
           :items="ledgerActionsData"
           item-value="identifier"
           item-text="label"
@@ -93,8 +93,8 @@
           outlined
           persistent-hint
           data-cy="rate"
-          :hint="$t('ledger_action_form.rate.hint')"
-          :label="$t('ledger_action_form.rate.label')"
+          :hint="tc('ledger_action_form.rate.hint')"
+          :label="tc('ledger_action_form.rate.label')"
           :error-messages="errorMessages['rate']"
           @focus="delete errorMessages['rate']"
         />
@@ -103,8 +103,8 @@
         <asset-select
           v-model="rateAsset"
           outlined
-          :label="$t('ledger_action_form.rate_asset.label')"
-          :hint="$t('ledger_action_form.rate_asset.hint')"
+          :label="tc('ledger_action_form.rate_asset.label')"
+          :hint="tc('ledger_action_form.rate_asset.hint')"
           persistent-hint
           data-cy="rate-asset"
           :error-messages="errorMessages['rateAsset']"
@@ -119,8 +119,8 @@
       prepend-inner-icon="mdi-link"
       persistent-hint
       data-cy="link"
-      :label="$t('ledger_action_form.link.label')"
-      :hint="$t('ledger_action_form.link.hint')"
+      :label="tc('ledger_action_form.link.label')"
+      :hint="tc('ledger_action_form.link.hint')"
       :error-messages="errorMessages['link']"
       @focus="delete errorMessages['link']"
     />
@@ -131,8 +131,8 @@
       persistent-hint
       outlined
       data-cy="notes"
-      :label="$t('ledger_action_form.notes.label')"
-      :hint="$t('ledger_action_form.notes.hint')"
+      :label="tc('ledger_action_form.notes.label')"
+      :hint="tc('ledger_action_form.notes.hint')"
       :error-messages="errorMessages['notes']"
       @focus="delete errorMessages['notes']"
     />
@@ -143,9 +143,9 @@
 import { get, set, useLocalStorage } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { defineComponent, onMounted, PropType, ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import i18n from '@/i18n';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { LedgerAction, NewLedgerAction } from '@/services/history/types';
@@ -164,7 +164,7 @@ const LedgerActionForm = defineComponent({
     value: { required: false, type: Boolean, default: false },
     edit: {
       required: false,
-      type: Object as PropType<LedgerAction>,
+      type: Object as PropType<LedgerAction | null>,
       default: null
     },
     saveData: {
@@ -198,20 +198,19 @@ const LedgerActionForm = defineComponent({
 
     const errorMessages = ref<{ [field: string]: string[] }>({});
 
+    const { t, tc } = useI18n();
+
     const amountRules = [
       (v: string) =>
-        !!v ||
-        i18n.t('ledger_action_form.amount.validation.non_empty').toString()
+        !!v || t('ledger_action_form.amount.validation.non_empty').toString()
     ];
     const assetRules = [
       (v: string) =>
-        !!v ||
-        i18n.t('ledger_action_form.asset.validation.non_empty').toString()
+        !!v || t('ledger_action_form.asset.validation.non_empty').toString()
     ];
     const locationRules = [
       (v: string) =>
-        !!v ||
-        i18n.t('ledger_action_form.location.validation.non_empty').toString()
+        !!v || t('ledger_action_form.location.validation.non_empty').toString()
     ];
 
     const reset = () => {
@@ -229,12 +228,11 @@ const LedgerActionForm = defineComponent({
     };
 
     const setEditMode = () => {
-      if (!get(edit)) {
+      const ledgerAction = get(edit);
+      if (!ledgerAction) {
         reset();
         return;
       }
-
-      const ledgerAction: LedgerAction = get(edit);
 
       set(location, ledgerAction.location);
       set(datetime, convertFromTimestamp(ledgerAction.timestamp, true));
@@ -321,7 +319,8 @@ const LedgerActionForm = defineComponent({
       assetRules,
       locationRules,
       save,
-      reset
+      reset,
+      tc
     };
   }
 });

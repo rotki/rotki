@@ -238,7 +238,7 @@ export type EthAddressBookLocation = z.infer<typeof EthAddressBookLocation>;
 
 export const BalanceSnapshot = z.object({
   timestamp: z.number(),
-  category: z.string(),
+  category: z.nativeEnum(BalanceType),
   assetIdentifier: z.string(),
   amount: NumericString,
   usdValue: NumericString

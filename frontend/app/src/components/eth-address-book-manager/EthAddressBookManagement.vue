@@ -2,15 +2,15 @@
   <v-container>
     <v-row justify="space-between" align="center" no-gutters>
       <v-col>
-        <card-title>{{ $t('eth_address_book.title') }}</card-title>
+        <card-title>{{ tc('eth_address_book.title') }}</card-title>
       </v-col>
     </v-row>
     <card outlined-body class="mt-8">
       <template #title>
-        {{ $t('eth_address_book.table.title') }}
+        {{ tc('eth_address_book.table.title') }}
       </template>
       <template #subtitle>
-        {{ $t('eth_address_book.table.subtitle') }}
+        {{ tc('eth_address_book.table.subtitle') }}
       </template>
 
       <template #search>
@@ -20,7 +20,7 @@
               :value="pendingSearch"
               dense
               prepend-inner-icon="mdi-magnify"
-              :label="$t('common.actions.filter')"
+              :label="tc('common.actions.filter')"
               outlined
               clearable
               @input="onSearchTermChange($event)"
@@ -81,8 +81,8 @@
       :display="showForm"
       :title="
         editMode
-          ? $t('eth_address_book.dialog.edit_title')
-          : $t('eth_address_book.dialog.add_title')
+          ? tc('eth_address_book.dialog.edit_title')
+          : tc('eth_address_book.dialog.add_title')
       "
       :action-disabled="!valid"
       @confirm="save"
@@ -99,11 +99,11 @@
 <script lang="ts">
 import { get, set, useTimeoutFn } from '@vueuse/core';
 import { computed, defineComponent, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import EthAddressBookForm from '@/components/eth-address-book-manager/EthAddressBookForm.vue';
 import EthAddressBookTable from '@/components/eth-address-book-manager/EthAddressBookTable.vue';
 import EthNamesHint from '@/components/EthNamesHint.vue';
-import i18n from '@/i18n';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import {
   EthAddressBookLocation,
@@ -126,6 +126,7 @@ export default defineComponent({
 
     const tab = ref<number>(0);
     const locations: EthAddressBookLocation[] = ['global', 'private'];
+    const { tc } = useI18n();
 
     const location = computed<EthAddressBookLocation>(() => {
       return locations[get(tab)];
@@ -205,14 +206,14 @@ export default defineComponent({
       } catch (e: any) {
         const values = { message: e.message };
         const title = get(editMode)
-          ? i18n.t('eth_address_book.actions.edit.error.title')
-          : i18n.t('eth_address_book.actions.add.error.title');
+          ? tc('eth_address_book.actions.edit.error.title')
+          : tc('eth_address_book.actions.add.error.title');
         const description = get(editMode)
-          ? i18n.t('eth_address_book.actions.edit.error.description', values)
-          : i18n.t('eth_address_book.actions.add.error.description', values);
+          ? tc('eth_address_book.actions.edit.error.description', 0, values)
+          : tc('eth_address_book.actions.add.error.description', 0, values);
         setMessage({
-          title: title.toString(),
-          description: description.toString(),
+          title,
+          description,
           success: false
         });
       }
@@ -231,7 +232,8 @@ export default defineComponent({
       openForm,
       hideForm,
       onSearchTermChange,
-      save
+      save,
+      tc
     };
   }
 });

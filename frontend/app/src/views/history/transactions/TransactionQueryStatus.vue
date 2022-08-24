@@ -46,7 +46,7 @@
             </div>
           </div>
           <div
-            v-for="item in queryStatus"
+            v-for="item in sortedQueryStatus"
             v-else
             :key="item.address"
             class="d-flex align-center"
@@ -70,7 +70,7 @@
               class="d-flex py-2 text-no-wrap flex-wrap"
             >
               <template #status>
-                {{ getStatusData(item).label }}
+                {{ getLabel(item) }}
               </template>
               <template #address>
                 <div class="font-weight-bold px-1 text-no-wrap">
@@ -136,7 +136,7 @@
                       :class="isStatusFinished(item) ? 'green--text' : ''"
                     >
                       <template #status>
-                        {{ getStatusData(item).label }}
+                        {{ getLabel(item) }}
                       </template>
                       <template #address>
                         <div class="font-weight-bold px-1 text-no-wrap">
@@ -220,16 +220,22 @@
     </td>
   </tr>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, ref, toRefs } from 'vue';
-import i18n from '@/i18n';
+import { computed, ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import {
   EthereumTransactionQueryData,
   EthereumTransactionsQueryStatus
 } from '@/services/websocket/messages';
 import { useTxQueryStatus } from '@/store/history/query-status';
 import { toSentenceCase } from '@/utils/text';
+
+defineProps({
+  colspan: { required: true, type: Number }
+});
+
+const { tc } = useI18n();
 
 const statusesData = {
   [EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: {
@@ -240,17 +246,17 @@ const statusesData = {
   },
   [EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS]: {
     index: 1,
-    label: i18n.t('transactions.query_status.statuses.querying_transactions')
+    label: tc('transactions.query_status.statuses.querying_transactions')
   },
   [EthereumTransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS]: {
     index: 2,
-    label: i18n.t(
+    label: tc(
       'transactions.query_status.statuses.querying_internal_transactions'
     )
   },
   [EthereumTransactionsQueryStatus.QUERYING_ETHEREUM_TOKENS_TRANSACTIONS]: {
     index: 3,
-    label: i18n.t(
+    label: tc(
       'transactions.query_status.statuses.querying_ethereum_tokens_transactions'
     )
   },
@@ -261,123 +267,102 @@ const statusesData = {
 
 const steps = [
   toSentenceCase(
-    i18n
-      .t('transactions.query_status.statuses.querying_transactions')
-      .toString()
+    tc('transactions.query_status.statuses.querying_transactions')
   ),
   toSentenceCase(
-    i18n
-      .t('transactions.query_status.statuses.querying_internal_transactions')
-      .toString()
+    tc('transactions.query_status.statuses.querying_internal_transactions')
   ),
   toSentenceCase(
-    i18n
-      .t(
-        'transactions.query_status.statuses.querying_ethereum_tokens_transactions'
-      )
-      .toString()
+    tc(
+      'transactions.query_status.statuses.querying_ethereum_tokens_transactions'
+    )
   )
 ];
 
-export default defineComponent({
-  name: 'TransactionQueryStatus',
-  props: {
-    colspan: { required: true, type: Number }
-  },
-  setup() {
-    const openStatusDropdown = ref<boolean>(false);
+const openStatusDropdown = ref<boolean>(false);
 
-    const transactionsQueryStatusStore = useTxQueryStatus();
-    const { queryStatus } = toRefs(transactionsQueryStatusStore);
+const transactionsQueryStatusStore = useTxQueryStatus();
+const { queryStatus } = toRefs(transactionsQueryStatusStore);
 
-    const { resetQueryStatus } = transactionsQueryStatusStore;
+const { resetQueryStatus } = transactionsQueryStatusStore;
 
-    const isQueryStatusRange = (data: EthereumTransactionQueryData) => {
-      return data.period?.[0] > 0;
-    };
+const isQueryStatusRange = (data: EthereumTransactionQueryData) => {
+  return data.period?.[0] > 0;
+};
 
-    const getStatusData = (data: EthereumTransactionQueryData) => {
-      return statusesData[data.status];
-    };
+const getStatusData = (data: EthereumTransactionQueryData) => {
+  return statusesData[data.status];
+};
 
-    const isStatusFinished = (item: EthereumTransactionQueryData) => {
-      return (
-        item.status ===
-        EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED
-      );
-    };
-
-    const isAllFinished = computed<boolean>(() => {
-      const queryStatusVal = get(queryStatus);
-      const addresses = Object.keys(queryStatusVal);
-
-      return addresses.every((address: string) => {
-        return isStatusFinished(queryStatusVal[address]);
-      });
-    });
-
-    const getItemTranslationKey = (item: EthereumTransactionQueryData) => {
-      const isRange = isQueryStatusRange(item);
-
-      if (isStatusFinished(item)) {
-        return isRange
-          ? 'transactions.query_status.done_date_range'
-          : 'transactions.query_status.done_end_date';
-      }
-
-      return isRange
-        ? 'transactions.query_status.date_range'
-        : 'transactions.query_status.end_date';
-    };
-
-    const isStepCompleted = (
-      item: EthereumTransactionQueryData,
-      stepIndex: number
-    ) => {
-      return getStatusData(item).index > stepIndex + 1;
-    };
-
-    const isStepInProgress = (
-      item: EthereumTransactionQueryData,
-      stepIndex: number
-    ) => {
-      return getStatusData(item).index === stepIndex + 1;
-    };
-
-    const sortedQueryStatus = computed<EthereumTransactionQueryData[]>(() => {
-      const statuses = Object.values(get(queryStatus));
-
-      return statuses.sort(
-        (a: EthereumTransactionQueryData, b: EthereumTransactionQueryData) =>
-          (isStatusFinished(a) ? 1 : 0) - (isStatusFinished(b) ? 1 : 0)
-      );
-    });
-
-    const length = computed<number>(() => Object.keys(get(queryStatus)).length);
-
-    const queryingLength = computed<number>(
-      () =>
-        Object.values(get(queryStatus)).filter(item => !isStatusFinished(item))
-          .length
-    );
-
-    return {
-      queryStatus: sortedQueryStatus,
-      length,
-      openStatusDropdown,
-      isAllFinished,
-      steps,
-      isStepCompleted,
-      isStepInProgress,
-      isQueryStatusRange,
-      getStatusData,
-      getItemTranslationKey,
-      isStatusFinished,
-      resetQueryStatus,
-      queryingLength
-    };
+const getLabel = (data: EthereumTransactionQueryData) => {
+  const statusData = getStatusData(data);
+  if ('label' in statusData) {
+    return statusData.label;
   }
+
+  return '';
+};
+
+const isStatusFinished = (item: EthereumTransactionQueryData) => {
+  return (
+    item.status ===
+    EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED
+  );
+};
+
+const isAllFinished = computed<boolean>(() => {
+  const queryStatusVal = get(queryStatus);
+  const addresses = Object.keys(queryStatusVal);
+
+  return addresses.every((address: string) => {
+    return isStatusFinished(queryStatusVal[address]);
+  });
 });
+
+const getItemTranslationKey = (item: EthereumTransactionQueryData) => {
+  const isRange = isQueryStatusRange(item);
+
+  if (isStatusFinished(item)) {
+    return isRange
+      ? 'transactions.query_status.done_date_range'
+      : 'transactions.query_status.done_end_date';
+  }
+
+  return isRange
+    ? 'transactions.query_status.date_range'
+    : 'transactions.query_status.end_date';
+};
+
+const isStepCompleted = (
+  item: EthereumTransactionQueryData,
+  stepIndex: number
+) => {
+  return getStatusData(item).index > stepIndex + 1;
+};
+
+const isStepInProgress = (
+  item: EthereumTransactionQueryData,
+  stepIndex: number
+) => {
+  return getStatusData(item).index === stepIndex + 1;
+};
+
+const sortedQueryStatus = computed<EthereumTransactionQueryData[]>(() => {
+  const statuses = Object.values(get(queryStatus));
+
+  return statuses.sort(
+    (a: EthereumTransactionQueryData, b: EthereumTransactionQueryData) =>
+      (isStatusFinished(a) ? 1 : 0) - (isStatusFinished(b) ? 1 : 0)
+  );
+});
+
+const length = computed<number>(() => Object.keys(get(queryStatus)).length);
+
+const queryingLength = computed<number>(
+  () =>
+    Object.values(get(queryStatus)).filter(item => !isStatusFinished(item))
+      .length
+);
 </script>
 <style module lang="scss">
 .tr {

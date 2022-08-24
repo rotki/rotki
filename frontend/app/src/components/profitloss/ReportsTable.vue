@@ -88,7 +88,7 @@
       <template #item.expand="{ item }">
         <row-expander
           :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
+          @click="expand(item)"
         />
       </template>
     </data-table>
@@ -96,9 +96,9 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
+import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, ComputedRef, onBeforeMount, ref } from 'vue';
+import { computed, ComputedRef, onBeforeMount, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -109,10 +109,11 @@ import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
+import { Report } from '@/types/reports';
 import { size } from '@/utils/data';
 import { calculateTotalProfitLoss } from '@/utils/report';
 
-const expanded = ref([]);
+const expanded: Ref<Report[]> = ref([]);
 const reportStore = useReports();
 const { fetchReports, deleteReport, isLatestReport } = reportStore;
 const { reports } = storeToRefs(reportStore);
@@ -182,4 +183,8 @@ const getReportUrl = (identifier: number) => {
 };
 
 const latestReport = (reportId: number) => get(isLatestReport(reportId));
+
+const expand = (item: Report) => {
+  set(expanded, get(expanded).includes(item) ? [] : [item]);
+};
 </script>

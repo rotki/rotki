@@ -7,15 +7,11 @@
           outlined
           hide-details
           :items="staking"
-          :label="$t('staking_page.dropdown_label')"
+          :label="tc('staking_page.dropdown_label')"
           item-value="id"
           @change="updateLocation"
         >
-          <template
-            v-for="slot in ['item', 'selection']"
-            :slot="slot"
-            slot-scope="data"
-          >
+          <template v-for="slot in ['item', 'selection']" #[slot]="data">
             <v-row v-if="data.item" :key="slot" align="center">
               <v-col cols="auto">
                 <adaptive-wrapper v-if="data.item.img" width="24" height="24">
@@ -52,7 +48,7 @@
           <v-icon>mdi-arrow-up-left</v-icon>
         </div>
         <div class="text--secondary pt-3 flex-shrink-0 ms-2">
-          {{ $t('staking_page.dropdown_hint') }}
+          {{ tc('staking_page.dropdown_hint') }}
         </div>
       </div>
       <full-size-content>
@@ -61,7 +57,7 @@
             <v-row align="center" justify="center">
               <v-col cols="auto">
                 <span class="font-weight-bold text-h5">
-                  {{ $t('staking_page.page.title') }}
+                  {{ tc('staking_page.page.title') }}
                 </span>
               </v-col>
             </v-row>
@@ -110,7 +106,7 @@
                   class="font-weight-light text-h6"
                   :class="$style.description"
                 >
-                  {{ $t('staking_page.page.description') }}
+                  {{ tc('staking_page.page.description') }}
                 </div>
               </v-col>
             </v-row>
@@ -121,19 +117,13 @@
   </v-container>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set, useLocalStorage } from '@vueuse/core';
-import {
-  computed,
-  defineComponent,
-  onBeforeMount,
-  PropType,
-  toRefs
-} from 'vue';
+import { computed, onBeforeMount, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { useTheme, useRouter } from '@/composables/common';
-import i18n from '@/i18n';
+import { useRouter } from '@/composables/common';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import AdexPage from '@/views/staking/AdexPage.vue';
@@ -148,29 +138,7 @@ type StakingInfo = {
   img?: boolean;
 };
 
-const staking = computed<StakingInfo[]>(() => [
-  {
-    id: 'eth2',
-    icon: 'ETH',
-    name: i18n.t('staking.eth2').toString()
-  },
-  {
-    id: 'adex',
-    icon: 'ADX',
-    name: i18n.t('staking.adex').toString()
-  },
-  {
-    id: 'liquity',
-    icon: 'LQTY',
-    name: i18n.t('staking.liquity').toString()
-  },
-  {
-    id: 'kraken',
-    icon: '/assets/images/exchanges/kraken.svg',
-    name: i18n.t('staking.kraken').toString(),
-    img: true
-  }
-]);
+const iconSize = '64px';
 
 const pages = {
   eth2: Eth2Page,
@@ -179,52 +147,62 @@ const pages = {
   kraken: KrakenPage
 };
 
-export default defineComponent({
-  name: 'StakingPage',
-  components: { AdaptiveWrapper, FullSizeContent },
-  props: {
-    location: {
-      required: false,
-      type: String as PropType<'eth2' | 'adex' | 'liquity' | 'kraken' | null>,
-      default: null
-    }
+const props = defineProps({
+  location: {
+    required: false,
+    type: String as PropType<'eth2' | 'adex' | 'liquity' | 'kraken' | null>,
+    default: null
+  }
+});
+
+const { location } = toRefs(props);
+
+const { tc } = useI18n();
+
+const staking = computed<StakingInfo[]>(() => [
+  {
+    id: 'eth2',
+    icon: 'ETH',
+    name: tc('staking.eth2')
   },
-  setup(props) {
-    const { location } = toRefs(props);
-    const { dark } = useTheme();
-    const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
+  {
+    id: 'adex',
+    icon: 'ADX',
+    name: tc('staking.adex')
+  },
+  {
+    id: 'liquity',
+    icon: 'LQTY',
+    name: tc('staking.liquity')
+  },
+  {
+    id: 'kraken',
+    icon: '/assets/images/exchanges/kraken.svg',
+    name: tc('staking.kraken'),
+    img: true
+  }
+]);
 
-    const lastLocation = useLocalStorage('rotki.staking.last_location', '');
+const router = useRouter();
+const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
 
-    const page = computed(() => {
-      const selectedLocation = get(location);
-      return selectedLocation ? pages[selectedLocation] : null;
-    });
+const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 
-    const router = useRouter();
+const page = computed(() => {
+  const selectedLocation = get(location);
+  return selectedLocation ? pages[selectedLocation] : null;
+});
 
-    const updateLocation = (location: string) => {
-      if (location) {
-        set(lastLocation, location);
-      }
-      router.push(Routes.STAKING.route.replace(':location*', location));
-    };
+const updateLocation = (location: string) => {
+  if (location) {
+    set(lastLocation, location);
+  }
+  router.push(Routes.STAKING.route.replace(':location*', location));
+};
 
-    onBeforeMount(() => {
-      if (get(lastLocation)) {
-        updateLocation(get(lastLocation));
-      }
-    });
-
-    return {
-      dark,
-      staking,
-      pages,
-      page,
-      iconSize: '64px',
-      getAssetIdentifierForSymbol,
-      updateLocation
-    };
+onBeforeMount(() => {
+  if (get(lastLocation)) {
+    updateLocation(get(lastLocation));
   }
 });
 </script>

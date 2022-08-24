@@ -15,24 +15,24 @@
       </span>
       <v-skeleton-loader
         v-if="premium"
-        :loading="typeof vault.totalLiquidated === 'undefined'"
+        :loading="!liquidated"
         class="mx-auto pt-3"
         max-width="450"
         type="paragraph"
       >
-        <div v-if="vault.totalLiquidated && vault.totalLiquidated.amount.gt(0)">
+        <div v-if="liquidated && liquidated.amount.gt(0)">
           <div class="mb-2">
             <loan-row :title="tc('loan_liquidation.liquidated_collateral')">
               <amount-display
                 :asset-padding="assetPadding"
-                :value="vault.totalLiquidated.amount"
+                :value="liquidated.amount"
                 :asset="vault.collateral.asset"
               />
             </loan-row>
             <loan-row :medium="false">
               <amount-display
                 :asset-padding="assetPadding"
-                :value="vault.totalLiquidated.usdValue"
+                :value="liquidated.usdValue"
                 fiat-currency="USD"
               />
             </loan-row>
@@ -61,9 +61,9 @@
     </div>
   </stat-card>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -75,44 +75,35 @@ import { getPremium } from '@/composables/session';
 import { MakerDAOVaultModel } from '@/store/defi/types';
 import { Zero } from '@/utils/bignumbers';
 
-export default defineComponent({
-  name: 'MakerDaoVaultLiquidation',
-  components: {
-    PercentageDisplay,
-    LoanRow,
-    AmountDisplay,
-    PremiumLock,
-    StatCard
-  },
-  props: {
-    vault: {
-      required: true,
-      type: Object as PropType<MakerDAOVaultModel>
-    }
-  },
-  setup(props) {
-    const { vault } = toRefs(props);
-    const premium = getPremium();
-    const { fontStyle } = useTheme();
-    const { tc } = useI18n();
+const assetPadding = 3;
 
-    const valueLost = computed(() => {
-      const makerVault = get(vault);
-      if (!('totalInterestOwed' in makerVault)) {
-        return Zero;
-      }
-      const { totalInterestOwed, totalLiquidated } = makerVault;
-      return totalLiquidated.usdValue.plus(totalInterestOwed);
-    });
-
-    return {
-      valueLost,
-      premium,
-      assetPadding: 3,
-      fontStyle,
-      tc
-    };
+const props = defineProps({
+  vault: {
+    required: true,
+    type: Object as PropType<MakerDAOVaultModel>
   }
+});
+
+const { vault } = toRefs(props);
+const premium = getPremium();
+const { fontStyle } = useTheme();
+const { tc } = useI18n();
+
+const valueLost = computed(() => {
+  const makerVault = get(vault);
+  if (!('totalInterestOwed' in makerVault)) {
+    return Zero;
+  }
+  const { totalInterestOwed, totalLiquidated } = makerVault;
+  return totalLiquidated.usdValue.plus(totalInterestOwed);
+});
+
+const liquidated = computed(() => {
+  const makerVault = get(vault);
+  if (!('totalLiquidated' in makerVault)) {
+    return undefined;
+  }
+  return makerVault.totalLiquidated;
 });
 </script>
 

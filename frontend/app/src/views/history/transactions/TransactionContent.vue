@@ -4,10 +4,10 @@
       <template #title>
         <refresh-button
           :loading="loading"
-          :tooltip="$tc('transactions.refresh_tooltip')"
+          :tooltip="tc('transactions.refresh_tooltip')"
           @refresh="fetch(true)"
         />
-        {{ $t('transactions.title') }}
+        {{ tc('transactions.title') }}
       </template>
       <template #actions>
         <v-row>
@@ -17,18 +17,18 @@
                 <v-menu offset-y>
                   <template #activator="{ on }">
                     <v-btn color="primary" depressed height="100%" v-on="on">
-                      {{ $t('transactions.redecode_events.title') }}
+                      {{ tc('transactions.redecode_events.title') }}
                     </v-btn>
                   </template>
                   <v-list>
                     <v-list-item link @click="redecodeEvents()">
                       <v-list-item-title>
-                        {{ $t('transactions.redecode_events.this_page') }}
+                        {{ tc('transactions.redecode_events.this_page') }}
                       </v-list-item-title>
                     </v-list-item>
                     <v-list-item link @click="redecodeEvents(true)">
                       <v-list-item-title>
-                        {{ $t('transactions.redecode_events.all') }}
+                        {{ tc('transactions.redecode_events.all') }}
                       </v-list-item-title>
                     </v-list-item>
                   </v-list>
@@ -40,7 +40,7 @@
                     v-model="account"
                     :chains="['ETH']"
                     dense
-                    :label="$tc('transactions.filter.account')"
+                    :label="tc('transactions.filter.account')"
                     outlined
                     no-padding
                     flat
@@ -53,7 +53,7 @@
             <div>
               <table-filter
                 :matchers="matchers"
-                @update:matches="updateFilterHandler($event)"
+                @update:matches="updateFilter($event)"
               />
             </div>
           </v-col>
@@ -69,7 +69,7 @@
         :server-items-length="itemLength"
         :single-select="false"
         :mobile-breakpoint="0"
-        :item-class="item => (item.ignoredInAccounting ? 'darken-row' : '')"
+        :item-class="getItemClass"
         :class="$style.table"
         @update:options="updatePaginationHandler($event)"
       >
@@ -78,7 +78,7 @@
             <badge-display v-if="isMobile" color="grey">
               <v-icon small> mdi-eye-off </v-icon>
               <span class="ml-2">
-                {{ $t('common.ignored_in_accounting') }}
+                {{ tc('common.ignored_in_accounting') }}
               </span>
             </badge-display>
             <v-tooltip v-else bottom>
@@ -88,7 +88,7 @@
                 </badge-display>
               </template>
               <span>
-                {{ $t('common.ignored_in_accounting') }}
+                {{ tc('common.ignored_in_accounting') }}
               </span>
             </v-tooltip>
           </div>
@@ -107,7 +107,7 @@
             color="accent"
             class="mb-1 mt-1"
           >
-            {{ $t('transactions.details.internal_transaction') }}
+            {{ tc('transactions.details.internal_transaction') }}
           </v-chip>
         </template>
         <template #item.timestamp="{ item }">
@@ -118,7 +118,7 @@
             <v-dialog width="600">
               <template #activator="{ on }">
                 <v-btn small color="primary" text v-on="on">
-                  {{ $t('common.details') }}
+                  {{ tc('common.details') }}
                   <v-icon small>mdi-chevron-right</v-icon>
                 </v-btn>
               </template>
@@ -142,7 +142,7 @@
                     <v-icon>mdi-plus</v-icon>
                   </v-list-item-icon>
                   <v-list-item-content>
-                    {{ $t('transactions.actions.add_event') }}
+                    {{ tc('transactions.actions.add_event') }}
                   </v-list-item-content>
                 </v-list-item>
                 <v-list-item link @click="toggleIgnore(item)">
@@ -153,8 +153,8 @@
                   <v-list-item-content>
                     {{
                       item.ignoredInAccounting
-                        ? $t('transactions.unignore')
-                        : $t('transactions.ignore')
+                        ? tc('transactions.unignore')
+                        : tc('transactions.ignore')
                     }}
                   </v-list-item-content>
                 </v-list-item>
@@ -167,7 +167,7 @@
                     <v-icon>mdi-database-refresh</v-icon>
                   </v-list-item-icon>
                   <v-list-item-content>
-                    {{ $t('transactions.actions.redecode_events') }}
+                    {{ tc('transactions.actions.redecode_events') }}
                   </v-list-item-content>
                 </v-list-item>
               </v-list>
@@ -178,8 +178,8 @@
           <transaction-events
             :transaction="item"
             :colspan="headers.length"
-            @edit:event="event => editEventHandler(event)"
-            @delete:event="event => promptForDelete(item, event)"
+            @edit:event="editEventHandler"
+            @delete:event="promptForDelete"
           />
         </template>
         <template #body.prepend="{ headers }">
@@ -189,7 +189,7 @@
             :limit="limit"
             :total="total"
             :colspan="headers.length"
-            :label="$tc('transactions.label')"
+            :label="tc('transactions.label')"
           />
         </template>
       </data-table>
@@ -197,7 +197,7 @@
     <big-dialog
       :display="openDialog"
       :title="dialogTitle"
-      :primary-action="$tc('common.actions.save')"
+      :primary-action="tc('common.actions.save')"
       :action-disabled="!valid"
       :loading="loading"
       @confirm="confirmSave()"
@@ -226,34 +226,22 @@
   </fragment>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import {
-  computed,
-  defineAsyncComponent,
-  defineComponent,
-  Ref,
-  ref,
-  toRefs,
-  watch
-} from 'vue';
+import { computed, defineAsyncComponent, Ref, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
-import {
-  MatchedKeyword,
-  SearchMatcher
-} from '@/components/history/filtering/types';
 import { TransactionEventFormInstance } from '@/components/history/TransactionEventForm.vue';
 import { isSectionLoading } from '@/composables/common';
+import { useTransactionFilter } from '@/composables/filters/transactions';
 import { setupIgnore } from '@/composables/history';
-import i18n from '@/i18n';
 import {
   EthTransaction,
   NewEthTransactionEvent,
   TransactionRequestPayload
 } from '@/services/history/types';
-import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import { useTransactions } from '@/store/history';
 import {
@@ -261,12 +249,10 @@ import {
   EthTransactionEventEntry,
   IgnoreActionType
 } from '@/store/history/types';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
 import { Collection } from '@/types/collection';
 import { TaskType } from '@/types/task-type';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
-import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 type PaginationOptions = {
   page: number;
@@ -274,6 +260,42 @@ type PaginationOptions = {
   sortBy: (keyof EthTransaction)[];
   sortDesc: boolean[];
 };
+
+const TransactionQueryStatus = defineAsyncComponent(
+  () => import('@/views/history/transactions/TransactionQueryStatus.vue')
+);
+const Fragment = defineAsyncComponent(
+  () => import('@/components/helper/Fragment')
+);
+const TransactionEventForm = defineAsyncComponent(
+  () => import('@/components/history/TransactionEventForm.vue')
+);
+const BigDialog = defineAsyncComponent(
+  () => import('@/components/dialogs/BigDialog.vue')
+);
+const TransactionDetail = defineAsyncComponent(
+  () => import('@/components/history/transactions/TransactionDetail.vue')
+);
+const BadgeDisplay = defineAsyncComponent(
+  () => import('@/components/history/BadgeDisplay.vue')
+);
+const UpgradeRow = defineAsyncComponent(
+  () => import('@/components/history/UpgradeRow.vue')
+);
+const TransactionEvents = defineAsyncComponent(
+  () => import('@/components/history/transactions/TransactionEvents.vue')
+);
+const BlockchainAccountSelector = defineAsyncComponent(
+  () => import('@/components/helper/BlockchainAccountSelector.vue')
+);
+const RefreshButton = defineAsyncComponent(
+  () => import('@/components/helper/RefreshButton.vue')
+);
+
+const emit = defineEmits(['fetch']);
+const fetch = (refresh: boolean = false) => emit('fetch', refresh);
+
+const { tc } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -285,12 +307,12 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     width: '0px'
   },
   {
-    text: i18n.t('common.tx_hash').toString(),
+    text: tc('common.tx_hash'),
     value: 'txHash',
     sortable: false
   },
   {
-    text: i18n.t('common.datetime').toString(),
+    text: tc('common.datetime'),
     value: 'timestamp',
     cellClass: 'text-no-wrap'
   },
@@ -303,405 +325,238 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-enum TransactionFilterKeys {
-  START = 'start',
-  END = 'end',
-  ASSET = 'asset',
-  PROTOCOL = 'protocol'
-}
+const transactionStore = useTransactions();
+const { transactions } = storeToRefs(transactionStore);
 
-enum TransactionFilterValueKeys {
-  START = 'fromTimestamp',
-  END = 'toTimestamp',
-  ASSET = 'asset',
-  PROTOCOL = 'protocols'
-}
+const { isTaskRunning } = useTasks();
 
-export default defineComponent({
-  name: 'TransactionContent',
-  components: {
-    TransactionQueryStatus: defineAsyncComponent(
-      () => import('@/views/history/transactions/TransactionQueryStatus.vue')
-    ),
-    Fragment: defineAsyncComponent(
-      () => import('@/components/helper/Fragment')
-    ),
-    TransactionEventForm: defineAsyncComponent(
-      () => import('@/components/history/TransactionEventForm.vue')
-    ),
-    BigDialog: defineAsyncComponent(
-      () => import('@/components/dialogs/BigDialog.vue')
-    ),
-    TransactionDetail: defineAsyncComponent(
-      () => import('@/components/history/transactions/TransactionDetail.vue')
-    ),
-    BadgeDisplay: defineAsyncComponent(
-      () => import('@/components/history/BadgeDisplay.vue')
-    ),
-    UpgradeRow: defineAsyncComponent(
-      () => import('@/components/history/UpgradeRow.vue')
-    ),
-    TransactionEvents: defineAsyncComponent(
-      () => import('@/components/history/transactions/TransactionEvents.vue')
-    ),
-    BlockchainAccountSelector: defineAsyncComponent(
-      () => import('@/components/helper/BlockchainAccountSelector.vue')
-    ),
-    RefreshButton: defineAsyncComponent(
-      () => import('@/components/helper/RefreshButton.vue')
-    )
-  },
-  emits: ['fetch'],
-  setup(_, { emit }) {
-    const fetch = (refresh: boolean = false) => emit('fetch', refresh);
+const {
+  fetchTransactionEvents,
+  updateTransactionsPayload,
+  addTransactionEvent,
+  editTransactionEvent,
+  deleteTransactionEvent
+} = transactionStore;
 
-    const transactionStore = useTransactions();
-    const { transactions, counterparties } = storeToRefs(transactionStore);
+const { data, limit, found, total } = getCollectionData<EthTransactionEntry>(
+  transactions as Ref<Collection<EthTransactionEntry>>
+);
 
-    const { isTaskRunning } = useTasks();
+watch(data, () => {
+  checkEmptyEvents();
+});
 
-    const {
-      fetchTransactionEvents,
-      updateTransactionsPayload,
-      addTransactionEvent,
-      editTransactionEvent,
-      deleteTransactionEvent
-    } = transactionStore;
+const checkEmptyEvents = async () => {
+  await fetchTransactionEvents(
+    get(data)
+      .filter(item => item.decodedEvents!.length === 0)
+      .map(item => item.txHash)
+  );
+};
 
-    const { data, limit, found, total } =
-      getCollectionData<EthTransactionEntry>(
-        transactions as Ref<Collection<EthTransactionEntry>>
-      );
+const redecodeEvents = async (all: boolean = false) => {
+  const txHashes = all ? null : get(data).map(item => item.txHash);
+  await fetchTransactionEvents(txHashes, true);
+};
 
-    watch(data, () => {
-      checkEmptyEvents();
-    });
+const forceRedecodeEvents = async (transaction: EthTransactionEntry) => {
+  await fetchTransactionEvents([transaction.txHash], true);
+};
 
-    const checkEmptyEvents = async () => {
-      await fetchTransactionEvents(
-        get(data)
-          .filter(item => item.decodedEvents!.length === 0)
-          .map(item => item.txHash)
-      );
-    };
+const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
-    const redecodeEvents = async (all: boolean = false) => {
-      const txHashes = all ? null : get(data).map(item => item.txHash);
-      await fetchTransactionEvents(txHashes, true);
-    };
+const dialogTitle: Ref<string> = ref('');
+const openDialog: Ref<boolean> = ref(false);
+const editableItem: Ref<EthTransactionEventEntry | null> = ref(null);
+const selectedTransaction: Ref<EthTransactionEntry | null> = ref(null);
+const eventToDelete: Ref<EthTransactionEventEntry | null> = ref(null);
+const transactionToIgnore: Ref<EthTransactionEntry | null> = ref(null);
+const confirmationTitle: Ref<string> = ref('');
+const confirmationMessage: Ref<string> = ref('');
+const confirmationPrimaryAction: Ref<string> = ref('');
+const valid: Ref<boolean> = ref(false);
+const form = ref<TransactionEventFormInstance | null>(null);
 
-    const forceRedecodeEvents = async (transaction: EthTransactionEntry) => {
-      await fetchTransactionEvents([transaction.txHash], true);
-    };
+const getId = (item: EthTransactionEntry) => item.txHash;
 
-    const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
+const selected: Ref<EthTransactionEntry[]> = ref([]);
 
-    const dialogTitle: Ref<string> = ref('');
-    const openDialog: Ref<boolean> = ref(false);
-    const editableItem: Ref<EthTransactionEventEntry | null> = ref(null);
-    const selectedTransaction: Ref<EthTransactionEntry | null> = ref(null);
-    const eventToDelete: Ref<EthTransactionEventEntry | null> = ref(null);
-    const transactionToIgnore: Ref<EthTransactionEntry | null> = ref(null);
-    const confirmationTitle: Ref<string> = ref('');
-    const confirmationMessage: Ref<string> = ref('');
-    const confirmationPrimaryAction: Ref<string> = ref('');
-    const valid: Ref<boolean> = ref(false);
-    const form = ref<TransactionEventFormInstance | null>(null);
+const { filters, matchers, updateFilter } = useTransactionFilter();
 
-    const getId = (item: EthTransactionEntry) => item.txHash;
+const { ignore } = setupIgnore(
+  IgnoreActionType.ETH_TRANSACTIONS,
+  selected,
+  data,
+  fetch,
+  getId
+);
 
-    const selected: Ref<EthTransactionEntry[]> = ref([]);
+const toggleIgnore = (item: EthTransactionEntry) => {
+  set(selected, [item]);
+  ignore(!item.ignoredInAccounting);
+};
 
-    const { ignore } = setupIgnore(
-      IgnoreActionType.ETH_TRANSACTIONS,
-      selected,
-      data,
-      fetch,
-      getId
+const addEvent = (item: EthTransactionEntry) => {
+  set(selectedTransaction, item);
+  set(dialogTitle, tc('transactions.events.dialog.add.title'));
+  set(openDialog, true);
+};
+
+const editEventHandler = (event: EthTransactionEventEntry) => {
+  set(editableItem, event);
+  set(dialogTitle, tc('transactions.events.dialog.edit.title'));
+  set(openDialog, true);
+};
+
+const promptForDelete = ({
+  txEvent,
+  tx
+}: {
+  tx: EthTransactionEntry;
+  txEvent: EthTransactionEventEntry;
+}) => {
+  const canDelete = tx.decodedEvents!.length > 1;
+
+  if (canDelete) {
+    set(confirmationTitle, tc('transactions.events.confirmation.delete.title'));
+    set(
+      confirmationMessage,
+      tc('transactions.events.confirmation.delete.message')
+    );
+    set(confirmationPrimaryAction, tc('common.actions.confirm'));
+    set(eventToDelete, txEvent);
+  } else {
+    set(confirmationTitle, tc('transactions.events.confirmation.ignore.title'));
+    set(
+      confirmationMessage,
+      tc('transactions.events.confirmation.ignore.message')
+    );
+    set(
+      confirmationPrimaryAction,
+      tc('transactions.events.confirmation.ignore.action')
+    );
+    set(transactionToIgnore, tx);
+  }
+};
+
+const deleteEventHandler = async () => {
+  if (get(transactionToIgnore)) {
+    set(selected, [get(transactionToIgnore)]);
+    ignore(true);
+  }
+
+  if (get(eventToDelete)?.identifier) {
+    const { success } = await deleteTransactionEvent(
+      get(eventToDelete)!.identifier!
     );
 
-    const toggleIgnore = (item: EthTransactionEntry) => {
-      set(selected, [item]);
-      ignore(!item.ignoredInAccounting);
-    };
+    if (!success) {
+      return;
+    }
+  }
+  set(eventToDelete, null);
+  set(transactionToIgnore, null);
+  set(confirmationTitle, '');
+  set(confirmationMessage, '');
+  set(confirmationPrimaryAction, '');
+};
 
-    const addEvent = (item: EthTransactionEntry) => {
-      set(selectedTransaction, item);
-      set(
-        dialogTitle,
-        i18n.t('transactions.events.dialog.add.title').toString()
-      );
-      set(openDialog, true);
-    };
+const clearDialog = () => {
+  get(form)?.reset();
 
-    const editEventHandler = (event: EthTransactionEventEntry) => {
-      set(editableItem, event);
-      set(
-        dialogTitle,
-        i18n.t('transactions.events.dialog.edit.title').toString()
-      );
-      set(openDialog, true);
-    };
+  set(openDialog, false);
+  set(editableItem, null);
+};
 
-    const promptForDelete = (
-      item: EthTransactionEntry,
-      event: EthTransactionEventEntry
-    ) => {
-      const canDelete = item.decodedEvents!.length > 1;
+const confirmSave = async () => {
+  if (get(form)) {
+    const success = await get(form)?.save();
+    if (success) {
+      clearDialog();
+    }
+  }
+};
 
-      if (canDelete) {
-        set(
-          confirmationTitle,
-          i18n.t('transactions.events.confirmation.delete.title').toString()
-        );
-        set(
-          confirmationMessage,
-          i18n.t('transactions.events.confirmation.delete.message').toString()
-        );
-        set(
-          confirmationPrimaryAction,
-          i18n.t('common.actions.confirm').toString()
-        );
-        set(eventToDelete, event);
-      } else {
-        set(
-          confirmationTitle,
-          i18n.t('transactions.events.confirmation.ignore.title').toString()
-        );
-        set(
-          confirmationMessage,
-          i18n.t('transactions.events.confirmation.ignore.message').toString()
-        );
-        set(
-          confirmationPrimaryAction,
-          i18n.t('transactions.events.confirmation.ignore.action').toString()
-        );
-        set(transactionToIgnore, item);
-      }
-    };
+const saveData = async (
+  event: NewEthTransactionEvent | EthTransactionEventEntry
+) => {
+  if ((<EthTransactionEventEntry>event).identifier) {
+    return await editTransactionEvent(event as EthTransactionEventEntry);
+  }
+  return await addTransactionEvent(event as NewEthTransactionEvent);
+};
 
-    const deleteEventHandler = async () => {
-      if (get(transactionToIgnore)) {
-        set(selected, [get(transactionToIgnore)]);
-        ignore(true);
-      }
+const options: Ref<PaginationOptions | null> = ref(null);
+const account: Ref<GeneralAccount | null> = ref(null);
 
-      if (get(eventToDelete)?.identifier) {
-        const { success } = await deleteTransactionEvent(
-          get(eventToDelete)!.identifier!
-        );
+const updatePayloadHandler = () => {
+  let paginationOptions = {};
+  const optionsVal = get(options);
+  if (optionsVal) {
+    const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
+    const offset = (page - 1) * itemsPerPage;
 
-        if (!success) {
-          return;
-        }
-      }
-      set(eventToDelete, null);
-      set(transactionToIgnore, null);
-      set(confirmationTitle, '');
-      set(confirmationMessage, '');
-      set(confirmationPrimaryAction, '');
-    };
-
-    const clearDialog = () => {
-      get(form)?.reset();
-
-      set(openDialog, false);
-      set(editableItem, null);
-    };
-
-    const confirmSave = async () => {
-      if (get(form)) {
-        const success = await get(form)?.save();
-        if (success) {
-          clearDialog();
-        }
-      }
-    };
-
-    const saveData = async (
-      event: NewEthTransactionEvent | EthTransactionEventEntry
-    ) => {
-      if ((<EthTransactionEventEntry>event).identifier) {
-        return await editTransactionEvent(event as EthTransactionEventEntry);
-      }
-      return await addTransactionEvent(event as NewEthTransactionEvent);
-    };
-
-    const options: Ref<PaginationOptions | null> = ref(null);
-    const account: Ref<GeneralAccount | null> = ref(null);
-    const filters: Ref<MatchedKeyword<TransactionFilterValueKeys>> = ref({});
-
-    const updatePayloadHandler = () => {
-      let paginationOptions = {};
-      const optionsVal = get(options);
-      if (optionsVal) {
-        const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
-        const offset = (page - 1) * itemsPerPage;
-
-        paginationOptions = {
-          limit: itemsPerPage,
-          offset,
-          orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
-          ascending: sortDesc.map(bool => !bool)
-        };
-      }
-
-      let filterAddress = {};
-      if (get(account)) {
-        filterAddress = {
-          address: get(account)!.address
-        };
-      }
-
-      const payload: Partial<TransactionRequestPayload> = {
-        ...filterAddress,
-        ...(get(filters) as Partial<TransactionRequestPayload>),
-        ...paginationOptions
-      };
-
-      updateTransactionsPayload(payload);
-    };
-
-    const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
-      set(options, newOptions);
-      updatePayloadHandler();
-    };
-
-    const updateFilterHandler = (
-      newFilters: MatchedKeyword<TransactionFilterKeys>
-    ) => {
-      set(filters, newFilters);
-
-      let newOptions = null;
-      if (get(options)) {
-        newOptions = {
-          ...get(options)!,
-          page: 1
-        };
-      }
-
-      updatePaginationHandler(newOptions);
-    };
-
-    watch(account, () => {
-      let newOptions = null;
-      if (get(options)) {
-        newOptions = {
-          ...get(options)!,
-          page: 1
-        };
-      }
-
-      updatePaginationHandler(newOptions);
-    });
-
-    const loading = isSectionLoading(Section.TX);
-    const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
-
-    const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-    const assetInfoRetrievalStore = useAssetInfoRetrieval();
-    const { supportedAssetsSymbol } = toRefs(assetInfoRetrievalStore);
-    const { getAssetIdentifierForSymbol } = assetInfoRetrievalStore;
-
-    const matchers = computed<
-      SearchMatcher<TransactionFilterKeys, TransactionFilterValueKeys>[]
-    >(() => [
-      {
-        key: TransactionFilterKeys.START,
-        keyValue: TransactionFilterValueKeys.START,
-        description: i18n.t('transactions.filter.start_date').toString(),
-        suggestions: () => [],
-        hint: i18n
-          .t('transactions.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
-          })
-          .toString(),
-        validate: value => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
-        },
-        transformer: (date: string) =>
-          convertToTimestamp(date, get(dateInputFormat)).toString()
-      },
-      {
-        key: TransactionFilterKeys.END,
-        keyValue: TransactionFilterValueKeys.END,
-        description: i18n.t('transactions.filter.end_date').toString(),
-        suggestions: () => [],
-        hint: i18n
-          .t('transactions.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
-          })
-          .toString(),
-        validate: value => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
-        },
-        transformer: (date: string) =>
-          convertToTimestamp(date, get(dateInputFormat)).toString()
-      },
-      {
-        key: TransactionFilterKeys.ASSET,
-        keyValue: TransactionFilterValueKeys.ASSET,
-        description: i18n.t('transactions.filter.asset').toString(),
-        suggestions: () => get(supportedAssetsSymbol),
-        validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
-        transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
-      },
-      {
-        key: TransactionFilterKeys.PROTOCOL,
-        keyValue: TransactionFilterValueKeys.PROTOCOL,
-        description: i18n.t('transactions.filter.protocol').toString(),
-        multiple: true,
-        suggestions: () => get(counterparties),
-        validate: (protocol: string) => !!protocol
-      }
-    ]);
-
-    return {
-      account,
-      tableHeaders,
-      data,
-      limit,
-      found,
-      total,
-      itemLength,
-      fetch,
-      showUpgradeRow,
-      loading,
-      eventTaskLoading,
-      dialogTitle,
-      openDialog,
-      editableItem,
-      selectedTransaction,
-      eventToDelete,
-      transactionToIgnore,
-      confirmationTitle,
-      confirmationMessage,
-      confirmationPrimaryAction,
-      valid,
-      addEvent,
-      editEventHandler,
-      promptForDelete,
-      deleteEventHandler,
-      form,
-      clearDialog,
-      confirmSave,
-      saveData,
-      options,
-      matchers,
-      updatePaginationHandler,
-      updateFilterHandler,
-      toggleIgnore,
-      forceRedecodeEvents,
-      redecodeEvents
+    paginationOptions = {
+      limit: itemsPerPage,
+      offset,
+      orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
+      ascending: sortDesc.map(bool => !bool)
     };
   }
+
+  let filterAddress = {};
+  if (get(account)) {
+    filterAddress = {
+      address: get(account)!.address
+    };
+  }
+
+  const payload: Partial<TransactionRequestPayload> = {
+    ...filterAddress,
+    ...(get(filters) as Partial<TransactionRequestPayload>),
+    ...paginationOptions
+  };
+
+  updateTransactionsPayload(payload);
+};
+
+const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
+  set(options, newOptions);
+  updatePayloadHandler();
+};
+
+const getItemClass = (item: EthTransactionEntry) =>
+  item.ignoredInAccounting ? 'darken-row' : '';
+
+watch(filters, (filter, oldValue) => {
+  if (filter === oldValue) {
+    return;
+  }
+
+  let newOptions = null;
+  if (get(options)) {
+    newOptions = {
+      ...get(options)!,
+      page: 1
+    };
+  }
+
+  updatePaginationHandler(newOptions);
 });
+watch(account, () => {
+  let newOptions = null;
+  if (get(options)) {
+    newOptions = {
+      ...get(options)!,
+      page: 1
+    };
+  }
+
+  updatePaginationHandler(newOptions);
+});
+
+const loading = isSectionLoading(Section.TX);
+const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
 </script>
 <style module lang="scss">
 .table {

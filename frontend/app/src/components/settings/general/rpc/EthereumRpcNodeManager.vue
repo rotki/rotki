@@ -165,7 +165,7 @@ export default defineComponent({
     const loading = ref(false);
     const isEdit = ref(false);
     const selectedNode = ref<EthereumRpcNode>(getPlaceholderNode());
-    const confirmDelete = ref<EthereumRpcNode | undefined>();
+    const confirmDelete = ref<EthereumRpcNode | null>(null);
     const errors = ref<Record<string, string[] | string>>({});
 
     const { notify } = useNotifications();

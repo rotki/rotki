@@ -75,7 +75,7 @@
                 <row-expander
                   v-else
                   :expanded="expanded.includes(item)"
-                  @click="expanded = expanded.includes(item) ? [] : [item]"
+                  @click="expand(item)"
                 />
               </template>
               <template #expanded-item="{ headers, item }">
@@ -96,9 +96,9 @@
 <script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get } from '@vueuse/core';
+import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, Ref, ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -127,7 +127,7 @@ import {
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP
 } from '@/store/defi/const';
-import { AirdropType } from '@/store/defi/types';
+import { Airdrop, AirdropType } from '@/store/defi/types';
 import PoapDeliveryAirdrops from '@/views/defi/PoapDeliveryAirdrops.vue';
 
 type AirdropSource = {
@@ -139,7 +139,7 @@ type AirdropSources = {
   readonly [source in AirdropType]: AirdropSource;
 };
 
-const expanded = ref([]);
+const expanded: Ref<Airdrop[]> = ref([]);
 const selectedAccounts = ref<GeneralAccount[]>([]);
 const section = Section.DEFI_AIRDROPS;
 const ETH = Blockchain.ETH;
@@ -260,6 +260,10 @@ const getLabel = (source: AirdropType) => sources[source]?.name ?? '';
 
 const hasDetails = (source: AirdropType): boolean =>
   [AIRDROP_POAP].includes(source);
+
+const expand = (item: Airdrop) => {
+  set(expanded, get(expanded).includes(item) ? [] : [item]);
+};
 
 onMounted(async () => {
   await defiStore.fetchAirdrops();
