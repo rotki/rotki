@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Dict, List, Optional
-
+from eth_utils import to_checksum_address
 from web3 import HTTPProvider, Web3
 from web3.datastructures import MutableAttributeDict
 from web3.exceptions import BadFunctionCallOutput
@@ -13,7 +13,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 
@@ -107,11 +107,12 @@ class AvalancheManager():
 
     def get_transaction_receipt(
             self,
-            tx_hash: str,
+            tx_hash: EVMTxHash,
     ) -> Dict[str, Any]:
         tx_receipt = self.covalent.get_transaction_receipt(tx_hash)
         if tx_receipt is None:
             tx_receipt = self.w3.eth.get_transaction(tx_hash).__dict__  # type: ignore
+            tx_receipt['hash'] = EVMTxHash(tx_receipt['hash'])  # web3 returns HexBytes
             return tx_receipt
         try:
             # Turn hex numbers to int
@@ -125,7 +126,11 @@ class AvalancheManager():
             tx_receipt['status'] = 1 if successful else 0
             tx_receipt['transactionIndex'] = 0
             txhash = tx_receipt.pop('tx_hash')
-            tx_receipt['hash'] = txhash
+            tx_receipt['hash'] = deserialize_evm_tx_hash(txhash)  # covalent returns string
+            tx_receipt['from'] = to_checksum_address(tx_receipt['from_address'])
+            tx_receipt['to'] = to_checksum_address(tx_receipt['to_address'])
+            tx_receipt['gasPrice'] = tx_receipt['gas_price']
+            tx_receipt['gas'] = tx_receipt['gas_offered']
 
             # TODO input and nonce is decoded in Covalent api, encoded in future
             tx_receipt['input'] = '0x'
@@ -135,10 +140,14 @@ class AvalancheManager():
                 receipt_log['logIndex'] = receipt_log.pop('log_offset', None)
                 receipt_log['transactionIndex'] = 0
                 tx_receipt['log_events'][index] = receipt_log
-        except (DeserializationError, ValueError) as e:
+        except (DeserializationError, ValueError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'missing key entry for {msg}'
+
             raise RemoteError(
-                f'Couldnt deserialize transaction receipt '
-                f'data from covalent {tx_receipt} due to {str(e)}',
+                f'Couldnt deserialize transaction receipt data from '
+                f'covalent {tx_receipt} due to {msg}',
             ) from e
         return tx_receipt
 
