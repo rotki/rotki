@@ -9073,7 +9073,7 @@ Adding blockchain accounts
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PUT on the blockchains endpoint with a specific blockchain URL and a list of account data in the json data will add these accounts to the tracked accounts for the given blockchain and the current user. A list of accounts that are in rotki is returned.
+   Doing a PUT on the blockchains endpoint with a specific blockchain URL and a list of account data in the json data will add these accounts to the tracked accounts for the given blockchain and the current user. A list of accounts' addresses that were added during a request is returned. This data is returned so that if you add an ens name, you get its name's resolved address for the further usage.
    If one of the given accounts to add is invalid the entire request will fail.
 
 
@@ -9116,13 +9116,12 @@ Adding blockchain accounts
         "message": ""
     }
 
-   :resjson list result: A list containing the blockchain account data as also defined `here <blockchain_accounts_result_>`_. Result is different depending on the blockchain type.
+   :resjson list result: A list containing accounts' addresses that were added during a request.
    :statuscode 200: Accounts successfully added
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
-   :statuscode 502: Remote error occured when attempted to connect to a node (Avalanche or Polkadot). Check message for details.
-
+   :statuscode 502: Remote error occured when attempted to connect to an Avalanche or Polkadot node and only if it's the first account added. Check message for details.
 
 Adding BTC/BCH xpubs
 ========================
