@@ -553,15 +553,3 @@ class Liquity(HasDSProxy):
                     )
                     continue
         return result
-
-    # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
-        super().on_account_addition(address)
-        trove_info = self.get_positions([address])
-        result = []
-        if address in trove_info:
-            result.append(trove_info[address].collateral)
-        stake_info = self.liquity_staking_balances([address])
-        if address in stake_info:
-            result.append(stake_info[address].staked)
-        return result

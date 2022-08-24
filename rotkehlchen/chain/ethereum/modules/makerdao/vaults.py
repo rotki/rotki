@@ -820,7 +820,7 @@ class MakerdaoVaults(HasDSProxy):
         return balances
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List[AssetBalance]]:  # pylint: disable=useless-return  # noqa: E501
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:  # pylint: disable=useless-return  # noqa: E501
         super().on_account_addition(address)
         # Check if it has been added to the mapping
         proxy_address = self.address_to_proxy.get(address)

@@ -21,7 +21,6 @@ from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_ti
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.balance import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
@@ -299,7 +298,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
         return True
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         pass
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:

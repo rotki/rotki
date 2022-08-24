@@ -59,7 +59,6 @@ from rotkehlchen.utils.interfaces import EthereumModule
 from .graph import V3_SWAPS_QUERY
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.balance import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -644,7 +643,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             self.database.delete_uniswap_trades_data(cursor)
             self.database.delete_uniswap_events_data(cursor)
 
-    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         pass
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:

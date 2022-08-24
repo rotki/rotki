@@ -14,7 +14,6 @@ from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.balance import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -131,7 +130,7 @@ class HasDSProxy(EthereumModule):
         return mapping
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         self.reset_last_query_ts()
         # Get the proxy of the account
         proxy_result = self._get_account_proxy(address)

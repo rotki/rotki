@@ -1,10 +1,7 @@
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Callable, List, Optional
+from typing import Callable, Optional
 
 from rotkehlchen.types import ChecksumEvmAddress
-
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.balance import AssetBalance
 
 
 class EthereumModule(metaclass=ABCMeta):
@@ -16,7 +13,7 @@ class EthereumModule(metaclass=ABCMeta):
     on_startup: Optional[Callable[['EthereumModule'], None]] = None
 
     @abstractmethod
-    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         """Actions to run on new ethereum account additions
 
         Can optionally return a list of asset balances determined by the module
