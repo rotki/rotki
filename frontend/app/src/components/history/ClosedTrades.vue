@@ -18,11 +18,11 @@
         <refresh-button
           v-if="!locationOverview"
           :loading="loading"
-          :tooltip="$t('closed_trades.refresh_tooltip')"
+          :tooltip="tc('closed_trades.refresh_tooltip')"
           @refresh="fetch(true)"
         />
         <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
-          {{ $t('closed_trades.title') }}
+          {{ tc('closed_trades.title') }}
         </navigator-link>
       </template>
       <template #actions>
@@ -33,9 +33,9 @@
               @ignore="ignore"
             />
             <div v-if="selected.length > 0" class="mt-2 ms-1">
-              {{ $t('closed_trades.selected', { count: selected.length }) }}
+              {{ tc('closed_trades.selected', 0, { count: selected.length }) }}
               <v-btn small text @click="selected = []">
-                {{ $t('closed_trades.clear_selection') }}
+                {{ tc('closed_trades.clear_selection') }}
               </v-btn>
             </div>
           </v-col>
@@ -43,7 +43,7 @@
             <div class="pb-sm-8">
               <table-filter
                 :matchers="matchers"
-                @update:matches="updateFilterHandler($event)"
+                @update:matches="updateFilter($event)"
               />
             </div>
           </v-col>
@@ -74,7 +74,7 @@
             <badge-display v-if="isMobile" color="grey">
               <v-icon small> mdi-eye-off </v-icon>
               <span class="ml-2">
-                {{ $t('common.ignored_in_accounting') }}
+                {{ tc('common.ignored_in_accounting') }}
               </span>
             </badge-display>
             <v-tooltip v-else bottom>
@@ -84,7 +84,7 @@
                 </badge-display>
               </template>
               <span>
-                {{ $t('common.ignored_in_accounting') }}
+                {{ tc('common.ignored_in_accounting') }}
               </span>
             </v-tooltip>
           </div>
@@ -121,8 +121,8 @@
         <template #item.description="{ item }">
           {{
             item.tradeType === 'buy'
-              ? $t('closed_trades.description.with')
-              : $t('closed_trades.description.for')
+              ? tc('closed_trades.description.with')
+              : tc('closed_trades.description.for')
           }}
         </template>
         <template #item.rate="{ item }">
@@ -144,8 +144,8 @@
           <row-actions
             v-if="item.location === 'external'"
             :disabled="loading"
-            :edit-tooltip="$t('closed_trades.edit_tooltip')"
-            :delete-tooltip="$t('closed_trades.delete_tooltip')"
+            :edit-tooltip="tc('closed_trades.edit_tooltip')"
+            :delete-tooltip="tc('closed_trades.delete_tooltip')"
             @edit-click="editTradeHandler(item)"
             @delete-click="promptForDelete(item)"
           />
@@ -158,7 +158,7 @@
             :limit="limit"
             :total="total"
             :colspan="headers.length"
-            :label="$t('closed_trades.label')"
+            :label="tc('closed_trades.label')"
           />
         </template>
       </data-table>
@@ -167,7 +167,7 @@
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :primary-action="$t('common.actions.save')"
+      :primary-action="tc('common.actions.save')"
       :action-disabled="loading || !valid"
       :loading="loading"
       @confirm="confirmSave()"
@@ -182,7 +182,7 @@
     </big-dialog>
     <confirm-dialog
       :display="tradeToDelete !== null"
-      :title="$t('closed_trades.confirmation.title')"
+      :title="tc('closed_trades.confirmation.title')"
       confirm-type="warning"
       :message="confirmationMessage"
       @cancel="tradeToDelete = null"
@@ -191,19 +191,12 @@
   </fragment>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { dropRight } from 'lodash';
 import { storeToRefs } from 'pinia';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  PropType,
-  Ref,
-  ref,
-  toRefs
-} from 'vue';
+import { computed, onMounted, PropType, Ref, ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -218,51 +211,26 @@ import ExternalTradeForm, {
   ExternalTradeFormInstance
 } from '@/components/history/ExternalTradeForm.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
-import {
-  MatchedKeyword,
-  SearchMatcher
-} from '@/components/history/filtering/types';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeDetails from '@/components/history/TradeDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { isSectionLoading, useRoute, useRouter } from '@/composables/common';
+import { useTradeFilters } from '@/composables/filters/trades';
 import { setupIgnore } from '@/composables/history';
-import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import {
   NewTrade,
   Trade,
   TradeLocation,
-  TradeRequestPayload,
-  TradeType
+  TradeRequestPayload
 } from '@/services/history/types';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
-import { useHistory, useTrades } from '@/store/history';
+import { useTrades } from '@/store/history';
 import { IgnoreActionType, TradeEntry } from '@/store/history/types';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
-import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
-
-enum TradeFilterKeys {
-  BASE = 'base',
-  QUOTE = 'quote',
-  ACTION = 'action',
-  START = 'start',
-  END = 'end',
-  LOCATION = 'location'
-}
-
-enum TradeFilterValueKeys {
-  BASE = 'baseAsset',
-  QUOTE = 'quoteAsset',
-  ACTION = 'tradeType',
-  START = 'fromTimestamp',
-  END = 'toTimestamp',
-  LOCATION = 'location'
-}
 
 type PaginationOptions = {
   page: number;
@@ -271,402 +239,262 @@ type PaginationOptions = {
   sortDesc: boolean[];
 };
 
-const tableHeaders = (locationOverview: string) => {
-  return computed<DataTableHeader[]>(() => {
-    const headers: DataTableHeader[] = [
-      {
-        text: '',
-        value: 'ignoredInAccounting',
-        sortable: false,
-        class: !locationOverview ? 'pa-0' : 'pr-0',
-        cellClass: !locationOverview ? 'pa-0' : 'pr-0'
-      },
-      {
-        text: i18n.t('common.location').toString(),
-        value: 'location',
-        width: '120px',
-        align: 'center'
-      },
-      {
-        text: i18n.t('closed_trades.headers.action').toString(),
-        value: 'type',
-        align: 'center',
-        class: `text-no-wrap ${locationOverview ? 'pl-0' : ''}`,
-        cellClass: locationOverview ? 'pl-0' : ''
-      },
-      {
-        text: i18n.t('common.amount').toString(),
-        value: 'amount',
-        align: 'end'
-      },
-      {
-        text: i18n.t('closed_trades.headers.base').toString(),
-        value: 'baseAsset',
-        sortable: false
-      },
-      {
-        text: '',
-        value: 'description',
-        sortable: false,
-        width: '40px'
-      },
-      {
-        text: i18n.t('closed_trades.headers.quote').toString(),
-        value: 'quoteAsset',
-        sortable: false
-      },
-      {
-        text: i18n.t('closed_trades.headers.rate').toString(),
-        value: 'rate',
-        align: 'end'
-      },
-      {
-        text: i18n.t('common.datetime').toString(),
-        value: 'timestamp'
-      },
-      {
-        text: i18n.t('closed_trades.headers.actions').toString(),
-        value: 'actions',
-        align: 'center',
-        sortable: false,
-        width: '1px'
-      },
-      { text: '', value: 'data-table-expand', sortable: false }
-    ];
+const props = defineProps({
+  locationOverview: {
+    required: false,
+    type: String as PropType<TradeLocation | ''>,
+    default: ''
+  }
+});
 
-    if (locationOverview) {
-      headers.splice(9, 1);
-      headers.splice(1, 1);
-    }
+const emit = defineEmits(['fetch']);
 
-    return headers;
-  });
+const { locationOverview } = toRefs(props);
+const selected: Ref<TradeEntry[]> = ref([]);
+const options: Ref<PaginationOptions | null> = ref(null);
+const dialogTitle: Ref<string> = ref('');
+const dialogSubtitle: Ref<string> = ref('');
+const openDialog: Ref<boolean> = ref(false);
+const editableItem: Ref<TradeEntry | null> = ref(null);
+const tradeToDelete: Ref<TradeEntry | null> = ref(null);
+const confirmationMessage: Ref<string> = ref('');
+const expanded: Ref<TradeEntry[]> = ref([]);
+const valid: Ref<boolean> = ref(false);
+const form = ref<ExternalTradeFormInstance | null>(null);
+const pageRoute = Routes.HISTORY_TRADES.route;
+
+const { filters, matchers, updateFilter } = useTradeFilters();
+const router = useRouter();
+const route = useRoute();
+const { tc } = useI18n();
+
+const loading = isSectionLoading(Section.TRADES);
+
+const tableHeaders = computed<DataTableHeader[]>(() => {
+  let overview = get(locationOverview);
+  const headers: DataTableHeader[] = [
+    {
+      text: '',
+      value: 'ignoredInAccounting',
+      sortable: false,
+      class: !overview ? 'pa-0' : 'pr-0',
+      cellClass: !overview ? 'pa-0' : 'pr-0'
+    },
+    {
+      text: tc('common.location'),
+      value: 'location',
+      width: '120px',
+      align: 'center'
+    },
+    {
+      text: tc('closed_trades.headers.action'),
+      value: 'type',
+      align: 'center',
+      class: `text-no-wrap ${overview ? 'pl-0' : ''}`,
+      cellClass: overview ? 'pl-0' : ''
+    },
+    {
+      text: tc('common.amount'),
+      value: 'amount',
+      align: 'end'
+    },
+    {
+      text: tc('closed_trades.headers.base'),
+      value: 'baseAsset',
+      sortable: false
+    },
+    {
+      text: '',
+      value: 'description',
+      sortable: false,
+      width: '40px'
+    },
+    {
+      text: tc('closed_trades.headers.quote'),
+      value: 'quoteAsset',
+      sortable: false
+    },
+    {
+      text: tc('closed_trades.headers.rate'),
+      value: 'rate',
+      align: 'end'
+    },
+    {
+      text: tc('common.datetime'),
+      value: 'timestamp'
+    },
+    {
+      text: tc('closed_trades.headers.actions'),
+      value: 'actions',
+      align: 'center',
+      sortable: false,
+      width: '1px'
+    },
+    { text: '', value: 'data-table-expand', sortable: false }
+  ];
+
+  if (overview) {
+    headers.splice(9, 1);
+    headers.splice(1, 1);
+  }
+
+  return headers;
+});
+
+const tradeStore = useTrades();
+const assetInfoRetrievalStore = useAssetInfoRetrieval();
+const { getAssetSymbol } = assetInfoRetrievalStore;
+const { trades } = storeToRefs(tradeStore);
+
+const {
+  addExternalTrade,
+  editExternalTrade,
+  deleteExternalTrade,
+  updateTradesPayload
+} = tradeStore;
+
+const { data, limit, found, total } = getCollectionData<TradeEntry>(
+  trades as Ref<Collection<TradeEntry>>
+);
+
+const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
+
+const newExternalTrade = () => {
+  set(dialogTitle, tc('closed_trades.dialog.add.title'));
+  set(dialogSubtitle, '');
+  set(openDialog, true);
 };
 
-export default defineComponent({
-  name: 'ClosedTrades',
-  components: {
-    NavigatorLink,
-    BadgeDisplay,
-    RowActions,
-    TradeDetails,
-    TableFilter,
-    DataTable,
-    Fragment,
-    IgnoreButtons,
-    RefreshButton,
-    UpgradeRow,
-    DateDisplay,
-    LocationDisplay,
-    ExternalTradeForm,
-    ConfirmDialog,
-    BigDialog
-  },
-  props: {
-    locationOverview: {
-      required: false,
-      type: String as PropType<TradeLocation | ''>,
-      default: ''
+const editTradeHandler = (trade: TradeEntry) => {
+  set(editableItem, trade);
+  set(dialogTitle, tc('closed_trades.dialog.edit.title'));
+  set(dialogSubtitle, tc('closed_trades.dialog.edit.subtitle'));
+  set(openDialog, true);
+};
+
+const promptForDelete = (trade: TradeEntry) => {
+  const prep = (
+    trade.tradeType === 'buy'
+      ? tc('closed_trades.description.with')
+      : tc('closed_trades.description.for')
+  ).toLocaleLowerCase();
+
+  set(
+    confirmationMessage,
+    tc('closed_trades.confirmation.message', 0, {
+      pair: `${getAssetSymbol(trade.baseAsset)} ${prep} ${getAssetSymbol(
+        trade.quoteAsset
+      )}`,
+      action: trade.tradeType,
+      amount: trade.amount
+    })
+  );
+  set(tradeToDelete, trade);
+};
+
+const deleteTradeHandler = async () => {
+  if (!get(tradeToDelete)) {
+    return;
+  }
+
+  const { success } = await deleteExternalTrade(get(tradeToDelete)!.tradeId!);
+
+  if (!success) {
+    return;
+  }
+
+  set(tradeToDelete, null);
+  set(confirmationMessage, '');
+};
+
+const clearDialog = () => {
+  get(form)?.reset();
+
+  set(openDialog, false);
+  set(editableItem, null);
+};
+
+const confirmSave = async () => {
+  if (get(form)) {
+    const success = await get(form)?.save();
+    if (success) {
+      clearDialog();
     }
-  },
-  emits: ['fetch', 'update:payload'],
-  setup(props, { emit }) {
-    const { locationOverview } = toRefs(props);
+  }
+};
 
-    const fetch = (refresh: boolean = false) => emit('fetch', refresh);
+const saveData = async (trade: NewTrade | TradeEntry) => {
+  if ((<TradeEntry>trade).tradeId) {
+    return await editExternalTrade(trade as TradeEntry);
+  }
+  return await addExternalTrade(trade as NewTrade);
+};
 
-    const historyStore = useHistory();
-    const tradeStore = useTrades();
-    const assetInfoRetrievalStore = useAssetInfoRetrieval();
-    const { supportedAssetsSymbol } = toRefs(assetInfoRetrievalStore);
-    const { getAssetSymbol, getAssetIdentifierForSymbol } =
-      assetInfoRetrievalStore;
+const updatePayloadHandler = () => {
+  let paginationOptions = {};
 
-    const { associatedLocations } = storeToRefs(historyStore);
-    const { trades } = storeToRefs(tradeStore);
+  const optionsVal = get(options);
+  if (optionsVal) {
+    const { itemsPerPage, page, sortBy, sortDesc } = optionsVal;
+    const offset = (page - 1) * itemsPerPage;
 
-    const {
-      addExternalTrade,
-      editExternalTrade,
-      deleteExternalTrade,
-      updateTradesPayload
-    } = tradeStore;
-
-    const { data, limit, found, total } = getCollectionData<TradeEntry>(
-      trades as Ref<Collection<TradeEntry>>
-    );
-
-    const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
-
-    const dialogTitle: Ref<string> = ref('');
-    const dialogSubtitle: Ref<string> = ref('');
-    const openDialog: Ref<boolean> = ref(false);
-    const editableItem: Ref<TradeEntry | null> = ref(null);
-    const tradeToDelete: Ref<TradeEntry | null> = ref(null);
-    const confirmationMessage: Ref<string> = ref('');
-    const expanded: Ref<TradeEntry[]> = ref([]);
-    const valid: Ref<boolean> = ref(false);
-    const form = ref<ExternalTradeFormInstance | null>(null);
-
-    const newExternalTrade = () => {
-      set(dialogTitle, i18n.t('closed_trades.dialog.add.title').toString());
-      set(dialogSubtitle, '');
-      set(openDialog, true);
+    paginationOptions = {
+      limit: itemsPerPage,
+      offset,
+      orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
+      ascending:
+        sortDesc.length > 1 ? dropRight(sortDesc).map(bool => !bool) : [false]
     };
+  }
 
-    const editTradeHandler = (trade: TradeEntry) => {
-      set(editableItem, trade);
-      set(dialogTitle, i18n.t('closed_trades.dialog.edit.title').toString());
-      set(
-        dialogSubtitle,
-        i18n.t('closed_trades.dialog.edit.subtitle').toString()
-      );
-      set(openDialog, true);
+  if (get(locationOverview)) {
+    filters.value.location = get(locationOverview) as TradeLocation;
+  }
+
+  const payload: Partial<TradeRequestPayload> = {
+    ...(get(filters) as Partial<TradeRequestPayload>),
+    ...paginationOptions
+  };
+
+  updateTradesPayload(payload);
+};
+
+const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
+  set(options, newOptions);
+  updatePayloadHandler();
+};
+
+watch(filters, (filters, oldValue) => {
+  if (filters === oldValue) {
+    return;
+  }
+  let newOptions = null;
+  if (get(options)) {
+    newOptions = {
+      ...get(options)!,
+      page: 1
     };
+  }
 
-    const promptForDelete = (trade: TradeEntry) => {
-      const prep = (
-        trade.tradeType === 'buy'
-          ? i18n.t('closed_trades.description.with').toString()
-          : i18n.t('closed_trades.description.for').toString()
-      ).toLocaleLowerCase();
+  updatePaginationHandler(newOptions);
+});
 
-      set(
-        confirmationMessage,
-        i18n
-          .t('closed_trades.confirmation.message', {
-            pair: `${getAssetSymbol(trade.baseAsset)} ${prep} ${getAssetSymbol(
-              trade.quoteAsset
-            )}`,
-            action: trade.tradeType,
-            amount: trade.amount
-          })
-          .toString()
-      );
-      set(tradeToDelete, trade);
-    };
+const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 
-    const deleteTradeHandler = async () => {
-      if (!get(tradeToDelete)) {
-        return;
-      }
+const { ignore } = setupIgnore(
+  IgnoreActionType.TRADES,
+  selected,
+  data,
+  fetch,
+  (item: TradeEntry) => item.tradeId
+);
 
-      const { success } = await deleteExternalTrade(
-        get(tradeToDelete)!.tradeId!
-      );
+onMounted(() => {
+  const query = get(route).query;
 
-      if (!success) {
-        return;
-      }
-
-      set(tradeToDelete, null);
-      set(confirmationMessage, '');
-    };
-
-    const clearDialog = () => {
-      get(form)?.reset();
-
-      set(openDialog, false);
-      set(editableItem, null);
-    };
-
-    const confirmSave = async () => {
-      if (get(form)) {
-        const success = await get(form)?.save();
-        if (success) {
-          clearDialog();
-        }
-      }
-    };
-
-    const saveData = async (trade: NewTrade | TradeEntry) => {
-      if ((<TradeEntry>trade).tradeId) {
-        return await editExternalTrade(trade as TradeEntry);
-      }
-      return await addExternalTrade(trade as NewTrade);
-    };
-
-    const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-
-    const options: Ref<PaginationOptions | null> = ref(null);
-    const filters: Ref<MatchedKeyword<TradeFilterValueKeys>> = ref({});
-
-    const matchers = computed<
-      SearchMatcher<TradeFilterKeys, TradeFilterValueKeys>[]
-    >(() => [
-      {
-        key: TradeFilterKeys.BASE,
-        keyValue: TradeFilterValueKeys.BASE,
-        description: i18n.t('closed_trades.filter.base_asset').toString(),
-        suggestions: () => get(supportedAssetsSymbol),
-        validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
-        transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
-      },
-      {
-        key: TradeFilterKeys.QUOTE,
-        keyValue: TradeFilterValueKeys.QUOTE,
-        description: i18n.t('closed_trades.filter.quote_asset').toString(),
-        suggestions: () => get(supportedAssetsSymbol),
-        validate: (asset: string) => get(supportedAssetsSymbol).includes(asset),
-        transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
-      },
-      {
-        key: TradeFilterKeys.ACTION,
-        keyValue: TradeFilterValueKeys.ACTION,
-        description: i18n.t('closed_trades.filter.trade_type').toString(),
-        suggestions: () => TradeType.options,
-        validate: type => (TradeType.options as string[]).includes(type)
-      },
-      {
-        key: TradeFilterKeys.START,
-        keyValue: TradeFilterValueKeys.START,
-        description: i18n.t('closed_trades.filter.start_date').toString(),
-        suggestions: () => [],
-        hint: i18n
-          .t('closed_trades.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
-          })
-          .toString(),
-        validate: value => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
-        },
-        transformer: (date: string) =>
-          convertToTimestamp(date, get(dateInputFormat)).toString()
-      },
-      {
-        key: TradeFilterKeys.END,
-        keyValue: TradeFilterValueKeys.END,
-        description: i18n.t('closed_trades.filter.end_date').toString(),
-        suggestions: () => [],
-        hint: i18n
-          .t('closed_trades.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat))
-          })
-          .toString(),
-        validate: value => {
-          return (
-            value.length > 0 &&
-            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
-          );
-        },
-        transformer: (date: string) =>
-          convertToTimestamp(date, get(dateInputFormat)).toString()
-      },
-      {
-        key: TradeFilterKeys.LOCATION,
-        keyValue: TradeFilterValueKeys.LOCATION,
-        description: i18n.t('closed_trades.filter.location').toString(),
-        suggestions: () => get(associatedLocations),
-        validate: location => get(associatedLocations).includes(location as any)
-      }
-    ]);
-
-    const updatePayloadHandler = () => {
-      let paginationOptions = {};
-
-      const optionsVal = get(options);
-      if (optionsVal) {
-        const { itemsPerPage, page, sortBy, sortDesc } = optionsVal;
-        const offset = (page - 1) * itemsPerPage;
-
-        paginationOptions = {
-          limit: itemsPerPage,
-          offset,
-          orderByAttributes: sortBy.length > 0 ? sortBy : ['timestamp'],
-          ascending:
-            sortDesc.length > 1
-              ? dropRight(sortDesc).map(bool => !bool)
-              : [false]
-        };
-      }
-
-      if (get(locationOverview)) {
-        filters.value.location = get(locationOverview) as TradeLocation;
-      }
-
-      const payload: Partial<TradeRequestPayload> = {
-        ...(get(filters) as Partial<TradeRequestPayload>),
-        ...paginationOptions
-      };
-
-      updateTradesPayload(payload);
-    };
-
-    const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
-      set(options, newOptions);
-      updatePayloadHandler();
-    };
-
-    const updateFilterHandler = (
-      newFilters: MatchedKeyword<TradeFilterKeys>
-    ) => {
-      set(filters, newFilters);
-
-      let newOptions = null;
-      if (get(options)) {
-        newOptions = {
-          ...get(options)!,
-          page: 1
-        };
-      }
-
-      updatePaginationHandler(newOptions);
-    };
-
-    const getId = (item: TradeEntry) => item.tradeId;
-    const selected: Ref<TradeEntry[]> = ref([]);
-
-    const pageRoute = Routes.HISTORY_TRADES.route;
-
-    const router = useRouter();
-    const route = useRoute();
-
-    onMounted(() => {
-      const query = get(route).query;
-
-      if (query.add) {
-        newExternalTrade();
-        router.replace({ query: {} });
-      }
-    });
-
-    return {
-      pageRoute,
-      selected,
-      tableHeaders: tableHeaders(get(locationOverview)),
-      data,
-      limit,
-      found,
-      total,
-      itemLength,
-      fetch,
-      showUpgradeRow,
-      loading: isSectionLoading(Section.TRADES),
-      dialogTitle,
-      dialogSubtitle,
-      openDialog,
-      editableItem,
-      tradeToDelete,
-      confirmationMessage,
-      expanded,
-      valid,
-      newExternalTrade,
-      editTradeHandler,
-      promptForDelete,
-      deleteTradeHandler,
-      form,
-      clearDialog,
-      confirmSave,
-      saveData,
-      options,
-      matchers,
-      updatePaginationHandler,
-      updateFilterHandler,
-      ...setupIgnore(IgnoreActionType.TRADES, selected, data, fetch, getId)
-    };
+  if (query.add) {
+    newExternalTrade();
+    router.replace({ query: {} });
   }
 });
 </script>

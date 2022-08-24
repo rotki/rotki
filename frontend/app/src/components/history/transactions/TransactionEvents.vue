@@ -8,7 +8,7 @@
     <template #append>
       <v-expansion-panels
         v-model="panel"
-        :class="$style['expansions-panels']"
+        :class="css['expansions-panels']"
         multiple
       >
         <v-expansion-panel>
@@ -19,8 +19,8 @@
               <div class="primary--text font-weight-bold">
                 {{
                   open
-                    ? $t('transactions.events.view.hide')
-                    : $t('transactions.events.view.show', {
+                    ? tc('transactions.events.view.hide')
+                    : tc('transactions.events.view.show', 0, {
                         length: events.length
                       })
                 }}
@@ -30,11 +30,11 @@
           <v-expansion-panel-content>
             <div class="my-n4">
               <data-table
-                :class="$style.table"
+                :class="css.table"
                 :headers="headers"
                 :items="events"
                 :mobile-breakpoint="0"
-                :no-data-text="$t('transactions.events.loading')"
+                :no-data-text="tc('transactions.events.loading')"
                 class="transparent"
                 hide-default-footer
                 hide-default-header
@@ -54,8 +54,8 @@
                 </template>
                 <template #item.actions="{ item }">
                   <row-actions
-                    :delete-tooltip="$t('transactions.events.actions.delete')"
-                    :edit-tooltip="$t('transactions.events.actions.edit')"
+                    :delete-tooltip="tc('transactions.events.actions.delete')"
+                    :edit-tooltip="tc('transactions.events.actions.edit')"
                     @edit-click="editEvent(item)"
                     @delete-click="deleteEvent(item)"
                   />
@@ -69,20 +69,19 @@
   </table-expand-container>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
 import {
   computed,
   defineAsyncComponent,
-  defineComponent,
   PropType,
   ref,
   toRefs,
+  useCssModule,
   watch
 } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
-import { useProxy } from '@/composables/common';
-import i18n from '@/i18n';
 import { EthTransactionEventWithMeta } from '@/services/history/types';
 import {
   EthTransactionEntry,
@@ -90,99 +89,92 @@ import {
 } from '@/store/history/types';
 import { transformEntryWithMeta } from '@/store/history/utils';
 
-export default defineComponent({
-  name: 'TransactionEvents',
-  components: {
-    TransactionEventNote: defineAsyncComponent(
-      () => import('@/components/history/transactions/TransactionEventNote.vue')
-    ),
-    RowActions: defineAsyncComponent(
-      () => import('@/components/helper/RowActions.vue')
-    ),
-    TransactionEventType: defineAsyncComponent(
-      () => import('@/components/history/transactions/TransactionEventType.vue')
-    ),
-    TransactionEventAsset: defineAsyncComponent(
-      () =>
-        import('@/components/history/transactions/TransactionEventAsset.vue')
-    ),
-    TableExpandContainer: defineAsyncComponent(
-      () => import('@/components/helper/table/TableExpandContainer.vue')
-    )
+const TransactionEventNote = defineAsyncComponent(
+  () => import('@/components/history/transactions/TransactionEventNote.vue')
+);
+const RowActions = defineAsyncComponent(
+  () => import('@/components/helper/RowActions.vue')
+);
+const TransactionEventType = defineAsyncComponent(
+  () => import('@/components/history/transactions/TransactionEventType.vue')
+);
+const TransactionEventAsset = defineAsyncComponent(
+  () => import('@/components/history/transactions/TransactionEventAsset.vue')
+);
+const TableExpandContainer = defineAsyncComponent(
+  () => import('@/components/helper/table/TableExpandContainer.vue')
+);
+
+const props = defineProps({
+  transaction: {
+    required: true,
+    type: Object as PropType<EthTransactionEntry>
   },
-  props: {
-    transaction: {
-      required: true,
-      type: Object as PropType<EthTransactionEntry>
-    },
-    colspan: { required: true, type: Number }
+  colspan: { required: true, type: Number }
+});
+
+const emit = defineEmits<{
+  (e: 'edit:event', data: EthTransactionEventEntry): void;
+  (
+    e: 'delete:event',
+    data: {
+      tx: EthTransactionEntry;
+      txEvent: EthTransactionEventEntry;
+    }
+  ): void;
+}>();
+
+const { transaction } = toRefs(props);
+
+const css = useCssModule();
+const { tc } = useI18n();
+
+const headers: DataTableHeader[] = [
+  {
+    text: tc('common.type'),
+    value: 'type',
+    sortable: false,
+    cellClass: css['row__type']
   },
-  emits: ['edit:event', 'delete:event'],
-  setup(props, { emit }) {
-    const { transaction } = toRefs(props);
+  {
+    text: tc('common.asset'),
+    value: 'asset',
+    sortable: false
+  },
+  {
+    text: tc('transactions.events.headers.description'),
+    value: 'description',
+    sortable: false,
+    cellClass: css['row__description']
+  },
+  {
+    text: '',
+    value: 'actions',
+    align: 'end',
+    sortable: false,
+    cellClass: css['row__actions']
+  }
+];
 
-    // @ts-ignore
-    const { $style } = useProxy();
+const events = computed<EthTransactionEventEntry[]>(() => {
+  return get(transaction).decodedEvents!.map(
+    (event: EthTransactionEventWithMeta) => {
+      return transformEntryWithMeta(event);
+    }
+  );
+});
 
-    const headers: DataTableHeader[] = [
-      {
-        text: i18n.t('common.type').toString(),
-        value: 'type',
-        sortable: false,
-        cellClass: $style['row__type']
-      },
-      {
-        text: i18n.t('common.asset').toString(),
-        value: 'asset',
-        sortable: false
-      },
-      {
-        text: i18n.t('transactions.events.headers.description').toString(),
-        value: 'description',
-        sortable: false,
-        cellClass: $style['row__description']
-      },
-      {
-        text: '',
-        value: 'actions',
-        align: 'end',
-        sortable: false,
-        cellClass: $style['row__actions']
-      }
-    ];
+const editEvent = (item: EthTransactionEventEntry) => emit('edit:event', item);
+const deleteEvent = (item: EthTransactionEventEntry) =>
+  emit('delete:event', { txEvent: item, tx: get(transaction) });
 
-    const events = computed<EthTransactionEventEntry[]>(() => {
-      return get(transaction).decodedEvents!.map(
-        (event: EthTransactionEventWithMeta) => {
-          return transformEntryWithMeta(event);
-        }
-      );
-    });
+const panel = ref<number[]>(get(transaction).ignoredInAccounting ? [] : [0]);
 
-    const editEvent = (item: EthTransactionEventEntry) =>
-      emit('edit:event', item);
-    const deleteEvent = (item: EthTransactionEventEntry) =>
-      emit('delete:event', item);
-
-    const panel = ref<number[]>(
-      get(transaction).ignoredInAccounting ? [] : [0]
-    );
-
-    watch(transaction, (current, old) => {
-      if (old.ignoredInAccounting && !current.ignoredInAccounting) {
-        panel.value = [0];
-      } else if (!old.ignoredInAccounting && current.ignoredInAccounting) {
-        panel.value = [];
-      }
-    });
-
-    return {
-      panel,
-      events,
-      headers,
-      editEvent,
-      deleteEvent
-    };
+watch(transaction, (current, old) => {
+  if (old.ignoredInAccounting && !current.ignoredInAccounting) {
+    panel.value = [0];
+  } else if (!old.ignoredInAccounting && current.ignoredInAccounting) {
+    panel.value = [];
   }
 });
 </script>

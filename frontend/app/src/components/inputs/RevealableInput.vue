@@ -35,7 +35,7 @@ const RevealableInput = defineComponent({
   props: {
     value: {
       required: false,
-      type: String,
+      type: String as PropType<string | null>,
       default: null
     },
     rules: {

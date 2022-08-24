@@ -67,7 +67,7 @@ export default defineComponent({
     },
     previewLocationBalance: {
       required: false,
-      type: Object as PropType<Record<string, BigNumber>>,
+      type: Object as PropType<Record<string, BigNumber> | null>,
       default: () => null
     }
   },

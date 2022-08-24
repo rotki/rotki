@@ -8,7 +8,7 @@
         @refresh="fetch(true)"
       />
       <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
-        {{ $t('deposits_withdrawals.title') }}
+        {{ tc('deposits_withdrawals.title') }}
       </navigator-link>
     </template>
     <template #actions>
@@ -20,10 +20,10 @@
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
             {{
-              $t('deposits_withdrawals.selected', { count: selected.length })
+              tc('deposits_withdrawals.selected', 0, { count: selected.length })
             }}
             <v-btn small text @click="selected = []">
-              {{ $t('deposits_withdrawals.clear_selection') }}
+              {{ tc('deposits_withdrawals.clear_selection') }}
             </v-btn>
           </div>
         </v-col>
@@ -61,7 +61,7 @@
           <badge-display v-if="isMobile" color="grey">
             <v-icon small> mdi-eye-off </v-icon>
             <span class="ml-2">
-              {{ $t('common.ignored_in_accounting') }}
+              {{ tc('common.ignored_in_accounting') }}
             </span>
           </badge-display>
           <v-tooltip v-else bottom>
@@ -71,7 +71,7 @@
               </badge-display>
             </template>
             <span>
-              {{ $t('common.ignored_in_accounting') }}
+              {{ tc('common.ignored_in_accounting') }}
             </span>
           </v-tooltip>
         </div>
@@ -115,7 +115,7 @@
           :limit="limit"
           :total="total"
           :colspan="headers.length"
-          :label="$t('deposits_withdrawals.label')"
+          :label="tc('deposits_withdrawals.label')"
         />
       </template>
     </data-table>

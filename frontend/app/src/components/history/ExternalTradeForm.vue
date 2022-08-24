@@ -299,7 +299,11 @@ const ExternalTradeForm = defineComponent({
   name: 'ExternalTradeForm',
   props: {
     value: { required: false, type: Boolean, default: false },
-    edit: { required: false, type: Object as PropType<Trade>, default: null },
+    edit: {
+      required: false,
+      type: Object as PropType<Trade | null>,
+      default: null
+    },
     saveData: {
       required: true,
       type: Function as PropType<
@@ -420,12 +424,11 @@ const ExternalTradeForm = defineComponent({
     };
 
     const setEditMode = () => {
-      if (!get(edit)) {
+      const trade = get(edit);
+      if (!trade) {
         reset();
         return;
       }
-
-      const trade: Trade = get(edit);
 
       set(base, trade.baseAsset);
       set(quote, trade.quoteAsset);
