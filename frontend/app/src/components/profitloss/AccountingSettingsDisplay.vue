@@ -1,13 +1,13 @@
 <template>
   <card>
-    <template #title>{{ $t('account_settings_display.title') }}</template>
+    <template #title>{{ tc('account_settings_display.title') }}</template>
     <template #subtitle>
-      {{ $t('account_settings_display.subtitle') }}
+      {{ tc('account_settings_display.subtitle') }}
     </template>
     <v-row class="mt-2">
       <v-col cols="12" sm="6">
         <span class="text--primary">
-          {{ $t('account_settings_display.past_cost_basis') }}
+          {{ tc('account_settings_display.past_cost_basis') }}
         </span>
         <span class="ms-2">
           <v-icon :class="color(accountingSettings.calculatePastCostBasis)">
@@ -17,7 +17,7 @@
       </v-col>
       <v-col cols="12" sm="6">
         <span class="text--primary">
-          {{ $t('account_settings_display.crypto2crypto') }}
+          {{ tc('account_settings_display.crypto2crypto') }}
         </span>
         <span class="ms-2">
           <v-icon :class="color(accountingSettings.includeCrypto2crypto)">
@@ -27,7 +27,7 @@
       </v-col>
       <v-col cols="12" sm="6">
         <span class="text--primary">
-          {{ $t('account_settings_display.gas_costs') }}
+          {{ tc('account_settings_display.gas_costs') }}
         </span>
         <span class="ms-2">
           <v-icon :class="color(accountingSettings.includeGasCosts)">
@@ -37,7 +37,7 @@
       </v-col>
       <v-col cols="12" sm="6">
         <span class="text--primary">
-          {{ $t('account_settings_display.profit_currency') }}
+          {{ tc('account_settings_display.profit_currency') }}
         </span>
         <span class="ms-2">
           {{ accountingSettings.profitCurrency }}
@@ -45,7 +45,7 @@
       </v-col>
       <v-col cols="12" sm="6">
         <span class="text--primary">
-          {{ $t('account_settings_display.account_asset_movement') }}
+          {{ tc('account_settings_display.account_asset_movement') }}
         </span>
         <span class="ms-2">
           <v-icon :class="color(accountingSettings.accountForAssetsMovements)">
@@ -55,7 +55,7 @@
       </v-col>
       <v-col cols="12" sm="6">
         <span class="text--primary">
-          {{ $t('account_settings_display.tax_free_period') }}
+          {{ tc('account_settings_display.tax_free_period') }}
         </span>
         <span class="font-weight-medium ms-2">
           <span
@@ -83,7 +83,7 @@
       >
         <span class="text--primary">
           {{
-            $t(
+            tc(
               'account_settings_display.eth_staking_taxable_after_withdrawal_enabled'
             )
           }}
@@ -102,7 +102,7 @@
       </v-col>
       <v-col v-if="costBasisMethodItem" cols="12" sm="6">
         <span class="text--primary">
-          {{ $t('account_settings_display.cost_basis_method') }}
+          {{ tc('account_settings_display.cost_basis_method') }}
         </span>
         <span class="ms-2">
           <span class="accounting-settings-display--uppercase">
@@ -115,58 +115,45 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
-import i18n from '@/i18n';
+import { computed, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { costBasisMethodData } from '@/store/reports/consts';
 import { ActionDataEntry } from '@/store/types';
 import { AccountingSettings, CostBasisMethod } from '@/types/user';
 
-const AccountingSettingsDisplay = defineComponent({
-  name: 'AccountingSettingsDisplay',
-  props: {
-    accountingSettings: {
-      required: true,
-      type: Object as PropType<AccountingSettings>
-    }
-  },
-  setup(props) {
-    const { accountingSettings } = toRefs(props);
-    const color = (enabled: boolean) => {
-      return enabled
-        ? 'accounting-settings-display--yes'
-        : 'accounting-settings-display--no';
-    };
-
-    const icon = (enabled: boolean) => {
-      return enabled ? 'mdi-check' : 'mdi-close';
-    };
-
-    const taxFreePeriod = (period: number) => {
-      const days = period / 86400;
-      return i18n.t('account_settings_display.days', { days }).toString();
-    };
-
-    const costBasisMethodItem =
-      computed<ActionDataEntry<CostBasisMethod> | null>(() => {
-        const method = get(accountingSettings).costBasisMethod;
-        if (!method) return null;
-        return (
-          costBasisMethodData.find(item => item.identifier === method) || null
-        );
-      });
-
-    return {
-      color,
-      icon,
-      taxFreePeriod,
-      costBasisMethodItem
-    };
+const props = defineProps({
+  accountingSettings: {
+    required: true,
+    type: Object as PropType<AccountingSettings>
   }
 });
 
-export default AccountingSettingsDisplay;
+const { accountingSettings } = toRefs(props);
+const { tc } = useI18n();
+const color = (enabled: boolean | null) => {
+  return enabled
+    ? 'accounting-settings-display--yes'
+    : 'accounting-settings-display--no';
+};
+
+const icon = (enabled: boolean | null) => {
+  return enabled ? 'mdi-check' : 'mdi-close';
+};
+
+const taxFreePeriod = (period: number) => {
+  const days = period / 86400;
+  return tc('account_settings_display.days', 0, { days });
+};
+
+const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
+  () => {
+    const method = get(accountingSettings).costBasisMethod;
+    if (!method) return null;
+    return costBasisMethodData.find(item => item.identifier === method) || null;
+  }
+);
 </script>
 
 <style scoped lang="scss">

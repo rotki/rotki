@@ -4,17 +4,17 @@
     :colspan="colspan"
     :padded="false"
     :offset="1"
-    :offset-class-name="$style.offset"
+    :offset-class-name="css.offset"
   >
     <template #offset>
-      <div v-if="showGroupLine" :class="$style.group">
-        <div :class="$style['group__line']" />
+      <div v-if="showGroupLine" :class="css.group">
+        <div :class="css['group__line']" />
       </div>
     </template>
     <template #append>
       <v-expansion-panels
         v-model="panel"
-        :class="$style['expansions-panels']"
+        :class="css['expansions-panels']"
         multiple
       >
         <v-expansion-panel>
@@ -23,8 +23,8 @@
               <div class="primary--text font-weight-bold">
                 {{
                   open
-                    ? $t('profit_loss_events.cost_basis.hide')
-                    : $t('profit_loss_events.cost_basis.show')
+                    ? tc('profit_loss_events.cost_basis.hide')
+                    : tc('profit_loss_events.cost_basis.show')
                 }}
               </div>
             </template>
@@ -33,19 +33,19 @@
           <v-expansion-panel-content>
             <card class="mt-4">
               <template #title>
-                {{ $t('cost_basis_table.cost_basis') }}
+                {{ tc('cost_basis_table.cost_basis') }}
                 <span class="text-caption ml-2">
                   {{
                     costBasis.isComplete
-                      ? $t('cost_basis_table.complete')
-                      : $t('cost_basis_table.incomplete')
+                      ? tc('cost_basis_table.complete')
+                      : tc('cost_basis_table.incomplete')
                   }}
                 </span>
               </template>
               <data-table
-                :class="$style.table"
-                :items="costBasis.matchedAcquisitions"
-                :headers="headers"
+                :class="css.table"
+                :items="matchedAcquisitions"
+                :headers="tableHeaders"
                 item-key="id"
                 sort-by="time"
               >
@@ -86,72 +86,70 @@
   </table-expand-container>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, ref, Ref } from 'vue';
+import { computed, PropType, ref, toRefs, useCssModule } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
-import { CURRENCY_USD } from '@/data/currencies';
-import i18n from '@/i18n';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CostBasis } from '@/types/reports';
 
-const getHeaders = (currency: Ref<string>) =>
-  computed<DataTableHeader[]>(() => {
-    return [
-      {
-        text: i18n.t('cost_basis_table.headers.amount').toString(),
-        value: 'amount',
-        align: 'end'
-      },
-      {
-        text: i18n.t('cost_basis_table.headers.full_amount').toString(),
-        value: 'fullAmount',
-        align: 'end'
-      },
-      {
-        text: i18n.t('cost_basis_table.headers.remaining_amount').toString(),
-        value: 'remainingAmount',
-        align: 'end'
-      },
-      {
-        text: i18n
-          .t('cost_basis_table.headers.rate', { currency: get(currency) })
-          .toString(),
-        value: 'rate',
-        align: 'end'
-      },
-      {
-        text: i18n.t('common.datetime').toString(),
-        value: 'time'
-      },
-      {
-        text: i18n.t('cost_basis_table.headers.taxable').toString(),
-        value: 'taxable'
-      }
-    ];
-  });
-
-export default defineComponent({
-  name: 'CostBasisTable',
-  components: { DataTable },
-  props: {
-    costBasis: { required: true, type: Object as PropType<CostBasis> },
-    colspan: { required: true, type: Number },
-    currency: { required: false, type: String, default: CURRENCY_USD },
-    showGroupLine: { required: false, type: Boolean, default: false }
+const props = defineProps({
+  costBasis: { required: true, type: Object as PropType<CostBasis> },
+  colspan: { required: true, type: Number },
+  currency: {
+    required: false,
+    type: String as PropType<string | null>,
+    default: null
   },
-  setup() {
-    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  showGroupLine: { required: false, type: Boolean, default: false }
+});
 
-    const panel = ref<number[]>([]);
+const { costBasis } = toRefs(props);
 
-    return {
-      headers: getHeaders(currencySymbol),
-      panel
-    };
+const panel = ref<number[]>([]);
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { tc } = useI18n();
+
+const css = useCssModule();
+
+const tableHeaders = computed<DataTableHeader[]>(() => [
+  {
+    text: tc('cost_basis_table.headers.amount'),
+    value: 'amount',
+    align: 'end'
+  },
+  {
+    text: tc('cost_basis_table.headers.full_amount'),
+    value: 'fullAmount',
+    align: 'end'
+  },
+  {
+    text: tc('cost_basis_table.headers.remaining_amount'),
+    value: 'remainingAmount',
+    align: 'end'
+  },
+  {
+    text: tc('cost_basis_table.headers.rate', 0, {
+      currency: get(currencySymbol)
+    }),
+    value: 'rate',
+    align: 'end'
+  },
+  {
+    text: tc('common.datetime'),
+    value: 'time'
+  },
+  {
+    text: tc('cost_basis_table.headers.taxable'),
+    value: 'taxable'
   }
+]);
+
+const matchedAcquisitions = computed(() => {
+  return get(costBasis).matchedAcquisitions ?? [];
 });
 </script>
 

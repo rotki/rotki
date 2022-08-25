@@ -64,32 +64,34 @@
     >
       <template #default="{ value }">
         <strong class="white--text">
-          {{ tc('update_popup.progress', { percentage: Math.ceil(value) }) }}
+          {{ tc('update_popup.progress', 0, { percentage: Math.ceil(value) }) }}
         </strong>
       </template>
     </v-progress-linear>
 
-    <template v-if="error" #action="{ attrs }">
-      <v-btn text v-bind="attrs" @click="dismiss">
-        {{ tc('common.actions.dismiss') }}
-      </v-btn>
-    </template>
-    <template v-else-if="!downloading && !restarting" #action="{ attrs }">
-      <v-btn text v-bind="attrs" @click="dismiss">
-        {{ tc('common.actions.cancel') }}
-      </v-btn>
-      <v-btn
-        v-if="!downloadReady"
-        color="primary"
-        text
-        v-bind="attrs"
-        @click="update"
-      >
-        {{ tc('common.actions.update') }}
-      </v-btn>
-      <v-btn v-else color="primary" text v-bind="attrs" @click="install">
-        {{ tc('common.actions.install') }}
-      </v-btn>
+    <template #action="{ attrs }">
+      <div v-if="error">
+        <v-btn text v-bind="attrs" @click="dismiss">
+          {{ tc('common.actions.dismiss') }}
+        </v-btn>
+      </div>
+      <div v-else-if="!downloading && !restarting">
+        <v-btn text v-bind="attrs" @click="dismiss">
+          {{ tc('common.actions.cancel') }}
+        </v-btn>
+        <v-btn
+          v-if="!downloadReady"
+          color="primary"
+          text
+          v-bind="attrs"
+          @click="update"
+        >
+          {{ tc('common.actions.update') }}
+        </v-btn>
+        <v-btn v-else color="primary" text v-bind="attrs" @click="install">
+          {{ tc('common.actions.install') }}
+        </v-btn>
+      </div>
     </template>
   </v-snackbar>
 </template>

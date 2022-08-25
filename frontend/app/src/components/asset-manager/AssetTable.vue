@@ -1,10 +1,10 @@
 <template>
   <card outlined-body>
     <template #title>
-      {{ $t('common.assets') }}
+      {{ tc('common.assets') }}
     </template>
     <template #subtitle>
-      {{ $t('asset_table.subtitle') }}
+      {{ tc('asset_table.subtitle') }}
     </template>
     <template #actions>
       <v-row>
@@ -14,9 +14,9 @@
             @ignore="massIgnore"
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
-            {{ $t('asset_table.selected', { count: selected.length }) }}
+            {{ tc('asset_table.selected', 0, { count: selected.length }) }}
             <v-btn small text @click="selected = []">
-              {{ $t('common.actions.clear_selection') }}
+              {{ tc('common.actions.clear_selection') }}
             </v-btn>
           </div>
         </v-col>
@@ -25,13 +25,13 @@
           <v-checkbox
             v-model="onlyShowOwned"
             class="mt-0"
-            :label="$t('asset_table.only_show_owned')"
+            :label="tc('asset_table.only_show_owned')"
             hide-details
           />
           <v-checkbox
             v-model="hideIgnoredAssets"
             class="mt-0"
-            :label="$t('asset_table.hide_ignored_assets')"
+            :label="tc('asset_table.hide_ignored_assets')"
             hide-details
           />
         </v-col>
@@ -41,7 +41,7 @@
             hide-details
             class="asset-table__filter"
             prepend-inner-icon="mdi-magnify"
-            :label="$t('common.actions.filter')"
+            :label="tc('common.actions.filter')"
             outlined
             clearable
             @input="onSearchTermChange($event)"
@@ -104,14 +104,14 @@
       </template>
       <template #item.actions="{ item }">
         <row-actions
-          :edit-tooltip="$t('asset_table.edit_tooltip')"
-          :delete-tooltip="$t('asset_table.delete_tooltip')"
+          :edit-tooltip="tc('asset_table.edit_tooltip')"
+          :delete-tooltip="tc('asset_table.delete_tooltip')"
           @edit-click="edit(item)"
           @delete-click="deleteAsset(item)"
         >
           <copy-button
             class="mx-1"
-            :tooltip="$t('asset_table.copy_identifier.tooltip')"
+            :tooltip="tc('asset_table.copy_identifier.tooltip')"
             :value="item.identifier"
           />
         </row-actions>
@@ -123,14 +123,14 @@
           :padded="false"
         >
           <template #title>
-            {{ $t('asset_table.underlying_tokens') }}
+            {{ tc('asset_table.underlying_tokens') }}
           </template>
           <v-simple-table>
             <thead>
               <tr>
-                <th>{{ $t('common.address') }}</th>
-                <th>{{ $t('underlying_token_manager.tokens.token_kind') }}</th>
-                <th>{{ $t('underlying_token_manager.tokens.weight') }}</th>
+                <th>{{ tc('common.address') }}</th>
+                <th>{{ tc('underlying_token_manager.tokens.token_kind') }}</th>
+                <th>{{ tc('underlying_token_manager.tokens.weight') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -141,7 +141,7 @@
                 <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
                 <td class="shrink">
                   {{
-                    $t('underlying_token_manager.tokens.weight_percentage', {
+                    tc('underlying_token_manager.tokens.weight_percentage', 0, {
                       weight: token.weight
                     })
                   }}
@@ -162,9 +162,10 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set, useTimeoutFn } from '@vueuse/core';
-import { computed, defineComponent, PropType, Ref, ref, toRefs } from 'vue';
+import { computed, PropType, Ref, ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
@@ -172,7 +173,6 @@ import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
-import i18n from '@/i18n';
 import { EthereumToken, ManagedAsset } from '@/services/assets/types';
 import { useIgnoredAssetsStore } from '@/store/assets';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
@@ -183,25 +183,47 @@ import { compareAssets, getAddressFromEvmIdentifier } from '@/utils/assets';
 import { uniqueStrings } from '@/utils/data';
 import { toSentenceCase } from '@/utils/text';
 
+const props = defineProps({
+  tokens: { required: true, type: Array as PropType<ManagedAsset[]> },
+  loading: { required: false, type: Boolean, default: false },
+  change: { required: true, type: Boolean }
+});
+
+const emit = defineEmits<{
+  (e: 'add'): void;
+  (e: 'edit', asset: ManagedAsset): void;
+  (e: 'delete-asset', asset: ManagedAsset): void;
+}>();
+
+const { tc } = useI18n();
+
+const { tokens } = toRefs(props);
+const expanded = ref<ManagedAsset[]>([]);
+const selected: Ref<ManagedAsset[]> = ref([]);
+const search = ref<string>('');
+const pendingSearch = ref<string>('');
+const onlyShowOwned = ref<boolean>(false);
+const hideIgnoredAssets = ref<boolean>(false);
+
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('common.asset').toString(),
+    text: tc('common.asset'),
     value: 'symbol'
   },
   {
-    text: i18n.t('common.type').toString(),
+    text: tc('common.type'),
     value: 'assetType'
   },
   {
-    text: i18n.t('common.address').toString(),
+    text: tc('common.address'),
     value: 'address'
   },
   {
-    text: i18n.t('asset_table.headers.started').toString(),
+    text: tc('asset_table.headers.started'),
     value: 'started'
   },
   {
-    text: i18n.t('assets.ignore').toString(),
+    text: tc('assets.ignore'),
     value: 'ignored',
     align: 'center',
     sortable: false
@@ -219,189 +241,135 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-export default defineComponent({
-  name: 'AssetTable',
-  components: {
-    CopyButton,
-    DataTable,
-    TableExpandContainer,
-    RowActions,
-    RowExpander,
-    AssetDetailsBase
-  },
-  props: {
-    tokens: { required: true, type: Array as PropType<ManagedAsset[]> },
-    loading: { required: false, type: Boolean, default: false },
-    change: { required: true, type: Boolean }
-  },
-  emits: ['add', 'edit', 'delete-asset'],
-  setup(props, { emit }) {
-    const { tokens } = toRefs(props);
-    const expanded = ref<ManagedAsset[]>([]);
-    const search = ref<string>('');
-    const pendingSearch = ref<string>('');
-    const onlyShowOwned = ref<boolean>(false);
-    const hideIgnoredAssets = ref<boolean>(false);
+const isIgnored = (identifier: string) => {
+  return isAssetIgnored(get(identifier));
+};
 
-    const add = () => emit('add');
-    const edit = (asset: ManagedAsset) => emit('edit', asset);
-    const deleteAsset = (asset: ManagedAsset) => emit('delete-asset', asset);
+const add = () => emit('add');
+const edit = (asset: ManagedAsset) => emit('edit', asset);
+const deleteAsset = (asset: ManagedAsset) => emit('delete-asset', asset);
 
-    const { aggregatedAssets } = useBlockchainBalancesStore();
+const { setMessage } = useMainStore();
+const { aggregatedAssets } = useBlockchainBalancesStore();
 
-    const { isAssetIgnored, ignoreAsset, unignoreAsset } =
-      useIgnoredAssetsStore();
+const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 
-    const isIgnored = (identifier: string) => {
-      return isAssetIgnored(get(identifier));
-    };
-
-    const filteredTokens = computed<ManagedAsset[]>(() => {
-      const showOwned = get(onlyShowOwned);
-      const hideIgnored = get(hideIgnoredAssets);
-      return get(tokens).filter(item => {
-        return (
-          (!showOwned ||
-            get(aggregatedAssets(hideIgnored)).includes(item.identifier)) &&
-          (!hideIgnored || !get(isIgnored(item.identifier)))
-        );
-      });
-    });
-
-    const {
-      isPending: isTimeoutPending,
-      start,
-      stop
-    } = useTimeoutFn(
-      () => {
-        set(search, get(pendingSearch));
-      },
-      600,
-      { immediate: false }
+const filteredTokens = computed<ManagedAsset[]>(() => {
+  const showOwned = get(onlyShowOwned);
+  const hideIgnored = get(hideIgnoredAssets);
+  return get(tokens).filter(item => {
+    return (
+      (!showOwned ||
+        get(aggregatedAssets(hideIgnored)).includes(item.identifier)) &&
+      (!hideIgnored || !get(isIgnored(item.identifier)))
     );
-
-    const onSearchTermChange = (term: string) => {
-      set(pendingSearch, term);
-      if (get(isTimeoutPending)) {
-        stop();
-      }
-      start();
-    };
-
-    const assetFilter = (
-      value: Nullable<string>,
-      search: Nullable<string>,
-      item: Nullable<ManagedAsset>
-    ) => {
-      if (!search || !item) {
-        return true;
-      }
-
-      const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
-      const name = item.name?.toLocaleLowerCase()?.trim() ?? '';
-      const symbol = item.symbol?.toLocaleLowerCase()?.trim() ?? '';
-      const address =
-        (item as EthereumToken).address?.toLocaleLowerCase()?.trim() ?? '';
-      return (
-        symbol.indexOf(keyword) >= 0 ||
-        name.indexOf(keyword) >= 0 ||
-        address.indexOf(keyword) >= 0 ||
-        item.identifier.indexOf(keyword) >= 0
-      );
-    };
-
-    const sortItems = (
-      items: ManagedAsset[],
-      sortBy: (keyof ManagedAsset)[],
-      sortDesc: boolean[]
-    ): ManagedAsset[] => {
-      const keyword = get(search)?.toLocaleLowerCase()?.trim() ?? '';
-      return items.sort((a, b) =>
-        compareAssets(a, b, sortBy[0], keyword, sortDesc[0])
-      );
-    };
-
-    const formatType = (string?: string) => {
-      return toSentenceCase(string ?? 'EVM token');
-    };
-
-    const getAsset = (item: EthereumToken) => {
-      const name =
-        item.name ??
-        item.symbol ??
-        getAddressFromEvmIdentifier(item.identifier);
-      return {
-        name,
-        symbol: item.symbol ?? '',
-        identifier: item.identifier
-      };
-    };
-
-    const toggleIgnoreAsset = (identifier: string) => {
-      if (get(isIgnored(identifier))) {
-        unignoreAsset(get(identifier));
-      } else {
-        ignoreAsset(get(identifier));
-      }
-    };
-
-    const selected: Ref<ManagedAsset[]> = ref([]);
-
-    const { setMessage } = useMainStore();
-    const massIgnore = async (ignored: boolean) => {
-      const ids = get(selected)
-        .filter(item => {
-          const isItemIgnored = get(isIgnored(item.identifier));
-          return ignored ? !isItemIgnored : isItemIgnored;
-        })
-        .map(item => item.identifier)
-        .filter(uniqueStrings);
-
-      let status: ActionStatus;
-
-      if (ids.length === 0) {
-        const choice = ignored ? 1 : 2;
-        setMessage({
-          success: false,
-          title: i18n.tc('ignore.no_items.title', choice),
-          description: i18n.tc('ignore.no_items.description', choice)
-        });
-        return;
-      }
-
-      if (ignored) {
-        status = await ignoreAsset(ids);
-      } else {
-        status = await unignoreAsset(ids);
-      }
-
-      if (status.success) {
-        set(selected, []);
-      }
-    };
-
-    return {
-      selected,
-      filteredTokens,
-      pendingSearch,
-      onSearchTermChange,
-      isTimeoutPending,
-      add,
-      edit,
-      deleteAsset,
-      tableHeaders,
-      expanded,
-      search,
-      sortItems,
-      assetFilter,
-      getAsset,
-      formatType,
-      onlyShowOwned,
-      hideIgnoredAssets,
-      isIgnored,
-      toggleIgnoreAsset,
-      massIgnore
-    };
-  }
+  });
 });
+
+const {
+  isPending: isTimeoutPending,
+  start,
+  stop
+} = useTimeoutFn(
+  () => {
+    set(search, get(pendingSearch));
+  },
+  600,
+  { immediate: false }
+);
+
+const onSearchTermChange = (term: string) => {
+  set(pendingSearch, term);
+  if (get(isTimeoutPending)) {
+    stop();
+  }
+  start();
+};
+
+const assetFilter = (
+  value: Nullable<string>,
+  search: Nullable<string>,
+  item: Nullable<ManagedAsset>
+) => {
+  if (!search || !item) {
+    return true;
+  }
+
+  const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
+  const name = item.name?.toLocaleLowerCase()?.trim() ?? '';
+  const symbol = item.symbol?.toLocaleLowerCase()?.trim() ?? '';
+  const address =
+    (item as EthereumToken).address?.toLocaleLowerCase()?.trim() ?? '';
+  return (
+    symbol.indexOf(keyword) >= 0 ||
+    name.indexOf(keyword) >= 0 ||
+    address.indexOf(keyword) >= 0 ||
+    item.identifier.indexOf(keyword) >= 0
+  );
+};
+
+const sortItems = (
+  items: ManagedAsset[],
+  sortBy: (keyof ManagedAsset)[],
+  sortDesc: boolean[]
+): ManagedAsset[] => {
+  const keyword = get(search)?.toLocaleLowerCase()?.trim() ?? '';
+  return items.sort((a, b) =>
+    compareAssets(a, b, sortBy[0], keyword, sortDesc[0])
+  );
+};
+
+const formatType = (string?: string) => {
+  return toSentenceCase(string ?? 'EVM token');
+};
+
+const getAsset = (item: EthereumToken) => {
+  const name =
+    item.name ?? item.symbol ?? getAddressFromEvmIdentifier(item.identifier);
+  return {
+    name,
+    symbol: item.symbol ?? '',
+    identifier: item.identifier
+  };
+};
+
+const toggleIgnoreAsset = (identifier: string) => {
+  if (get(isIgnored(identifier))) {
+    unignoreAsset(get(identifier));
+  } else {
+    ignoreAsset(get(identifier));
+  }
+};
+
+const massIgnore = async (ignored: boolean) => {
+  const ids = get(selected)
+    .filter(item => {
+      const isItemIgnored = get(isIgnored(item.identifier));
+      return ignored ? !isItemIgnored : isItemIgnored;
+    })
+    .map(item => item.identifier)
+    .filter(uniqueStrings);
+
+  let status: ActionStatus;
+
+  if (ids.length === 0) {
+    const choice = ignored ? 1 : 2;
+    setMessage({
+      success: false,
+      title: tc('ignore.no_items.title', choice),
+      description: tc('ignore.no_items.description', choice)
+    });
+    return;
+  }
+
+  if (ignored) {
+    status = await ignoreAsset(ids);
+  } else {
+    status = await unignoreAsset(ids);
+  }
+
+  if (status.success) {
+    set(selected, []);
+  }
+};
 </script>
