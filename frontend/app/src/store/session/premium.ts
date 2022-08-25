@@ -2,7 +2,7 @@ import { Severity } from '@rotki/common/lib/messages';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref, watch } from 'vue';
-import i18n from '@/i18n';
+import { useI18n } from 'vue-i18n-composable';
 import { setupPremium } from '@/premium/setup-premium';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
@@ -23,6 +23,7 @@ export const usePremiumStore = defineStore('session/premium', () => {
 
   const { isTaskRunning, awaitTask } = useTasks();
   const { notify } = useNotifications();
+  const { tc } = useI18n();
 
   const setup = async ({
     apiKey,
@@ -72,36 +73,49 @@ export const usePremiumStore = defineStore('session/premium', () => {
       return;
     }
 
+    function notifyFailure(error: string): void {
+      const title = tc('actions.session.force_sync.error.title');
+      const message = tc('actions.session.force_sync.error.message', 0, {
+        error
+      });
+
+      notify({
+        title,
+        message,
+        display: true
+      });
+    }
+
     try {
       const { taskId } = await api.forceSync(action);
-      await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-        title: i18n.tc('actions.session.force_sync.task.title'),
-        numericKeys: balanceKeys
-      });
-      const title = i18n.tc('actions.session.force_sync.success.title');
-      const message = i18n.tc('actions.session.force_sync.success.message');
+      const { result, message } = await awaitTask<boolean, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: tc('actions.session.force_sync.task.title'),
+          numericKeys: balanceKeys
+        }
+      );
 
-      notify({
-        title,
-        message,
-        severity: Severity.INFO,
-        display: true
-      });
+      if (result) {
+        const title = tc('actions.session.force_sync.success.title');
+        const message = tc('actions.session.force_sync.success.message');
 
-      if (action === SYNC_DOWNLOAD) {
-        await logout();
+        notify({
+          title,
+          message,
+          severity: Severity.INFO,
+          display: true
+        });
+
+        if (action === SYNC_DOWNLOAD) {
+          await logout();
+        }
+      } else {
+        notifyFailure(message ?? '');
       }
     } catch (e: any) {
-      const title = i18n.tc('actions.session.force_sync.error.title');
-      const message = i18n.tc('actions.session.force_sync.error.message', 0, {
-        error: e.message
-      });
-
-      notify({
-        title,
-        message,
-        display: true
-      });
+      notifyFailure(e.message);
     }
   }
 
