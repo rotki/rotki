@@ -6,12 +6,40 @@
     <template #subtitle>
       {{ $t('asset_table.subtitle') }}
     </template>
-    <template #search>
-      <v-row justify="end" no-gutters>
-        <v-col cols="12" sm="4">
+    <template #actions>
+      <v-row>
+        <v-col cols="12" md="4">
+          <ignore-buttons
+            :disabled="selected.length === 0"
+            @ignore="massIgnore"
+          />
+          <div v-if="selected.length > 0" class="mt-2 ms-1">
+            {{ $t('asset_table.selected', { count: selected.length }) }}
+            <v-btn small text @click="selected = []">
+              {{ $t('common.actions.clear_selection') }}
+            </v-btn>
+          </div>
+        </v-col>
+        <v-col />
+        <v-col cols="12" md="auto">
+          <v-checkbox
+            v-model="onlyShowOwned"
+            class="mt-0"
+            :label="$t('asset_table.only_show_owned')"
+            hide-details
+          />
+          <v-checkbox
+            v-model="hideIgnoredAssets"
+            class="mt-0"
+            :label="$t('asset_table.hide_ignored_assets')"
+            hide-details
+          />
+        </v-col>
+        <v-col cols="12" md="4" class="pb-md-8">
           <v-text-field
             :value="pendingSearch"
-            dense
+            hide-details
+            class="asset-table__filter"
             prepend-inner-icon="mdi-magnify"
             :label="$t('common.actions.filter')"
             outlined
@@ -34,7 +62,8 @@
       <v-icon> mdi-plus </v-icon>
     </v-btn>
     <data-table
-      :items="tokens"
+      v-model="selected"
+      :items="filteredTokens"
       :loading="loading"
       :headers="tableHeaders"
       single-expand
@@ -43,6 +72,8 @@
       sort-by="symbol"
       :sort-desc="false"
       :search="search"
+      :single-select="false"
+      show-select
       :custom-sort="sortItems"
       :custom-filter="assetFilter"
     >
@@ -62,6 +93,14 @@
       </template>
       <template #item.assetType="{ item }">
         {{ formatType(item.assetType) }}
+      </template>
+      <template #item.ignored="{ item }">
+        <div class="d-flex justify-center">
+          <v-switch
+            :input-value="isIgnored(item.identifier)"
+            @change="toggleIgnoreAsset(item.identifier)"
+          />
+        </div>
       </template>
       <template #item.actions="{ item }">
         <row-actions
@@ -125,7 +164,7 @@
 
 <script lang="ts">
 import { get, set, useTimeoutFn } from '@vueuse/core';
-import { computed, defineComponent, PropType, ref } from 'vue';
+import { computed, defineComponent, PropType, Ref, ref, toRefs } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
@@ -135,8 +174,13 @@ import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import i18n from '@/i18n';
 import { EthereumToken, ManagedAsset } from '@/services/assets/types';
+import { useIgnoredAssetsStore } from '@/store/assets';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { useMainStore } from '@/store/main';
+import { ActionStatus } from '@/store/types';
 import { Nullable } from '@/types';
 import { compareAssets, getAddressFromEvmIdentifier } from '@/utils/assets';
+import { uniqueStrings } from '@/utils/data';
 import { toSentenceCase } from '@/utils/text';
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
@@ -157,13 +201,21 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     value: 'started'
   },
   {
+    text: i18n.t('assets.ignore').toString(),
+    value: 'ignored',
+    align: 'center',
+    sortable: false
+  },
+  {
     text: '',
-    value: 'actions'
+    value: 'actions',
+    sortable: false
   },
   {
     text: '',
     width: '48px',
-    value: 'expand'
+    value: 'expand',
+    sortable: false
   }
 ]);
 
@@ -183,14 +235,38 @@ export default defineComponent({
     change: { required: true, type: Boolean }
   },
   emits: ['add', 'edit', 'delete-asset'],
-  setup(_, { emit }) {
+  setup(props, { emit }) {
+    const { tokens } = toRefs(props);
     const expanded = ref<ManagedAsset[]>([]);
     const search = ref<string>('');
     const pendingSearch = ref<string>('');
+    const onlyShowOwned = ref<boolean>(false);
+    const hideIgnoredAssets = ref<boolean>(false);
 
     const add = () => emit('add');
     const edit = (asset: ManagedAsset) => emit('edit', asset);
     const deleteAsset = (asset: ManagedAsset) => emit('delete-asset', asset);
+
+    const { aggregatedAssets } = useBlockchainBalancesStore();
+
+    const { isAssetIgnored, ignoreAsset, unignoreAsset } =
+      useIgnoredAssetsStore();
+
+    const isIgnored = (identifier: string) => {
+      return isAssetIgnored(get(identifier));
+    };
+
+    const filteredTokens = computed<ManagedAsset[]>(() => {
+      const showOwned = get(onlyShowOwned);
+      const hideIgnored = get(hideIgnoredAssets);
+      return get(tokens).filter(item => {
+        return (
+          (!showOwned ||
+            get(aggregatedAssets(hideIgnored)).includes(item.identifier)) &&
+          (!hideIgnored || !get(isIgnored(item.identifier)))
+        );
+      });
+    });
 
     const {
       isPending: isTimeoutPending,
@@ -261,7 +337,52 @@ export default defineComponent({
       };
     };
 
+    const toggleIgnoreAsset = (identifier: string) => {
+      if (get(isIgnored(identifier))) {
+        unignoreAsset(get(identifier));
+      } else {
+        ignoreAsset(get(identifier));
+      }
+    };
+
+    const selected: Ref<ManagedAsset[]> = ref([]);
+
+    const { setMessage } = useMainStore();
+    const massIgnore = async (ignored: boolean) => {
+      const ids = get(selected)
+        .filter(item => {
+          const isItemIgnored = get(isIgnored(item.identifier));
+          return ignored ? !isItemIgnored : isItemIgnored;
+        })
+        .map(item => item.identifier)
+        .filter(uniqueStrings);
+
+      let status: ActionStatus;
+
+      if (ids.length === 0) {
+        const choice = ignored ? 1 : 2;
+        setMessage({
+          success: false,
+          title: i18n.tc('ignore.no_items.title', choice),
+          description: i18n.tc('ignore.no_items.description', choice)
+        });
+        return;
+      }
+
+      if (ignored) {
+        status = await ignoreAsset(ids);
+      } else {
+        status = await unignoreAsset(ids);
+      }
+
+      if (status.success) {
+        set(selected, []);
+      }
+    };
+
     return {
+      selected,
+      filteredTokens,
       pendingSearch,
       onSearchTermChange,
       isTimeoutPending,
@@ -274,7 +395,12 @@ export default defineComponent({
       sortItems,
       assetFilter,
       getAsset,
-      formatType
+      formatType,
+      onlyShowOwned,
+      hideIgnoredAssets,
+      isIgnored,
+      toggleIgnoreAsset,
+      massIgnore
     };
   }
 });

@@ -380,27 +380,6 @@ The method that should be used during the profit and loss execution to calculate
 - FIFO: `First In First Out`
 - LIFO: `Last In First Out``
 
-Asset settings
---------------
-
-.. image:: images/sc_accountingasset_settings.png
-   :alt: Customizing the accounting asset settings
-   :align: center
-
-
-Ignored assets
-^^^^^^^^^^^^^^^
-
-Specify which assets you own and would like to completely ignore from all calculations and balance queries. Any actions that involve these assets are ignored.
-We have introduced a mechanism to populate the ignore list with assets labeled as spam/scam by us. This list can be re-queried at any time by the user by clicking on ``Sync the list of ignored assets``.
-
-You can also ignore asset by clicking asset icons anywhere on the app, that will redirect you to this overview asset page. In this page, you can ignore or un-ignore selected asset.
-
-.. image:: images/asset_overview.png
-   :alt: Asset overview page
-   :align: center
-
-
 .. _ledger_action_settings:
 
 Ledger action settings
@@ -1150,15 +1129,17 @@ When you press the + button on the top right, or edit an existing token you can 
 
 You can fill in the following fields:
 
-1. The token address. This is required.
-2. The token name. This is required.
-3. The token symbol. This is required.
-4. The token decimals. This is required.
-5. Coingecko identifier. This is optional, but highly recommended. If the asset is supported by coingecko you should get its coingecko identifier. This will allow the usage of coingecko as a price oracle and also will automatically pull the asset icon from coingecko. You can get the coingecko identifier for an asset by searching this list: https://api.coingecko.com/api/v3/coins/list . It may also be the same as the last part of the coingecko url. For example from ``https://www.coingecko.com/en/coins/ethereum`` we have ``ethereum`` as the identifier for ETH.
-6. Cryptocompare identifier. This is optional but recommended. At least one of coingecko or cryptocompare should be given so that prices can be queried. If not given, the symbol of the asset will be used. If that fails, then cryptocompare is not used. To get the cryptocompare identifier, search for the coin in cryptocompare, visit its url and take it from there. For example for https://www.cryptocompare.com/coins/eth/overview/USD the identifier is ``ETH``. It's always what comes after ``coins``.
-7. Optional fields section. This section will be explained below.
-8. Preview of the icon. This section will show the icon you upload, or the current icon on edit mode. Additionally, on edit mode, there is also a button to fetch the latest icon.
-9. You can upload an icon for the asset. Any of the common image extensions is accepted (png, jpg, jpeg, webp). The custom icon always takes precedence over the one auto-detected by coingecko.
+1. The chain where the token located. This is required if the asset type is ```EVM Token```.
+2. The token kind. This is required if the asset type is ```EVM Token```.
+3. The token address. This is required.
+4. The token name. This is required.
+5. The token symbol. This is required.
+6. The token decimals. This is required.
+7. Coingecko identifier. This is optional, but highly recommended. If the asset is supported by coingecko you should get its coingecko identifier. This will allow the usage of coingecko as a price oracle and also will automatically pull the asset icon from coingecko. You can get the coingecko identifier for an asset by searching this list: https://api.coingecko.com/api/v3/coins/list . It may also be the same as the last part of the coingecko url. For example from ``https://www.coingecko.com/en/coins/ethereum`` we have ``ethereum`` as the identifier for ETH.
+8. Cryptocompare identifier. This is optional but recommended. At least one of coingecko or cryptocompare should be given so that prices can be queried. If not given, the symbol of the asset will be used. If that fails, then cryptocompare is not used. To get the cryptocompare identifier, search for the coin in cryptocompare, visit its url and take it from there. For example for https://www.cryptocompare.com/coins/eth/overview/USD the identifier is ``ETH``. It's always what comes after ``coins``.
+9. Optional fields section. This section will be explained below.
+10. Preview of the icon. This section will show the icon you upload, or the current icon on edit mode. Additionally, on edit mode, there is also a button to fetch the latest icon.
+11. You can upload an icon for the asset. Any of the common image extensions is accepted (png, jpg, jpeg, webp). The custom icon always takes precedence over the one auto-detected by coingecko.
 
 When you input the address of the token rotki will try to fetch its name, symbol and decimals and use them if they are available.
 
@@ -1172,8 +1153,9 @@ There is also some other fields that are completely optional and expand if you p
 2. If the asset is part of a protocol, specify it here. For example 'uniswap' for uniswap pool tokens, 'aave' for aTokens etc.
 3. If the token is swapped for another token, specify it here. For example LEND was swapped for AAVE.
 4. A token can have underlying tokens. Like a pool, or a token set. Here add the underlying token's address.
-5. And here add the underlying token's weight.
-6. Here you can edit or delete underlying token address/weights. Note: The weight of the underlying tokens should add up to 100%.
+5. You have to specify the token kind.
+6. And here add the underlying token's weight.
+7. Here you can edit or delete underlying token address/weights. Note: The weight of the underlying tokens should add up to 100%.
 
 Merging two assets
 =======================
@@ -1212,7 +1194,15 @@ rotki allows you to track special assets like:
 Ignoring assets
 ===============
 
-Clicking on an asset's name or icon from the assets list, takes you to its detail's page from which you can ignore it by pressing the ``Ignore Asset`` switch.
+Specify which assets you own and would like to completely ignore from all calculations and balance queries. Any actions that involve these assets are ignored.
+You can ignore/un-ignore the assets by toggling the switch on the table. You can also ignore/un-ignore multiple assets by using the checkboxes.
+We have introduced a mechanism to populate the ignore list with assets labeled as spam/scam by us. This list can be re-queried at any time by the user by clicking on ``Sync the list of ignored assets``.
+
+.. image:: images/asset_overview.png
+   :alt: Asset overview page
+   :align: center
+
+You can also ignore asset by clicking asset icons anywhere on the app, that will redirect you to this overview asset page. In this page, you can ignore or un-ignore selected asset.
 
 Adding missing prices
 **********************

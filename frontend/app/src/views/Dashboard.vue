@@ -132,7 +132,7 @@
         :title="tc('common.assets')"
         table-type="ASSETS"
         :loading="isAnyLoading"
-        :balances="aggregatedBalances"
+        :balances="aggregatedBalances().value"
       />
       <liquidity-provider-balance-table class="mt-8" />
       <dashboard-asset-table
@@ -141,7 +141,7 @@
         table-type="LIABILITIES"
         :title="tc('dashboard.liabilities.title')"
         :loading="isAnyLoading"
-        :balances="liabilities"
+        :balances="liabilities().value"
       />
       <nft-balance-table data-cy="nft-balance-table" class="mt-8" />
     </v-container>
@@ -192,12 +192,12 @@ const { t, tc } = useI18n();
 const { isTaskRunning } = useTasks();
 
 const blockchainBalancesStore = useBlockchainBalancesStore();
-
-const { aggregatedBalances, liabilities } = storeToRefs(
-  blockchainBalancesStore
-);
-const { fetchBlockchainBalances, fetchLoopringBalances } =
-  blockchainBalancesStore;
+const {
+  aggregatedBalances,
+  liabilities,
+  fetchBlockchainBalances,
+  fetchLoopringBalances
+} = blockchainBalancesStore;
 
 const { blockchainSummary } = storeToRefs(useBlockchainAccountsStore());
 

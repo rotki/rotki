@@ -198,7 +198,7 @@ export class HistoryApi {
   ): Promise<PendingTask> {
     return this.axios
       .post<ActionResult<PendingTask>>(
-        'blockchains/ETH/transactions/events',
+        'blockchains/ETH/transactions',
         axiosSnakeCaseTransformer({
           asyncQuery: true,
           ...payload

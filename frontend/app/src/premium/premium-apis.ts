@@ -118,10 +118,10 @@ export const adexApi = (): AdexApi => {
 export const balancesApi = (): BalancesApi => {
   const { exchangeRate } = useBalancePricesStore();
   const { balancesByLocation } = storeToRefs(useBalancesStore());
-  const { aggregatedBalances } = storeToRefs(useBlockchainBalancesStore());
+  const { aggregatedBalances } = useBlockchainBalancesStore();
   return {
     byLocation: balancesByLocation as ComputedRef<Record<string, BigNumber>>,
-    aggregatedBalances: aggregatedBalances as ComputedRef<
+    aggregatedBalances: aggregatedBalances() as ComputedRef<
       AssetBalanceWithPrice[]
     >,
     exchangeRate: (currency: string) =>

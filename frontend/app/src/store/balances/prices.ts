@@ -1,6 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
@@ -31,8 +31,8 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   const { notify } = useNotifications();
 
   const fetchPrices = async (payload: FetchPricePayload) => {
-    const { aggregatedAssets } = storeToRefs(useBlockchainBalancesStore());
-    const assets = get(aggregatedAssets);
+    const { aggregatedAssets } = useBlockchainBalancesStore();
+    const assets = get(aggregatedAssets());
 
     const taskType = TaskType.UPDATE_PRICES;
     if (get(isTaskRunning(taskType))) {

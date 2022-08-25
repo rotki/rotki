@@ -11,6 +11,7 @@ import { setupLiquidityPosition } from '@/composables/defi';
 import { interop, useInterop } from '@/electron-interop';
 import { Api } from '@/plugins/api';
 import { Interop } from '@/plugins/interop';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
@@ -50,6 +51,9 @@ describe('AccountManagement.vue', () => {
       lpTotal: () => bigNumberify(0),
       lpAggregatedBalances: () => []
     }));
+
+    useBlockchainBalancesStore(testingPinia).aggregatedBalances = () => [];
+    useBlockchainBalancesStore(testingPinia).liabilities = () => [];
 
     sessionStore = useSessionStore();
 

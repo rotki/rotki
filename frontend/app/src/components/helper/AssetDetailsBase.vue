@@ -72,7 +72,7 @@ const AssetDetailsBase = defineComponent({
       if (!get(opensDetails)) {
         return;
       }
-      const id = get(identifier) ?? get(symbol);
+      const id = encodeURIComponent(get(identifier)) ?? get(symbol);
       router.push({
         path: Routes.ASSETS.route.replace(':identifier', id)
       });

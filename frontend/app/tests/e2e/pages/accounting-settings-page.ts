@@ -35,42 +35,6 @@ export class AccountingSettingsPage {
     });
   }
 
-  addIgnoredAsset(asset: string) {
-    cy.get(
-      '.accounting-settings__asset-to-ignore div.v-select__selections input'
-    ).click();
-    cy.get(
-      '.accounting-settings__asset-to-ignore div.v-select__selections input'
-    ).type(`{selectall}{backspace}${asset}{enter}`);
-    cy.get('.accounting-settings__buttons__add').click();
-  }
-
-  remIgnoredAsset(asset: string) {
-    cy.get(
-      '.accounting-settings__ignored-assets div.v-select__selections input'
-    ).click();
-    cy.get(
-      '.accounting-settings__ignored-assets div.v-select__selections input'
-    ).type(`${asset}{enter}`);
-    cy.get('.accounting-settings__buttons__remove').click();
-  }
-
-  ignoredAssetCount(number: number) {
-    cy.get('.accounting-settings__ignored-assets__badge').should(
-      'include.text',
-      number.toString()
-    );
-  }
-
-  ignoredAssets() {
-    return cy
-      .get('.accounting-settings__ignored-assets__badge')
-      .invoke('text')
-      .then(text => {
-        cy.wrap(text);
-      });
-  }
-
   confirmInlineSuccess(target: string, messageContains?: string) {
     cy.get(`${target} .v-messages__message`).should('be.visible');
     cy.get(`${target} .v-messages__message`).should(

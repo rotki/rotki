@@ -98,6 +98,7 @@ export const useBalancesStore = defineStore('balances', () => {
     adjustBlockchainPrices,
     fetchBlockchainBalances,
     fetchLoopringBalances,
+    totals,
     reset: resetBlockchainBalancesStore
   } = blockchainBalancesStore;
 
@@ -110,7 +111,6 @@ export const useBalancesStore = defineStore('balances', () => {
     bchBalancesState,
     eth2BalancesState,
     loopringBalancesState,
-    totals,
     blockchainTotal
   } = storeToRefs(blockchainBalancesStore);
 
@@ -378,7 +378,7 @@ export const useBalancesStore = defineStore('balances', () => {
       }
 
       if (identifier === TRADE_LOCATION_BLOCKCHAIN) {
-        (get(totals) as AssetBalance[]).forEach((value: AssetBalance) =>
+        (get(totals()) as AssetBalance[]).forEach((value: AssetBalance) =>
           addToOwned(value)
         );
 

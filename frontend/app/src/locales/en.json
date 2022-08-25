@@ -83,15 +83,6 @@
     }
   },
   "account_settings": {
-    "asset_settings": {
-      "ignore_tags_hint": "Click to see all assets and select one to ignore",
-      "labels": {
-        "ignore": "Select asset to ignore",
-        "unignore": "Select asset to remove from ignored assets",
-        "unignore_hint": "Click to see all ignored assets and select one for removal"
-      },
-      "title": "Asset Settings"
-    },
     "cost_basis_method_settings": {
       "labels": {
         "fifo": "First In First Out",
@@ -125,12 +116,8 @@
       "export_csv_formulas": "Error setting the option to include formulas in CSV export: {message}",
       "gas_costs": "Error setting Ethereum gas costs: {message}",
       "have_csv_summary": "Error setting the option to include summary in CSV export: {message}",
-      "ignored_failure": "{asset} could not be added to ignored assets: {message}",
-      "ignored_success": "{asset} added to ignored assets",
       "tax_free": "Tax free period {enabled}",
-      "tax_free_period": "Tax free period set to {period} days",
-      "unignored_failure": "{asset} could not be removed from ignored assets: {message}",
-      "unignored_success": "{asset} removed from ignored assets"
+      "tax_free_period": "Tax free period set to {period} days"
     },
     "validation": {
       "tax_free_days": "Please enter the number of days",
@@ -151,8 +138,6 @@
     "title": "Accounting Settings"
   },
   "accounting_settings": {
-    "fetch_from_cryptoscamdb": "Sync the list of ignored assets",
-    "ignored_assets": "Total number of ignored assets",
     "labels": {
       "account_for_assets_movements": "Take into account assets movements fees",
       "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
@@ -949,6 +934,7 @@
     "edit_title": "Edit an asset",
     "merge_assets": "Merge Assets",
     "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)",
+    "sync_ignored_assets_list": "Sync the list of ignored assets",
     "title": "Asset Management"
   },
   "asset_table": {
@@ -960,6 +946,9 @@
     "headers": {
       "started": "Started"
     },
+    "hide_ignored_assets": "Hide ignored assets",
+    "only_show_owned": "Only show owned assets",
+    "selected": "{count} asset(s) selected",
     "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts",
     "underlying_tokens": "Underlying Tokens"
   },
@@ -1156,7 +1145,6 @@
     }
   },
   "closed_trades": {
-    "clear_selection": "Clear Selection",
     "confirmation": {
       "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}",
       "title": "Delete Trade"
@@ -1209,9 +1197,9 @@
   "common": {
     "account": "Account",
     "actions": {
-      "add": "Add",
       "back": "Back",
       "cancel": "Cancel",
+      "clear_selection": "Clear Selection",
       "close": "Close",
       "confirm": "Confirm",
       "continue": "Continue",
@@ -1231,7 +1219,6 @@
       "ok": "Ok",
       "pull": "Pull",
       "push": "Push",
-      "remove": "Remove",
       "save": "Save",
       "search": "Search",
       "skip": "Skip",
@@ -1646,7 +1633,6 @@
     }
   },
   "deposits_withdrawals": {
-    "clear_selection": "Clear Selection",
     "details": {
       "no_details": "No details found.",
       "title": "Details"
@@ -2299,6 +2285,12 @@
     }
   },
   "ignore": {
+    "failed": {
+      "ignore_message": "{length} asset(s) could not be added to ignored assets: {message}",
+      "ignore_title": "Failed to ignore assets",
+      "unignore_message": "{length} asset(s) could not be removed from ignored assets: {message}",
+      "unignore_title": "Failed to unignore assets"
+    },
     "no_items": {
       "description": "All the selected entries are already ignored | All the selected entries are already included",
       "title": "No entries to ignore | No entries to unignore"
@@ -2519,7 +2511,6 @@
       "income": "Income",
       "loss": "Loss"
     },
-    "clear_selection": "Clear Selection",
     "delete": {
       "message": "Are you sure wou want to delete this ledger action?",
       "title": "Delete Ledger Action"

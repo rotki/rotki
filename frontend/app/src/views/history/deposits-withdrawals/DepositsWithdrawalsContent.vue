@@ -23,7 +23,7 @@
               tc('deposits_withdrawals.selected', 0, { count: selected.length })
             }}
             <v-btn small text @click="selected = []">
-              {{ tc('deposits_withdrawals.clear_selection') }}
+              {{ tc('common.actions.clear_selection') }}
             </v-btn>
           </div>
         </v-col>

@@ -450,7 +450,7 @@ const ExternalTradeForm = defineComponent({
 
       const tradePayload: Writeable<NewTrade> = {
         amount: amount.isNaN() ? Zero : amount,
-        fee: fee.isNaN() ? undefined : fee,
+        fee: fee.isNaN() || fee.isZero() ? undefined : fee,
         feeCurrency: get(feeCurrency) ? get(feeCurrency) : undefined,
         link: get(link) ? get(link) : undefined,
         notes: get(notes) ? get(notes) : undefined,
