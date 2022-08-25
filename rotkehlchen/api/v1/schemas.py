@@ -89,7 +89,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import create_order_by_rules_list, is_valid_ethereum_tx_hash, ts_now
+from rotkehlchen.utils.misc import create_order_by_rules_list, ts_now
 
 from .fields import (
     AmountField,
@@ -487,10 +487,7 @@ class HistoryBaseEntrySchema(Schema):
         if self.identifier_required is True and data['identifier'] is None:
             raise ValidationError('History event identifier should be given')
         try:
-            if is_valid_ethereum_tx_hash(data['event_identifier']):
-                data['event_identifier'] = HistoryBaseEntry.deserialize_event_identifier(data['event_identifier'])  # noqa: 501
-            else:
-                data['event_identifier'] = HistoryBaseEntry.deserialize_event_identifier_from_kraken(data['event_identifier'])  # noqa: 501
+            data['event_identifier'] = HistoryBaseEntry.deserialize_event_identifier(data['event_identifier'])  # noqa: E501
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 

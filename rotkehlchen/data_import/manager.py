@@ -8,6 +8,8 @@ from rotkehlchen.data_import.importers.blockfi_transactions import BlockfiTransa
 from rotkehlchen.data_import.importers.cointracking import CointrackingImporter
 from rotkehlchen.data_import.importers.cryptocom import CryptocomImporter
 from rotkehlchen.data_import.importers.nexo import NexoImporter
+from rotkehlchen.data_import.importers.rotki_events import RotkiGenericEventsImporter
+from rotkehlchen.data_import.importers.rotki_trades import RotkiGenericTradesImporter
 from rotkehlchen.data_import.importers.shapeshift_trades import ShapeshiftTradesImporter
 from rotkehlchen.data_import.importers.uphold_transactions import UpholdTransactionsImporter
 from rotkehlchen.data_import.utils import BaseExchangeImporter
@@ -25,6 +27,8 @@ class DataImportSource(SerializableEnumMixin):
     UPHOLD_TRANSACTIONS = 7
     BISQ_TRADES = 8
     BINANCE = 9
+    ROTKI_TRADES = 10
+    ROTKI_EVENTS = 11
 
     def get_importer_type(self) -> Type[BaseExchangeImporter]:
         if self == DataImportSource.COINTRACKING:
@@ -45,6 +49,10 @@ class DataImportSource(SerializableEnumMixin):
             return BisqTradesImporter
         if self == DataImportSource.BINANCE:
             return BinanceImporter
+        if self == DataImportSource.ROTKI_TRADES:
+            return RotkiGenericTradesImporter
+        if self == DataImportSource.ROTKI_EVENTS:
+            return RotkiGenericEventsImporter
         raise AssertionError(f'Unknown DataImportSource value {self}')
 
 

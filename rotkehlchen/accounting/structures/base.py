@@ -169,7 +169,7 @@ class HistoryBaseEntry(AccountingEventMixin):
     @property
     def serialized_event_identifier(self) -> str:
         """Take a HistoryBaseEntry's event_identifier and returns a string representation."""
-        if self.location == Location.KRAKEN:
+        if self.location == Location.KRAKEN or self.event_identifier.startswith('rotki_events'.encode()):  # noqa: E501
             return self.event_identifier.decode()
 
         hex_representation = self.event_identifier.hex()
@@ -178,17 +178,15 @@ class HistoryBaseEntry(AccountingEventMixin):
         return '0x' + hex_representation
 
     @classmethod
-    def deserialize_event_identifier_from_kraken(cls, val: str) -> bytes:
-        """Takes a `refid` from Kraken exchange and turns it into a bytes event_identifier."""
-        return val.encode()
-
-    @classmethod
     def deserialize_event_identifier(cls, val: str) -> bytes:
-        """Takes an abritrary string and turns it into a bytes event_identifier.
+        """Takes any arbitrary string and turns it into a bytes event_identifier.
+
         May raise:
         - DeserializationError if value is not valid transaction hash.
         """
-        return hexstring_to_bytes(val)
+        if is_valid_ethereum_tx_hash(val):
+            return hexstring_to_bytes(val)
+        return val.encode()
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -214,12 +212,8 @@ class HistoryBaseEntry(AccountingEventMixin):
             - KeyError
             - UnknownAsset
         """
-        if is_valid_ethereum_tx_hash(data['event_identifier']):
-            event_identifier = cls.deserialize_event_identifier(data['event_identifier'])  # noqa: 501
-        else:
-            event_identifier = cls.deserialize_event_identifier_from_kraken(data['event_identifier'])  # noqa: 501
         return cls(
-            event_identifier=event_identifier,
+            event_identifier=cls.deserialize_event_identifier(data['event_identifier']),
             sequence_index=data['sequence_index'],
             timestamp=ts_sec_to_ms(deserialize_timestamp(data['timestamp'])),
             location=Location.deserialize(data['location']),
