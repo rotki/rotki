@@ -170,7 +170,7 @@ def _check_blockstream_for_transactions(
 def _check_blockchaininfo_for_transactions(
         accounts: List[BTCAddress],
 ) -> Dict[BTCAddress, Tuple[bool, FVal]]:
-    """May raise RemotError or KeyError"""
+    """May raise RemoteError or KeyError"""
     have_transactions = {}
     params = '|'.join(accounts)
     btc_resp = request_get_dict(

@@ -89,7 +89,7 @@ Adding new assets to rotki
 
 To add new assets for rotki you will have to edit `the SQL file <https://github.com/rotki/assets/tree/develop/updates>`__
 in the last update at the assets repository. SQL sentences for insertion differ depending on if we are adding an ethereum token
-or other types of assets. More information about each type of asset and columns is available at the 
+or other types of assets. More information about each type of asset and columns is available at the
 `readme file <https://github.com/rotki/assets#adding-ethereum-tokens>`__.
 
 Once you have finished adding assets it would be necessary to update the file containing metadata about the update. To do so run the script:
@@ -219,7 +219,7 @@ This guide is to explain how to add a new ethereum module into rotki and its cor
 Add new module directory
 --------------------------
 
-Each ethereum modules lives in `this <https://github.com/rotki/rotki/tree/develop/rotkehlchen/chain/ethereum/modules>`__ directory. To add a new module you should make sure the name is unique and create a new directory underneath.
+Each ethereum module lives in `this <https://github.com/rotki/rotki/tree/develop/rotkehlchen/chain/ethereum/modules>`__ directory. To add a new module you should make sure the name is unique and create a new directory underneath.
 
 The directory should contain the following structure::
 
@@ -468,9 +468,9 @@ Premium Analytics
 Updating the documentation
 ==========================
 
-rotki is continuously changing and sometimes documentation gets outdated. One way to contribute to rotki is by helping to keep the documentation up to date. To do so you have to edit the corresponding section in the .rst files inside the docs folder of the git repo. 
+rotki is continuously changing and sometimes documentation gets outdated. One way to contribute to rotki is by helping to keep the documentation up to date. To do so you have to edit the corresponding section in the .rst files inside the docs folder of the git repo.
 
-To review your changes you can compile the documentation using the command 
+To review your changes you can compile the documentation using the command
 
 ::
 

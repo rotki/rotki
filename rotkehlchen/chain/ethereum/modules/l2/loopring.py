@@ -404,7 +404,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         case a RemoteError is raised and should be handled by the caller.
 
         May Raise:
-        - RemotError if there is a problem querying the loopring api or if the format
+        - RemoteError if there is a problem querying the loopring api or if the format
         of the response does not match expectations or if there is no account id.
         """
         db = DBLoopring(self.db)  # type: ignore # we always know self.db is not None
@@ -429,7 +429,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         """Get the loopring balances of a given account id
 
         May Raise:
-        - RemotError if there is a problem querying the loopring api or if the format
+        - RemoteError if there is a problem querying the loopring api or if the format
         of the response does not match expectations
         """
         response = self._api_query('user/balances', {'accountId': account_id})
