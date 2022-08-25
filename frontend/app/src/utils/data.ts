@@ -8,10 +8,10 @@ export function chunkArray<T>(myArray: T[], size: number): T[][] {
   return results;
 }
 
-export const uniqueStrings = function (
-  value: string,
+export const uniqueStrings = function <T = string>(
+  value: T,
   index: number,
-  array: string[]
+  array: T[]
 ): boolean {
   return array.indexOf(value) === index;
 };

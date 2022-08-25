@@ -1,6 +1,6 @@
 <template>
   <card outlined-body>
-    <template #title>{{ $t('common.events') }}</template>
+    <template #title>{{ tc('common.events') }}</template>
     <data-table
       :headers="tableHeaders"
       :items="items"
@@ -27,7 +27,7 @@
               />
             </div>
           </template>
-          <span>{{ $tc('profit_loss_events.same_action') }}</span>
+          <span>{{ tc('profit_loss_events.same_action') }}</span>
         </v-tooltip>
       </template>
       <template #item.type="{ item }">
@@ -95,7 +95,7 @@
           :time-end="report.lastProcessedTimestamp"
           :time-start="report.firstProcessedTimestamp"
           :colspan="headers.length"
-          :label="$tc('common.events')"
+          :label="tc('common.events')"
         />
       </template>
       <template #item.notes="{ item }">
@@ -122,8 +122,9 @@
   </card>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
+<script setup lang="ts">
+import { computed, PropType, ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -134,13 +135,49 @@ import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import { useRoute } from '@/composables/common';
 import { getPremium } from '@/composables/session';
-import i18n from '@/i18n';
 import {
   ProfitLossEvent,
   ProfitLossEvents,
   ProfitLossEventTypeEnum,
   SelectedReport
 } from '@/types/reports';
+
+type PaginationOptions = {
+  page: number;
+  itemsPerPage: number;
+  sortBy: any[];
+  sortDesc: boolean[];
+};
+
+const props = defineProps({
+  loading: {
+    required: false,
+    type: Boolean,
+    default: false
+  },
+  refreshing: {
+    required: false,
+    type: Boolean,
+    default: false
+  },
+  report: {
+    required: true,
+    type: Object as PropType<SelectedReport>
+  }
+});
+
+const emit = defineEmits<{
+  (
+    e: 'update:page',
+    page: { reportId: number; offset: number; limit: number }
+  ): void;
+}>();
+
+const route = useRoute();
+const options = ref<PaginationOptions | null>(null);
+const { report } = toRefs(props);
+
+const { tc } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -151,175 +188,119 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     cellClass: 'px-0'
   },
   {
-    text: i18n.t('common.type').toString(),
+    text: tc('common.type'),
     align: 'center',
     value: 'type',
     width: 110,
     sortable: false
   },
   {
-    text: i18n.t('common.location').toString(),
+    text: tc('common.location'),
     value: 'location',
     width: '120px',
     align: 'center',
     sortable: false
   },
   {
-    text: i18n.t('profit_loss_events.headers.tax_free_amount').toString(),
+    text: tc('profit_loss_events.headers.tax_free_amount'),
     align: 'end',
     value: 'free_amount',
     sortable: false
   },
   {
-    text: i18n.t('profit_loss_events.headers.taxable_amount').toString(),
+    text: tc('profit_loss_events.headers.taxable_amount'),
     align: 'end',
     value: 'taxable_amount',
     sortable: false
   },
   {
-    text: i18n.t('common.price').toString(),
+    text: tc('common.price'),
     align: 'end',
     value: 'price',
     sortable: false
   },
   {
-    text: i18n.t('profit_loss_events.headers.pnl_free').toString(),
+    text: tc('profit_loss_events.headers.pnl_free'),
     align: 'end',
     value: 'pnl_free',
     sortable: false
   },
   {
-    text: i18n.t('profit_loss_events.headers.pnl_taxable').toString(),
+    text: tc('profit_loss_events.headers.pnl_taxable'),
     align: 'end',
     value: 'pnl_taxable',
     sortable: false
   },
   {
-    text: i18n.t('common.datetime').toString(),
+    text: tc('common.datetime'),
     value: 'time',
     sortable: false
   },
   {
-    text: i18n.t('profit_loss_events.headers.notes').toString(),
+    text: tc('profit_loss_events.headers.notes'),
     value: 'notes',
     sortable: false
   }
 ]);
 
-type PaginationOptions = {
-  page: number;
-  itemsPerPage: number;
-  sortBy: any[];
-  sortDesc: boolean[];
+const items = computed(() => {
+  const entries = report.value.entries.map((value, index) => ({
+    ...value,
+    id: index
+  }));
+
+  return entries.map((entry, index) => ({
+    ...entry,
+    groupLine: checkGroupLine(entries, index)
+  }));
+});
+
+const itemLength = computed(() => {
+  const { entriesFound, entriesLimit } = report.value;
+  if (entriesLimit > 0 && entriesLimit <= entriesFound) {
+    return entriesLimit;
+  }
+  return entriesFound;
+});
+
+const premium = getPremium();
+
+const showUpgradeMessage = computed(
+  () =>
+    !premium.value && report.value.totalActions > report.value.processedActions
+);
+
+const updatePagination = async (options: PaginationOptions | null) => {
+  if (!options) {
+    return;
+  }
+  const { itemsPerPage, page } = options;
+
+  const reportId = parseInt(route.value.params.id);
+
+  emit('update:page', {
+    reportId,
+    limit: itemsPerPage,
+    offset: itemsPerPage * (page - 1)
+  });
 };
 
-export default defineComponent({
-  components: {
-    TransactionEventNote,
-    DataTable,
-    ProfitLossEventType,
-    UpgradeRow,
-    CostBasisTable,
-    DateDisplay,
-    AmountDisplay
-  },
-  props: {
-    loading: {
-      required: false,
-      type: Boolean,
-      default: false
-    },
-    refreshing: {
-      required: false,
-      type: Boolean,
-      default: false
-    },
-    report: {
-      required: true,
-      type: Object as PropType<SelectedReport>
-    }
-  },
-  emits: ['update:page'],
-  setup(props, { emit }) {
-    const route = useRoute();
-    const options = ref<PaginationOptions | null>(null);
-    const { report } = toRefs(props);
+const isTransactionEvent = (item: ProfitLossEvent) => {
+  return item.type === ProfitLossEventTypeEnum.TRANSACTION_EVENT;
+};
 
-    const items = computed(() => {
-      const entries = report.value.entries.map((value, index) => ({
-        ...value,
-        id: index
-      }));
+watch(options, updatePagination);
 
-      return entries.map((entry, index) => ({
-        ...entry,
-        groupLine: checkGroupLine(entries, index)
-      }));
-    });
+const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
+  const current = entries[index];
+  const prev = index - 1 >= 0 ? entries[index - 1] : null;
+  const next = index + 1 < entries.length ? entries[index + 1] : null;
 
-    const itemLength = computed(() => {
-      const { entriesFound, entriesLimit } = report.value;
-      if (entriesLimit > 0 && entriesLimit <= entriesFound) {
-        return entriesLimit;
-      }
-      return entriesFound;
-    });
-
-    const premium = getPremium();
-
-    const showUpgradeMessage = computed(
-      () =>
-        !premium.value &&
-        report.value.totalActions > report.value.processedActions
-    );
-
-    const updatePagination = async (options: PaginationOptions | null) => {
-      if (!options) {
-        return;
-      }
-      const { itemsPerPage, page } = options;
-
-      const reportId = parseInt(route.value.params.id);
-
-      emit('update:page', {
-        reportId,
-        limit: itemsPerPage,
-        offset: itemsPerPage * (page - 1)
-      });
-    };
-
-    const isTransactionEvent = (item: ProfitLossEvent) => {
-      return item.type === ProfitLossEventTypeEnum.TRANSACTION_EVENT;
-    };
-
-    watch(options, updatePagination);
-
-    const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
-      const current = entries[index];
-      const prev = index - 1 >= 0 ? entries[index - 1] : null;
-      const next = index + 1 < entries.length ? entries[index + 1] : null;
-
-      return {
-        top: !!(current?.groupId && prev && current?.groupId === prev?.groupId),
-        bottom: !!(
-          current?.groupId &&
-          next &&
-          current?.groupId === next?.groupId
-        )
-      };
-    };
-
-    return {
-      items,
-      itemLength,
-      options,
-      showUpgradeMessage,
-      isTransactionEvent,
-      tableHeaders,
-      checkGroupLine
-    };
-  }
-});
+  return {
+    top: !!(current?.groupId && prev && current?.groupId === prev?.groupId),
+    bottom: !!(current?.groupId && next && current?.groupId === next?.groupId)
+  };
+};
 </script>
 <style module lang="scss">
 .group {
