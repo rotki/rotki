@@ -50,6 +50,7 @@ from rotkehlchen.constants.ethereum import (
     ETH_SCAN,
     UNIV1_LP_ABI,
 )
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     InputError,
@@ -530,7 +531,7 @@ class EthereumManager():
             'Querying ethereum chain for ETH balance',
             eth_addresses=accounts,
         )
-        result = ETH_SCAN.call(
+        result = ETH_SCAN[ChainID.ETHEREUM].call(
             ethereum=self,
             method_name='etherBalances',
             arguments=[accounts],
