@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.constants.resolver import ChainID
 
 MAX_BLOCKTIME_CACHE = 250  # 55 mins with 13 secs avg block time
 ETH_SPECIAL_ADDRESS = string_to_evm_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
@@ -150,7 +151,11 @@ YEARN_ASUSD_VAULT = EthereumConstants().contract('YEARN_ASUSD_VAULT')
 YEARN_USDP_3CRV_VAULT = EthereumConstants().contract('YEARN_USDP_3CRV_VAULT')
 YEARN_PSLP_VAULT = EthereumConstants().contract('YEARN_PSLP_VAULT')
 
-ETH_SCAN = EthereumConstants().contract('ETH_SCAN')
+ETH_SCAN = {}
+ETH_SCAN[ChainID.ETHEREUM] = EthereumConstants().contract('ETH_SCAN')
+ETH_SCAN[ChainID.MATIC] = EthereumConstants().contract('ETH_SCAN_MATIC')
+# BalanceScanner from mycrypto: https://github.com/MyCryptoHQ/eth-scan
+
 ETH_MULTICALL = EthereumConstants().contract('ETH_MULTICALL')
 ETH_MULTICALL_2 = EthereumConstants().contract('ETH_MULTICALL_2')
 

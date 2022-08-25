@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.constants.resolver import ChainID, strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -357,8 +357,9 @@ def mock_etherscan_query(
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
 
                 if multicall_purpose == 'multibalance_query':
+                    contract = ETH_SCAN[ChainID.ETHEREUM]
                     # Get the ethscan multibalance subcalls
-                    ethscan_contract = web3.eth.contract(address=ETH_SCAN.address, abi=ETH_SCAN.abi)  # noqa: E501
+                    ethscan_contract = web3.eth.contract(address=contract.address, abi=contract.abi)  # noqa: E501
                     # not really the given args, but we just want the fn abi
                     args = [list(eth_map.keys())[0], list(eth_map.keys())]
                     scan_fn_abi = ethscan_contract._find_matching_fn_abi(
@@ -370,7 +371,7 @@ def mock_etherscan_query(
                     result_bytes = []
                     for call_entry in decoded_input[0]:  # pylint: disable=unsubscriptable-object
                         call_contract_address = deserialize_ethereum_address(call_entry[0])
-                        assert call_contract_address == ETH_SCAN.address, 'balances multicall should only contain calls to scan contract'  # noqa: E501
+                        assert call_contract_address == contract.address, 'balances multicall should only contain calls to scan contract'  # noqa: E501
                         call_data = call_entry[1]
                         scan_decoded_input = web3.codec.decode_abi(scan_input_types, call_data[4:])
                         account_address = deserialize_ethereum_address(scan_decoded_input[0])  # pylint: disable=unsubscriptable-object  # noqa: E501
@@ -401,18 +402,19 @@ def mock_etherscan_query(
             else:
                 raise AssertionError('Unexpected etherscan multicall during tests: {url}')
 
-        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_SCAN.address}' in url:
+        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_SCAN[ChainID.ETHEREUM].address}' in url:  # noqa: E501
             if 'ethscan' in original_queries:
                 return original_requests_get(url, *args, **kwargs)
 
             web3 = Web3()
-            contract = web3.eth.contract(address=ETH_SCAN.address, abi=ETH_SCAN.abi)
+            contract = ETH_SCAN[ChainID.ETHEREUM]
+            ethscan_contract = web3.eth.contract(address=contract.address, abi=contract.abi)
             if 'data=0xdbdbb51b' in url:  # Eth balance query
                 data = url.split('data=')[1]
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
 
-                fn_abi = contract._find_matching_fn_abi(
+                fn_abi = ethscan_contract._find_matching_fn_abi(
                     fn_identifier='etherBalances',
                     args=[list(eth_map.keys())],
                 )
@@ -431,7 +433,7 @@ def mock_etherscan_query(
                     data = data.split('&apikey')[0]
                 # not really the given args, but we just want the fn abi
                 args = [list(eth_map.keys()), list(eth_map.keys())]
-                fn_abi = contract._find_matching_fn_abi(
+                fn_abi = ethscan_contract._find_matching_fn_abi(
                     fn_identifier='tokensBalances',
                     args=args,
                 )
@@ -466,7 +468,7 @@ def mock_etherscan_query(
                     data = data.split('&apikey')[0]
                 # not really the given args, but we just want the fn abi
                 args = ['str', list(eth_map.keys())]
-                fn_abi = contract._find_matching_fn_abi(
+                fn_abi = ethscan_contract._find_matching_fn_abi(
                     fn_identifier='tokensBalance',
                     args=args,
                 )

@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import multicall, token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -120,7 +121,7 @@ class EthTokens():
             eth_address=address,
             tokens_num=len(tokens),
         )
-        result = ETH_SCAN.call(
+        result = ETH_SCAN[ChainID.ETHEREUM].call(
             ethereum=self.ethereum,
             method_name='tokensBalance',
             arguments=[address, [x.evm_address for x in tokens]],
@@ -150,12 +151,13 @@ class EthTokens():
         - RemoteError if no result is queried in multicall
         """
         calls: List[Tuple[ChecksumEvmAddress, str]] = []
+        eth_scan = ETH_SCAN[ChainID.ETHEREUM]
         for address, tokens in chunk:
             tokens_addrs = [token.evm_address for token in tokens]
             calls.append(
                 (
-                    ETH_SCAN.address,
-                    ETH_SCAN.encode(
+                    eth_scan.address,
+                    eth_scan.encode(
                         method_name='tokensBalance',
                         arguments=[address, tokens_addrs],
                     ),
@@ -168,7 +170,7 @@ class EthTokens():
         )
         balances: Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
         for (address, tokens), result in zip(chunk, results):
-            decoded_result = ETH_SCAN.decode(  # pylint: disable=unsubscriptable-object
+            decoded_result = ETH_SCAN[ChainID.ETHEREUM].decode(  # pylint: disable=unsubscriptable-object  # noqa: E501
                 result=result,
                 method_name='tokensBalance',
                 arguments=[address, [token.evm_address for token in tokens]],
