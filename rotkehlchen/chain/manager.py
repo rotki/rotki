@@ -123,11 +123,11 @@ log = RotkehlchenLogsAdapter(logger)
 def _module_name_to_class(module_name: ModuleName) -> EthereumModule:
     class_name = ''.join(word.title() for word in module_name.split('_'))
     try:
-        etherem_modules_module = import_module('rotkehlchen.chain.ethereum.modules')
+        ethereum_modules_module = import_module('rotkehlchen.chain.ethereum.modules')
     except ModuleNotFoundError as e:
         # This should never happen
         raise AssertionError('Could not load ethereum modules') from e
-    module = getattr(etherem_modules_module, class_name, None)
+    module = getattr(ethereum_modules_module, class_name, None)
     assert module, f'Could not find object {class_name} in ethereum modules'
     return module
 
@@ -635,7 +635,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         """Queries blockchain.info/blockstream for the balance of all BTC accounts
 
         May raise:
-        - RemotError if there is a problem querying any remote
+        - RemoteError if there is a problem querying any remote
         """
         if len(self.accounts.btc) == 0:
             return
@@ -659,7 +659,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         """Queries api.haskoin.com for the balance of all BCH accounts
 
         May raise:
-        - RemotError if there is a problem querying any remote
+        - RemoteError if there is a problem querying any remote
         """
         if len(self.accounts.bch) == 0:
             return
@@ -684,7 +684,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         """Queries the KSM balances of the accounts via Kusama endpoints.
 
         May raise:
-        - RemotError: if no nodes are available or the balances request fails.
+        - RemoteError: if no nodes are available or the balances request fails.
         """
         if len(self.accounts.ksm) == 0:
             return
@@ -715,7 +715,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     ) -> None:
         """Queries the AVAX balances of the accounts via Avalanche/Covalent endpoints.
         May raise:
-        - RemotError: if no nodes are available or the balances request fails.
+        - RemoteError: if no nodes are available or the balances request fails.
         """
         if len(self.accounts.avax) == 0:
             return
@@ -740,7 +740,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         """Queries the DOT balances of the accounts via Polkadot endpoints.
 
         May raise:
-        - RemotError: if no nodes are available or the balances request fails.
+        - RemoteError: if no nodes are available or the balances request fails.
         """
         if len(self.accounts.dot) == 0:
             return

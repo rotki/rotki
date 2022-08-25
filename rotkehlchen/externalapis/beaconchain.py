@@ -66,7 +66,7 @@ class BeaconChain(ExternalServiceWithApiKey):
     We do extend ExternalServiceWithApiKey though so that it becomes easier to add
     in the future.
 
-    https://beaconcha.in/api/v1/docs
+    https://beaconcha.in/api/v1/docs/
     """
 
     def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator) -> None:
