@@ -96,7 +96,16 @@ module.exports = {
       {
         allowModifiers: true
       }
-    ]
+    ],
+    // vue 3 migration rules
+    'vue/component-api-style': ['warn', ['script-setup', 'composition']],
+    'vue/no-deprecated-dollar-listeners-api': 'warn',
+    'vue/no-deprecated-events-api': 'warn',
+    'vue/no-deprecated-filter': 'error',
+    'vue/prefer-import-from-vue': 'warn',
+    'vue/require-explicit-emits': 'warn',
+    // rules to slowly fix,
+    '@typescript-eslint/no-floating-promises': ['warn', { ignoreIIFE: true }]
   },
 
   parserOptions: {
@@ -109,7 +118,8 @@ module.exports = {
     {
       files: ['*.json'],
       rules: {
-        '@typescript-eslint/naming-convention': 'off'
+        '@typescript-eslint/naming-convention': 'off',
+        '@typescript-eslint/no-floating-promises': 'off'
       }
     },
     {
