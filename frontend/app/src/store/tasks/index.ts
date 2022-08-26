@@ -129,25 +129,27 @@ export const useTasks = defineStore('tasks', () => {
   ) {
     addTask(id, type, meta);
 
-    return new Promise<{ result: R; meta: M }>((resolve, reject) => {
-      registerHandler<R, M>(
-        type,
-        (actionResult, meta) => {
-          unregisterHandler(type, id.toString());
-          const { result, message } = actionResult;
-          if (result === null) {
-            const errorMessage = message
-              ? message
-              : `No message returned for ${TaskType[type]} with id ${id}`;
+    return new Promise<{ result: R; meta: M; message?: string }>(
+      (resolve, reject) => {
+        registerHandler<R, M>(
+          type,
+          (actionResult, meta) => {
+            unregisterHandler(type, id.toString());
+            const { result, message } = actionResult;
+            if (result === null) {
+              const errorMessage = message
+                ? message
+                : `No message returned for ${TaskType[type]} with id ${id}`;
 
-            reject(new Error(errorMessage));
-          } else {
-            resolve({ result, meta });
-          }
-        },
-        nonUnique ? id.toString() : undefined
-      );
-    });
+              reject(new Error(errorMessage));
+            } else {
+              resolve({ result, meta, message });
+            }
+          },
+          nonUnique ? id.toString() : undefined
+        );
+      }
+    );
   }
 
   function filterOutUnprocessable(taskIds: number[]): number[] {
