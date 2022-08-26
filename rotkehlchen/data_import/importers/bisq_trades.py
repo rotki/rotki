@@ -48,11 +48,6 @@ class BisqTradesImporter(BaseExchangeImporter):
             else:
                 base_asset = symbol_to_asset_or_token(assets2_symbol)
                 quote_asset = symbol_to_asset_or_token(assets1_symbol)
-
-            if base_asset == A_BTC:  # the condition is correct and tested
-                buy_amount = deserialize_asset_amount(csv_row['Amount'])
-            else:
-                buy_amount = deserialize_asset_amount(csv_row['Amount in BTC'])
         else:
             trade_type = TradeType.BUY
             if offer[1] == assets1_symbol:
@@ -62,10 +57,10 @@ class BisqTradesImporter(BaseExchangeImporter):
                 base_asset = symbol_to_asset_or_token(assets2_symbol)
                 quote_asset = symbol_to_asset_or_token(assets1_symbol)
 
-            if base_asset == A_BTC:
-                buy_amount = deserialize_asset_amount(csv_row['Amount in BTC'])
-            else:
-                buy_amount = deserialize_asset_amount(csv_row['Amount'])
+        if base_asset == A_BTC:
+            buy_amount = deserialize_asset_amount(csv_row['Amount in BTC'])
+        else:
+            buy_amount = deserialize_asset_amount(csv_row['Amount'])
 
         rate = Price(deserialize_asset_amount(csv_row['Price']))
         # Get trade fee
