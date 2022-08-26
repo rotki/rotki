@@ -7,7 +7,7 @@
     "cypress:open": "cypress open",
     "cypress:run": "cypress run --headless",
     "serve": "node scripts/serve.js --web",
-    "build": "cross-env NODE_ENV=production node scripts/build.js",
+    "build": "npm run typecheck && cross-env NODE_ENV=production node scripts/build.js",
     "test:unit": "cross-env TZ=UTC VITE_TEST=true vitest --dir tests/unit --coverage",
     "test:e2e": "cross-env-shell dotenv -e .env.e2e 'start-server-and-test serve http-get://localhost:8080 \"npm run cypress:open -- $ARGS\"'",
     "lint": "eslint --fix ./ --ext .js,.ts,.vue,.json",

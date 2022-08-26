@@ -77,7 +77,7 @@
     </v-card-subtitle>
     <v-card-actions>
       <v-spacer />
-      <icon-link :url="item.permalink" text="OpenSea" />
+      <icon-link v-if="item.permalink" :url="item.permalink" text="OpenSea" />
     </v-card-actions>
   </v-card>
 </template>

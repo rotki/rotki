@@ -82,6 +82,7 @@
       @cancel="clearEditDialog"
     >
       <edit-balances-snapshot-form
+        v-if="form"
         v-model="valid"
         :form="form"
         :excluded-assets="excludedAssets"

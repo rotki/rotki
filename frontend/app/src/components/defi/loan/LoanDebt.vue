@@ -17,39 +17,28 @@
     <slot />
   </stat-card>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { Balance } from '@rotki/common';
-import { defineComponent, PropType } from 'vue';
+import { PropType } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 
-export default defineComponent({
-  name: 'LoanDebt',
-  components: {
-    LoanRow,
-    AmountDisplay,
-    StatCard
+defineProps({
+  debt: {
+    required: true,
+    type: Object as PropType<Balance>
   },
-  props: {
-    debt: {
-      required: true,
-      type: Object as PropType<Balance>
-    },
-    asset: {
-      required: true,
-      type: String
-    }
-  },
-  setup() {
-    const { tc } = useI18n();
-    return {
-      tc,
-      assetPadding: 4
-    };
+  asset: {
+    required: false,
+    type: String,
+    default: ''
   }
 });
+
+const { tc } = useI18n();
+const assetPadding = 4;
 </script>
 
 <style module lang="scss">

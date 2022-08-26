@@ -12,11 +12,11 @@
             <v-icon small color="primary">mdi-launch</v-icon>
           </v-btn>
         </template>
-        <span>{{ $t('liquidity_pool_details.tooltip') }}</span>
+        <span>{{ tc('liquidity_pool_details.tooltip') }}</span>
       </v-tooltip>
     </template>
     <card>
-      <template #title>{{ $t('liquidity_pool_details.title') }}</template>
+      <template #title>{{ tc('liquidity_pool_details.title') }}</template>
       <template v-for="(token, key) in balance.assets">
         <v-divider v-if="key > 0" :key="token.asset + 'divider'" class="my-3" />
         <v-row :key="token.asset" align="center">
@@ -27,7 +27,7 @@
             <v-row>
               <v-col md="6">
                 <div class="text--secondary text-body-2">
-                  {{ $t('liquidity_pool_details.total_amount') }}
+                  {{ tc('liquidity_pool_details.total_amount') }}
                 </div>
                 <div class="d-flex font-weight-bold">
                   <amount-display
@@ -39,7 +39,7 @@
               <v-col md="6">
                 <div class="text--secondary text-body-2">
                   {{
-                    $t('liquidity_pool_details.total_value_in_symbol', {
+                    tc('liquidity_pool_details.total_value_in_symbol', 0, {
                       symbol: currencySymbol
                     })
                   }}
@@ -47,7 +47,7 @@
                 <div class="d-flex font-weight-bold">
                   <amount-display
                     fiat-currency="USD"
-                    :value="token.usdPrice.multipliedBy(token.totalAmount)"
+                    :value="getTotal(token)"
                   />
                 </div>
               </v-col>
@@ -57,7 +57,7 @@
       </template>
       <div v-if="balance.totalSupply" class="d-flex pt-6">
         <div class="text--secondary text-body-2">
-          {{ $t('liquidity_pool_details.liquidity') }}:
+          {{ tc('liquidity_pool_details.liquidity') }}:
         </div>
         <div class="pl-2 font-weight-bold">
           <amount-display :value="balance.totalSupply" />
@@ -67,26 +67,24 @@
   </v-dialog>
 </template>
 
-<script lang="ts">
-import { XswapBalance } from '@rotki/common/lib/defi/xswap';
+<script setup lang="ts">
+import { XswapAsset, XswapBalance } from '@rotki/common/lib/defi/xswap';
 import { storeToRefs } from 'pinia';
-import { defineComponent, PropType, ref } from 'vue';
+import { PropType, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { One } from '@/utils/bignumbers';
 
-export default defineComponent({
-  name: 'UniswapPoolDetails',
-  props: {
-    balance: { required: true, type: Object as PropType<XswapBalance> }
-  },
-  setup() {
-    const details = ref<boolean>(false);
-
-    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-
-    return {
-      currencySymbol,
-      details
-    };
-  }
+defineProps({
+  balance: { required: true, type: Object as PropType<XswapBalance> }
 });
+
+const details = ref<boolean>(false);
+
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { tc } = useI18n();
+
+const getTotal = ({ totalAmount, usdPrice }: XswapAsset) => {
+  return usdPrice.multipliedBy(totalAmount ?? One);
+};
 </script>

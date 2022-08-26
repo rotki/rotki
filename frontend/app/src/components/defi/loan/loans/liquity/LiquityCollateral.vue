@@ -7,38 +7,29 @@
     <v-divider v-if="ratio" class="my-4" />
 
     <loan-row v-if="ratio" :title="tc('loan_collateral.ratio')">
-      <percentage-display :value="ratio.toFormat(2)" />
+      <percentage-display v-if="ratio" :value="ratio.toFormat(2)" />
     </loan-row>
   </stat-card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { AssetBalance, BigNumber } from '@rotki/common';
-import { defineComponent, PropType } from 'vue';
+import { PropType } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
 
-export default defineComponent({
-  name: 'LiquityCollateral',
-  components: { LoanRow, StatCard },
-  props: {
-    collateral: {
-      required: true,
-      type: Object as PropType<AssetBalance>
-    },
-    ratio: {
-      required: false,
-      type: BigNumber,
-      default: null
-    }
+defineProps({
+  collateral: {
+    required: true,
+    type: Object as PropType<AssetBalance>
   },
-  setup() {
-    const { tc } = useI18n();
-    return {
-      assetPadding: 5,
-      tc
-    };
+  ratio: {
+    required: false,
+    type: BigNumber as PropType<BigNumber | null | undefined>,
+    default: null
   }
 });
+
+const { tc } = useI18n();
 </script>

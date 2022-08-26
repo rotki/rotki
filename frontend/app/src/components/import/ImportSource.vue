@@ -74,8 +74,9 @@
 
 <script lang="ts">
 import { get, set } from '@vueuse/core';
-import { computed, defineComponent, ref, toRefs } from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import FileUpload from '@/components/import/FileUpload.vue';
+import { ImportSourceType } from '@/components/import/upload-types';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
@@ -95,7 +96,7 @@ export default defineComponent({
       default: '',
       type: String
     },
-    source: { required: true, type: String }
+    source: { required: true, type: String as PropType<ImportSourceType> }
   },
   setup(props) {
     const { source } = toRefs(props);

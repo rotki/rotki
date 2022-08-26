@@ -79,7 +79,7 @@
         <defi-protocol-selector v-model="protocol" liabilities />
       </v-col>
     </v-row>
-    <loan-info v-if="selection" :loan="loan" />
+    <loan-info v-if="loan" :loan="loan" />
     <full-size-content v-else>
       <v-row align="center" justify="center">
         <v-col class="text-h6">{{ tc('liabilities.no_selection') }}</v-col>
@@ -88,10 +88,10 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { get, set } from '@vueuse/core';
-import { computed, defineComponent, onMounted, PropType, ref } from 'vue';
+import { computed, onMounted, PropType, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -108,86 +108,58 @@ import { Section } from '@/store/const';
 import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
 import { Module } from '@/types/modules';
 
-export default defineComponent({
-  name: 'Borrowing',
-  components: {
-    FullSizeContent,
-    ActiveModules,
-    DefiSelectorItem,
-    DefiProtocolSelector,
-    RefreshHeader,
-    StatCardColumn,
-    AmountDisplay,
-    StatCardWide,
-    LoanInfo,
-    ProgressScreen
-  },
-  props: {
-    modules: { required: true, type: Array as PropType<Module[]> }
-  },
-  setup() {
-    const selection = ref<string>();
-    const protocol = ref<DefiProtocol | null>(null);
-    const store = useDefiSupportedProtocolsStore();
-    const route = useRoute();
-    const { tc } = useI18n();
+defineProps({
+  modules: { required: true, type: Array as PropType<Module[]> }
+});
 
-    const { shouldShowLoadingScreen, isSectionRefreshing } =
-      setupStatusChecking();
+const selection = ref<string>();
+const protocol = ref<DefiProtocol | null>(null);
+const store = useDefiSupportedProtocolsStore();
+const route = useRoute();
+const { tc } = useI18n();
 
-    const selectedProtocols = computed(() => {
-      const selected = get(protocol);
-      return selected ? [selected] : [];
-    });
+const { shouldShowLoadingScreen, isSectionRefreshing } = setupStatusChecking();
 
-    const loan = computed(() => get(store.loan(get(selection))));
+const loading = shouldShowLoadingScreen(Section.DEFI_BORROWING);
 
-    const loans = computed(() => {
-      const protocols = get(selectedProtocols);
-      return get(store.loans(protocols));
-    });
+const selectedProtocols = computed(() => {
+  const selected = get(protocol);
+  return selected ? [selected] : [];
+});
 
-    const summary = computed(() => {
-      const protocols = get(selectedProtocols);
-      return get(store.loanSummary(protocols));
-    });
+const loan = computed(() => get(store.loan(get(selection))));
 
-    const refreshing = computed(() => {
-      return (
-        get(isSectionRefreshing(Section.DEFI_BORROWING)) ||
-        get(isSectionRefreshing(Section.DEFI_BORROWING_HISTORY))
-      );
-    });
+const loans = computed(() => {
+  const protocols = get(selectedProtocols);
+  return get(store.loans(protocols));
+});
 
-    const refresh = async () => {
-      await store.fetchBorrowing(true);
-    };
+const summary = computed(() => {
+  const protocols = get(selectedProtocols);
+  return get(store.loanSummary(protocols));
+});
 
-    onMounted(async () => {
-      const currentRoute = get(route);
-      const queryElement = currentRoute.query['protocol'];
-      const protocols = Object.values(DefiProtocol);
-      const protocolIndex = protocols.findIndex(
-        protocol => protocol === queryElement
-      );
-      if (protocolIndex >= 0) {
-        set(protocol, protocols[protocolIndex]);
-      }
-      await store.fetchBorrowing(false);
-    });
+const refreshing = computed(() => {
+  return (
+    get(isSectionRefreshing(Section.DEFI_BORROWING)) ||
+    get(isSectionRefreshing(Section.DEFI_BORROWING_HISTORY))
+  );
+});
 
-    return {
-      selection,
-      protocol,
-      selectedProtocols,
-      loan,
-      loans,
-      summary,
-      loading: shouldShowLoadingScreen(Section.DEFI_BORROWING),
-      refreshing,
-      refresh,
-      tc
-    };
+const refresh = async () => {
+  await store.fetchBorrowing(true);
+};
+
+onMounted(async () => {
+  const currentRoute = get(route);
+  const queryElement = currentRoute.query['protocol'];
+  const protocols = Object.values(DefiProtocol);
+  const protocolIndex = protocols.findIndex(
+    protocol => protocol === queryElement
+  );
+  if (protocolIndex >= 0) {
+    set(protocol, protocols[protocolIndex]);
   }
+  await store.fetchBorrowing(false);
 });
 </script>

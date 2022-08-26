@@ -11,65 +11,54 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import { defineComponent, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
-export default defineComponent({
-  name: 'FrontendUpdateNotifier',
-  setup() {
-    const updateSW = ref<((refresh: boolean) => Promise<void>) | undefined>(
-      undefined
+const updateSW = ref<((refresh: boolean) => Promise<void>) | undefined>(
+  undefined
+);
+const offlineReady = ref<boolean>(false);
+const needRefresh = ref<boolean>(false);
+const updating = ref<boolean>(false);
+
+onMounted(async () => {
+  // eslint-disable-next-line import/no-unresolved
+  const { registerSW } = await import('virtual:pwa-register');
+  try {
+    set(
+      updateSW,
+      registerSW({
+        immediate: true,
+        onRegistered: (registration?: ServiceWorkerRegistration) => {
+          setInterval(async () => {
+            await registration?.update();
+          }, 1000 * 60);
+          console.log('Service worker has been registered.');
+        },
+        onOfflineReady: () => {
+          set(offlineReady, true);
+          console.log('Offline ready');
+        },
+        onNeedRefresh: () => {
+          set(needRefresh, true);
+          console.log('New content is available, please refresh.');
+        },
+        onRegisterError: (error: any) => {
+          console.error('Error during service worker registration:', error);
+        }
+      })
     );
-    const offlineReady = ref<boolean>(false);
-    const needRefresh = ref<boolean>(false);
-    const updating = ref<boolean>(false);
-
-    onMounted(async () => {
-      // eslint-disable-next-line import/no-unresolved
-      const { registerSW } = await import('virtual:pwa-register');
-      try {
-        set(
-          updateSW,
-          registerSW({
-            immediate: true,
-            onRegistered: (registration: ServiceWorkerRegistration) => {
-              setInterval(async () => {
-                await registration.update();
-              }, 1000 * 60);
-              console.log('Service worker has been registered.');
-            },
-            onOfflineReady: () => {
-              set(offlineReady, true);
-              console.log('Offline ready');
-            },
-            onNeedRefresh: () => {
-              set(needRefresh, true);
-              console.log('New content is available, please refresh.');
-            },
-            onRegisterError: (error: any) => {
-              console.error('Error during service worker registration:', error);
-            }
-          })
-        );
-      } catch {
-        console.log('PWA disabled.');
-      }
-    });
-
-    const update = () => {
-      set(updating, true);
-      const worker = get(updateSW);
-      if (worker) {
-        worker(true);
-      }
-    };
-
-    return {
-      needRefresh,
-      updating,
-      update
-    };
+  } catch {
+    console.log('PWA disabled.');
   }
 });
+
+const update = () => {
+  set(updating, true);
+  const worker = get(updateSW);
+  if (worker) {
+    worker(true);
+  }
+};
 </script>

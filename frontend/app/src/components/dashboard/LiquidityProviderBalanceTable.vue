@@ -1,7 +1,7 @@
 <template>
   <dashboard-expandable-table v-if="balances.length > 0 || loading">
     <template #title>
-      <refresh-buttton
+      <refresh-button
         :loading="loading"
         :tooltip="tc('dashboard.liquidity_position.refresh_tooltip')"
         @refresh="fetch(true)"
@@ -28,7 +28,7 @@
           </menu-tooltip-button>
         </template>
         <visible-columns-selector
-          group="LIQUIDITY_POSITION"
+          :group="LIQUIDITY_POSITION"
           :group-label="tc('dashboard.liquidity_position.title')"
         />
       </v-menu>
@@ -106,6 +106,7 @@ import DashboardExpandableTable from '@/components/dashboard/DashboardExpandable
 import LiquidityProviderBalanceDetails from '@/components/dashboard/LiquidityProviderBalanceDetails.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
@@ -127,6 +128,7 @@ import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
 
 const { tc } = useI18n();
+const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;
 
 const createTableHeaders = (
   currency: Ref<string>,
@@ -134,7 +136,7 @@ const createTableHeaders = (
 ) => {
   return computed<DataTableHeader[]>(() => {
     const visibleColumns = get(dashboardTablesVisibleColumns)[
-      DashboardTableType.LIQUIDITY_POSITION
+      LIQUIDITY_POSITION
     ];
 
     const headers: DataTableHeader[] = [

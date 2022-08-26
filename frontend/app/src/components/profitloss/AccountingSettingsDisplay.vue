@@ -64,12 +64,7 @@
           >
             {{ taxFreePeriod(accountingSettings.taxfreeAfterPeriod) }}
           </span>
-          <v-icon
-            v-else
-            :class="color(accountingSettings.taxfreeAfterPeriod > 0)"
-          >
-            mdi-close
-          </v-icon>
+          <v-icon v-else :class="color(false)"> mdi-close </v-icon>
         </span>
       </v-col>
 

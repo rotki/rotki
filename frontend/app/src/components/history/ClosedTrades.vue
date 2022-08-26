@@ -61,7 +61,7 @@
         class="closed-trades"
         :single-select="false"
         :show-select="!locationOverview"
-        :item-class="item => (item.ignoredInAccounting ? 'darken-row' : '')"
+        :item-class="getClass"
         item-key="tradeId"
         show-expand
         single-expand
@@ -462,6 +462,10 @@ const updatePayloadHandler = () => {
 const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
   set(options, newOptions);
   updatePayloadHandler();
+};
+
+const getClass = (item: TradeEntry) => {
+  return item.ignoredInAccounting ? 'darken-row' : '';
 };
 
 watch(filters, (filters, oldValue) => {

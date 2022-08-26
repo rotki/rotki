@@ -13,7 +13,7 @@
         dense
         outlined
         :open-on-clear="false"
-        :label="$t('defi_protocol_selector.label')"
+        :label="tc('defi_protocol_selector.label')"
         item-text="name"
         item-value="identifier"
         class="defi-protocol-selector"
@@ -30,24 +30,25 @@
     <v-card-text>
       {{
         value
-          ? $t('defi_protocol_selector.filter_specific')
-          : $t('defi_protocol_selector.filter_all')
+          ? tc('defi_protocol_selector.filter_specific')
+          : tc('defi_protocol_selector.filter_all')
       }}
     </v-card-text>
   </v-card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
+import { computed, PropType, ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import DefiProtocolDetails from '@/components/helper/DefiProtocolDetails.vue';
 
-export interface Protocol {
+type Protocol = {
   name: string;
   icon: string;
   identifier: DefiProtocol;
-}
+};
 
 const dual: Protocol[] = [
   {
@@ -93,38 +94,32 @@ const lending: Protocol[] = [
   }
 ];
 
-export default defineComponent({
-  name: 'DefiProtocolSelector',
-  components: { DefiProtocolDetails },
-  props: {
-    value: {
-      required: false,
-      type: String as PropType<DefiProtocol>,
-      default: ''
-    },
-    liabilities: { required: false, type: Boolean, default: false }
+const props = defineProps({
+  value: {
+    required: false,
+    type: String as PropType<DefiProtocol | null>,
+    default: null
   },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { liabilities } = toRefs(props);
-    const search = ref<string>('');
+  liabilities: { required: false, type: Boolean, default: false }
+});
 
-    const input = (_selectedProtocol: DefiProtocol | null) => {
-      emit('input', _selectedProtocol);
-    };
+const emit = defineEmits<{
+  (e: 'input', protocol: DefiProtocol | null): void;
+}>();
 
-    const protocols = computed<Protocol[]>(() => {
-      if (get(liabilities)) {
-        return [...dual, ...borrowing];
-      }
-      return [...dual, ...lending];
-    });
+const { liabilities } = toRefs(props);
+const search = ref<string>('');
 
-    return {
-      search,
-      input,
-      protocols
-    };
+const { tc } = useI18n();
+
+const input = (_selectedProtocol: DefiProtocol | null) => {
+  emit('input', _selectedProtocol);
+};
+
+const protocols = computed<Protocol[]>(() => {
+  if (get(liabilities)) {
+    return [...dual, ...borrowing];
   }
+  return [...dual, ...lending];
 });
 </script>
