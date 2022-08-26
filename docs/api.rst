@@ -3554,18 +3554,20 @@ Replacing an asset
 Querying asset icons
 ======================
 
-.. http:get:: /api/(version)/assets/(identifier)/icon
+.. http:post:: /api/(version)/assets/icon
 
-   Doing a GET on the asset icon endpoint will return the icon of the given asset.
-   If we have no icon for an asset a 404 is returned. The identifier of the asset needs to be url encoded since it can contain invalid symbols for urls.
+   Doing a POST on the asset icon endpoint will return the icon of the given asset. If we have no icon for an asset a 404 is returned
 
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/eip155%3A1%2Ferc20%3A0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e/icon HTTP/1.1
+      POST /api/1/assets/icon HTTP/1.1
       Host: localhost:5042
+      {"asset": "eip155:1/erc20:3A0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"}
+
+   :reqjson string asset: Identifier of the asset to be queried.
 
    **Example Response**:
 
@@ -3585,8 +3587,8 @@ Querying asset icons
 Uploading custom asset icons
 ===============================
 
-.. http:put:: /api/(version)/assets/(identifier)/icon
-.. http:post:: /api/(version)/assets/(identifier)/icon
+.. http:put:: /api/(version)/assets/icon/modify
+.. http:post:: /api/(version)/assets/icon/modify
 
    Doing either a PUT or a POST on the asset icon endpoint with appropriate arguments will upload a custom icon for an asset. That icon will take precedence over what rotki already knows for the asset if anything.
 
@@ -3595,13 +3597,14 @@ Uploading custom asset icons
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/assets/ACUSTOMICON/icon/large HTTP/1.1
+      PUT /api/1/assets/icon/modify HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"file": "/path/to/file"}
+      {"file": "/path/to/file", "asset": "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96"}
 
    :reqjson string file: The path to the image file to upload for PUT. The file itself for POST.
+   :reqjson string asset: Identifier of the asset to be updated.
 
    **Example Response**:
 
@@ -3620,7 +3623,7 @@ Uploading custom asset icons
 Refreshing asset icons
 ===============================
 
-.. http:patch:: /api/(version)/assets/(identifier)/icon
+.. http:patch:: /api/(version)/assets/icon/modify
 
    Doing a PATCH on the asset icon endpoint will refresh the icon of the given asset.
    First, the cache of the icon of the given asset is deleted and then requeried from CoinGecko and saved to the filesystem.
@@ -3630,8 +3633,11 @@ Refreshing asset icons
 
    .. http:example:: curl wget httpie python-requests
 
-      PATCH /api/1/assets/eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e/icon HTTP/1.1
+      PATCH /api/1/assets/icon/modify HTTP/1.1
       Host: localhost:5042
+
+      {"asset": "eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"}
+      :reqjson string asset: Identifier of the asset to be refreshed.
 
    **Example Response**:
 
@@ -3691,7 +3697,7 @@ Statistics for netvalue over time
 Statistics for asset balance over time
 ======================================
 
-.. http:get:: /api/(version)/statistics/balance/(asset identifier)
+.. http:post:: /api/(version)/statistics/balance/
 
    .. note::
       This endpoint is only available for premium users
@@ -3699,23 +3705,25 @@ Statistics for asset balance over time
    .. note::
       This endpoint also accepts parameters as query arguments.
 
-   Doing a GET on the statistics asset balance over time endpoint will return all saved balance entries for an asset. Optionally you can filter for a specific time range by providing appropriate arguments.
+   Doing a POST on the statistics asset balance over time endpoint will return all saved balance entries for an asset. Optionally you can filter for a specific time range by providing appropriate arguments.
 
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/statistics/balance/BTC HTTP/1.1
+      POST /api/1/statistics/balance HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"from_timestamp": 1514764800, "to_timestamp": 1572080165}
+      {"from_timestamp": 1514764800, "to_timestamp": 1572080165, "asset": "BTC"}
 
    :reqjson int from_timestamp: The timestamp after which to return saved balances for the asset. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return saved balances for the asset. If not given all balances until now are returned.
+   :reqjson string asset: Identifier of the asset.
    :param int from_timestamp: The timestamp after which to return saved balances for the asset. If not given zero is considered as the start.
    :param int to_timestamp: The timestamp until which to return saved balances for the asset. If not given all balances until now are returned.
+   :param string asset: Identifier of the asset.
 
    **Example Response**:
 

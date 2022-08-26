@@ -35,17 +35,16 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
             api_url_for(
                 rotkehlchen_api_server,
                 'asseticonsresource',
-                asset=gno_id_quoted,
             ),
             files=files,
+            data={'asset': gno_id_quoted},
         )
     else:
-        json_data = {'file': str(filepath)}
+        json_data = {'file': str(filepath), 'asset': gno_id_quoted}
         response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,
                 'asseticonsresource',
-                asset=gno_id_quoted,
             ), json=json_data,
         )
 
@@ -54,6 +53,20 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
     uploaded_icon = data_dir / 'icons' / 'custom' / f'{gno_id_quoted}.svg'
     assert uploaded_icon.is_file()
     assert filecmp.cmp(uploaded_icon, filepath)
+
+    # query the file using the endpoint
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'asseticonfileresource'),
+        json={'asset': A_GNO.identifier},
+    )
+    assert response.status_code == HTTPStatus.OK
+    response.headers.pop('Date')
+    assert response.headers == {
+        'mimetype': 'image/png',
+        'Content-Type': 'image/png',
+        'Content-Length': '563',
+        'ETag': '"9b5e2a97c10bc6e4735b7d19897c0457"',
+    }
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
@@ -75,17 +88,19 @@ def test_upload_custom_icon_errors(rotkehlchen_api_server, file_upload):
                 api_url_for(
                     rotkehlchen_api_server,
                     'asseticonsresource',
-                    asset=urllib.parse.quote_plus(A_GNO.identifier),
                 ),
+                data={'asset': urllib.parse.quote_plus(A_GNO.identifier)},
                 files=files,
             )
         else:
-            json_data = {'file': str(bad_filepath)}
+            json_data = {
+                'file': str(bad_filepath),
+                'asset': urllib.parse.quote_plus(A_GNO.identifier),
+            }
             response = requests.put(
                 api_url_for(
                     rotkehlchen_api_server,
                     'asseticonsresource',
-                    asset=urllib.parse.quote_plus(A_GNO.identifier),
                 ), json=json_data,
             )
 
@@ -111,8 +126,8 @@ def test_refresh_icon(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'asseticonsresource',
-            asset=urllib.parse.quote_plus(A_DOGE.identifier),
         ),
+        json={'asset': urllib.parse.quote_plus(A_DOGE.identifier)},
     )
     assert_simple_ok_response(response)
     assert icon_filepath.stat().st_ctime > now
