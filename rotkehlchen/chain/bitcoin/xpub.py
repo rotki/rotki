@@ -312,7 +312,7 @@ class XpubManager():
         """Checks all xpub addresses and sees if new addresses got used.
         If they did it adds them for tracking.
         """
-        log.debug('Starting task for derivation of new xpub addresses')
+        log.debug(f'Starting task for derivation of new {blockchain.value} xpub addresses')
         with self.db.conn.read_ctx() as cursor:
             xpubs = self.db.get_bitcoin_xpub_data(cursor)
         with self.lock:

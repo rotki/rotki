@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1830` Bitcoin and Bitcoin Cash addresses are now derived from XPUBs when balances are refreshed.
 * :feature:`4602` Shows indicator that indicates whether ETH nodes are connected or not.
 * :feature:`3249` Add Uniswap V3 LP Positions Functionality.
 * :feature:`4600` User will now be notified if a leftover backend process is running when starting rotki.
