@@ -1,7 +1,7 @@
 <template>
   <card light class="tag-manager">
     <template #title>
-      {{ $t('tag_manager.title') }}
+      {{ tc('tag_manager.title') }}
     </template>
     <template v-if="dialog" #details>
       <v-btn class="tag-manager__close" icon text @click="close">
@@ -9,7 +9,7 @@
       </v-btn>
     </template>
     <template #subtitle>
-      {{ $t('tag_manager.subtitle') }}
+      {{ tc('tag_manager.subtitle') }}
     </template>
     <tag-creator
       :tag="tag"
@@ -23,7 +23,7 @@
 
     <card outlined-body flat>
       <template #title>
-        {{ $t('tag_manager.my_tags') }}
+        {{ tc('tag_manager.my_tags') }}
       </template>
       <template #search>
         <v-row justify="end">
@@ -34,7 +34,7 @@
               dense
               class="mb-4"
               prepend-inner-icon="mdi-magnify"
-              :label="$t('common.actions.search')"
+              :label="tc('common.actions.search')"
               single-line
               hide-details
             />
@@ -68,8 +68,8 @@
     </card>
 
     <confirm-dialog
-      :title="$t('tag_manager.confirmation.title')"
-      :message="$t('tag_manager.confirmation.message', { tagToDelete })"
+      :title="tc('tag_manager.confirmation.title')"
+      :message="tc('tag_manager.confirmation.message', 0, { tagToDelete })"
       :display="!!tagToDelete"
       @confirm="confirmDelete"
       @cancel="tagToDelete = ''"
@@ -77,108 +77,90 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import TagCreator from '@/components/tags/TagCreator.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { defaultTag } from '@/components/tags/types';
-import i18n from '@/i18n';
 import { useTagStore } from '@/store/session/tags';
 import { Tag } from '@/types/user';
 
+defineProps({
+  dialog: { required: false, type: Boolean, default: false }
+});
+
+const emit = defineEmits(['close']);
+
+const store = useTagStore();
+const { addTag, editTag, deleteTag } = store;
+const { tags } = storeToRefs(store);
+
+const tag = ref<Tag>(defaultTag());
+const editMode = ref<boolean>(false);
+const tagToDelete = ref<string>('');
+const search = ref<string>('');
+
+const { tc } = useI18n();
+
 const headers = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('common.name').toString(),
+    text: tc('common.name'),
     value: 'name',
     width: '200'
   },
   {
-    text: i18n.t('tag_manager.headers.description').toString(),
+    text: tc('tag_manager.headers.description'),
     value: 'description'
   },
   {
-    text: i18n.t('tag_manager.headers.actions').toString(),
+    text: tc('tag_manager.headers.actions'),
     value: 'action',
     sortable: false,
     width: '80'
   }
 ]);
 
-export default defineComponent({
-  name: 'TagManager',
-  components: { DataTable, TagIcon, ConfirmDialog, TagCreator },
-  props: {
-    dialog: { required: false, type: Boolean, default: false }
-  },
-  emits: ['close'],
-  setup(_, { emit }) {
-    const store = useTagStore();
-    const { addTag, editTag, deleteTag } = store;
-    const { tags } = storeToRefs(store);
+const close = () => emit('close');
 
-    const tag = ref<Tag>(defaultTag());
-    const editMode = ref<boolean>(false);
-    const tagToDelete = ref<string>('');
-    const search = ref<string>('');
+const onChange = (newTag: Tag) => {
+  set(tag, newTag);
+};
 
-    const close = () => emit('close');
-
-    const onChange = (newTag: Tag) => {
-      set(tag, newTag);
-    };
-
-    const save = async (newTag: Tag) => {
-      set(tag, defaultTag());
-      if (get(editMode)) {
-        set(editMode, false);
-        await editTag(newTag);
-      } else {
-        await addTag(newTag);
-      }
-    };
-
-    const cancel = () => {
-      set(tag, defaultTag());
-      set(editMode, false);
-    };
-
-    const editItem = (newTag: Tag) => {
-      set(tag, newTag);
-      set(editMode, true);
-    };
-
-    const deleteItem = (selectedTag: Tag) => {
-      set(tagToDelete, selectedTag.name);
-    };
-
-    const confirmDelete = async () => {
-      const tagName = get(tagToDelete);
-      set(tagToDelete, '');
-      await deleteTag(tagName);
-    };
-
-    return {
-      headers,
-      close,
-      tags,
-      tag,
-      editMode,
-      onChange,
-      cancel,
-      save,
-      search,
-      editItem,
-      deleteItem,
-      tagToDelete,
-      confirmDelete
-    };
+const save = async (newTag: Tag) => {
+  set(tag, defaultTag());
+  if (get(editMode)) {
+    set(editMode, false);
+    await editTag(newTag);
+  } else {
+    await addTag(newTag);
   }
-});
+};
+
+const cancel = () => {
+  set(tag, defaultTag());
+  set(editMode, false);
+};
+
+const editItem = (newTag: Tag) => {
+  set(tag, newTag);
+  set(editMode, true);
+};
+
+const deleteItem = (selectedTag: Tag) => {
+  set(tagToDelete, selectedTag.name);
+};
+
+const confirmDelete = async () => {
+  const tagName = get(tagToDelete);
+  set(tagToDelete, '');
+  await deleteTag(tagName);
+};
 </script>
 
 <style scoped lang="scss">

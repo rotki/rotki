@@ -62,8 +62,8 @@ export interface HistoricalPriceDeletePayload {
 }
 
 export interface HistoricalPricePayload {
-  readonly fromAsset: string;
-  readonly toAsset: string;
+  readonly fromAsset: string | null;
+  readonly toAsset: string | null;
 }
 
 export const PriceInformation = z.object({

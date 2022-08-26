@@ -2,11 +2,6 @@
   <price-management />
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
 import PriceManagement from '@/components/price-manager/PriceManagement.vue';
-
-export default defineComponent({
-  components: { PriceManagement }
-});
 </script>

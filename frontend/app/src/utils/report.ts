@@ -1,8 +1,8 @@
-import { ProfitLossOverviewItem, Report } from '@/types/reports';
+import { ProfitLossOverviewItem, SelectedReport } from '@/types/reports';
 import { Zero } from '@/utils/bignumbers';
 
 export const calculateTotalProfitLoss = (
-  item: Report
+  item: SelectedReport
 ): ProfitLossOverviewItem => {
   let totalFree = Zero;
   let totalTaxable = Zero;

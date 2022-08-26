@@ -27,49 +27,42 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import {
   TimeFramePersist,
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
 import { get } from '@vueuse/core';
-import { defineComponent, PropType, toRefs } from 'vue';
+import { PropType, toRefs } from 'vue';
 import { getPremium } from '@/composables/session';
 
 import { isPeriodAllowed } from '@/store/settings/utils';
 
-export default defineComponent({
-  name: 'TimeframeSelector',
-  props: {
-    value: { required: true, type: String as PropType<TimeFrameSetting> },
-    disabled: { required: false, type: Boolean, default: false },
-    visibleTimeframes: { required: true, type: Array }
-  },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { value } = toRefs(props);
-    const input = (_value: TimeFrameSetting) => {
-      emit('input', _value);
-    };
-
-    const premium = getPremium();
-
-    const worksWithoutPremium = (period: TimeFrameSetting): boolean => {
-      return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
-    };
-
-    const activeClass = (timeframePeriod: TimeFrameSetting): string => {
-      return timeframePeriod === get(value) ? 'timeframe-selector--active' : '';
-    };
-
-    return {
-      input,
-      premium,
-      worksWithoutPremium,
-      activeClass
-    };
+const props = defineProps({
+  value: { required: true, type: String as PropType<TimeFrameSetting> },
+  disabled: { required: false, type: Boolean, default: false },
+  visibleTimeframes: {
+    required: true,
+    type: Array as PropType<TimeFrameSetting[]>
   }
 });
+
+const emit = defineEmits<{ (e: 'input', value: TimeFrameSetting): void }>();
+
+const { value } = toRefs(props);
+const input = (_value: TimeFrameSetting) => {
+  emit('input', _value);
+};
+
+const premium = getPremium();
+
+const worksWithoutPremium = (period: TimeFrameSetting): boolean => {
+  return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
+};
+
+const activeClass = (timeframePeriod: TimeFrameSetting): string => {
+  return timeframePeriod === get(value) ? 'timeframe-selector--active' : '';
+};
 </script>
 
 <style scoped lang="scss">

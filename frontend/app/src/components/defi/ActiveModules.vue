@@ -29,16 +29,16 @@
               </template>
               <span v-if="module.enabled">
                 {{
-                  tc('active_modules.view_addresses', 0, {
-                    name: name(module.identifier)
-                  })
+                  tc(
+                    'active_modules.view_addresses',
+                    0,
+                    getName(module.identifier)
+                  )
                 }}
               </span>
               <span v-else>
                 {{
-                  tc('active_modules.activate', 0, {
-                    name: name(module.identifier)
-                  })
+                  tc('active_modules.activate', 0, getName(module.identifier))
                 }}
               </span>
             </v-tooltip>
@@ -46,15 +46,14 @@
         </v-row>
       </v-sheet>
       <queried-address-dialog
+        v-if="manageModule"
         :module="manageModule"
         @close="manageModule = null"
       />
       <confirm-dialog
         :title="tc('active_modules.enable.title')"
         :message="
-          tc('active_modules.enable.description', 0, {
-            name: name(confirmEnable)
-          })
+          tc('active_modules.enable.description', 0, getName(confirmEnable))
         "
         :display="!!confirmEnable"
         @cancel="confirmEnable = null"
@@ -64,18 +63,10 @@
   </v-row>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  PropType,
-  ref,
-  Ref,
-  toRefs
-} from 'vue';
+import { computed, onMounted, PropType, ref, Ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
@@ -93,84 +84,70 @@ type ModuleWithStatus = {
   readonly enabled: boolean;
 };
 
-export default defineComponent({
-  name: 'ActiveModules',
-  components: { ConfirmDialog, QueriedAddressDialog },
-  props: {
-    modules: { required: true, type: Array as PropType<Module[]> }
-  },
-  setup(props) {
-    const { modules } = toRefs(props);
-    const manageModule: Ref<Nullable<Module>> = ref(null);
-    const confirmEnable: Ref<Nullable<Module>> = ref(null);
+const props = defineProps({
+  modules: { required: true, type: Array as PropType<Module[]> }
+});
+const { modules } = toRefs(props);
+const manageModule: Ref<Nullable<Module>> = ref(null);
+const confirmEnable: Ref<Nullable<Module>> = ref(null);
 
-    const supportedModules = SUPPORTED_MODULES;
+const supportedModules = SUPPORTED_MODULES;
 
-    const { fetchQueriedAddresses } = useQueriedAddressesStore();
-    const { update } = useSettingsStore();
-    const { activeModules } = storeToRefs(useGeneralSettingsStore());
-    const { dark } = useTheme();
+const { fetchQueriedAddresses } = useQueriedAddressesStore();
+const { update } = useSettingsStore();
+const { activeModules } = storeToRefs(useGeneralSettingsStore());
+const { dark } = useTheme();
 
-    const style = computed(() => ({
-      background: get(dark) ? '#1E1E1E' : 'white',
-      width: `${get(modules).length * 38}px`
-    }));
+const style = computed(() => ({
+  background: get(dark) ? '#1E1E1E' : 'white',
+  width: `${get(modules).length * 38}px`
+}));
 
-    const moduleStatus = computed(() => {
-      const active = get(activeModules);
-      return get(modules)
-        .map(module => ({
-          identifier: module,
-          enabled: active.includes(module)
-        }))
-        .sort((a, b) => (a.enabled === b.enabled ? 0 : a.enabled ? -1 : 1));
-    });
+const moduleStatus = computed(() => {
+  const active = get(activeModules);
+  return get(modules)
+    .map(module => ({
+      identifier: module,
+      enabled: active.includes(module)
+    }))
+    .sort((a, b) => (a.enabled === b.enabled ? 0 : a.enabled ? -1 : 1));
+});
 
-    const onModulePress = (module: ModuleWithStatus) => {
-      if (module.enabled) {
-        set(manageModule, module.identifier);
-      } else {
-        set(confirmEnable, module.identifier);
-      }
-    };
-
-    const enableModule = async () => {
-      const module = get(confirmEnable);
-      assert(module !== null);
-      await update({
-        activeModules: [...get(activeModules), module]
-      });
-      set(confirmEnable, null);
-    };
-
-    const name = (module: string): string => {
-      const data = supportedModules.find(value => value.identifier === module);
-      return data?.name ?? '';
-    };
-
-    const icon = (module: Module): string => {
-      const data = supportedModules.find(value => value.identifier === module);
-      return data?.icon ?? '';
-    };
-
-    const { tc } = useI18n();
-
-    onMounted(async () => {
-      await fetchQueriedAddresses();
-    });
-
-    return {
-      manageModule,
-      confirmEnable,
-      moduleStatus,
-      style,
-      onModulePress,
-      enableModule,
-      name,
-      icon,
-      tc
-    };
+const onModulePress = (module: ModuleWithStatus) => {
+  if (module.enabled) {
+    set(manageModule, module.identifier);
+  } else {
+    set(confirmEnable, module.identifier);
   }
+};
+
+const enableModule = async () => {
+  const module = get(confirmEnable);
+  assert(module !== null);
+  await update({
+    activeModules: [...get(activeModules), module]
+  });
+  set(confirmEnable, null);
+};
+
+const name = (module: string): string => {
+  const data = supportedModules.find(value => value.identifier === module);
+  return data?.name ?? '';
+};
+
+const icon = (module: Module): string => {
+  const data = supportedModules.find(value => value.identifier === module);
+  return data?.icon ?? '';
+};
+
+const { tc } = useI18n();
+
+const getName = (module: Nullable<Module>) => ({
+  name: module ? name(module) : ''
+});
+
+onMounted(async () => {
+  await fetchQueriedAddresses();
 });
 </script>
 
