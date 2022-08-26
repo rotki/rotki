@@ -199,12 +199,10 @@ class XpubManager():
             known_addresses = getattr(self.db.get_blockchain_accounts(cursor), blockchain.value.lower())  # noqa: E501
 
         new_addresses = []
-        new_balances = []
         existing_address_data = []
         for entry in derived_addresses_data:
             if entry.address not in known_addresses:
                 new_addresses.append(entry.address)
-                new_balances.append(entry.balance)
             elif new_xpub:
                 existing_address_data.append(BlockchainAccountData(
                     address=entry.address,
