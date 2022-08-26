@@ -2350,6 +2350,11 @@
       "note": "Important notes for importing data from {0}'s CSV exports.",
       "source_name": "crypto.com mobile app"
     },
+    "custom": {
+      "import_events": "Import events",
+      "import_trades": "Import trades",
+      "name": "Custom Import"
+    },
     "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
     "nexo": {
       "import": "Import {0} from Nexo",

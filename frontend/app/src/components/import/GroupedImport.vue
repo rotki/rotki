@@ -14,6 +14,7 @@
           <div v-if="data.item" :key="slotName" class="d-flex align-center">
             <adaptive-wrapper>
               <v-img
+                v-if="data.item.logo"
                 :src="data.item.logo"
                 :width="30"
                 :height="30"
@@ -22,6 +23,13 @@
                 position="center left"
                 contain
               />
+              <v-icon
+                v-else-if="data.item.icon"
+                color="grey darken-2"
+                size="30"
+              >
+                {{ data.item.icon }}
+              </v-icon>
             </adaptive-wrapper>
             <div class="pl-3">{{ data.item.name }}</div>
           </div>
@@ -39,6 +47,15 @@ import { get } from '@vueuse/core';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import BinanceImport from '@/components/import/BinanceImport.vue';
+import BisqImport from '@/components/import/Bisq.vue';
+import BlockFiImport from '@/components/import/BlockFiImport.vue';
+import CointrackingImport from '@/components/import/CointrackingImport.vue';
+import CryptoComImport from '@/components/import/CryptoComImport.vue';
+import CustomImport from '@/components/import/CustomImport.vue';
+import NexoImport from '@/components/import/NexoImport.vue';
+import ShapeshiftImport from '@/components/import/ShapeshiftImport.vue';
+import UpholdImport from '@/components/import/UpholdImport.vue';
 
 const { tc } = useI18n();
 const sources = [
@@ -46,49 +63,55 @@ const sources = [
     identifier: 'cointracking.info',
     name: tc('import_data.cointracking.name'),
     logo: '/assets/images/cointracking.svg',
-    form: 'cointracking-import'
+    form: CointrackingImport
   },
   {
     identifier: 'cryptocom',
     name: tc('import_data.cryptocom.name'),
     logo: '/assets/images/crypto_com.svg',
-    form: 'crypto-com-import'
+    form: CryptoComImport
   },
   {
     identifier: 'blockfi',
     name: tc('import_data.blockfi.name'),
     logo: '/assets/images/blockfi.svg',
-    form: 'block-fi-import'
+    form: BlockFiImport
   },
   {
     identifier: 'nexo',
     name: tc('import_data.nexo.name'),
     logo: '/assets/images/nexo.svg',
-    form: 'nexo-import'
+    form: NexoImport
   },
   {
     identifier: 'shapeshift-trades',
     name: tc('import_data.shapeshift.name'),
     logo: '/assets/images/shapeshift.svg',
-    form: 'shapeshift-import'
+    form: ShapeshiftImport
   },
   {
     identifier: 'uphold',
     name: tc('import_data.uphold.name'),
     logo: '/assets/images/uphold.svg',
-    form: 'uphold-import'
+    form: UpholdImport
   },
   {
     identifier: 'bisq',
     name: tc('import_data.bisq.name'),
     logo: '/assets/images/bisq.svg',
-    form: 'bisq-import'
+    form: BisqImport
   },
   {
     identifier: 'binance',
     name: tc('import_data.binance.name'),
     logo: '/assets/images/exchanges/binance.svg',
-    form: 'binance-import'
+    form: BinanceImport
+  },
+  {
+    identifier: 'custom',
+    name: tc('import_data.custom.name'),
+    icon: 'mdi-book-open',
+    form: CustomImport
   }
 ];
 

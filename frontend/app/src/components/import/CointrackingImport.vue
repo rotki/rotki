@@ -1,5 +1,5 @@
 <template>
-  <import-source source="cointracking.info">
+  <import-source source="cointracking">
     <template #hint>
       {{ $t('import_data.cointracking.preferred') }}
     </template>

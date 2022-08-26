@@ -2,15 +2,16 @@
 Changelog
 =========
 
+* :feature:`2770` Add generic CSV import functionality.
 * :feature:`1830` Bitcoin and Bitcoin Cash addresses are now derived from XPUBs when balances are refreshed.
 * :feature:`4602` Shows indicator that indicates whether ETH nodes are connected or not.
+* :feature:`1744` LP balances (Uniswap V2 & V3, Sushiswap, Balancer) should now appear in the dashboard and be taken into account in the snapshots.
 * :feature:`3249` Add Uniswap V3 LP Positions Functionality.
 * :feature:`4600` User will now be notified if a leftover backend process is running when starting rotki.
 * :feature:`1224` Windows binaries should now be signed and the warnings that the software is not trusted should slowly go away.
 * :feature:`4704` Management of ignored assets is now moved to asset settings.
-* :feature:`1744` Uniswap and other supported LP balancess should now appear in the dashboard and be taken into account in the snapshots.
-* :feature:`-` Ethreum transactions involving convex finance shuld now be automatically decoded.
-* :feature:`-` An ethereum address's tokens can now be manualy detected by pressing a specific button in the UI.
+* :feature:`-` Ethereum transactions involving convex finance should now be automatically decoded.
+* :feature:`-` An ethereum address's tokens can now be manually detected by pressing a specific button in the UI.
 * :bug:`-` When force sync fails a proper error message is displayed
 
 * :release:`1.25.2 <2022-08-17>`

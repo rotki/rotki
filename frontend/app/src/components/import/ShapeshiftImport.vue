@@ -1,5 +1,5 @@
 <template>
-  <import-source source="shapeshift-trades">
+  <import-source source="shapeshift_trades">
     <template #upload-title>
       <i18n tag="span" path="import_data.shapeshift.import">
         <strong>{{ $t('import_data.shapeshift.import_trade') }}</strong>

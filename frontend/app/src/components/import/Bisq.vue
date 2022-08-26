@@ -1,5 +1,5 @@
 <template>
-  <import-source source="bisq">
+  <import-source source="bisq_trades">
     <template #upload-title>
       <i18n tag="span" path="import_data.bisq.import">
         <strong>{{ $t('import_data.bisq.import_trade') }}</strong>
