@@ -3565,6 +3565,8 @@ Querying asset icons
 
       POST /api/1/assets/icon HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
       {"asset": "eip155:1/erc20:3A0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"}
 
    :reqjson string asset: Identifier of the asset to be queried.
@@ -3635,9 +3637,11 @@ Refreshing asset icons
 
       PATCH /api/1/assets/icon/modify HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"asset": "eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"}
-      :reqjson string asset: Identifier of the asset to be refreshed.
+
+   :reqjson string asset: Identifier of the asset to be refreshed.
 
    **Example Response**:
 
@@ -3702,8 +3706,6 @@ Statistics for asset balance over time
    .. note::
       This endpoint is only available for premium users
 
-   .. note::
-      This endpoint also accepts parameters as query arguments.
 
    Doing a POST on the statistics asset balance over time endpoint will return all saved balance entries for an asset. Optionally you can filter for a specific time range by providing appropriate arguments.
 

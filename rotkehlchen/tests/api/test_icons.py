@@ -89,7 +89,7 @@ def test_upload_custom_icon_errors(rotkehlchen_api_server, file_upload):
                     rotkehlchen_api_server,
                     'asseticonsresource',
                 ),
-                data={'asset': urllib.parse.quote_plus(A_GNO.identifier)},
+                json={'asset': urllib.parse.quote_plus(A_GNO.identifier)},
                 files=files,
             )
         else:

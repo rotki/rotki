@@ -98,7 +98,7 @@ def test_query_statistics_asset_balance(
             rotkehlchen_api_server_with_exchanges,
             'statisticsassetbalanceresource',
         ),
-        params={'asset': 'ETH'},
+        json={'asset': 'ETH'},
     )
     if start_with_valid_premium:
         result = assert_proper_response_with_result(response)

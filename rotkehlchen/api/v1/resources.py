@@ -1143,7 +1143,7 @@ class StatisticsAssetBalanceResource(BaseMethodView):
     get_schema = StatisticsAssetBalanceSchema()
 
     @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='json')
     def post(
             self,
             asset: Asset,
@@ -2149,7 +2149,7 @@ class AssetIconFileResource(BaseMethodView):
 
     post_schema = SingleAssetIdentifierSchema()
 
-    @use_kwargs(post_schema, location='json_and_query')
+    @use_kwargs(post_schema, location='json')
     def post(self, asset: Asset) -> Response:
         # Process the if-match and if-none-match headers so that comparison with etag can be done
         match_header = flask_request.headers.get('If-Match', None)
@@ -2166,12 +2166,16 @@ class AssetIconsResource(BaseMethodView):
     patch_schema = SingleAssetIdentifierSchema()
     upload_schema = AssetIconUploadSchema()
 
-    @use_kwargs(upload_schema, location='json_and_query')
+    @use_kwargs(upload_schema, location='json')
     def put(self, asset: Asset, file: Path) -> Response:
         return self.rest_api.upload_asset_icon(asset=asset, filepath=file)
 
     @use_kwargs(upload_schema, location='form_and_file')
     def post(self, asset: Asset, file: FileStorage) -> Response:
+        """
+        This endpoint uses form_and_file instead of accepting json because is not possible
+        to send multiform data and a json body in the same request.
+        """
         with TemporaryDirectory() as temp_directory:
             filename = file.filename if file.filename else f'{asset.identifier}.png'
             filepath = Path(temp_directory) / filename
@@ -2180,7 +2184,7 @@ class AssetIconsResource(BaseMethodView):
 
         return response
 
-    @use_kwargs(patch_schema, location='json_and_query')
+    @use_kwargs(patch_schema, location='json')
     def patch(self, asset: Asset) -> Response:
         return self.rest_api.refresh_asset_icon(asset)
 
