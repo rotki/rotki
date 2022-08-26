@@ -2,17 +2,17 @@
   <v-container>
     <v-row justify="space-between" align="center" no-gutters>
       <v-col>
-        <card-title>{{ $t('price_management.title') }}</card-title>
+        <card-title>{{ tc('price_management.title') }}</card-title>
       </v-col>
     </v-row>
     <card class="mt-8">
-      <template #title>{{ $t('price_management.filter_title') }}</template>
+      <template #title>{{ tc('price_management.filter_title') }}</template>
       <v-row>
         <v-col cols="12" md="6">
           <asset-select
             v-model="filter.fromAsset"
             outlined
-            :label="$tc('price_management.from_asset')"
+            :label="tc('price_management.from_asset')"
             clearable
           />
         </v-col>
@@ -20,7 +20,7 @@
           <asset-select
             v-model="filter.toAsset"
             outlined
-            :label="$tc('price_management.to_asset')"
+            :label="tc('price_management.to_asset')"
             clearable
           />
         </v-col>
@@ -41,8 +41,8 @@
       :display="showForm"
       :title="
         editMode
-          ? $t('price_management.dialog.edit_title')
-          : $t('price_management.dialog.add_title')
+          ? tc('price_management.dialog.edit_title')
+          : tc('price_management.dialog.add_title')
       "
       :action-disabled="!valid"
       @confirm="managePrice(priceForm, editMode)"
@@ -57,14 +57,15 @@
   </v-container>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import { defineComponent, onMounted, reactive, Ref, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import PriceForm from '@/components/price-manager/PriceForm.vue';
 import PriceTable from '@/components/price-manager/PriceTable.vue';
 import { useRoute, useRouter } from '@/composables/common';
-import i18n from '@/i18n';
 import {
   HistoricalPrice,
   HistoricalPriceFormPayload
@@ -80,107 +81,84 @@ const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   timestamp: 0
 });
 
-const managePrice = (showForm: Ref<boolean>, refresh: Ref<boolean>) => {
-  const { setMessage } = useMainStore();
-  const managePrice = async (
-    price: HistoricalPriceFormPayload,
-    edit: boolean
-  ) => {
-    try {
-      if (edit) {
-        await api.assets.editHistoricalPrice(price);
-      } else {
-        await api.assets.addHistoricalPrice(price);
-      }
+const refresh = ref(false);
+const priceForm = ref<HistoricalPriceFormPayload>(emptyPrice());
+const showForm = ref(false);
+const filter = reactive<{
+  fromAsset: Nullable<string>;
+  toAsset: Nullable<string>;
+}>({
+  fromAsset: null,
+  toAsset: null
+});
+const valid = ref(false);
+const editMode = ref(false);
 
-      set(showForm, false);
-      if (!get(refresh)) {
-        set(refresh, true);
-      }
-    } catch (e: any) {
-      const values = { message: e.message };
-      const title = edit
-        ? i18n.t('price_management.edit.error.title')
-        : i18n.t('price_management.add.error.title');
-      const description = edit
-        ? i18n.t('price_management.edit.error.description', values)
-        : i18n.t('price_management.add.error.description', values);
-      setMessage({
-        title: title.toString(),
-        description: description.toString(),
-        success: false
-      });
-    }
-  };
+const { setMessage } = useMainStore();
+const router = useRouter();
+const route = useRoute();
+const { tc } = useI18n();
 
-  return {
-    managePrice
-  };
+const openForm = (hPrice: HistoricalPrice | null = null) => {
+  set(editMode, !!hPrice);
+  if (hPrice) {
+    set(priceForm, {
+      ...hPrice,
+      price: hPrice.price.toFixed() ?? ''
+    });
+  } else {
+    const emptyPriceObj = emptyPrice();
+    set(priceForm, {
+      ...emptyPriceObj,
+      fromAsset: filter.fromAsset ?? '',
+      toAsset: filter.toAsset ?? ''
+    });
+  }
+  set(showForm, true);
 };
 
-export default defineComponent({
-  name: 'PriceManagement',
-  components: { PriceTable, PriceForm, BigDialog },
-  setup() {
-    const refresh = ref(false);
-    const priceForm = ref<HistoricalPriceFormPayload>(emptyPrice());
-    const showForm = ref(false);
-    const filter = reactive<{
-      fromAsset: Nullable<string>;
-      toAsset: Nullable<string>;
-    }>({
-      fromAsset: null,
-      toAsset: null
+const hideForm = function () {
+  set(showForm, false);
+  set(priceForm, emptyPrice());
+};
+
+const managePrice = async (
+  price: HistoricalPriceFormPayload,
+  edit: boolean
+) => {
+  try {
+    if (edit) {
+      await api.assets.editHistoricalPrice(price);
+    } else {
+      await api.assets.addHistoricalPrice(price);
+    }
+
+    set(showForm, false);
+    if (!get(refresh)) {
+      set(refresh, true);
+    }
+  } catch (e: any) {
+    const values = { message: e.message };
+    const title = edit
+      ? tc('price_management.edit.error.title')
+      : tc('price_management.add.error.title');
+    const description = edit
+      ? tc('price_management.edit.error.description', 0, values)
+      : tc('price_management.add.error.description', 0, values);
+    setMessage({
+      title,
+      description,
+      success: false
     });
-    const valid = ref(false);
-    const editMode = ref(false);
+  }
+};
 
-    const openForm = (hPrice: HistoricalPrice | null = null) => {
-      set(editMode, !!hPrice);
-      if (hPrice) {
-        set(priceForm, {
-          ...hPrice,
-          price: hPrice.price.toFixed() ?? ''
-        });
-      } else {
-        const emptyPriceObj = emptyPrice();
-        set(priceForm, {
-          ...emptyPriceObj,
-          fromAsset: filter.fromAsset ?? '',
-          toAsset: filter.toAsset ?? ''
-        });
-      }
-      set(showForm, true);
-    };
+onMounted(() => {
+  const query = get(route).query;
 
-    const hideForm = function () {
-      set(showForm, false);
-      set(priceForm, emptyPrice());
-    };
-
-    const router = useRouter();
-    const route = useRoute();
-
-    onMounted(() => {
-      const query = get(route).query;
-
-      if (query.add) {
-        openForm();
-        router.replace({ query: {} });
-      }
-    });
-
-    return {
-      ...managePrice(showForm, refresh),
-      refresh,
-      filter,
-      openForm,
-      hideForm,
-      showForm,
-      editMode,
-      priceForm,
-      valid
-    };
+  if (query.add) {
+    openForm();
+    router.replace({ query: {} });
   }
 });
 </script>

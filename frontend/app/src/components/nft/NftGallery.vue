@@ -1,15 +1,15 @@
 <template>
   <progress-screen v-if="loading && visibleNfts.length === 0">
-    {{ $t('nft_gallery.loading') }}
+    {{ tc('nft_gallery.loading') }}
   </progress-screen>
   <no-data-screen v-else-if="noData">
     <template #title>
       {{
-        error ? $t('nft_gallery.error_title') : $t('nft_gallery.empty_title')
+        error ? tc('nft_gallery.error_title') : tc('nft_gallery.empty_title')
       }}
     </template>
     <span class="text-subtitle-2 text--secondary">
-      {{ error ? error : $t('nft_gallery.empty_subtitle') }}
+      {{ error ? error : tc('nft_gallery.empty_subtitle') }}
     </span>
   </no-data-screen>
   <div v-else class="py-4">
@@ -19,8 +19,8 @@
           <v-col :cols="isMobile ? '12' : '6'">
             <blockchain-account-selector
               v-model="selectedAccount"
-              :label="$t('nft_gallery.select_account')"
-              :chains="['ETH']"
+              :label="tc('nft_gallery.select_account')"
+              :chains="chains"
               dense
               outlined
               no-padding
@@ -33,7 +33,7 @@
               <div>
                 <v-autocomplete
                   v-model="selectedCollection"
-                  :label="$t('nft_gallery.select_collection')"
+                  :label="tc('nft_gallery.select_collection')"
                   single-line
                   clearable
                   hide-details
@@ -66,7 +66,7 @@
       <v-col cols="auto">
         <refresh-button
           :loading="loading"
-          :tooltip="$t('nft_gallery.refresh_tooltip')"
+          :tooltip="tc('nft_gallery.refresh_tooltip')"
           @refresh="fetchNfts(true)"
         />
       </v-col>
@@ -77,8 +77,8 @@
           <template #limit> {{ limit }}</template>
           <template #link>
             <base-external-link
-              :text="$t('upgrade_row.rotki_premium')"
-              :href="$interop.premiumURL"
+              :text="tc('upgrade_row.rotki_premium')"
+              :href="premiumURL"
             />
           </template>
         </i18n>
@@ -88,10 +88,10 @@
       v-if="visibleNfts.length === 0"
       align="center"
       justify="center"
-      :class="$style.empty"
+      :class="css.empty"
     >
       <v-col cols="auto" class="text--secondary text-h6">
-        {{ $t('nft_gallery.empty_filter') }}
+        {{ tc('nft_gallery.empty_filter') }}
       </v-col>
     </v-row>
     <v-row v-else>
@@ -102,7 +102,7 @@
         sm="6"
         md="6"
         lg="3"
-        :class="$style.xl"
+        :class="css.xl"
       >
         <nft-gallery-item :item="item" />
       </v-col>
@@ -110,19 +110,21 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { get, set } from '@vueuse/core';
 import {
   computed,
-  defineComponent,
   onMounted,
   PropType,
   Ref,
   ref,
+  useCssModule,
   watch
 } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -133,7 +135,7 @@ import SortingSelector from '@/components/helper/SortingSelector.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { useTheme } from '@/composables/common';
 import { getPremium } from '@/composables/session';
-import i18n from '@/i18n';
+import { useInterop } from '@/electron-interop';
 import { AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useSessionStore } from '@/store/session';
@@ -141,31 +143,178 @@ import { GalleryNft, Nft, Nfts } from '@/store/session/types';
 import { Module } from '@/types/modules';
 import { uniqueStrings } from '@/utils/data';
 
-const requestPrices = () => {
-  const prices: Ref<AssetPriceArray> = ref([]);
-  const priceError = ref('');
-  const fetchPrices = async () => {
-    try {
-      const data = await api.assets.fetchCurrentPrices();
-      set(prices, AssetPriceArray.parse(data));
-    } catch (e: any) {
-      set(priceError, e.message);
+defineProps({
+  modules: {
+    required: true,
+    type: Array as PropType<Module[]>
+  }
+});
+
+const prices: Ref<AssetPriceArray> = ref([]);
+const priceError = ref('');
+const total = ref(0);
+const limit = ref(0);
+const error = ref('');
+const loading = ref(true);
+const perAccount: Ref<Nfts | null> = ref(null);
+const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
+const sortDesc = ref(false);
+
+const { tc } = useI18n();
+const { premiumURL } = useInterop();
+const css = useCssModule();
+const sortProperties = [
+  {
+    text: tc('common.name'),
+    value: 'name'
+  },
+  {
+    text: tc('common.price'),
+    value: 'priceUsd'
+  },
+  {
+    text: tc('nft_gallery.sort.collection'),
+    value: 'collection'
+  }
+];
+
+const chains = [Blockchain.ETH];
+
+const { isMobile, breakpoint, width } = useTheme();
+const page = ref(1);
+
+const itemsPerPage = computed(() => {
+  if (get(breakpoint) === 'xs') {
+    return 1;
+  } else if (get(breakpoint) === 'sm') {
+    return 2;
+  } else if (get(width) >= 1600) {
+    return 10;
+  }
+  return 8;
+});
+const selectedAccount = ref<GeneralAccount | null>(null);
+const selectedCollection = ref<string | null>(null);
+const premium = getPremium();
+
+watch(selectedAccount, () => set(page, 1));
+watch(selectedCollection, () => set(page, 1));
+
+const items = computed(() => {
+  const account = get(selectedAccount);
+  const selection = get(selectedCollection);
+  if (account || selection) {
+    return get(nfts)
+      .filter(({ address, collection }) => {
+        const sameAccount = account ? address === account.address : true;
+        const sameCollection = selection ? selection === collection.name : true;
+        return sameAccount && sameCollection;
+      })
+      .sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
+  }
+
+  return get(nfts).sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
+});
+
+const pages = computed(() => {
+  return Math.ceil(get(items).length / get(itemsPerPage));
+});
+
+const visibleNfts = computed(() => {
+  const start = (get(page) - 1) * get(itemsPerPage);
+  return get(items).slice(start, start + get(itemsPerPage));
+});
+
+const availableAddresses = computed(() =>
+  get(perAccount) ? Object.keys(get(perAccount)!) : []
+);
+
+const nfts = computed<GalleryNft[]>(() => {
+  const addresses: Nfts | null = get(perAccount);
+  const value = get(prices);
+  if (!addresses) {
+    return [];
+  }
+
+  const allNfts: GalleryNft[] = [];
+  for (const address in addresses) {
+    const addressNfts: Nft[] = addresses[address];
+    for (const nft of addressNfts) {
+      const price = value.find(({ asset }) => asset === nft.tokenIdentifier);
+      const { priceEth, priceUsd, ...data } = nft;
+      let priceDetails: {
+        priceInAsset: BigNumber;
+        priceAsset: string;
+        priceUsd: BigNumber;
+      };
+      if (price && price.manuallyInput) {
+        priceDetails = {
+          priceAsset: price.priceAsset,
+          priceInAsset: price.priceInAsset,
+          priceUsd: price.usdPrice
+        };
+      } else {
+        priceDetails = {
+          priceAsset: 'ETH',
+          priceInAsset: priceEth,
+          priceUsd
+        };
+      }
+
+      allNfts.push({ ...data, ...priceDetails, address });
     }
-  };
-  onMounted(fetchPrices);
-  return {
-    fetchPrices,
-    priceError,
-    prices
-  };
+  }
+  return allNfts;
+});
+
+const collections = computed(() => {
+  if (!get(nfts)) {
+    return [];
+  }
+  return get(nfts)
+    .map(({ collection }) => collection.name ?? '')
+    .filter(uniqueStrings);
+});
+
+const { fetchNfts: nftFetch } = useSessionStore();
+
+const fetchNfts = async (ignoreCache: boolean = false) => {
+  set(loading, true);
+  const { message, result } = await nftFetch(ignoreCache);
+  if (result) {
+    set(total, result.entriesFound);
+    set(limit, result.entriesLimit);
+    set(perAccount, result.addresses);
+  } else {
+    set(error, message);
+  }
+  set(loading, false);
 };
 
-function sortNfts(
+const noData = computed(
+  () =>
+    get(visibleNfts).length === 0 &&
+    !(get(selectedCollection) || get(selectedAccount))
+);
+
+const fetchPrices = async () => {
+  try {
+    const data = await api.assets.fetchCurrentPrices();
+    set(prices, AssetPriceArray.parse(data));
+  } catch (e: any) {
+    set(priceError, e.message);
+  }
+};
+
+onMounted(fetchPrices);
+onMounted(fetchNfts);
+
+const sortNfts = (
   sortBy: Ref<'name' | 'priceUsd' | 'collection'>,
   sortDesc: Ref<boolean>,
   a: GalleryNft,
   b: GalleryNft
-): number {
+): number => {
   const sortProp = get(sortBy);
   const desc = get(sortDesc);
   const isCollection = sortProp === 'collection';
@@ -187,212 +336,7 @@ function sortNfts(
     return desc ? -1 : 1;
   }
   return 0;
-}
-
-const setupNfts = (
-  selectedAccount: Ref<GeneralAccount | null>,
-  selectedCollection: Ref<string | null>,
-  itemsPerPage: Ref<number>,
-  page: Ref<number>,
-  prices: Ref<AssetPriceArray>
-) => {
-  const total = ref(0);
-  const limit = ref(0);
-  const error = ref('');
-  const loading = ref(true);
-  const perAccount: Ref<Nfts | null> = ref(null);
-  const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
-  const sortDesc = ref(false);
-  const sortProperties = [
-    {
-      text: i18n.t('common.name').toString(),
-      value: 'name'
-    },
-    {
-      text: i18n.t('common.price').toString(),
-      value: 'priceUsd'
-    },
-    {
-      text: i18n.t('nft_gallery.sort.collection').toString(),
-      value: 'collection'
-    }
-  ];
-
-  const items = computed(() => {
-    const account = get(selectedAccount);
-    const selection = get(selectedCollection);
-    if (account || selection) {
-      return get(nfts)
-        .filter(({ address, collection }) => {
-          const sameAccount = account ? address === account.address : true;
-          const sameCollection = selection
-            ? selection === collection.name
-            : true;
-          return sameAccount && sameCollection;
-        })
-        .sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
-    }
-
-    return get(nfts).sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
-  });
-
-  const pages = computed(() => {
-    return Math.ceil(get(items).length / get(itemsPerPage));
-  });
-
-  const visibleNfts = computed(() => {
-    const start = (get(page) - 1) * get(itemsPerPage);
-    return get(items).slice(start, start + get(itemsPerPage));
-  });
-
-  const availableAddresses = computed(() =>
-    get(perAccount) ? Object.keys(get(perAccount)!) : []
-  );
-
-  const nfts = computed<GalleryNft[]>(() => {
-    const addresses: Nfts | null = get(perAccount);
-    const value = get(prices);
-    if (!addresses) {
-      return [];
-    }
-
-    const allNfts: GalleryNft[] = [];
-    for (const address in addresses) {
-      const addressNfts: Nft[] = addresses[address];
-      for (const nft of addressNfts) {
-        const price = value.find(({ asset }) => asset === nft.tokenIdentifier);
-        const { priceEth, priceUsd, ...data } = nft;
-        let priceDetails: {
-          priceInAsset: BigNumber;
-          priceAsset: string;
-          priceUsd: BigNumber;
-        };
-        if (price && price.manuallyInput) {
-          priceDetails = {
-            priceAsset: price.priceAsset,
-            priceInAsset: price.priceInAsset,
-            priceUsd: price.usdPrice
-          };
-        } else {
-          priceDetails = {
-            priceAsset: 'ETH',
-            priceInAsset: priceEth,
-            priceUsd
-          };
-        }
-
-        allNfts.push({ ...data, ...priceDetails, address });
-      }
-    }
-    return allNfts;
-  });
-
-  const collections = computed(() => {
-    if (!get(nfts)) {
-      return [];
-    }
-    return get(nfts)
-      .map(({ collection }) => collection.name ?? '')
-      .filter(uniqueStrings);
-  });
-
-  const { fetchNfts: nftFetch } = useSessionStore();
-
-  const fetchNfts = async (ignoreCache: boolean = false) => {
-    set(loading, true);
-    const { message, result } = await nftFetch(ignoreCache);
-    if (result) {
-      set(total, result.entriesFound);
-      set(limit, result.entriesLimit);
-      set(perAccount, result.addresses);
-    } else {
-      set(error, message);
-    }
-    set(loading, false);
-  };
-
-  const noData = computed(
-    () =>
-      get(visibleNfts).length === 0 &&
-      !(get(selectedCollection) || get(selectedAccount))
-  );
-
-  onMounted(fetchNfts);
-
-  return {
-    total,
-    limit,
-    visibleNfts,
-    fetchNfts,
-    pages,
-    error,
-    availableAddresses,
-    collections,
-    sortBy,
-    sortDesc,
-    sortProperties,
-    noData,
-    loading
-  };
 };
-
-export default defineComponent({
-  name: 'NftGallery',
-  components: {
-    SortingSelector,
-    Pagination,
-    ActiveModules,
-    BaseExternalLink,
-    NoDataScreen,
-    RefreshButton,
-    ProgressScreen,
-    NftGalleryItem
-  },
-  props: {
-    modules: {
-      required: true,
-      type: Array as PropType<Module[]>
-    }
-  },
-  setup() {
-    const { isMobile, breakpoint, width } = useTheme();
-    const page = ref(1);
-
-    const itemsPerPage = computed(() => {
-      if (get(breakpoint) === 'xs') {
-        return 1;
-      } else if (get(breakpoint) === 'sm') {
-        return 2;
-      } else if (get(width) >= 1600) {
-        return 10;
-      }
-      return 8;
-    });
-    const selectedAccount = ref<GeneralAccount | null>(null);
-    const selectedCollection = ref<string | null>(null);
-    const premium = getPremium();
-
-    watch(selectedAccount, () => set(page, 1));
-    watch(selectedCollection, () => set(page, 1));
-    const retrievePrices = requestPrices();
-
-    return {
-      selectedAccount,
-      selectedCollection,
-      page,
-      isMobile,
-      premium,
-      ...retrievePrices,
-      ...setupNfts(
-        selectedAccount,
-        selectedCollection,
-        itemsPerPage,
-        page,
-        retrievePrices.prices
-      )
-    };
-  }
-});
 </script>
 
 <style module lang="scss">

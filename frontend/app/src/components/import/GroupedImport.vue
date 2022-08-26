@@ -3,18 +3,14 @@
     <div class="pa-1 pt-2">
       <v-select
         v-model="selectedSource"
-        :label="$t('import_data.select_source.title')"
+        :label="tc('import_data.select_source.title')"
         outlined
         :items="sources"
         item-value="identifier"
         item-text="name"
         :hide-details="true"
       >
-        <template
-          v-for="slotName in ['item', 'selection']"
-          :slot="slotName"
-          slot-scope="data"
-        >
+        <template v-for="slotName in ['item', 'selection']" #[slotName]="data">
           <div v-if="data.item" :key="slotName" class="d-flex align-center">
             <adaptive-wrapper>
               <v-img
@@ -38,97 +34,68 @@
     </div>
   </card>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import BinanceImport from '@/components/import/BinanceImport.vue';
-import BisqImport from '@/components/import/Bisq.vue';
-import BlockFiImport from '@/components/import/BlockFiImport.vue';
-import CointrackingImport from '@/components/import/CointrackingImport.vue';
-import CryptoComImport from '@/components/import/CryptoComImport.vue';
-import NexoImport from '@/components/import/NexoImport.vue';
-import ShapeshiftImport from '@/components/import/ShapeshiftImport.vue';
-import UpholdImport from '@/components/import/UpholdImport.vue';
-import i18n from '@/i18n';
 
+const { tc } = useI18n();
 const sources = [
   {
     identifier: 'cointracking.info',
-    name: i18n.t('import_data.cointracking.name').toString(),
+    name: tc('import_data.cointracking.name'),
     logo: '/assets/images/cointracking.svg',
     form: 'cointracking-import'
   },
   {
     identifier: 'cryptocom',
-    name: i18n.t('import_data.cryptocom.name').toString(),
+    name: tc('import_data.cryptocom.name'),
     logo: '/assets/images/crypto_com.svg',
     form: 'crypto-com-import'
   },
   {
     identifier: 'blockfi',
-    name: i18n.t('import_data.blockfi.name').toString(),
+    name: tc('import_data.blockfi.name'),
     logo: '/assets/images/blockfi.svg',
     form: 'block-fi-import'
   },
   {
     identifier: 'nexo',
-    name: i18n.t('import_data.nexo.name').toString(),
+    name: tc('import_data.nexo.name'),
     logo: '/assets/images/nexo.svg',
     form: 'nexo-import'
   },
   {
     identifier: 'shapeshift-trades',
-    name: i18n.t('import_data.shapeshift.name').toString(),
+    name: tc('import_data.shapeshift.name'),
     logo: '/assets/images/shapeshift.svg',
     form: 'shapeshift-import'
   },
   {
     identifier: 'uphold',
-    name: i18n.t('import_data.uphold.name').toString(),
+    name: tc('import_data.uphold.name'),
     logo: '/assets/images/uphold.svg',
     form: 'uphold-import'
   },
   {
     identifier: 'bisq',
-    name: i18n.t('import_data.bisq.name'),
+    name: tc('import_data.bisq.name'),
     logo: '/assets/images/bisq.svg',
     form: 'bisq-import'
   },
   {
     identifier: 'binance',
-    name: i18n.t('import_data.binance.name'),
+    name: tc('import_data.binance.name'),
     logo: '/assets/images/exchanges/binance.svg',
     form: 'binance-import'
   }
 ];
 
-export default defineComponent({
-  name: 'GroupedImport',
-  components: {
-    AdaptiveWrapper,
-    UpholdImport,
-    ShapeshiftImport,
-    NexoImport,
-    BlockFiImport,
-    CryptoComImport,
-    CointrackingImport,
-    BisqImport,
-    BinanceImport
-  },
-  setup() {
-    const selectedSource = ref<string>('');
+const selectedSource = ref<string>('');
 
-    const form = computed(() => {
-      return sources.find(source => source.identifier === get(selectedSource))
-        ?.form;
-    });
-
-    return {
-      selectedSource,
-      form,
-      sources
-    };
-  }
+const form = computed(() => {
+  return sources.find(source => source.identifier === get(selectedSource))
+    ?.form;
 });
 </script>

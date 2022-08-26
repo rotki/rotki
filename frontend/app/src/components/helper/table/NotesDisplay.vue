@@ -2,28 +2,31 @@
   <fragment>
     <v-row>
       <v-col class="text-subtitle-2">
-        {{ $t('notes_display.notes') }}
+        {{ tc('notes_display.notes') }}
       </v-col>
     </v-row>
     <v-row>
       <v-col>
         <card outlined>
-          {{ notes ? notes : $t('notes_display.empty_notes') }}
+          {{ notes ? notes : tc('notes_display.empty_notes') }}
         </card>
       </v-col>
     </v-row>
   </fragment>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import Fragment from '@/components/helper/Fragment';
 
-export default defineComponent({
-  name: 'NotesDisplay',
-  components: { Fragment },
-  props: {
-    notes: { required: false, type: String, default: '' }
+defineProps({
+  notes: {
+    required: false,
+    type: String as PropType<string | null>,
+    default: null
   }
 });
+
+const { tc } = useI18n();
 </script>

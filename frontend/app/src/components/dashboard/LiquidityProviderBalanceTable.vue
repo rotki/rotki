@@ -1,12 +1,12 @@
 <template>
   <dashboard-expandable-table v-if="balances.length > 0 || loading">
     <template #title>
-      <refresh-button
+      <refresh-buttton
         :loading="loading"
-        :tooltip="$t('dashboard.liquidity_position.refresh_tooltip')"
+        :tooltip="tc('dashboard.liquidity_position.refresh_tooltip')"
         @refresh="fetch(true)"
       />
-      {{ $t('dashboard.liquidity_position.title') }}
+      {{ tc('dashboard.liquidity_position.title') }}
       <v-btn :to="route" icon class="ml-2">
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
@@ -20,7 +20,7 @@
       >
         <template #activator="{ on }">
           <menu-tooltip-button
-            :tooltip="$t('dashboard_asset_table.select_visible_columns')"
+            :tooltip="tc('dashboard_asset_table.select_visible_columns')"
             class-name="ml-4 nft_balance_table__column-filter__button"
             :on-menu="on"
           >
@@ -29,7 +29,7 @@
         </template>
         <visible-columns-selector
           group="LIQUIDITY_POSITION"
-          :group-label="$t('dashboard.liquidity_position.title').toString()"
+          :group-label="tc('dashboard.liquidity_position.title')"
         />
       </v-menu>
     </template>
@@ -79,7 +79,7 @@
       <template #body.append="{ isMobile }">
         <row-append
           label-colspan="1"
-          :label="$t('common.total')"
+          :label="tc('common.total')"
           :right-patch-colspan="tableHeaders.length - 2"
           :is-mobile="isMobile"
         >
@@ -100,6 +100,7 @@ import { get } from '@vueuse/core';
 import { isEqual } from 'lodash';
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeMount, ref, Ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import LiquidityProviderBalanceDetails from '@/components/dashboard/LiquidityProviderBalanceDetails.vue';
@@ -109,7 +110,6 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { getPremium } from '@/composables/session';
-import i18nFn from '@/i18n';
 import { Routes } from '@/router/routes';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { Section } from '@/store/const';
@@ -126,6 +126,8 @@ import {
 import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
 
+const { tc } = useI18n();
+
 const createTableHeaders = (
   currency: Ref<string>,
   dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>
@@ -137,17 +139,15 @@ const createTableHeaders = (
 
     const headers: DataTableHeader[] = [
       {
-        text: i18nFn.t('common.name').toString(),
+        text: tc('common.name'),
         value: 'name',
         cellClass: 'text-no-wrap',
         sortable: false
       },
       {
-        text: i18nFn
-          .t('common.value_in_symbol', {
-            symbol: get(currency)
-          })
-          .toString(),
+        text: tc('common.value_in_symbol', 0, {
+          symbol: get(currency)
+        }),
         value: 'usdValue',
         align: 'end',
         class: 'text-no-wrap'
@@ -156,9 +156,7 @@ const createTableHeaders = (
 
     if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
       headers.push({
-        text: i18nFn
-          .t('dashboard_asset_table.headers.percentage_of_total_net_value')
-          .toString(),
+        text: tc('dashboard_asset_table.headers.percentage_of_total_net_value'),
         value: 'percentageOfTotalNetValue',
         align: 'end',
         class: 'text-no-wrap',
@@ -170,14 +168,13 @@ const createTableHeaders = (
       visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)
     ) {
       headers.push({
-        text: i18nFn
-          .t(
-            'dashboard_asset_table.headers.percentage_of_total_current_group',
-            {
-              group: i18nFn.t('dashboard.liquidity_position.title').toString()
-            }
-          )
-          .toString(),
+        text: tc(
+          'dashboard_asset_table.headers.percentage_of_total_current_group',
+          0,
+          {
+            group: tc('dashboard.liquidity_position.title')
+          }
+        ),
         value: 'percentageOfTotalCurrentGroup',
         align: 'end',
         class: 'text-no-wrap',

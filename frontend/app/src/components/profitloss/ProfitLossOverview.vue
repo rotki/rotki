@@ -1,19 +1,19 @@
 <template>
   <card outlined-body :flat="flat">
     <template #title>
-      {{ $t('profit_loss_overview.title') }}
+      {{ tc('profit_loss_overview.title') }}
     </template>
     <v-simple-table>
       <thead>
         <tr>
-          <th class="text-left" v-text="$t('common.type')" />
+          <th class="text-left" v-text="tc('common.type')" />
           <th
             class="text-right"
-            v-text="$t('profit_loss_overview.headers.tax_free_profit_loss')"
+            v-text="tc('profit_loss_overview.headers.tax_free_profit_loss')"
           />
           <th
             class="text-right"
-            v-text="$t('profit_loss_overview.headers.taxable_profit_loss')"
+            v-text="tc('profit_loss_overview.headers.taxable_profit_loss')"
           />
         </tr>
       </thead>
@@ -44,7 +44,7 @@
         </tr>
         <tr>
           <td class="font-weight-medium text-subtitle-1">
-            {{ $t('common.total') }}
+            {{ tc('common.total') }}
           </td>
           <td class="text-right font-weight-medium text-subtitle-1">
             <amount-display
@@ -70,51 +70,42 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { ProfitLossOverviewItem, Report } from '@/types/reports';
+import { ProfitLossOverviewItem, SelectedReport } from '@/types/reports';
 import { calculateTotalProfitLoss } from '@/utils/report';
 import { pluralizeLastWord, toCapitalCase } from '@/utils/text';
 
-export default defineComponent({
-  name: 'ProfitLossOverview',
-  components: {
-    AmountDisplay
+const props = defineProps({
+  report: {
+    required: true,
+    type: Object as PropType<SelectedReport>
   },
-  props: {
-    report: {
-      required: true,
-      type: Object as PropType<Report>
-    },
-    symbol: {
-      required: true,
-      type: String
-    },
-    flat: {
-      required: false,
-      type: Boolean,
-      default: false
-    },
-    loading: {
-      required: false,
-      type: Boolean,
-      default: false
-    }
+  symbol: {
+    required: false,
+    type: String as PropType<string | null>,
+    default: null
   },
-  setup(props) {
-    const { report } = toRefs(props);
-
-    const total = computed<ProfitLossOverviewItem>(() => {
-      return calculateTotalProfitLoss(get(report));
-    });
-
-    return {
-      total,
-      toCapitalCase,
-      pluralizeLastWord
-    };
+  flat: {
+    required: false,
+    type: Boolean,
+    default: false
+  },
+  loading: {
+    required: false,
+    type: Boolean,
+    default: false
   }
 });
+
+const { report } = toRefs(props);
+
+const total = computed<ProfitLossOverviewItem>(() => {
+  return calculateTotalProfitLoss(get(report));
+});
+
+const { tc } = useI18n();
 </script>

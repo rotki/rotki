@@ -121,12 +121,12 @@ import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { costBasisMethodData } from '@/store/reports/consts';
 import { ActionDataEntry } from '@/store/types';
-import { AccountingSettings, CostBasisMethod } from '@/types/user';
+import { BaseAccountingSettings, CostBasisMethod } from '@/types/user';
 
 const props = defineProps({
   accountingSettings: {
     required: true,
-    type: Object as PropType<AccountingSettings>
+    type: Object as PropType<BaseAccountingSettings>
   }
 });
 

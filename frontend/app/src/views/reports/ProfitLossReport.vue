@@ -27,25 +27,25 @@
       </i18n>
     </card>
     <accounting-settings-display
-      :accounting-settings="report.settings"
+      :accounting-settings="settings"
       class="mt-4 mb-8"
     />
     <div v-if="latest" class="d-flex">
       <export-report-csv class="mr-4" />
       <report-actionable
-        :report="report"
+        :report="selectedReport"
         :initial-open="initialOpenReportActionable"
       />
     </div>
     <profit-loss-overview
       class="mt-8"
-      :report="report"
-      :symbol="report.settings.profitCurrency"
+      :report="selectedReport"
+      :symbol="settings.profitCurrency"
       :loading="loading"
     />
     <profit-loss-events
       class="mt-8"
-      :report="report"
+      :report="selectedReport"
       :refreshing="refreshing"
       @update:page="onPage"
     />
@@ -55,7 +55,7 @@
 <script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, ComputedRef, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -69,6 +69,7 @@ import { useRoute, useRouter } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
+import { SelectedReport } from '@/types/reports';
 
 const loading = ref(true);
 const refreshing = ref(false);
@@ -80,6 +81,11 @@ const { premiumURL } = useInterop();
 const router = useRouter();
 const route = useRoute();
 let firstPage = true;
+
+const selectedReport: ComputedRef<SelectedReport> = computed(
+  () => get(report) as SelectedReport
+);
+const settings = computed(() => get(selectedReport).settings);
 
 const initialOpenReportActionable = ref<boolean>(false);
 
