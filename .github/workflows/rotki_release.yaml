@@ -263,6 +263,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       BUILD_DEPENDENCIES: "build-dependencies"
     runs-on: windows-latest
+    environment: windows_sign
     needs: create_draft
     steps:
       - name: Checkout
@@ -294,6 +295,9 @@ jobs:
           key: ${{ runner.os }}-build-dependencies
       - name: Build rotki
         id: packaging
+        env:
+          CERTIFICATE_WIN_APPLICATION: ${{ secrets.CERTIFICATE_WIN_APPLICATION }}
+          CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           echo ::group::"packaging dependencies"
           npm install -g npm@8.12.2 # pinned version because of bug in 8.13.[0,1] check npm/cli#5066
