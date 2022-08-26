@@ -1,5 +1,6 @@
 const { spawn } = require("child_process");
 const fs = require("fs");
+const { platform } = require("os");
 
 const PROXY = 'proxy';
 const COMMON = '@rotki/common'
@@ -122,8 +123,9 @@ if (args) {
 }
 
 const serveCmd = noElectron ? 'npm run serve': 'npm run electron:serve';
+const cmd = platform() === 'win32' ? serveCmd : `sleep 20 && ${serveCmd}`
 
-const devRotkiProcess = spawn(`sleep 20 && ${serveCmd} -w rotki${args}`, {
+const devRotkiProcess = spawn(`${cmd} -w rotki${args}`, {
   shell: true,
   stdio: [process.stdin]
 });
