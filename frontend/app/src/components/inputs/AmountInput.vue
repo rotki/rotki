@@ -13,7 +13,13 @@
       :slot="slot"
       slot-scope="scope"
     >
-      <slot :name="slot" v-bind="scope" />
+      <slot
+        :name="slot"
+        v-bind="
+          // @ts-ignore
+          scope
+        "
+      />
     </template>
   </v-text-field>
 </template>

@@ -36,9 +36,8 @@ import { get, set } from '@vueuse/core';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import PurgeSelector, {
-  PurgeParams
-} from '@/components/settings/data-security/PurgeSelector.vue';
+import PurgeSelector from '@/components/settings/data-security/PurgeSelector.vue';
+import { PurgeParams } from '@/components/settings/data-security/types';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { BaseMessage } from '@/components/settings/utils';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
@@ -50,7 +49,6 @@ import {
   ALL_TRANSACTIONS
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
-
 import { useSessionStore } from '@/store/session';
 import { SUPPORTED_EXCHANGES, SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';

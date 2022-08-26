@@ -99,31 +99,16 @@
 import { get, set, useCounter } from '@vueuse/core';
 import { defineComponent, PropType, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { ImportSourceType, SOURCES } from '@/components/import/upload-types';
 import i18n from '@/i18n';
-
-const SOURCES = [
-  'cointracking.info',
-  'cryptocom',
-  'icon',
-  'zip',
-  'csv',
-  'json',
-  'nexo',
-  'blockfi-transactions',
-  'blockfi-trades',
-  'shapeshift-trades',
-  'uphold',
-  'bisq',
-  'binance'
-] as const;
 
 export default defineComponent({
   name: 'FileUpload',
   props: {
     source: {
       required: true,
-      type: String as PropType<typeof SOURCES[number]>,
-      validator: (value: typeof SOURCES[number]) => {
+      type: String as PropType<ImportSourceType>,
+      validator: (value: ImportSourceType) => {
         return SOURCES.includes(value);
       }
     },

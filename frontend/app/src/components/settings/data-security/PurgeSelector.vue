@@ -5,7 +5,7 @@
         <v-autocomplete
           outlined
           :value="value"
-          :label="$t('purge_selector.label')"
+          :label="tc('purge_selector.label')"
           :items="purgable"
           item-text="text"
           item-value="id"
@@ -28,22 +28,23 @@
               <v-icon>mdi-delete</v-icon>
             </v-btn>
           </template>
-          <span> {{ $t('purge_selector.tooltip') }} </span>
+          <span> {{ tc('purge_selector.tooltip') }} </span>
         </v-tooltip>
       </v-col>
     </v-row>
 
-    <action-status-indicator :status="status" />
+    <action-status-indicator v-if="status" :status="status" />
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import { tradeLocations } from '@/components/history/consts';
+import { PurgeParams } from '@/components/settings/data-security/types';
 import { BaseMessage } from '@/components/settings/utils';
-import i18n from '@/i18n';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
@@ -53,69 +54,57 @@ import {
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
 
-export type PurgeParams = { readonly source: Purgeable; readonly text: string };
-
-export default defineComponent({
-  name: 'PurgeSelector',
-  components: { ActionStatusIndicator },
-  props: {
-    value: { required: true, type: String as PropType<Purgeable> },
-    status: {
-      required: false,
-      type: Object as PropType<BaseMessage>,
-      default: null
-    },
-    pending: { required: false, type: Boolean, default: false }
+defineProps({
+  value: { required: true, type: String as PropType<Purgeable> },
+  status: {
+    required: false,
+    type: Object as PropType<BaseMessage | null>,
+    default: null
   },
-  emits: ['input', 'purge'],
-  setup(_, { emit }) {
-    const input = (value: Purgeable) => emit('input', value);
-    const purge = (payload: PurgeParams) => emit('purge', payload);
-
-    const text = (source: Purgeable) => {
-      const location = tradeLocations.find(
-        ({ identifier }) => identifier === source
-      );
-      if (location) {
-        return i18n
-          .t('purge_selector.exchange', {
-            name: location.name
-          })
-          .toString();
-      }
-
-      const module = SUPPORTED_MODULES.find(
-        ({ identifier }) => identifier === source
-      );
-      if (module) {
-        return i18n
-          .t('purge_selector.module', { name: module.name })
-          .toString();
-      }
-
-      if (source === ALL_TRANSACTIONS) {
-        return i18n.t('purge_selector.ethereum_transactions').toString();
-      } else if (source === ALL_CENTRALIZED_EXCHANGES) {
-        return i18n.t('purge_selector.all_exchanges').toString();
-      } else if (source === ALL_MODULES) {
-        return i18n.t('purge_selector.all_modules').toString();
-      } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
-        return i18n.t('purge_selector.all_decentralized_exchanges').toString();
-      }
-      return source;
-    };
-
-    const purgable = PURGABLE.map(id => ({
-      id,
-      text: text(id)
-    })).sort((a, b) => (a.text < b.text ? -1 : 1));
-
-    return {
-      input,
-      purge,
-      text,
-      purgable
-    };
-  }
+  pending: { required: false, type: Boolean, default: false }
 });
+
+const emit = defineEmits<{
+  (e: 'input', value: Purgeable): void;
+  (e: 'purge', value: PurgeParams): void;
+}>();
+
+const input = (value: Purgeable) => emit('input', value);
+const purge = (payload: PurgeParams) => emit('purge', payload);
+
+const { tc } = useI18n();
+
+const text = (source: Purgeable) => {
+  const location = tradeLocations.find(
+    ({ identifier }) => identifier === source
+  );
+  if (location) {
+    return tc('purge_selector.exchange', 0, {
+      name: location.name
+    });
+  }
+
+  const module = SUPPORTED_MODULES.find(
+    ({ identifier }) => identifier === source
+  );
+  if (module) {
+    return tc('purge_selector.module', 0, { name: module.name });
+  }
+
+  if (source === ALL_TRANSACTIONS) {
+    return tc('purge_selector.ethereum_transactions');
+  } else if (source === ALL_CENTRALIZED_EXCHANGES) {
+    return tc('purge_selector.all_exchanges');
+  } else if (source === ALL_MODULES) {
+    return tc('purge_selector.all_modules');
+  } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
+    return tc('purge_selector.all_decentralized_exchanges');
+  }
+  return source;
+};
+
+const purgable = PURGABLE.map(id => ({
+  id,
+  text: text(id)
+})).sort((a, b) => (a.text < b.text ? -1 : 1));
 </script>

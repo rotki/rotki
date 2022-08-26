@@ -65,7 +65,7 @@
         single-expand
         multi-sort
         :must-sort="false"
-        :item-class="item => (item.ignoredInAccounting ? 'darken-row' : '')"
+        :item-class="getClass"
         @update:options="updatePaginationHandler($event)"
       >
         <template #item.ignoredInAccounting="{ item, isMobile }">
@@ -552,6 +552,10 @@ export default defineComponent({
       return headers;
     });
 
+    const getClass = (item: LedgerActionEntry) => {
+      return item.ignoredInAccounting ? 'darken-row' : '';
+    };
+
     return {
       pageRoute,
       selected,
@@ -582,6 +586,7 @@ export default defineComponent({
       saveData,
       options,
       matchers,
+      getClass,
       updatePaginationHandler,
       updateFilterHandler,
       ...setupIgnore(

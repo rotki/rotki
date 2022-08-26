@@ -2,12 +2,7 @@
   <v-row>
     <v-col cols="12">
       <loan-header v-if="vault.owner" class="mt-8 mb-6" :owner="vault.owner">
-        {{
-          $t('maker_dao_vault_loan.header', {
-            identifier: scrambleData ? '-' : vault.identifier,
-            collateralType: vault.collateralType
-          })
-        }}
+        {{ tc('maker_dao_vault_loan.header', 0, header) }}
       </loan-header>
       <v-row no-gutters>
         <v-col cols="12" md="6" class="pe-md-4">
@@ -30,7 +25,7 @@
         <v-col cols="12">
           <premium-card
             v-if="!premium"
-            :title="$t('maker_dao_vault_loan.borrowing_history')"
+            :title="tc('maker_dao_vault_loan.borrowing_history')"
           />
           <vault-events-list
             v-else
@@ -45,10 +40,11 @@
   </v-row>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import MakerDaoVaultCollateral from '@/components/defi/loan/loans/makerdao/MakerDaoVaultCollateral.vue';
@@ -67,66 +63,53 @@ import { usePremiumStore } from '@/store/session/premium';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { Zero } from '@/utils/bignumbers';
 
-export default defineComponent({
-  name: 'MakerDaoVaultLoan',
-  components: {
-    MakerDaoVaultLiquidation,
-    MakerDaoVaultCollateral,
-    MakerDaoVaultDebtDetails,
-    PremiumCard,
-    LoanDebt,
-    LoanHeader,
-    VaultEventsList
-  },
-  props: {
-    vault: {
-      required: true,
-      type: Object as PropType<MakerDAOVaultModel>
-    }
-  },
-  setup(props) {
-    const { vault } = toRefs(props);
-    const { scrambleData } = storeToRefs(useSessionSettingsStore());
-    const { premium } = storeToRefs(usePremiumStore());
-    const { openUrl } = useInterop();
-
-    const openLink = (url: string) => {
-      openUrl(url);
-    };
-
-    const totalInterestOwed = computed(() => {
-      const makerVault = get(vault);
-      if ('totalInterestOwed' in makerVault) {
-        return (get(vault) as MakerDAOVault & MakerDAOVaultDetails)
-          .totalInterestOwed;
-      }
-      return Zero;
-    });
-
-    const events = computed<MakerDAOVaultEvent[] | undefined>(() => {
-      const makerVault = get(vault);
-      if ('totalInterestOwed' in makerVault) {
-        return makerVault.events;
-      }
-      return undefined;
-    });
-
-    const creation = computed(() => {
-      const makerVault = get(vault);
-      if ('totalInterestOwed' in makerVault) {
-        return makerVault.creationTs;
-      }
-      return undefined;
-    });
-
-    return {
-      scrambleData,
-      totalInterestOwed,
-      premium,
-      events,
-      creation,
-      openLink
-    };
+const props = defineProps({
+  vault: {
+    required: true,
+    type: Object as PropType<MakerDAOVaultModel>
   }
+});
+
+const { vault } = toRefs(props);
+const { scrambleData } = storeToRefs(useSessionSettingsStore());
+const { premium } = storeToRefs(usePremiumStore());
+const { openUrl } = useInterop();
+const { tc } = useI18n();
+
+const openLink = (url: string) => {
+  openUrl(url);
+};
+
+const totalInterestOwed = computed(() => {
+  const makerVault = get(vault);
+  if ('totalInterestOwed' in makerVault) {
+    return (get(vault) as MakerDAOVault & MakerDAOVaultDetails)
+      .totalInterestOwed;
+  }
+  return Zero;
+});
+
+const events = computed<MakerDAOVaultEvent[] | undefined>(() => {
+  const makerVault = get(vault);
+  if ('totalInterestOwed' in makerVault) {
+    return makerVault.events;
+  }
+  return undefined;
+});
+
+const creation = computed(() => {
+  const makerVault = get(vault);
+  if ('totalInterestOwed' in makerVault) {
+    return makerVault.creationTs;
+  }
+  return undefined;
+});
+
+const header = computed(() => {
+  const makerVault = get(vault);
+  return {
+    identifier: scrambleData ? '-' : makerVault.identifier,
+    collateralType: makerVault.collateralType
+  };
 });
 </script>

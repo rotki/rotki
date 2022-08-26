@@ -40,7 +40,7 @@
           <loan-row :title="tc('loan_liquidation.outstanding_debt')">
             <amount-display
               :asset-padding="assetPadding"
-              :value="vault.totalInterestOwed"
+              :value="totalInterestOwed"
               asset="DAI"
             />
           </loan-row>
@@ -104,6 +104,14 @@ const liquidated = computed(() => {
     return undefined;
   }
   return makerVault.totalLiquidated;
+});
+
+const totalInterestOwed = computed(() => {
+  const makerVault = get(vault);
+  if (!('totalInterestOwed' in makerVault)) {
+    return Zero;
+  }
+  return makerVault.totalInterestOwed;
 });
 </script>
 

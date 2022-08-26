@@ -148,7 +148,7 @@ export default defineComponent({
     const { connectedExchanges } = storeToRefs(store);
 
     const selectedExchange = ref<string>('');
-    const usedExchanges = computed<string[]>(() => {
+    const usedExchanges = computed<SupportedExchange[]>(() => {
       return get(connectedExchanges)
         .map(({ location }) => location)
         .filter(uniqueStrings);

@@ -53,7 +53,7 @@
       single-expand
       multi-sort
       :must-sort="false"
-      :item-class="item => (item.ignoredInAccounting ? 'darken-row' : '')"
+      :item-class="getClass"
       @update:options="updatePaginationHandler($event)"
     >
       <template #item.ignoredInAccounting="{ item, isMobile }">
@@ -411,6 +411,10 @@ export default defineComponent({
 
     const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS.route;
 
+    const getClass = (item: AssetMovementEntry) => {
+      return item.ignoredInAccounting ? 'darken-row' : '';
+    };
+
     return {
       pageRoute,
       selected,
@@ -429,6 +433,7 @@ export default defineComponent({
       updatePaginationHandler,
       updateFilterHandler,
       ...setupIgnore(IgnoreActionType.MOVEMENTS, selected, data, fetch, getId),
+      getClass,
       tc
     };
   }
