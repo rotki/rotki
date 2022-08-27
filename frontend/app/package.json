@@ -15,7 +15,7 @@
     "electron:package": "electron-builder build --config .electron-builder.config.js",
     "electron:serve": "node scripts/serve.js",
     "i18n:report": "vue-i18n-extract report --vueFiles './src/**/*.?(ts|js|vue)' --languageFiles './src/locales/**/*.json'",
-    "lint:check": "eslint ./ --no-fix --max-warnings 0  --ext .js,.ts,.vue,.json",
+    "lint:check": "eslint ./ --no-fix --ext .js,.ts,.vue,.json",
     "preinstall": "node ../check-versions.js",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
