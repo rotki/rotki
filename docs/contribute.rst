@@ -63,6 +63,15 @@ For an exhaustive guide read `this <http://chris.beams.io/posts/git-commit/>`_ g
 
 When pushing on a PR the tags ``[skip ci]`` or ``[ci skip]`` can be used a part of the commit message to skip the run of all the CI jobs (lint, test etc).
 
+Lastly, we encourage using signed commits:
+
+::
+
+    git config commit.gpgsign true
+    git config --global user.signingkey <KEYID>
+
+For more information about signing commits, check out `Verify commit signatures <https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification>`__.
+
 Linting / Formatting
 =======================
 
