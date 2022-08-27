@@ -547,6 +547,65 @@ Finally open the svg with any compatible viewer and explore the flamegraph. It w
    :alt: A flamegraph profiling example
    :align: center
 
+
+rotki Database
+**************
+
+rotki uses two different sqlite databases, one with information about assets, price and other non-sensitive information (global.db) and one with user information (rotkehlchen.db).
+The latter is encrypted using an extension called `SQLCipher <https://github.com/sqlcipher/sqlcipher>`__
+that provides transparent 256-bit AES full database encryption.
+
+Database Location
+=================
+
+Databases are stored in directories under the `rotki data directory <https://rotki.readthedocs.io/en/latest/usage_guide.html#rotki-data-directory>`__.
+
+The global database is stored at ``global_data/global.db``.
+
+The accounts you create in rotki have their own database stored at ``<account_name>/rotkehlchen.db``.
+
+Exploring the database
+======================
+
+To open the user database you can use `sqlitebrowser <https://sqlitebrowser.org/>`__.
+It supports sqlcipher and will ask for the password used to decrypt the database.
+
+If you prefer the command line instead, you can use the ``sqlcipher`` cli tool. Note: using just ``sqlite3`` cli will not work since the database is encrypted.
+
+Note to Debian and Ubuntu users: we are using SQLCipher encryption v4, therefore a recent version of sqlcipher is required. Unfortunately
+the version available in the distribution repositories are too old and won't let you open the database using ``sqlitebrowser`` nor ``sqlcipher``.
+On top of that, the ``sqlitebrowser`` version provided is not compiled with sqlcipher support.
+As a workaround, you can find a `PPA <https://launchpad.net/ubuntu/+ppas>`__ **(use at your own risk)** to
+install more recent versions of both packages and you can also recompile sqlitebrowser with sqlcipher support following this
+`stackoverflow thread <https://stackoverflow.com/questions/48105035/sqlite-browser-without-sqlcipher-support-in-ubuntu>`__.
+
+When using sqlcipher, you need to specify the password to decrypt the database entering ``PRAGMA key='your-secret-key';`` right after opening the database.
+
+DB Upgrades
+=================
+
+Database upgrades are needed when changes in the schema happen. rotki checks a setting in the database with the version and just executes sequentially a check against the version to verify if the upgrade needs to happen or not.
+
+When the database schema is changed, it is important to note that **the operation is not reversible**. Therefore in order to open the upgraded database with an older
+version you would need to have a backup. For more information, check `upgrade_manager.py <https://github.com/rotki/rotki/blob/da7062220abddc7bde9b99fc3d297412bb6552b4/rotkehlchen/db/upgrade_manager.py>`__.
+
+When adding a new upgrade, remember to bump ``ROTKEHLCHEN_DB_VERSION`` in `settings.py <https://github.com/rotki/rotki/blob/da7062220abddc7bde9b99fc3d297412bb6552b4/rotkehlchen/db/settings.py>`__.
+Generally we only make one upgrade per release, so if you need to make changes to the schema, simply add them to the latest unreleased migration.
+
+rotki generates a backup before any schema upgrade. These backups are stored in the same directory as the database with name ``<timestamp>_rotkehlchen_db_v<version>.backup``
+or ``<timestamp>_global_db_v<version>.backup``.
+
+rotki uses the same mechanism of updating the schema for both the global and the user databases.
+
+DB Migrations
+=================
+
+When developers need to make changes in the data but the schema does not change, a data migration is made instead. This operation can be a simple task such as deleting old backups files,
+inserting some rows or running a background task to update some table. In this case, the database can be opened using the previous version of rotki. For more information, check
+`data_migrations <https://github.com/rotki/rotki/tree/develop/rotkehlchen/data_migrations>__`.
+
+
+
 Docker publishing (manual)
 *****************************
 
