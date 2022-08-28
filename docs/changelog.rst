@@ -6,6 +6,11 @@ Changelog
 * :feature:`4602` Shows indicator that indicates whether ETH nodes are connected or not.
 * :feature:`3249` Add Uniswap V3 LP Positions Functionality.
 * :feature:`4600` User will now be notified if a leftover backend process is running when starting rotki.
+* :feature:`1224` Windows binaries should now be signed and the warnings that the software is not trusted should slowly go away.
+* :feature:`4704` Management of ignored assets is now moved to asset settings.
+* :feature:`-` Ethreum transactions involving convex finance shuld now be automatically decoded.
+* :feature:`-` An ethereum address's tokens can now be manualy detected by pressing a specific button in the UI.
+* :bug:`-` When force sync fails a proper error message is displayed
 
 * :release:`1.25.2 <2022-08-17>`
 * :feature:`-` The add button in blockchain accounts & balances is now bigger on larger screens.
