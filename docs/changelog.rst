@@ -8,6 +8,7 @@ Changelog
 * :feature:`4600` User will now be notified if a leftover backend process is running when starting rotki.
 * :feature:`1224` Windows binaries should now be signed and the warnings that the software is not trusted should slowly go away.
 * :feature:`4704` Management of ignored assets is now moved to asset settings.
+* :feature:`1744` Uniswap and other supported LP balancess should now appear in the dashboard and be taken into account in the snapshots.
 * :feature:`-` Ethreum transactions involving convex finance shuld now be automatically decoded.
 * :feature:`-` An ethereum address's tokens can now be manualy detected by pressing a specific button in the UI.
 * :bug:`-` When force sync fails a proper error message is displayed
