@@ -110,7 +110,7 @@ If you have not opened rotki for more than a year and a half and you have data y
 The steps to update your database if you get this error are the following:
 
 1. Download version `1.25.2 of rotki <https://github.com/rotki/rotki/releases/tag/v1.25.2>`__ from the release page and install it.
-2. Log into your account with rotki 1.25.2. The upgrade process should happens and your account's database should be updated. If the upgrade was successful in the settings :ref:`database-info` you will see that the ``Database version`` is now ``34``. You can now close rotki.
+2. Log into your account with rotki 1.25.2. The upgrade process should happen and your account's database should be updated. If the upgrade was successful in the settings :ref:`database-info` you will see that the ``Database version`` is now ``34``. You can now close rotki.
 3. Download the `latest version of rotki <https://github.com/rotki/rotki/releases/>`__ and install it.
 4. Open your database with the latest version.
 
@@ -132,7 +132,7 @@ This section contains information about how to customize the application through
 Changing the Profit Currency
 =============================
 
-rotki calculates everything, including your total profit/loss during the PnL report into a given fiat currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
+rotki calculates everything, including your total profit/loss during the PnL report into a given fiat currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon in the top right menu and changing it to the currency you are using.
 
 .. image:: images/sc_profit_currency.png
    :alt: Changing the profit currency
@@ -224,7 +224,7 @@ Ethereum RPC nodes
 
 This setting allows you to modify the nodes that will be queried to interact with the Ethereum blockchain. We provide a list of public nodes but sometimes they are not available or are overloaded. This is why it is a good idea to have more nodes just in case and to have the possibility to customize the priority with which they are queried.
 When making queries we always give preference to your own nodes if you have any and then add a small list of randomly selected open nodes in case they are needed. If you don't have your own node then the open nodes are always selected. The weight of the node sets the probability
-of picking it and is represented by a percentage. From that list is also possible to mark them as active or inactive by using the toggle button.
+of picking it and is represented by a percentage. From that list it is also possible to mark them as active or inactive by using the toggle button.
 
 .. image:: images/rotki_nodes_management.png
    :alt: Customizing the app's connection to ethereum nodes
@@ -236,7 +236,7 @@ In this menu you can also edit, delete or add more nodes.
    :alt: Editing an ethereum node
    :align: center
 
-The slider lets you modify the weight of the node and you can also manually imput a value. The owned parameter gives priority to the selected node over the rest of not owned nodes. You can also mark the node as not active in this screen to completely ignore it in the selection process.
+The slider lets you modify the weight of the node and you can also manually input a value. The owned parameter gives priority to the selected node over the rest of not owned nodes. You can also mark the node as not active in this screen to completely ignore it in the selection process.
 Similarly you can add more nodes.
 
 
@@ -276,7 +276,7 @@ Frontend only settings
 Animations effect
 ^^^^^^^^^^^^^^^^^
 
-It is possible to reduce the animation effect in differents part of the app to improve the performance in case where this is needed. This will affect the quality of the animations but the user will get a better usage of the resources.
+It is possible to reduce the animation effect in different parts of the app to improve the performance if needed. This will affect the quality of the animations but the user will get a better usage of the resources.
 
 Data scrambling
 ^^^^^^^^^^^^^^^
@@ -321,7 +321,7 @@ You can customize in which explorer the transaction and addresses links open.
 Theme [Premium]
 ^^^^^^^^^^^^^^^^^^^^
 
-Premium users can customize the color them for either light or dark mode.
+Premium users can customize the color for either light or dark mode.
 
 
 Customizing the accounting settings
@@ -520,7 +520,7 @@ Selecting Addresses
 In order to limit the querying only to selected addresses instead of all the eligible ones you can go to the "Select Accounts"
 and click on the module you are interested in (3). The module address selection (4) for this module should be visible.
 
-Search for each address you are interested and then select each one from the dropdown menu. The selected addresses should
+Search for each address you are interested in and then select each one from the dropdown menu. The selected addresses should
 be visible in the same way as the modules above. To remove an address you need to press the (x) button at the end of the entry.
 
 If no addresses are selected for a module this means that rotki will check all the eligible addresses which can add to the total query duration and considerably slow down retrieving data from the app.
@@ -583,7 +583,7 @@ Then copy and paste the ``API Key`` and the ``API Secret`` in the respective tex
 
 If all went well, you should be able to see your newly added exchange. If not please doublecheck that the key and secret are correct.
 
-You also have option to enable/disable synchronization for the connected exchanges. Usually, you may want to disable the synchronization to prevent your IP get banned because of too many syncs.
+You also have the option to enable/disable synchronization for the connected exchanges. Usually, you may want to disable the synchronization to prevent your IP getting banned because of too many syncs.
 
 .. image:: images/rotki_add_exchange_3.png
    :alt: Add API keys for a new exchange
@@ -606,7 +606,7 @@ In case of an exchange providing a more granular permissions scheme (e.g. Coinba
    :alt: Granular API key permissions
    :align: center
 
-You may as well try creating an API key with the minimum read-related permissions, then adding it in rotki and finally checking that the connection was successful and data was loaded as expected. Otherwise, try again adding more read-related premissions.
+You may as well try creating an API key with the minimum read-related permissions, then adding it in rotki and finally checking that the connection was successful and data was loaded as expected. Otherwise, try again adding more read-related permissions.
 
 Binance / Binance US
 -----------------------------
@@ -772,7 +772,7 @@ rotki automatically resolves ens name for each of your ethereum accounts. If the
 Ethereum Transactions
 =====================
 
-rotki is capable of getting and decoding (understand what is happening) your ethereum transactions. When you visit the ``Ethereum Transactions`` section the process to obtain all the information will start. You will be able to check the status in a informative breakdown per address.
+rotki is capable of getting and decoding (understand what is happening) your ethereum transactions. When you visit the ``Ethereum Transactions`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per address.
 
 .. image:: images/eth_tx_query_process.png
    :alt: Ethereum transactions query status breakdown
@@ -855,7 +855,7 @@ Simply add the tags you wish to filter by in the filter textbox above the tables
 Loopring balances
 =================
 
-From the balances section you can quickly get an overview of the accounts having balances in Loopring and what assets this accounts hold.
+From the balances section you can quickly get an overview of the accounts having balances in Loopring and what assets these accounts hold.
 
 .. image:: images/loopring_balances_detailed.png
    :alt: Loopring balances detailed per address
@@ -896,7 +896,7 @@ is also possible to customize the proportion of the validator owned for users wh
    :alt: Track an ETH2 validator
    :align: center
 
-After adding a new validator you should be able to see the list of balances for each these validators.
+After adding a new validator you should be able to see the list of balances for each of these validators.
 
 .. image:: images/rotki_eth2_balances.png
    :alt: ETH2 validator balances
@@ -1041,14 +1041,14 @@ You can provide a location, for example an exchange, a bank, a blockchain or oth
    :alt: Add a ledger action
    :align: center
 
-For ledger actions you can optionally specify a rate and a asset for the rate. This is the rate linked to the asset for this action. If no rate is provided, the historical price at the date of the action is used.
+For ledger actions you can optionally specify a rate and an asset for the rate. This is the rate linked to the asset for this action. If no rate is provided, the historical price at the date of the action is used.
 
 When generating a profit and loss report some ledger actions might be taxable in your jurisdiction and some not. To customize the list of taxable actions refer to the :ref:`ledger actions settings <ledger_action_settings>` section.
 
 Filtering trades
 ================
 
-Rotki supports filter your trades with a combination of filters. All of the filters are applied at the same time
+Rotki supports filtering your trades with a combination of filters. All of the filters are applied at the same time
 limiting the trades to the ones that satisfy all the applied filters.
 
 .. image:: images/sc_history_trades_filter.png
@@ -1060,7 +1060,7 @@ You can filter using the following keys:
 * **base:** the base asset of the trades [1]_.
 * **quote:** the quote asset of the trades [1]_.
 * **action:** it can be buy or sell [2]_.
-* **start:** will only filter any trades from that date an onwards [2]_.
+* **start:** will only filter any trades from that date onwards [2]_.
 * **end:** will only filter any trades that happened before the selected date [2]_.
 * **location:** the location of tha trade, e.g. kraken, uniswap etc [1]_.
 
@@ -1097,7 +1097,7 @@ For deposits you can use the following filters:
 
 * **asset:** the asset that was deposited or withdrawn [1]_.
 * **action:** the actions (withdrawal or deposit) [1]_.
-* **start:** will only filter any trades from that date an onwards [2]_.
+* **start:** will only filter any trades from that date onwards [2]_.
 * **end:** will only filter any trades that happened before the selected date [2]_.
 * **location:** the location of tha trade, e.g. kraken, uniswap etc [1]_.
 
@@ -1110,7 +1110,7 @@ Customization of the list of supported assets
 Inspecting list of assets
 =========================
 
-You can now manage the list of supported assets by your local rotki instance. At the moment only ethereum tokens are modifiable but from next releases you will be able to add all kind of assets.
+You can now manage the list of supported assets by your local rotki instance. At the moment only ethereum tokens are modifiable but from next releases you will be able to add all kinds of assets.
 
 You can inspect the list of all supported assets, edit them, delete them or add new ones.
 
@@ -1129,7 +1129,7 @@ When you press the + button on the top right, or edit an existing token you can 
 
 You can fill in the following fields:
 
-1. The chain where the token located. This is required if the asset type is ```EVM Token```.
+1. The chain where the token is located. This is required if the asset type is ```EVM Token```.
 2. The token kind. This is required if the asset type is ```EVM Token```.
 3. The token address. This is required.
 4. The token name. This is required.
@@ -1143,7 +1143,7 @@ You can fill in the following fields:
 
 When you input the address of the token rotki will try to fetch its name, symbol and decimals and use them if they are available.
 
-There is also some other fields that are completely optional and expand if you press the (7) Optional Fields section.
+There are also some other fields that are completely optional and expand if you press the (7) Optional Fields section.
 
 .. image:: images/rotki_add_edit_token_optionals.png
    :alt: Optional information when adding a custom token
@@ -1163,7 +1163,7 @@ Merging two assets
 There are two possible situations where you might need to merge two assets into one.
 
 1. You added a custom asset that was later officially supported on rotki. In this case you should merge your
-custom asset to the the officially supported one. If you don't do this might split balances between entries,
+custom asset to the officially supported one. If you don't do this might split balances between entries,
 especially for supported exchanges that will use the officially supported entry.
 
 2. There was an issue and an Unknown asset notification is now visible. This can happen if you somehow end up deleting your global DB of assets. This way all your custom assets will be unknown. In this case you would need to re-add the deleted assets, and merge the old asset id that errors to the new one that you created.
@@ -1177,10 +1177,10 @@ In the dialog you can put the identifier of your custom or missing asset in the 
 you can get the identifier using the copy button in the asset table. If you have a missing asset then you can copy it
 from the notification message
 
-Then you can go to the target field and search for the asset into which the source will be merge to.
+Then you can go to the target field and search for the asset into which the source will be merged to.
 When both the source identifier and target asset are selected you can press the merge button.
 
-On a successful merge you will be notified to to either re-login or refresh the balances manually to see the changes
+On a successful merge you will be notified to either re-login or refresh the balances manually to see the changes
 on the frontend.
 
 Special assets
@@ -1202,12 +1202,12 @@ We have introduced a mechanism to populate the ignore list with assets labeled a
    :alt: Asset overview page
    :align: center
 
-You can also ignore asset by clicking asset icons anywhere on the app, that will redirect you to this overview asset page. In this page, you can ignore or un-ignore selected asset.
+You can also ignore assets by clicking asset icons anywhere on the app, that will redirect you to this overview asset page. In this page, you can ignore or un-ignore a selected asset.
 
 Adding missing prices
 **********************
 
-Some times rotki might be unable to retrieve a historical price for an asset from CoinGecko or CryptoCompare.
+Sometimes rotki might be unable to retrieve a historical price for an asset from CoinGecko or CryptoCompare.
 In this case you can use the price management interface to insert your own price entries.
 
 .. image:: images/price_management.png
@@ -1408,7 +1408,7 @@ files into Google Sheets via its import menu. CSV export only works for the late
 Following are definitions for the all_event document's columns
 
 - ``type`` is a string describing the type of event a user engaged in, e.g. in "I buy ETH for EUR", buy is the ``type``.
-- ``location`` is a string describing the location the event occured at. For example "kraken" for kraken trades.
+- ``location`` is a string describing the location the event occurred at. For example "kraken" for kraken trades.
 - ``asset`` is a string identifying the asset an event was paid in, e.g. in "I bought 1 ETH for 100 EUR", EUR is the  ``asset``.
 - ``free_amount``: is a number specifying the amount of ``asset`` that won't be taken into consideration for tax purposes.
 - ``taxable_amount``: is a number specifying the amount of ``asset`` needed to be taken into consideration for tax purposes according to the accounting settings, e.g. "I sold 1 ETH for 120 EUR", 1 ETH is the ``taxable_amount``.
@@ -1592,7 +1592,7 @@ Set the backend's arguments
 
 rotki runs a python daemon on the backend. Most times you won't need to customize its arguments but if you need to do so, especially for debugging purposes this is how you can.
 
-Create or edit if it exists a file with the name ``rotki_config.json`` in the same directory as the rotki executable. Add to the json object any arguments that are also arguments of rotki. Then when rotki starts these will be passed as arguments to the backend. An example ``rotki_config.json`` follows::
+Create or edit if there exists a file with the name ``rotki_config.json`` in the same directory as the rotki executable. Add to the json object any arguments that are also arguments of rotki. Then when rotki starts these will be passed as arguments to the backend. An example ``rotki_config.json`` follows::
 
   {
       "loglevel": "debug",
@@ -1620,7 +1620,7 @@ The above arguments are:
 rotki data directory
 ***********************
 
-rotki saves user data by default in a different directory per OS. For each OS data is stored in the respective standards compliants equivalent directory.
+rotki saves user data by default in a different directory per OS. For each OS data is stored in the respective standards compliant equivalent directory.
 
 - **Linux**: ``~/.local/share/rotki/data/``
 - **OSX**: ``~/Library/Application Support/rotki/data``
