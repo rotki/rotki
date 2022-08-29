@@ -19,7 +19,7 @@ concurrency:
 jobs:
   check-changes:
     name: 'Required job check'
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     outputs:
       backend_tasks: ${{ steps.checker.outputs.backend_tasks }}
       frontend_tasks: ${{ steps.checker.outputs.frontend_tasks }}
@@ -28,7 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Run check action
-        uses: ./.github/actions/job-checker
+        uses: rotki/action-job-checker@d428e09451023925afa886459d3a3bb32fe72318
         id: checker
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -47,7 +47,7 @@ jobs:
     name: 'Frontend lint'
     needs: ['check-changes']
     if: ${{ needs.check-changes.outputs.frontend_tasks }}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -85,7 +85,7 @@ jobs:
     name: 'Frontend unit tests'
     needs: [ 'check-changes' ]
     if: ${{ needs.check-changes.outputs.frontend_tasks }}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -121,7 +121,7 @@ jobs:
     name: 'Documentation build'
     needs: [ 'check-changes' ]
     if: ${{ needs.check-changes.outputs.documentation_tasks }}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -143,7 +143,7 @@ jobs:
     name: 'Backend lint'
     needs: ['check-changes']
     if: ${{ needs.check-changes.outputs.backend_tasks }}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -277,7 +277,7 @@ jobs:
     name: 'Success check'
     if: ${{ always() }}
     needs: [ 'check-changes', 'lint-frontend', 'unittest-frontend', 'docs', 'lint-backend', 'test-backend', 'test-e2e' ]
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - name: Check if any task failed
         run: |
