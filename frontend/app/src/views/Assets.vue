@@ -34,7 +34,6 @@
     <asset-amount-and-value-over-time
       v-if="premium"
       class="mt-8"
-      :service="$api"
       :asset="identifier"
     />
     <asset-locations class="mt-8" :identifier="identifier" />

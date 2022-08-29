@@ -5,7 +5,7 @@
       {{ $t('connection_failure.message') }}
     </div>
     <div class="full-width d-flex mt-4">
-      <v-btn v-if="!$api.defaultBackend" text @click="toDefault">
+      <v-btn v-if="!defaultBackend" text @click="toDefault">
         {{ $t('connection_failure.default') }}
       </v-btn>
       <v-spacer />
@@ -30,11 +30,13 @@ export default defineComponent({
     const { connect } = useMainStore();
     const interop = useInterop();
 
+    const defaultBackend = api.defaultBackend;
     const retry = () => connect(api.serverUrl);
     const toDefault = () => connect();
     const terminate = () => interop.closeApp();
 
     return {
+      defaultBackend,
       retry,
       toDefault,
       terminate
