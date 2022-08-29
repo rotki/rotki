@@ -76,11 +76,20 @@
 
 <script setup lang="ts">
 import { TimeUnit } from '@rotki/common/lib/settings';
-import { TimeFramePeriod, timeframes } from '@rotki/common/lib/settings/graphs';
+import {
+  TimeFramePeriod,
+  TimeFramePersist,
+  timeframes,
+  TimeFrameSetting
+} from '@rotki/common/lib/settings/graphs';
 import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, watch } from 'vue';
+import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import Loading from '@/components/helper/Loading.vue';
+import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
 import { usePremiumStore } from '@/store/session/premium';
@@ -89,6 +98,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { isPeriodAllowed } from '@/store/settings/utils';
 import { useStatisticsStore } from '@/store/statistics';
+import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
 const { currencySymbol, floatingPrecision } = storeToRefs(
@@ -172,7 +182,8 @@ const balanceClass = computed(() => {
   return get(balanceDelta).isNegative() ? 'rotki-red lighten-1' : 'rotki-green';
 });
 
-const setTimeframe = (value: TimeFramePeriod) => {
+const setTimeframe = (value: TimeFrameSetting) => {
+  assert(value !== TimeFramePersist.REMEMBER);
   set(timeframe, value);
   frontendStore.updateSetting({ lastKnownTimeframe: value });
 };
