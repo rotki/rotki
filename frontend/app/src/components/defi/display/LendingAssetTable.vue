@@ -24,7 +24,7 @@
       </template>
       <template #header.balance.usdValue>
         {{
-          $t('lending_asset_table.headers.usd_value', {
+          t('lending_asset_table.headers.usd_value', {
             currency: currencySymbol
           })
         }}
@@ -33,9 +33,9 @@
   </v-sheet>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType } from 'vue';
+import { computed, PropType } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -44,39 +44,29 @@ import DataTable from '@/components/helper/DataTable.vue';
 import { BaseDefiBalance } from '@/store/defi/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
-export default defineComponent({
-  name: 'LendingAssetTable',
-  components: { DataTable, PercentageDisplay, AmountDisplay },
-  props: {
-    assets: { required: true, type: Array as PropType<BaseDefiBalance[]> },
-    loading: { required: false, type: Boolean, default: false }
-  },
-  setup() {
-    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-    const { tc } = useI18n();
-
-    const headers = computed<DataTableHeader[]>(() => [
-      {
-        text: tc('common.asset'),
-        value: 'asset'
-      },
-      {
-        text: tc('common.amount'),
-        value: 'balance.amount',
-        align: 'end'
-      },
-      { text: '', value: 'balance.usdValue', align: 'end' },
-      {
-        text: tc('lending_asset_table.headers.effective_interest_rate'),
-        value: 'effectiveInterestRate',
-        align: 'end'
-      }
-    ]);
-
-    return {
-      headers,
-      currencySymbol
-    };
-  }
+defineProps({
+  assets: { required: true, type: Array as PropType<BaseDefiBalance[]> },
+  loading: { required: false, type: Boolean, default: false }
 });
+
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { t, tc } = useI18n();
+
+const headers = computed<DataTableHeader[]>(() => [
+  {
+    text: tc('common.asset'),
+    value: 'asset'
+  },
+  {
+    text: tc('common.amount'),
+    value: 'balance.amount',
+    align: 'end'
+  },
+  { text: '', value: 'balance.usdValue', align: 'end' },
+  {
+    text: tc('lending_asset_table.headers.effective_interest_rate'),
+    value: 'effectiveInterestRate',
+    align: 'end'
+  }
+]);
 </script>

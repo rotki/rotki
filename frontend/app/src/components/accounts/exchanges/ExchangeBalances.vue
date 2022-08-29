@@ -1,7 +1,7 @@
 <template>
   <card class="exchange-balances mt-8" outlined-body>
     <template #title>
-      {{ $tc('exchange_balances.title') }}
+      {{ tc('exchange_balances.title') }}
     </template>
     <v-btn
       v-blur
@@ -16,7 +16,7 @@
     >
       <v-icon> mdi-plus </v-icon>
       <div v-if="$vuetify.breakpoint.xl" class="ml-2">
-        {{ $tc('exchange_balances.add_exchange') }}
+        {{ tc('exchange_balances.add_exchange') }}
       </div>
     </v-btn>
     <v-row
@@ -30,7 +30,7 @@
           filled
           :items="usedExchanges"
           hide-details
-          :label="$tc('exchange_balances.select_exchange')"
+          :label="tc('exchange_balances.select_exchange')"
           class="exchange-balances__content__select"
           @change="openExchangeDetails"
         >
@@ -86,7 +86,7 @@
           :balances="balances"
         />
         <div v-else class="pa-4">
-          {{ $t('exchange_balances.select_hint') }}
+          {{ t('exchange_balances.select_hint') }}
         </div>
       </v-col>
     </v-row>
@@ -94,7 +94,7 @@
       <v-col>
         <i18n path="exchange_balances.no_connected_exchanges">
           <router-link to="/settings/api-keys/exchanges">
-            {{ $t('exchange_balances.click_here') }}
+            {{ t('exchange_balances.click_here') }}
           </router-link>
         </i18n>
       </v-col>
@@ -102,19 +102,12 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from 'vue';
+import { computed, onMounted, PropType, ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -127,81 +120,63 @@ import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 
-export default defineComponent({
-  name: 'ExchangeBalances',
-  components: {
-    ExchangeAmountRow,
-    AssetBalances,
-    AmountDisplay
-  },
-  props: {
-    exchange: {
-      required: false,
-      type: String as PropType<SupportedExchange>,
-      default: ''
-    }
-  },
-  setup(props) {
-    const { exchange } = toRefs(props);
-    const { isTaskRunning } = useTasks();
-    const store = useExchangeBalancesStore();
-    const { connectedExchanges } = storeToRefs(store);
-
-    const selectedExchange = ref<string>('');
-    const usedExchanges = computed<SupportedExchange[]>(() => {
-      return get(connectedExchanges)
-        .map(({ location }) => location)
-        .filter(uniqueStrings);
-    });
-
-    const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
-
-    const router = useRouter();
-    const route = useRoute();
-
-    const setSelectedExchange = () => {
-      set(selectedExchange, get(route).params.exchange);
-    };
-
-    onMounted(() => {
-      setSelectedExchange();
-    });
-
-    watch(route, () => {
-      setSelectedExchange();
-    });
-
-    const exchangeBalance = (exchange: SupportedExchange): BigNumber => {
-      const balances = get(store.getBalances(exchange));
-      return balances.reduce(
-        (sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue),
-        Zero
-      );
-    };
-
-    const openExchangeDetails = async () => {
-      await router.push({
-        path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${get(
-          selectedExchange
-        )}`
-      });
-    };
-
-    const balances = computed(() => {
-      let currentExchange = get(exchange);
-      return get(store.getBalances(currentExchange));
-    });
-
-    return {
-      balances,
-      usedExchanges,
-      selectedExchange,
-      openExchangeDetails,
-      exchangeBalance,
-      isExchangeLoading
-    };
+const props = defineProps({
+  exchange: {
+    required: false,
+    type: String as PropType<SupportedExchange>,
+    default: ''
   }
 });
+
+const { exchange } = toRefs(props);
+const { isTaskRunning } = useTasks();
+const store = useExchangeBalancesStore();
+const { connectedExchanges } = storeToRefs(store);
+
+const selectedExchange = ref<string>('');
+const usedExchanges = computed<SupportedExchange[]>(() => {
+  return get(connectedExchanges)
+    .map(({ location }) => location)
+    .filter(uniqueStrings);
+});
+
+const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+
+const router = useRouter();
+const route = useRoute();
+
+const setSelectedExchange = () => {
+  set(selectedExchange, get(route).params.exchange);
+};
+
+onMounted(() => {
+  setSelectedExchange();
+});
+
+watch(route, () => {
+  setSelectedExchange();
+});
+
+const exchangeBalance = (exchange: SupportedExchange): BigNumber => {
+  const balances = get(store.getBalances(exchange));
+  return balances.reduce(
+    (sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue),
+    Zero
+  );
+};
+
+const openExchangeDetails = async () => {
+  await router.push({
+    path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${get(selectedExchange)}`
+  });
+};
+
+const balances = computed(() => {
+  let currentExchange = get(exchange);
+  return get(store.getBalances(currentExchange));
+});
+
+const { t, tc } = useI18n();
 </script>
 
 <style scoped lang="scss">

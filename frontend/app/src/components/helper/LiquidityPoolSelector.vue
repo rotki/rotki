@@ -7,7 +7,7 @@
     >
       <v-autocomplete
         :value="value"
-        :label="$t('liquidity_pool_selector.label')"
+        :label="t('liquidity_pool_selector.label')"
         :items="pools"
         :dense="dense"
         :outlined="outlined"
@@ -53,45 +53,38 @@
   </v-card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { Pool } from '@rotki/common/lib/defi/balancer';
 import { get } from '@vueuse/core';
-import { defineComponent, PropType, toRefs } from 'vue';
+import { PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 
-export default defineComponent({
-  name: 'LiquidityPoolSelector',
-  props: {
-    pools: { required: true, type: Array as PropType<Pool[]> },
-    value: { required: true, type: Array as PropType<string[]> },
-    outlined: { required: false, type: Boolean, default: false },
-    dense: { required: false, type: Boolean, default: false },
-    noPadding: { required: false, type: Boolean, default: false }
-  },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { value } = toRefs(props);
-    const input = (_value: string[]) => emit('input', _value);
-
-    const filter = (item: Pool, queryText: string) => {
-      const searchString = queryText.toLocaleLowerCase();
-      const asset1 = item.name.toLocaleLowerCase();
-      const asset2 = item.name.toLocaleLowerCase();
-      const name = `${asset1}/${asset2}`;
-      return name.indexOf(searchString) > -1;
-    };
-
-    const remove = (asset: Pool) => {
-      const addresses = [...get(value)];
-      const index = addresses.findIndex(address => address === asset.address);
-      addresses.splice(index, 1);
-      input(addresses);
-    };
-
-    return {
-      filter,
-      input,
-      remove
-    };
-  }
+const props = defineProps({
+  pools: { required: true, type: Array as PropType<Pool[]> },
+  value: { required: true, type: Array as PropType<string[]> },
+  outlined: { required: false, type: Boolean, default: false },
+  dense: { required: false, type: Boolean, default: false },
+  noPadding: { required: false, type: Boolean, default: false }
 });
+
+const emit = defineEmits(['input']);
+const { value } = toRefs(props);
+const input = (_value: string[]) => emit('input', _value);
+
+const filter = (item: Pool, queryText: string) => {
+  const searchString = queryText.toLocaleLowerCase();
+  const asset1 = item.name.toLocaleLowerCase();
+  const asset2 = item.name.toLocaleLowerCase();
+  const name = `${asset1}/${asset2}`;
+  return name.indexOf(searchString) > -1;
+};
+
+const remove = (asset: Pool) => {
+  const addresses = [...get(value)];
+  const index = addresses.findIndex(address => address === asset.address);
+  addresses.splice(index, 1);
+  input(addresses);
+};
+
+const { t } = useI18n();
 </script>

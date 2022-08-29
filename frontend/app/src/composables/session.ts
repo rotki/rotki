@@ -47,6 +47,7 @@ export const useDarkMode = () => {
   const updateDarkMode = (enabled: boolean) => {
     set(darkModeEnabled, enabled);
   };
+
   return {
     darkModeEnabled,
     updateDarkMode

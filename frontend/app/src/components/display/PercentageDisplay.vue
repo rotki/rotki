@@ -23,78 +23,71 @@
       class="ml-1 percentage-display__symbol text--secondary"
       :cols="justify === 'start' ? null : 'auto'"
     >
-      {{ $t('percentage_display.symbol') }}
+      {{ t('percentage_display.symbol') }}
     </v-col>
   </v-row>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
-export default defineComponent({
-  name: 'PercentageDisplay',
-  props: {
-    value: {
-      required: false,
-      type: String,
-      default: null,
-      validator: (value: any) => typeof value === 'string' || value === null
-    },
-    justify: {
-      required: false,
-      type: String as PropType<'end' | 'start'>,
-      default: 'end',
-      validator: (value: any) => {
-        return ['end', 'start'].includes(value);
-      }
-    },
-    assetPadding: {
-      required: false,
-      type: Number,
-      default: 0,
-      validator: (chars: number) => chars >= 0 && chars <= 5
+const props = defineProps({
+  value: {
+    required: false,
+    type: String,
+    default: null,
+    validator: (value: any) => typeof value === 'string' || value === null
+  },
+  justify: {
+    required: false,
+    type: String as PropType<'end' | 'start'>,
+    default: 'end',
+    validator: (value: any) => {
+      return ['end', 'start'].includes(value);
     }
   },
-  setup(props) {
-    const { assetPadding, value } = toRefs(props);
-    const { shouldShowPercentage, scrambleData } = storeToRefs(
-      useSessionSettingsStore()
-    );
-
-    const displayValue = computed<string>(() => {
-      if (get(scrambleData) || !get(shouldShowPercentage)) {
-        return (Math.random() * 100 + 1).toFixed(2);
-      }
-
-      if (!get(value)) {
-        return '-';
-      }
-
-      return get(value).replace('%', '');
-    });
-
-    const assetStyle = computed<{ [key: string]: string | undefined }>(() => {
-      if (!get(assetPadding)) {
-        return {
-          'max-width': '0ch'
-        };
-      }
-      return {
-        width: `${get(assetPadding) + 1}ch`,
-        'text-align': 'start'
-      };
-    });
-
-    return {
-      shouldShowPercentage,
-      displayValue,
-      assetStyle
-    };
+  assetPadding: {
+    required: false,
+    type: Number,
+    default: 0,
+    validator: (chars: number) => chars >= 0 && chars <= 5
   }
 });
+
+const { assetPadding, value } = toRefs(props);
+const { shouldShowPercentage, scrambleData } = storeToRefs(
+  useSessionSettingsStore()
+);
+
+const displayValue = computed<string>(() => {
+  if (get(scrambleData) || !get(shouldShowPercentage)) {
+    return (Math.random() * 100 + 1).toFixed(2);
+  }
+
+  if (!get(value)) {
+    return '-';
+  }
+
+  return get(value).replace('%', '');
+});
+
+const assetStyle = computed<{ [key: string]: string | undefined }>(() => {
+  if (!get(assetPadding)) {
+    return {
+      'max-width': '0ch'
+    };
+  }
+  return {
+    width: `${get(assetPadding) + 1}ch`,
+    'text-align': 'start'
+  };
+});
+
+const { t } = useI18n();
 </script>
 
 <style scoped lang="scss">

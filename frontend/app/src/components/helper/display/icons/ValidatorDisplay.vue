@@ -11,41 +11,36 @@
     <div>
       <span v-if="horizontal" :class="$style.divider"> - </span>
       <span v-else class="text-caption">
-        {{ $t('validator_display.validator_index') }}
+        {{ t('validator_display.validator_index') }}
       </span>
       {{ validator.validatorIndex }}
     </div>
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { truncateAddress } from '@/filters';
 
-export default defineComponent({
-  name: 'ValidatorDisplay',
-  props: {
-    validator: {
-      required: true,
-      type: Object as PropType<Eth2ValidatorEntry>
-    },
-    horizontal: {
-      required: false,
-      type: Boolean,
-      default: false
-    }
+const props = defineProps({
+  validator: {
+    required: true,
+    type: Object as PropType<Eth2ValidatorEntry>
   },
-  setup(props) {
-    const { horizontal } = toRefs(props);
-    const length = computed(() => (get(horizontal) ? 4 : 10));
-    return {
-      length,
-      truncateAddress
-    };
+  horizontal: {
+    required: false,
+    type: Boolean,
+    default: false
   }
 });
+
+const { horizontal } = toRefs(props);
+const length = computed(() => (get(horizontal) ? 4 : 10));
+
+const { t } = useI18n();
 </script>
 
 <style lang="scss" module>

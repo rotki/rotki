@@ -3,7 +3,7 @@
     :headers="tableHeaders"
     :items="balances"
     :loading="loading"
-    :loading-text="$t('asset_balances.loading')"
+    :loading-text="t('asset_balances.loading')"
     :custom-sort="sortItems"
     sort-by="usdValue"
   >
@@ -35,7 +35,7 @@
     <template v-if="balances.length > 0" #body.append="{ isMobile }">
       <row-append
         label-colspan="3"
-        :label="$t('common.total')"
+        :label="tc('common.total')"
         :is-mobile="isMobile"
       >
         <amount-display
@@ -48,86 +48,74 @@
   </data-table>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { AssetBalanceWithPrice } from '@rotki/common';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, Ref, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { bigNumberSum } from '@/filters';
-import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { getSortItems } from '@/utils/assets';
 
-const tableHeaders = (symbol: Ref<string>) => {
-  return computed<DataTableHeader[]>(() => {
-    return [
-      {
-        text: i18n.t('common.asset').toString(),
-        value: 'asset',
-        class: 'text-no-wrap'
-      },
-      {
-        text: i18n
-          .t('common.price_in_symbol', { symbol: get(symbol) })
-          .toString(),
-        value: 'usdPrice',
-        align: 'end',
-        class: 'text-no-wrap'
-      },
-      {
-        text: i18n.t('common.amount').toString(),
-        value: 'amount',
-        align: 'end',
-        width: '99%'
-      },
-      {
-        text: i18n
-          .t('common.value_in_symbol', { symbol: get(symbol) })
-          .toString(),
-        value: 'usdValue',
-        align: 'end',
-        class: 'text-no-wrap'
-      }
-    ];
-  });
-};
-
-const AssetBalancesTable = defineComponent({
-  name: 'AssetBalancesTable',
-  components: { RowAppend, DataTable, AmountDisplay },
-  props: {
-    balances: {
-      required: true,
-      type: Array as PropType<AssetBalanceWithPrice[]>
-    },
-    loading: {
-      required: false,
-      type: Boolean,
-      default: false
-    }
+const props = defineProps({
+  balances: {
+    required: true,
+    type: Array as PropType<AssetBalanceWithPrice[]>
   },
-  setup(props) {
-    const { balances } = toRefs(props);
-    const total = computed(() => {
-      return bigNumberSum(balances.value.map(({ usdValue }) => usdValue));
-    });
-
-    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-    const { getAssetInfo } = useAssetInfoRetrieval();
-
-    return {
-      total,
-      tableHeaders: tableHeaders(currencySymbol),
-      sortItems: getSortItems(getAssetInfo),
-      currency: currencySymbol
-    };
+  loading: {
+    required: false,
+    type: Boolean,
+    default: false
   }
 });
 
-export default AssetBalancesTable;
+const { balances } = toRefs(props);
+
+const { t, tc } = useI18n();
+const total = computed(() => {
+  return bigNumberSum(balances.value.map(({ usdValue }) => usdValue));
+});
+
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { getAssetInfo } = useAssetInfoRetrieval();
+
+const tableHeaders = computed<DataTableHeader[]>(() => {
+  return [
+    {
+      text: t('common.asset').toString(),
+      value: 'asset',
+      class: 'text-no-wrap'
+    },
+    {
+      text: t('common.price_in_symbol', {
+        symbol: get(currencySymbol)
+      }).toString(),
+      value: 'usdPrice',
+      align: 'end',
+      class: 'text-no-wrap'
+    },
+    {
+      text: t('common.amount').toString(),
+      value: 'amount',
+      align: 'end',
+      width: '99%'
+    },
+    {
+      text: t('common.value_in_symbol', {
+        symbol: get(currencySymbol)
+      }).toString(),
+      value: 'usdValue',
+      align: 'end',
+      class: 'text-no-wrap'
+    }
+  ];
+});
+
+const sortItems = getSortItems(getAssetInfo);
 </script>

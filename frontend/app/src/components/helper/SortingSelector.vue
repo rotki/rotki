@@ -15,9 +15,9 @@
           </v-btn>
         </template>
         <span v-if="sortDesc">
-          {{ $t('sorting_selector.desc.sort_asc_tooltip') }}
+          {{ t('sorting_selector.desc.sort_asc_tooltip') }}
         </span>
-        <span v-else>{{ $t('sorting_selector.desc.sort_desc_tooltip') }}</span>
+        <span v-else>{{ t('sorting_selector.desc.sort_desc_tooltip') }}</span>
       </v-tooltip>
     </div>
     <div
@@ -40,44 +40,38 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { defineComponent, PropType, toRefs } from 'vue';
+import { PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useTheme } from '@/composables/common';
 
-export default defineComponent({
-  name: 'SortingSelector',
-  props: {
-    sortBy: {
-      required: true,
-      type: String
-    },
-    sortDesc: {
-      required: true,
-      type: Boolean
-    },
-    sortProperties: {
-      required: true,
-      type: Array as PropType<{ text: string; value: string }[]>
-    }
+const props = defineProps({
+  sortBy: {
+    required: true,
+    type: String
   },
-  emits: ['update:sort-by', 'update:sort-desc'],
-  setup(props, { emit }) {
-    const { sortDesc } = toRefs(props);
-    const updateSortBy = (value: string) => {
-      emit('update:sort-by', value);
-    };
-    const updateSortDesc = () => {
-      emit('update:sort-desc', !get(sortDesc));
-    };
-    const { dark } = useTheme();
-    return {
-      dark,
-      updateSortBy,
-      updateSortDesc
-    };
+  sortDesc: {
+    required: true,
+    type: Boolean
+  },
+  sortProperties: {
+    required: true,
+    type: Array as PropType<{ text: string; value: string }[]>
   }
 });
+
+const emit = defineEmits(['update:sort-by', 'update:sort-desc']);
+const { sortDesc } = toRefs(props);
+const updateSortBy = (value: string) => {
+  emit('update:sort-by', value);
+};
+const updateSortDesc = () => {
+  emit('update:sort-desc', !get(sortDesc));
+};
+const { dark } = useTheme();
+
+const { t } = useI18n();
 </script>
 
 <style module lang="scss">

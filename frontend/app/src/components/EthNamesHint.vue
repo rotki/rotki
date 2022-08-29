@@ -7,12 +7,12 @@
       <template v-if="withHeader">
         <div class="pb-4">
           <div>
-            <b>{{ $t('eth_address_book.hint.global') }}</b>
-            {{ $t('eth_address_book.hint.global_description') }}
+            <b>{{ t('eth_address_book.hint.global') }}</b>
+            {{ t('eth_address_book.hint.global_description') }}
           </div>
           <div>
-            <b>{{ $t('eth_address_book.hint.private') }}</b>
-            {{ $t('eth_address_book.hint.private_description') }}
+            <b>{{ t('eth_address_book.hint.private') }}</b>
+            {{ t('eth_address_book.hint.private_description') }}
           </div>
         </div>
       </template>
@@ -20,7 +20,7 @@
         <v-icon small class="pr-4 pt-1">mdi-information</v-icon>
         <div>
           <div>
-            {{ $t('eth_address_book.hint.priority.title') }}
+            {{ t('eth_address_book.hint.priority.title') }}
           </div>
           <ol class="ml-n2">
             <li v-for="(priority, index) in priorityList" :key="index">
@@ -32,30 +32,20 @@
     </div>
   </v-menu>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue';
-import i18n from '@/i18n';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 
+const { t, tc } = useI18n();
 const priorityList = [
-  i18n.t('eth_address_book.hint.priority.list.private_address_book').toString(),
-  i18n
-    .t('eth_address_book.hint.priority.list.blockchain_account_labels')
-    .toString(),
-  i18n.t('eth_address_book.hint.priority.list.global_address_book').toString(),
-  i18n.t('eth_address_book.hint.priority.list.ethereum_tokens').toString(),
-  i18n.t('eth_address_book.hint.priority.list.hardcoded_mappings').toString(),
-  i18n.t('eth_address_book.hint.priority.list.ens_names').toString()
+  tc('eth_address_book.hint.priority.list.private_address_book'),
+  tc('eth_address_book.hint.priority.list.blockchain_account_labels'),
+  tc('eth_address_book.hint.priority.list.global_address_book'),
+  tc('eth_address_book.hint.priority.list.ethereum_tokens'),
+  tc('eth_address_book.hint.priority.list.hardcoded_mappings'),
+  tc('eth_address_book.hint.priority.list.ens_names')
 ];
 
-export default defineComponent({
-  name: 'EthNamesHint',
-  props: {
-    withHeader: { required: false, type: Boolean, default: false }
-  },
-  setup() {
-    return {
-      priorityList
-    };
-  }
+defineProps({
+  withHeader: { required: false, type: Boolean, default: false }
 });
 </script>

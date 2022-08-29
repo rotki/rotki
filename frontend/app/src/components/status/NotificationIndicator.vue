@@ -10,7 +10,7 @@
       <span>{{ count }}</span>
     </template>
     <menu-tooltip-button
-      :tooltip="$t('notification_indicator.tooltip')"
+      :tooltip="tc('notification_indicator.tooltip')"
       class-name="secondary--text text--lighten-4"
       @click="click"
     >
@@ -27,37 +27,25 @@
   </v-badge>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { setupNotifications } from '@/composables/notifications';
 import { setupTaskStatus } from '@/composables/tasks';
 
-const NotificationIndicator = defineComponent({
-  name: 'NotificationIndicator',
-  components: {
-    MenuTooltipButton
-  },
-  props: {
-    visible: { required: true, type: Boolean }
-  },
-  emits: ['click'],
-  setup(_, { emit }) {
-    const { count } = setupNotifications();
-    const click = () => {
-      emit('click');
-    };
-
-    const { hasRunningTasks } = setupTaskStatus();
-
-    return {
-      hasRunningTasks,
-      click,
-      count
-    };
-  }
+defineProps({
+  visible: { required: true, type: Boolean }
 });
-export default NotificationIndicator;
+
+const emit = defineEmits(['click']);
+const { count } = setupNotifications();
+const click = () => {
+  emit('click');
+};
+
+const { hasRunningTasks } = setupTaskStatus();
+
+const { tc } = useI18n();
 </script>
 
 <style module lang="scss">

@@ -6,7 +6,7 @@
       </v-col>
       <v-col>
         <div :class="$style.title">
-          {{ $tc('collapsed_pending_tasks.title', count, { count }) }}
+          {{ tc('collapsed_pending_tasks.title', count, { count }) }}
         </div>
       </v-col>
 
@@ -19,33 +19,30 @@
     </v-row>
   </card>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { defineComponent, toRefs } from 'vue';
+import { toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 
-export default defineComponent({
-  name: 'CollapsedPendingTasks',
-  props: {
-    value: {
-      required: true,
-      type: Boolean
-    },
-    count: {
-      required: true,
-      type: Number
-    }
+const props = defineProps({
+  value: {
+    required: true,
+    type: Boolean
   },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { value } = toRefs(props);
-    const input = () => {
-      emit('input', !get(value));
-    };
-    return {
-      input
-    };
+  count: {
+    required: true,
+    type: Number
   }
 });
+
+const emit = defineEmits(['input']);
+
+const { value } = toRefs(props);
+const input = () => {
+  emit('input', !get(value));
+};
+
+const { tc } = useI18n();
 </script>
 <style module lang="scss">
 .collapsed {

@@ -16,10 +16,10 @@
         <v-row class="text-center mt-14">
           <v-col>
             <p class="text-h5 font-weight-bold pb-4">
-              {{ $t('no_premium_placeholder.no_premium') }}
+              {{ t('no_premium_placeholder.no_premium') }}
             </p>
             <div class="text--secondary text-no-wrap">
-              {{ $t('no_premium_placeholder.premium_only', { text }) }}
+              {{ t('no_premium_placeholder.premium_only', { text }) }}
             </div>
             <i18n
               path="no_premium_placeholder.get_premium"
@@ -28,7 +28,7 @@
             >
               <base-external-link
                 text="website."
-                :href="$interop.premiumURL"
+                :href="interop.premiumURL"
                 class="font-weight-medium"
               />
             </i18n>
@@ -39,21 +39,20 @@
   </full-size-content>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import { interop } from '@/electron-interop';
 
-export default defineComponent({
-  name: 'NoPremiumPlaceholder',
-  components: { FullSizeContent, BaseExternalLink },
-  props: {
-    text: {
-      type: String,
-      required: true
-    }
+defineProps({
+  text: {
+    type: String,
+    required: true
   }
 });
+
+const { t } = useI18n();
 </script>
 
 <style module lang="scss">

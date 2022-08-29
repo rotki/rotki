@@ -12,7 +12,7 @@
       outlined
       data-cy="location"
       :rules="locationRules"
-      :label="$t('common.location')"
+      :label="t('common.location')"
       :error-messages="errorMessages['location']"
       @focus="delete errorMessages['location']"
     />
@@ -20,13 +20,13 @@
     <date-time-picker
       v-model="datetime"
       outlined
-      :label="$t('transactions.events.form.datetime.label')"
+      :label="t('transactions.events.form.datetime.label')"
       persistent-hint
       required
       seconds
       limit-now
       data-cy="datetime"
-      :hint="$t('transactions.events.form.datetime.hint')"
+      :hint="t('transactions.events.form.datetime.hint')"
       :error-messages="errorMessages['datetime']"
       @focus="delete errorMessages['datetime']"
     />
@@ -58,7 +58,7 @@
           required
           data-cy="amount"
           :rules="amountRules"
-          :label="$t('common.amount')"
+          :label="t('common.amount')"
           :error-messages="errorMessages['amount']"
           @focus="delete errorMessages['amount']"
         />
@@ -73,7 +73,7 @@
           :rules="fiatValueRules"
           :loading="fetching"
           :label="
-            $t('common.value_in_symbol', {
+            t('common.value_in_symbol', {
               symbol: currencySymbol
             })
           "
@@ -97,7 +97,7 @@
           v-model="eventType"
           outlined
           required
-          :label="$t('transactions.events.form.event_type.label')"
+          :label="t('transactions.events.form.event_type.label')"
           :items="historyEventTypeData"
           item-value="identifier"
           item-text="label"
@@ -112,7 +112,7 @@
           v-model="eventSubtype"
           outlined
           required
-          :label="$t('transactions.events.form.event_subtype.label')"
+          :label="t('transactions.events.form.event_subtype.label')"
           :items="historyEventSubTypeData"
           item-value="identifier"
           item-text="label"
@@ -128,7 +128,7 @@
           outlined
           required
           disabled
-          :label="$t('transactions.events.form.transaction_event_type.label')"
+          :label="t('transactions.events.form.transaction_event_type.label')"
         />
       </v-col>
       <v-col cols="12" md="4">
@@ -139,7 +139,7 @@
           integer
           data-cy="sequenceIndex"
           :rules="sequenceIndexRules"
-          :label="$t('transactions.events.form.sequence_index.label')"
+          :label="t('transactions.events.form.sequence_index.label')"
           :error-messages="errorMessages['sequenceIndex']"
           @focus="delete errorMessages['sequenceIndex']"
         />
@@ -149,7 +149,7 @@
           v-model="locationLabel"
           outlined
           data-cy="locationLabel"
-          :label="$t('transactions.events.form.location_label.label')"
+          :label="t('transactions.events.form.location_label.label')"
           :error-messages="errorMessages['locationLabel']"
           @focus="delete errorMessages['locationLabel']"
         />
@@ -159,7 +159,7 @@
           v-model="counterparty"
           outlined
           data-cy="counterparty"
-          :label="$t('transactions.events.form.counterparty.label')"
+          :label="t('transactions.events.form.counterparty.label')"
           :error-messages="errorMessages['counterparty']"
           @focus="delete errorMessages['counterparty']"
         />
@@ -172,8 +172,8 @@
       persistent-hint
       outlined
       data-cy="notes"
-      :label="$t('transactions.events.form.notes.label')"
-      :hint="$t('transactions.events.form.notes.hint')"
+      :label="t('transactions.events.form.notes.label')"
+      :hint="t('transactions.events.form.notes.hint')"
       :error-messages="errorMessages['notes']"
       @focus="delete errorMessages['notes']"
     />
@@ -193,11 +193,11 @@ import {
   toRefs,
   watch
 } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import i18n from '@/i18n';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import {
@@ -249,6 +249,7 @@ const TransactionEventForm = defineComponent({
   },
   emits: ['input'],
   setup(props, { emit }) {
+    const { t } = useI18n();
     const { edit, transaction, saveData } = toRefs(props);
 
     const input = (valid: boolean) => emit('input', valid);
@@ -283,57 +284,49 @@ const TransactionEventForm = defineComponent({
     const locationRules = [
       (v: string) =>
         !!v ||
-        i18n
-          .t('transactions.events.form.location.validation.non_empty')
-          .toString()
+        t('transactions.events.form.location.validation.non_empty').toString()
     ];
 
     const assetRules = [
       (v: string) =>
         !!v ||
-        i18n.t('transactions.events.form.asset.validation.non_empty').toString()
+        t('transactions.events.form.asset.validation.non_empty').toString()
     ];
 
     const amountRules = [
       (v: string) =>
         !!v ||
-        i18n
-          .t('transactions.events.form.amount.validation.non_empty')
-          .toString()
+        t('transactions.events.form.amount.validation.non_empty').toString()
     ];
 
     const fiatValueRules = [
       (v: string) =>
         !!v ||
-        i18n
-          .t('transactions.events.form.fiat_value.validation.non_empty', {
-            currency: get(currencySymbol)
-          })
-          .toString()
+        t('transactions.events.form.fiat_value.validation.non_empty', {
+          currency: get(currencySymbol)
+        }).toString()
     ];
 
     const sequenceIndexRules = [
       (v: string) =>
         !!v ||
-        i18n
-          .t('transactions.events.form.sequence_index.validation.non_empty')
-          .toString()
+        t(
+          'transactions.events.form.sequence_index.validation.non_empty'
+        ).toString()
     ];
 
     const eventTypeRules = [
       (v: string) =>
         !!v ||
-        i18n
-          .t('transactions.events.form.event_type.validation.non_empty')
-          .toString()
+        t('transactions.events.form.event_type.validation.non_empty').toString()
     ];
 
     const eventSubtypeRules = [
       (v: string) =>
         !!v ||
-        i18n
-          .t('transactions.events.form.event_subtype.validation.non_empty')
-          .toString()
+        t(
+          'transactions.events.form.event_subtype.validation.non_empty'
+        ).toString()
     ];
 
     const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
@@ -515,6 +508,7 @@ const TransactionEventForm = defineComponent({
     });
 
     return {
+      t,
       currencySymbol,
       historyEventTypeData,
       historyEventSubTypeData,

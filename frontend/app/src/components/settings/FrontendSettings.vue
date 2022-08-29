@@ -1,7 +1,7 @@
 <template>
   <setting-category>
     <template #title>
-      {{ $t('frontend_settings.title') }}
+      {{ t('frontend_settings.title') }}
     </template>
 
     <animations-enabled-setting />
@@ -10,7 +10,7 @@
     <div class="mt-8">
       <div class="d-flex align-center">
         <div class="text-h6">
-          {{ $t('frontend_settings.subtitle.eth_names') }}
+          {{ t('frontend_settings.subtitle.eth_names') }}
         </div>
         <div class="pl-2">
           <eth-names-hint />
@@ -23,21 +23,21 @@
 
     <div class="mt-8">
       <div class="text-h6">
-        {{ $t('frontend_settings.subtitle.graph_basis') }}
+        {{ t('frontend_settings.subtitle.graph_basis') }}
       </div>
       <zero-based-graph-setting />
     </div>
 
     <div class="mt-8">
       <div class="text-h6">
-        {{ $t('frontend_settings.subtitle.show_graph_range_selector') }}
+        {{ t('frontend_settings.subtitle.show_graph_range_selector') }}
       </div>
       <show-graph-range-selector-setting />
     </div>
 
     <div class="mt-4">
       <div class="text-h6">
-        {{ $t('frontend_settings.subtitle.include_nfts') }}
+        {{ t('frontend_settings.subtitle.include_nfts') }}
       </div>
       <nfts-in-net-value-setting />
     </div>
@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n-composable';
 import EthNamesHint from '@/components/EthNamesHint.vue';
 import ThemeManagerLock from '@/components/premium/ThemeManagerLock.vue';
 import Explorers from '@/components/settings/explorers/Explorers.vue';
@@ -69,4 +70,6 @@ import { ThemeManager } from '@/premium/premium';
 import { usePremiumStore } from '@/store/session/premium';
 
 const { premium } = storeToRefs(usePremiumStore());
+
+const { t } = useI18n();
 </script>

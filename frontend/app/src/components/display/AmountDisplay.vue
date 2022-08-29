@@ -53,10 +53,10 @@
                 }"
               >
                 <div>
-                  {{ $t('amount_display.click_to_copy') }}
+                  {{ t('amount_display.click_to_copy') }}
                 </div>
                 <div class="green--text text--lighten-2">
-                  {{ $t('amount_display.copied') }}
+                  {{ t('amount_display.copied') }}
                 </div>
               </div>
             </div>
@@ -80,6 +80,7 @@ import { BigNumber } from '@rotki/common';
 import { get, set, useClipboard, useTimeoutFn } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, PropType, ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { findCurrency } from '@/data/currencies';
@@ -94,6 +95,8 @@ import RoundingMode = BigNumber.RoundingMode;
 
 const CurrencyType = ['none', 'ticker', 'symbol', 'name'] as const;
 type ShownCurrency = typeof CurrencyType[number];
+
+const { t } = useI18n();
 
 const props = defineProps({
   value: { required: true, type: BigNumber },

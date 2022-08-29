@@ -2,21 +2,19 @@
   <v-card>
     <v-alert color="error" icon="mdi-alert" outlined prominent>
       <span class="font-weight-medium">
-        {{ $t('premium_loading_failed.title') }}
+        {{ t('premium_loading_failed.title') }}
       </span>
       <p class="mt-1">
-        {{ $t('premium_loading_failed.description') }}
+        {{ t('premium_loading_failed.description') }}
       </p>
-      <p>{{ $t('premium_loading_failed.try_again') }}</p>
-      <p>{{ $t('premium_loading_failed.open_issue') }}</p>
+      <p>{{ t('premium_loading_failed.try_again') }}</p>
+      <p>{{ t('premium_loading_failed.open_issue') }}</p>
     </v-alert>
   </v-card>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 
-export default defineComponent({
-  name: 'PremiumLoadingError'
-});
+const { t } = useI18n();
 </script>

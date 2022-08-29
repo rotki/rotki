@@ -1,12 +1,12 @@
 <template>
   <div>
     <v-btn depressed color="primary" @click="confirmRestore = true">
-      {{ $t('asset_update.restore.action') }}
+      {{ t('asset_update.restore.action') }}
     </v-btn>
     <confirm-dialog
       :display="confirmRestore"
-      :title="$t('asset_update.restore.delete_confirmation.title')"
-      :message="$t('asset_update.restore.delete_confirmation.message')"
+      :title="tc('asset_update.restore.delete_confirmation.title')"
+      :message="tc('asset_update.restore.delete_confirmation.message')"
       @confirm="restoreAssets"
       @cancel="confirmRestore = false"
     />
@@ -14,9 +14,9 @@
       v-if="done"
       single-action
       display
-      :title="$t('asset_update.restore.success.title')"
-      :primary-action="$t('asset_update.success.ok')"
-      :message="$t('asset_update.restore.success.description')"
+      :title="tc('asset_update.restore.success.title')"
+      :primary-action="tc('asset_update.success.ok')"
+      :message="tc('asset_update.restore.success.description')"
       @confirm="updateComplete()"
     />
   </div>
@@ -26,8 +26,8 @@
 import { Severity } from '@rotki/common/lib/messages';
 import { set } from '@vueuse/core';
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useBackendManagement } from '@/composables/backend';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
@@ -42,12 +42,14 @@ const { logout } = useSessionStore();
 
 const { restartBackend } = useBackendManagement();
 
+const { t, tc } = useI18n();
+
 const restoreAssets = async () => {
   try {
     set(confirmRestore, false);
     set(done, await api.assets.restoreAssetsDatabase('hard', false));
   } catch (e: any) {
-    const title = i18n.t('asset_update.restore.title').toString();
+    const title = t('asset_update.restore.title').toString();
     const message = e.toString();
     notify({
       title,

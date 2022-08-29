@@ -16,7 +16,7 @@
           </v-list-item-title>
           <v-list-item-subtitle>
             {{
-              $t('general_settings.date_input_format_hint', {
+              t('general_settings.date_input_format_hint', {
                 format: dateInputFormatExample(item.value)
               })
             }}
@@ -27,33 +27,25 @@
   </v-select>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DateFormat } from '@/types/date-format';
-export default defineComponent({
-  name: 'DateFormatSelector',
-  setup() {
-    const selections = [
-      {
-        value: DateFormat.DateMonthYearHourMinuteSecond
-      },
-      {
-        value: DateFormat.MonthDateYearHourMinuteSecond
-      },
-      {
-        value: DateFormat.YearMonthDateHourMinuteSecond
-      }
-    ];
-
-    const dateInputFormatExample = (format: DateFormat): string => {
-      return displayDateFormatter.format(new Date(), format);
-    };
-
-    return {
-      selections,
-      dateInputFormatExample
-    };
+const selections = [
+  {
+    value: DateFormat.DateMonthYearHourMinuteSecond
+  },
+  {
+    value: DateFormat.MonthDateYearHourMinuteSecond
+  },
+  {
+    value: DateFormat.YearMonthDateHourMinuteSecond
   }
-});
+];
+
+const dateInputFormatExample = (format: DateFormat): string => {
+  return displayDateFormatter.format(new Date(), format);
+};
+
+const { t } = useI18n();
 </script>

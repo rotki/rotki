@@ -10,10 +10,10 @@
           v-on="on"
           @click="ignore(true)"
         >
-          {{ $t('ignore_buttons.ignore') }}
+          {{ t('ignore_buttons.ignore') }}
         </v-btn>
       </template>
-      <span>{{ $t('ignore_buttons.ignore_tooltip') }}</span>
+      <span>{{ t('ignore_buttons.ignore_tooltip') }}</span>
     </v-tooltip>
     <v-col cols="auto" />
     <v-col cols="auto">
@@ -28,27 +28,25 @@
             v-on="on"
             @click="ignore(false)"
           >
-            {{ $t('ignore_buttons.unignore') }}
+            {{ t('ignore_buttons.unignore') }}
           </v-btn>
         </template>
-        <span>{{ $t('ignore_buttons.unignore_tooltip') }}</span>
+        <span>{{ t('ignore_buttons.unignore_tooltip') }}</span>
       </v-tooltip>
     </v-col>
   </v-row>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 
-export default defineComponent({
-  props: {
-    disabled: { required: false, type: Boolean, default: false }
-  },
-  emits: ['ignore'],
-  setup(prop, { emit }) {
-    return {
-      ignore: (ignore: boolean) => emit('ignore', ignore)
-    };
-  }
+defineProps({
+  disabled: { required: false, type: Boolean, default: false }
 });
+
+const emit = defineEmits(['ignore']);
+
+const ignore = (ignore: boolean) => emit('ignore', ignore);
+
+const { t } = useI18n();
 </script>

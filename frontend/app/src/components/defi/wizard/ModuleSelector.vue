@@ -14,7 +14,7 @@
     :disabled="loading"
     :loading="loading"
     :open-on-clear="false"
-    :label="$t('module_selector.label')"
+    :label="t('module_selector.label')"
     item-text="name"
     item-value="identifier"
     class="module-selector"
@@ -63,6 +63,7 @@
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { onMounted, Ref, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useBalancesStore } from '@/store/balances';
@@ -147,4 +148,6 @@ const unselect = async (identifier: Module) => {
 onMounted(() => {
   set(selectedModules, get(activeModules));
 });
+
+const { t } = useI18n();
 </script>

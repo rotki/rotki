@@ -1,7 +1,7 @@
 <template>
   <table-expand-container :visible="visible" :colspan="colspan" :padded="false">
     <template #title>
-      {{ $t('poap_delivery_airdrops.title') }}
+      {{ t('poap_delivery_airdrops.title') }}
     </template>
     <data-table :items="items" :headers="headers">
       <template #item.name="{ item }">
@@ -33,13 +33,13 @@
   </table-expand-container>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { computed, PropType } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { useInterop } from '@/electron-interop';
-import i18n from '@/i18n';
 import { PoapDeliveryDetails } from '@/store/defi/types';
 import { default as images } from './poap.json';
 
@@ -62,11 +62,13 @@ const events = [
   'yfi_og'
 ] as const;
 
-export type EventType = typeof events[number];
+type EventType = typeof events[number];
+
+const { t } = useI18n();
 
 const headers = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('common.name').toString(),
+    text: t('common.name').toString(),
     value: 'name'
   },
   {
@@ -77,30 +79,18 @@ const headers = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-export default defineComponent({
-  name: 'PoapDeliveryAirdrops',
-  components: { DataTable, TableExpandContainer },
-  props: {
-    visible: { required: true, type: Boolean },
-    colspan: { required: true, type: Number },
-    items: { required: true, type: Array as PropType<PoapDeliveryDetails[]> }
-  },
-  setup() {
-    const getImage = (event: EventType): string => {
-      const image = images[event];
-      return image ?? '';
-    };
-
-    const { navigate, isPackaged } = useInterop();
-
-    return {
-      headers,
-      isPackaged,
-      navigate,
-      getImage
-    };
-  }
+defineProps({
+  visible: { required: true, type: Boolean },
+  colspan: { required: true, type: Number },
+  items: { required: true, type: Array as PropType<PoapDeliveryDetails[]> }
 });
+
+const getImage = (event: EventType): string => {
+  const image = images[event];
+  return image ?? '';
+};
+
+const { navigate, isPackaged } = useInterop();
 </script>
 
 <style scoped lang="scss">

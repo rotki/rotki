@@ -22,7 +22,7 @@
       <v-col cols="auto">
         <v-row align="center">
           <v-col cols="auto">
-            <div class="text-subtitle-2">{{ $t('assets.ignore') }}</div>
+            <div class="text-subtitle-2">{{ t('assets.ignore') }}</div>
           </v-col>
           <v-col>
             <v-switch :input-value="isIgnored" @change="toggleIgnoreAsset" />
@@ -40,9 +40,10 @@
   </v-container>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, toRefs } from 'vue';
+import { computed, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { RawLocation } from 'vue-router';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
@@ -51,57 +52,44 @@ import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 
-export default defineComponent({
-  name: 'Assets',
-  components: { AssetLocations, AssetValueRow, AssetAmountAndValueOverTime },
-  props: {
-    identifier: { required: true, type: String }
-  },
-  setup(props) {
-    const { identifier } = toRefs(props);
-    const { isAssetIgnored, ignoreAsset, unignoreAsset } =
-      useIgnoredAssetsStore();
-
-    const isIgnored = isAssetIgnored(identifier);
-
-    const toggleIgnoreAsset = async () => {
-      const id = get(identifier);
-      if (get(isIgnored)) {
-        await unignoreAsset(id);
-      } else {
-        await ignoreAsset(id);
-      }
-    };
-
-    const editRoute = computed<RawLocation>(() => {
-      return {
-        path: Routes.ASSET_MANAGER.route,
-        query: {
-          id: get(identifier)
-        }
-      };
-    });
-
-    const premium = getPremium();
-
-    const { assetName, assetSymbol } = useAssetInfoRetrieval();
-
-    const name = computed<string>(() => {
-      return get(assetName(get(identifier)));
-    });
-
-    const symbol = computed<string>(() => {
-      return get(assetSymbol(get(identifier)));
-    });
-
-    return {
-      isIgnored,
-      toggleIgnoreAsset,
-      premium,
-      editRoute,
-      name,
-      symbol
-    };
-  }
+const props = defineProps({
+  identifier: { required: true, type: String }
 });
+
+const { identifier } = toRefs(props);
+const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
+
+const isIgnored = isAssetIgnored(identifier);
+
+const toggleIgnoreAsset = async () => {
+  const id = get(identifier);
+  if (get(isIgnored)) {
+    await unignoreAsset(id);
+  } else {
+    await ignoreAsset(id);
+  }
+};
+
+const editRoute = computed<RawLocation>(() => {
+  return {
+    path: Routes.ASSET_MANAGER.route,
+    query: {
+      id: get(identifier)
+    }
+  };
+});
+
+const premium = getPremium();
+
+const { assetName, assetSymbol } = useAssetInfoRetrieval();
+
+const name = computed<string>(() => {
+  return get(assetName(get(identifier)));
+});
+
+const symbol = computed<string>(() => {
+  return get(assetSymbol(get(identifier)));
+});
+
+const { t } = useI18n();
 </script>

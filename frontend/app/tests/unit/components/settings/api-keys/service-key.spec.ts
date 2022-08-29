@@ -3,15 +3,29 @@ import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import '../../../i18n';
+import { mockT, mockTc } from '../../../i18n';
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 
-describe('ServiceKey.vue', () => {
-  let wrapper: Wrapper<ServiceKey>;
+vi.mock('vue-i18n-composable', async () => {
+  const mod = await vi.importActual<typeof import('vue-i18n-composable')>(
+    'vue-i18n-composable'
+  );
 
-  function createWrapper(): Wrapper<ServiceKey> {
+  return {
+    ...mod,
+    useI18n: () => ({
+      t: mockT,
+      tc: mockTc
+    })
+  };
+});
+
+describe('ServiceKey.vue', () => {
+  let wrapper: Wrapper<any>;
+
+  function createWrapper(): Wrapper<any> {
     const vuetify = new Vuetify();
     const pinia = createPinia();
     setActivePinia(pinia);

@@ -1,10 +1,10 @@
 <template>
   <div v-if="needRefresh">
     <v-snackbar v-model="needRefresh" :timeout="-1" dark bottom right>
-      {{ $t('update_notifier.update_available') }}
+      {{ t('update_notifier.update_available') }}
       <template #action>
         <v-btn text :loading="updating" @click="update">
-          {{ $t('common.actions.update') }}
+          {{ t('common.actions.update') }}
         </v-btn>
       </template>
     </v-snackbar>
@@ -14,6 +14,7 @@
 <script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 
 const updateSW = ref<((refresh: boolean) => Promise<void>) | undefined>(
   undefined
@@ -61,4 +62,6 @@ const update = async () => {
     await worker(true);
   }
 };
+
+const { t } = useI18n();
 </script>

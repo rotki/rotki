@@ -37,7 +37,10 @@
             :key="item.tickerSymbol"
             @click="onSelected(item)"
           >
-            <v-list-item-avatar class="currency-list primary--text">
+            <v-list-item-avatar
+              class="currency-list primary--text"
+              :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
+            >
               {{ item.unicodeSymbol }}
             </v-list-item-avatar>
             <v-list-item-content>
@@ -122,6 +125,11 @@ export default defineComponent({
       start();
     };
 
+    const calculateFontSize = (symbol: string) => {
+      const length = symbol.length;
+      return `${2.4 - length * 0.4}em`;
+    };
+
     return {
       filter,
       visible,
@@ -129,6 +137,7 @@ export default defineComponent({
       selectFirst,
       filteredCurrencies,
       onSelected,
+      calculateFontSize,
       tc
     };
   }
@@ -149,7 +158,6 @@ export default defineComponent({
 }
 
 .currency-list {
-  font-size: 2em;
   font-weight: bold;
 }
 </style>

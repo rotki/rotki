@@ -6,20 +6,19 @@
         icon
         target="_blank"
         v-bind="$attrs"
-        :href="$interop.isPackaged ? undefined : $interop.premiumURL"
+        :href="interop.isPackaged ? undefined : interop.premiumURL"
         v-on="on"
-        @click="$interop.isPackaged ? $interop.navigateToPremium() : undefined"
+        @click="interop.isPackaged ? interop.navigateToPremium() : undefined"
       >
         <v-icon>mdi-lock</v-icon>
       </v-btn>
     </template>
-    <span v-text="$t('premium_lock.tooltip')" />
+    <span v-text="t('premium_lock.tooltip')" />
   </v-tooltip>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
+import { interop } from '@/electron-interop';
 
-export default defineComponent({
-  name: 'PremiumLock'
-});
+const { t } = useI18n();
 </script>

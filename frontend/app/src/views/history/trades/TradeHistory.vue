@@ -1,78 +1,54 @@
 <template>
   <progress-screen v-if="loading">
     <template #message>
-      {{ $t('trade_history.loading') }}
+      {{ t('trade_history.loading') }}
     </template>
-    {{ $t('trade_history.loading_subtitle') }}
+    {{ t('trade_history.loading_subtitle') }}
   </progress-screen>
-  <div v-else>
-    <open-trades v-if="preview" :data="openTrades" />
-    <div class="mt-8">
-      <closed-trades @fetch="fetchTrades" />
-    </div>
+  <div v-else class="mt-8">
+    <closed-trades @fetch="fetchTrades" />
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, useIntervalFn } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, onBeforeMount, onUnmounted } from 'vue';
+import { onBeforeMount, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
-import OpenTrades from '@/components/history/OpenTrades.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useTrades } from '@/store/history';
-import { TradeEntry } from '@/store/history/types';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-export default defineComponent({
-  name: 'Trades',
-  components: {
-    ProgressScreen,
-    ClosedTrades,
-    OpenTrades
+const { refreshPeriod } = storeToRefs(useFrontendSettingsStore());
+const { fetchTrades } = useTrades();
+
+const period = get(refreshPeriod) * 60 * 1000;
+
+const { pause, resume, isActive } = useIntervalFn(
+  async () => {
+    await fetchTrades(true);
   },
-  setup() {
-    const { refreshPeriod } = storeToRefs(useFrontendSettingsStore());
-    const { fetchTrades } = useTrades();
+  period,
+  { immediate: false }
+);
 
-    const preview = computed<boolean>(() => {
-      return !!import.meta.env.VITE_TRADES_PREVIEW;
-    });
+onBeforeMount(async () => {
+  await fetchTrades();
 
-    const openTrades: TradeEntry[] = [];
-
-    const period = get(refreshPeriod) * 60 * 1000;
-
-    const { pause, resume, isActive } = useIntervalFn(
-      async () => {
-        await fetchTrades(true);
-      },
-      period,
-      { immediate: false }
-    );
-
-    onBeforeMount(async () => {
-      await fetchTrades();
-
-      if (period > 0) {
-        resume();
-      }
-    });
-
-    onUnmounted(() => {
-      if (isActive) pause();
-    });
-
-    const { shouldShowLoadingScreen } = setupStatusChecking();
-
-    return {
-      preview,
-      openTrades,
-      fetchTrades,
-      loading: shouldShowLoadingScreen(Section.TRADES)
-    };
+  if (period > 0) {
+    resume();
   }
 });
+
+onUnmounted(() => {
+  if (isActive) pause();
+});
+
+const { shouldShowLoadingScreen } = setupStatusChecking();
+const loading = shouldShowLoadingScreen(Section.TRADES);
+
+const { t } = useI18n();
 </script>

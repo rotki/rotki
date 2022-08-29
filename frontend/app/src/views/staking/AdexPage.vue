@@ -2,7 +2,7 @@
   <module-not-active v-if="!enabled" :modules="module" />
   <progress-screen v-else-if="loading">
     <template #message>
-      {{ $t('adex_page.loading') }}
+      {{ t('adex_page.loading') }}
     </template>
   </progress-screen>
   <div v-else>
@@ -17,9 +17,10 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { defineComponent, onBeforeMount } from 'vue';
+import { onBeforeMount } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -30,39 +31,26 @@ import { Section } from '@/store/const';
 import { useAdexStakingStore } from '@/store/staking';
 import { Module } from '@/types/modules';
 
-export default defineComponent({
-  name: 'AdexPage',
-  components: { ActiveModules, ModuleNotActive, AdexStaking, ProgressScreen },
-  setup() {
-    const { isModuleEnabled } = useModules();
-    const enabled = isModuleEnabled(Module.ADEX);
+const { isModuleEnabled } = useModules();
+const enabled = isModuleEnabled(Module.ADEX);
 
-    const { fetchAdex } = useAdexStakingStore();
-    onBeforeMount(async () => {
-      if (!get(enabled)) {
-        return;
-      }
-      await fetchAdex(false);
-    });
-
-    const { isSectionRefreshing, shouldShowLoadingScreen } =
-      setupStatusChecking();
-
-    const loading = shouldShowLoadingScreen(Section.STAKING_ADEX);
-    const primaryRefreshing = isSectionRefreshing(Section.STAKING_ADEX);
-    const secondaryRefreshing = isSectionRefreshing(
-      Section.STAKING_ADEX_HISTORY
-    );
-
-    return {
-      enabled,
-      loading,
-      primaryRefreshing,
-      secondaryRefreshing,
-      module: [Module.ADEX]
-    };
+const { fetchAdex } = useAdexStakingStore();
+onBeforeMount(async () => {
+  if (!get(enabled)) {
+    return;
   }
+  await fetchAdex(false);
 });
+
+const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
+
+const loading = shouldShowLoadingScreen(Section.STAKING_ADEX);
+const primaryRefreshing = isSectionRefreshing(Section.STAKING_ADEX);
+const secondaryRefreshing = isSectionRefreshing(Section.STAKING_ADEX_HISTORY);
+
+const module = [Module.ADEX];
+
+const { t } = useI18n();
 </script>
 
 <style module lang="scss">

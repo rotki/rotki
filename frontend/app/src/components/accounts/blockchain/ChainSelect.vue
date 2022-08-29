@@ -5,7 +5,7 @@
     outlined
     class="account-form__chain pt-2"
     :items="items"
-    :label="$t('account_form.labels.blockchain')"
+    :label="t('account_form.labels.blockchain')"
     :disabled="disabled"
     item-value="symbol"
     @change="updateBlockchain"
@@ -19,10 +19,11 @@
   </v-select>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType } from 'vue';
+import { computed, PropType } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import { useModules } from '@/composables/session';
 import { Module } from '@/types/modules';
@@ -63,40 +64,33 @@ const chains: SupportedChain[] = [
   }
 ];
 
-export default defineComponent({
-  name: 'ChainSelect',
-  components: { ChainDisplay },
-  props: {
-    blockchain: {
-      required: true,
-      type: String as PropType<Blockchain>
-    },
-    disabled: {
-      required: true,
-      type: Boolean
-    }
+defineProps({
+  blockchain: {
+    required: true,
+    type: String as PropType<Blockchain>
   },
-  emits: ['update:blockchain'],
-  setup(props, { emit }) {
-    const updateBlockchain = (blockchain: Blockchain) => {
-      emit('update:blockchain', blockchain);
-    };
-
-    const { isModuleEnabled } = useModules();
-
-    const items = computed(() => {
-      const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
-
-      if (!isEth2Enabled) {
-        return chains.filter(({ symbol }) => symbol !== Blockchain.ETH2);
-      }
-      return chains;
-    });
-
-    return {
-      items,
-      updateBlockchain
-    };
+  disabled: {
+    required: true,
+    type: Boolean
   }
 });
+
+const emit = defineEmits(['update:blockchain']);
+
+const updateBlockchain = (blockchain: Blockchain) => {
+  emit('update:blockchain', blockchain);
+};
+
+const { isModuleEnabled } = useModules();
+
+const items = computed(() => {
+  const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
+
+  if (!isEth2Enabled) {
+    return chains.filter(({ symbol }) => symbol !== Blockchain.ETH2);
+  }
+  return chains;
+});
+
+const { t } = useI18n();
 </script>

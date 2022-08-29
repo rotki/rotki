@@ -12,7 +12,7 @@
     @input="visibleUpdate($event)"
   >
     <v-row justify="space-between" class="mt-0 pa-4">
-      <v-col class="text-h5">{{ $t('help_sidebar.title') }}</v-col>
+      <v-col class="text-h5">{{ t('help_sidebar.title') }}</v-col>
       <v-col cols="auto">
         <v-btn icon @click="visibleUpdate(false)">
           <v-icon>mdi-close</v-icon>
@@ -23,9 +23,9 @@
       <v-list-item
         v-for="(item, index) in entries"
         :key="index"
-        :href="$interop.isPackaged ? null : item.link"
+        :href="interop.isPackaged ? null : item.link"
         target="_blank"
-        @click="$interop.isPackaged ? $interop.openUrl(item.link) : null"
+        @click="interop.isPackaged ? interop.openUrl(item.link) : null"
       >
         <v-list-item-avatar>
           <v-icon>{{ item.icon }}</v-icon>
@@ -42,17 +42,17 @@
           <v-icon>mdi-chevron-right</v-icon>
         </v-list-item-action>
       </v-list-item>
-      <template v-if="!$interop.isPackaged">
+      <template v-if="!interop.isPackaged">
         <v-list-item selectable @click="openAbout()">
           <v-list-item-avatar>
             <v-icon>mdi-information</v-icon>
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>
-              {{ $t('help_sidebar.about.title') }}
+              {{ t('help_sidebar.about.title') }}
             </v-list-item-title>
             <v-list-item-subtitle>
-              {{ $t('help_sidebar.about.subtitle') }}
+              {{ t('help_sidebar.about.subtitle') }}
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action>
@@ -65,10 +65,10 @@
           </v-list-item-avatar>
           <v-list-item-content>
             <v-list-item-title>
-              {{ $t('help_sidebar.browser_log.title') }}
+              {{ t('help_sidebar.browser_log.title') }}
             </v-list-item-title>
             <v-list-item-subtitle>
-              {{ $t('help_sidebar.browser_log.subtitle') }}
+              {{ t('help_sidebar.browser_log.subtitle') }}
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action>
@@ -80,13 +80,14 @@
   </v-navigation-drawer>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-import i18n from '@/i18n';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
+import { interop } from '@/electron-interop';
 import { useNotifications } from '@/store/notifications';
 import { downloadFileByUrl } from '@/utils/download';
 import IndexedDb from '@/utils/indexed-db';
 
+const { t } = useI18n();
 type Entry = {
   readonly icon: string;
   readonly title: string;
@@ -97,84 +98,71 @@ type Entry = {
 const entries: Entry[] = [
   {
     icon: 'mdi-book-open-page-variant',
-    title: i18n.t('help_sidebar.user_guide.title').toString(),
-    subtitle: i18n.t('help_sidebar.user_guide.subtitle').toString(),
+    title: t('help_sidebar.user_guide.title').toString(),
+    subtitle: t('help_sidebar.user_guide.subtitle').toString(),
     link: 'https://rotki.readthedocs.io/en/latest/usage_guide.html'
   },
   {
     icon: 'mdi-frequently-asked-questions',
-    title: i18n.t('help_sidebar.faq.title').toString(),
-    subtitle: i18n.t('help_sidebar.faq.subtitle').toString(),
+    title: t('help_sidebar.faq.title').toString(),
+    subtitle: t('help_sidebar.faq.subtitle').toString(),
     link: 'https://rotki.readthedocs.io/en/latest/faq.html'
   },
   {
     icon: 'mdi-discord',
-    title: i18n.t('help_sidebar.support.title').toString(),
-    subtitle: i18n.t('help_sidebar.support.subtitle').toString(),
+    title: t('help_sidebar.support.title').toString(),
+    subtitle: t('help_sidebar.support.subtitle').toString(),
     link: 'https://discord.gg/aGCxHG7'
   },
   {
     icon: 'mdi-github',
-    title: i18n.t('help_sidebar.github.title').toString(),
-    subtitle: i18n.t('help_sidebar.github.subtitle').toString(),
+    title: t('help_sidebar.github.title').toString(),
+    subtitle: t('help_sidebar.github.subtitle').toString(),
     link: 'https://github.com/rotki/rotki'
   },
   {
     icon: 'mdi-twitter',
-    title: i18n.t('help_sidebar.twitter.title').toString(),
-    subtitle: i18n.t('help_sidebar.twitter.subtitle').toString(),
+    title: t('help_sidebar.twitter.title').toString(),
+    subtitle: t('help_sidebar.twitter.subtitle').toString(),
     link: 'https://twitter.com/rotkiapp'
   }
 ];
-export default defineComponent({
-  name: 'HelpSidebar',
-  props: {
-    visible: { required: true, type: Boolean }
-  },
-  emits: ['visible:update', 'about'],
-  setup(_, { emit }) {
-    const visibleUpdate = (_visible: boolean) => {
-      emit('visible:update', _visible);
-    };
 
-    const openAbout = () => {
-      visibleUpdate(false);
-    };
-
-    const downloadBrowserLog = async () => {
-      const loggerDb = new IndexedDb('db', 1, 'logs');
-
-      await loggerDb.getAll((data: any) => {
-        if (data?.length === 0) {
-          const { notify } = useNotifications();
-          notify({
-            title: i18n
-              .t('help_sidebar.browser_log.error.empty.title')
-              .toString(),
-            message: i18n
-              .t('help_sidebar.browser_log.error.empty.message')
-              .toString(),
-            display: true
-          });
-          return;
-        }
-        const messages = data.map((item: any) => item.message).join('\n');
-
-        downloadFileByUrl(
-          'data:text/plain;charset=utf-8,' + encodeURIComponent(messages),
-          'frontend_log.txt'
-        );
-      });
-    };
-
-    return {
-      entries,
-      visibleUpdate,
-      openAbout,
-      downloadBrowserLog
-    };
-  }
+defineProps({
+  visible: { required: true, type: Boolean }
 });
+
+const emit = defineEmits(['visible:update', 'about']);
+
+const visibleUpdate = (_visible: boolean) => {
+  emit('visible:update', _visible);
+};
+
+const openAbout = () => {
+  visibleUpdate(false);
+};
+
+const downloadBrowserLog = async () => {
+  const loggerDb = new IndexedDb('db', 1, 'logs');
+
+  await loggerDb.getAll((data: any) => {
+    if (data?.length === 0) {
+      const { notify } = useNotifications();
+      notify({
+        title: t('help_sidebar.browser_log.error.empty.title').toString(),
+        message: t('help_sidebar.browser_log.error.empty.message').toString(),
+        display: true
+      });
+      return;
+    }
+    const messages = data.map((item: any) => item.message).join('\n');
+
+    downloadFileByUrl(
+      'data:text/plain;charset=utf-8,' + encodeURIComponent(messages),
+      'frontend_log.txt'
+    );
+  });
+};
 </script>
 
 <style scoped lang="scss">

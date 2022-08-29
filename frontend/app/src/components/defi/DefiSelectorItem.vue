@@ -11,13 +11,13 @@
     <span class="ml-2">{{ identifier }}</span>
   </div>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { get } from '@vueuse/core';
 
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
-import i18n from '@/i18n';
+import { computed, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
 type DefiProtocolInfo = {
@@ -25,35 +25,27 @@ type DefiProtocolInfo = {
   readonly protocol: DefiProtocol;
 };
 
-export default defineComponent({
-  name: 'DefiSelectorItem',
-  props: {
-    item: { required: true, type: Object as PropType<DefiProtocolInfo> }
-  },
-  setup(props) {
-    const { item } = toRefs(props);
-    const { scrambleData } = storeToRefs(useSessionSettingsStore());
+const props = defineProps({
+  item: { required: true, type: Object as PropType<DefiProtocolInfo> }
+});
+const { item } = toRefs(props);
+const { scrambleData } = storeToRefs(useSessionSettingsStore());
 
-    const getIcon = ({ protocol }: DefiProtocolInfo): string => {
-      return protocol.startsWith('makerdao') ? 'makerdao' : protocol;
-    };
+const getIcon = ({ protocol }: DefiProtocolInfo): string => {
+  return protocol.startsWith('makerdao') ? 'makerdao' : protocol;
+};
 
-    const identifier = computed<string>(() => {
-      const { identifier } = get(item);
-      if (get(scrambleData)) {
-        if (parseInt(identifier)) {
-          return i18n.t('defi_selector_item.vault').toString();
-        } else if (identifier.includes('-')) {
-          return identifier.split('-')[0];
-        }
-      }
-      return identifier;
-    });
+const { t } = useI18n();
 
-    return {
-      getIcon,
-      identifier
-    };
+const identifier = computed<string>(() => {
+  const { identifier } = get(item);
+  if (get(scrambleData)) {
+    if (parseInt(identifier)) {
+      return t('defi_selector_item.vault').toString();
+    } else if (identifier.includes('-')) {
+      return identifier.split('-')[0];
+    }
   }
+  return identifier;
 });
 </script>

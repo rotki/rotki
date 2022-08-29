@@ -1,10 +1,10 @@
 <template>
   <setting-category>
     <template #title>
-      {{ $t('price_oracle_settings.title') }}
+      {{ t('price_oracle_settings.title') }}
     </template>
     <template #subtitle>
-      {{ $t('price_oracle_settings.subtitle') }}
+      {{ t('price_oracle_settings.subtitle') }}
     </template>
 
     <v-row>
@@ -21,7 +21,7 @@
             @input="update"
           >
             <template #title>
-              {{ $t('price_oracle_settings.current_prices') }}
+              {{ t('price_oracle_settings.current_prices') }}
             </template>
           </price-oracle-selection>
         </settings-option>
@@ -40,7 +40,7 @@
             @input="update"
           >
             <template #title>
-              {{ $t('price_oracle_settings.historic_prices') }}
+              {{ t('price_oracle_settings.historic_prices') }}
             </template>
           </price-oracle-selection>
         </settings-option>
@@ -48,7 +48,7 @@
     </v-row>
     <v-row>
       <v-col class="text-caption">
-        {{ $t('price_oracle_selection.hint') }}
+        {{ t('price_oracle_selection.hint') }}
       </v-col>
     </v-row>
   </setting-category>
@@ -58,6 +58,7 @@
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import PriceOracleSelection from '@/components/settings/PriceOracleSelection.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
@@ -91,4 +92,6 @@ onMounted(() => {
   resetCurrentPriceOracles();
   resetHistoricalPriceOracles();
 });
+
+const { t } = useI18n();
 </script>

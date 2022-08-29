@@ -33,7 +33,7 @@
             <v-icon color="primary">mdi-cog</v-icon>
           </v-list-item-avatar>
           <v-list-item-title>
-            {{ $t('user_dropdown.settings') }}
+            {{ t('user_dropdown.settings') }}
           </v-list-item-title>
         </v-list-item>
 
@@ -46,7 +46,7 @@
             <v-icon color="primary"> {{ privacyModeIcon }}</v-icon>
           </v-list-item-avatar>
           <v-list-item-title>
-            {{ $t('user_dropdown.change_privacy_mode.label') }}
+            {{ t('user_dropdown.change_privacy_mode.label') }}
           </v-list-item-title>
         </v-list-item>
 
@@ -55,7 +55,7 @@
             <theme-control :dark-mode-enabled="darkModeEnabled" menu />
           </v-list-item-avatar>
           <v-list-item-title>
-            {{ $t('user_dropdown.switch_theme') }}
+            {{ t('user_dropdown.switch_theme') }}
           </v-list-item-title>
         </v-list-item>
 
@@ -69,25 +69,26 @@
             <v-icon color="primary">mdi-logout-variant</v-icon>
           </v-list-item-avatar>
           <v-list-item-title>
-            {{ $t('user_dropdown.logout') }}
+            {{ t('user_dropdown.logout') }}
           </v-list-item-title>
         </v-list-item>
       </v-list>
     </v-menu>
     <confirm-dialog
       :display="confirmLogout"
-      :title="$tc('user_dropdown.confirmation.title')"
-      :message="$tc('user_dropdown.confirmation.message')"
+      :title="tc('user_dropdown.confirmation.title')"
+      :message="tc('user_dropdown.confirmation.message')"
       @confirm="logoutHandler()"
       @cancel="confirmLogout = false"
     />
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set, useLocalStorage } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import ThemeControl from '@/components/premium/ThemeControl.vue';
@@ -97,49 +98,33 @@ import { useDarkMode } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
 
+const { t, tc } = useI18n();
+
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 
-export default defineComponent({
-  name: 'UserDropdown',
-  components: {
-    ThemeControl,
-    ConfirmDialog,
-    MenuTooltipButton
-  },
-  setup() {
-    const store = useSessionStore();
-    const { username } = storeToRefs(store);
-    const confirmLogout = ref<boolean>(false);
-    const router = useRouter();
-    const route = useRoute();
-    const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
-    const { currentBreakpoint } = useTheme();
-    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+const store = useSessionStore();
+const { username } = storeToRefs(store);
+const confirmLogout = ref<boolean>(false);
+const router = useRouter();
+const route = useRoute();
+const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
+const { currentBreakpoint } = useTheme();
+const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
-    const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
+const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 
-    const logoutHandler = async () => {
-      if (interop.isPackaged && get(savedRememberPassword)) {
-        await interop.clearPassword();
-      }
-
-      set(confirmLogout, false);
-      await store.logout();
-
-      if (get(route).path !== '/') {
-        await router.replace('/');
-      }
-    };
-
-    return {
-      confirmLogout,
-      username,
-      privacyModeIcon,
-      xsOnly,
-      togglePrivacyMode,
-      logoutHandler,
-      ...useDarkMode()
-    };
+const logoutHandler = async () => {
+  if (interop.isPackaged && get(savedRememberPassword)) {
+    await interop.clearPassword();
   }
-});
+
+  set(confirmLogout, false);
+  await store.logout();
+
+  if (get(route).path !== '/') {
+    await router.replace('/');
+  }
+};
+
+const { darkModeEnabled } = useDarkMode();
 </script>

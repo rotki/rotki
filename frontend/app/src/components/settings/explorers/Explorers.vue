@@ -1,10 +1,10 @@
 ﻿<template>
   <div class="explorers mt-8">
     <div class="text-h6">
-      {{ $t('explorers.title') }}
+      {{ t('explorers.title') }}
     </div>
     <div class="text-subtitle-1">
-      {{ $t('explorers.subtitle') }}
+      {{ t('explorers.subtitle') }}
     </div>
 
     <v-select
@@ -12,7 +12,7 @@
       class="mt-4"
       outlined
       :items="supportedExplorers"
-      :label="$t('explorers.chain_selector')"
+      :label="t('explorers.chain_selector')"
       @change="onChange"
     >
       <template #item="{ item }">
@@ -27,8 +27,8 @@
       v-model="address"
       outlined
       clearable
-      :label="$t('explorers.address')"
-      :hint="$t('explorers.address_url', { addressUrl })"
+      :label="t('explorers.address')"
+      :hint="t('explorers.address_url', { addressUrl })"
       :placeholder="addressUrl"
       persistent-hint
       @click:clear="saveAddress()"
@@ -48,8 +48,8 @@
       v-model="tx"
       outlined
       clearable
-      :label="$t('explorers.tx')"
-      :hint="$t('explorers.tx_url', { txUrl })"
+      :label="t('explorers.tx')"
+      :hint="t('explorers.tx_url', { txUrl })"
       :placeholder="txUrl"
       persistent-hint
       @click:clear="saveTransaction()"
@@ -73,6 +73,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { explorerUrls } from '@/components/helper/asset-urls';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
@@ -151,6 +152,8 @@ const saveTransaction = async (newTransaction?: string) => {
     }
   });
 };
+
+const { t } = useI18n();
 </script>
 
 <style scoped lang="scss">

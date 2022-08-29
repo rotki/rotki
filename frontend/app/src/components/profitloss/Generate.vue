@@ -2,7 +2,7 @@
   <v-form v-model="valid">
     <card>
       <template #title>
-        {{ $t('common.actions.generate') }}
+        {{ t('common.actions.generate') }}
       </template>
       <template #details>
         <v-tooltip top>
@@ -18,7 +18,7 @@
               <v-icon color="primary">mdi-cog</v-icon>
             </v-btn>
           </template>
-          <span>{{ $t('profit_loss_report.settings_tooltip') }}</span>
+          <span>{{ t('profit_loss_report.settings_tooltip') }}</span>
         </v-tooltip>
       </template>
       <range-selector v-model="range" />
@@ -35,7 +35,7 @@
               @click="generate()"
             >
               <v-icon class="mr-2">mdi-file-chart</v-icon>
-              {{ $t('common.actions.generate') }}
+              {{ t('common.actions.generate') }}
             </v-btn>
           </v-col>
           <v-col cols="auto">
@@ -49,7 +49,7 @@
                   v-on="on"
                 >
                   <v-icon class="mr-2">mdi-wrench</v-icon>
-                  {{ $t('profit_loss_reports.debug.title') }}
+                  {{ t('profit_loss_reports.debug.title') }}
                 </v-btn>
               </template>
               <v-list>
@@ -58,7 +58,7 @@
                     <div class="d-flex align-center">
                       <v-icon class="mr-2">mdi-export</v-icon>
                       <span>
-                        {{ $t('profit_loss_reports.debug.export_data') }}
+                        {{ t('profit_loss_reports.debug.export_data') }}
                       </span>
                     </div>
                   </v-list-item-title>
@@ -68,7 +68,7 @@
                     <div class="d-flex align-center">
                       <v-icon class="mr-2">mdi-import</v-icon>
                       <span>
-                        {{ $t('profit_loss_reports.debug.import_data') }}
+                        {{ t('profit_loss_reports.debug.import_data') }}
                       </span>
                     </div>
                   </v-list-item-title>
@@ -84,7 +84,7 @@
               @click="exportReportData"
             >
               <v-icon class="mr-2">mdi-export</v-icon>
-              {{ $t('profit_loss_reports.debug.export_data') }}
+              {{ t('profit_loss_reports.debug.export_data') }}
             </v-btn>
           </v-col>
         </v-row>
@@ -93,59 +93,46 @@
   </v-form>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineEmits, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import { convertToTimestamp } from '@/utils/date';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
-export default defineComponent({
-  name: 'Generate',
-  components: {
-    RangeSelector
-  },
-  emits: ['generate', 'export-data', 'import-data'],
-  setup(_, { emit }) {
-    const range = ref({ start: '', end: '' });
-    const valid = ref<boolean>(false);
+const emit = defineEmits(['generate', 'export-data', 'import-data']);
 
-    const startTimestamp = computed<number>(() => {
-      return convertToTimestamp(get(range).start);
-    });
+const { t } = useI18n();
 
-    const endTimestamp = computed<number>(() => {
-      return convertToTimestamp(get(range).end);
-    });
+const range = ref({ start: '', end: '' });
+const valid = ref<boolean>(false);
 
-    const generate = () => {
-      emit('generate', {
-        start: get(startTimestamp),
-        end: get(endTimestamp)
-      });
-    };
-
-    const exportReportData = () => {
-      emit('export-data', {
-        start: get(startTimestamp),
-        end: get(endTimestamp)
-      });
-    };
-
-    const importReportData = () => {
-      emit('import-data');
-    };
-
-    const isDevelopment = checkIfDevelopment();
-
-    return {
-      isDevelopment,
-      range,
-      valid,
-      generate,
-      exportReportData,
-      importReportData
-    };
-  }
+const startTimestamp = computed<number>(() => {
+  return convertToTimestamp(get(range).start);
 });
+
+const endTimestamp = computed<number>(() => {
+  return convertToTimestamp(get(range).end);
+});
+
+const generate = () => {
+  emit('generate', {
+    start: get(startTimestamp),
+    end: get(endTimestamp)
+  });
+};
+
+const exportReportData = () => {
+  emit('export-data', {
+    start: get(startTimestamp),
+    end: get(endTimestamp)
+  });
+};
+
+const importReportData = () => {
+  emit('import-data');
+};
+
+const isDevelopment = checkIfDevelopment();
 </script>

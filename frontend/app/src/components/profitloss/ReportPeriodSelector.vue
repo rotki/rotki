@@ -1,7 +1,7 @@
 <template>
   <v-row>
     <v-col cols="12">
-      <span class="text-h6">{{ $t('generate.period') }}</span>
+      <span class="text-h6">{{ t('generate.period') }}</span>
       <v-chip-group
         :value="year"
         mandatory
@@ -27,12 +27,12 @@
           label
           :color="isCustom ? 'primary' : null"
         >
-          {{ $t('generate.custom_selection') }}
+          {{ t('generate.custom_selection') }}
         </v-chip>
       </v-chip-group>
     </v-col>
     <v-col v-if="year !== 'custom'" cols="12">
-      <span class="text-h6">{{ $t('generate.sub_period_label') }}</span>
+      <span class="text-h6">{{ t('generate.sub_period_label') }}</span>
       <v-chip-group
         :value="quarter"
         mandatory
@@ -66,7 +66,7 @@ import {
   toRefs,
   watch
 } from 'vue';
-import i18n from '@/i18n';
+import { useI18n } from 'vue-i18n-composable';
 import { Quarter } from '@/types/frontend-settings';
 
 export type PeriodChangedEvent = {
@@ -95,29 +95,6 @@ const QUARTER_ENDS: { [quarter in Quarter]: string } = {
   [Quarter.ALL]: '31/12'
 };
 
-const getSubPeriods = () => [
-  {
-    id: Quarter.ALL,
-    name: i18n.t('generate.sub_period.all').toString()
-  },
-  {
-    id: Quarter.Q1,
-    name: 'Q1'
-  },
-  {
-    id: Quarter.Q2,
-    name: 'Q2'
-  },
-  {
-    id: Quarter.Q3,
-    name: 'Q3'
-  },
-  {
-    id: Quarter.Q4,
-    name: 'Q4'
-  }
-];
-
 export default defineComponent({
   name: 'ReportPeriodSelector',
   props: {
@@ -135,6 +112,8 @@ export default defineComponent({
   emits: ['update:period', 'update:selection', 'changed'],
   setup(props, { emit }) {
     const { quarter, year } = toRefs(props);
+
+    const { t } = useI18n();
 
     const updatePeriod = (period: PeriodChangedEvent | null) => {
       emit('update:period', period);
@@ -193,11 +172,35 @@ export default defineComponent({
       return periods;
     });
 
+    const subPeriods = [
+      {
+        id: Quarter.ALL,
+        name: t('generate.sub_period.all').toString()
+      },
+      {
+        id: Quarter.Q1,
+        name: 'Q1'
+      },
+      {
+        id: Quarter.Q2,
+        name: 'Q2'
+      },
+      {
+        id: Quarter.Q3,
+        name: 'Q3'
+      },
+      {
+        id: Quarter.Q4,
+        name: 'Q4'
+      }
+    ];
+
     return {
+      t,
       start,
       periods,
       isCustom,
-      subPeriods: getSubPeriods(),
+      subPeriods,
       onChange,
       isStartAfterNow
     };

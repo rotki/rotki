@@ -25,7 +25,7 @@
         />
       </div>
     </v-col>
-    <v-col cols="auto">{{ $t('pagination.of', { length }) }}</v-col>
+    <v-col cols="auto">{{ t('pagination.of', { length }) }}</v-col>
     <v-col cols="auto">
       <v-btn icon :disabled="value === length" @click="nextPage">
         <v-icon>mdi-chevron-right</v-icon>
@@ -34,74 +34,64 @@
   </v-row>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, toRefs } from 'vue';
+import { computed, defineProps, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useTheme } from '@/composables/common';
 
-export default defineComponent({
-  name: 'Pagination',
-  props: {
-    value: {
-      required: true,
-      type: Number
-    },
-    length: {
-      required: true,
-      type: Number
-    }
+const props = defineProps({
+  value: {
+    required: true,
+    type: Number
   },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { length, value } = toRefs(props);
-    const items = computed(() => {
-      const items: number[] = [];
-
-      for (let i = 1; i <= get(length); i++) {
-        items.push(i);
-      }
-      return items;
-    });
-
-    const changePage = (page: number) => {
-      emit('input', page);
-    };
-
-    const newPage = (data?: any) => {
-      if (!data) {
-        return;
-      }
-
-      const page = parseInt(data);
-      if (isNaN(page)) {
-        return;
-      }
-      changePage(page);
-    };
-
-    const nextPage = () => {
-      if (get(value) < get(length)) {
-        changePage(get(value) + 1);
-      }
-    };
-
-    const previousPage = () => {
-      if (get(value) > 1) {
-        changePage(get(value) - 1);
-      }
-    };
-
-    const { dark } = useTheme();
-
-    return {
-      items,
-      nextPage,
-      previousPage,
-      newPage,
-      dark
-    };
+  length: {
+    required: true,
+    type: Number
   }
 });
+
+const emit = defineEmits(['input']);
+const { length, value } = toRefs(props);
+const items = computed(() => {
+  const items: number[] = [];
+
+  for (let i = 1; i <= get(length); i++) {
+    items.push(i);
+  }
+  return items;
+});
+
+const changePage = (page: number) => {
+  emit('input', page);
+};
+
+const newPage = (data?: any) => {
+  if (!data) {
+    return;
+  }
+
+  const page = parseInt(data);
+  if (isNaN(page)) {
+    return;
+  }
+  changePage(page);
+};
+
+const nextPage = () => {
+  if (get(value) < get(length)) {
+    changePage(get(value) + 1);
+  }
+};
+
+const previousPage = () => {
+  if (get(value) > 1) {
+    changePage(get(value) - 1);
+  }
+};
+
+const { dark } = useTheme();
+const { t } = useI18n();
 </script>
 
 <style module lang="scss">

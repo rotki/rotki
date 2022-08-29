@@ -9,7 +9,7 @@
           class="font-weight-light"
           :class="$style.percentage"
         >
-          {{ $t('progress_screen.progress', { progress: percentage }) }}
+          {{ t('progress_screen.progress', { progress: percentage }) }}
         </v-row>
         <v-row align="center" justify="center" :class="$style.loader">
           <v-col cols="10">
@@ -50,33 +50,28 @@
     </div>
   </full-size-content>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, toRefs } from 'vue';
+import { computed, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 
-export default defineComponent({
-  name: 'ProgressScreen',
-  components: { FullSizeContent },
-  props: {
-    progress: { required: false, default: '', type: String }
-  },
-  setup(props) {
-    const { progress } = toRefs(props);
-    const percentage = computed(() => {
-      const currentProgress = get(progress);
-      try {
-        const number = parseFloat(currentProgress);
-        return number.toFixed(2);
-      } catch (e: any) {
-        return currentProgress;
-      }
-    });
-    return {
-      percentage
-    };
+const props = defineProps({
+  progress: { required: false, default: '', type: String }
+});
+
+const { progress } = toRefs(props);
+const percentage = computed(() => {
+  const currentProgress = get(progress);
+  try {
+    const number = parseFloat(currentProgress);
+    return number.toFixed(2);
+  } catch (e: any) {
+    return currentProgress;
   }
 });
+
+const { t } = useI18n();
 </script>
 <style module lang="scss">
 .indeterminate {

@@ -8,8 +8,8 @@
     <v-switch
       v-model="includeNfts"
       class="general-settings__fields__zero-base mb-4 mt-2"
-      :label="$t('frontend_settings.label.include_nfts')"
-      :hint="$t('frontend_settings.label.include_nfts_hint')"
+      :label="t('frontend_settings.label.include_nfts')"
+      :hint="t('frontend_settings.label.include_nfts_hint')"
       persistent-hint
       :success-messages="success"
       :error-messages="error"
@@ -22,6 +22,7 @@
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
 
@@ -32,4 +33,6 @@ const { nftsInNetValue: enabled } = storeToRefs(useFrontendSettingsStore());
 onMounted(() => {
   set(includeNfts, get(enabled));
 });
+
+const { t } = useI18n();
 </script>

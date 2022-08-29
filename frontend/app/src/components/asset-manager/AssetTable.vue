@@ -242,7 +242,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 ]);
 
 const isIgnored = (identifier: string) => {
-  return isAssetIgnored(get(identifier));
+  return isAssetIgnored(identifier);
 };
 
 const add = () => emit('add');

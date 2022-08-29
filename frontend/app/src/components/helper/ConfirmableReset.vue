@@ -26,47 +26,41 @@
       </v-tooltip>
     </template>
     <v-card max-width="280px">
-      <v-card-title>{{ $t('common.actions.confirm') }}</v-card-title>
+      <v-card-title>{{ t('common.actions.confirm') }}</v-card-title>
       <v-card-text>
-        <slot>{{ $t('confirmable_reset.confirm.message') }}</slot>
+        <slot>{{ t('confirmable_reset.confirm.message') }}</slot>
       </v-card-text>
       <v-card-actions>
         <v-spacer />
         <v-btn text @click="menu = false">
-          {{ $t('common.actions.cancel') }}
+          {{ t('common.actions.cancel') }}
         </v-btn>
         <v-btn color="primary" text :disabled="disabled" @click="reset()">
-          {{ $t('common.actions.confirm') }}
+          {{ t('common.actions.confirm') }}
         </v-btn>
       </v-card-actions>
     </v-card>
   </v-menu>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { set } from '@vueuse/core';
-import { defineComponent, ref } from 'vue';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 
-export default defineComponent({
-  name: 'ConfirmableReset',
-  props: {
-    tooltip: { required: false, type: String, default: '' },
-    loading: { required: false, type: Boolean, default: false },
-    disabled: { required: false, type: Boolean, default: false }
-  },
-  emits: ['reset'],
-  setup(_, { emit }) {
-    const menu = ref<boolean>(false);
-
-    const reset = () => {
-      set(menu, false);
-      emit('reset');
-    };
-
-    return {
-      menu,
-      reset
-    };
-  }
+defineProps({
+  tooltip: { required: false, type: String, default: '' },
+  loading: { required: false, type: Boolean, default: false },
+  disabled: { required: false, type: Boolean, default: false }
 });
+
+const emit = defineEmits(['reset']);
+const menu = ref<boolean>(false);
+
+const reset = () => {
+  set(menu, false);
+  emit('reset');
+};
+
+const { t } = useI18n();
 </script>

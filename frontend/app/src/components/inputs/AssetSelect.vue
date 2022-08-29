@@ -80,7 +80,11 @@ export default defineComponent({
     },
     hint: { required: false, type: String, default: '' },
     successMessages: { required: false, type: String, default: '' },
-    errorMessages: { required: false, type: String, default: '' },
+    errorMessages: {
+      required: false,
+      type: Array as PropType<string[]>,
+      default: () => []
+    },
     label: { required: false, type: String, default: 'Asset' },
     value: { required: false, type: String, default: '' },
     rules: {

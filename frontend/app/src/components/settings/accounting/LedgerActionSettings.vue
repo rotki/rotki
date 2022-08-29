@@ -1,8 +1,8 @@
 <template>
   <setting-category>
-    <template #title>{{ $t('ledger_action_settings.title') }}</template>
+    <template #title>{{ t('ledger_action_settings.title') }}</template>
     <template #subtitle>
-      {{ $t('ledger_action_settings.subtitle') }}
+      {{ t('ledger_action_settings.subtitle') }}
     </template>
     <settings-option
       #default="{ error, success, update }"
@@ -12,8 +12,8 @@
         <v-simple-table dense>
           <thead>
             <tr>
-              <th>{{ $t('ledger_action_settings.header.ledger_action') }}</th>
-              <th>{{ $t('ledger_action_settings.header.taxable') }}</th>
+              <th>{{ t('ledger_action_settings.header.ledger_action') }}</th>
+              <th>{{ t('ledger_action_settings.header.taxable') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -40,6 +40,7 @@
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
@@ -78,4 +79,6 @@ onMounted(() => {
     taxable.value[taxableAction] = true;
   }
 });
+
+const { t } = useI18n();
 </script>

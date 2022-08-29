@@ -4,11 +4,11 @@
       <v-col>
         <div
           class="text-h6"
-          v-text="$t('timeframe_settings.default_timeframe')"
+          v-text="t('timeframe_settings.default_timeframe')"
         />
         <div
           class="text-subtitle-1"
-          v-text="$t('timeframe_settings.default_timeframe_description')"
+          v-text="t('timeframe_settings.default_timeframe_description')"
         />
       </v-col>
     </v-row>
@@ -17,7 +17,7 @@
         <v-card class="pa-4" outlined>
           <div>
             <div class="text-subtitle-1">
-              {{ $t('timeframe_settings.visible_timeframes') }}
+              {{ t('timeframe_settings.visible_timeframes') }}
             </div>
 
             <div class="timeframe-settings">
@@ -25,7 +25,7 @@
                 <template #activator="{ on, attrs }">
                   <v-icon small v-bind="attrs" v-on="on"> mdi-lock </v-icon>
                 </template>
-                <span v-text="$t('overall_balances.premium_hint')" />
+                <span v-text="t('overall_balances.premium_hint')" />
               </v-tooltip>
 
               <v-chip
@@ -53,7 +53,7 @@
 
             <div>
               <div class="text-subtitle-1">
-                {{ $t('timeframe_settings.inactive_timeframes') }}
+                {{ t('timeframe_settings.inactive_timeframes') }}
               </div>
               <div class="timeframe-settings">
                 <v-chip
@@ -97,6 +97,7 @@ import {
 } from '@rotki/common/lib/settings/graphs';
 import { get } from '@vueuse/core';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import Fragment from '@/components/helper/Fragment';
 import { getPremium } from '@/composables/session';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -132,6 +133,7 @@ export default defineComponent({
   },
   emits: ['timeframe-change', 'visible-timeframes-change'],
   setup(props, { emit }) {
+    const { t } = useI18n();
     const { message, visibleTimeframes, value, currentSessionTimeframe } =
       toRefs(props);
 
@@ -224,6 +226,7 @@ export default defineComponent({
     };
 
     return {
+      t,
       premium,
       appendedVisibleTimeframes,
       chipClass,

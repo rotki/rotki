@@ -2,12 +2,12 @@
   <div>
     <no-premium-placeholder
       v-if="!premium"
-      :text="$t('eth2_page.no_premium')"
+      :text="tc('eth2_page.no_premium')"
     />
     <module-not-active v-else-if="!enabled" :modules="module" />
     <progress-screen v-else-if="loading">
       <template #message>
-        {{ $t('eth2_page.loading') }}
+        {{ t('eth2_page.loading') }}
       </template>
     </progress-screen>
     <eth2-staking
@@ -32,14 +32,14 @@
               <template #activator="{ on, attrs }">
                 <div v-bind="attrs" v-on="on">
                   <v-btn-toggle v-model="filterType" dense mandatory>
-                    <v-btn value="key">{{ $t('eth2_page.toggle.key') }}</v-btn>
+                    <v-btn value="key">{{ t('eth2_page.toggle.key') }}</v-btn>
                     <v-btn value="address">
-                      {{ $t('eth2_page.toggle.depositor') }}
+                      {{ t('eth2_page.toggle.depositor') }}
                     </v-btn>
                   </v-btn-toggle>
                 </div>
               </template>
-              <span>{{ $t('eth2_page.toggle.hint') }}</span>
+              <span>{{ t('eth2_page.toggle.hint') }}</span>
             </v-tooltip>
           </v-col>
           <v-col cols="12" md="6">
@@ -58,11 +58,11 @@
   </div>
 </template>
 
-<script lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
@@ -76,78 +76,47 @@ import { Section } from '@/store/const';
 import { useEth2StakingStore } from '@/store/staking';
 import { Module } from '@/types/modules';
 
-const Eth2Page = defineComponent({
-  name: 'Eth2Page',
-  components: {
-    NoPremiumPlaceholder,
-    Eth2ValidatorFilter,
-    ActiveModules,
-    ModuleNotActive,
-    ProgressScreen,
-    Eth2Staking
-  },
-  setup() {
-    const selection = ref<string[]>([]);
-    const filterType = ref<'address' | 'key'>('key');
-    const { isModuleEnabled } = useModules();
+const selection = ref<string[]>([]);
+const filterType = ref<'address' | 'key'>('key');
+const { isModuleEnabled } = useModules();
 
-    const enabled = isModuleEnabled(Module.ETH2);
+const enabled = isModuleEnabled(Module.ETH2);
 
-    const store = useEth2StakingStore();
-    const { details, deposits, stats } = storeToRefs(store);
-    const { load, updatePagination } = store;
+const store = useEth2StakingStore();
+const { details, deposits, stats } = storeToRefs(store);
+const { load, updatePagination } = store;
 
-    onMounted(async () => {
-      if (get(enabled)) {
-        await refresh();
-      }
-    });
-    const { isSectionRefreshing, shouldShowLoadingScreen } =
-      setupStatusChecking();
-
-    const loading = shouldShowLoadingScreen(Section.STAKING_ETH2);
-    const primaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2);
-    const secondaryRefreshing = isSectionRefreshing(
-      Section.STAKING_ETH2_DEPOSITS
-    );
-    const eth2StatsLoading = isSectionLoading(Section.STAKING_ETH2_STATS);
-
-    const { eth2ValidatorsState: eth2Validators } = storeToRefs(
-      useBlockchainAccountsStore()
-    );
-    watch(filterType, () => set(selection, []));
-
-    const refresh = async () => await load(true);
-
-    const ownership = computed(() => {
-      const ownership: Record<string, string> = {};
-      for (const { validatorIndex, ownershipPercentage } of get(eth2Validators)
-        .entries) {
-        ownership[validatorIndex] = ownershipPercentage;
-      }
-      return ownership;
-    });
-
-    return {
-      selection,
-      loading,
-      primaryRefreshing,
-      secondaryRefreshing,
-      eth2StatsLoading,
-      enabled,
-      filterType,
-      eth2Validators,
-      deposits,
-      details,
-      stats,
-      ownership,
-      premium: getPremium(),
-      refresh,
-      updatePagination,
-      chains: [Blockchain.ETH],
-      module: [Module.ETH2]
-    };
+onMounted(async () => {
+  if (get(enabled)) {
+    await refresh();
   }
 });
-export default Eth2Page;
+const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
+
+const loading = shouldShowLoadingScreen(Section.STAKING_ETH2);
+const primaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2);
+const secondaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2_DEPOSITS);
+const eth2StatsLoading = isSectionLoading(Section.STAKING_ETH2_STATS);
+
+const { eth2ValidatorsState: eth2Validators } = storeToRefs(
+  useBlockchainAccountsStore()
+);
+watch(filterType, () => set(selection, []));
+
+const refresh = async () => await load(true);
+
+const ownership = computed(() => {
+  const ownership: Record<string, string> = {};
+  for (const { validatorIndex, ownershipPercentage } of get(eth2Validators)
+    .entries) {
+    ownership[validatorIndex] = ownershipPercentage;
+  }
+  return ownership;
+});
+
+const premium = getPremium();
+
+const module = [Module.ETH2];
+
+const { t, tc } = useI18n();
 </script>

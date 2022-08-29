@@ -4,7 +4,7 @@
       <template #activator="{ on }">
         <v-btn color="error" depressed v-on="on">
           <span class="px-2">
-            {{ $tc('profit_loss_report.actionable.show_issues') }}
+            {{ tc('profit_loss_report.actionable.show_issues') }}
           </span>
           <v-chip x-small class="px-2" color="error darken-2">
             {{ actionableItemsLength }}
@@ -19,48 +19,39 @@
     </v-dialog>
   </div>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
+import { computed, PropType, ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import { useReports } from '@/store/reports';
 import { SelectedReport } from '@/types/reports';
 
-export default defineComponent({
-  name: 'ReportActionable',
-  components: {
-    ReportActionableCard
+const props = defineProps({
+  report: {
+    required: true,
+    type: Object as PropType<SelectedReport>
   },
-  props: {
-    report: {
-      required: true,
-      type: Object as PropType<SelectedReport>
-    },
-    initialOpen: { required: false, type: Boolean, default: false }
-  },
-  setup(props) {
-    const { initialOpen } = toRefs(props);
-    const mainDialogOpen = ref<boolean>(get(initialOpen));
-
-    const reportsStore = useReports();
-    const { actionableItems } = toRefs(reportsStore);
-
-    const actionableItemsLength = computed(() => {
-      let total: number = 0;
-
-      const items = get(actionableItems);
-
-      if (items) {
-        total = items.missingAcquisitions.length + items.missingPrices.length;
-      }
-
-      return total;
-    });
-
-    return {
-      mainDialogOpen,
-      actionableItemsLength
-    };
-  }
+  initialOpen: { required: false, type: Boolean, default: false }
 });
+
+const { initialOpen } = toRefs(props);
+const mainDialogOpen = ref<boolean>(get(initialOpen));
+
+const reportsStore = useReports();
+const { actionableItems } = toRefs(reportsStore);
+
+const actionableItemsLength = computed(() => {
+  let total: number = 0;
+
+  const items = get(actionableItems);
+
+  if (items) {
+    total = items.missingAcquisitions.length + items.missingPrices.length;
+  }
+
+  return total;
+});
+
+const { tc } = useI18n();
 </script>

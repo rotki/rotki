@@ -17,9 +17,9 @@
         data-cy="account-management"
       >
         <div class="pa-6 text-h2 font-weight-black white--text primary">
-          <div>{{ $t('app.name') }}</div>
+          <div>{{ t('app.name') }}</div>
           <div class="text-caption">
-            {{ $t('app.moto') }}
+            {{ t('app.moto') }}
           </div>
         </div>
         <connection-loading
@@ -65,11 +65,11 @@
             </v-btn>
           </template>
           <span v-if="animationEnabled">
-            {{ $t('frontend_settings.animations.disable') }} ({{
-              $t('frontend_settings.animations.disable_hint')
+            {{ t('frontend_settings.animations.disable') }} ({{
+              t('frontend_settings.animations.disable_hint')
             }})
           </span>
-          <span v-else>{{ $t('frontend_settings.animations.enable') }}</span>
+          <span v-else>{{ t('frontend_settings.animations.enable') }}</span>
         </v-tooltip>
       </div>
       <privacy-notice />
@@ -92,7 +92,7 @@
                 <v-icon>mdi-information</v-icon>
               </v-btn>
             </template>
-            <span>{{ $t('account_management.about_tooltip') }}</span>
+            <span>{{ t('account_management.about_tooltip') }}</span>
           </v-tooltip>
         </template>
       </div>
@@ -118,6 +118,7 @@ import {
   toRefs,
   watch
 } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import {
@@ -131,7 +132,6 @@ import { useBackendManagement } from '@/composables/backend';
 import { useTheme } from '@/composables/common';
 import { getPremium } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
-import i18n from '@/i18n';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { CreateAccountPayload, LoginCredentials } from '@/types/login';
@@ -162,6 +162,7 @@ export default defineComponent({
   },
   emits: ['about', 'login-complete'],
   setup(props, { emit }) {
+    const { t } = useI18n();
     const { logged } = toRefs(props);
     const accountCreation = ref(false);
     const loading = ref(false);
@@ -286,8 +287,7 @@ export default defineComponent({
       } else {
         set(
           accountCreationError,
-          result.message ??
-            i18n.t('account_management.creation.error').toString()
+          result.message ?? t('account_management.creation.error').toString()
         );
       }
     };
@@ -317,6 +317,7 @@ export default defineComponent({
     };
 
     return {
+      t,
       xsOnly,
       updateNeeded,
       autolog,

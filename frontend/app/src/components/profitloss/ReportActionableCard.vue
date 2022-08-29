@@ -18,7 +18,7 @@
           }"
         >
           {{
-            $t('profit_loss_report.actionable.issues_found', {
+            t('profit_loss_report.actionable.issues_found', {
               total: actionableItemsLength.total
             })
           }}
@@ -42,10 +42,10 @@
             </v-btn>
           </template>
           <span v-if="isPinned">
-            {{ $t('profit_loss_report.actionable.actions.unpin_section') }}
+            {{ t('profit_loss_report.actionable.actions.unpin_section') }}
           </span>
           <span v-else>
-            {{ $t('profit_loss_report.actionable.actions.pin_section') }}
+            {{ t('profit_loss_report.actionable.actions.pin_section') }}
           </span>
         </v-tooltip>
       </v-toolbar>
@@ -118,7 +118,7 @@
                           text
                           @click="step = step - 1"
                         >
-                          {{ $tc('common.actions.back') }}
+                          {{ tc('common.actions.back') }}
                         </v-btn>
                         <v-btn
                           v-if="step < stepperContents.length"
@@ -128,7 +128,7 @@
                           elevation="1"
                           @click="step = step + 1"
                         >
-                          {{ $tc('common.actions.next') }}
+                          {{ tc('common.actions.next') }}
                         </v-btn>
                         <template v-if="step === stepperContents.length">
                           <v-btn
@@ -139,7 +139,7 @@
                             :small="isPinned"
                             @click="setDialog(false)"
                           >
-                            {{ $tc('common.actions.close') }}
+                            {{ tc('common.actions.close') }}
                           </v-btn>
                           <v-btn
                             v-else-if="content.key !== 'missingAcquisitions'"
@@ -149,7 +149,7 @@
                             elevation="1"
                             @click="submitActionableItems(items)"
                           >
-                            {{ $tc('common.actions.finish') }}
+                            {{ tc('common.actions.finish') }}
                           </v-btn>
                         </template>
                       </div>
@@ -168,15 +168,13 @@
           <div v-if="filledMissingPrices === 0">
             <v-icon class="mr-2" color="red">mdi-alert</v-icon>
             {{
-              $tc(
-                'profit_loss_report.actionable.missing_prices.no_filled_prices'
-              )
+              t('profit_loss_report.actionable.missing_prices.no_filled_prices')
             }}
           </div>
           <div v-else-if="skippedMissingPrices">
             <v-icon class="mr-2" color="red">mdi-alert</v-icon>
             {{
-              $t(
+              t(
                 'profit_loss_report.actionable.missing_prices.total_skipped_prices',
                 {
                   total: skippedMissingPrices
@@ -187,7 +185,7 @@
           <div v-else>
             <v-icon class="mr-2" color="green">mdi-check</v-icon>
             {{
-              $tc(
+              t(
                 'profit_loss_report.actionable.missing_prices.all_prices_filled'
               )
             }}
@@ -196,15 +194,15 @@
         <div>
           <div v-if="filledMissingPrices === 0">
             {{
-              $tc(
+              tc(
                 'profit_loss_report.actionable.missing_prices.skipped_all_events_confirmation'
               )
             }}
           </div>
           <div v-else-if="skippedMissingPrices">
-            {{ $tc('profit_loss_report.actionable.missing_prices.if_sure') }}
+            {{ tc('profit_loss_report.actionable.missing_prices.if_sure') }}
             {{
-              $tc(
+              tc(
                 'profit_loss_report.actionable.missing_prices.regenerate_report_nudge'
               )
             }}
@@ -212,7 +210,7 @@
           <div v-else>
             {{
               toSentenceCase(
-                $tc(
+                tc(
                   'profit_loss_report.actionable.missing_prices.regenerate_report_nudge'
                 )
               )
@@ -222,17 +220,17 @@
         <template #buttons>
           <v-spacer />
           <v-btn text class="mr-2" @click="confirmationDialogOpen = false">
-            {{ $tc('common.actions.cancel') }}
+            {{ tc('common.actions.cancel') }}
           </v-btn>
           <v-btn
             v-if="filledMissingPrices"
             color="primary"
             @click="regenerateReport"
           >
-            {{ $tc('profit_loss_report.actionable.actions.regenerate_report') }}
+            {{ tc('profit_loss_report.actionable.actions.regenerate_report') }}
           </v-btn>
           <v-btn v-else color="primary" @click="ignoreIssues">
-            {{ $tc('common.actions.yes') }}
+            {{ tc('common.actions.yes') }}
           </v-btn>
         </template>
       </card>
@@ -244,12 +242,12 @@ import { Nullable } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcquisitions.vue';
 import ReportMissingPrices, {
   EditableMissingPrice
 } from '@/components/profitloss/ReportMissingPrices.vue';
 import { useRouter } from '@/composables/common';
-import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
 import { Pinned } from '@/store/session/types';
@@ -272,6 +270,7 @@ export default defineComponent({
   },
   emits: ['set-dialog'],
   setup(props, { emit }) {
+    const { t, tc } = useI18n();
     const { report, isPinned } = toRefs(props);
     const router = useRouter();
     const { pinned } = storeToRefs(useAreaVisibilityStore());
@@ -335,14 +334,12 @@ export default defineComponent({
       if (missingAcquisitionsLength > 0) {
         contents.push({
           key: 'missingAcquisitions',
-          title: i18n
-            .t('profit_loss_report.actionable.missing_acquisitions.title', {
-              total: missingAcquisitionsLength
-            })
-            .toString(),
-          hint: i18n
-            .t('profit_loss_report.actionable.missing_acquisitions.hint')
-            .toString(),
+          title: t('profit_loss_report.actionable.missing_acquisitions.title', {
+            total: missingAcquisitionsLength
+          }).toString(),
+          hint: t(
+            'profit_loss_report.actionable.missing_acquisitions.hint'
+          ).toString(),
           selector: 'report-missing-acquisitions',
           items: get(actionableItems).missingAcquisitions
         });
@@ -354,14 +351,12 @@ export default defineComponent({
       if (missingPricesLength > 0) {
         contents.push({
           key: 'missingPrices',
-          title: i18n
-            .t('profit_loss_report.actionable.missing_prices.title', {
-              total: missingPricesLength
-            })
-            .toString(),
-          hint: i18n
-            .t('profit_loss_report.actionable.missing_prices.hint')
-            .toString(),
+          title: t('profit_loss_report.actionable.missing_prices.title', {
+            total: missingPricesLength
+          }).toString(),
+          hint: t(
+            'profit_loss_report.actionable.missing_prices.hint'
+          ).toString(),
           selector: 'report-missing-prices',
           items: get(actionableItems).missingPrices
         });
@@ -417,6 +412,8 @@ export default defineComponent({
     };
 
     return {
+      t,
+      tc,
       setDialog,
       pinSection,
       setPinned,

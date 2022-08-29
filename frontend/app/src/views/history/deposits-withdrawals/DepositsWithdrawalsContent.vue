@@ -244,13 +244,14 @@ export default defineComponent({
     const { tc } = useI18n();
 
     const tableHeaders = computed<DataTableHeader[]>(() => {
+      let overview = get(locationOverview);
       const headers: DataTableHeader[] = [
         {
           text: '',
           value: 'ignoredInAccounting',
           sortable: false,
-          class: !locationOverview ? 'pa-0' : 'pr-0',
-          cellClass: !locationOverview ? 'pa-0' : 'pr-0'
+          class: !overview ? 'pa-0' : 'pr-0',
+          cellClass: !overview ? 'pa-0' : 'pr-0'
         },
         {
           text: tc('common.location'),
@@ -262,8 +263,8 @@ export default defineComponent({
           text: tc('deposits_withdrawals.headers.action'),
           value: 'category',
           align: 'center',
-          class: `text-no-wrap ${locationOverview ? 'pl-0' : ''}`,
-          cellClass: locationOverview ? 'pl-0' : ''
+          class: `text-no-wrap ${overview ? 'pl-0' : ''}`,
+          cellClass: overview ? 'pl-0' : ''
         },
         {
           text: tc('common.asset'),
@@ -287,7 +288,7 @@ export default defineComponent({
         { text: '', value: 'data-table-expand', sortable: false }
       ];
 
-      if (get(locationOverview)) {
+      if (overview) {
         headers.splice(1, 1);
       }
 

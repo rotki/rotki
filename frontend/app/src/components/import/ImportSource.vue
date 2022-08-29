@@ -18,7 +18,7 @@
           @change="changeShouldCustomDateFormat"
         >
           <template #label>
-            {{ $t('file_upload.date_input_format.switch_label') }}
+            {{ t('file_upload.date_input_format.switch_label') }}
           </template>
         </v-switch>
         <v-text-field
@@ -27,9 +27,9 @@
           class="mt-2"
           outlined
           :rules="dateFormatRules"
-          :placeholder="$t('file_upload.date_input_format.placeholder')"
+          :placeholder="t('file_upload.date_input_format.placeholder')"
           :hint="
-            $t('file_upload.date_input_format.hint', {
+            t('file_upload.date_input_format.hint', {
               format: dateInputFormatExample
             })
           "
@@ -63,7 +63,7 @@
             :disabled="!valid || !file || loading"
             @click="uploadFile"
           >
-            {{ $t('common.actions.import') }}
+            {{ t('common.actions.import') }}
           </v-btn>
         </div>
       </v-form>
@@ -72,14 +72,14 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
+import { computed, PropType, ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { ImportSourceType } from '@/components/import/upload-types';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { interop } from '@/electron-interop';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useTasks } from '@/store/tasks';
 import { DateFormat } from '@/types/date-format';
@@ -87,70 +87,94 @@ import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
 
-export default defineComponent({
-  name: 'ImportSource',
-  components: { DateFormatHelp, FileUpload },
-  props: {
-    icon: {
-      required: false,
-      default: '',
-      type: String
-    },
-    source: { required: true, type: String as PropType<ImportSourceType> }
+const props = defineProps({
+  icon: {
+    required: false,
+    default: '',
+    type: String
   },
-  setup(props) {
-    const { source } = toRefs(props);
-    const dateInputFormat = ref<string | null>(null);
-    const uploaded = ref(false);
-    const errorMessage = ref('');
-    const valid = ref<boolean>(true);
-    const formatHelp = ref<boolean>(false);
-    const file = ref<File | null>(null);
+  source: { required: true, type: String as PropType<ImportSourceType> }
+});
 
-    const upload = (selectedFile: File) => {
-      set(file, selectedFile);
-    };
+const { source } = toRefs(props);
+const dateInputFormat = ref<string | null>(null);
+const uploaded = ref(false);
+const errorMessage = ref('');
+const valid = ref<boolean>(true);
+const formatHelp = ref<boolean>(false);
+const file = ref<File | null>(null);
 
-    const dateFormatRules = [
-      (v: string) => {
-        if (!v) {
-          return i18n.t('general_settings.date_display.validation.empty');
-        }
-        if (!displayDateFormatter.containsValidDirectives(v)) {
-          return i18n
-            .t('general_settings.date_display.validation.invalid')
-            .toString();
-        }
-        return true;
-      }
-    ];
+const { t } = useI18n();
 
-    const dateInputFormatExample = computed(() => {
-      const now = new Date();
-      if (!get(dateInputFormat)) return '';
-      return displayDateFormatter.format(now, get(dateInputFormat)!);
+const upload = (selectedFile: File) => {
+  set(file, selectedFile);
+};
+
+const dateFormatRules = [
+  (v: string) => {
+    if (!v) {
+      return t('general_settings.date_display.validation.empty');
+    }
+    if (!displayDateFormatter.containsValidDirectives(v)) {
+      return t('general_settings.date_display.validation.invalid').toString();
+    }
+    return true;
+  }
+];
+
+const dateInputFormatExample = computed(() => {
+  const now = new Date();
+  if (!get(dateInputFormat)) return '';
+  return displayDateFormatter.format(now, get(dateInputFormat)!);
+});
+
+const taskType = TaskType.IMPORT_CSV;
+const { awaitTask, isTaskRunning } = useTasks();
+
+const loading = isTaskRunning(taskType);
+
+const uploadPackaged = async (file: string) => {
+  try {
+    const { taskId } = await api.importDataFrom(
+      get(source),
+      file,
+      get(dateInputFormat) || null
+    );
+
+    const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
+      title: t('file_upload.task.title', { source: get(source) }).toString(),
+      numericKeys: []
     });
 
-    const taskType = TaskType.IMPORT_CSV;
-    const { awaitTask, isTaskRunning } = useTasks();
+    if (result) {
+      set(uploaded, true);
+    }
+  } catch (e: any) {
+    set(errorMessage, e.message);
+  }
+};
 
-    const loading = isTaskRunning(taskType);
-
-    const uploadPackaged = async (file: string) => {
+const uploadFile = async () => {
+  if (get(file)) {
+    if (interop.isPackaged && api.defaultBackend) {
+      await uploadPackaged(get(file)!.path);
+    } else {
+      const formData = new FormData();
+      formData.append('source', get(source));
+      formData.append('file', get(file)!);
+      formData.append('async_query', 'true');
+      if (get(dateInputFormat)) {
+        formData.append('timestamp_format', get(dateInputFormat)!);
+      }
       try {
-        const { taskId } = await api.importDataFrom(
-          get(source),
-          file,
-          get(dateInputFormat) || null
-        );
-
+        const { taskId } = await api.importFile(formData);
         const { result } = await awaitTask<boolean, TaskMeta>(
           taskId,
           taskType,
           {
-            title: i18n
-              .t('file_upload.task.title', { source: get(source) })
-              .toString(),
+            title: t('file_upload.task.title', {
+              source: get(source)
+            }).toString(),
             numericKeys: []
           }
         );
@@ -161,67 +185,17 @@ export default defineComponent({
       } catch (e: any) {
         set(errorMessage, e.message);
       }
-    };
-
-    const uploadFile = async () => {
-      if (get(file)) {
-        if (interop.isPackaged && api.defaultBackend) {
-          await uploadPackaged(get(file)!.path);
-        } else {
-          const formData = new FormData();
-          formData.append('source', get(source));
-          formData.append('file', get(file)!);
-          formData.append('async_query', 'true');
-          if (get(dateInputFormat)) {
-            formData.append('timestamp_format', get(dateInputFormat)!);
-          }
-          try {
-            const { taskId } = await api.importFile(formData);
-            const { result } = await awaitTask<boolean, TaskMeta>(
-              taskId,
-              taskType,
-              {
-                title: i18n
-                  .t('file_upload.task.title', { source: get(source) })
-                  .toString(),
-                numericKeys: []
-              }
-            );
-
-            if (result) {
-              set(uploaded, true);
-            }
-          } catch (e: any) {
-            set(errorMessage, e.message);
-          }
-        }
-      }
-    };
-
-    const changeShouldCustomDateFormat = () => {
-      if (get(dateInputFormat) === null) {
-        set(dateInputFormat, DateFormat.DateMonthYearHourMinuteSecond);
-      } else {
-        set(dateInputFormat, null);
-      }
-    };
-
-    return {
-      file,
-      valid,
-      errorMessage,
-      formatHelp,
-      loading,
-      uploaded,
-      dateInputFormat,
-      dateFormatRules,
-      dateInputFormatExample,
-      upload,
-      uploadFile,
-      changeShouldCustomDateFormat
-    };
+    }
   }
-});
+};
+
+const changeShouldCustomDateFormat = () => {
+  if (get(dateInputFormat) === null) {
+    set(dateInputFormat, DateFormat.DateMonthYearHourMinuteSecond);
+  } else {
+    set(dateInputFormat, null);
+  }
+};
 </script>
 
 <style module lang="scss">

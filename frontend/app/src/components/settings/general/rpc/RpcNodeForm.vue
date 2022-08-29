@@ -5,7 +5,7 @@
       outlined
       data-cy="node-name"
       :disabled="isEtherscan"
-      :label="$tc('common.name')"
+      :label="tc('common.name')"
       :error-messages="v$.name.$errors.map(e => e.$message)"
       @blur="v$.name.$touch()"
     />
@@ -15,7 +15,7 @@
       data-cy="node-endpoint"
       :disabled="isEtherscan"
       :error-messages="v$.endpoint.$errors.map(e => e.$message)"
-      :label="$tc('rpc_node_form.endpoint')"
+      :label="tc('rpc_node_form.endpoint')"
       @blur="v$.endpoint.$touch()"
     />
 
@@ -25,11 +25,11 @@
           :value="state.weight"
           :disabled="state.owned"
           :error-messages="v$.weight.$errors.map(e => e.$message)"
-          :label="$tc('rpc_node_form.weight')"
+          :label="tc('rpc_node_form.weight')"
           min="0"
           max="100"
           persistent-hint
-          :hint="$tc('rpc_node_form.weight_hint', 0, { weight: state.weight })"
+          :hint="tc('rpc_node_form.weight_hint', 0, { weight: state.weight })"
           step="1"
           thumb-label
           @change="state.weight = $event"
@@ -48,100 +48,87 @@
         />
       </v-col>
       <v-col cols="auto" class="pl-0">
-        {{ $t('rpc_node_form.weight_per_hundred') }}
+        {{ t('rpc_node_form.weight_per_hundred') }}
       </v-col>
     </v-row>
 
     <v-switch
       v-model="state.owned"
-      :label="$tc('rpc_node_form.owned')"
+      :label="tc('rpc_node_form.owned')"
       persistent-hint
       :disabled="isEtherscan"
-      :hint="$tc('rpc_node_form.owned_hint')"
+      :hint="tc('rpc_node_form.owned_hint')"
     />
     <v-switch
       v-model="state.active"
-      :label="$tc('rpc_node_form.active')"
+      :label="tc('rpc_node_form.active')"
       persistent-hint
       :disabled="isEtherscan"
-      :hint="$tc('rpc_node_form.active_hint')"
+      :hint="tc('rpc_node_form.active_hint')"
     />
   </form>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { between, required, requiredIf } from '@vuelidate/validators';
 import { get } from '@vueuse/core';
-import {
-  defineComponent,
-  onMounted,
-  PropType,
-  reactive,
-  toRefs,
-  watch
-} from 'vue';
+import { onMounted, PropType, reactive, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { EthereumRpcNode, getPlaceholderNode } from '@/types/settings';
 
-export default defineComponent({
-  name: 'RpcNodeForm',
-  props: {
-    value: {
-      required: true,
-      type: Object as PropType<EthereumRpcNode>
-    },
-    isEtherscan: {
-      required: true,
-      type: Boolean
-    },
-    errorMessages: {
-      required: false,
-      type: Object as PropType<Record<string, string | string[]>>,
-      default: null
-    }
+const { t, tc } = useI18n();
+
+const props = defineProps({
+  value: {
+    required: true,
+    type: Object as PropType<EthereumRpcNode>
   },
-  emits: ['input', 'update:valid'],
-  setup(props, { emit }) {
-    const { value, errorMessages } = toRefs(props);
-    const state = reactive<EthereumRpcNode>(getPlaceholderNode());
-    const rules = {
-      name: { required },
-      endpoint: { required: requiredIf(() => state.name !== 'etherscan') },
-      weight: { required, between: between(0, 100) }
-    };
-
-    const v$ = useVuelidate(rules, state, { $externalResults: errorMessages });
-
-    const updateState = (selectedNode: EthereumRpcNode): void => {
-      state.identifier = selectedNode.identifier;
-      state.name = selectedNode.name;
-      state.endpoint = selectedNode.endpoint;
-      state.weight = selectedNode.weight;
-      state.active = selectedNode.active;
-      state.owned = selectedNode.owned;
-    };
-
-    onMounted(() => {
-      updateState(get(value));
-    });
-
-    watch(value, node => {
-      if (node === get(state)) {
-        return;
-      }
-      updateState(node);
-    });
-
-    watch(state, state => {
-      emit('input', state);
-      emit('update:valid', !get(v$).$invalid);
-    });
-
-    return {
-      state,
-      v$
-    };
+  isEtherscan: {
+    required: true,
+    type: Boolean
+  },
+  errorMessages: {
+    required: false,
+    type: Object as PropType<Record<string, string | string[]>>,
+    default: null
   }
+});
+
+const emit = defineEmits(['input', 'update:valid']);
+const { value, errorMessages } = toRefs(props);
+const state = reactive<EthereumRpcNode>(getPlaceholderNode());
+const rules = {
+  name: { required },
+  endpoint: { required: requiredIf(() => state.name !== 'etherscan') },
+  weight: { required, between: between(0, 100) }
+};
+
+const v$ = useVuelidate(rules, state, { $externalResults: errorMessages });
+
+const updateState = (selectedNode: EthereumRpcNode): void => {
+  state.identifier = selectedNode.identifier;
+  state.name = selectedNode.name;
+  state.endpoint = selectedNode.endpoint;
+  state.weight = selectedNode.weight;
+  state.active = selectedNode.active;
+  state.owned = selectedNode.owned;
+};
+
+onMounted(() => {
+  updateState(get(value));
+});
+
+watch(value, node => {
+  if (node === get(state)) {
+    return;
+  }
+  updateState(node);
+});
+
+watch(state, state => {
+  emit('input', state);
+  emit('update:valid', !get(v$).$invalid);
 });
 </script>
 <style lang="scss" module>

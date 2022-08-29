@@ -7,40 +7,33 @@
   />
 </template>
 
-<script lang="ts">
-import { computed, defineComponent, PropType } from 'vue';
-import i18n from '@/i18n';
+<script setup lang="ts">
+import { computed, PropType } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { BalanceType } from '@/services/balances/types';
 
+defineProps({
+  value: {
+    required: true,
+    type: String as PropType<BalanceType>
+  }
+});
+
+const emit = defineEmits(['input']);
+
+const { t } = useI18n();
 const balanceTypes = computed(() => [
   {
     value: BalanceType.ASSET,
-    text: i18n.t('common.asset')
+    text: t('common.asset')
   },
   {
     value: BalanceType.LIABILITY,
-    text: i18n.t('manual_balances_form.type.liability')
+    text: t('manual_balances_form.type.liability')
   }
 ]);
 
-export default defineComponent({
-  name: 'BalanceTypeInput',
-  props: {
-    value: {
-      required: true,
-      type: String as PropType<BalanceType>
-    }
-  },
-  emits: ['input'],
-  setup(_, { emit }) {
-    const input = (value: BalanceType) => {
-      emit('input', value);
-    };
-
-    return {
-      balanceTypes,
-      input
-    };
-  }
-});
+const input = (value: BalanceType) => {
+  emit('input', value);
+};
 </script>

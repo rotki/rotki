@@ -39,7 +39,6 @@ import {
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
-import i18n from '@/i18n';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import {
   EthAddressBookLocation,
@@ -48,21 +47,6 @@ import {
 } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { Nullable } from '@/types';
-
-const tableHeaders = computed<DataTableHeader[]>(() => [
-  {
-    text: i18n.t('common.address').toString(),
-    value: 'address'
-  },
-  {
-    text: i18n.t('common.name').toString(),
-    value: 'name'
-  },
-  {
-    text: '',
-    value: 'actions'
-  }
-]);
 
 const addressBookDeletion = (location: Ref<EthAddressBookLocation>) => {
   const pending = ref<Nullable<EthNamesEntry>>(null);
@@ -122,7 +106,7 @@ export default defineComponent({
     const { ethAddressBook } = toRefs(ethNamesStore);
     const loading = ref<boolean>(false);
 
-    const { tc } = useI18n();
+    const { t, tc } = useI18n();
 
     const data = computed<EthNamesEntries>(() => {
       return get(ethAddressBook)[get(location)];
@@ -147,6 +131,21 @@ export default defineComponent({
       await fetchEthAddressBook(get(location));
       set(loading, false);
     });
+
+    const tableHeaders = computed<DataTableHeader[]>(() => [
+      {
+        text: t('common.address').toString(),
+        value: 'address'
+      },
+      {
+        text: t('common.name').toString(),
+        value: 'name'
+      },
+      {
+        text: '',
+        value: 'actions'
+      }
+    ]);
 
     return {
       loading,

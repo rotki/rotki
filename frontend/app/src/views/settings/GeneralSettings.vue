@@ -2,7 +2,7 @@
   <div class="general-settings mt-n8">
     <setting-category>
       <template #title>
-        {{ $t('general_settings.title') }}
+        {{ t('general_settings.title') }}
       </template>
 
       <usage-analytics-setting />
@@ -18,7 +18,7 @@
 
     <setting-category>
       <template #title>
-        {{ $t('general_settings.amount.title') }}
+        {{ t('general_settings.amount.title') }}
       </template>
 
       <floating-precision-setting />
@@ -28,7 +28,7 @@
 
       <div>
         <strong>
-          {{ $t('general_settings.amount.label.resulting_format') }}
+          {{ t('general_settings.amount.label.resulting_format') }}
         </strong>
         <amount-display :value="amountExample" show-currency="symbol" />
       </div>
@@ -43,6 +43,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import RoundingSettings from '@/components/settings/explorers/RoundingSettings.vue';
 import FrontendSettings from '@/components/settings/FrontendSettings.vue';
@@ -66,6 +67,7 @@ import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { bigNumberify } from '@/utils/bignumbers';
 
 const amountExample = bigNumberify(123456.789);
+const { t } = useI18n();
 </script>
 <style scoped lang="scss">
 .general-settings {

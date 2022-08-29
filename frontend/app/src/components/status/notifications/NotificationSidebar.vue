@@ -19,14 +19,14 @@
                 <v-icon>mdi-chevron-right</v-icon>
               </v-btn>
             </template>
-            <span>{{ $t('notification_sidebar.close_tooltip') }}</span>
+            <span>{{ t('notification_sidebar.close_tooltip') }}</span>
           </v-tooltip>
         </v-col>
         <v-col>
           <span
             class="text-uppercase text--secondary text-caption font-weight-medium pl-1"
           >
-            {{ $t('notification_sidebar.title') }}
+            {{ t('notification_sidebar.title') }}
           </span>
         </v-col>
         <v-col cols="auto">
@@ -37,7 +37,7 @@
             :disabled="notifications.length === 0"
             @click="confirmClear = true"
           >
-            {{ $t('notification_sidebar.clear_tooltip') }}
+            {{ t('notification_sidebar.clear_tooltip') }}
           </v-btn>
         </v-col>
       </v-row>
@@ -47,7 +47,7 @@
       >
         <v-icon size="64px" color="primary">mdi-information</v-icon>
         <div :class="$style.label">
-          {{ $t('notification_sidebar.no_messages') }}
+          {{ t('notification_sidebar.no_messages') }}
         </div>
       </div>
       <div v-else :class="$style.messages">
@@ -72,17 +72,18 @@
 
     <confirm-dialog
       :display="confirmClear"
-      :title="$t('notification_sidebar.confirmation.title')"
-      :message="$t('notification_sidebar.confirmation.message')"
+      :title="tc('notification_sidebar.confirmation.title')"
+      :message="tc('notification_sidebar.confirmation.message')"
       @cancel="confirmClear = false"
       @confirm="clear()"
     />
   </v-navigation-drawer>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import orderBy from 'lodash/orderBy';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Notification from '@/components/status/notifications/Notification.vue';
 import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
@@ -90,53 +91,39 @@ import { useTheme } from '@/composables/common';
 import { setupNotifications } from '@/composables/notifications';
 import { setupTaskStatus } from '@/composables/tasks';
 
-const NotificationSidebar = defineComponent({
-  components: { PendingTasks, Notification, ConfirmDialog },
-  props: {
-    visible: { required: true, type: Boolean }
-  },
-  emits: ['close'],
-  setup(props, { emit }) {
-    const confirmClear = ref(false);
-
-    const { reset, remove, data } = setupNotifications();
-    const close = () => {
-      emit('close');
-    };
-
-    const input = (visible: boolean) => {
-      if (visible) {
-        return;
-      }
-      close();
-    };
-
-    const clear = () => {
-      confirmClear.value = false;
-      reset();
-      close();
-    };
-
-    const notifications = computed(() => {
-      return orderBy(data.value, 'id', 'desc');
-    });
-
-    const { isMobile } = useTheme();
-    const { hasRunningTasks } = setupTaskStatus();
-
-    return {
-      isMobile,
-      notifications,
-      hasRunningTasks,
-      confirmClear,
-      input,
-      close,
-      clear,
-      remove
-    };
-  }
+defineProps({
+  visible: { required: true, type: Boolean }
 });
-export default NotificationSidebar;
+
+const { t, tc } = useI18n();
+
+const emit = defineEmits(['close']);
+const confirmClear = ref(false);
+
+const { reset, remove, data } = setupNotifications();
+const close = () => {
+  emit('close');
+};
+
+const input = (visible: boolean) => {
+  if (visible) {
+    return;
+  }
+  close();
+};
+
+const clear = () => {
+  confirmClear.value = false;
+  reset();
+  close();
+};
+
+const notifications = computed(() => {
+  return orderBy(data.value, 'id', 'desc');
+});
+
+const { isMobile } = useTheme();
+const { hasRunningTasks } = setupTaskStatus();
 </script>
 
 <style module lang="scss">

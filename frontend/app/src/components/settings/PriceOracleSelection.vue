@@ -12,7 +12,7 @@
               v-model="selection"
               prepend-inner-icon="mdi-magnify"
               outlined
-              :no-data-text="$t('price_oracle_selection.all_added')"
+              :no-data-text="t('price_oracle_selection.all_added')"
               :items="missing"
               hide-details
             >
@@ -38,7 +38,7 @@
                   <v-icon>mdi-plus</v-icon>
                 </v-btn>
               </template>
-              <span>{{ $t('price_oracle_selection.add_tooltip') }}</span>
+              <span>{{ t('price_oracle_selection.add_tooltip') }}</span>
             </v-tooltip>
           </v-col>
         </v-row>
@@ -49,9 +49,9 @@
           <tr>
             <th class="price-oracle-selection__move" />
             <th class="price-oracle-selection__priority text-center">
-              {{ $t('price_oracle_selection.header.priority') }}
+              {{ t('price_oracle_selection.header.priority') }}
             </th>
-            <th class="ps-6">{{ $t('common.name') }}</th>
+            <th class="ps-6">{{ t('common.name') }}</th>
             <th />
           </tr>
         </thead>
@@ -60,7 +60,7 @@
             <td colspan="4">
               <v-row class="pa-3 text-h6" justify="center">
                 <v-col cols="auto">
-                  {{ $t('price_oracle_selection.item.empty') }}
+                  {{ t('price_oracle_selection.item.empty') }}
                 </v-col>
               </v-row>
             </td>
@@ -104,7 +104,7 @@
                     <v-icon>mdi-delete-outline</v-icon>
                   </v-btn>
                 </template>
-                <span>{{ $t('price_oracle_selection.item.delete') }}</span>
+                <span>{{ t('price_oracle_selection.item.delete') }}</span>
               </v-tooltip>
             </td>
           </tr>
@@ -114,88 +114,75 @@
     <action-status-indicator class="mt-4" :status="status" />
   </div>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
+import { computed, PropType, ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import OracleEntry from '@/components/settings/OracleEntry.vue';
 import { BaseMessage } from '@/components/settings/utils';
 import { Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
 
-export default defineComponent({
-  name: 'PriceOracleSelection',
-  components: { OracleEntry, ActionStatusIndicator },
-  props: {
-    value: { required: true, type: Array as PropType<string[]> },
-    allItems: { required: true, type: Array as PropType<string[]> },
-    status: {
-      required: false,
-      type: Object as PropType<BaseMessage>,
-      default: () => null
-    }
-  },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { value, allItems } = toRefs(props);
-    const selection = ref<Nullable<string>>(null);
-
-    const input = (items: string[]) => emit('input', items);
-
-    const missing = computed<string[]>(() => {
-      return get(allItems).filter(item => !get(value).includes(item));
-    });
-
-    const noResults = computed<boolean>(() => {
-      return get(value).length === 0;
-    });
-
-    const isFirst = (item: string): boolean => {
-      return get(value)[0] === item;
-    };
-
-    const isLast = (item: string): boolean => {
-      const items = get(value);
-      return items[items.length - 1] === item;
-    };
-
-    const addItem = () => {
-      assert(get(selection));
-      const items = [...get(value)];
-      items.push(get(selection)!);
-      input(items);
-      set(selection, null);
-    };
-
-    const move = (item: string, down: boolean) => {
-      const items = [...get(value)];
-      const itemIndex = items.indexOf(item);
-      const nextIndex = itemIndex + (down ? 1 : -1);
-      const nextItem = items[nextIndex];
-      items[nextIndex] = item;
-      items[itemIndex] = nextItem;
-      input(items);
-    };
-
-    const remove = (item: string) => {
-      const items = [...get(value)];
-      const itemIndex = items.indexOf(item);
-      items.splice(itemIndex, 1);
-      input(items);
-    };
-
-    return {
-      selection,
-      missing,
-      noResults,
-      isFirst,
-      isLast,
-      addItem,
-      move,
-      remove
-    };
+const props = defineProps({
+  value: { required: true, type: Array as PropType<string[]> },
+  allItems: { required: true, type: Array as PropType<string[]> },
+  status: {
+    required: false,
+    type: Object as PropType<BaseMessage>,
+    default: () => null
   }
 });
+
+const emit = defineEmits(['input']);
+const { value, allItems } = toRefs(props);
+const selection = ref<Nullable<string>>(null);
+
+const input = (items: string[]) => emit('input', items);
+
+const missing = computed<string[]>(() => {
+  return get(allItems).filter(item => !get(value).includes(item));
+});
+
+const noResults = computed<boolean>(() => {
+  return get(value).length === 0;
+});
+
+const isFirst = (item: string): boolean => {
+  return get(value)[0] === item;
+};
+
+const isLast = (item: string): boolean => {
+  const items = get(value);
+  return items[items.length - 1] === item;
+};
+
+const addItem = () => {
+  assert(get(selection));
+  const items = [...get(value)];
+  items.push(get(selection)!);
+  input(items);
+  set(selection, null);
+};
+
+const move = (item: string, down: boolean) => {
+  const items = [...get(value)];
+  const itemIndex = items.indexOf(item);
+  const nextIndex = itemIndex + (down ? 1 : -1);
+  const nextItem = items[nextIndex];
+  items[nextIndex] = item;
+  items[itemIndex] = nextItem;
+  input(items);
+};
+
+const remove = (item: string) => {
+  const items = [...get(value)];
+  const itemIndex = items.indexOf(item);
+  items.splice(itemIndex, 1);
+  input(items);
+};
+
+const { t } = useI18n();
 </script>
 
 <style scoped lang="scss">

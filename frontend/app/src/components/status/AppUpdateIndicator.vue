@@ -5,77 +5,65 @@
         <v-icon color="error" dark v-on="on"> mdi-arrow-up-bold-circle </v-icon>
       </v-btn>
     </template>
-    <span v-text="$t('update_indicator.version', { appVersion })" />
+    <span v-text="t('update_indicator.version', { appVersion })" />
   </v-tooltip>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set, useIntervalFn } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, onMounted, watch } from 'vue';
+import { computed, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { startPromise } from '@/utils';
 
-export default defineComponent({
-  name: 'AppUpdateIndicator',
-  setup() {
-    const mainStore = useMainStore();
-    const { version, updateNeeded } = storeToRefs(mainStore);
-    const { getVersion } = mainStore;
-    const { isPackaged, openUrl } = useInterop();
-    const { versionUpdateCheckFrequency } = storeToRefs(
-      useFrontendSettingsStore()
-    );
-    const { showUpdatePopup } = storeToRefs(useSessionStore());
+const mainStore = useMainStore();
+const { version, updateNeeded } = storeToRefs(mainStore);
+const { getVersion } = mainStore;
+const { isPackaged, openUrl } = useInterop();
+const { versionUpdateCheckFrequency } = storeToRefs(useFrontendSettingsStore());
+const { showUpdatePopup } = storeToRefs(useSessionStore());
 
-    const appVersion = computed(() => get(version).latestVersion);
+const appVersion = computed(() => get(version).latestVersion);
 
-    const openLink = () => openUrl(get(version).downloadUrl);
-    const openUpdatePopup = () => {
-      set(showUpdatePopup, true);
-    };
+const openLink = () => openUrl(get(version).downloadUrl);
+const openUpdatePopup = () => {
+  set(showUpdatePopup, true);
+};
 
-    const update = () => {
-      if (isPackaged) {
-        openUpdatePopup();
-      } else {
-        openLink();
-      }
-    };
-
-    const period = get(versionUpdateCheckFrequency) * 60 * 60 * 1000;
-
-    const { pause, resume, isActive } = useIntervalFn(
-      () => {
-        startPromise(getVersion());
-      },
-      period,
-      { immediate: false }
-    );
-
-    const setVersionUpdateCheckInterval = () => {
-      if (isActive) pause();
-      if (period > 0) {
-        resume();
-      }
-    };
-
-    onMounted(() => {
-      setVersionUpdateCheckInterval();
-    });
-
-    watch(versionUpdateCheckFrequency, () => setVersionUpdateCheckInterval());
-
-    return {
-      appVersion,
-      updateNeeded,
-      openUpdatePopup,
-      update,
-      openLink
-    };
+const update = () => {
+  if (isPackaged) {
+    openUpdatePopup();
+  } else {
+    openLink();
   }
+};
+
+const period = get(versionUpdateCheckFrequency) * 60 * 60 * 1000;
+
+const { pause, resume, isActive } = useIntervalFn(
+  () => {
+    startPromise(getVersion());
+  },
+  period,
+  { immediate: false }
+);
+
+const setVersionUpdateCheckInterval = () => {
+  if (isActive) pause();
+  if (period > 0) {
+    resume();
+  }
+};
+
+onMounted(() => {
+  setVersionUpdateCheckInterval();
 });
+
+watch(versionUpdateCheckFrequency, () => setVersionUpdateCheckInterval());
+
+const { t } = useI18n();
 </script>

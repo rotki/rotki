@@ -6,13 +6,13 @@
       align="center"
     >
       <v-col cols="auto" class="font-weight-medium">
-        {{ $t('asset_form.identifier') }}
+        {{ t('asset_form.identifier') }}
       </v-col>
       <v-col>
         {{ edit.identifier }}
         <copy-button
           :value="edit.identifier"
-          :tooltip="$tc('asset_form.identifier_copy')"
+          :tooltip="tc('asset_form.identifier_copy')"
         />
       </v-col>
     </v-row>
@@ -22,7 +22,7 @@
           <v-select
             v-model="assetType"
             outlined
-            :label="$t('asset_form.labels.asset_type')"
+            :label="t('asset_form.labels.asset_type')"
             :disabled="types.length === 1 || !!edit"
             :items="types"
           >
@@ -36,7 +36,7 @@
           <v-select
             v-model="chain"
             outlined
-            :label="$t('asset_form.labels.chain')"
+            :label="t('asset_form.labels.chain')"
             :disabled="!isEvmToken || !!edit"
             :items="evmChainsData"
             item-text="label"
@@ -49,7 +49,7 @@
           <v-select
             v-model="tokenKind"
             outlined
-            :label="$t('asset_form.labels.token_kind')"
+            :label="t('asset_form.labels.token_kind')"
             :disabled="!isEvmToken || !!edit"
             :items="evmTokenKindsData"
             item-text="label"
@@ -66,7 +66,7 @@
             outlined
             :loading="fetching"
             :error-messages="errors['address']"
-            :label="$t('common.address')"
+            :label="t('common.address')"
             :disabled="saving || fetching || !!edit"
             @keydown.space.prevent
             @focus="delete errors['address']"
@@ -80,7 +80,7 @@
             v-model="name"
             outlined
             :error-messages="errors['name']"
-            :label="$t('common.name')"
+            :label="t('common.name')"
             :disabled="saving || fetching"
             @focus="delete errors['name']"
           />
@@ -90,7 +90,7 @@
             v-model="symbol"
             outlined
             :error-messages="errors['symbol']"
-            :label="$t('asset_form.labels.symbol')"
+            :label="t('asset_form.labels.symbol')"
             :disabled="saving || fetching"
             @focus="delete errors['symbol']"
           />
@@ -102,7 +102,7 @@
             outlined
             min="0"
             max="18"
-            :label="$t('asset_form.labels.decimals')"
+            :label="t('asset_form.labels.decimals')"
             :error-messages="errors['decimals']"
             :disabled="saving || fetching"
             @focus="delete errors['decimals']"
@@ -116,8 +116,8 @@
             outlined
             clearable
             persistent-hint
-            :hint="$t('asset_form.labels.coingecko_hint')"
-            :label="$t('asset_form.labels.coingecko')"
+            :hint="t('asset_form.labels.coingecko_hint')"
+            :label="t('asset_form.labels.coingecko')"
             :error-messages="errors['coingecko']"
             :disabled="saving || !coingeckoEnabled"
             @focus="delete errors['coingecko']"
@@ -126,7 +126,7 @@
               <help-link
                 small
                 :url="`${$interop.contributeUrl}#get-coingecko-asset-identifier`"
-                :tooltip="$tc('asset_form.help_coingecko')"
+                :tooltip="tc('asset_form.help_coingecko')"
               />
             </template>
           </v-text-field>
@@ -136,7 +136,7 @@
                 <v-checkbox v-model="coingeckoEnabled" class="ms-4 me-2" />
               </span>
             </template>
-            <span> {{ $t('asset_form.oracle_disable') }}</span>
+            <span> {{ t('asset_form.oracle_disable') }}</span>
           </v-tooltip>
         </v-col>
         <v-col cols="12" md="6" class="d-flex flex-row">
@@ -145,8 +145,8 @@
             outlined
             persistent-hint
             clearable
-            :label="$t('asset_form.labels.cryptocompare')"
-            :hint="$t('asset_form.labels.cryptocompare_hint')"
+            :label="t('asset_form.labels.cryptocompare')"
+            :hint="t('asset_form.labels.cryptocompare_hint')"
             :error-messages="errors['cryptocompare']"
             :disabled="saving || !cryptocompareEnabled"
             @focus="delete errors['cryptocompare']"
@@ -155,7 +155,7 @@
               <help-link
                 small
                 :url="`${$interop.contributeUrl}#get-cryptocompare-asset-identifier`"
-                :tooltip="$tc('asset_form.help_cryptocompare')"
+                :tooltip="tc('asset_form.help_cryptocompare')"
               />
             </template>
           </v-text-field>
@@ -165,7 +165,7 @@
                 <v-checkbox v-model="cryptocompareEnabled" class="ms-4 me-2" />
               </span>
             </template>
-            <span> {{ $t('asset_form.oracle_disable') }}</span>
+            <span> {{ t('asset_form.oracle_disable') }}</span>
           </v-tooltip>
         </v-col>
       </v-row>
@@ -175,14 +175,14 @@
       <v-expansion-panels flat tile>
         <v-expansion-panel>
           <v-expansion-panel-header>
-            {{ $t('asset_form.optional') }}
+            {{ t('asset_form.optional') }}
           </v-expansion-panel-header>
           <v-expansion-panel-content>
             <date-time-picker
               v-model="started"
               seconds
               outlined
-              :label="$tc('asset_form.labels.started')"
+              :label="tc('asset_form.labels.started')"
               :error-messages="errors['started']"
               :disabled="saving"
               @focus="delete errors['started']"
@@ -196,7 +196,7 @@
                   clearable
                   clear-icon="mdi-close"
                   class="asset-form__protocol"
-                  :label="$t('common.protocol')"
+                  :label="t('common.protocol')"
                   :error-messages="errors['protocol']"
                   :disabled="saving"
                   @focus="delete errors['protocol']"
@@ -208,7 +208,7 @@
                   outlined
                   persistent-hint
                   clearable
-                  :label="$tc('asset_form.labels.swapped_for')"
+                  :label="tc('asset_form.labels.swapped_for')"
                   :error-messages="errors['swapped_for']"
                   :disabled="saving"
                   @focus="delete errors['swapped_for']"
@@ -221,7 +221,7 @@
                   outlined
                   persistent-hint
                   clearable
-                  :label="$tc('asset_form.labels.forked')"
+                  :label="tc('asset_form.labels.forked')"
                   :error-messages="errors['forked']"
                   :disabled="saving"
                   @focus="delete errors['forked']"
@@ -256,7 +256,7 @@
                   <v-icon>mdi-refresh</v-icon>
                 </v-btn>
               </template>
-              {{ $t('asset_form.fetch_latest_icon.title') }}
+              {{ t('asset_form.fetch_latest_icon.title') }}
             </v-tooltip>
 
             <asset-icon
@@ -279,7 +279,7 @@
       </v-row>
       <v-row v-if="icon">
         <v-col class="text-caption">
-          {{ $t('asset_form.replaced', { name: icon.name }) }}
+          {{ t('asset_form.replaced', { name: icon.name }) }}
         </v-col>
       </v-row>
     </div>
@@ -299,13 +299,13 @@ import {
   toRefs,
   watch
 } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { interop } from '@/electron-interop';
-import i18n from '@/i18n';
 import {
   EVM_TOKEN,
   evmChainsData,
@@ -356,6 +356,7 @@ export default defineComponent({
   },
   emits: ['input'],
   setup(props, { emit }) {
+    const { t, tc } = useI18n();
     const { edit } = toRefs(props);
     const { fetchSupportedAssets, fetchTokenDetails } = useAssetInfoRetrieval();
 
@@ -462,7 +463,7 @@ export default defineComponent({
         set(types, await api.assets.assetTypes());
       } catch (e: any) {
         showError(
-          i18n.t('asset_form.types.error', { message: e.message }).toString()
+          t('asset_form.types.error', { message: e.message }).toString()
         );
       }
     });
@@ -522,12 +523,10 @@ export default defineComponent({
 
       if (!success) {
         showError(
-          i18n
-            .t('asset_form.icon_upload.description', {
-              message
-            })
-            .toString(),
-          i18n.t('asset_form.icon_upload.title').toString()
+          t('asset_form.icon_upload.description', {
+            message
+          }).toString(),
+          t('asset_form.icon_upload.title').toString()
         );
       }
     };
@@ -583,12 +582,12 @@ export default defineComponent({
 
           showError(
             messages.join(','),
-            i18n.t('asset_form.underlying_tokens').toString()
+            t('asset_form.underlying_tokens').toString()
           );
         } else if (token._schema) {
           showError(
             token._schema[0],
-            i18n.t('asset_form.underlying_tokens').toString()
+            t('asset_form.underlying_tokens').toString()
           );
         }
       } else {
@@ -608,10 +607,7 @@ export default defineComponent({
       } catch (e: any) {
         const message = deserializeApiErrorMessage(e.message) as any;
         if (!message) {
-          showError(
-            e.message,
-            i18n.t('asset_form.underlying_tokens').toString()
-          );
+          showError(e.message, t('asset_form.underlying_tokens').toString());
         } else {
           handleError(message);
         }
@@ -629,15 +625,11 @@ export default defineComponent({
         await api.assets.refreshIcon(identifierVal);
       } catch (e: any) {
         notify({
-          title: i18n.tc('asset_form.fetch_latest_icon.title'),
-          message: i18n.tc(
-            'asset_form.fetch_latest_icon.description',
-            undefined,
-            {
-              identifier: identifierVal,
-              message: e.message
-            }
-          ),
+          title: tc('asset_form.fetch_latest_icon.title'),
+          message: tc('asset_form.fetch_latest_icon.description', undefined, {
+            identifier: identifierVal,
+            message: e.message
+          }),
           display: true
         });
       }
@@ -646,6 +638,8 @@ export default defineComponent({
     };
 
     return {
+      t,
+      tc,
       address,
       name,
       symbol,

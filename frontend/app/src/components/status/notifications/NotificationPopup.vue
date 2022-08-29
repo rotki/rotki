@@ -25,7 +25,7 @@
               <v-icon>mdi-notification-clear-all</v-icon>
             </v-btn>
           </template>
-          <span>{{ $t('notification_popup.dismiss_all') }}</span>
+          <span>{{ t('notification_popup.dismiss_all') }}</span>
         </v-tooltip>
       </v-col>
     </v-row>
@@ -40,60 +40,50 @@
           />
         </div>
       </template>
-      <span v-text="$t('notification_popup.tooltip')" />
+      <span v-text="t('notification_popup.tooltip')" />
     </v-tooltip>
   </v-snackbar>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import { defineComponent, nextTick, ref, watch } from 'vue';
+import { nextTick, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Notification from '@/components/status/notifications/Notification.vue';
 import { setupNotifications } from '@/composables/notifications';
 import { emptyNotification } from '@/store/notifications';
 
-const NotificationPopup = defineComponent({
-  name: 'NotificationPopup',
-  components: { Notification },
-  setup() {
-    const notification = ref(emptyNotification());
-    const { queue, displayed } = setupNotifications();
-    const dismiss = async (id: number) => {
-      await displayed([id]);
-      set(notification, { ...get(notification), display: false });
-    };
+const notification = ref(emptyNotification());
+const { queue, displayed } = setupNotifications();
+const dismiss = async (id: number) => {
+  await displayed([id]);
+  set(notification, { ...get(notification), display: false });
+};
 
-    const dismissAll = async () => {
-      await displayed(get(queue).map(({ id }) => id));
-      set(notification, { ...get(notification), display: false });
-    };
+const dismissAll = async () => {
+  await displayed(get(queue).map(({ id }) => id));
+  set(notification, { ...get(notification), display: false });
+};
 
-    watch(
-      queue,
-      () => {
-        const data = [...get(queue)];
-        if (!get(notification).display && data.length > 0) {
-          const next = data.shift();
-          if (!next) {
-            return;
-          }
-          nextTick(() => {
-            set(notification, next);
-          });
-        }
-      },
-      { deep: true }
-    );
-    return {
-      queue,
-      notification,
-      dismiss,
-      dismissAll,
-      displayed
-    };
-  }
-});
-export default NotificationPopup;
+watch(
+  queue,
+  () => {
+    const data = [...get(queue)];
+    if (!get(notification).display && data.length > 0) {
+      const next = data.shift();
+      if (!next) {
+        return;
+      }
+      nextTick(() => {
+        set(notification, next);
+      });
+    }
+  },
+  { deep: true }
+);
+
+const { t } = useI18n();
 </script>
 <style module lang="scss">
 .popup {

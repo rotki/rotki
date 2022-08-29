@@ -6,7 +6,7 @@
           <v-row align="center" justify="center">
             <v-col cols="auto">
               <span class="font-weight-bold text-h5">
-                {{ $t('kraken_page.page.title') }}
+                {{ t('kraken_page.page.title') }}
               </span>
             </v-col>
           </v-row>
@@ -31,7 +31,7 @@
                 <i18n path="kraken_page.page.description">
                   <template #link>
                     <router-link to="/settings/api-keys/exchanges">
-                      {{ $t('kraken_page.page.api_key') }}
+                      {{ t('kraken_page.page.api_key') }}
                     </router-link>
                   </template>
                 </i18n>
@@ -43,7 +43,7 @@
     </full-size-content>
     <progress-screen v-else-if="loading">
       <template #message>
-        {{ $t('kraken_page.loading') }}
+        {{ t('kraken_page.loading') }}
       </template>
     </progress-screen>
     <div v-else>
@@ -52,10 +52,11 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, onMounted, watch } from 'vue';
+import { computed, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
@@ -65,39 +66,32 @@ import { Section } from '@/store/const';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
 import { SupportedExchange } from '@/types/exchanges';
 
-export default defineComponent({
-  name: 'KrakenPage',
-  components: { FullSizeContent, KrakenStaking, ProgressScreen },
-  setup() {
-    const { shouldShowLoadingScreen } = setupStatusChecking();
-    const { load } = useKrakenStakingStore();
+const { shouldShowLoadingScreen } = setupStatusChecking();
+const { load } = useKrakenStakingStore();
 
-    const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
-    const isKrakenConnected = computed(() => {
-      const exchanges = get(connectedExchanges);
-      return !!exchanges.find(
-        ({ location }) => location === SupportedExchange.KRAKEN
-      );
-    });
+const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
+const isKrakenConnected = computed(() => {
+  const exchanges = get(connectedExchanges);
+  return !!exchanges.find(
+    ({ location }) => location === SupportedExchange.KRAKEN
+  );
+});
 
-    onMounted(async () => {
-      if (get(isKrakenConnected)) {
-        await load(false);
-      }
-    });
-
-    watch(isKrakenConnected, async isKrakenConnected => {
-      if (isKrakenConnected) {
-        await load(false);
-      }
-    });
-
-    return {
-      isKrakenConnected,
-      loading: shouldShowLoadingScreen(Section.STAKING_KRAKEN)
-    };
+onMounted(async () => {
+  if (get(isKrakenConnected)) {
+    await load(false);
   }
 });
+
+watch(isKrakenConnected, async isKrakenConnected => {
+  if (isKrakenConnected) {
+    await load(false);
+  }
+});
+
+const loading = shouldShowLoadingScreen(Section.STAKING_KRAKEN);
+
+const { t } = useI18n();
 </script>
 
 <style lang="scss" module>

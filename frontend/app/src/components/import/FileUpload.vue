@@ -95,162 +95,141 @@
   </v-row>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set, useCounter } from '@vueuse/core';
-import { defineComponent, PropType, ref, toRefs, watch } from 'vue';
+import { PropType, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { ImportSourceType, SOURCES } from '@/components/import/upload-types';
-import i18n from '@/i18n';
 
-export default defineComponent({
-  name: 'FileUpload',
-  props: {
-    source: {
-      required: true,
-      type: String as PropType<ImportSourceType>,
-      validator: (value: ImportSourceType) => {
-        return SOURCES.includes(value);
-      }
-    },
-    loading: { required: false, type: Boolean, default: false },
-    fileFilter: { required: false, type: String, default: '.csv' },
-    uploaded: { required: false, type: Boolean, default: false },
-    errorMessage: { required: false, type: String, default: '' }
+const props = defineProps({
+  source: {
+    required: true,
+    type: String as PropType<ImportSourceType>,
+    validator: (value: ImportSourceType) => {
+      return SOURCES.includes(value);
+    }
   },
-  emits: ['selected', 'update:uploaded'],
-  setup(props, { emit }) {
-    const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
-
-    const error = ref('');
-    const active = ref(false);
-    const file = ref<File | null>(null);
-    const select = ref<HTMLInputElement>();
-    const { count, inc, dec, reset } = useCounter(0, { min: 0 });
-    const { tc } = useI18n();
-
-    const onDrop = (event: DragEvent) => {
-      event.preventDefault();
-      set(active, false);
-      if (!event.dataTransfer?.files?.length) {
-        return;
-      }
-
-      if (get(source) !== 'icon') {
-        check(event.dataTransfer.files);
-      } else {
-        selected(event.dataTransfer.files[0]);
-      }
-    };
-
-    const onEnter = (event: DragEvent) => {
-      event.preventDefault();
-      inc();
-      set(active, true);
-    };
-
-    const onLeave = (event: DragEvent) => {
-      event.preventDefault();
-      dec();
-      if (get(count) === 0) {
-        set(active, false);
-      }
-    };
-
-    const onSelect = (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      if (!target || !target.files) {
-        return;
-      }
-      if (!['icon', 'zip', 'csv', 'json'].includes(get(source))) {
-        check(target.files);
-      } else {
-        selected(target.files[0]);
-      }
-    };
-
-    const onError = (message: string) => {
-      set(error, message);
-      reset();
-      set(active, false);
-      removeFile();
-    };
-
-    const removeFile = () => {
-      const inputFile = get(select);
-      if (inputFile) {
-        inputFile.value = '';
-      }
-      set(file, null);
-    };
-
-    const check = (files: FileList) => {
-      if (get(error) || get(uploaded)) {
-        return;
-      }
-
-      if (files.length !== 1) {
-        onError(i18n.t('file_upload.many_files_selected').toString());
-        return;
-      }
-
-      if (!files[0].name.endsWith('.csv')) {
-        onError(
-          i18n
-            .t('file_upload.only_files', {
-              fileFilter: get(fileFilter)
-            })
-            .toString()
-        );
-        return;
-      }
-
-      set(file, files[0]);
-    };
-
-    const selected = (selected: File | null) => {
-      set(file, selected);
-      emit('selected', selected);
-    };
-
-    const updateUploaded = (value: boolean) => {
-      emit('update:uploaded', value);
-    };
-
-    const clickSelect = () => {
-      get(select)?.click();
-    };
-
-    watch(file, file => {
-      selected(file);
-    });
-
-    watch(uploaded, uploaded => {
-      if (!uploaded) {
-        return;
-      }
-      set(file, null);
-      setTimeout(() => {
-        updateUploaded(false);
-      }, 4000);
-    });
-
-    watch(errorMessage, message => onError(message));
-
-    return {
-      file,
-      error,
-      active,
-      select,
-      onDrop,
-      onEnter,
-      onLeave,
-      onSelect,
-      removeFile,
-      clickSelect,
-      tc
-    };
-  }
+  loading: { required: false, type: Boolean, default: false },
+  fileFilter: { required: false, type: String, default: '.csv' },
+  uploaded: { required: false, type: Boolean, default: false },
+  errorMessage: { required: false, type: String, default: '' }
 });
+
+const emit = defineEmits(['selected', 'update:uploaded']);
+const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
+
+const error = ref('');
+const active = ref(false);
+const file = ref<File | null>(null);
+const select = ref<HTMLInputElement>();
+const { count, inc, dec, reset } = useCounter(0, { min: 0 });
+const { t, tc } = useI18n();
+
+const onDrop = (event: DragEvent) => {
+  event.preventDefault();
+  set(active, false);
+  if (!event.dataTransfer?.files?.length) {
+    return;
+  }
+
+  if (get(source) !== 'icon') {
+    check(event.dataTransfer.files);
+  } else {
+    selected(event.dataTransfer.files[0]);
+  }
+};
+
+const onEnter = (event: DragEvent) => {
+  event.preventDefault();
+  inc();
+  set(active, true);
+};
+
+const onLeave = (event: DragEvent) => {
+  event.preventDefault();
+  dec();
+  if (get(count) === 0) {
+    set(active, false);
+  }
+};
+
+const onSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (!target || !target.files) {
+    return;
+  }
+  if (!['icon', 'zip', 'csv', 'json'].includes(get(source))) {
+    check(target.files);
+  } else {
+    selected(target.files[0]);
+  }
+};
+
+const onError = (message: string) => {
+  set(error, message);
+  reset();
+  set(active, false);
+  removeFile();
+};
+
+const removeFile = () => {
+  const inputFile = get(select);
+  if (inputFile) {
+    inputFile.value = '';
+  }
+  set(file, null);
+};
+
+const check = (files: FileList) => {
+  if (get(error) || get(uploaded)) {
+    return;
+  }
+
+  if (files.length !== 1) {
+    onError(t('file_upload.many_files_selected').toString());
+    return;
+  }
+
+  if (!files[0].name.endsWith('.csv')) {
+    onError(
+      t('file_upload.only_files', {
+        fileFilter: get(fileFilter)
+      }).toString()
+    );
+    return;
+  }
+
+  set(file, files[0]);
+};
+
+const selected = (selected: File | null) => {
+  set(file, selected);
+  emit('selected', selected);
+};
+
+const updateUploaded = (value: boolean) => {
+  emit('update:uploaded', value);
+};
+
+const clickSelect = () => {
+  get(select)?.click();
+};
+
+watch(file, file => {
+  selected(file);
+});
+
+watch(uploaded, uploaded => {
+  if (!uploaded) {
+    return;
+  }
+  set(file, null);
+  setTimeout(() => {
+    updateUploaded(false);
+  }, 4000);
+});
+
+watch(errorMessage, message => onError(message));
 </script>
 
 <style scoped lang="scss">
