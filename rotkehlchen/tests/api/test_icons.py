@@ -55,9 +55,9 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
     assert filecmp.cmp(uploaded_icon, filepath)
 
     # query the file using the endpoint
-    response = requests.post(
+    response = requests.get(
         api_url_for(rotkehlchen_api_server, 'asseticonfileresource'),
-        json={'asset': A_GNO.identifier},
+        params={'asset': A_GNO.identifier},
     )
     assert response.status_code == HTTPStatus.OK
     response.headers.pop('Date')

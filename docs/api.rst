@@ -3556,20 +3556,17 @@ Querying asset icons
 
 .. http:post:: /api/(version)/assets/icon
 
-   Doing a POST on the asset icon endpoint will return the icon of the given asset. If we have no icon for an asset a 404 is returned
+   Doing a GET on the asset icon endpoint will return the icon of the given asset. If we have no icon for an asset a 404 is returned
 
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/assets/icon HTTP/1.1
+      GET /api/1/assets/icon?asset=eip155:1/erc20:3A0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e HTTP/1.1
       Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
 
-      {"asset": "eip155:1/erc20:3A0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"}
-
-   :reqjson string asset: Identifier of the asset to be queried.
+   :reqquery string asset: Identifier of the asset to be queried.
 
    **Example Response**:
 
