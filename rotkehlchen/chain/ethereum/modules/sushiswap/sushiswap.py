@@ -8,14 +8,12 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AddressEvents,
     AddressEventsBalances,
     AddressToLPBalances,
-    AddressTrades,
     AssetToPrice,
     DDAddressEvents,
     EventType,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
-from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
@@ -218,50 +216,11 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
         return protocol_balance.address_balances
 
-    def get_trades_history(
-        self,
-        addresses: List[ChecksumEvmAddress],
-        reset_db_data: bool,
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
-    ) -> AddressTrades:
-        """Get the addresses' trades history in the Sushiswap protocol"""
-        with self.trades_lock:
-            if reset_db_data is True:
-                with self.database.user_write() as cursor:
-                    self.database.delete_sushiswap_trades_data(cursor)
-
-            trades = self._get_trades(
-                addresses=addresses,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-                only_cache=False,
-            )
-        return trades
-
-    def _get_trades_graph_for_address(
-            self,
-            address: ChecksumEvmAddress,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> List[AMMTrade]:
-        trades = []
-        try:
-            trades.extend(self._read_subgraph_trades(address, start_ts, end_ts))
-        except RemoteError as e:
-            log.error(
-                f'Error querying sushiswap trades using graph for address {address} '
-                f'between {start_ts} and {end_ts}. {str(e)}',
-            )
-
-        return trades
-
     def delete_events_data(self, write_cursor: 'DBCursor') -> None:
         self.database.delete_sushiswap_events_data(write_cursor)
 
     def deactivate(self) -> None:
         with self.database.user_write() as cursor:
-            self.database.delete_sushiswap_trades_data(cursor)
             self.database.delete_sushiswap_events_data(cursor)
 
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:

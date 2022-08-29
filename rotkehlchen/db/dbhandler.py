@@ -35,10 +35,6 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
-from rotkehlchen.chain.ethereum.interfaces.ammswap import (
-    SUSHISWAP_TRADES_PREFIX,
-    UNISWAP_TRADES_PREFIX,
-)
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.aave.common import atoken_to_asset
 from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent, aave_event_from_db
@@ -51,13 +47,9 @@ from rotkehlchen.chain.ethereum.modules.adex import (
     UnbondRequest,
     deserialize_adex_event_from_db,
 )
-from rotkehlchen.chain.ethereum.modules.balancer import (
-    BALANCER_EVENTS_PREFIX,
-    BALANCER_TRADES_PREFIX,
-)
+from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
@@ -938,17 +930,6 @@ class DBHandler:
             'DELETE FROM used_query_ranges WHERE name LIKE ?', (f'{ADEX_EVENTS_PREFIX}%',),
         )
 
-    def delete_balancer_trades_data(self, write_cursor: 'DBCursor') -> None:
-        """Delete all historical Balancer trades data"""
-        write_cursor.execute(
-            'DELETE FROM amm_swaps WHERE location=?',
-            (Location.BALANCER.serialize_for_db(),),  # pylint: disable=no-member
-        )
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{BALANCER_TRADES_PREFIX}%',),
-        )
-
     def delete_balancer_events_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all historical Balancer events data"""
         write_cursor.execute('DELETE FROM balancer_events;')
@@ -1044,11 +1025,8 @@ class DBHandler:
     def purge_module_data(self, module_name: Optional[ModuleName]) -> None:
         with self.user_write() as cursor:
             if module_name is None:
-                self.delete_uniswap_trades_data(cursor)
                 self.delete_uniswap_events_data(cursor)
-                self.delete_sushiswap_trades_data(cursor)
                 self.delete_sushiswap_events_data(cursor)
-                self.delete_balancer_trades_data(cursor)
                 self.delete_balancer_events_data(cursor)
                 self.delete_aave_data(cursor)
                 self.delete_adex_events_data(cursor)
@@ -1061,13 +1039,10 @@ class DBHandler:
                 return
 
             if module_name == 'uniswap':
-                self.delete_uniswap_trades_data(cursor)
                 self.delete_uniswap_events_data(cursor)
             elif module_name == 'sushiswap':
-                self.delete_sushiswap_trades_data(cursor)
                 self.delete_sushiswap_events_data(cursor)
             elif module_name == 'balancer':
-                self.delete_balancer_trades_data(cursor)
                 self.delete_balancer_events_data(cursor)
             elif module_name == 'aave':
                 self.delete_aave_data(cursor)
@@ -1088,17 +1063,6 @@ class DBHandler:
 
             log.debug(f'Purged {module_name} data from the DB')
 
-    def delete_uniswap_trades_data(self, write_cursor: DBCursor) -> None:
-        """Delete all historical Uniswap trades data"""
-        write_cursor.execute(
-            'DELETE FROM amm_swaps WHERE location=?',
-            (Location.UNISWAP.serialize_for_db(),),  # pylint: disable=no-member
-        )
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{UNISWAP_TRADES_PREFIX}%',),
-        )
-
     def delete_uniswap_events_data(self, write_cursor: DBCursor) -> None:
         """Delete all historical Uniswap events data"""
         write_cursor.execute(
@@ -1108,17 +1072,6 @@ class DBHandler:
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ?',
             (f'{UNISWAP_EVENTS_PREFIX}%',),
-        )
-
-    def delete_sushiswap_trades_data(self, write_cursor: DBCursor) -> None:
-        """Delete all historical Sushiswap trades data"""
-        write_cursor.execute(
-            'DELETE FROM amm_swaps WHERE location=?',
-            (Location.SUSHISWAP.serialize_for_db(),),  # pylint: disable=no-member
-        )
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{SUSHISWAP_TRADES_PREFIX}%',),
         )
 
     def delete_sushiswap_events_data(self, write_cursor: DBCursor) -> None:
@@ -2230,15 +2183,7 @@ class DBHandler:
         )
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name = ?',
-            (f'{BALANCER_TRADES_PREFIX}_{address}',),
-        )
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name = ?',
             (f'{UNISWAP_EVENTS_PREFIX}_{address}',),
-        )
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name = ?',
-            (f'{UNISWAP_TRADES_PREFIX}_{address}',),
         )
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name = ?',
@@ -2359,12 +2304,10 @@ class DBHandler:
     def get_trades(self, cursor: 'DBCursor', filter_query: TradesFilterQuery, has_premium: bool) -> List[Trade]:  # noqa: E501
         """Returns a list of trades optionally filtered by various filters.
 
-        This will also take into account AMMSwaps and return them as trades via a view.
-
         The returned list is ordered according to the passed filter query"""
         query, bindings = filter_query.prepare()
         if has_premium:
-            query = 'SELECT * from combined_trades_view ' + query
+            query = 'SELECT * from trades ' + query
             results = cursor.execute(query, bindings)
         else:
             query = 'SELECT * FROM (SELECT * from trades ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
@@ -2394,79 +2337,6 @@ class DBHandler:
         if write_cursor.rowcount == 0:
             return False, 'Tried to delete non-existing trade'
         return True, ''
-
-    def add_amm_swaps(self, write_cursor: 'DBCursor', swaps: List[AMMSwap]) -> None:
-        swap_tuples: List[Tuple[Any, ...]] = []
-        for swap in swaps:
-            swap_tuples.append(swap.to_db_tuple())
-
-        query = (
-            """
-            INSERT INTO amm_swaps (
-                tx_hash,
-                log_index,
-                address,
-                from_address,
-                to_address,
-                timestamp,
-                location,
-                token0_identifier,
-                token1_identifier,
-                amount0_in,
-                amount1_in,
-                amount0_out,
-                amount1_out
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """
-        )
-        self.write_tuples(write_cursor, tuple_type='amm_swap', query=query, tuples=swap_tuples)
-
-    def get_amm_swaps(
-            self,
-            cursor: 'DBCursor',
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            location: Optional[Location] = None,
-            address: Optional[ChecksumEvmAddress] = None,
-    ) -> List[AMMSwap]:
-        """Returns a list of AMM swaps optionally filtered by time, location
-        and address
-        """
-        query = 'SELECT * FROM amm_swaps '
-        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
-        filters = []
-        if location is not None:
-            filters.append(f'location="{location.serialize_for_db()}" ')
-        if address is not None:
-            filters.append(f'address="{address}" ')
-
-        if filters:
-            query += 'WHERE '
-            query += 'AND '.join(filters)
-
-        query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
-        results = cursor.execute(query, bindings)
-
-        swaps = []
-        for result in results:
-            try:
-                swap = AMMSwap.deserialize_from_db(result)
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing AMM swap from the DB. Skipping swap. '
-                    f'Error was: {str(e)}',
-                )
-                continue
-            except UnknownAsset as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing AMM swap from the DB. Skipping swap. '
-                    f'Unknown asset {e.asset_name} found',
-                )
-                continue
-            swaps.append(swap)
-
-        return swaps
 
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""

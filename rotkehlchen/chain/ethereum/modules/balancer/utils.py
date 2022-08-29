@@ -1,10 +1,9 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Literal, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
@@ -17,13 +16,10 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
-    AssetAmount,
     ChecksumEvmAddress,
     EvmTokenKind,
     EVMTxHash,
-    Location,
     Price,
-    TradeType,
     deserialize_evm_tx_hash,
 )
 
@@ -272,99 +268,6 @@ def deserialize_transaction_id(raw_tx_id: str) -> Tuple[EVMTxHash, int]:
     return deserialized_tx_hash, log_index
 
 
-def deserialize_swap(userdb: 'DBHandler', raw_swap: Dict[str, Any]) -> AMMSwap:
-    """May raise DeserializationError"""
-    try:
-        tx_hash, log_index = deserialize_transaction_id(raw_swap['id'])
-        timestamp = deserialize_timestamp(raw_swap['timestamp'])
-        raw_tokens = raw_swap['poolAddress']['tokens']
-        token0_symbol = raw_swap['tokenInSym']
-        token1_symbol = raw_swap['tokenOutSym']
-        amount0_in = deserialize_asset_amount(raw_swap['tokenAmountIn'])
-        amount1_out = deserialize_asset_amount(raw_swap['tokenAmountOut'])
-        raw_user_address = raw_swap['userAddress']['id']  # address
-        raw_caller_address = raw_swap['caller']  # from_address
-        raw_pool_address = raw_swap['poolAddress']['id']  # to_address
-        raw_token_in_address = raw_swap['tokenIn']  # token0_address
-        raw_token_out_address = raw_swap['tokenOut']  # token1_address
-    except KeyError as e:
-        raise DeserializationError(f'Missing key: {str(e)}.') from e
-
-    if amount0_in == ZERO:
-        # Prevent a division by zero error when creating the trade
-        raise DeserializationError('TokenAmountIn balance is zero.')
-
-    # Checksum addresses
-    user_address = deserialize_ethereum_address(raw_user_address)
-    caller_address = deserialize_ethereum_address(raw_caller_address)
-    pool_address = deserialize_ethereum_address(raw_pool_address)
-    token_in_address = deserialize_ethereum_address(raw_token_in_address)
-    token_out_address = deserialize_ethereum_address(raw_token_out_address)
-
-    # Get token0 and token1
-    # When the controller removes all the tokens from a pool, `raw_tokens` will
-    # be an empty list. Therefore it won't be possible to get their names and
-    # decimals.
-    if len(raw_tokens) != 0:
-        try:
-            raw_address_tokens = {raw_token['address']: raw_token for raw_token in raw_tokens}
-            raw_token0 = raw_address_tokens.get(raw_token_in_address)
-            raw_token1 = raw_address_tokens.get(raw_token_out_address)
-            if raw_token0 is not None:
-                token0_name = raw_token0['name']
-                token0_decimals = raw_token0['decimals']
-            else:
-                token0_name = None
-                token0_decimals = None
-            if raw_token1 is not None:
-                token1_name = raw_token1['name']
-                token1_decimals = raw_token1['decimals']
-            else:
-                token1_name = None
-                token1_decimals = None
-
-        except KeyError as e:
-            raise DeserializationError(f'Missing key: {str(e)}.') from e
-    else:
-        token0_name = None
-        token0_decimals = None
-        token1_name = None
-        token1_decimals = None
-
-    token0 = get_or_create_evm_token(
-        userdb=userdb,
-        symbol=token0_symbol,
-        evm_address=token_in_address,
-        chain=ChainID.ETHEREUM,
-        name=token0_name,
-        decimals=token0_decimals,
-    )
-    token1 = get_or_create_evm_token(
-        userdb=userdb,
-        symbol=token1_symbol,
-        evm_address=token_out_address,
-        chain=ChainID.ETHEREUM,
-        name=token1_name,
-        decimals=token1_decimals,
-    )
-    amm_swap = AMMSwap(
-        tx_hash=tx_hash,
-        log_index=log_index,
-        address=user_address,
-        from_address=caller_address,
-        to_address=pool_address,
-        timestamp=timestamp,
-        location=Location.BALANCER,
-        token0=token0,
-        token1=token1,
-        amount0_in=amount0_in,
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=amount1_out,
-    )
-    return amm_swap
-
-
 def deserialize_token_price(
         raw_token_price: Dict[str, Any],
 ) -> Tuple[ChecksumEvmAddress, Price]:
@@ -393,88 +296,3 @@ def deserialize_token_day_data(
     token_address = deserialize_ethereum_address(token_address)
 
     return token_address, usd_price
-
-
-def calculate_trade_from_swaps(
-        swaps: List[AMMSwap],
-        trade_index: int = 0,
-) -> AMMTrade:
-    """Given a list of 1 or more AMMSwap (swap) return an AMMTrade (trade).
-    The trade is calculated using the first swap token (QUOTE) and last swap
-    token (BASE). Be aware that any token data in between will be ignored for
-    calculating the trade.
-
-    Examples:
-    [USDC -> AMPL]                              BASE_QUOTE pair is AMPL_USDC.
-    [USDC -> AMPL, AMPL -> WETH]                BASE_QUOTE pair is WETH_USDC.
-    [USDC -> AMPL, AMPL -> WETH, WETH -> USDC]  BASE_QUOTE pair is USDC_USDC.
-
-    May raise DeserializationError
-    """
-    assert len(swaps) != 0, "Swaps can't be an empty list here"
-
-    if swaps[0].amount0_in == ZERO:
-        # Prevent a division by zero error when creating the trade.
-        # Swaps with `tokenIn` amount (<AMMSwap>.amount0_in) equals to zero are
-        # not expected nor supported. The function `deserialize_swap` will raise
-        # a DeserializationError, preventing to store them in the DB. In case
-        # of having a zero amount it means the db data was corrupted.
-        log.error(
-            'Failed to deserialize swap from db. First swap amount0_in is zero',
-            swaps=swaps,
-        )
-        raise DeserializationError('First swap amount0_in is zero.')
-
-    amm_trade = AMMTrade(
-        trade_type=TradeType.BUY,  # AMMTrade is always a buy
-        base_asset=swaps[-1].token1,
-        quote_asset=swaps[0].token0,
-        amount=swaps[-1].amount1_out,
-        rate=Price(swaps[0].amount0_in / swaps[-1].amount1_out),
-        swaps=swaps,
-        trade_index=trade_index,
-    )
-    return amm_trade
-
-
-def get_trades_from_tx_swaps(swaps: List[AMMSwap]) -> List[AMMTrade]:
-    """Given a list of AMMSwap (swap) return a list of AMMTrade (trade). Each
-    trade is made from 1 or more swaps (N swaps aggregated).
-
-    Swaps aggregation criteria (all must be true):
-    - Sequence: the swaps are in sequence ([swap N, swap N+1]).
-    - Token: swap N token is swap N+1 token.
-    - Amount: swap N "amount out" is equal to swap N+1 "amount in".
-
-    When swaps are done via the Balancer Exchange Proxy (caller address is
-    0x3e66b66fd1d0b02fda6c811da9e0547970db2f21) the swap N "amount out" equals
-    to the swap N+1 "amount in". However, there may be a slight difference
-    (e.g. 1e-5) when the caller is a custom contract. In this case the swaps
-    won't be aggregated under the same trade.
-
-    May raise DeserializationError
-    """
-    trades: List[AMMTrade] = []
-    trade_swaps: List[AMMSwap] = []
-    last_idx = len(swaps) - 1
-    trade_index = 0
-    for idx, swap in enumerate(swaps):
-        trade_swaps.append(swap)
-        if idx == last_idx:
-            trade = calculate_trade_from_swaps(swaps=trade_swaps, trade_index=trade_index)
-            trades.append(trade)
-            break
-
-        # Create the trade when the current swap can't be aggregated with the next one
-        next_swap = swaps[idx + 1]
-        is_not_aggregable = (
-            swap.amount1_out != next_swap.amount0_in or
-            swap.token1.evm_address != next_swap.token0.evm_address
-        )
-        if is_not_aggregable:
-            trade = calculate_trade_from_swaps(swaps=trade_swaps, trade_index=trade_index)
-            trades.append(trade)
-            trade_index = trade_index + 1 if swap.tx_hash == next_swap.tx_hash else 0
-            trade_swaps = []
-
-    return trades

@@ -17,7 +17,6 @@ from rotkehlchen.chain.ethereum.graph import (
     format_query_indentation,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.graph import TOKEN_DAY_DATAS_QUERY
-from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
@@ -47,12 +46,10 @@ from .graph import (
     MINTS_QUERY,
     POOLSHARES_QUERY,
     REMOVE_LIQUIDITIES_QUERY,
-    SWAPS_QUERY,
     TOKENPRICES_QUERY,
 )
 from .types import (
     BALANCER_EVENTS_PREFIX,
-    BALANCER_TRADES_PREFIX,
     POOL_MAX_NUMBER_TOKENS,
     AddressToBPTEvents,
     AddressToEvents,
@@ -60,8 +57,6 @@ from .types import (
     AddressToInvestEvents,
     AddressToPoolBalances,
     AddressToPoolEventsBalances,
-    AddressToSwaps,
-    AddressToTrades,
     BalancerBPTEventType,
     BalancerEvent,
     BalancerEventsData,
@@ -73,7 +68,6 @@ from .types import (
     DDAddressToProfitLossAmounts,
     DDAddressToUniqueBPTEvents,
     DDAddressToUniqueInvestEvents,
-    DDAddressToUniqueSwaps,
     PoolAddrToTokenAddrToIndex,
     ProtocolBalance,
     TokenToPrices,
@@ -83,11 +77,9 @@ from .utils import (
     deserialize_bpt_event,
     deserialize_invest_event,
     deserialize_pool_share,
-    deserialize_swap,
     deserialize_token_day_data,
     deserialize_token_price,
     deserialize_transaction_id,
-    get_trades_from_tx_swaps,
 )
 
 if TYPE_CHECKING:
@@ -182,33 +174,6 @@ class Balancer(EthereumModule):
             pool_events_balances.append(pool_events_balance)
 
         return pool_events_balances
-
-    def _fetch_trades_from_db(
-            self,
-            cursor: 'DBCursor',
-            addresses: List[ChecksumEvmAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> AddressToTrades:
-        """Fetch all DB Balancer swaps within the time range and format as trades"""
-        db_address_to_trades: AddressToTrades = {}
-        for address in addresses:
-            db_swaps = self.database.get_amm_swaps(
-                cursor=cursor,
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-                location=Location.BALANCER,
-                address=address,
-            )
-            if db_swaps:
-                try:
-                    db_trades = self._get_trades_from_swaps(db_swaps)
-                except DeserializationError as e:
-                    raise RemoteError('Failed to deserialize balancer trades') from e
-
-                db_address_to_trades[address] = db_trades
-
-        return db_address_to_trades
 
     def _get_address_to_bpt_events_graph(
             self,
@@ -580,185 +545,6 @@ class Balancer(EthereumModule):
 
         return address_to_pool_events_balances
 
-    def _get_address_to_swaps_graph(
-            self,
-            addresses: List[ChecksumEvmAddress],
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> AddressToSwaps:
-        """Get a mapping of addresses to swaps for a given time range
-
-        May raise RemoteError
-        """
-        addresses_lower = [address.lower() for address in addresses]
-        querystr = format_query_indentation(SWAPS_QUERY.format())
-        query_start_ts = start_ts
-        query_offset = 0
-        param_types = {
-            '$limit': 'Int!',
-            '$offset': 'Int!',
-            '$addresses': '[ID!]',
-            '$start_ts': 'Int!',
-            '$end_ts': 'Int!',
-        }
-        param_values = {
-            'limit': GRAPH_QUERY_LIMIT,
-            'offset': query_offset,
-            'addresses': addresses_lower,
-            'start_ts': query_start_ts,
-            'end_ts': end_ts,
-        }
-        address_to_unique_swaps: DDAddressToUniqueSwaps = defaultdict(set)
-        while True:
-            try:
-                result = self.graph.query(
-                    querystr=querystr,
-                    param_types=param_types,
-                    param_values=param_values,
-                )
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
-                )
-                raise
-
-            try:
-                raw_swaps = result['swaps']
-            except KeyError as e:
-                log.error(
-                    'Failed to deserialize balancer swaps',
-                    error='Missing key: swaps',
-                    result=result,
-                    param_values=param_values,
-                )
-                raise RemoteError('Failed to deserialize balancer trades') from e
-
-            for raw_swap in raw_swaps:
-                try:
-                    amm_swap = deserialize_swap(self.database, raw_swap)
-                except DeserializationError as e:
-                    error = str(e)
-                    self.msg_aggregator.add_error(
-                        f'Failed to deserialize a balancer swap due to {error}. Check logs for more details',  # noqa: E501
-                    )
-                    log.error(
-                        'Failed to deserialize a balancer swap',
-                        error=error,
-                        raw_swap=raw_swap,
-                        start_ts=start_ts,
-                        end_ts=end_ts,
-                        param_values=param_values,
-                    )
-                    continue
-
-                address_to_unique_swaps[amm_swap.address].add(amm_swap)
-
-            if len(raw_swaps) < GRAPH_QUERY_LIMIT:
-                break
-
-            if query_offset == GRAPH_QUERY_SKIP_LIMIT:
-                query_start_ts = amm_swap.timestamp
-                query_offset = 0
-            else:
-                query_offset += GRAPH_QUERY_LIMIT
-
-            param_values = {
-                **param_values,
-                'start_ts': query_start_ts,
-                'offset': query_offset,
-            }
-
-        address_to_swaps: AddressToSwaps = {
-            address: list(amm_swaps) for address, amm_swaps in address_to_unique_swaps.items()
-        }
-        return address_to_swaps
-
-    def _get_address_to_trades(
-            self,
-            addresses: List[ChecksumEvmAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            only_cache: bool,
-    ) -> AddressToTrades:
-        """Get a mapping of addresses to trades for a given time range
-
-        Requests all the new swaps (since last used query range) of the existing
-        addresses via subgraph.
-
-        May raise RemoteError
-        """
-        new_addresses: List[ChecksumEvmAddress] = []
-        existing_addresses: List[ChecksumEvmAddress] = []
-        min_to_timestamp: Timestamp = to_timestamp
-
-        with self.database.conn.read_ctx() as cursor:
-            if only_cache:
-                return self._fetch_trades_from_db(
-                    cursor=cursor,
-                    addresses=addresses,
-                    from_timestamp=from_timestamp,
-                    to_timestamp=to_timestamp,
-                )
-
-            # Get the trades last used query range of the addresses
-            for address in addresses:
-                entry_name = f'{BALANCER_TRADES_PREFIX}_{address}'
-                trades_range = self.database.get_used_query_range(cursor=cursor, name=entry_name)
-
-                if not trades_range:
-                    new_addresses.append(address)
-                else:
-                    existing_addresses.append(address)
-                    min_to_timestamp = min(min_to_timestamp, trades_range[1])
-
-        address_to_swaps: AddressToSwaps = {}
-        with self.database.user_write() as cursor:
-            # Request new addresses' trades
-            if new_addresses:
-                start_ts = Timestamp(0)
-                address_to_swaps_ = self._get_address_to_swaps_graph(
-                    addresses=new_addresses,
-                    start_ts=start_ts,
-                    end_ts=to_timestamp,
-                )
-                address_to_swaps.update(address_to_swaps_)
-                self._update_used_query_range(
-                    write_cursor=cursor,
-                    addresses=new_addresses,
-                    prefix='balancer_trades',
-                    from_timestamp=start_ts,
-                    to_timestamp=to_timestamp,
-                )
-
-            # Request existing DB addresses' trades
-            if existing_addresses and to_timestamp > min_to_timestamp:
-                address_to_swaps_ = self._get_address_to_swaps_graph(
-                    addresses=existing_addresses,
-                    start_ts=min_to_timestamp,
-                    end_ts=to_timestamp,
-                )
-                address_to_swaps.update(address_to_swaps_)
-                self._update_used_query_range(
-                    write_cursor=cursor,
-                    addresses=existing_addresses,
-                    prefix='balancer_trades',
-                    from_timestamp=min_to_timestamp,
-                    to_timestamp=to_timestamp,
-                )
-
-            # Insert all swaps to the DB
-            if address_to_swaps:
-                all_swaps = [swap for a_swaps in address_to_swaps.values() for swap in a_swaps]
-                self.database.add_amm_swaps(cursor, all_swaps)
-
-        with self.database.conn.read_ctx() as cursor:
-            return self._fetch_trades_from_db(
-                cursor=cursor,
-                addresses=addresses,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
-
     def _get_balancer_aggregated_events_data(
             self,
             address_to_events_data: AddressToEventsData,
@@ -1053,28 +839,6 @@ class Balancer(EthereumModule):
 
         return usd_price
 
-    @staticmethod
-    def _get_trades_from_swaps(swaps: List[AMMSwap]) -> List[AMMTrade]:
-        """May raise DeserializationError"""
-        assert len(swaps) != 0, "Swaps can't be an empty list"
-
-        swaps.sort(key=lambda swap: (swap.timestamp, -swap.log_index), reverse=True)
-        current_swaps: List[AMMSwap] = []
-        trades: List[AMMTrade] = []
-        last_tx_hash = swaps[0].tx_hash
-        for swap in swaps:
-            if swap.tx_hash != last_tx_hash:
-                trades.extend(get_trades_from_tx_swaps(current_swaps))
-                last_tx_hash = swap.tx_hash
-                current_swaps = []
-
-            current_swaps.append(swap)
-
-        if len(current_swaps) != 0:
-            trades.extend(get_trades_from_tx_swaps(current_swaps))
-
-        return trades
-
     def _get_unknown_token_to_prices_balancer_graph(
             self,
             unknown_token_addresses: Set[ChecksumEvmAddress],
@@ -1289,7 +1053,7 @@ class Balancer(EthereumModule):
             self,
             write_cursor: 'DBCursor',
             addresses: List[ChecksumEvmAddress],
-            prefix: Literal['balancer_events', 'balancer_trades'],
+            prefix: Literal['balancer_events'],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> None:
@@ -1346,54 +1110,6 @@ class Balancer(EthereumModule):
                 )
         return address_to_pool_events_balances
 
-    def get_trades(
-            self,
-            addresses: List[ChecksumEvmAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            only_cache: bool,
-    ) -> List[AMMTrade]:
-        if len(addresses) == 0:
-            return []
-
-        with self.trades_lock:
-            all_trades = []
-            address_to_trades = self._get_address_to_trades(
-                addresses=addresses,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-                only_cache=only_cache,
-            )
-            for _, trades in address_to_trades.items():
-                all_trades.extend(trades)
-
-            return all_trades
-
-    def get_trades_history(
-        self,
-        addresses: List[ChecksumEvmAddress],
-        reset_db_data: bool,
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
-    ) -> AddressToTrades:
-        """Get the trades history of the given addresses
-
-        May raise RemoteError
-        """
-        with self.trades_lock:
-            if reset_db_data is True:
-                with self.database.user_write() as cursor:
-                    self.database.delete_balancer_trades_data(cursor)
-
-            address_to_trades = self._get_address_to_trades(
-                addresses=addresses,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-                only_cache=False,
-            )
-
-        return address_to_trades
-
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         pass
@@ -1404,4 +1120,3 @@ class Balancer(EthereumModule):
     def deactivate(self) -> None:
         with self.database.user_write() as cursor:
             self.database.delete_balancer_events_data(cursor)
-            self.database.delete_balancer_trades_data(cursor)

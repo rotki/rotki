@@ -4,8 +4,6 @@ from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.balancer.db import add_balancer_events
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerBPTEventType, BalancerEvent
-from rotkehlchen.chain.ethereum.trades import AMMSwap
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_EUR, A_USD
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.exchanges.data_structures import Trade
@@ -171,23 +169,6 @@ def test_associated_locations(database):
                 lp_amount=FVal('0.460858304063739927'),
             ),
         ])
-        database.add_amm_swaps(cursor, [
-            AMMSwap(
-                tx_hash='0xa54bf4c68d435e3c8f432fd7e62b7f8aca497a831a3d3fca305a954484ddd7b2',
-                log_index=208,
-                address=ChecksumEvmAddress('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'),
-                from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),  # noqa: E501
-                to_address=string_to_evm_address('0xC9cB53B48A2f3A9e75982685644c1870F1405CCb'),  # noqa: E501
-                timestamp=Timestamp(1609301469),
-                location=Location.UNISWAP,
-                token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                token1=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
-                amount0_in=AssetAmount(FVal('2.6455727132446468')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('1936.810111')),
-            ),
-        ])
         add_balancer_events(
             cursor,
             [
@@ -217,7 +198,6 @@ def test_associated_locations(database):
         Location.COINBASE,
         Location.EXTERNAL,
         Location.SUSHISWAP,
-        Location.UNISWAP,
         Location.BALANCER,
     }
 

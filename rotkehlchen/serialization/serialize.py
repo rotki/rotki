@@ -58,7 +58,6 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultEvent,
     YearnVaultHistory,
 )
-from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.settings import DBSettings
@@ -144,7 +143,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             AaveEvent,
             UniswapPool,
             UniswapPoolAsset,
-            AMMTrade,
             UniswapPoolEventsBalance,
             ADXStakingHistory,
             BalancerBPTEventPoolToken,

@@ -5,7 +5,6 @@ from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tupl
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
@@ -77,9 +76,6 @@ class ProtocolBalance(NamedTuple):
     address_balances: AddressToLPBalances
     known_assets: Set[EvmToken]
     unknown_assets: Set[EvmToken]
-
-
-AddressTrades = Dict[ChecksumEvmAddress, List[AMMTrade]]
 
 
 class EventType(Enum):
