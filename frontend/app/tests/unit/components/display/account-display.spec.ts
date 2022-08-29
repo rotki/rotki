@@ -17,6 +17,9 @@ import { useSessionStore } from '@/store/session';
 import { PrivacyMode } from '@/store/session/types';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
+vi.mock('@/services/rotkehlchen-api');
+vi.mock('@/services/websocket/websocket-service');
+
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 

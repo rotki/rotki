@@ -5,7 +5,6 @@ import Vue, { provide } from 'vue';
 import App from '@/App.vue';
 import '@/filters';
 import '@/main.scss';
-import { Api } from '@/plugins/api';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
 import { Interop } from '@/plugins/interop';
@@ -23,7 +22,6 @@ const isDevelopment = checkIfDevelopment() && !import.meta.env.VITE_TEST;
 Vue.config.productionTip = false;
 Vue.config.devtools = isDevelopment;
 
-Vue.use(Api);
 Vue.use(Interop);
 Vue.use(PiniaVuePlugin);
 

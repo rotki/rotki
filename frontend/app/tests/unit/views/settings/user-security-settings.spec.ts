@@ -9,6 +9,7 @@ import {
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { BackupApi } from '@/services/backup/backup-api';
+import { BalancesApi } from '@/services/balances/balances-api';
 import { api } from '@/services/rotkehlchen-api';
 import { usePremiumStore } from '@/store/session/premium';
 import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
@@ -18,6 +19,12 @@ import '../../i18n';
 vi.spyOn(api, 'backups', 'get').mockReturnValue(
   stub<BackupApi>({
     info: vi.fn()
+  })
+);
+
+vi.spyOn(api, 'balances', 'get').mockReturnValue(
+  stub<BalancesApi>({
+    getPriceCache: vi.fn().mockResolvedValue([])
   })
 );
 
@@ -44,11 +51,6 @@ describe('UserSecuritySettings.vue', () => {
         'card'
       ],
       mocks: {
-        $api: {
-          balances: {
-            getPriceCache: () => []
-          }
-        },
         $interop: {
           isPackaged: () => true,
           config: () => ({

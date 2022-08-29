@@ -9,6 +9,13 @@ import { useSessionStore } from '@/store/session';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import '../../i18n';
+vi.mock('vue', async () => {
+  const mod = await vi.importActual<typeof import('vue')>('vue');
+  return {
+    ...mod,
+    useListeners: vi.fn()
+  };
+});
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);

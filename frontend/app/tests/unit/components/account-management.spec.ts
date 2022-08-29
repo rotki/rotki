@@ -9,7 +9,6 @@ import { VDialog } from 'vuetify/lib/components';
 import AccountManagement from '@/components/AccountManagement.vue';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { interop, useInterop } from '@/electron-interop';
-import { Api } from '@/plugins/api';
 import { Interop } from '@/plugins/interop';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useMainStore } from '@/store/main';
@@ -23,7 +22,6 @@ vi.mock('@/services/rotkehlchen-api');
 vi.mock('@/composables/defi');
 
 Vue.use(Vuetify);
-Vue.use(Api);
 Vue.use(Interop);
 Vue.use(PiniaVuePlugin);
 
