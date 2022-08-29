@@ -37,10 +37,6 @@ export class ElectronInterop {
     window.interop?.openUrl(this.premiumURL);
   }
 
-  navigateToRotki() {
-    window.interop?.openUrl(this.baseUrl);
-  }
-
   setupListeners(listeners: Listeners) {
     window.interop?.setListeners(listeners);
   }

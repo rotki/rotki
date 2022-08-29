@@ -248,7 +248,7 @@ export default defineComponent({
       default: false
     }
   },
-  emit: ['update:pagination', 'refresh'],
+  emits: ['update:pagination', 'refresh'],
   setup(props, { emit }) {
     const { events } = toRefs(props);
     const filters: Ref<MatchedKeyword<KrakenStakingValueKeys>> = ref({});

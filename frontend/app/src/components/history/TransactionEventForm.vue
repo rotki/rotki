@@ -366,7 +366,7 @@ const TransactionEventForm = defineComponent({
       return get(exchangeRate(get(currencySymbol))) ?? One;
     });
 
-    const setEditMode = () => {
+    const setEditMode = async () => {
       if (!get(edit)) {
         reset();
         return;
@@ -395,7 +395,7 @@ const TransactionEventForm = defineComponent({
       set(notes, event.notes ?? '');
       set(counterparty, event.counterparty ?? '');
 
-      fetchPrice();
+      await fetchPrice();
     };
 
     const save = async (): Promise<boolean> => {
@@ -483,12 +483,12 @@ const TransactionEventForm = defineComponent({
       }
     };
 
-    watch(edit, () => {
-      setEditMode();
+    watch(edit, async () => {
+      await setEditMode();
     });
 
-    watch([datetime, asset], () => {
-      fetchPrice();
+    watch([datetime, asset], async () => {
+      await fetchPrice();
     });
 
     watch(amount, () => {
@@ -510,8 +510,8 @@ const TransactionEventForm = defineComponent({
       set(transactionEventType, typeData.label);
     });
 
-    onMounted(() => {
-      setEditMode();
+    onMounted(async () => {
+      await setEditMode();
     });
 
     return {

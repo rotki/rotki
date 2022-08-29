@@ -481,11 +481,11 @@ export default defineComponent({
       });
     });
 
-    const change = (index: number) => {
+    const change = async (index: number) => {
       const item: SearchItem = get(items)[index];
       if (item) {
         if (item.route) {
-          router.push(item.route);
+          await router.push(item.route);
         }
         item?.action?.();
         set(open, false);

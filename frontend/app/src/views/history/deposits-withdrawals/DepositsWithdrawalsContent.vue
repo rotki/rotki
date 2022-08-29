@@ -355,7 +355,7 @@ export default defineComponent({
       }
     ]);
 
-    const updatePayloadHandler = () => {
+    const updatePayloadHandler = async () => {
       let paginationOptions = {};
       const optionsVal = get(options);
       if (optionsVal) {
@@ -382,15 +382,17 @@ export default defineComponent({
         ...paginationOptions
       };
 
-      updateAssetMovementsPayload(payload);
+      await updateAssetMovementsPayload(payload);
     };
 
-    const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
+    const updatePaginationHandler = async (
+      newOptions: PaginationOptions | null
+    ) => {
       set(options, newOptions);
-      updatePayloadHandler();
+      await updatePayloadHandler();
     };
 
-    const updateFilterHandler = (
+    const updateFilterHandler = async (
       newFilters: MatchedKeyword<AssetMovementFilterKeys>
     ) => {
       set(filters, newFilters);
@@ -403,7 +405,7 @@ export default defineComponent({
         };
       }
 
-      updatePaginationHandler(newOptions);
+      await updatePaginationHandler(newOptions);
     };
 
     const getId = (item: AssetMovementEntry) => item.identifier;

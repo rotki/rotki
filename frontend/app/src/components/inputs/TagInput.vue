@@ -94,6 +94,7 @@ import { useTagStore } from '@/store/session/tags';
 import { Tag } from '@/types/user';
 import { invertColor, randomColor } from '@/utils/Color';
 import { checkIfDevelopment } from '@/utils/env-utils';
+import { logger } from '@/utils/logging';
 
 const valueValidator = (value: any) => {
   if (!checkIfDevelopment()) {
@@ -118,6 +119,7 @@ export default defineComponent({
     label: { required: false, type: String, default: 'Tags' },
     outlined: { required: false, type: Boolean, default: false }
   },
+  emits: ['input'],
   setup(props, { emit }) {
     const { value } = toRefs(props);
     const store = useTagStore();
@@ -164,11 +166,13 @@ export default defineComponent({
       if (tagExists(element)) {
         return;
       }
-      createTag(element).then(({ success }) => {
-        if (!success) {
-          remove(element);
-        }
-      });
+      createTag(element)
+        .then(({ success }) => {
+          if (!success) {
+            remove(element);
+          }
+        })
+        .catch(e => logger.error(e));
     };
 
     const input = (_value: (string | Tag)[]) => {

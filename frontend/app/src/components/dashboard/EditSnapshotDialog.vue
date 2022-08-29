@@ -131,8 +131,8 @@ const fetchSnapshotData = async () => {
   });
 };
 
-onMounted(() => {
-  fetchSnapshotData();
+onMounted(async () => {
+  await fetchSnapshotData();
 });
 
 const close = () => {
@@ -196,7 +196,7 @@ const finish = async () => {
       tc('dashboard.snapshot.edit.dialog.message.success'),
       tc('dashboard.snapshot.edit.dialog.message.title')
     );
-    fetchNetValue();
+    await fetchNetValue();
     emit('finish');
   }
 };

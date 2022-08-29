@@ -148,7 +148,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       const { balances } = await api.balances.addManualBalances([balance]);
       set(manualBalancesData, balances);
       const { refreshPrices } = useBalancesStore();
-      refreshPrices({
+      await refreshPrices({
         ignoreCache: false,
         selectedAsset: balance.asset
       });
@@ -170,7 +170,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       const { balances } = await api.balances.editManualBalances([balance]);
       set(manualBalancesData, balances);
       const { refreshPrices } = useBalancesStore();
-      refreshPrices({
+      await refreshPrices({
         ignoreCache: false,
         selectedAsset: balance.asset
       });

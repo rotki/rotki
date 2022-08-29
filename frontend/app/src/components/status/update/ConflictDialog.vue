@@ -1,5 +1,10 @@
 ﻿<template>
-  <v-bottom-sheet v-bind="$attrs" persistent width="98%" v-on="$listeners">
+  <v-bottom-sheet
+    v-bind="rootAttrs"
+    persistent
+    width="98%"
+    v-on="rootListeners"
+  >
     <card outlined-body contained no-radius-bottom>
       <template #title>{{ tc('conflict_dialog.title') }}</template>
       <template #subtitle>{{ tc('conflict_dialog.subtitle') }}</template>
@@ -97,7 +102,15 @@
 <script setup lang="ts">
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { get, set } from '@vueuse/core';
-import { computed, PropType, Ref, ref, toRefs } from 'vue';
+import {
+  computed,
+  PropType,
+  Ref,
+  ref,
+  toRefs,
+  useAttrs,
+  useListeners
+} from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import ConflictRow from '@/components/status/update/ConflictRow.vue';
@@ -122,6 +135,9 @@ const emit = defineEmits<{
 }>();
 
 const { conflicts } = toRefs(props);
+
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
 
 const { tc } = useI18n();
 

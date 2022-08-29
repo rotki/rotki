@@ -103,9 +103,7 @@ module.exports = {
     'vue/no-deprecated-events-api': 'warn',
     'vue/no-deprecated-filter': 'error',
     'vue/prefer-import-from-vue': 'warn',
-    'vue/require-explicit-emits': 'warn',
-    // rules to slowly fix,
-    '@typescript-eslint/no-floating-promises': ['warn', { ignoreIIFE: true }]
+    'vue/require-explicit-emits': 'warn'
   },
 
   parserOptions: {

@@ -55,7 +55,7 @@ if (!isDevelopment) {
         if (interop.isPackaged) {
           interop.logToFile(`(${methodName}): ${message.join('')}`);
         } else {
-          loggerDb.add({
+          void loggerDb.add({
             message: `${new Date(Date.now()).toISOString()}: ${message.join(
               ''
             )}`

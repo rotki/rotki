@@ -566,8 +566,8 @@ const ExternalTradeForm = defineComponent({
       setEditMode();
     });
 
-    watch([datetime, quote, base], () => {
-      fetchPrice();
+    watch([datetime, quote, base], async () => {
+      await fetchPrice();
     });
 
     watch(rate, () => {

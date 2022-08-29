@@ -10,6 +10,8 @@ import { useSessionStore } from '@/store/session';
 import { useWatchersStore } from '@/store/session/watchers';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
+import { startPromise } from '@/utils';
+import { logger } from '@/utils/logging';
 
 const PERIODIC = 'periodic';
 const TASK = 'task';
@@ -20,15 +22,18 @@ class Monitoring {
   private monitors: { [monitor: string]: any } = {};
 
   private static fetch() {
-    useSessionStore().periodicCheck().then();
+    const { periodicCheck } = useSessionStore();
     const { consume } = useNotifications();
+    startPromise(periodicCheck());
+
     if (!websocket.connected) {
-      consume();
+      startPromise(consume());
     }
   }
 
   private static fetchWatchers() {
-    useWatchersStore().fetchWatchers().then();
+    const { fetchWatchers } = useWatchersStore();
+    startPromise(fetchWatchers());
   }
 
   private static async fetchBalances() {
@@ -55,25 +60,28 @@ class Monitoring {
       useFrontendSettingsStore()
     );
 
-    websocket.connect().then(() => {
-      if (!this.monitors[PERIODIC]) {
-        if (!restarting) {
-          Monitoring.fetch();
-        }
+    websocket
+      .connect()
+      .then(() => {
+        if (!this.monitors[PERIODIC]) {
+          if (!restarting) {
+            Monitoring.fetch();
+          }
 
-        this.monitors[PERIODIC] = setInterval(
-          Monitoring.fetch,
-          get(queryPeriod) * 1000
-        );
-      }
-    });
+          this.monitors[PERIODIC] = setInterval(
+            Monitoring.fetch,
+            get(queryPeriod) * 1000
+          );
+        }
+      })
+      .catch(e => logger.error(e));
 
     if (!this.monitors[TASK]) {
       const { monitor } = useTasks();
       if (!restarting) {
-        monitor();
+        startPromise(monitor());
       }
-      this.monitors[TASK] = setInterval(() => monitor(), 2000);
+      this.monitors[TASK] = setInterval(() => startPromise(monitor()), 2000);
     }
 
     if (!this.monitors[WATCHER]) {

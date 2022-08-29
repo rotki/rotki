@@ -75,11 +75,13 @@ export default defineComponent({
       getLocation(get(identifier))
     );
 
-    onBeforeMount(() => {
+    onBeforeMount(async () => {
       const payload = { location: get(identifier) };
-      updateTradesPayload(payload);
-      updateAssetMovementsPayload(payload);
-      updateLedgerActionsPayload(payload);
+      await Promise.allSettled([
+        updateTradesPayload(payload),
+        updateAssetMovementsPayload(payload),
+        updateLedgerActionsPayload(payload)
+      ]);
     });
 
     const showTrades = computed<boolean>(() => {

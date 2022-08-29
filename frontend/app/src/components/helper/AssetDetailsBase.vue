@@ -68,12 +68,12 @@ const AssetDetailsBase = defineComponent({
       get(assetName(get(identifier), get(enableAssociation)))
     );
     const router = useRouter();
-    const navigate = () => {
+    const navigate = async () => {
       if (!get(opensDetails)) {
         return;
       }
       const id = encodeURIComponent(get(identifier)) ?? get(symbol);
-      router.push({
+      await router.push({
         path: Routes.ASSETS.route.replace(':identifier', id)
       });
     };

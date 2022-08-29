@@ -136,7 +136,7 @@ watch(logged, async logged => {
   }
 
   if (get(route).name !== 'dashboard') {
-    router.push({ name: 'dashboard' });
+    await router.push({ name: 'dashboard' });
   }
 });
 </script>

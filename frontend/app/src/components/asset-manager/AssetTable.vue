@@ -333,11 +333,11 @@ const getAsset = (item: EthereumToken) => {
   };
 };
 
-const toggleIgnoreAsset = (identifier: string) => {
+const toggleIgnoreAsset = async (identifier: string) => {
   if (get(isIgnored(identifier))) {
-    unignoreAsset(get(identifier));
+    await unignoreAsset(get(identifier));
   } else {
-    ignoreAsset(get(identifier));
+    await ignoreAsset(get(identifier));
   }
 };
 

@@ -397,8 +397,8 @@ export default defineComponent({
       setDialog(false);
     };
 
-    const regenerateReport = () => {
-      router.push({
+    const regenerateReport = async () => {
+      await router.push({
         path: Routes.PROFIT_LOSS_REPORTS.route,
         query: {
           regenerate: 'true',

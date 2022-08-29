@@ -52,7 +52,7 @@ describe('ModuleSelector.vue', () => {
   test('removes active modules on click', async () => {
     expect.assertions(2);
     api.setSettings = vi.fn().mockResolvedValue({ active_modules: [] });
-    wrapper.find('#defi-module-aave').find('button').trigger('click');
+    await wrapper.find('#defi-module-aave').find('button').trigger('click');
     await wrapper.vm.$nextTick();
     expect(wrapper.find('#defi-module-aave').exists()).toBe(false);
     expect(settingsStore.activeModules).toEqual([]);

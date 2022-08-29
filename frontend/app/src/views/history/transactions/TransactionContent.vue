@@ -342,8 +342,8 @@ const { data, limit, found, total } = getCollectionData<EthTransactionEntry>(
   transactions as Ref<Collection<EthTransactionEntry>>
 );
 
-watch(data, () => {
-  checkEmptyEvents();
+watch(data, async () => {
+  await checkEmptyEvents();
 });
 
 const checkEmptyEvents = async () => {
@@ -391,9 +391,9 @@ const { ignore } = setupIgnore(
   getId
 );
 
-const toggleIgnore = (item: EthTransactionEntry) => {
+const toggleIgnore = async (item: EthTransactionEntry) => {
   set(selected, [item]);
-  ignore(!item.ignoredInAccounting);
+  await ignore(!item.ignoredInAccounting);
 };
 
 const addEvent = (item: EthTransactionEntry) => {
@@ -442,7 +442,7 @@ const promptForDelete = ({
 const deleteEventHandler = async () => {
   if (get(transactionToIgnore)) {
     set(selected, [get(transactionToIgnore)]);
-    ignore(true);
+    await ignore(true);
   }
 
   if (get(eventToDelete)?.identifier) {
@@ -489,7 +489,7 @@ const saveData = async (
 const options: Ref<PaginationOptions | null> = ref(null);
 const account: Ref<GeneralAccount | null> = ref(null);
 
-const updatePayloadHandler = () => {
+const updatePayloadHandler = async () => {
   let paginationOptions = {};
   const optionsVal = get(options);
   if (optionsVal) {
@@ -517,18 +517,20 @@ const updatePayloadHandler = () => {
     ...paginationOptions
   };
 
-  updateTransactionsPayload(payload);
+  await updateTransactionsPayload(payload);
 };
 
-const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
+const updatePaginationHandler = async (
+  newOptions: PaginationOptions | null
+) => {
   set(options, newOptions);
-  updatePayloadHandler();
+  await updatePayloadHandler();
 };
 
 const getItemClass = (item: EthTransactionEntry) =>
   item.ignoredInAccounting ? 'darken-row' : '';
 
-watch(filters, (filter, oldValue) => {
+watch(filters, async (filter, oldValue) => {
   if (filter === oldValue) {
     return;
   }
@@ -541,9 +543,9 @@ watch(filters, (filter, oldValue) => {
     };
   }
 
-  updatePaginationHandler(newOptions);
+  await updatePaginationHandler(newOptions);
 });
-watch(account, () => {
+watch(account, async () => {
   let newOptions = null;
   if (get(options)) {
     newOptions = {
@@ -552,7 +554,7 @@ watch(account, () => {
     };
   }
 
-  updatePaginationHandler(newOptions);
+  await updatePaginationHandler(newOptions);
 });
 
 const loading = isSectionLoading(Section.TX);

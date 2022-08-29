@@ -280,12 +280,13 @@ export const useExchangeBalancesStore = defineStore(
 
         const { refreshPrices } = useBalancesStore();
 
-        fetchExchangeBalances({
+        await fetchExchangeBalances({
           location: exchange.location,
           ignoreCache: false
-        }).then(() => refreshPrices({ ignoreCache: false }));
+        });
+        await refreshPrices({ ignoreCache: false });
 
-        purgeHistoryLocation(exchange.location);
+        await purgeHistoryLocation(exchange.location);
 
         return success;
       } catch (e: any) {

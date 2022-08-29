@@ -192,17 +192,17 @@ async function createWindow() {
   // Register and deregister listeners to window events (resize, move, close) so that window state is saved
   mainWindowState.manage(win);
 
-  win.on('close', e => {
+  win.on('close', async e => {
     try {
       if (process.platform === 'darwin' && !forceQuit) {
         e.preventDefault();
         win?.hide();
       } else {
-        closeApp();
+        await closeApp();
       }
     } catch (e) {
       console.error(e);
-      closeApp();
+      await closeApp();
     }
   });
 

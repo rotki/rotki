@@ -163,9 +163,14 @@ export const useHistory = defineStore('history', () => {
 
   // Purge
   const purgeHistoryLocation = async (exchange: SupportedExchange) => {
-    useTrades().fetchTrades(true, exchange).then();
-    useAssetMovements().fetchAssetMovements(true, exchange).then();
-    useLedgerActions().fetchLedgerActions(true, exchange).then();
+    const { fetchTrades } = useTrades();
+    const { fetchAssetMovements } = useAssetMovements();
+    const { fetchLedgerActions } = useLedgerActions();
+    await Promise.allSettled([
+      fetchTrades(true, exchange),
+      fetchAssetMovements(true, exchange),
+      fetchLedgerActions(true, exchange)
+    ]);
   };
 
   const purgeExchange = async (
@@ -342,10 +347,12 @@ export const useTrades = defineStore('history/trades', () => {
     }
   };
 
-  const updateTradesPayload = (newPayload: Partial<TradeRequestPayload>) => {
+  const updateTradesPayload = async (
+    newPayload: Partial<TradeRequestPayload>
+  ) => {
     if (!isEqual(get(tradesPayload), newPayload)) {
       set(tradesPayload, newPayload);
-      fetchTrades().then();
+      await fetchTrades();
     }
   };
 
@@ -467,7 +474,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
           }
         });
 
-        fetchEnsNames(addresses, false);
+        await fetchEnsNames(addresses, false);
 
         return mapped;
       }
@@ -511,7 +518,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
         }
       });
 
-      fetchEnsNames(addresses, false);
+      await fetchEnsNames(addresses, false);
 
       return mapped;
     };
@@ -583,12 +590,12 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
     }
   };
 
-  const updateAssetMovementsPayload = (
+  const updateAssetMovementsPayload = async (
     newPayload: Partial<AssetMovementRequestPayload>
   ) => {
     if (!isEqual(get(assetMovementsPayload), newPayload)) {
       set(assetMovementsPayload, newPayload);
-      fetchAssetMovements().then();
+      await fetchAssetMovements();
     }
   };
 
@@ -654,7 +661,7 @@ export const useTransactions = defineStore('history/transactions', () => {
         ) as Collection<EthTransactionEntry>;
 
         const addresses = getNotesAddresses(mapped.data);
-        fetchEnsNames(addresses, false);
+        await fetchEnsNames(addresses, false);
 
         return mapped;
       }
@@ -737,12 +744,12 @@ export const useTransactions = defineStore('history/transactions', () => {
     }
   };
 
-  const updateTransactionsPayload = (
+  const updateTransactionsPayload = async (
     newPayload: Partial<TransactionRequestPayload>
   ) => {
     if (!isEqual(get(transactionsPayload), newPayload)) {
       set(transactionsPayload, newPayload);
-      fetchTransactions().then();
+      await fetchTransactions();
     }
   };
 
@@ -996,7 +1003,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
       }
 
       if (firstLoad || refresh) {
-        fetchAssociatedLocations().then();
+        await fetchAssociatedLocations();
       }
 
       const fetchOnlyCache = async () => {
@@ -1046,12 +1053,12 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
     }
   };
 
-  const updateLedgerActionsPayload = (
+  const updateLedgerActionsPayload = async (
     newPayload: Partial<LedgerActionRequestPayload>
   ) => {
     if (!isEqual(get(ledgerActionsPayload), newPayload)) {
       set(ledgerActionsPayload, newPayload);
-      fetchLedgerActions().then();
+      await fetchLedgerActions();
     }
   };
 

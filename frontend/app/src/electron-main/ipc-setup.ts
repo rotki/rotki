@@ -226,12 +226,12 @@ export function ipcSetup(
 
   ipcMain.on(IPC_CLOSE_APP, async () => await closeApp());
 
-  ipcMain.on(IPC_OPEN_URL, (event, args) => {
+  ipcMain.on(IPC_OPEN_URL, async (event, args) => {
     if (!args.startsWith('https://')) {
       console.error(`Error: Requested to open untrusted URL: ${args} `);
       return;
     }
-    shell.openExternal(args);
+    await shell.openExternal(args);
   });
 
   ipcMain.on(

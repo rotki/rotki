@@ -261,13 +261,13 @@ export default defineComponent({
       }
     });
 
-    const togglePin = (note: UserNote) => {
+    const togglePin = async (note: UserNote) => {
       const payload = {
         ...note,
         isPinned: !note.isPinned
       };
 
-      callUpdateNote(payload);
+      await callUpdateNote(payload);
     };
 
     const resetForm = () => {
@@ -332,8 +332,8 @@ export default defineComponent({
 
     const premium = getPremium();
 
-    watch([filter, premium], () => {
-      fetchNotes();
+    watch([filter, premium], async () => {
+      await fetchNotes();
     });
 
     debouncedWatch(

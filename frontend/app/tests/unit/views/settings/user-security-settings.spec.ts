@@ -27,6 +27,14 @@ vi.spyOn(api, 'balances', 'get').mockReturnValue(
     getPriceCache: vi.fn().mockResolvedValue([])
   })
 );
+vi.mock('vue', async () => {
+  const mod = await vi.importActual<typeof import('vue')>('vue');
+  return {
+    ...mod,
+    useListeners: vi.fn(),
+    useAttrs: vi.fn()
+  };
+});
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);

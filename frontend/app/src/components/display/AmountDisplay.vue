@@ -323,8 +323,8 @@ const { start: startAnimation } = useTimeoutFn(
   { immediate: false }
 );
 
-const copy = () => {
-  copyText();
+const copy = async () => {
+  await copyText();
   if (get(isPending)) {
     stop();
     set(copied, false);

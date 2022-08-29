@@ -97,8 +97,8 @@ const Notification = defineComponent({
       return dayjs(get(notification).date).format('LLL');
     });
 
-    const copy = () => {
-      navigator.clipboard.writeText(get(notification).message);
+    const copy = async () => {
+      await navigator.clipboard.writeText(get(notification).message);
     };
 
     const { fontStyle } = useTheme();

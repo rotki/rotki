@@ -182,10 +182,10 @@ const balanceClass = computed(() => {
   return get(balanceDelta).isNegative() ? 'rotki-red lighten-1' : 'rotki-green';
 });
 
-const setTimeframe = (value: TimeFrameSetting) => {
+const setTimeframe = async (value: TimeFrameSetting) => {
   assert(value !== TimeFramePersist.REMEMBER);
   set(timeframe, value);
-  frontendStore.updateSetting({ lastKnownTimeframe: value });
+  await frontendStore.updateSetting({ lastKnownTimeframe: value });
 };
 
 watch(premium, async () => fetchNetValue());

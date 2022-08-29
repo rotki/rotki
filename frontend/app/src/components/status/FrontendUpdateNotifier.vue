@@ -54,11 +54,11 @@ onMounted(async () => {
   }
 });
 
-const update = () => {
+const update = async () => {
   set(updating, true);
   const worker = get(updateSW);
   if (worker) {
-    worker(true);
+    await worker(true);
   }
 };
 </script>

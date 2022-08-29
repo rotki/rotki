@@ -113,7 +113,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     });
   };
 
-  const updateEthAddressBookState = (
+  const updateEthAddressBookState = async (
     location: EthAddressBookLocation,
     result: EthNamesEntries
   ) => {
@@ -123,7 +123,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
       set(ethAddressBookPrivate, result);
     }
 
-    fetchEthNames();
+    await fetchEthNames();
   };
 
   const fetchEthAddressBook = async (
@@ -143,7 +143,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     };
     try {
       const result = await api.balances.getEthAddressBook(location, addresses);
-      updateEthAddressBookState(location, result);
+      await updateEthAddressBookState(location, result);
     } catch (e: any) {
       notifyError(e);
     }

@@ -193,16 +193,16 @@ const page = computed(() => {
   return selectedLocation ? pages[selectedLocation] : null;
 });
 
-const updateLocation = (location: string) => {
+const updateLocation = async (location: string) => {
   if (location) {
     set(lastLocation, location);
   }
-  router.push(Routes.STAKING.route.replace(':location*', location));
+  await router.push(Routes.STAKING.route.replace(':location*', location));
 };
 
-onBeforeMount(() => {
+onBeforeMount(async () => {
   if (get(lastLocation)) {
-    updateLocation(get(lastLocation));
+    await updateLocation(get(lastLocation));
   }
 });
 </script>

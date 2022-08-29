@@ -175,7 +175,7 @@ export const useReports = defineStore('reports', () => {
       const addresses = filterAddressesFromWords(words);
 
       const { fetchEnsNames } = useEthNamesStore();
-      fetchEnsNames(addresses, false);
+      await fetchEnsNames(addresses, false);
     } catch (e: any) {
       notify({
         title: i18n.t('actions.reports.fetch.error.title').toString(),

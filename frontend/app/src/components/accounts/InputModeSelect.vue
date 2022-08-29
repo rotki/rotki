@@ -149,7 +149,7 @@ export default defineComponent({
 
     const metamaskDownloadLink = 'https://metamask.io/download/';
 
-    const copyPageUrl = () => {
+    const copyPageUrl = async () => {
       const params = new URLSearchParams(window.location.search);
       params.set('add', 'true');
       params.set('test', 'false');
@@ -158,7 +158,7 @@ export default defineComponent({
 
       const pageUrl = `${origin}${pathname}?${params}`;
       const { copy } = useClipboard({ source: pageUrl });
-      copy();
+      await copy();
     };
 
     return {

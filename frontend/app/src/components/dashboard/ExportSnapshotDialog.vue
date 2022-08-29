@@ -165,11 +165,11 @@ export default defineComponent({
       }
     };
 
-    const exportSnapshot = () => {
+    const exportSnapshot = async () => {
       if (interop.isPackaged) {
-        exportSnapshotCSV();
+        await exportSnapshotCSV();
       } else {
-        downloadSnapshot();
+        await downloadSnapshot();
       }
     };
 
@@ -192,7 +192,7 @@ export default defineComponent({
         };
 
         updateVisibility(false);
-        fetchNetValue();
+        await fetchNetValue();
       } catch (e: any) {
         message = {
           title: i18n.t('dashboard.snapshot.download.message.title').toString(),

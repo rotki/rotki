@@ -101,17 +101,17 @@ onMounted(async () => {
   }
   const success = await fetchReport(reportId);
   if (!success) {
-    router.push(Routes.PROFIT_LOSS_REPORTS.route);
+    await router.push(Routes.PROFIT_LOSS_REPORTS.route);
   }
 
   if (get(route).query.openReportActionable) {
     set(initialOpenReportActionable, true);
-    router.replace({ query: {} });
+    await router.replace({ query: {} });
   }
 
   if (get(route).query.openReportActionable) {
     set(initialOpenReportActionable, true);
-    router.replace({ query: {} });
+    await router.replace({ query: {} });
   }
   set(loading, false);
 });

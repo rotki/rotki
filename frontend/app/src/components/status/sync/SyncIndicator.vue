@@ -233,6 +233,7 @@ import { useTasks } from '@/store/tasks';
 import { showError, showMessage } from '@/store/utils';
 import { Writeable } from '@/types';
 import { TaskType } from '@/types/task-type';
+import { startPromise } from '@/utils';
 
 export default defineComponent({
   name: 'SyncIndicator',
@@ -369,7 +370,7 @@ export default defineComponent({
         );
 
         setTimeout(() => {
-          logout();
+          startPromise(logout());
         }, 3000);
       }
 

@@ -46,8 +46,8 @@ export default defineComponent({
     const period = get(refreshPeriod) * 60 * 1000;
 
     const { pause, resume, isActive } = useIntervalFn(
-      () => {
-        fetchTrades(true);
+      async () => {
+        await fetchTrades(true);
       },
       period,
       { immediate: false }

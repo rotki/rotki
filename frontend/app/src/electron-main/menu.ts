@@ -210,16 +210,16 @@ export function getUserMenu(showPremium: boolean, menuActions: MenuActions) {
             {
               label: 'Get rotki Premium',
               id: 'premium-button',
-              click: () => {
-                shell.openExternal('https://rotki.com/products/');
+              click: async () => {
+                await shell.openExternal('https://rotki.com/products/');
               }
             }
           ]
         }
       : {
           id: 'premium-button',
-          click: () => {
-            shell.openExternal('https://rotki.com/products/');
+          click: async () => {
+            await shell.openExternal('https://rotki.com/products/');
           }
         })
   };

@@ -267,19 +267,19 @@ const fetch = async (refresh: boolean = false) => {
   }
 };
 
-onBeforeMount(() => {
-  fetch();
+onBeforeMount(async () => {
+  await fetch();
 });
 
-watch(ethAddresses, (curr, prev) => {
+watch(ethAddresses, async (curr, prev) => {
   if (!isEqual(curr, prev)) {
-    fetch(true);
+    await fetch(true);
   }
 });
 
-watch(premium, (curr, prev) => {
+watch(premium, async (curr, prev) => {
   if (prev !== curr) {
-    fetch(true);
+    await fetch(true);
   }
 });
 </script>

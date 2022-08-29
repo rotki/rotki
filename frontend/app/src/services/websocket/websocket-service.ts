@@ -74,7 +74,11 @@ class WebsocketService {
         logger.debug('websocket connection closed');
         if (!event.wasClean) {
           logger.debug('Close was not clean attempting reconnect');
-          this.connect().then();
+          this.connect()
+            .then(() => {
+              logger.debug('websocket reconnection complete');
+            })
+            .catch(e => logger.debug(e, 'Reconnect failed'));
         }
       };
     });

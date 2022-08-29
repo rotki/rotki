@@ -147,7 +147,7 @@ export default defineComponent({
     // eslint-disable-next-line no-undef
     const frontendVersion = __APP_VERSION__;
 
-    const copy = () => {
+    const copy = async () => {
       let versionText = '';
       versionText += `App Version: ${get(version).version}\r\n`;
       versionText += `Frontend Version: ${frontendVersion}\r\n`;
@@ -164,7 +164,7 @@ export default defineComponent({
       }
 
       const { copy } = useClipboard({ source: versionText });
-      copy();
+      await copy();
     };
 
     return {

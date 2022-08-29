@@ -24,9 +24,9 @@ export default defineComponent({
 
     const router = useRouter();
 
-    const navigate = () => {
+    const navigate = async () => {
       if (enabled) {
-        router.push(to.value);
+        await router.push(to.value);
       }
     };
 

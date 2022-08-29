@@ -15,6 +15,14 @@ Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 
 vi.mock('@/services/rotkehlchen-api');
+vi.mock('vue', async () => {
+  const mod = await vi.importActual<typeof import('vue')>('vue');
+  return {
+    ...mod,
+    useListeners: vi.fn(),
+    useAttrs: vi.fn()
+  };
+});
 
 describe('ExternalServices.vue', () => {
   let wrapper: Wrapper<ExternalServices>;
@@ -65,9 +73,11 @@ describe('ExternalServices.vue', () => {
     test('save the values when etherscan save is pressed', async () => {
       const setService = api.setExternalServices as any;
       setService.mockResolvedValueOnce(mockResponse);
-      wrapper.find('.external-services__etherscan-key input').setValue('123');
+      await wrapper
+        .find('.external-services__etherscan-key input')
+        .setValue('123');
       await wrapper.vm.$nextTick();
-      wrapper
+      await wrapper
         .find('.external-services__etherscan-key .service-key__buttons__save')
         .trigger('click');
       await flushPromises();
@@ -79,11 +89,11 @@ describe('ExternalServices.vue', () => {
     test('save the values when cryptocompare save is pressed', async () => {
       const setService = api.setExternalServices as any;
       setService.mockResolvedValueOnce(mockResponse);
-      wrapper
+      await wrapper
         .find('.external-services__cryptocompare-key input')
         .setValue('123');
       await wrapper.vm.$nextTick();
-      wrapper
+      await wrapper
         .find(
           '.external-services__cryptocompare-key .service-key__buttons__save'
         )
@@ -99,9 +109,11 @@ describe('ExternalServices.vue', () => {
     test('save fails with an error', async () => {
       const setService = api.setExternalServices as any;
       setService.mockRejectedValueOnce(new Error('mock failure'));
-      wrapper.find('.external-services__etherscan-key input').setValue('123');
+      await wrapper
+        .find('.external-services__etherscan-key input')
+        .setValue('123');
       await wrapper.vm.$nextTick();
-      wrapper
+      await wrapper
         .find('.external-services__etherscan-key .service-key__buttons__save')
         .trigger('click');
       await flushPromises();
@@ -158,12 +170,12 @@ describe('ExternalServices.vue', () => {
     test('confirm and delete etherscan key', async () => {
       const deleteService = api.deleteExternalServices as any;
       deleteService.mockResolvedValueOnce({});
-      wrapper
+      await wrapper
         .find('.external-services__etherscan-key .service-key__content__delete')
         .trigger('click');
       await wrapper.vm.$nextTick();
 
-      wrapper
+      await wrapper
         .find('[data-cy="confirm-dialog"] [data-cy="button-confirm"]')
         .trigger('click');
       await wrapper.vm.$nextTick();
@@ -176,14 +188,14 @@ describe('ExternalServices.vue', () => {
     test('delete cryptocompare fails', async () => {
       const deleteService = api.deleteExternalServices as any;
       deleteService.mockRejectedValueOnce(new Error('mock failure'));
-      wrapper
+      await wrapper
         .find(
           '.external-services__cryptocompare-key .service-key__content__delete'
         )
         .trigger('click');
       await wrapper.vm.$nextTick();
 
-      wrapper
+      await wrapper
         .find('[data-cy="confirm-dialog"] [data-cy="button-confirm"]')
         .trigger('click');
       await wrapper.vm.$nextTick();

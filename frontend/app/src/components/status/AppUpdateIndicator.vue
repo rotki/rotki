@@ -17,6 +17,7 @@ import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { startPromise } from '@/utils';
 
 export default defineComponent({
   name: 'AppUpdateIndicator',
@@ -49,7 +50,7 @@ export default defineComponent({
 
     const { pause, resume, isActive } = useIntervalFn(
       () => {
-        getVersion();
+        startPromise(getVersion());
       },
       period,
       { immediate: false }

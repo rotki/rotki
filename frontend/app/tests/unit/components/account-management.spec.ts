@@ -77,7 +77,9 @@ describe('AccountManagement.vue', () => {
 
       expect(wrapper.find('.premium-reminder').exists()).toBe(true);
 
-      wrapper.find('.premium-reminder__buttons__confirm').trigger('click');
+      await wrapper
+        .find('.premium-reminder__buttons__confirm')
+        .trigger('click');
 
       await wrapper.vm.$nextTick();
 

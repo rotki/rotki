@@ -185,13 +185,13 @@ const cancelDelete = () => {
   set(xpubToDelete, null);
 };
 
-const refresh = () => {
-  fetchBlockchainBalances({
+const refresh = async () => {
+  await fetchBlockchainBalances({
     ignoreCache: true,
     blockchain: get(blockchain)
   });
   if (get(blockchain) === Blockchain.ETH) {
-    fetchLoopringBalances(true);
+    await fetchLoopringBalances(true);
   }
 };
 </script>

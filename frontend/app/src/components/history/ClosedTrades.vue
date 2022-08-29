@@ -430,7 +430,7 @@ const saveData = async (trade: NewTrade | TradeEntry) => {
   return await addExternalTrade(trade as NewTrade);
 };
 
-const updatePayloadHandler = () => {
+const updatePayloadHandler = async () => {
   let paginationOptions = {};
 
   const optionsVal = get(options);
@@ -456,19 +456,21 @@ const updatePayloadHandler = () => {
     ...paginationOptions
   };
 
-  updateTradesPayload(payload);
+  await updateTradesPayload(payload);
 };
 
-const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
+const updatePaginationHandler = async (
+  newOptions: PaginationOptions | null
+) => {
   set(options, newOptions);
-  updatePayloadHandler();
+  await updatePayloadHandler();
 };
 
 const getClass = (item: TradeEntry) => {
   return item.ignoredInAccounting ? 'darken-row' : '';
 };
 
-watch(filters, (filters, oldValue) => {
+watch(filters, async (filters, oldValue) => {
   if (filters === oldValue) {
     return;
   }
@@ -480,7 +482,7 @@ watch(filters, (filters, oldValue) => {
     };
   }
 
-  updatePaginationHandler(newOptions);
+  await updatePaginationHandler(newOptions);
 });
 
 const fetch = (refresh: boolean = false) => emit('fetch', refresh);
@@ -493,12 +495,12 @@ const { ignore } = setupIgnore(
   (item: TradeEntry) => item.tradeId
 );
 
-onMounted(() => {
+onMounted(async () => {
   const query = get(route).query;
 
   if (query.add) {
     newExternalTrade();
-    router.replace({ query: {} });
+    await router.replace({ query: {} });
   }
 });
 </script>
