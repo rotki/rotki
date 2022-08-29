@@ -2147,10 +2147,10 @@ class WatchersResource(BaseMethodView):
 
 class AssetIconFileResource(BaseMethodView):
 
-    post_schema = SingleAssetIdentifierSchema()
+    get_schema = SingleAssetIdentifierSchema()
 
-    @use_kwargs(post_schema, location='json')
-    def post(self, asset: Asset) -> Response:
+    @use_kwargs(get_schema, location='query')
+    def get(self, asset: Asset) -> Response:
         # Process the if-match and if-none-match headers so that comparison with etag can be done
         match_header = flask_request.headers.get('If-Match', None)
         if not match_header:
