@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/rotki/rotki/develop/frontend/app/public/assets/images/rotkehlchen_no_text.png" width="250">
 
-rotki is an open source portfolio tracking, analytics, accounting and tax reporting tool that protects your privacy.  The mission of rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly unlike virtually every other competing service which consists of closed source SaaS onto which you are forced to hand over all your financial data, with rotki your data is stored encrypted locally in your computer. It enables you to take ownership of your financial data!
+rotki is an open source portfolio tracking, analytics, accounting and tax reporting tool that protects your privacy. The mission of rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly, rotki stores your data locally on your computer in an encrypted form, unlike virtually every other competing services which consists of closed source SaaS onto which you are forced to transmit all your financial data. This allows you to take ownership of your financial data!
 
 [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/rotki/rotki.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rotki/rotki/context:javascript)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/rotki/rotki.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rotki/rotki/context:python)
@@ -41,7 +41,7 @@ Click [here](https://rotki.readthedocs.io/en/latest/changelog.html) for the late
 
 ## Contribute
 
-rotki is an opensource project and as such any and all help is really appreciated.
+rotki is an open source project and as such any and all help is really appreciated.
 
 ### Issues or code
 
@@ -75,4 +75,4 @@ For people who don't want to purchase a subscription but would still like to sup
 
 #### Gitcoin Grant
 
-You can also supports us via a [Gitcoin grant](https://gitcoin.co/grants/149/rotki) and receive kudos and other NFTs in the Gitcoin platform.
+You can also support us via a [Gitcoin grant](https://gitcoin.co/grants/149/rotki) and receive kudos and other NFTs in the Gitcoin platform.
