@@ -1921,8 +1921,10 @@ class RestAPI():
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        # success
-        return OK_RESULT
+        # we can be sure that all addresses from account_data were added since the addition
+        # would have failed otherwise
+        added_addresses = [x.address for x in account_data]
+        return _wrap_in_ok_result(added_addresses)
 
     def add_blockchain_accounts(
             self,
@@ -1984,6 +1986,7 @@ class RestAPI():
                 blockchain=blockchain,
                 accounts=accounts,
             )
+            balances_update = self.rotkehlchen.chain_manager.get_balances_update()
         except EthSyncError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except InputError as e:
@@ -1991,7 +1994,7 @@ class RestAPI():
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        return OK_RESULT
+        return _wrap_in_ok_result(balances_update.serialize())
 
     def remove_blockchain_accounts(
             self,

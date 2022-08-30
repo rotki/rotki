@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import gevent
 
-from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
@@ -460,20 +460,15 @@ class Eth2(EthereumModule):
         ])
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List[AssetBalance]]:  # pylint: disable=useless-return  # noqa: E501
-        """Just query balances and add detected validators to DB. Return nothing"""
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:
+        """Just add validators to DB."""
         try:
-            self.get_balances(
-                addresses=[address],
-                fetch_validators_for_eth1=True,
-            )
+            self.fetch_eth1_validator_data([address])
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Did not manage to query beaconcha.in api for address {address} due to {str(e)}.'
                 f' If you have Eth2 staked balances the final balance results may not be accurate',
             )
-
-        return None
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         pass

@@ -143,8 +143,8 @@ class PickleFinance(EthereumModule):
         return balances_per_address
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
-        return self.balances_in_protocol([address]).get(address, None)
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:
+        pass
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         pass

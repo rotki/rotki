@@ -132,7 +132,6 @@ from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.balance import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
@@ -530,7 +529,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         return result
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         pass
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:

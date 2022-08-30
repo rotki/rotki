@@ -24,7 +24,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.balance import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -265,7 +264,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
             self.database.delete_sushiswap_trades_data(cursor)
             self.database.delete_sushiswap_events_data(cursor)
 
-    def on_account_addition(self, address: ChecksumEvmAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         pass
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
