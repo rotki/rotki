@@ -166,7 +166,6 @@ TABLES_WITH_ASSETS = (
     ('margin_positions', 'pl_currency', 'fee_currency'),
     ('asset_movements', 'asset', 'fee_asset'),
     ('ledger_actions', 'asset', 'rate_asset'),
-    ('amm_swaps', 'token0_identifier', 'token1_identifier'),
     ('amm_events', 'token0_identifier', 'token1_identifier'),
     ('adex_events', 'token'),
     ('balancer_events', 'pool_address_token'),

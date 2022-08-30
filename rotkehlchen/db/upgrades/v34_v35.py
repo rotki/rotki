@@ -49,7 +49,6 @@ def _rename_assets_identifiers(cursor: 'DBCursor') -> None:
     sqlite_tuples = [(new_id, old_id) for old_id, new_id in old_id_to_new.items()]
     cursor.executemany('UPDATE OR IGNORE assets SET identifier=? WHERE identifier=?', sqlite_tuples)  # noqa: E501
 
-
 def _change_xpub_mappings_primary_key(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
     """This upgrade includes xpub_mappings' `blockchain` column in primary key.
     After this upgrade it will become possible to create mapping for the same bitcoin address
@@ -82,6 +81,15 @@ def _change_xpub_mappings_primary_key(write_cursor: 'DBCursor', conn: 'DBConnect
     write_cursor.execute('ALTER TABLE xpub_mappings_copy RENAME TO xpub_mappings')
 
 
+def _clean_amm_swaps(cursor: 'DBCursor') -> None:
+    """Since we remove the amm swaps, clean all related DB tables and entries"""
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "uniswap_trades%";')
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "sushiswap_trades%";')
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "balancer_trades%";')
+    cursor.execute('DROP VIEW IF EXISTS combined_trades_view;')
+    cursor.execute('DROP TABLE IF EXISTS amm_swaps;')
+
+
 def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     """Upgrades the DB from v34 to v35
     - Change tables where time is used as column name to timestamp
@@ -91,5 +99,6 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     with db.user_write() as write_cursor:
         _rename_assets_identifiers(write_cursor)
         _refactor_time_columns(write_cursor)
+        _clean_amm_swaps(write_cursor)
         _create_new_tables(write_cursor)
         _change_xpub_mappings_primary_key(write_cursor=write_cursor, conn=db.conn)
