@@ -587,6 +587,16 @@ def test_add_blockchain_accounts(
     })
     assert_error_response(response, 'appears multiple times in the request data')
 
+    # adding a taproot btc address
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='BTC',
+    ), json={'accounts': [
+        {'address': 'bc1pqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqsyjer9e'},
+    ]})
+    assert_proper_response(response)
+
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('btc_accounts', [[]])

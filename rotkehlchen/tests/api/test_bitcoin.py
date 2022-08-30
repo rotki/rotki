@@ -306,6 +306,49 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     result = cursor.execute('SELECT * from xpub_mappings WHERE xpub=?', (bch_xpub1,)).fetchall()
     assert len(result) == 0, 'all xpub mappings should have been deleted'
 
+    # test that adding a btc p2tr xpub works
+    btc_xpub3 = 'xpub6D8VW7U5pTXMsuyyj3NRFP5QbzENbMijxAqy596niQTdc3PVBWcFEPYF8ZZBzeKopsN5Dvk3psNRRwwZAUhwhhzaaX6QV6izd189YmQ6DR6'  # noqa: E501
+    json_data = {
+        'async_query': async_query,
+        'xpub': btc_xpub3,
+        'xpub_type': 'p2tr',
+        'derivation_path': 'm/86/0/0',
+    }
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'btcxpubresource',
+        blockchain='BTC',
+    ), json=json_data)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        wait_for_async_task(rotkehlchen_api_server, task_id, timeout=180)
+    else:
+        outcome = assert_proper_response_with_result(response)
+
+    # test that deleting a btc p2tr xpub works
+    json_data = {
+        'async_query': async_query,
+        'xpub': btc_xpub3,
+        'derivation_path': 'm/86/0/0',
+    }
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'btcxpubresource',
+        blockchain='BTC',
+    ), json=json_data)
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        wait_for_async_task(rotkehlchen_api_server, task_id, timeout=180)
+    else:
+        outcome = assert_proper_response_with_result(response)
+
+    # Also make sure all mappings are gone from the DB
+    cursor = rotki.data.db.conn.cursor()
+    result = cursor.execute('SELECT object_reference from tag_mappings;').fetchall()
+    assert len(result) == 0, 'all tag mappings should have been deleted'
+    result = cursor.execute('SELECT * from xpub_mappings WHERE xpub=?', (btc_xpub3,)).fetchall()
+    assert len(result) == 0, 'all xpub mappings should have been deleted'
+
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('btc_accounts', [[
@@ -411,7 +454,7 @@ def test_xpub_addition_errors(rotkehlchen_api_server):
     ), json=json_data)
     assert_error_response(
         response=response,
-        contained_in_msg='"xpub_type": ["Must be one of: p2pkh, p2sh_p2wpkh, wpkh."]}',
+        contained_in_msg='Unknown xpub type whatever found at deserialization',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

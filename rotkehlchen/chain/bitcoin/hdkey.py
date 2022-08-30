@@ -4,7 +4,7 @@
 import hashlib
 import hmac
 from dataclasses import dataclass
-from enum import Enum
+from enum import auto
 from typing import List, NamedTuple, Optional, Union, cast
 
 from base58check import b58decode, b58encode
@@ -12,6 +12,7 @@ from coincurve import PrivateKey, PublicKey
 
 from rotkehlchen.chain.bitcoin.utils import (
     BIP32_HARDEN,
+    WitnessVersion,
     hash160,
     pubkey_to_base58_address,
     pubkey_to_bech32_address,
@@ -20,6 +21,7 @@ from rotkehlchen.chain.bitcoin.utils import (
 from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import BTCAddress
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 COMPRESSED_PUBKEY = True
 
@@ -30,10 +32,11 @@ class PrefixParsingResult(NamedTuple):
     hint: str
 
 
-class XpubType(Enum):
-    P2PKH = 1          # lecacy/xpub
-    P2SH_P2WPKH = 2    # segwit/ypyb
-    WPKH = 3           # native segwit/zpub
+class XpubType(SerializableEnumMixin):
+    P2PKH = auto()          # lecacy/xpub
+    P2SH_P2WPKH = auto()    # segwit/ypub
+    WPKH = auto()           # native segwit/zpub
+    P2TR = auto()           # taproot/xpub
 
     def matches_prefix(self, prefix: str) -> bool:
         own_prefix = XPUB_TYPE_MAPPING[self]  # should not raise due to enum
@@ -45,14 +48,16 @@ class XpubType(Enum):
     def prefix_bytes(self) -> bytes:
         return XPUB_TYPE_MAPPING_BYTES[self]  # should not raise due to enum
 
-    @staticmethod
-    def deserialize(value: str) -> 'XpubType':
+    @classmethod
+    def deserialize(cls, value: str) -> 'XpubType':
         if value == 'p2pkh':
-            return XpubType.P2PKH
+            return cls.P2PKH
         if value == 'p2sh_p2wpkh':
-            return XpubType.P2SH_P2WPKH
+            return cls.P2SH_P2WPKH
         if value == 'wpkh':
-            return XpubType.WPKH
+            return cls.WPKH
+        if value == 'p2tr':
+            return cls.P2TR
         # else
         raise DeserializationError(f'Unknown xpub type {value} found at deserialization')
 
@@ -61,12 +66,14 @@ XPUB_TYPE_MAPPING = {
     XpubType.P2PKH: 'xpub',
     XpubType.P2SH_P2WPKH: 'ypub',
     XpubType.WPKH: 'zpub',
+    XpubType.P2TR: 'xpub',
 }
 
 XPUB_TYPE_MAPPING_BYTES = {
     XpubType.P2PKH: b'\x04\x88\xb2\x1e',
     XpubType.P2SH_P2WPKH: b'\x04\x9d|\xb2',
     XpubType.WPKH: b'\x04\xb2GF',
+    XpubType.P2TR: b'\x04\x88\xb2\x1e',
 }
 
 
@@ -134,6 +141,7 @@ class HDKey():
     chain_code: Optional[bytes]
     fingerprint: bytes
     xpub: Optional[str]
+    xpub_type: Optional[XpubType]
     pubkey: PublicKey
     privkey: Optional[PrivateKey]
     hint: str
@@ -195,6 +203,7 @@ class HDKey():
             chain_code=xpub_bytes[13:45],
             fingerprint=hash160(pubkey.format(COMPRESSED_PUBKEY))[:4],
             xpub=xpub,
+            xpub_type=xpub_type,
             privkey=None,
             pubkey=pubkey,
             hint=hint,
@@ -249,6 +258,7 @@ class HDKey():
             chain_code=xpub_bytes[13:45],
             fingerprint=hash160(pubkey)[:4],
             xpub=child_xpub,
+            xpub_type=self.xpub_type,
             privkey=None,
             pubkey=PublicKey(pubkey),
             hint=result.hint,
@@ -398,6 +408,11 @@ class HDKey():
         return self._child_from_xpub(index=index, child_xpub=child_xpub)
 
     def address(self) -> BTCAddress:
+        if self.hint == 'xpub' and self.xpub_type == XpubType.P2TR:
+            return pubkey_to_bech32_address(
+                data=self.pubkey.format(COMPRESSED_PUBKEY),
+                witver=WitnessVersion.BECH32M,
+            )
         if self.hint == 'xpub':
             return pubkey_to_base58_address(self.pubkey.format(COMPRESSED_PUBKEY))
         if self.hint == 'ypub':
@@ -405,7 +420,7 @@ class HDKey():
         if self.hint == 'zpub':
             return pubkey_to_bech32_address(
                 data=self.pubkey.format(COMPRESSED_PUBKEY),
-                witver=0,
+                witver=WitnessVersion.BECH32,
             )
         # else
         raise AssertionError(f'Unknown hint {self.hint} ended up in an HDKey')

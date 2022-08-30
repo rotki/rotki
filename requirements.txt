@@ -31,6 +31,8 @@ werkzeug==2.2.2
 # for icon validation
 filetype==1.1.0
 
+bip-utils==2.6.1
+
 typing-extensions==4.3.0 # used for typing.ParamSpec and typing.Concatenate (in stdlib since python 3.10)
 
 #constraints

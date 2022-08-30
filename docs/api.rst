@@ -9216,7 +9216,7 @@ Adding BTC/BCH xpubs
 
    :reqjson string xpub: The extended public key to add
    :reqjsonarr string derivation_path: The derivation path from which to start deriving addresses relative to the xpub.
-   :reqjsonarr string[optional] xpub_type: An optional type to denote the type of the given xpub. If omitted the prefix xpub/ypub/zpub is used to determine the type. The valid xpub types are: ``"p2pkh"``, ``"p2sh_p2wpkh"`` and ``"wpkh"``.
+   :reqjsonarr string[optional] xpub_type: An optional type to denote the type of the given xpub. If omitted the prefix xpub/ypub/zpub is used to determine the type. The valid xpub types are: ``"p2pkh"``, ``"p2sh_p2wpkh"``, ``"wpkh"`` and ``"p2tr"``.
    :reqjsonarr string[optional] label: An optional label to describe the new extended public key
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the xpub
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not

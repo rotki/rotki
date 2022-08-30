@@ -6,6 +6,7 @@ import pytest
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import (
+    WitnessVersion,
     is_valid_btc_address,
     is_valid_derivation_path,
     pubkey_to_base58_address,
@@ -30,6 +31,7 @@ from rotkehlchen.types import BTCAddress
 def test_is_valid_btc_address():
     """Test cases for Bech32 addresses taken from here:
     https://en.bitcoin.it/wiki/BIP_0173#Test_vectors
+    https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki#test-vectors
     Note that we do not support test net addresses (starting with 'tb1').
     """
     assert is_valid_btc_address(UNIT_BTC_ADDRESS1)
@@ -44,6 +46,10 @@ def test_is_valid_btc_address():
         'bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7k7grplx')
     assert is_valid_btc_address('BC1SW50QA3JX3S')
     assert is_valid_btc_address('bc1zw508d6qejxtdg4y5r3zarvaryvg6kdaj')
+    # taproot addresses
+    assert is_valid_btc_address('bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7kt5nd6y')  # noqa: E501
+    assert is_valid_btc_address('bc1pgns9vmclx9dfyffsxhknwuedaunz40up23xn0x6wkrznu2jqvgkqxulmws')
+    assert is_valid_btc_address('bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0')
 
     assert not is_valid_btc_address('')
     assert not is_valid_btc_address('foo')
@@ -68,6 +74,8 @@ def test_is_valid_btc_address():
     assert not is_valid_btc_address(
         'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3pjxtptv')
     assert not is_valid_btc_address('bc1gmk9yu')
+    assert not is_valid_btc_address('bc1p38j9r5y49hruaue7wxjce0updqjuyyx0kh56v8s25huc6995vvpql3jow4')  # noqa: E501
+    assert not is_valid_btc_address('BC130XLXVLHEMJA6C4DQV22UAPCTQUPFHLXM9H8Z3K2E72Q4K9HCZ7VQ7ZWS8R')  # noqa: E501
 
 
 def test_pubkey_to_base58_address():
@@ -98,24 +106,49 @@ def test_pubkey_to_bech32_address():
     """Test vectors from here: https://iancoleman.io/bip39/"""
     address = pubkey_to_bech32_address(
         bytes.fromhex('0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
-        witver=0,
+        witver=WitnessVersion.BECH32,
     )
     assert address == 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4'
     address = pubkey_to_bech32_address(
         bytes.fromhex('037ff51223cb6fddbfc2c90f0ce5bbb3ee1f846f319858940856b1724f7fa1e15c'),
-        witver=0,
+        witver=WitnessVersion.BECH32,
     )
     assert address == 'bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5'
     address = pubkey_to_bech32_address(
         bytes.fromhex('02192dce4b382adecdcf74a366fc1f39dd1b88d0829eb058d746702c1d2626ab55'),
-        witver=0,
+        witver=WitnessVersion.BECH32,
     )
     assert address == 'bc1q96nd0va09tdalp7f232ukhj6lp4s5m2g3s2hdy'
     address = pubkey_to_bech32_address(
         bytes.fromhex('03ad84bf691e9d7ddb44d7e9311857af575b686e71506d2c9e8e1d2d11d4f115c1'),
-        witver=0,
+        witver=WitnessVersion.BECH32,
     )
     assert address == 'bc1q7zxvguxdazzjd4m7d7ahlt03nnakc9fhxhskd5'
+    address = pubkey_to_bech32_address(
+        bytes.fromhex('03cc8a4bc64d897bddc5fbc2f670f7a8ba0b386779106cf1223c6fc5d7cd6fc115'),
+        witver=WitnessVersion.BECH32M,
+    )
+    assert address == 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr'
+    address = pubkey_to_bech32_address(
+        bytes.fromhex('0302f3fa32b3a9da1601f7b843304ce0f4c7efe530650572f28375279a217ecb77'),
+        witver=WitnessVersion.BECH32M,
+    )
+    assert address == 'bc1pwauql42p6wgehs5g8kwkf3vjuw6a66akxv4dndrs9p2nvay8wvmqw2dsld'
+    address = pubkey_to_bech32_address(
+        bytes.fromhex('0350a1269caac14f3bc69bcfb6096cb40cb26e5e23bfe5ca683c94360f25973f62'),
+        witver=WitnessVersion.BECH32M,
+    )
+    assert address == 'bc1pgns9vmclx9dfyffsxhknwuedaunz40up23xn0x6wkrznu2jqvgkqxulmws'
+    address = pubkey_to_bech32_address(
+        bytes.fromhex('0277e49029d3a63784d7b719304d7c45b22fa912224635aa4c585d5cf3ed375205'),
+        witver=WitnessVersion.BECH32M,
+    )
+    assert address == 'bc1pnys6fn50vddyhse5t2n59rj2nta9jcmrjlfg7e3p67r3zdgjt5ssd8cl2z'
+    address = pubkey_to_bech32_address(
+        bytes.fromhex('030dbdc19f74ea2cacf829315c4af1ef7439562b2ddcd040bfa229215ebab1be82'),
+        witver=WitnessVersion.BECH32M,
+    )
+    assert address == 'bc1p0vuq2cmrm7xdyc4wskdg8hp2prgkpe56g09knye73ne97tjdqfgqru9fkg'
 
 
 def test_from_xpub_with_conversion():
@@ -179,6 +212,22 @@ def test_xpub_to_addresses():
     for i in range(5):
         child = root.derive_path(f'm/0/{i}')
         assert child.address() == expected_addresses[i]
+
+    # taproot xpubs using test vectors from:
+    # https://github.com/bitcoin/bips/blob/master/bip-0086.mediawiki#test-vectors
+    xpub = 'xpub6BgBgsespWvERF3LHQu6CnqdvfEvtMcQjYrcRzx53QJjSxarj2afYWcLteoGVky7D3UKDP9QyrLprQ3VCECoY49yfdDEHGCtMMj92pReUsQ'  # noqa: E501
+    root = HDKey.from_xpub(xpub=xpub, xpub_type=XpubType.P2TR, path='m/86/0/0')
+
+    expected_addresses = [
+        'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr',
+        'bc1p4qhjn9zdvkux4e44uhx8tc55attvtyu358kutcqkudyccelu0was9fqzwh',
+    ]
+    for i in range(2):
+        child = root.derive_path(f'm/86/0/0/0/{i}')
+        assert child.address() == expected_addresses[i]
+
+    child = root.derive_path('m/86/0/0/1/0')
+    assert child.address() == 'bc1p3qkhfews2uk44qtvauqyr2ttdsw7svhkl9nkm9s9c3x4ax5h60wqwruhk7'
 
 
 def test_ypub_to_addresses():
