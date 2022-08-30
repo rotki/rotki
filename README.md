@@ -41,7 +41,7 @@ Click [here](https://rotki.readthedocs.io/en/latest/changelog.html) for the late
 
 ## Contribute
 
-rotki is an opensource project and as such any and all help is really appreciated.
+rotki is an open source project and as such any and all help is really appreciated.
 
 ### Issues or code
 
@@ -75,4 +75,4 @@ For people who don't want to purchase a subscription but would still like to sup
 
 #### Gitcoin Grant
 
-You can also supports us via a [Gitcoin grant](https://gitcoin.co/grants/149/rotki) and receive kudos and other NFTs in the Gitcoin platform.
+You can also support us via a [Gitcoin grant](https://gitcoin.co/grants/149/rotki) and receive kudos and other NFTs in the Gitcoin platform.
