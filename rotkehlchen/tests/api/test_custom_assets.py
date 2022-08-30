@@ -24,6 +24,7 @@ from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_proper_response,
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
@@ -425,11 +426,10 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
         ),
         json={'identifier': custom3_id},
     )
-    result = assert_proper_response_with_result(response)
-    assert result is True
+    assert_proper_response(response)
     assert globaldb.get_asset_data(identifier=custom3_id, form_with_incomplete_data=False) is None
 
-    # Try to delete custom1 but make sure it fails. It's used by custom2
+    # Delete custom1 and assert it works
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -437,12 +437,10 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
         ),
         json={'identifier': custom1_id},
     )
-    expected_msg = 'Tried to delete asset with name "foo token" and symbol "FOO" but its deletion would violate a constraint so deletion failed'  # noqa: E501
-    assert_error_response(
-        response=response,
-        contained_in_msg=expected_msg,
-        status_code=HTTPStatus.CONFLICT,
-    )
+    assert_proper_response(response)
+    assert globaldb.get_asset_data(identifier=custom1_id, form_with_incomplete_data=False) is None
+    # Also check that `forked` was updated
+    assert globaldb.get_asset_data(identifier=custom2_id, form_with_incomplete_data=False).forked is None  # noqa: E501
 
     # Delete custom 2 and assert it works
     response = requests.delete(
@@ -452,21 +450,8 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
         ),
         json={'identifier': custom2_id},
     )
-    result = assert_proper_response_with_result(response)
-    assert result is True
+    assert_proper_response(response)
     assert globaldb.get_asset_data(identifier=custom2_id, form_with_incomplete_data=False) is None
-
-    # now custom 1 should be deletable
-    response = requests.delete(
-        api_url_for(
-            rotkehlchen_api_server,
-            'allassetsresource',
-        ),
-        json={'identifier': custom1_id},
-    )
-    result = assert_proper_response_with_result(response)
-    assert result is True
-    assert globaldb.get_asset_data(identifier=custom1_id, form_with_incomplete_data=False) is None
 
     # Make sure that deleting unknown asset is detected
     response = requests.delete(
@@ -785,19 +770,6 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
         ).fetchone()[0] == 1
 
     assert_db()
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'assetsreplaceresource',
-        ),
-        json={'source_identifier': glm_id, 'target_asset': 'ICP'},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Tried to delete ethereum token with address',
-        status_code=HTTPStatus.CONFLICT,
-    )
-    assert_db()
 
     # Test non-string source identifier
     response = requests.put(
@@ -840,6 +812,15 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
         contained_in_msg='Tried to initialize an asset out of a non-string identifier',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': glm_id, 'target_asset': 'ICP'},
+    )
+    assert_proper_response(response)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

@@ -16,6 +16,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_proper_response,
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.constants import A_MKR
@@ -41,7 +42,6 @@ def assert_token_entry_exists_in_result(
     We append the identifier to each entry since it's returned
     """
     for entry in expected_result:
-        entry['identifier'] = ethaddress_to_identifier(entry['address'])
         assert entry in result
 
 
@@ -451,8 +451,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     )
 
     # test that trying to delete an underlying token that exists in a mapping
-    # of another token is handled correctly
-    non_existing_address = make_ethereum_address()
+    # of another token is handled correctly, and it works.
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -460,15 +459,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         ),
         json={'address': underlying_address1, 'chain': str(ChainID.ETHEREUM)},
     )
-    expected_msg = (
-        f'Tried to delete ethereum token with address {underlying_address1} '
-        f'but its deletion would violate a constraint so deletion failed'
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg=expected_msg,
-        status_code=HTTPStatus.CONFLICT,
-    )
+    assert_proper_response(response)
 
     # Check that the initial token of the test has MKR as swapped for token
     # this is just a sanity check as the fixture initialization should take care of it
@@ -484,7 +475,6 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
 
     # test that trying to delete a token (MKR) that is used as swapped_for
     # of another token is handled correctly
-    non_existing_address = make_ethereum_address()
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -492,15 +482,10 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         ),
         json={'address': A_MKR.evm_address, 'chain': str(ChainID.ETHEREUM)},
     )
-    expected_msg = (
-        f'Tried to delete ethereum token with address {A_MKR.evm_address} '
-        f'but its deletion would violate a constraint so deletion failed'
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg=expected_msg,
-        status_code=HTTPStatus.CONFLICT,
-    )
+    assert_proper_response(response)
+    # Check that with the MKR deletion `swapped_for` was set to null
+    new_swapped_for = cursor.execute('SELECT swapped_for FROM assets WHERE identifier = ?', (token0_id,)).fetchone()  # noqa: E501
+    assert new_swapped_for is not None and new_swapped_for[0] is None
 
     # now test that deleting the token with underlying tokens works
     response = requests.delete(
@@ -512,6 +497,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert result == {'identifier': token0_id}
+
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -519,7 +505,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    expected_tokens = INITIAL_EXPECTED_TOKENS[1:-1]
+    expected_tokens = INITIAL_EXPECTED_TOKENS[2:-1]
     expected_result = [x.serialize_all_info() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
     # and removes the mapping of all underlying tokens

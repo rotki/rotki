@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Literal, NamedTuple, Optional, Tuple, Union
 
 import requests
 
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.constants.resolver import ChainID
@@ -72,22 +72,10 @@ def _force_remote(cursor: DBCursor, local_asset: Asset, full_insert: str) -> Non
 
     May raise an sqlite3 error if something fails.
     """
-    cursor.executescript('PRAGMA foreign_keys = OFF;')
-    if local_asset.asset_type == AssetType.EVM_TOKEN:
-        token = EvmToken.from_asset(local_asset)
-        cursor.execute(
-            'DELETE FROM evm_tokens WHERE identifier=?;',
-            (token.identifier,),  # type: ignore  # token != None
-        )
-    cursor.execute(
-        'DELETE FROM common_asset_details WHERE identifier=?;',
-        (local_asset.identifier,),
-    )
     cursor.execute(
         'DELETE FROM assets WHERE identifier=?;',
         (local_asset.identifier,),
     )
-    cursor.executescript('PRAGMA foreign_keys = ON;')
     # Insert new entry. Since identifiers are the same, no foreign key constrains should break
     executeall(cursor, full_insert)
     AssetResolver().clean_memory_cache(local_asset.identifier.lower())
