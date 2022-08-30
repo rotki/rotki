@@ -243,11 +243,18 @@ def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
     for entry in result:
         if entry[0] in OTHER_EVM_CHAINS_ASSETS:
             continue
+        swapped_for = entry[5]
+        if swapped_for is not None and swapped_for.startswith(ETHEREUM_DIRECTIVE):
+            swapped_for = evm_address_to_identifier(
+                address=swapped_for[ETHEREUM_DIRECTIVE_LENGTH:],
+                chain=ChainID.ETHEREUM,
+                token_type=EvmTokenKind.ERC20,
+            )
         assets_tuple.append((
             entry[0],  # identifier
             entry[1],  # type
             entry[4],  # started
-            entry[5],  # swapped for
+            swapped_for,
         ))
         common_asset_details.append((
             entry[0],  # identifier

@@ -89,3 +89,17 @@ def test_upgrade_v2_v3(globaldb):
             'EUR',
             'BCH',
         }
+
+        # FLO asset is the one that is not an evm token but has `swapped_for` pointing to an evm
+        # token. Here we check that its `swapped_for` field is updated properly.
+        # 1. Check that FLO asset exists
+        flo_swapped_for = cursor.execute(
+            'SELECT swapped_for FROM assets WHERE identifier="FLO"',
+        ).fetchone()
+        assert flo_swapped_for is not None
+        # 2. Check that its `swapped_for` was updated properly
+        found_assets = cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier = ?', (flo_swapped_for[0],),
+        ).fetchone()[0]
+        # should have found one asset that FLO's swapped_for is pointing to
+        assert found_assets == 1
