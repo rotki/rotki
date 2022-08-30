@@ -1,6 +1,7 @@
 import { XpubKeyType, XpubPayload } from '@/store/balances/types';
 
 export enum XpubPrefix {
+  P2TR = 'p2tr',
   XPUB = 'xpub',
   YPUB = 'ypub',
   ZPUB = 'zpub'
@@ -11,6 +12,7 @@ export type XpubType = {
   readonly value: XpubPrefix;
 };
 
+const P2TR_LABEL = 'P2TR';
 const XPUB_LABEL = 'P2PKH';
 const YPUB_LABEL = 'P2SH-P2WPKH';
 const ZPUB_LABEL = 'WPKH';
@@ -22,6 +24,8 @@ export const getKeyType: (key: XpubPrefix) => XpubKeyType = key => {
     return XpubKeyType.YPUB;
   } else if (key === XpubPrefix.ZPUB) {
     return XpubKeyType.ZPUB;
+  } else if (key === XpubPrefix.P2TR) {
+    return XpubKeyType.P2TR;
   }
   throw new Error(`${key} is not acceptable`);
 };
@@ -47,6 +51,10 @@ export const keyType: XpubType[] = [
   {
     label: ZPUB_LABEL,
     value: XpubPrefix.ZPUB
+  },
+  {
+    label: P2TR_LABEL,
+    value: XpubPrefix.P2TR
   }
 ];
 

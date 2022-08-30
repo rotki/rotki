@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`4449` Add Taproot (P2TR) option when adding Bitcoin xpub.
 * :feature:`2770` Add generic CSV import functionality.
 * :feature:`1830` Bitcoin and Bitcoin Cash addresses are now derived from XPUBs when balances are refreshed.
 * :feature:`4602` Shows indicator that indicates whether ETH nodes are connected or not.
