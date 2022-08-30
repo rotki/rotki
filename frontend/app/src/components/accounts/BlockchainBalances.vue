@@ -277,12 +277,12 @@ const BlockchainBalances = defineComponent({
     const router = useRouter();
     const route = useRoute();
 
-    onMounted(() => {
+    onMounted(async () => {
       const query = get(route).query;
 
       if (query.add) {
         createAccount();
-        router.replace({ query: {} });
+        await router.replace({ query: {} });
       }
     });
 

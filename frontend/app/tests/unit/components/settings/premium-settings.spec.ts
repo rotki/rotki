@@ -27,6 +27,14 @@ vi.mock('@/electron-interop', () => {
   };
 });
 vi.mock('@/services/rotkehlchen-api');
+vi.mock('vue', async () => {
+  const mod = await vi.importActual<typeof import('vue')>('vue');
+  return {
+    ...mod,
+    useListeners: vi.fn(),
+    useAttrs: vi.fn()
+  };
+});
 
 Vue.use(Vuetify);
 Vue.use(Interop);
@@ -64,10 +72,10 @@ describe('PremiumSettings.vue', () => {
     (apiKey.element as HTMLInputElement).value = '1234';
     (apiSecret.element as HTMLInputElement).value = '1234';
 
-    apiKey.trigger('input');
-    apiSecret.trigger('input');
+    await apiKey.trigger('input');
+    await apiSecret.trigger('input');
     await wrapper.vm.$nextTick();
-    wrapper.find('.premium-settings__button__setup').trigger('click');
+    await wrapper.find('.premium-settings__button__setup').trigger('click');
     await wrapper.vm.$nextTick();
     await flushPromises();
 

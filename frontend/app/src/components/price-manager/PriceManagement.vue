@@ -153,12 +153,12 @@ const managePrice = async (
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   const query = get(route).query;
 
   if (query.add) {
     openForm();
-    router.replace({ query: {} });
+    await router.replace({ query: {} });
   }
 });
 </script>

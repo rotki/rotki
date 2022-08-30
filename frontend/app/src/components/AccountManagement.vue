@@ -135,6 +135,7 @@ import i18n from '@/i18n';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { CreateAccountPayload, LoginCredentials } from '@/types/login';
+import { startPromise } from '@/utils';
 
 export default defineComponent({
   name: 'AccountManagement',
@@ -267,7 +268,7 @@ export default defineComponent({
       await connect(url);
     };
 
-    setupBackend().then();
+    startPromise(setupBackend());
 
     const createNewAccount = async (payload: CreateAccountPayload) => {
       set(loading, true);

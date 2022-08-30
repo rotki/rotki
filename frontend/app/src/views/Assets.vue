@@ -62,13 +62,14 @@ export default defineComponent({
     const { isAssetIgnored, ignoreAsset, unignoreAsset } =
       useIgnoredAssetsStore();
 
-    const isIgnored = isAssetIgnored(get(identifier));
+    const isIgnored = isAssetIgnored(identifier);
 
-    const toggleIgnoreAsset = () => {
+    const toggleIgnoreAsset = async () => {
+      const id = get(identifier);
       if (get(isIgnored)) {
-        unignoreAsset(get(identifier));
+        await unignoreAsset(id);
       } else {
-        ignoreAsset(get(identifier));
+        await ignoreAsset(id);
       }
     };
 

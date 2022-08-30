@@ -57,12 +57,12 @@ export interface Listeners {
 }
 
 export interface Interop {
-  openUrl(url: string): Promise<void>;
-  openPath(path: string): Promise<void>;
+  openUrl(url: string): void;
+  openPath(path: string): void;
   closeApp(): void;
   setListeners(listeners: Listeners): void;
   openDirectory(title: string): Promise<undefined | string>;
-  premiumUserLoggedIn(premiumUser: boolean): Promise<undefined | boolean>;
+  premiumUserLoggedIn(premiumUser: boolean): void;
   monitorDebugSettings(): void;
   debugSettings?(): DebugSettings | undefined;
   serverUrl(): string;
@@ -75,7 +75,7 @@ export interface Interop {
   version(): Promise<SystemVersion>;
   isMac(): Promise<boolean>;
   config(defaults: boolean): Promise<Partial<BackendOptions>>;
-  updateTray(trayUpdate: TrayUpdate): Promise<void>;
+  updateTray(trayUpdate: TrayUpdate): void;
   logToFile(message: string): void;
   storePassword(username: string, password: string): Promise<boolean>;
   getPassword(username: string): Promise<string>;

@@ -35,7 +35,7 @@ describe('ServiceKey.vue', () => {
     expect(
       wrapper.find('.service-key__api-key input').attributes('disabled')
     ).toBeUndefined();
-    wrapper.setProps({
+    await wrapper.setProps({
       value: '1234'
     });
     await wrapper.vm.$nextTick();

@@ -58,13 +58,13 @@ const NotificationPopup = defineComponent({
   setup() {
     const notification = ref(emptyNotification());
     const { queue, displayed } = setupNotifications();
-    const dismiss = (id: number) => {
-      displayed([id]);
+    const dismiss = async (id: number) => {
+      await displayed([id]);
       set(notification, { ...get(notification), display: false });
     };
 
-    const dismissAll = () => {
-      displayed(get(queue).map(({ id }) => id));
+    const dismissAll = async () => {
+      await displayed(get(queue).map(({ id }) => id));
       set(notification, { ...get(notification), display: false });
     };
 

@@ -229,14 +229,16 @@ const isAnyLoading = computed<boolean>(() => {
   );
 });
 
-const refreshBalance = (balanceSource: string) => {
+const refreshBalance = async (balanceSource: string) => {
   if (balanceSource === 'blockchain') {
-    fetchBlockchainBalances({
-      ignoreCache: true
-    });
-    fetchLoopringBalances(true);
+    await Promise.allSettled([
+      fetchBlockchainBalances({
+        ignoreCache: true
+      }),
+      fetchLoopringBalances(true)
+    ]);
   } else if (balanceSource === 'exchange') {
-    fetchConnectedExchangeBalances(true);
+    await fetchConnectedExchangeBalances(true);
   }
 };
 </script>

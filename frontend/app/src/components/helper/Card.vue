@@ -1,11 +1,11 @@
 <template>
   <v-card
-    v-bind="$attrs"
+    v-bind="rootAttrs"
     :class="{
       [$style['no-radius-bottom']]: noRadiusBottom,
       [$style['full-height']]: fullHeight
     }"
-    v-on="$listeners"
+    v-on="rootListeners"
   >
     <v-card-title v-if="$slots.title">
       <slot v-if="$slots.icon" name="icon" />
@@ -58,54 +58,44 @@
   </v-card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import { computed, defineComponent, onMounted, ref, toRefs } from 'vue';
+import { computed, onMounted, ref, toRefs, useAttrs, useListeners } from 'vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 
-const Card = defineComponent({
-  name: 'Card',
-  components: { CardTitle },
-  props: {
-    outlinedBody: { required: false, type: Boolean, default: false },
-    contained: { required: false, type: Boolean, default: false },
-    noRadiusBottom: { required: false, type: Boolean, default: false },
-    fullHeight: { required: false, type: Boolean, default: false }
-  },
-  setup(props) {
-    const { contained } = toRefs(props);
-    const body = ref<HTMLDivElement | null>(null);
-    const actions = ref<HTMLDivElement | null>(null);
-    const top = ref(206);
-
-    onMounted(() => {
-      setTimeout(() => {
-        set(top, get(body)?.getBoundingClientRect().top ?? 0);
-      }, 1000);
-    });
-
-    const bodyStyle = computed(() => {
-      if (!get(contained)) {
-        return null;
-      }
-      const bodyTop = get(top);
-      const actionsHeight = get(actions)?.getBoundingClientRect().height ?? 0;
-      const diff = bodyTop + actionsHeight;
-
-      return {
-        height: `calc(100vh - ${diff}px)`
-      };
-    });
-
-    return {
-      actions,
-      body,
-      bodyStyle
-    };
-  }
+const props = defineProps({
+  outlinedBody: { required: false, type: Boolean, default: false },
+  contained: { required: false, type: Boolean, default: false },
+  noRadiusBottom: { required: false, type: Boolean, default: false },
+  fullHeight: { required: false, type: Boolean, default: false }
 });
 
-export default Card;
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+
+const { contained } = toRefs(props);
+const body = ref<HTMLDivElement | null>(null);
+const actions = ref<HTMLDivElement | null>(null);
+const top = ref(206);
+
+onMounted(() => {
+  setTimeout(() => {
+    set(top, get(body)?.getBoundingClientRect().top ?? 0);
+  }, 1000);
+});
+
+const bodyStyle = computed(() => {
+  if (!get(contained)) {
+    return null;
+  }
+  const bodyTop = get(top);
+  const actionsHeight = get(actions)?.getBoundingClientRect().height ?? 0;
+  const diff = bodyTop + actionsHeight;
+
+  return {
+    height: `calc(100vh - ${diff}px)`
+  };
+});
 </script>
 
 <style module lang="scss">

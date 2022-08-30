@@ -38,7 +38,7 @@ describe('RevealableInput.vue', () => {
   test('should change to type text', async () => {
     const input = wrapper.find('input');
     await wrapper.vm.$nextTick();
-    wrapper.find('button').trigger('click');
+    await wrapper.find('button').trigger('click');
     await wrapper.vm.$nextTick();
     expect(input.attributes('type')).toBe('text');
   });
@@ -46,7 +46,7 @@ describe('RevealableInput.vue', () => {
   test('input changing should emit an event', async () => {
     const input = wrapper.find('input');
     await wrapper.vm.$nextTick();
-    input.setValue('123');
+    await input.setValue('123');
     await wrapper.vm.$nextTick();
     await flushPromises();
     expect(wrapper.emitted('input')?.[0]?.[0]).toBe('123');

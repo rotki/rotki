@@ -20,8 +20,8 @@ export default defineComponent({
   setup(props) {
     const { asset } = toRefs(props);
     const router = useRouter();
-    const navigateToDetails = () => {
-      router.push({
+    const navigateToDetails = async () => {
+      await router.push({
         path: Routes.ASSETS.route.replace(':identifier', get(asset))
       });
     };

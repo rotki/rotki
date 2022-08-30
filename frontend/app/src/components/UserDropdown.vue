@@ -127,7 +127,7 @@ export default defineComponent({
       await store.logout();
 
       if (get(route).path !== '/') {
-        router.replace('/');
+        await router.replace('/');
       }
     };
 

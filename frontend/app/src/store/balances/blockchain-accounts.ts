@@ -54,6 +54,7 @@ import { L2_LOOPRING } from '@/types/protocols';
 import { BlockchainMetadata, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ReadOnlyTag } from '@/types/user';
+import { startPromise } from '@/utils';
 import { assert } from '@/utils/assertions';
 import { sortDesc, Zero, zeroBalance } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
@@ -252,7 +253,7 @@ export const useBlockchainAccountsStore = defineStore(
             if (blockchain === Blockchain.ETH) {
               const addresses = accounts.map(account => account.address);
               const { fetchEnsNames } = useEthNamesStore();
-              fetchEnsNames(addresses, true);
+              startPromise(fetchEnsNames(addresses, true));
             }
           } else {
             throw Error(`invalid argument ${Blockchain[blockchain]}`);
@@ -455,7 +456,7 @@ export const useBlockchainAccountsStore = defineStore(
         useDefiStore().reset();
         useMainStore().resetDefiStatus();
         const { refreshPrices, fetchNfBalances } = useBalancesStore();
-        fetchNfBalances();
+        startPromise(fetchNfBalances());
 
         if (blockchain === Blockchain.ETH) {
           await fetchBlockchainBalances({
@@ -517,7 +518,7 @@ export const useBlockchainAccountsStore = defineStore(
         }
       ];
 
-      list.forEach(async item => {
+      for (const item of list) {
         if (item.blockchain === blockchain) {
           const accountData = [Blockchain.BTC, Blockchain.BCH].includes(
             blockchain
@@ -526,11 +527,11 @@ export const useBlockchainAccountsStore = defineStore(
             : await api.editAccount(payload);
           set(item.state, accountData);
         }
-      });
+      }
 
       const { fetchEthNames } = useEthNamesStore();
       if (blockchain === Blockchain.ETH) {
-        fetchEthNames();
+        startPromise(fetchEthNames());
       }
     };
 
@@ -605,7 +606,7 @@ export const useBlockchainAccountsStore = defineStore(
         useDefiStore().reset();
         useMainStore().resetDefiStatus();
         const { refreshPrices, fetchNfBalances } = useBalancesStore();
-        fetchNfBalances();
+        await fetchNfBalances();
 
         await fetchBlockchainBalances({
           blockchain,
@@ -1114,10 +1115,12 @@ export const useBlockchainAccountsStore = defineStore(
 
           await fetchDetectedTokens();
 
-          fetchBlockchainBalances({
-            ignoreCache: true,
-            blockchain: Blockchain.ETH
-          });
+          startPromise(
+            fetchBlockchainBalances({
+              ignoreCache: true,
+              blockchain: Blockchain.ETH
+            })
+          );
         } else {
           set(
             ethDetectedTokensRecord,
@@ -1147,9 +1150,9 @@ export const useBlockchainAccountsStore = defineStore(
       };
     };
 
-    watch(ethAddresses, (curr, prev) => {
+    watch(ethAddresses, async (curr, prev) => {
       if (!isEqual(curr, prev)) {
-        fetchDetectedTokens();
+        await fetchDetectedTokens();
       }
     });
 

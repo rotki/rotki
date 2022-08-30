@@ -491,14 +491,14 @@ export default class PyHandler {
 
     const taskKill = spawn('taskkill', args);
 
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve, reject) => {
       taskKill.on('exit', () => {
         this.logToFile('Call to taskkill exited');
         if (!restart) {
           app.exit();
         }
 
-        this.waitForTermination(tasks, pids).then(resolve);
+        this.waitForTermination(tasks, pids).then(resolve, reject);
       });
 
       taskKill.on('error', err => {

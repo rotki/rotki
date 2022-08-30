@@ -141,10 +141,10 @@ export default defineComponent({
       visibleUpdate(false);
     };
 
-    const downloadBrowserLog = () => {
+    const downloadBrowserLog = async () => {
       const loggerDb = new IndexedDb('db', 1, 'logs');
 
-      loggerDb.getAll((data: any) => {
+      await loggerDb.getAll((data: any) => {
         if (data?.length === 0) {
           const { notify } = useNotifications();
           notify({

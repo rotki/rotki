@@ -237,7 +237,7 @@ export const useBlockchainBalancesStore = defineStore(
         const addresses = [...Object.keys(ethBalances)];
 
         const { fetchEnsNames } = useEthNamesStore();
-        fetchEnsNames(addresses, forceUpdate);
+        await fetchEnsNames(addresses, forceUpdate);
       }
 
       const updateList = [
@@ -272,7 +272,7 @@ export const useBlockchainBalancesStore = defineStore(
 
       const blockchainToRefresh = chain ? [chain] : null;
       const { fetchAccounts } = useBlockchainAccountsStore();
-      fetchAccounts(blockchainToRefresh);
+      await fetchAccounts(blockchainToRefresh);
     };
 
     const adjustBlockchainPrices = async () => {

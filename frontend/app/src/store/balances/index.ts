@@ -118,7 +118,7 @@ export const useBalancesStore = defineStore('balances', () => {
   const { notify } = useNotifications();
 
   const adjustPrices = async () => {
-    adjustBlockchainPrices();
+    await adjustBlockchainPrices();
 
     const newManualBalancesData = get(manualBalancesData).map(item => {
       const assetPrice = get(prices)[item.asset];

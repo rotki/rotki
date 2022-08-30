@@ -160,12 +160,12 @@ const ManualBalances = defineComponent({
     };
 
     const router = useRouter();
-    onMounted(() => {
+    onMounted(async () => {
       const { currentRoute } = router;
       const { add } = dialog;
       if (currentRoute.query.add) {
         add();
-        router.replace({ query: {} });
+        await router.replace({ query: {} });
       }
     });
 

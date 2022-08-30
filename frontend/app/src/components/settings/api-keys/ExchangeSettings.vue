@@ -263,11 +263,11 @@ onBeforeMount(() => {
 });
 
 const router = useRouter();
-onMounted(() => {
+onMounted(async () => {
   const { currentRoute } = router;
   if (currentRoute.query.add) {
     addExchange();
-    router.replace({ query: {} });
+    await router.replace({ query: {} });
   }
 });
 

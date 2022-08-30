@@ -232,7 +232,7 @@ const route = useRoute();
 
 const closeDialog = async () => {
   set(showForm, false);
-  router.push(Routes.ASSET_MANAGER.route);
+  await router.push(Routes.ASSET_MANAGER.route);
 };
 
 onMounted(async () => {
@@ -242,7 +242,7 @@ onMounted(async () => {
   const query = get(route).query;
   if (query.add) {
     add();
-    router.replace({ query: {} });
+    await router.replace({ query: {} });
   }
 });
 

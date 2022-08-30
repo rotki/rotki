@@ -433,7 +433,7 @@ export default defineComponent({
       }
     ]);
 
-    const updatePayloadHandler = () => {
+    const updatePayloadHandler = async () => {
       let paginationOptions = {};
 
       const optionsVal = get(options);
@@ -461,15 +461,17 @@ export default defineComponent({
         ...paginationOptions
       };
 
-      updateLedgerActionsPayload(payload);
+      await updateLedgerActionsPayload(payload);
     };
 
-    const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
+    const updatePaginationHandler = async (
+      newOptions: PaginationOptions | null
+    ) => {
       set(options, newOptions);
-      updatePayloadHandler();
+      await updatePayloadHandler();
     };
 
-    const updateFilterHandler = (
+    const updateFilterHandler = async (
       newFilters: MatchedKeyword<LedgerActionFilterKeys>
     ) => {
       set(filters, newFilters);
@@ -482,7 +484,7 @@ export default defineComponent({
         };
       }
 
-      updatePaginationHandler(newOptions);
+      await updatePaginationHandler(newOptions);
     };
 
     const getId = (item: LedgerActionEntry) => item.identifier.toString();
@@ -493,12 +495,12 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
 
-    onMounted(() => {
+    onMounted(async () => {
       const query = get(route).query;
 
       if (query.add) {
         newLedgerAction();
-        router.replace({ query: {} });
+        await router.replace({ query: {} });
       }
     });
 

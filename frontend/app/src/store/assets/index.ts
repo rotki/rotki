@@ -1,6 +1,6 @@
 import { AssetBalanceWithPrice } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { get, set } from '@vueuse/core';
+import { get, MaybeRef, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
 import { interop } from '@/electron-interop';
@@ -580,9 +580,10 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
     }
   };
 
-  const isAssetIgnored = (asset: string) =>
+  const isAssetIgnored = (asset: MaybeRef<string>) =>
     computed<boolean>(() => {
-      return get(ignoredAssets).includes(asset);
+      const selectedAsset = get(asset);
+      return get(ignoredAssets).includes(selectedAsset);
     });
 
   return {

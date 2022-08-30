@@ -61,6 +61,7 @@ import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { UserSettingsModel } from '@/types/user';
+import { startPromise } from '@/utils';
 import { backoff } from '@/utils/backoff';
 import { logger } from '@/utils/logging';
 
@@ -145,15 +146,14 @@ export const useSessionStore = defineStore('session', () => {
   const refreshData = async (exchanges: Exchange[]) => {
     logger.info('Refreshing data');
 
-    const async = [
+    await Promise.allSettled([
       fetchIgnored(),
       fetchIgnoredAssets(),
       fetchWatchers(),
       fetch(exchanges),
       fetchNetValue()
-    ];
-
-    Promise.all(async).then(() => refreshPrices({ ignoreCache: false }));
+    ]);
+    await refreshPrices({ ignoreCache: false });
   };
 
   const unlock = async ({
@@ -203,7 +203,7 @@ export const useSessionStore = defineStore('session', () => {
       await fetchCounterparties();
 
       if (!isNew || sync) {
-        await refreshData(exchanges);
+        startPromise(refreshData(exchanges));
       } else {
         const ethUpdater = getStatusUpdater(Section.BLOCKCHAIN_ETH);
         const btcUpdater = getStatusUpdater(Section.BLOCKCHAIN_BTC);

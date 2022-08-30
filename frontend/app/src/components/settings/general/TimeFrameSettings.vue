@@ -184,7 +184,7 @@ export default defineComponent({
       emit('visible-timeframes-change', _timeframes);
     };
 
-    const updateVisibleTimeframes = (
+    const updateVisibleTimeframes = async (
       newTimeFrames: TimeFramePeriod[],
       replaceCurrentSessionTimeframe: boolean = false
     ) => {
@@ -196,26 +196,26 @@ export default defineComponent({
         const { updateSetting } = useFrontendSettingsStore();
         const { update } = useSessionSettingsStore();
         const value = newTimeFrames[0];
-        update({ timeframe: value });
-        updateSetting({ lastKnownTimeframe: value });
+        await update({ timeframe: value });
+        await updateSetting({ lastKnownTimeframe: value });
       }
 
       visibleTimeframesChange(newTimeFrames);
     };
 
-    const addVisibleTimeframe = (timeframe: TimeFramePeriod) => {
-      updateVisibleTimeframes([...get(visibleTimeframes), timeframe]);
+    const addVisibleTimeframe = async (timeframe: TimeFramePeriod) => {
+      await updateVisibleTimeframes([...get(visibleTimeframes), timeframe]);
     };
 
     const timeframeChange = (_timeframe: TimeFrameSetting) => {
       emit('timeframe-change', _timeframe);
     };
 
-    const removeVisibleTimeframe = (timeframe: TimeFrameSetting) => {
+    const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
       if (timeframe === get(value)) {
         timeframeChange(TimeFramePersist.REMEMBER);
       }
-      updateVisibleTimeframes(
+      await updateVisibleTimeframes(
         get(visibleTimeframes).filter(item => {
           return item !== timeframe;
         }),

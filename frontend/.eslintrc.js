@@ -82,7 +82,8 @@ module.exports = {
         selector: 'typeLike',
         format: ['PascalCase']
       }
-    ]
+    ],
+    '@typescript-eslint/no-floating-promises': ['error', { ignoreIIFE: true }]
   },
 
   parserOptions: {

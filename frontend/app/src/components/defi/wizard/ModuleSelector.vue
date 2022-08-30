@@ -129,7 +129,7 @@ const update = async (activeModules: Module[], clearSearch: boolean = true) => {
   set(loading, false);
 };
 
-const unselect = (identifier: Module) => {
+const unselect = async (identifier: Module) => {
   const selected = get(selectedModules);
   const previouslyActive = [...selected];
   const selectionIndex = selected.indexOf(identifier);
@@ -137,7 +137,7 @@ const unselect = (identifier: Module) => {
     return;
   }
   selected.splice(selectionIndex, 1);
-  update(selected, false);
+  await update(selected, false);
 
   if (wasDeactivated(selected, previouslyActive, Module.NFTS)) {
     clearNfBalances();

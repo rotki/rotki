@@ -116,7 +116,7 @@ export default defineComponent({
 
     const { tc } = useI18n();
 
-    onMounted(() => {
+    onMounted(async () => {
       const query = get(route).query;
       if (query.regenerate) {
         const start: string = (query.start as string) || '';
@@ -128,10 +128,10 @@ export default defineComponent({
             end: parseInt(end)
           };
 
-          generate(period);
+          await generate(period);
         }
 
-        router.replace({ query: {} });
+        await router.replace({ query: {} });
       }
     });
 
@@ -144,7 +144,7 @@ export default defineComponent({
 
       const reportId = await generateReport(period);
       if (reportId > 0) {
-        router.push({
+        await router.push({
           path: Routes.PROFIT_LOSS_REPORT.route.replace(
             ':id',
             reportId.toString()

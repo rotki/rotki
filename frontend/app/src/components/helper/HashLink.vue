@@ -161,9 +161,9 @@ export default defineComponent({
         : `${formattedBaseUrl}/`;
     });
 
-    const copyText = (text: string) => {
+    const copyText = async (text: string) => {
       const { copy } = useClipboard({ source: text });
-      copy();
+      await copy();
     };
 
     const url = computed<string>(() => {

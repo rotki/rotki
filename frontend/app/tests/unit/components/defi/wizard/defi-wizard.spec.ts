@@ -9,6 +9,14 @@ import '../../../i18n';
 import { FrontendSettings } from '@/types/frontend-settings';
 
 vi.mock('@/services/rotkehlchen-api');
+vi.mock('vue', async () => {
+  const mod = await vi.importActual<typeof import('vue')>('vue');
+  return {
+    ...mod,
+    useListeners: vi.fn(),
+    useAttrs: vi.fn()
+  };
+});
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
@@ -35,7 +43,7 @@ describe('DefiWizard.vue', () => {
 
   test('wizard completes when use default is pressed', async () => {
     expect.assertions(1);
-    wrapper.find('.defi-wizard__use-default').trigger('click');
+    await wrapper.find('.defi-wizard__use-default').trigger('click');
     await wrapper.vm.$nextTick();
     expect(api.setSettings).toBeCalledWith({
       frontendSettings: JSON.stringify(
@@ -46,11 +54,11 @@ describe('DefiWizard.vue', () => {
 
   test('wizard completes when complete is pressed', async () => {
     expect.assertions(1);
-    wrapper.find('.defi-wizard__select-modules').trigger('click');
+    await wrapper.find('.defi-wizard__select-modules').trigger('click');
     await wrapper.vm.$nextTick();
-    wrapper.find('.defi-wizard__select-accounts').trigger('click');
+    await wrapper.find('.defi-wizard__select-accounts').trigger('click');
     await wrapper.vm.$nextTick();
-    wrapper.find('.defi-wizard__done').trigger('click');
+    await wrapper.find('.defi-wizard__done').trigger('click');
     await wrapper.vm.$nextTick();
     expect(api.setSettings).toBeCalledWith({
       frontendSettings: JSON.stringify(

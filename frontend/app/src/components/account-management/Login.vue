@@ -431,13 +431,13 @@ export default defineComponent({
 
         if (savedPassword) {
           set(password, savedPassword);
-          login();
+          await login();
         }
       }
     };
 
-    onMounted(() => {
-      loadSettings();
+    onMounted(async () => {
+      await loadSettings();
       updateFocus();
     });
 
@@ -454,7 +454,7 @@ export default defineComponent({
       }
     });
 
-    watch(rememberPassword, (remember: boolean, previous: boolean) => {
+    watch(rememberPassword, async (remember: boolean, previous: boolean) => {
       if (remember === previous) {
         return;
       }
@@ -462,7 +462,7 @@ export default defineComponent({
       if (!remember) {
         set(savedRememberPassword, null);
         if (isPackaged) {
-          clearPassword();
+          await clearPassword();
         }
       } else {
         set(savedRememberPassword, 'true');
@@ -471,7 +471,7 @@ export default defineComponent({
       checkRememberUsername();
     });
 
-    const login = (syncApproval: SyncApproval = 'unknown') => {
+    const login = async (syncApproval: SyncApproval = 'unknown') => {
       const credentials: LoginCredentials = {
         username: get(username),
         password: get(password),
@@ -483,7 +483,7 @@ export default defineComponent({
       }
 
       if (get(rememberPassword) && isPackaged) {
-        storePassword(get(username), get(password));
+        await storePassword(get(username), get(password));
       }
     };
 

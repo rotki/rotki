@@ -179,8 +179,8 @@ export default defineComponent({
       );
     };
 
-    const openExchangeDetails = () => {
-      router.push({
+    const openExchangeDetails = async () => {
+      await router.push({
         path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${get(
           selectedExchange
         )}`

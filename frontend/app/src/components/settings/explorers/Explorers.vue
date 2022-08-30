@@ -111,7 +111,7 @@ const isValid = (entry: string | null): boolean => {
   return !entry ? false : entry.length > 0;
 };
 
-const saveAddress = (newAddress?: string) => {
+const saveAddress = async (newAddress?: string) => {
   set(address, newAddress ?? '');
   const setting = get(explorers)[get(selection)];
 
@@ -124,7 +124,7 @@ const saveAddress = (newAddress?: string) => {
     delete updated.address;
   }
 
-  store.updateSetting({
+  await store.updateSetting({
     explorers: {
       ...get(explorers),
       [get(selection)]: updated
@@ -132,7 +132,7 @@ const saveAddress = (newAddress?: string) => {
   });
 };
 
-const saveTransaction = (newTransaction?: string) => {
+const saveTransaction = async (newTransaction?: string) => {
   const setting = get(explorers)[get(selection)];
 
   const updated = {
@@ -144,7 +144,7 @@ const saveTransaction = (newTransaction?: string) => {
     delete updated.transaction;
   }
 
-  store.updateSetting({
+  await store.updateSetting({
     explorers: {
       ...get(explorers),
       [get(selection)]: updated
