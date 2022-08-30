@@ -437,14 +437,13 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         );
         """)  # noqa: E501
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS multiasset_collector(
-            identifier TEXT NOT NULL,
-            child_asset_id TEXT,
-            FOREIGN KEY(child_asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
-            FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE
-            PRIMARY KEY(identifier, child_asset_id)
+        CREATE TABLE IF NOT EXISTS multiasset_mappings(
+            collection_id INTEGER NOT NULL,
+            asset TEXT NOT NULL,
+            FOREIGN KEY(collection_id) REFERENCES asset_collections(id) ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
         );
-        """)
+        """)  # noqa: E501
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS user_owned_assets (
             asset_id VARCHAR[24] NOT NULL PRIMARY KEY,
@@ -475,13 +474,12 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         );
         """)  # noqa: E501
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS asset_collection_properties(
-            identifier TEXT NOT NULL PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS asset_collections(
+            id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
-            symbol TEXT NOT NULL,
-            FOREIGN KEY(identifier) REFERENCES multiasset_collector(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+            symbol TEXT NOT NULL
         );
-        """)  # noqa: E501
+        """)
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS custom_assets(
             identifier TEXT NOT NULL PRIMARY KEY,

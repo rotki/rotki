@@ -1156,18 +1156,16 @@ class GlobalDBHandler():
                         return False, msg
 
                     # If versions match drop tables
-                    write_cursor.execute('PRAGMA foreign_keys = OFF;')
-                    write_cursor.execute('DELETE FROM assets;')
-                    write_cursor.execute('DELETE FROM evm_tokens;')
-                    write_cursor.execute('DELETE FROM underlying_tokens_list;')
-                    write_cursor.execute('DELETE FROM common_asset_details;')
-                    write_cursor.execute('DELETE FROM user_owned_assets;')
-                    write_cursor.execute('DELETE FROM custom_assets;')
+                    write_cursor.execute('DELETE FROM assets')
+                    write_cursor.execute('DELETE FROM asset_collections')
                     # Copy assets
+                    write_cursor.execute('PRAGMA foreign_keys = OFF;')
                     write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
                     write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
                     write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
                     write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+                    write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
+                    write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
                     # Don't copy custom_assets since there are no custom assets in clean_db
                     write_cursor.execute('PRAGMA foreign_keys = ON;')
 
@@ -1221,12 +1219,15 @@ class GlobalDBHandler():
                 ids = ', '.join([f'"{id[0]}"' for id in shipped_ids])
                 # If versions match drop tables
                 write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({ids});')
-                write_cursor.execute('PRAGMA foreign_keys = OFF;')
+                write_cursor.execute('DELETE FROM asset_collections')
                 # Copy assets
+                write_cursor.execute('PRAGMA foreign_keys = OFF;')
                 write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
                 write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
                 write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
                 write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+                write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
+                write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
                 # TODO: think about how to implement multiassets insertion
                 write_cursor.execute('PRAGMA foreign_keys = ON;')
         except sqlite3.Error as e:
