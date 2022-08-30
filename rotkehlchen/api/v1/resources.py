@@ -80,6 +80,7 @@ from rotkehlchen.api.v1.schemas import (
     IgnoredActionsGetSchema,
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
+    IntegerIdentifierListSchema,
     IntegerIdentifierSchema,
     LedgerActionSchema,
     LedgerActionsQuerySchema,
@@ -889,8 +890,8 @@ class TradesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, trade_id: str) -> Response:
-        return self.rest_api.delete_trade(trade_id=trade_id)
+    def delete(self, trades_ids: List[str]) -> Response:
+        return self.rest_api.delete_trades(trades_ids=trades_ids)
 
 
 class AssetMovementsResource(BaseMethodView):
@@ -976,7 +977,7 @@ class LedgerActionsResource(BaseMethodView):
 
     put_schema = LedgerActionSchema(identifier_required=False)
     patch_schema = LedgerActionSchema(identifier_required=True)
-    delete_schema = IntegerIdentifierSchema()
+    delete_schema = IntegerIdentifierListSchema()
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_get_schema, location='json_and_query')
@@ -1007,8 +1008,8 @@ class LedgerActionsResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, identifier: int) -> Response:
-        return self.rest_api.delete_ledger_action(identifier=identifier)
+    def delete(self, identifiers: List[int]) -> Response:
+        return self.rest_api.delete_ledger_actions(identifiers=identifiers)
 
 
 class HistoryBaseEntryResource(BaseMethodView):

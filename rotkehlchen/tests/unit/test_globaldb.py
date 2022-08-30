@@ -603,7 +603,7 @@ def test_global_db_restore(globaldb, database):
         status, _ = GlobalDBHandler().hard_reset_assets_list(database)
         assert status is False
         # Now do it without the trade
-        database.delete_trade(cursor, trade.identifier)
+        database.delete_trades(cursor, [trade.identifier])
     status, msg = GlobalDBHandler().hard_reset_assets_list(database, True)
     assert status, msg
     cursor = globaldb.conn.cursor()

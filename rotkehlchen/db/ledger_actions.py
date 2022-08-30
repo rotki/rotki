@@ -7,6 +7,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.constants.limits import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
@@ -110,21 +111,17 @@ class DBLedgerActions():
                 self.db.msg_aggregator.add_warning('Did not add ledger action to DB due to it already existing')  # noqa: E501
                 log.warning(f'Did not add ledger action {action} to the DB due to it already existing')  # noqa: E501
 
-    def remove_ledger_action(self, write_cursor: 'DBCursor', identifier: int) -> Optional[str]:  # pylint: disable=no-self-use  # noqa: E501
-        """Removes a ledger action from the DB by identifier
-
-        Returns None for success or an error message for error
+    def remove_ledger_actions(self, write_cursor: 'DBCursor', identifiers: List[int]) -> None:  # pylint: disable=no-self-use  # noqa: E501
+        """Remove multiple ledger actions from the DB using their identifier.
+        May raise:
+        - InputError if any of the identifiers are non-existent
         """
-        error_msg = None
-        write_cursor.execute(
-            'DELETE from ledger_actions WHERE identifier = ?;', (identifier,),
+        write_cursor.executemany(
+            'DELETE from ledger_actions WHERE identifier = ?',
+            [(identifier,) for identifier in identifiers],
         )
-        if write_cursor.rowcount < 1:
-            error_msg = (
-                f'Tried to delete ledger action with identifier {identifier} but '
-                f'it was not found in the DB'
-            )
-        return error_msg
+        if write_cursor.rowcount != len(identifiers):
+            raise InputError('Tried to delete ledger action(s) but they were not found in the DB')
 
     def edit_ledger_action(self, action: LedgerAction) -> Optional[str]:
         """Edits a ledger action from the DB by identifier

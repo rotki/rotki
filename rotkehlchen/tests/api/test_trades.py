@@ -967,19 +967,17 @@ def test_delete_trades(rotkehlchen_api_server_with_exchanges):
 
     # get the poloniex trade ids
     poloniex_trade_ids = [t['entry']['trade_id'] for t in trades if t['entry']['location'] == 'poloniex']  # noqa: E501
-
-    for trade_id in poloniex_trade_ids:
-        # delete all poloniex trades
-        response = requests.delete(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
-            ), json={'trade_id': trade_id},
-        )
-        assert_proper_response(response)
-        data = response.json()
-        assert data['message'] == ''
-        assert data['result'] is True
+    # delete all poloniex trades
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'tradesresource',
+        ), json={'trades_ids': poloniex_trade_ids},
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+    assert data['result'] is True
 
     # Finally also query poloniex trades to see they no longer exist
     with setup.binance_patch, setup.polo_patch:
@@ -1012,24 +1010,24 @@ def test_delete_trades_trades_errors(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
-        ), json={'trade_id': 55},
+            'tradesresource',
+        ), json={'trades_ids': [55]},
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Not a valid string",
+        contained_in_msg='Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Check that providing non existing trade id is is handled
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
-        ), json={'trade_id': 'this_trade_id_does_not_exist'},
+            'tradesresource',
+        ), json={'trades_ids': ['this_trade_id_does_not_exist']},
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Tried to delete non-existing trade",
+        contained_in_msg='Tried to delete one or more non-existing trade(s)',
         status_code=HTTPStatus.CONFLICT,
     )
 
