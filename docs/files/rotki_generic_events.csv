@@ -1,0 +1,7 @@
+Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp
+Deposit,kucoin,EUR,1000.00,,,Deposit EUR to Kucoin,1658912400000
+Withdrawal,binance,USDT,99.00,1.00,USDT,,1658998800000
+Withdrawal,kraken,BNB,1.01,,,,1659085200000
+Staking,external,ETH,0.0513,,,ETH Staking reward from QRS,1659340800000
+Loss,coinbase,BTC,0.0910,,,,1659430800000
+Income,external,DAI,1000.00,,,,1659513600000

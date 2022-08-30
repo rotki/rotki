@@ -697,6 +697,63 @@ The loopring account balances are also visible in the blockchain accounts view.
    :alt: Loopring balances for an account
    :align: center
 
+Rotki Generic Import
+=====================
+
+You can import data(trades & events) from exchanges not supported by Rotki by clicking "Import Data" on the left sidebar, select "Custom Import" and following the prompt. This involves the user converting the source(a not directly supported exchange, protocol etc.) data to match the import format of Rotki.
+The import is split into two types:
+
+1. Rotki Generic Trades
+2. Rotki Generic Events
+
+Rotki Generic Trades Import
+---------------------------
+This is solely for importing generic trades. The expected file format is **CSV** with the following headers and description as a guide:
+
+1. **Location**: This is the source of the data. It should be one of Rotki's `supported locations`_. If it is not supported, use ``"external"``.
+2. **Base Currency**: The currency bought in a ``"Buy"`` and sold in a ``"Sell"``. e.g BTC/ETH where BTC is the base currency.
+3. **Quote Currency**: The currency sold in a ``"Buy"`` and bought in a ``"Sell"`` e.g BTC/ETH where ETH is the quote currency.
+4. **Type**: The type of trade made. It can either be a ``"Buy"`` or a  ``"Sell"``.
+5. **Buy Amount**:  The amount of the currency bought.
+6. **Sell Amount**: The amount of the currency sold.
+7. **Fee**: The amount charged for the trade. This is optional.
+8. **Fee Currency**: The currency in which the fee was charged. This is optional.
+9. **Description**: A description of the trade if any. This is optional.
+10. **Timestamp**: The UTC unix timestamp at which the trade took place. This is a milliseconds timestamp.
+
+A sample generic trades template can be found below
+
+    .. csv-table:: Rotki Generic Trades Template
+       :file: files/rotki_generic_trades.csv
+       :class: longtable
+       :header-rows: 1
+
+Rotki Generic Events Import
+----------------------------
+This is for importing generic events. Supported events are ``"Deposit"``, ``"Withdrawal"``, ``"Income"``, ``"Loss"`` and ``"Staking"``. The expected file format is **CSV** with the following headers and description as a guide:
+
+1. **Type**: The event type. It can be one of ``"Deposit"``, ``"Withdrawal"``, ``"Income"``, ``"Loss"`` or ``"Staking"``.
+2. **Location**: This is the source of the data. It should be one of Rotki's `supported locations`_. If it is not supported, use ``"external"``.
+3. **Currency**: The currency used during the specified event.
+4. **Amount**: The amount of the currency used by the event.
+5. **Fee**: The amount charged for the event. This is optional.
+6. **Fee Currency**: The currency in which the fee was charged. This is optional.
+7. **Description**: A description of the event that was carried out if any. This is optional.
+8. **Timestamp**: The UTC unix timestamp at which the event took place. This is a milliseconds timestamp.
+
+A sample generic events template can be found below
+
+    .. csv-table:: Rotki Generic Events Template
+       :file: files/rotki_generic_events.csv
+       :header-rows: 1
+       :class: longtable
+
+Supported Locations
+--------------------
+A list of supported locations in Rotki are ``"external"``, ``"kraken"``, ``"poloniex"``, ``"bittrex"``, ``"binance"``, ``"bitmex"``, ``"coinbase"``, ``"banks"``, ``"blockchain"``, ``"coinbasepro"``, ``"gemini"``, ``"equities"``, ``"realestate"``, ``"commodities"``, ``"cryptocom"``, ``"uniswap"``, ``"bitstamp"``, ``"binanceus"``, ``"bitfinex"``, ``"bitcoinde"``, ``"iconomi"``, ``"kucoin"``, ``"balancer"``, ``"loopring"``, ``"ftx"``, ``"nexo"``, ``"blockfi"``, ``"independentreserve"``, ``"gitcoin"``, ``"sushiswap"``, ``"shapeshift"``, ``"uphold"``, ``"bitpanda"``, ``"bisq"`` and ``"ftxus"``.
+
+**NOTE**: If at any point, you're confused as regards the csv format, feel free to send us a message on `Discord <https://discord.gg/aGCxHG7>`_.
+
 Moving data to another system
 =====================================
 
