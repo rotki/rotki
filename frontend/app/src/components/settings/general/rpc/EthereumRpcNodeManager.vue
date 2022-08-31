@@ -199,8 +199,7 @@ export default defineComponent({
         }
       } finally {
         set(loading, false);
-        set(showForm, false);
-        set(selectedNode, getPlaceholderNode());
+        clear();
       }
     };
 
