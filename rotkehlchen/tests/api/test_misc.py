@@ -200,7 +200,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     )
 
     # try to edit a node
-    response = requests.post(
+    response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
             'identifier': 8,
@@ -233,7 +233,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         },
     )
     # set owned to false and see that we have the expected amount of nodes
-    response = requests.post(
+    response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
             'identifier': 4,
@@ -254,7 +254,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             break
 
     # Try to edit etherscan weight
-    response = requests.post(
+    response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
             'identifier': 1,

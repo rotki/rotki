@@ -1385,7 +1385,7 @@ export class RotkehlchenApi {
   }
 
   async editEthereumNode(node: EthereumRpcNode): Promise<boolean> {
-    const response = await this.axios.post<ActionResult<boolean>>(
+    const response = await this.axios.patch<ActionResult<boolean>>(
       '/blockchains/ETH/nodes',
       axiosSnakeCaseTransformer(node),
       {
