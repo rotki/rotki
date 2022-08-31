@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
 from rotkehlchen.constants.ethereum import AAVE_V1_LENDING_POOL, AAVE_V2_LENDING_POOL
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
@@ -133,9 +134,9 @@ class Aave(EthereumModule):
                     balance = balance_entry.base_balance.balance
 
                 try:
-                    token = EvmToken(token_address)
+                    token = EvmToken(ethaddress_to_identifier(token_address))
                 except UnknownAsset:
-                    log.warning('Found aave DeFi balance for unknown token {token_address}. Skipping')  # noqa: E501
+                    log.warning(f'Found aave DeFi balance for unknown token {token_address}. Skipping')  # noqa: E501
                     continue
                 reserve_address, _ = _get_reserve_address_decimals(token)
 
