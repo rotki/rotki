@@ -55,6 +55,7 @@ export interface ExchangePayload {
 }
 
 export enum XpubKeyType {
+  P2TR = 'p2tr',
   XPUB = 'p2pkh',
   YPUB = 'p2sh_p2wpkh',
   ZPUB = 'wpkh'
