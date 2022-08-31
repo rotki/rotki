@@ -17,9 +17,9 @@
               seconds
               limit-now
               data-cy="date"
-              :label="$t('external_trade_form.date.label')"
+              :label="t('external_trade_form.date.label')"
               persistent-hint
-              :hint="$t('external_trade_form.date.hint')"
+              :hint="t('external_trade_form.date.hint')"
               :error-messages="errorMessages['timestamp']"
               @focus="delete errorMessages['timestamp']"
             />
@@ -27,14 +27,14 @@
               <v-radio-group
                 v-model="type"
                 required
-                :label="$t('external_trade_form.trade_type.label')"
+                :label="t('external_trade_form.trade_type.label')"
               >
                 <v-radio
-                  :label="$t('external_trade_form.trade_type.buy')"
+                  :label="t('external_trade_form.trade_type.buy')"
                   value="buy"
                 />
                 <v-radio
-                  :label="$t('external_trade_form.trade_type.sell')"
+                  :label="t('external_trade_form.trade_type.sell')"
                   value="sell"
                 />
               </v-radio-group>
@@ -52,8 +52,8 @@
                   required
                   data-cy="base-asset"
                   :rules="baseRules"
-                  :hint="$t('external_trade_form.base_asset.hint')"
-                  :label="$t('external_trade_form.base_asset.label')"
+                  :hint="t('external_trade_form.base_asset.hint')"
+                  :label="t('external_trade_form.base_asset.label')"
                   :error-messages="errorMessages['baseAsset']"
                   @focus="delete errorMessages['baseAsset']"
                 />
@@ -68,8 +68,8 @@
                   outlined
                   data-cy="quote-asset"
                   :rules="quoteRules"
-                  :hint="$t('external_trade_form.quote_asset.hint')"
-                  :label="$t('external_trade_form.quote_asset.label')"
+                  :hint="t('external_trade_form.quote_asset.hint')"
+                  :label="t('external_trade_form.quote_asset.label')"
                   :error-messages="errorMessages['quoteAsset']"
                   @focus="delete errorMessages['quoteAsset']"
                 />
@@ -81,9 +81,9 @@
               outlined
               :rules="amountRules"
               data-cy="amount"
-              :label="$t('common.amount')"
+              :label="t('common.amount')"
               persistent-hint
-              :hint="$t('external_trade_form.amount.hint')"
+              :hint="t('external_trade_form.amount.hint')"
               :error-messages="errorMessages['amount']"
               @focus="delete errorMessages['amount']"
             />
@@ -98,7 +98,7 @@
                 ref="rateInput"
                 v-model="rate"
                 :disabled="selectedCalculationInput !== 'rate'"
-                :label="$t('external_trade_form.rate.label')"
+                :label="t('external_trade_form.rate.label')"
                 :loading="fetching"
                 :rules="rateRules"
                 data-cy="rate"
@@ -125,7 +125,7 @@
                     ? 'v-input--is-enabled'
                     : ''
                 }`"
-                :label="$t('external_trade_form.quote_amount.label')"
+                :label="t('external_trade_form.quote_amount.label')"
                 filled
                 :error-messages="errorMessages['quote_amount']"
                 @focus="delete errorMessages['quote_amount']"
@@ -154,7 +154,7 @@
                 path="external_trade_form.summary.buy"
               >
                 <template #label>
-                  <strong>{{ $t('external_trade_form.summary.label') }}</strong>
+                  <strong>{{ t('external_trade_form.summary.label') }}</strong>
                 </template>
                 <template #amount>
                   <strong>
@@ -179,7 +179,7 @@
                 path="external_trade_form.summary.sell"
               >
                 <template #label>
-                  <strong>{{ $t('external_trade_form.summary.label') }}</strong>
+                  <strong>{{ t('external_trade_form.summary.label') }}</strong>
                 </template>
                 <template #amount>
                   <strong>
@@ -214,8 +214,8 @@
               outlined
               data-cy="fee"
               :required="!!feeCurrency"
-              :label="$t('external_trade_form.fee.label')"
-              :hint="$t('external_trade_form.fee.hint')"
+              :label="t('external_trade_form.fee.label')"
+              :hint="t('external_trade_form.fee.hint')"
               :error-messages="errorMessages['fee']"
               :rules="feeRules"
               @focus="delete errorMessages['fee']"
@@ -229,8 +229,8 @@
               data-cy="fee-currency"
               outlined
               persistent-hint
-              :label="$t('external_trade_form.fee_currency.label')"
-              :hint="$t('external_trade_form.fee_currency.hint')"
+              :label="t('external_trade_form.fee_currency.label')"
+              :hint="t('external_trade_form.fee_currency.hint')"
               :required="!!fee"
               :error-messages="errorMessages['feeCurrency']"
               :rules="feeCurrencyRules"
@@ -244,9 +244,9 @@
           data-cy="link"
           outlined
           prepend-inner-icon="mdi-link"
-          :label="$t('external_trade_form.link.label')"
+          :label="t('external_trade_form.link.label')"
           persistent-hint
-          :hint="$t('external_trade_form.link.hint')"
+          :hint="t('external_trade_form.link.hint')"
           :error-messages="errorMessages['link']"
           @focus="delete errorMessages['link']"
         />
@@ -256,9 +256,9 @@
           outlined
           data-cy="notes"
           class="mt-4"
-          :label="$t('external_trade_form.notes.label')"
+          :label="t('external_trade_form.notes.label')"
           persistent-hint
-          :hint="$t('external_trade_form.notes.hint')"
+          :hint="t('external_trade_form.notes.hint')"
           :error-messages="errorMessages['notes']"
           @focus="delete errorMessages['notes']"
         />
@@ -281,7 +281,7 @@ import {
   toRefs,
   watch
 } from 'vue';
-import i18n from '@/i18n';
+import { useI18n } from 'vue-i18n-composable';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { NewTrade, Trade, TradeType } from '@/services/history/types';
@@ -313,6 +313,7 @@ const ExternalTradeForm = defineComponent({
   },
   emits: ['input'],
   setup(props, { emit }) {
+    const { t } = useI18n();
     const { edit, saveData } = toRefs(props);
 
     const { getAssetSymbol } = useAssetInfoRetrieval();
@@ -343,38 +344,34 @@ const ExternalTradeForm = defineComponent({
     const feeCurrencyInput = ref<any>(null);
 
     const baseRules = [
-      (v: string) =>
-        !!v || i18n.t('external_trade_form.validation.non_empty_base')
+      (v: string) => !!v || t('external_trade_form.validation.non_empty_base')
     ];
     const quoteRules = [
-      (v: string) =>
-        !!v || i18n.t('external_trade_form.validation.non_empty_quote')
+      (v: string) => !!v || t('external_trade_form.validation.non_empty_quote')
     ];
     const amountRules = [
-      (v: string) =>
-        !!v || i18n.t('external_trade_form.validation.non_empty_amount')
+      (v: string) => !!v || t('external_trade_form.validation.non_empty_amount')
     ];
     const rateRules = [
-      (v: string) =>
-        !!v || i18n.t('external_trade_form.validation.non_empty_rate')
+      (v: string) => !!v || t('external_trade_form.validation.non_empty_rate')
     ];
     const quoteAmountRules = [
       (v: string) =>
-        !!v || i18n.t('external_trade_form.validation.non_empty_quote_amount')
+        !!v || t('external_trade_form.validation.non_empty_quote_amount')
     ];
 
     const feeRules = [
       (v: string) =>
         !!v ||
         !get(feeCurrency) ||
-        i18n.t('external_trade_form.validation.non_empty_fee')
+        t('external_trade_form.validation.non_empty_fee')
     ];
 
     const feeCurrencyRules = [
       (v: string) =>
         !!v ||
         !get(fee) ||
-        i18n.t('external_trade_form.validation.non_empty_fee_currency')
+        t('external_trade_form.validation.non_empty_fee_currency')
     ];
 
     const triggerFeeValidator = () => {
@@ -384,14 +381,14 @@ const ExternalTradeForm = defineComponent({
 
     const baseHint = computed<string>(() => {
       return get(type) === 'buy'
-        ? i18n.t('external_trade_form.buy_base').toString()
-        : i18n.t('external_trade_form.sell_base').toString();
+        ? t('external_trade_form.buy_base').toString()
+        : t('external_trade_form.sell_base').toString();
     });
 
     const quoteHint = computed<string>(() => {
       return get(type) === 'buy'
-        ? i18n.t('external_trade_form.buy_quote').toString()
-        : i18n.t('external_trade_form.sell_quote').toString();
+        ? t('external_trade_form.buy_quote').toString()
+        : t('external_trade_form.sell_quote').toString();
     });
 
     const shouldRenderSummary = computed<boolean>(() => {
@@ -539,7 +536,7 @@ const ExternalTradeForm = defineComponent({
         updateRate(true);
       } else if (!get(rate)) {
         set(errorMessages, {
-          rate: [i18n.t('external_trade_form.rate_not_found').toString()]
+          rate: [t('external_trade_form.rate_not_found').toString()]
         });
         useTimeoutFn(() => {
           set(errorMessages, {});
@@ -588,6 +585,7 @@ const ExternalTradeForm = defineComponent({
     });
 
     return {
+      t,
       triggerFeeValidator,
       getAssetSymbol,
       input,

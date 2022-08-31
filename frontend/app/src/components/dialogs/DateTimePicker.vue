@@ -75,8 +75,8 @@ import {
   toRefs,
   watch
 } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { timezones } from '@/data/timezones';
-import i18n from '@/i18n';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { DateFormat } from '@/types/date-format';
 import {
@@ -112,6 +112,7 @@ const useRules = (
   seconds: Ref<boolean>,
   allowEmpty: Ref<boolean>
 ) => {
+  const { t } = useI18n();
   const dateFormatRule = (date: string) => {
     const format = get(dateInputFormat);
     const dateFormat = getDateInputISOFormat(format);
@@ -123,27 +124,23 @@ const useRules = (
     if (get(seconds)) {
       return (
         isValid(date, format, true) ||
-        i18n
-          .t('date_time_picker.seconds_format', {
-            dateFormat
-          })
-          .toString()
+        t('date_time_picker.seconds_format', {
+          dateFormat
+        }).toString()
       );
     }
     return (
       isValid(date, format) ||
-      i18n
-        .t('date_time_picker.default_format', {
-          dateFormat
-        })
-        .toString()
+      t('date_time_picker.default_format', {
+        dateFormat
+      }).toString()
     );
   };
 
   const allRules = computed(() => get(rules).concat(dateFormatRule));
   const timezoneRule = computed(() => [
     (v: string) =>
-      !!v || i18n.t('date_time_picker.timezone_field.non_empty').toString()
+      !!v || t('date_time_picker.timezone_field.non_empty').toString()
   ]);
 
   return { allRules, timezoneRule };

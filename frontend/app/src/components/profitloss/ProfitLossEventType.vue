@@ -9,14 +9,16 @@
   </span>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
-import i18n from '@/i18n';
+import { computed, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { ProfitLossEventTypeEnum } from '@/types/reports';
 import { toCapitalCase } from '@/utils/text';
 
 type Resources = { [key in ProfitLossEventTypeEnum]: string };
+
+const { t } = useI18n();
 
 const icons: Resources = {
   [ProfitLossEventTypeEnum.TRADE]: 'mdi-shuffle-variant',
@@ -32,51 +34,37 @@ const icons: Resources = {
 };
 
 const names: Resources = {
-  [ProfitLossEventTypeEnum.TRADE]: i18n
-    .t('profit_loss_event_type.trade')
-    .toString(),
-  [ProfitLossEventTypeEnum.FEE]: i18n
-    .t('profit_loss_event_type.fee')
-    .toString(),
-  [ProfitLossEventTypeEnum.ASSET_MOVEMENT]: i18n
-    .t('profit_loss_event_type.asset_movement')
-    .toString(),
-  [ProfitLossEventTypeEnum.MARGIN_POSITION]: i18n
-    .t('profit_loss_event_type.margin_position')
-    .toString(),
-  [ProfitLossEventTypeEnum.LOAN]: i18n
-    .t('profit_loss_event_type.loan')
-    .toString(),
-  [ProfitLossEventTypeEnum.PREFORK_ACQUISITION]: i18n
-    .t('profit_loss_event_type.prefork_acquisition')
-    .toString(),
-  [ProfitLossEventTypeEnum.LEDGER_ACTION]: i18n
-    .t('profit_loss_event_type.ledger_action')
-    .toString(),
-  [ProfitLossEventTypeEnum.STAKING]: i18n
-    .t('profit_loss_event_type.staking')
-    .toString(),
-  [ProfitLossEventTypeEnum.HISTORY_BASE_ENTRY]: i18n
-    .t('profit_loss_event_type.history_base_entry')
-    .toString(),
-  [ProfitLossEventTypeEnum.TRANSACTION_EVENT]: i18n
-    .t('profit_loss_event_type.transaction_event')
-    .toString()
+  [ProfitLossEventTypeEnum.TRADE]: t('profit_loss_event_type.trade').toString(),
+  [ProfitLossEventTypeEnum.FEE]: t('profit_loss_event_type.fee').toString(),
+  [ProfitLossEventTypeEnum.ASSET_MOVEMENT]: t(
+    'profit_loss_event_type.asset_movement'
+  ).toString(),
+  [ProfitLossEventTypeEnum.MARGIN_POSITION]: t(
+    'profit_loss_event_type.margin_position'
+  ).toString(),
+  [ProfitLossEventTypeEnum.LOAN]: t('profit_loss_event_type.loan').toString(),
+  [ProfitLossEventTypeEnum.PREFORK_ACQUISITION]: t(
+    'profit_loss_event_type.prefork_acquisition'
+  ).toString(),
+  [ProfitLossEventTypeEnum.LEDGER_ACTION]: t(
+    'profit_loss_event_type.ledger_action'
+  ).toString(),
+  [ProfitLossEventTypeEnum.STAKING]: t(
+    'profit_loss_event_type.staking'
+  ).toString(),
+  [ProfitLossEventTypeEnum.HISTORY_BASE_ENTRY]: t(
+    'profit_loss_event_type.history_base_entry'
+  ).toString(),
+  [ProfitLossEventTypeEnum.TRANSACTION_EVENT]: t(
+    'profit_loss_event_type.transaction_event'
+  ).toString()
 };
 
-export default defineComponent({
-  name: 'ProfitLossEventType',
-  props: {
-    type: { required: true, type: String as PropType<ProfitLossEventTypeEnum> }
-  },
-  setup(props) {
-    const { type } = toRefs(props);
-    const icon = computed(() => icons[get(type)] ?? 'mdi-help');
-    const name = computed(() => names[get(type)] ?? toCapitalCase(get(type)));
-    return {
-      icon,
-      name
-    };
-  }
+const props = defineProps({
+  type: { required: true, type: String as PropType<ProfitLossEventTypeEnum> }
 });
+
+const { type } = toRefs(props);
+const icon = computed(() => icons[get(type)] ?? 'mdi-help');
+const name = computed(() => names[get(type)] ?? toCapitalCase(get(type)));
 </script>

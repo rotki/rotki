@@ -22,10 +22,10 @@
             mobile-breakpoint="0"
           >
             <v-tab>
-              {{ $t('notes_menu.tabs.general') }}
+              {{ t('notes_menu.tabs.general') }}
             </v-tab>
             <v-tab v-if="locationName" class="ml-2">
-              {{ $t('notes_menu.tabs.in_this_page', { page: locationName }) }}
+              {{ t('notes_menu.tabs.in_this_page', { page: locationName }) }}
             </v-tab>
           </v-tabs>
         </v-col>
@@ -44,60 +44,51 @@
   </v-navigation-drawer>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import { computed, defineComponent, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import UserNotesList from '@/components/UserNotesList.vue';
 import { useRoute } from '@/composables/common';
 import { routesRef } from '@/router/routes';
 
-export default defineComponent({
-  name: 'UserNotesSidebar',
-  components: { UserNotesList },
-  props: {
-    visible: { required: true, type: Boolean }
-  },
-  emits: ['visible:update', 'about'],
-  setup(_, { emit }) {
-    const tab = ref<number>(0);
-    const visibleUpdate = (_visible: boolean) => {
-      emit('visible:update', _visible);
-    };
+const { t } = useI18n();
 
-    const route = useRoute();
+defineProps({
+  visible: { required: true, type: Boolean }
+});
 
-    const location = computed<string>(() => {
-      const meta = get(route).meta;
-      if (meta && meta.noteLocation) return meta.noteLocation;
+const emit = defineEmits(['visible:update', 'about']);
+const tab = ref<number>(0);
+const visibleUpdate = (_visible: boolean) => {
+  emit('visible:update', _visible);
+};
 
-      let noteLocation = '';
-      get(route).matched.forEach(matched => {
-        if (matched.meta.noteLocation) {
-          noteLocation = matched.meta.noteLocation;
-        }
-      });
+const route = useRoute();
 
-      return noteLocation;
-    });
+const location = computed<string>(() => {
+  const meta = get(route).meta;
+  if (meta && meta.noteLocation) return meta.noteLocation;
 
-    const Routes = get(routesRef);
-    const locationName = computed<string>(() => {
-      // @ts-ignore
-      return Routes[get(location)]?.text ?? '';
-    });
+  let noteLocation = '';
+  get(route).matched.forEach(matched => {
+    if (matched.meta.noteLocation) {
+      noteLocation = matched.meta.noteLocation;
+    }
+  });
 
-    watch(locationName, locationName => {
-      if (locationName === '') {
-        set(tab, 0);
-      }
-    });
+  return noteLocation;
+});
 
-    return {
-      tab,
-      location,
-      locationName,
-      visibleUpdate
-    };
+const Routes = get(routesRef);
+const locationName = computed<string>(() => {
+  // @ts-ignore
+  return Routes[get(location)]?.text ?? '';
+});
+
+watch(locationName, locationName => {
+  if (locationName === '') {
+    set(tab, 0);
   }
 });
 </script>

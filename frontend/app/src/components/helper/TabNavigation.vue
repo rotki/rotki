@@ -46,6 +46,7 @@
 <script lang="ts">
 import { get } from '@vueuse/core';
 import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
+import { useTheme } from '@/composables/common';
 import { checkIfDevelopment } from '@/utils/env-utils';
 
 export interface TabContent {
@@ -74,18 +75,17 @@ export default defineComponent({
       return route.indexOf(tab.route) >= 0 && tab.route === get(selectedTab);
     };
 
+    const { currentBreakpoint } = useTheme();
+    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+
     return {
+      xsOnly,
       isDev: checkIfDevelopment(),
       visibleTabs,
       selectedTab,
       getClass,
       isRouterVisible
     };
-  },
-  computed: {
-    xsOnly(): boolean {
-      return this.$vuetify.breakpoint.xsOnly;
-    }
   }
 });
 </script>

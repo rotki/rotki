@@ -2,7 +2,7 @@
   <div>
     <div v-if="enabled">
       <v-switch
-        :label="$t('premium_credentials.restore_synced_database')"
+        :label="tc('premium_credentials.restore_synced_database')"
         :value="syncDatabase"
         @change="updateSyncDatabase"
       />
@@ -13,7 +13,7 @@
         :disabled="loading"
         class="premium-settings__fields__api-key"
         :rules="apiKeyRules"
-        :label="$t('premium_credentials.label_api_key')"
+        :label="tc('premium_credentials.label_api_key')"
         @input="updateApiKey"
         @paste="onApiKeyPaste"
       />
@@ -23,7 +23,7 @@
         :disabled="loading"
         class="premium-settings__fields__api-secret"
         prepend-icon="mdi-lock"
-        :label="$t('premium_credentials.label_api_secret')"
+        :label="tc('premium_credentials.label_api_secret')"
         :rules="apiSecretRules"
         @input="updateApiSecret"
         @paste="onApiSecretPaste"
@@ -32,87 +32,68 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, toRefs, watch } from 'vue';
-import { IVueI18n } from 'vue-i18n';
+<script setup lang="ts">
+import { toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import i18n from '@/i18n';
 import { trimOnPaste } from '@/utils/event';
 
-const setupValidationRules = (i18n: IVueI18n) => {
-  const apiKeyRules = [
-    (v: string) =>
-      !!v || i18n.t('premium_credentials.validation.non_empty_key').toString()
-  ];
-  const apiSecretRules = [
-    (v: string) =>
-      !!v ||
-      i18n.t('premium_credentials.validation.non_empty_secret').toString()
-  ];
-  return { apiKeyRules, apiSecretRules };
+const { t, tc } = useI18n();
+const apiKeyRules = [
+  (v: string) =>
+    !!v || t('premium_credentials.validation.non_empty_key').toString()
+];
+const apiSecretRules = [
+  (v: string) =>
+    !!v || t('premium_credentials.validation.non_empty_secret').toString()
+];
+
+const props = defineProps({
+  loading: { required: true, type: Boolean },
+  enabled: { required: true, type: Boolean },
+  apiSecret: { required: true, type: String },
+  apiKey: { required: true, type: String },
+  syncDatabase: { required: true, type: Boolean }
+});
+
+const emit = defineEmits([
+  'update:api-key',
+  'update:api-secret',
+  'update:sync-database'
+]);
+const { enabled } = toRefs(props);
+
+const updateApiKey = (apiKey: string) => {
+  emit('update:api-key', apiKey?.trim() ?? '');
 };
 
-const PremiumCredentials = defineComponent({
-  name: 'PremiumCredentials',
-  components: { RevealableInput },
-  props: {
-    loading: { required: true, type: Boolean },
-    enabled: { required: true, type: Boolean },
-    apiSecret: { required: true, type: String },
-    apiKey: { required: true, type: String },
-    syncDatabase: { required: true, type: Boolean }
-  },
-  emits: ['update:api-key', 'update:api-secret', 'update:sync-database'],
-  setup(props, { emit }) {
-    const { enabled } = toRefs(props);
-    const showKey = ref(false);
-    const showSecret = ref(false);
+const updateApiSecret = (apiSecret: string) => {
+  emit('update:api-secret', apiSecret?.trim() ?? '');
+};
 
-    const updateApiKey = (apiKey: string) => {
-      emit('update:api-key', apiKey?.trim() ?? '');
-    };
+const updateSyncDatabase = (enabled: boolean | null) => {
+  emit('update:sync-database', !!enabled);
+};
 
-    const updateApiSecret = (apiSecret: string) => {
-      emit('update:api-secret', apiSecret?.trim() ?? '');
-    };
-
-    const updateSyncDatabase = (enabled: boolean | null) => {
-      emit('update:sync-database', !!enabled);
-    };
-
-    const onApiKeyPaste = (_event: ClipboardEvent) => {
-      const paste = trimOnPaste(_event);
-      if (paste) {
-        updateApiKey(paste);
-      }
-    };
-
-    const onApiSecretPaste = (_event: ClipboardEvent) => {
-      const paste = trimOnPaste(_event);
-      if (paste) {
-        updateApiSecret(paste);
-      }
-    };
-
-    watch(enabled, enabled => {
-      if (enabled) {
-        return;
-      }
-      updateApiKey('');
-      updateApiSecret('');
-    });
-
-    return {
-      updateApiKey,
-      updateApiSecret,
-      updateSyncDatabase,
-      onApiKeyPaste,
-      onApiSecretPaste,
-      showKey,
-      showSecret,
-      ...setupValidationRules(i18n)
-    };
+const onApiKeyPaste = (_event: ClipboardEvent) => {
+  const paste = trimOnPaste(_event);
+  if (paste) {
+    updateApiKey(paste);
   }
+};
+
+const onApiSecretPaste = (_event: ClipboardEvent) => {
+  const paste = trimOnPaste(_event);
+  if (paste) {
+    updateApiSecret(paste);
+  }
+};
+
+watch(enabled, enabled => {
+  if (enabled) {
+    return;
+  }
+  updateApiKey('');
+  updateApiSecret('');
 });
-export default PremiumCredentials;
 </script>

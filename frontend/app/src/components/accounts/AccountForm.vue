@@ -52,7 +52,7 @@
         data-cy="account-label-field"
         outlined
         class="account-form__label"
-        :label="$t('common.name')"
+        :label="t('common.name')"
         :disabled="loading"
       />
 
@@ -82,6 +82,7 @@ import {
   toRefs,
   watch
 } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
@@ -99,7 +100,6 @@ import TagInput from '@/components/inputs/TagInput.vue';
 import { setupMessages } from '@/composables/common';
 import { setupTaskStatus } from '@/composables/tasks';
 import { useInterop } from '@/electron-interop';
-import i18n from '@/i18n';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import {
@@ -152,6 +152,7 @@ const AccountForm = defineComponent({
   emits: ['input'],
   setup(props, { emit }) {
     const { context, edit } = toRefs(props);
+    const { t } = useI18n();
 
     const isEdit = computed(() => !!get(edit));
     const xpub = ref<XpubPayload | null>(null);
@@ -321,14 +322,15 @@ const AccountForm = defineComponent({
         });
         return true;
       } catch (e: any) {
-        const title = i18n
-          .t('blockchain_balances.metamask_import.error.title')
-          .toString();
-        const description = i18n
-          .t('blockchain_balances.metamask_import.error.description', {
+        const title = t(
+          'blockchain_balances.metamask_import.error.title'
+        ).toString();
+        const description = t(
+          'blockchain_balances.metamask_import.error.description',
+          {
             error: e.message
-          })
-          .toString();
+          }
+        ).toString();
         const { notify } = useNotifications();
         notify({
           title,
@@ -385,12 +387,10 @@ const AccountForm = defineComponent({
           return false;
         }
         await setMessage({
-          description: i18n
-            .t('account_form.error.description', {
-              error: e.message
-            })
-            .toString(),
-          title: i18n.t('account_form.error.title').toString(),
+          description: t('account_form.error.description', {
+            error: e.message
+          }).toString(),
+          title: t('account_form.error.title').toString(),
           success: false
         });
         return false;
@@ -419,6 +419,7 @@ const AccountForm = defineComponent({
     };
 
     return {
+      t,
       form,
       addresses,
       xpub,

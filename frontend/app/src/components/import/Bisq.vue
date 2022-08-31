@@ -2,23 +2,20 @@
   <import-source source="bisq_trades">
     <template #upload-title>
       <i18n tag="span" path="import_data.bisq.import">
-        <strong>{{ $t('import_data.bisq.import_trade') }}</strong>
+        <strong>{{ t('import_data.bisq.import_trade') }}</strong>
       </i18n>
     </template>
     <i18n tag="span" path="import_data.bisq.note">
-      <strong>{{ $t('import_data.bisq.source_name') }}</strong>
+      <strong>{{ t('import_data.bisq.source_name') }}</strong>
     </i18n>
     <ul>
-      <li>{{ $t('import_data.bisq.line_one') }}</li>
+      <li>{{ t('import_data.bisq.line_one') }}</li>
     </ul>
   </import-source>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 import ImportSource from '@/components/import/ImportSource.vue';
 
-export default defineComponent({
-  name: 'BisqImport',
-  components: { ImportSource }
-});
+const { t } = useI18n();
 </script>

@@ -11,7 +11,7 @@
       <menu-tooltip-button
         class-name="secondary--text text--lighten-4"
         :tooltip="
-          $t('global_search.menu_tooltip', {
+          t('global_search.menu_tooltip', {
             modifier,
             key
           }).toString()
@@ -27,7 +27,7 @@
         v-model="selected"
         no-filter
         filled
-        :no-data-text="$tc('global_search.no_actions')"
+        :no-data-text="tc('global_search.no_actions')"
         :search-input.sync="search"
         :background-color="dark ? 'black' : 'white'"
         hide-details
@@ -35,7 +35,7 @@
         auto-select-first
         prepend-inner-icon="mdi-magnify"
         append-icon=""
-        :placeholder="$tc('global_search.search_placeholder')"
+        :placeholder="tc('global_search.search_placeholder')"
         @input="change"
       >
         <template #item="{ item }">
@@ -83,7 +83,7 @@
             </span>
             <v-spacer />
             <div v-if="item.price" class="text-right">
-              <div class="text-caption">{{ $tc('common.price') }}:</div>
+              <div class="text-caption">{{ tc('common.price') }}:</div>
               <amount-display
                 class="font-weight-bold"
                 :fiat-currency="currencySymbol"
@@ -91,7 +91,7 @@
               />
             </div>
             <div v-if="item.total" class="text-right">
-              <div class="text-caption">{{ $tc('common.total') }}:</div>
+              <div class="text-caption">{{ tc('common.total') }}:</div>
               <amount-display
                 class="font-weight-bold"
                 :fiat-currency="currencySymbol"
@@ -104,18 +104,12 @@
     </div>
   </v-dialog>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import {
-  computed,
-  defineComponent,
-  nextTick,
-  onBeforeMount,
-  ref,
-  watch
-} from 'vue';
+import { computed, nextTick, onBeforeMount, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
@@ -123,7 +117,6 @@ import { TradeLocationData } from '@/components/history/type';
 import { setupLocationInfo } from '@/composables/balances';
 import { useRouter, useTheme } from '@/composables/common';
 import { interop } from '@/electron-interop';
-import i18n from '@/i18n';
 import { routesRef } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { useBalancesStore } from '@/store/balances';
@@ -149,376 +142,353 @@ type SearchItem = {
 
 type SearchItemWithoutValue = Omit<SearchItem, 'value'>;
 
-export default defineComponent({
-  name: 'GlobalSearch',
-  components: { LocationIcon, AdaptiveWrapper, MenuTooltipButton },
-  setup() {
-    const Routes = get(routesRef);
-    const open = ref<boolean>(false);
-    const isMac = ref<boolean>(false);
+const { t, tc } = useI18n();
 
-    const input = ref<any>(null);
-    const selected = ref<number | string>('');
-    const search = ref<string>('');
+const Routes = get(routesRef);
+const open = ref<boolean>(false);
+const isMac = ref<boolean>(false);
 
-    const modifier = computed<string>(() => (get(isMac) ? 'Cmd' : 'Ctrl'));
-    const key = '/';
+const input = ref<any>(null);
+const selected = ref<number | string>('');
+const search = ref<string>('');
 
-    const router = useRouter();
+const modifier = computed<string>(() => (get(isMac) ? 'Cmd' : 'Ctrl'));
+const key = '/';
 
-    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-    const { assetSymbol } = useAssetInfoRetrieval();
-    const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
-    const { aggregatedBalances } = useBlockchainBalancesStore();
-    const { balancesByLocation } = storeToRefs(useBalancesStore());
-    const { getLocation } = setupLocationInfo();
-    const { dark } = useTheme();
+const router = useRouter();
 
-    const items = computed<SearchItem[]>(() => {
-      const routeItems: SearchItemWithoutValue[] = [
-        { ...Routes.DASHBOARD },
-        {
-          ...Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
-          texts: [
-            Routes.ACCOUNTS_BALANCES.text,
-            Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.text
-          ]
-        },
-        {
-          ...Routes.ACCOUNTS_BALANCES_EXCHANGE,
-          texts: [
-            Routes.ACCOUNTS_BALANCES.text,
-            Routes.ACCOUNTS_BALANCES_EXCHANGE.text
-          ]
-        },
-        {
-          ...Routes.ACCOUNTS_BALANCES_MANUAL,
-          texts: [
-            Routes.ACCOUNTS_BALANCES.text,
-            Routes.ACCOUNTS_BALANCES_MANUAL.text
-          ]
-        },
-        {
-          ...Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE,
-          texts: [
-            Routes.ACCOUNTS_BALANCES.text,
-            Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.text
-          ]
-        },
-        { ...Routes.NFTS },
-        {
-          ...Routes.HISTORY_TRADES,
-          texts: [Routes.HISTORY.text, Routes.HISTORY_TRADES.text]
-        },
-        {
-          ...Routes.HISTORY_DEPOSITS_WITHDRAWALS,
-          texts: [Routes.HISTORY.text, Routes.HISTORY_DEPOSITS_WITHDRAWALS.text]
-        },
-        {
-          ...Routes.HISTORY_TRANSACTIONS,
-          texts: [Routes.HISTORY.text, Routes.HISTORY_TRANSACTIONS.text]
-        },
-        {
-          ...Routes.HISTORY_LEDGER_ACTIONS,
-          texts: [Routes.HISTORY.text, Routes.HISTORY_LEDGER_ACTIONS.text]
-        },
-        {
-          ...Routes.DEFI_OVERVIEW,
-          texts: [Routes.DEFI.text, Routes.DEFI_OVERVIEW.text]
-        },
-        {
-          ...Routes.DEFI_DEPOSITS_PROTOCOLS,
-          texts: [
-            Routes.DEFI.text,
-            Routes.DEFI_DEPOSITS.text,
-            Routes.DEFI_DEPOSITS_PROTOCOLS.text
-          ]
-        },
-        {
-          ...Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2,
-          texts: [
-            Routes.DEFI.text,
-            Routes.DEFI_DEPOSITS.text,
-            Routes.DEFI_DEPOSITS_LIQUIDITY.text,
-            Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2.text
-          ]
-        },
-        {
-          ...Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3,
-          texts: [
-            Routes.DEFI.text,
-            Routes.DEFI_DEPOSITS.text,
-            Routes.DEFI_DEPOSITS_LIQUIDITY.text,
-            Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3.text
-          ]
-        },
-        {
-          ...Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
-          texts: [
-            Routes.DEFI.text,
-            Routes.DEFI_DEPOSITS.text,
-            Routes.DEFI_DEPOSITS_LIQUIDITY.text,
-            Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER.text
-          ]
-        },
-        {
-          ...Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP,
-          texts: [
-            Routes.DEFI.text,
-            Routes.DEFI_DEPOSITS.text,
-            Routes.DEFI_DEPOSITS_LIQUIDITY.text,
-            Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP.text
-          ]
-        },
-        {
-          ...Routes.DEFI_LIABILITIES,
-          texts: [Routes.DEFI.text, Routes.DEFI_LIABILITIES.text]
-        },
-        {
-          ...Routes.DEFI_DEX_TRADES,
-          texts: [Routes.DEFI.text, Routes.DEFI_DEX_TRADES.text]
-        },
-        {
-          ...Routes.DEFI_AIRDROPS,
-          texts: [Routes.DEFI.text, Routes.DEFI_AIRDROPS.text]
-        },
-        { ...Routes.STATISTICS },
-        { ...Routes.STAKING },
-        { ...Routes.PROFIT_LOSS_REPORTS },
-        { ...Routes.ASSET_MANAGER },
-        { ...Routes.PRICE_MANAGER },
-        { ...Routes.ETH_ADDRESS_BOOK_MANAGER },
-        {
-          ...Routes.API_KEYS_ROTKI_PREMIUM,
-          texts: [Routes.API_KEYS.text, Routes.API_KEYS_ROTKI_PREMIUM.text]
-        },
-        {
-          ...Routes.API_KEYS_EXCHANGES,
-          texts: [Routes.API_KEYS.text, Routes.API_KEYS_EXCHANGES.text]
-        },
-        {
-          ...Routes.API_KEYS_EXTERNAL_SERVICES,
-          texts: [Routes.API_KEYS.text, Routes.API_KEYS_EXTERNAL_SERVICES.text]
-        },
-        { ...Routes.IMPORT },
-        {
-          ...Routes.SETTINGS_GENERAL,
-          texts: [Routes.SETTINGS.text, Routes.SETTINGS_GENERAL.text]
-        },
-        {
-          ...Routes.SETTINGS_ACCOUNTING,
-          texts: [Routes.SETTINGS.text, Routes.SETTINGS_ACCOUNTING.text]
-        },
-        {
-          ...Routes.SETTINGS_DATA_SECURITY,
-          texts: [Routes.SETTINGS.text, Routes.SETTINGS_DATA_SECURITY.text]
-        },
-        {
-          ...Routes.SETTINGS_MODULES,
-          texts: [Routes.SETTINGS.text, Routes.SETTINGS_MODULES.text]
-        }
-      ];
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { assetSymbol } = useAssetInfoRetrieval();
+const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
+const { aggregatedBalances } = useBlockchainBalancesStore();
+const { balancesByLocation } = storeToRefs(useBalancesStore());
+const { getLocation } = setupLocationInfo();
+const { dark } = useTheme();
 
-      const exchangeItems: SearchItemWithoutValue[] = get(
-        connectedExchanges
-      ).map((exchange: Exchange) => {
-        const identifier = exchange.location;
-        const name = exchange.name;
+const items = computed<SearchItem[]>(() => {
+  const routeItems: SearchItemWithoutValue[] = [
+    { ...Routes.DASHBOARD },
+    {
+      ...Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
+      texts: [
+        Routes.ACCOUNTS_BALANCES.text,
+        Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.text
+      ]
+    },
+    {
+      ...Routes.ACCOUNTS_BALANCES_EXCHANGE,
+      texts: [
+        Routes.ACCOUNTS_BALANCES.text,
+        Routes.ACCOUNTS_BALANCES_EXCHANGE.text
+      ]
+    },
+    {
+      ...Routes.ACCOUNTS_BALANCES_MANUAL,
+      texts: [
+        Routes.ACCOUNTS_BALANCES.text,
+        Routes.ACCOUNTS_BALANCES_MANUAL.text
+      ]
+    },
+    {
+      ...Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE,
+      texts: [
+        Routes.ACCOUNTS_BALANCES.text,
+        Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.text
+      ]
+    },
+    { ...Routes.NFTS },
+    {
+      ...Routes.HISTORY_TRADES,
+      texts: [Routes.HISTORY.text, Routes.HISTORY_TRADES.text]
+    },
+    {
+      ...Routes.HISTORY_DEPOSITS_WITHDRAWALS,
+      texts: [Routes.HISTORY.text, Routes.HISTORY_DEPOSITS_WITHDRAWALS.text]
+    },
+    {
+      ...Routes.HISTORY_TRANSACTIONS,
+      texts: [Routes.HISTORY.text, Routes.HISTORY_TRANSACTIONS.text]
+    },
+    {
+      ...Routes.HISTORY_LEDGER_ACTIONS,
+      texts: [Routes.HISTORY.text, Routes.HISTORY_LEDGER_ACTIONS.text]
+    },
+    {
+      ...Routes.DEFI_OVERVIEW,
+      texts: [Routes.DEFI.text, Routes.DEFI_OVERVIEW.text]
+    },
+    {
+      ...Routes.DEFI_DEPOSITS_PROTOCOLS,
+      texts: [
+        Routes.DEFI.text,
+        Routes.DEFI_DEPOSITS.text,
+        Routes.DEFI_DEPOSITS_PROTOCOLS.text
+      ]
+    },
+    {
+      ...Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2,
+      texts: [
+        Routes.DEFI.text,
+        Routes.DEFI_DEPOSITS.text,
+        Routes.DEFI_DEPOSITS_LIQUIDITY.text,
+        Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2.text
+      ]
+    },
+    {
+      ...Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3,
+      texts: [
+        Routes.DEFI.text,
+        Routes.DEFI_DEPOSITS.text,
+        Routes.DEFI_DEPOSITS_LIQUIDITY.text,
+        Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3.text
+      ]
+    },
+    {
+      ...Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
+      texts: [
+        Routes.DEFI.text,
+        Routes.DEFI_DEPOSITS.text,
+        Routes.DEFI_DEPOSITS_LIQUIDITY.text,
+        Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER.text
+      ]
+    },
+    {
+      ...Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP,
+      texts: [
+        Routes.DEFI.text,
+        Routes.DEFI_DEPOSITS.text,
+        Routes.DEFI_DEPOSITS_LIQUIDITY.text,
+        Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP.text
+      ]
+    },
+    {
+      ...Routes.DEFI_LIABILITIES,
+      texts: [Routes.DEFI.text, Routes.DEFI_LIABILITIES.text]
+    },
+    {
+      ...Routes.DEFI_DEX_TRADES,
+      texts: [Routes.DEFI.text, Routes.DEFI_DEX_TRADES.text]
+    },
+    {
+      ...Routes.DEFI_AIRDROPS,
+      texts: [Routes.DEFI.text, Routes.DEFI_AIRDROPS.text]
+    },
+    { ...Routes.STATISTICS },
+    { ...Routes.STAKING },
+    { ...Routes.PROFIT_LOSS_REPORTS },
+    { ...Routes.ASSET_MANAGER },
+    { ...Routes.PRICE_MANAGER },
+    { ...Routes.ETH_ADDRESS_BOOK_MANAGER },
+    {
+      ...Routes.API_KEYS_ROTKI_PREMIUM,
+      texts: [Routes.API_KEYS.text, Routes.API_KEYS_ROTKI_PREMIUM.text]
+    },
+    {
+      ...Routes.API_KEYS_EXCHANGES,
+      texts: [Routes.API_KEYS.text, Routes.API_KEYS_EXCHANGES.text]
+    },
+    {
+      ...Routes.API_KEYS_EXTERNAL_SERVICES,
+      texts: [Routes.API_KEYS.text, Routes.API_KEYS_EXTERNAL_SERVICES.text]
+    },
+    { ...Routes.IMPORT },
+    {
+      ...Routes.SETTINGS_GENERAL,
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_GENERAL.text]
+    },
+    {
+      ...Routes.SETTINGS_ACCOUNTING,
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_ACCOUNTING.text]
+    },
+    {
+      ...Routes.SETTINGS_DATA_SECURITY,
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_DATA_SECURITY.text]
+    },
+    {
+      ...Routes.SETTINGS_MODULES,
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_MODULES.text]
+    }
+  ];
 
-        return {
-          location: getLocation(identifier),
-          route: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${identifier}`,
-          texts: [
-            Routes.ACCOUNTS_BALANCES.text,
-            Routes.ACCOUNTS_BALANCES_EXCHANGE.text,
-            name
-          ]
-        };
-      });
+  const exchangeItems: SearchItemWithoutValue[] = get(connectedExchanges).map(
+    (exchange: Exchange) => {
+      const identifier = exchange.location;
+      const name = exchange.name;
 
-      const actionItems: SearchItemWithoutValue[] = [
-        {
-          text: i18n.t('exchange_settings.dialog.add.title').toString(),
-          route: `${Routes.API_KEYS_EXCHANGES.route}?add=true`,
-          icon: 'mdi-wallet-plus'
-        },
-        {
-          text: i18n.t('blockchain_balances.form_dialog.add_title').toString(),
-          route: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}?add=true`,
-          icon: 'mdi-lock-open-plus'
-        },
-        {
-          text: i18n.t('manual_balances.dialog.add.title').toString(),
-          route: `${Routes.ACCOUNTS_BALANCES_MANUAL.route}?add=true`,
-          icon: 'mdi-note-plus'
-        },
-        {
-          text: i18n.t('closed_trades.dialog.add.title').toString(),
-          route: `${Routes.HISTORY_TRADES.route}?add=true`,
-          icon: 'mdi-plus-box-multiple'
-        },
-        {
-          text: i18n.t('ledger_actions.dialog.add.title').toString(),
-          route: `${Routes.HISTORY_LEDGER_ACTIONS.route}?add=true`,
-          icon: 'mdi-text-box-plus'
-        },
-        {
-          text: i18n.t('asset_management.add_title').toString(),
-          route: `${Routes.ASSET_MANAGER.route}?add=true`,
-          icon: 'mdi-plus-circle-multiple-outline'
-        },
-        {
-          text: i18n.t('price_management.dialog.add_title').toString(),
-          route: `${Routes.PRICE_MANAGER.route}?add=true`,
-          icon: 'mdi-database-plus'
-        }
-      ];
+      return {
+        location: getLocation(identifier),
+        route: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${identifier}`,
+        texts: [
+          Routes.ACCOUNTS_BALANCES.text,
+          Routes.ACCOUNTS_BALANCES_EXCHANGE.text,
+          name
+        ]
+      };
+    }
+  );
 
-      const assetItems: SearchItemWithoutValue[] = (
-        get(aggregatedBalances()) as AssetBalanceWithPrice[]
-      ).map(balance => {
-        const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
-        const asset = balance.asset;
+  const actionItems: SearchItemWithoutValue[] = [
+    {
+      text: t('exchange_settings.dialog.add.title').toString(),
+      route: `${Routes.API_KEYS_EXCHANGES.route}?add=true`,
+      icon: 'mdi-wallet-plus'
+    },
+    {
+      text: t('blockchain_balances.form_dialog.add_title').toString(),
+      route: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}?add=true`,
+      icon: 'mdi-lock-open-plus'
+    },
+    {
+      text: t('manual_balances.dialog.add.title').toString(),
+      route: `${Routes.ACCOUNTS_BALANCES_MANUAL.route}?add=true`,
+      icon: 'mdi-note-plus'
+    },
+    {
+      text: t('closed_trades.dialog.add.title').toString(),
+      route: `${Routes.HISTORY_TRADES.route}?add=true`,
+      icon: 'mdi-plus-box-multiple'
+    },
+    {
+      text: t('ledger_actions.dialog.add.title').toString(),
+      route: `${Routes.HISTORY_LEDGER_ACTIONS.route}?add=true`,
+      icon: 'mdi-text-box-plus'
+    },
+    {
+      text: t('asset_management.add_title').toString(),
+      route: `${Routes.ASSET_MANAGER.route}?add=true`,
+      icon: 'mdi-plus-circle-multiple-outline'
+    },
+    {
+      text: t('price_management.dialog.add_title').toString(),
+      route: `${Routes.PRICE_MANAGER.route}?add=true`,
+      icon: 'mdi-database-plus'
+    }
+  ];
 
-        return {
-          route: Routes.ASSETS.route.replace(':identifier', asset),
-          texts: [i18n.t('common.asset').toString(), get(assetSymbol(asset))],
-          price,
-          asset
-        };
-      });
-
-      const locationBalances = get(balancesByLocation) as Record<
-        string,
-        BigNumber
-      >;
-      const locationItems: SearchItemWithoutValue[] = Object.keys(
-        locationBalances
-      ).map(identifier => {
-        const total = locationBalances?.[identifier] ?? undefined;
-
-        const location: TradeLocationData = getLocation(identifier);
-
-        return {
-          route: Routes.LOCATIONS.route.replace(
-            ':identifier',
-            location.identifier
-          ),
-          texts: [i18n.t('common.location').toString(), location.name],
-          location,
-          total
-        };
-      });
-
-      return [
-        ...routeItems,
-        ...exchangeItems,
-        ...actionItems,
-        ...assetItems,
-        ...locationItems
-      ].map((item, index) => {
-        const text = item.texts ? item.texts.join(' ') : item.text;
-        return {
-          ...item,
-          value: index,
-          text: text
-            ?.replace(/[^\w\s]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim()
-        };
-      });
-    });
-
-    const filteredItems = computed<SearchItem[]>(() => {
-      const keyword = get(search)?.toLowerCase() ?? '';
-      if (!keyword) {
-        return get(items);
-      }
-
-      // Filter items text by checking how many word on keyword that appear.
-      return get(items)
-        .filter(item => {
-          let matchedPoints: number = 0;
-          keyword
-            .trim()
-            .split(' ')
-            .forEach(word => {
-              const indexOf = item.text!.toLowerCase().indexOf(word);
-              if (indexOf > -1) matchedPoints++;
-              if (indexOf === 0) matchedPoints += 0.5;
-            });
-          item.matchedPoints = matchedPoints;
-          return matchedPoints > 0;
-        })
-        .sort((a, b) => (b.matchedPoints ?? 0) - (a.matchedPoints ?? 0));
-    });
-
-    watch(search, () => {
-      const el = get(input)?.$el;
-      if (el) {
-        const className = 'v-list-item--highlighted';
-        const highlighted = el.querySelectorAll(`.${className}`).length;
-        if (highlighted === 0) {
-          nextTick(() => {
-            const elementToUpdate = el.querySelectorAll('.v-list-item');
-            if (elementToUpdate.length > 0) {
-              elementToUpdate[0].classList.add(className);
-            }
-          });
-        }
-      }
-    });
-
-    watch(open, open => {
-      nextTick(() => {
-        if (open) {
-          setTimeout(() => {
-            get(input)?.$refs?.input?.focus?.();
-          }, 100);
-        }
-        set(selected, '');
-        set(search, '');
-      });
-    });
-
-    const change = async (index: number) => {
-      const item: SearchItem = get(items)[index];
-      if (item) {
-        if (item.route) {
-          await router.push(item.route);
-        }
-        item?.action?.();
-        set(open, false);
-      }
-    };
-
-    onBeforeMount(async () => {
-      set(isMac, await interop.isMac());
-
-      window.addEventListener('keydown', async event => {
-        // Mac use Command, Others use Control
-        if (
-          ((get(isMac) && event.metaKey) || (!get(isMac) && event.ctrlKey)) &&
-          event.key === key
-        ) {
-          set(open, true);
-        }
-      });
-    });
+  const assetItems: SearchItemWithoutValue[] = (
+    get(aggregatedBalances()) as AssetBalanceWithPrice[]
+  ).map(balance => {
+    const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
+    const asset = balance.asset;
 
     return {
-      dark,
-      currencySymbol,
-      input,
-      filteredItems,
-      selected,
-      search,
-      change,
-      modifier,
-      key,
-      open
+      route: Routes.ASSETS.route.replace(':identifier', asset),
+      texts: [t('common.asset').toString(), get(assetSymbol(asset))],
+      price,
+      asset
     };
+  });
+
+  const locationBalances = get(balancesByLocation) as Record<string, BigNumber>;
+  const locationItems: SearchItemWithoutValue[] = Object.keys(
+    locationBalances
+  ).map(identifier => {
+    const total = locationBalances?.[identifier] ?? undefined;
+
+    const location: TradeLocationData = getLocation(identifier);
+
+    return {
+      route: Routes.LOCATIONS.route.replace(':identifier', location.identifier),
+      texts: [t('common.location').toString(), location.name],
+      location,
+      total
+    };
+  });
+
+  return [
+    ...routeItems,
+    ...exchangeItems,
+    ...actionItems,
+    ...assetItems,
+    ...locationItems
+  ].map((item, index) => {
+    const text = item.texts ? item.texts.join(' ') : item.text;
+    return {
+      ...item,
+      value: index,
+      text: text
+        ?.replace(/[^\w\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    };
+  });
+});
+
+const filteredItems = computed<SearchItem[]>(() => {
+  const keyword = get(search)?.toLowerCase() ?? '';
+  if (!keyword) {
+    return get(items);
   }
+
+  // Filter items text by checking how many word on keyword that appear.
+  return get(items)
+    .filter(item => {
+      let matchedPoints: number = 0;
+      keyword
+        .trim()
+        .split(' ')
+        .forEach(word => {
+          const indexOf = item.text!.toLowerCase().indexOf(word);
+          if (indexOf > -1) matchedPoints++;
+          if (indexOf === 0) matchedPoints += 0.5;
+        });
+      item.matchedPoints = matchedPoints;
+      return matchedPoints > 0;
+    })
+    .sort((a, b) => (b.matchedPoints ?? 0) - (a.matchedPoints ?? 0));
+});
+
+watch(search, () => {
+  const el = get(input)?.$el;
+  if (el) {
+    const className = 'v-list-item--highlighted';
+    const highlighted = el.querySelectorAll(`.${className}`).length;
+    if (highlighted === 0) {
+      nextTick(() => {
+        const elementToUpdate = el.querySelectorAll('.v-list-item');
+        if (elementToUpdate.length > 0) {
+          elementToUpdate[0].classList.add(className);
+        }
+      });
+    }
+  }
+});
+
+watch(open, open => {
+  nextTick(() => {
+    if (open) {
+      setTimeout(() => {
+        get(input)?.$refs?.input?.focus?.();
+      }, 100);
+    }
+    set(selected, '');
+    set(search, '');
+  });
+});
+
+const change = async (index: number) => {
+  const item: SearchItem = get(items)[index];
+  if (item) {
+    if (item.route) {
+      await router.push(item.route);
+    }
+    item?.action?.();
+    set(open, false);
+  }
+};
+
+onBeforeMount(async () => {
+  set(isMac, await interop.isMac());
+
+  window.addEventListener('keydown', async event => {
+    // Mac use Command, Others use Control
+    if (
+      ((get(isMac) && event.metaKey) || (!get(isMac) && event.ctrlKey)) &&
+      event.key === key
+    ) {
+      set(open, true);
+    }
+  });
 });
 </script>
 <style module lang="scss">

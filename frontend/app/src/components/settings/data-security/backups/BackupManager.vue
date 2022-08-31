@@ -7,11 +7,11 @@
       :user-db="userDb"
     />
     <card outlined-body class="mt-8">
-      <template #title>{{ $t('backup_manager.title') }}</template>
+      <template #title>{{ t('backup_manager.title') }}</template>
       <template #details>
         <refresh-button
           :loading="loading"
-          :tooltip="$t('database_manager.refresh_tooltip')"
+          :tooltip="tc('database_manager.refresh_tooltip')"
           @refresh="loadInfo"
         />
       </template>
@@ -31,7 +31,7 @@
           :loading="saving"
           @click="backup"
         >
-          {{ $t('backup_manager.backup_button') }}
+          {{ t('backup_manager.backup_button') }}
         </v-btn>
         <v-btn
           v-if="selected.length > 0"
@@ -39,15 +39,15 @@
           color="error"
           @click="showConfirmMassDelete = true"
         >
-          {{ $t('backup_manager.delete_selected') }}
+          {{ t('backup_manager.delete_selected') }}
         </v-btn>
       </template>
     </card>
     <confirm-dialog
       :display="!!showConfirmMassDelete"
-      :title="$t('database_backups.confirm.title')"
+      :title="tc('database_backups.confirm.title')"
       :message="
-        $t('database_backups.confirm.mass_message', {
+        tc('database_backups.confirm.mass_message', 0, {
           length: selected.length
         })
       "
@@ -61,12 +61,12 @@
 import { Severity } from '@rotki/common/lib/messages';
 import { get, set } from '@vueuse/core';
 import { computed, defineComponent, onMounted, Ref, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import DatabaseInfoDisplay from '@/components/settings/data-security/backups/DatabaseInfoDisplay.vue';
 import { getFilepath } from '@/components/settings/data-security/backups/utils';
-import i18n from '@/i18n';
 import { DatabaseInfo, UserDbBackup } from '@/services/backup/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
@@ -82,6 +82,7 @@ const isSameEntry = (firstDb: UserDbBackup, secondDb: UserDbBackup) => {
 };
 
 const setupBackupInfo = () => {
+  const { t } = useI18n();
   const backupInfo = ref<DatabaseInfo | null>();
   const loading = ref(false);
 
@@ -131,12 +132,10 @@ const setupBackupInfo = () => {
       const { notify } = useNotifications();
       notify({
         display: true,
-        title: i18n.t('database_backups.load_error.title').toString(),
-        message: i18n
-          .t('database_backups.load_error.message', {
-            message: e.message
-          })
-          .toString()
+        title: t('database_backups.load_error.title').toString(),
+        message: t('database_backups.load_error.message', {
+          message: e.message
+        }).toString()
       });
     } finally {
       set(loading, false);
@@ -161,6 +160,7 @@ const setupBackupActions = (
   selected: Ref<UserDbBackup[]>,
   showConfirmMassDelete: Ref<boolean>
 ) => {
+  const { t } = useI18n();
   const massRemove = async () => {
     const filepaths = get(selected).map(db => getFilepath(db, directory));
     try {
@@ -181,12 +181,10 @@ const setupBackupActions = (
       const { notify } = useNotifications();
       notify({
         display: true,
-        title: i18n.t('database_backups.delete_error.title').toString(),
-        message: i18n
-          .t('database_backups.delete_error.mass_message', {
-            message: e.message
-          })
-          .toString()
+        title: t('database_backups.delete_error.title').toString(),
+        message: t('database_backups.delete_error.mass_message', {
+          message: e.message
+        }).toString()
       });
     }
 
@@ -217,13 +215,11 @@ const setupBackupActions = (
       const { notify } = useNotifications();
       notify({
         display: true,
-        title: i18n.t('database_backups.delete_error.title').toString(),
-        message: i18n
-          .t('database_backups.delete_error.message', {
-            file: filepath,
-            message: e.message
-          })
-          .toString()
+        title: t('database_backups.delete_error.title').toString(),
+        message: t('database_backups.delete_error.message', {
+          file: filepath,
+          message: e.message
+        }).toString()
       });
     }
   };
@@ -231,6 +227,7 @@ const setupBackupActions = (
   const saving = ref(false);
 
   const backup = async () => {
+    const { t } = useI18n();
     try {
       set(saving, true);
       const filepath = await api.backups.createBackup();
@@ -238,12 +235,10 @@ const setupBackupActions = (
       notify({
         display: true,
         severity: Severity.INFO,
-        title: i18n.t('database_backups.backup.title').toString(),
-        message: i18n
-          .t('database_backups.backup.message', {
-            filepath
-          })
-          .toString()
+        title: t('database_backups.backup.title').toString(),
+        message: t('database_backups.backup.message', {
+          filepath
+        }).toString()
       });
 
       await refresh();
@@ -252,12 +247,10 @@ const setupBackupActions = (
       const { notify } = useNotifications();
       notify({
         display: true,
-        title: i18n.t('database_backups.backup_error.title').toString(),
-        message: i18n
-          .t('database_backups.backup_error.message', {
-            message: e.message
-          })
-          .toString()
+        title: t('database_backups.backup_error.title').toString(),
+        message: t('database_backups.backup_error.message', {
+          message: e.message
+        }).toString()
       });
     } finally {
       set(saving, false);
@@ -285,7 +278,11 @@ const BackupManager = defineComponent({
       set(selected, newSelected);
     };
 
+    const { t, tc } = useI18n();
+
     return {
+      t,
+      tc,
       ...getBackupInfo,
       ...setupBackupActions(
         directory,

@@ -2,7 +2,7 @@
   <div class="accounting-settings mt-n8">
     <setting-category>
       <template #title>
-        {{ $t('accounting_settings.title') }}
+        {{ t('accounting_settings.title') }}
       </template>
 
       <crypto-to-crypto-trade-setting />
@@ -16,7 +16,7 @@
     <ledger-action-settings />
     <setting-category>
       <template #title>
-        {{ $t('account_settings.csv_export_settings.title') }}
+        {{ t('account_settings.csv_export_settings.title') }}
       </template>
 
       <pnl-csv-with-formulas-setting />
@@ -26,6 +26,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 import AccountAssetMovementsSetting from '@/components/settings/accounting/AccountAssetMovementsSetting.vue';
 import CalculatePastCostBasisSetting from '@/components/settings/accounting/CalculatePastCostBasisSetting.vue';
 import CostBasisMethodSetting from '@/components/settings/accounting/CostBasisMethodSetting.vue';
@@ -37,4 +38,6 @@ import PnlCsvSummarySetting from '@/components/settings/accounting/PnlCsvSummary
 import PnlCsvWithFormulasSetting from '@/components/settings/accounting/PnlCsvWithFormulasSetting.vue';
 import TaxFreeSetting from '@/components/settings/accounting/TaxFreeSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+
+const { t } = useI18n();
 </script>

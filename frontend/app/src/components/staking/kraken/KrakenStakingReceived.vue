@@ -1,13 +1,13 @@
 <template>
   <card full-height>
-    <template #title>{{ $t('kraken_staking_received.title') }}</template>
+    <template #title>{{ t('kraken_staking_received.title') }}</template>
     <template #details>
       <v-btn-toggle v-model="current" dense mandatory>
         <v-btn :value="true">
-          {{ $t('kraken_staking_received.switch.current') }}
+          {{ t('kraken_staking_received.switch.current') }}
         </v-btn>
         <v-btn :value="false">
-          {{ $t('kraken_staking_received.switch.historical') }}
+          {{ t('kraken_staking_received.switch.historical') }}
         </v-btn>
       </v-btn-toggle>
     </template>
@@ -36,53 +36,42 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { Balance } from '@rotki/common';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, ref } from 'vue';
+import { computed, PropType, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { ReceivedAmount } from '@/types/staking';
 import { Zero } from '@/utils/bignumbers';
 
-export default defineComponent({
-  name: 'KrakenStakingReceived',
-  components: { ValueAccuracyHint },
-  props: {
-    received: {
-      required: true,
-      type: Array as PropType<ReceivedAmount[]>
-    }
-  },
-  setup() {
-    const { prices } = storeToRefs(useBalancePricesStore());
-    const current = ref(true);
-    const pricesAreLoading = computed(() => {
-      return Object.keys(get(prices)).length === 0;
-    });
-    const getBalance = ({
-      amount,
-      asset,
-      usdValue
-    }: ReceivedAmount): Balance => {
-      const assetPrices = get(prices);
-
-      const currentPrice = assetPrices[asset]
-        ? assetPrices[asset].times(amount)
-        : Zero;
-      return {
-        amount,
-        usdValue: get(current) ? currentPrice : usdValue
-      };
-    };
-    return {
-      current,
-      pricesAreLoading,
-      getBalance
-    };
+defineProps({
+  received: {
+    required: true,
+    type: Array as PropType<ReceivedAmount[]>
   }
 });
+
+const { prices } = storeToRefs(useBalancePricesStore());
+const current = ref(true);
+const pricesAreLoading = computed(() => {
+  return Object.keys(get(prices)).length === 0;
+});
+const getBalance = ({ amount, asset, usdValue }: ReceivedAmount): Balance => {
+  const assetPrices = get(prices);
+
+  const currentPrice = assetPrices[asset]
+    ? assetPrices[asset].times(amount)
+    : Zero;
+  return {
+    amount,
+    usdValue: get(current) ? currentPrice : usdValue
+  };
+};
+
+const { t } = useI18n();
 </script>
 
 <style lang="scss" module>

@@ -4,13 +4,13 @@
       <v-col>
         <refresh-header
           :loading="refreshing"
-          :title="$t('airdrops.title')"
+          :title="t('airdrops.title')"
           @refresh="refresh()"
         />
       </v-col>
     </v-row>
     <progress-screen v-if="loading">
-      <template #message>{{ $t('airdrops.loading') }}</template>
+      <template #message>{{ t('airdrops.loading') }}</template>
     </progress-screen>
     <div v-else>
       <blockchain-account-selector
@@ -23,7 +23,7 @@
         :chains="[ETH]"
         :usable-addresses="airdropAddresses"
       >
-        <div class="text-caption mt-4" v-text="$t('airdrops.description')" />
+        <div class="text-caption mt-4" v-text="t('airdrops.description')" />
       </blockchain-account-selector>
       <v-card class="mt-8">
         <v-card-text>
@@ -99,6 +99,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, Ref, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -106,7 +107,6 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
-import i18n from '@/i18n';
 import { Section } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import {
@@ -210,6 +210,7 @@ const sources: AirdropSources = {
   }
 };
 
+const { t, tc } = useI18n();
 const defiStore = useDefiStore();
 const { airdropAddresses } = storeToRefs(defiStore);
 const { isPackaged, navigate } = useInterop();
@@ -229,16 +230,16 @@ const entries = computed(() => {
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: i18n.t('airdrops.headers.source').toString(),
+    text: tc('airdrops.headers.source'),
     value: 'source',
     width: '200px'
   },
   {
-    text: i18n.t('common.address').toString(),
+    text: tc('common.address'),
     value: 'address'
   },
   {
-    text: i18n.t('common.amount').toString(),
+    text: tc('common.amount'),
     value: 'amount',
     align: 'end'
   },

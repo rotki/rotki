@@ -15,13 +15,13 @@
             <template v-if="!!label && !ethName">
               <span class="text-truncate">
                 {{
-                  $t('labeled_address_display.label', {
+                  t('labeled_address_display.label', {
                     label: label
                   })
                 }}
               </span>
               <span v-if="displayAddress && !smAndDown" class="px-1">
-                {{ $t('labeled_address_display.divider') }}
+                {{ t('labeled_address_display.divider') }}
               </span>
             </template>
             <span
@@ -45,109 +45,96 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { get } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useTheme } from '@/composables/common';
 import { truncateAddress, truncationPoints } from '@/filters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { randomHex } from '@/utils/data';
 
-export default defineComponent({
-  name: 'LabeledAddressDisplay',
-  props: {
-    account: { required: true, type: Object as PropType<GeneralAccount> }
-  },
-  setup(props) {
-    const { account } = toRefs(props);
-    const { currentBreakpoint } = useTheme();
-    const { scrambleData, shouldShowAmount } = storeToRefs(
-      useSessionSettingsStore()
-    );
+const { t } = useI18n();
 
-    const { ethNameSelector } = useEthNamesStore();
-    const ethName = computed<string | null>(() =>
-      get(ethNameSelector(get(account).address))
-    );
+const props = defineProps({
+  account: { required: true, type: Object as PropType<GeneralAccount> }
+});
 
-    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-    const smAndDown = computed(() => get(currentBreakpoint).smAndDown);
+const { account } = toRefs(props);
+const { currentBreakpoint } = useTheme();
+const { scrambleData, shouldShowAmount } = storeToRefs(
+  useSessionSettingsStore()
+);
 
-    const address = computed<string>(() => {
-      return get(scrambleData) ? randomHex() : get(account).address;
-    });
+const { ethNameSelector } = useEthNamesStore();
+const ethName = computed<string | null>(() =>
+  get(ethNameSelector(get(account).address))
+);
 
-    const breakpoint = computed<string>(() => {
-      return get(account).label.length > 0 && get(currentBreakpoint).mdAndDown
-        ? 'sm'
-        : get(currentBreakpoint).name;
-    });
+const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+const smAndDown = computed(() => get(currentBreakpoint).smAndDown);
 
-    const truncationLength = computed<number>(() => {
-      let truncationPoint = truncationPoints[get(breakpoint)];
-      if (truncationPoint && get(account).label) {
-        return 4;
-      }
-      return truncationPoint ?? 4;
-    });
+const address = computed<string>(() => {
+  return get(scrambleData) ? randomHex() : get(account).address;
+});
 
-    const truncatedAddress = computed(() => {
-      return truncateAddress(get(address), get(truncationLength));
-    });
+const breakpoint = computed<string>(() => {
+  return get(account).label.length > 0 && get(currentBreakpoint).mdAndDown
+    ? 'sm'
+    : get(currentBreakpoint).name;
+});
 
-    const displayAddress = computed<string>(() => {
-      if (get(ethName)) return get(ethName) as string;
-      if (get(truncatedAddress).length >= get(address).length) {
-        return get(address);
-      }
-      return get(truncatedAddress);
-    });
-
-    const truncated = computed<boolean>(() => {
-      if (get(truncatedAddress).length >= get(address).length) {
-        return false;
-      }
-      return get(truncatedAddress).includes('...');
-    });
-
-    const label = computed<string>(() => {
-      const bp = get(currentBreakpoint);
-      const label = get(account).label;
-      let length = -1;
-
-      if (bp.xlOnly && label.length > 50) {
-        length = 47;
-      } else if (bp.lgOnly && label.length > 38) {
-        length = 35;
-      } else if (bp.md && label.length > 27) {
-        length = 24;
-      } else if (bp.smOnly && label.length > 19) {
-        length = 16;
-      }
-
-      if (length > 0) {
-        return label.substr(0, length) + '...';
-      }
-
-      return label;
-    });
-
-    return {
-      ethName,
-      xsOnly,
-      smAndDown,
-      truncated,
-      label,
-      displayAddress,
-      shouldShowAmount,
-      address,
-      makeBlockie
-    };
+const truncationLength = computed<number>(() => {
+  let truncationPoint = truncationPoints[get(breakpoint)];
+  if (truncationPoint && get(account).label) {
+    return 4;
   }
+  return truncationPoint ?? 4;
+});
+
+const truncatedAddress = computed(() => {
+  return truncateAddress(get(address), get(truncationLength));
+});
+
+const displayAddress = computed<string>(() => {
+  if (get(ethName)) return get(ethName) as string;
+  if (get(truncatedAddress).length >= get(address).length) {
+    return get(address);
+  }
+  return get(truncatedAddress);
+});
+
+const truncated = computed<boolean>(() => {
+  if (get(truncatedAddress).length >= get(address).length) {
+    return false;
+  }
+  return get(truncatedAddress).includes('...');
+});
+
+const label = computed<string>(() => {
+  const bp = get(currentBreakpoint);
+  const label = get(account).label;
+  let length = -1;
+
+  if (bp.xlOnly && label.length > 50) {
+    length = 47;
+  } else if (bp.lgOnly && label.length > 38) {
+    length = 35;
+  } else if (bp.md && label.length > 27) {
+    length = 24;
+  } else if (bp.smOnly && label.length > 19) {
+    length = 16;
+  }
+
+  if (length > 0) {
+    return label.substr(0, length) + '...';
+  }
+
+  return label;
 });
 </script>
 

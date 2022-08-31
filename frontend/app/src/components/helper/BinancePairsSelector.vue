@@ -15,7 +15,7 @@
     clearable
     :outlined="outlined"
     :open-on-clear="false"
-    :label="label ? label : $t('binance_market_selector.default_label')"
+    :label="label ? label : t('binance_market_selector.default_label')"
     :class="outlined ? 'binance-market-selector--outlined' : null"
     item-text="address"
     item-value="address"
@@ -50,127 +50,103 @@
   </v-autocomplete>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import { get, set } from '@vueuse/core';
-import { defineComponent, onMounted, ref, toRefs, watch } from 'vue';
+import { onMounted, ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useTheme } from '@/composables/common';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
 import { uniqueStrings } from '@/utils/data';
 
-export default defineComponent({
-  name: 'BinancePairsSelector',
-  props: {
-    label: { required: false, type: String, default: '' },
-    outlined: { required: false, type: Boolean, default: false },
-    name: { required: true, type: String },
-    location: { required: true, type: String }
-  },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { name, location } = toRefs(props);
-    const { dark } = useTheme();
+const props = defineProps({
+  label: { required: false, type: String, default: '' },
+  outlined: { required: false, type: Boolean, default: false },
+  name: { required: true, type: String },
+  location: { required: true, type: String }
+});
 
-    const input = (_value: string[]) => emit('input', _value);
+const emit = defineEmits(['input']);
+const { name, location } = toRefs(props);
+const { dark } = useTheme();
 
-    const search = ref<string>('');
-    const queriedMarkets = ref<string[]>([]);
-    const selection = ref<string[]>([]);
-    const allMarkets = ref<string[]>([]);
-    const loading = ref<boolean>(false);
+const input = (_value: string[]) => emit('input', _value);
 
-    const handleInput = (value: string[]) => {
-      set(selection, value);
-      input(value);
-    };
+const search = ref<string>('');
+const queriedMarkets = ref<string[]>([]);
+const selection = ref<string[]>([]);
+const allMarkets = ref<string[]>([]);
+const loading = ref<boolean>(false);
 
-    onMounted(async () => {
-      set(loading, true);
-      try {
-        set(
-          queriedMarkets,
-          await api.queryBinanceUserMarkets(get(name), get(location))
-        );
-      } catch (e: any) {
-        const title = i18n
-          .t('binance_market_selector.query_user.title')
-          .toString();
-        const description = i18n
-          .t('binance_market_selector.query_user.error', {
-            message: e.message
-          })
-          .toString();
-        const { notify } = useNotifications();
-        notify({
-          title,
-          message: description,
-          severity: Severity.ERROR,
-          display: true
-        });
-      }
+const handleInput = (value: string[]) => {
+  set(selection, value);
+  input(value);
+};
 
-      try {
-        set(allMarkets, await api.queryBinanceMarkets(get(location)));
-      } catch (e: any) {
-        const title = i18n
-          .t('binance_market_selector.query_all.title')
-          .toString();
-        const description = i18n
-          .t('binance_market_selector.query_all.error', {
-            message: e.message
-          })
-          .toString();
-        const { notify } = useNotifications();
-        notify({
-          title,
-          message: description,
-          severity: Severity.ERROR,
-          display: true
-        });
-      }
+const { t } = useI18n();
 
-      set(loading, false);
-      set(selection, get(queriedMarkets));
+onMounted(async () => {
+  set(loading, true);
+  try {
+    set(
+      queriedMarkets,
+      await api.queryBinanceUserMarkets(get(name), get(location))
+    );
+  } catch (e: any) {
+    const title = t('binance_market_selector.query_user.title').toString();
+    const description = t('binance_market_selector.query_user.error', {
+      message: e.message
+    }).toString();
+    const { notify } = useNotifications();
+    notify({
+      title,
+      message: description,
+      severity: Severity.ERROR,
+      display: true
     });
+  }
 
-    const filter = (item: string, queryText: string) => {
-      const query = queryText.toLocaleLowerCase();
-      const pair = item.toLocaleLowerCase();
-
-      return pair.indexOf(query) > -1;
-    };
-
-    watch(search, search => {
-      if (search) {
-        const pairs = search.split(' ');
-        if (pairs.length > 0) {
-          const useLastPairs = search.substr(search.length - 1) === ' ';
-          if (useLastPairs) {
-            search = '';
-          } else {
-            search = pairs.pop()!;
-          }
-          const matchedPairs = pairs.filter(pair =>
-            get(allMarkets).includes(pair)
-          );
-          handleInput(
-            [...get(selection), ...matchedPairs].filter(uniqueStrings)
-          );
-        }
-      }
+  try {
+    set(allMarkets, await api.queryBinanceMarkets(get(location)));
+  } catch (e: any) {
+    const title = t('binance_market_selector.query_all.title').toString();
+    const description = t('binance_market_selector.query_all.error', {
+      message: e.message
+    }).toString();
+    const { notify } = useNotifications();
+    notify({
+      title,
+      message: description,
+      severity: Severity.ERROR,
+      display: true
     });
+  }
 
-    return {
-      dark,
-      allMarkets,
-      filter,
-      search,
-      loading,
-      selection,
-      handleInput
-    };
+  set(loading, false);
+  set(selection, get(queriedMarkets));
+});
+
+const filter = (item: string, queryText: string) => {
+  const query = queryText.toLocaleLowerCase();
+  const pair = item.toLocaleLowerCase();
+
+  return pair.indexOf(query) > -1;
+};
+
+watch(search, search => {
+  if (search) {
+    const pairs = search.split(' ');
+    if (pairs.length > 0) {
+      const useLastPairs = search.substr(search.length - 1) === ' ';
+      if (useLastPairs) {
+        search = '';
+      } else {
+        search = pairs.pop()!;
+      }
+      const matchedPairs = pairs.filter(pair => get(allMarkets).includes(pair));
+      handleInput([...get(selection), ...matchedPairs].filter(uniqueStrings));
+    }
   }
 });
 </script>

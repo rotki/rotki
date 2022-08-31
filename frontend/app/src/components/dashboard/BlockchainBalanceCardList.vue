@@ -59,20 +59,20 @@ const props = defineProps({
 
 const { total } = toRefs(props);
 
-const i18n = useI18n();
+const { t } = useI18n();
 
 const name = computed<string>(() => {
   const chain = get(total).chain;
 
   return (
     {
-      [Blockchain.ETH]: i18n.t('blockchains.eth').toString(),
-      [Blockchain.ETH2]: i18n.t('blockchains.eth2').toString(),
-      [Blockchain.BTC]: i18n.t('blockchains.btc').toString(),
-      [Blockchain.BCH]: i18n.t('blockchains.bch').toString(),
-      [Blockchain.KSM]: i18n.t('blockchains.ksm').toString(),
-      [Blockchain.DOT]: i18n.t('blockchains.dot').toString(),
-      [Blockchain.AVAX]: i18n.t('blockchains.avax').toString()
+      [Blockchain.ETH]: t('blockchains.eth').toString(),
+      [Blockchain.ETH2]: t('blockchains.eth2').toString(),
+      [Blockchain.BTC]: t('blockchains.btc').toString(),
+      [Blockchain.BCH]: t('blockchains.bch').toString(),
+      [Blockchain.KSM]: t('blockchains.ksm').toString(),
+      [Blockchain.DOT]: t('blockchains.dot').toString(),
+      [Blockchain.AVAX]: t('blockchains.avax').toString()
     }[chain] ?? ''
   );
 });

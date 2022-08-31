@@ -6,11 +6,11 @@
     :disabled="resetSelection.length === 0"
     @reset="reset()"
   >
-    {{ $t('lending.reset_confirm') }}
+    {{ tc('lending.reset_confirm') }}
     <div />
     <v-row>
       <v-col class="text-center font-weight-medium">
-        {{ $t('lending.reset.protocol_selection') }}
+        {{ tc('lending.reset.protocol_selection') }}
       </v-col>
     </v-row>
     <v-row align="center" justify="center">
@@ -30,46 +30,32 @@
     </v-row>
   </confirmable-reset>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { get } from '@vueuse/core';
-import { defineComponent, ref } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ConfirmableReset from '@/components/helper/ConfirmableReset.vue';
 import { getPremium } from '@/composables/session';
 
-export default defineComponent({
-  name: 'DepositProtocolReset',
-  components: { ConfirmableReset },
-  props: {
-    loading: {
-      required: true,
-      type: Boolean
-    }
-  },
-  emits: ['reset'],
-  setup(_, { emit }) {
-    const resetSelection = ref<DefiProtocol[]>([]);
-    const premium = getPremium();
-    const AAVE = DefiProtocol.AAVE;
-    const YEARN_VAULTS = DefiProtocol.YEARN_VAULTS;
-    const YEARN_VAULTS_V2 = DefiProtocol.YEARN_VAULTS_V2;
-
-    const { tc } = useI18n();
-
-    const reset = () => {
-      emit('reset', get(resetSelection));
-    };
-
-    return {
-      resetSelection,
-      premium,
-      AAVE,
-      YEARN_VAULTS,
-      YEARN_VAULTS_V2,
-      reset,
-      tc
-    };
+defineProps({
+  loading: {
+    required: true,
+    type: Boolean
   }
 });
+
+const emit = defineEmits(['reset']);
+
+const resetSelection = ref<DefiProtocol[]>([]);
+const premium = getPremium();
+const AAVE = DefiProtocol.AAVE;
+const YEARN_VAULTS = DefiProtocol.YEARN_VAULTS;
+const YEARN_VAULTS_V2 = DefiProtocol.YEARN_VAULTS_V2;
+
+const { tc } = useI18n();
+
+const reset = () => {
+  emit('reset', get(resetSelection));
+};
 </script>

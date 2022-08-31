@@ -9,7 +9,7 @@
     >
       <card-title>
         <navigator-link :enabled="!!navigatesTo" :to="{ path: navigatesTo }">
-          {{ $t('summary_card.title', { name }) }}
+          {{ t('summary_card.title', { name }) }}
         </navigator-link>
       </card-title>
       <v-tooltip v-if="$slots.tooltip" bottom max-width="300px">
@@ -42,7 +42,7 @@
               <v-icon color="primary">mdi-refresh</v-icon>
             </v-btn>
           </template>
-          <span>{{ $t('summary_card.refresh_tooltip', { name }) }}</span>
+          <span>{{ t('summary_card.refresh_tooltip', { name }) }}</span>
         </v-tooltip>
       </span>
     </v-card-title>
@@ -52,33 +52,27 @@
   </v-card>
 </template>
 
-<script lang="ts">
-import { defineAsyncComponent, defineComponent } from 'vue';
+<script setup lang="ts">
+import { defineAsyncComponent, defineProps } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
+const NavigatorLink = defineAsyncComponent(
+  () => import('@/components/helper/NavigatorLink.vue')
+);
 
-export default defineComponent({
-  name: 'SummaryCard',
-  components: {
-    NavigatorLink: defineAsyncComponent(
-      () => import('@/components/helper/NavigatorLink.vue')
-    )
-  },
-  props: {
-    name: { required: true, type: String },
-    isLoading: { required: false, type: Boolean, default: false },
-    canRefresh: { required: false, type: Boolean, default: false },
-    navigatesTo: { required: false, type: String, default: '' }
-  },
-  emits: ['refresh'],
-  setup(_, { emit }) {
-    const refresh = (balanceSource: string) => {
-      emit('refresh', balanceSource.toLowerCase());
-    };
-
-    return {
-      refresh
-    };
-  }
+defineProps({
+  name: { required: true, type: String },
+  isLoading: { required: false, type: Boolean, default: false },
+  canRefresh: { required: false, type: Boolean, default: false },
+  navigatesTo: { required: false, type: String, default: '' }
 });
+
+const emit = defineEmits(['refresh']);
+
+const refresh = (balanceSource: string) => {
+  emit('refresh', balanceSource.toLowerCase());
+};
+
+const { t } = useI18n();
 </script>
 
 <style scoped lang="scss">

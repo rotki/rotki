@@ -5,7 +5,7 @@
     :items="availableTagsList"
     class="tag-filter"
     small-chips
-    :label="$t('tag_filter.label')"
+    :label="t('tag_filter.label')"
     prepend-inner-icon="mdi-magnify"
     item-text="name"
     :menu-props="{ closeOnContentClick: true }"
@@ -45,59 +45,42 @@
   </v-autocomplete>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
 import { Tag } from '@/types/user';
 
-export default defineComponent({
-  components: {
-    TagIcon
-  },
-  props: {
-    value: { required: true, type: Array as PropType<string[]> },
-    disabled: { required: false, default: false, type: Boolean },
-    hideDetails: { required: false, default: false, type: Boolean }
-  },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { value } = toRefs(props);
-
-    const { availableTags } = storeToRefs(useTagStore());
-
-    const availableTagsList = computed<Tag[]>(() => {
-      const tags = get(availableTags);
-      return Object.values(tags);
-    });
-    const input = (tags: string[]) => {
-      emit('input', tags);
-    };
-    const filter = (tag: Tag, queryText: string): boolean => {
-      const { name, description } = tag;
-      const query = queryText.toLocaleLowerCase();
-      return (
-        name.toLocaleLowerCase().indexOf(query) > -1 ||
-        description.toLocaleLowerCase().indexOf(query) > -1
-      );
-    };
-
-    const remove = (tag: string) => {
-      const tags = get(value);
-      const index = tags.indexOf(tag);
-      input([...tags.slice(0, index), ...tags.slice(index + 1)]);
-    };
-
-    return {
-      availableTagsList,
-      remove,
-      filter,
-      input
-    };
-  }
+const props = defineProps({
+  value: { required: true, type: Array as PropType<string[]> },
+  disabled: { required: false, default: false, type: Boolean },
+  hideDetails: { required: false, default: false, type: Boolean }
 });
+
+const emit = defineEmits(['input']);
+const { value } = toRefs(props);
+
+const { t } = useI18n();
+
+const { availableTags } = storeToRefs(useTagStore());
+
+const availableTagsList = computed<Tag[]>(() => {
+  const tags = get(availableTags);
+  return Object.values(tags);
+});
+
+const input = (tags: string[]) => {
+  emit('input', tags);
+};
+
+const remove = (tag: string) => {
+  const tags = get(value);
+  const index = tags.indexOf(tag);
+  input([...tags.slice(0, index), ...tags.slice(index + 1)]);
+};
 </script>
 
 <style scoped lang="scss">

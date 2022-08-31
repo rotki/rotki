@@ -1,8 +1,8 @@
 <template>
   <fragment>
     <card class="mt-8">
-      <template #title>{{ $t('asset_update.restore.title') }}</template>
-      <template #subtitle>{{ $t('asset_update.restore.subtitle') }}</template>
+      <template #title>{{ t('asset_update.restore.title') }}</template>
+      <template #subtitle>{{ t('asset_update.restore.subtitle') }}</template>
       <template #buttons>
         <v-btn
           depressed
@@ -10,21 +10,21 @@
           class="mt-2"
           @click="confirmRestore = true"
         >
-          {{ $t('asset_update.restore.action') }}
+          {{ t('asset_update.restore.action') }}
         </v-btn>
       </template>
     </card>
     <confirm-dialog
       :display="confirmRestore"
-      :title="$t('asset_update.restore.hard_restore_message.title')"
-      :message="$t('asset_update.restore.hard_restore_message.message')"
+      :title="tc('asset_update.restore.hard_restore_message.title')"
+      :message="tc('asset_update.restore.hard_restore_message.message')"
       @confirm="restoreAssets"
       @cancel="confirmRestore = false"
     />
     <confirm-dialog
       :display="doubleConfirmation"
-      :title="$t('asset_update.restore.hard_restore_confirmation.title')"
-      :message="$t('asset_update.restore.hard_restore_confirmation.message')"
+      :title="tc('asset_update.restore.hard_restore_confirmation.title')"
+      :message="tc('asset_update.restore.hard_restore_confirmation.message')"
       @confirm="confirmHardReset"
       @cancel="doubleConfirmation = false"
     />
@@ -32,9 +32,9 @@
       v-if="done"
       single-action
       display
-      :title="$t('asset_update.restore.success.title')"
-      :primary-action="$t('asset_update.success.ok')"
-      :message="$t('asset_update.restore.success.description')"
+      :title="tc('asset_update.restore.success.title')"
+      :primary-action="tc('asset_update.success.ok')"
+      :message="tc('asset_update.restore.success.description')"
       @confirm="updateComplete()"
     />
   </fragment>
@@ -44,9 +44,9 @@
 import { Severity } from '@rotki/common/lib/messages';
 import { get, set } from '@vueuse/core';
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import Fragment from '@/components/helper/Fragment';
 import { useBackendManagement } from '@/composables/backend';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
@@ -60,6 +60,8 @@ const done = ref(false);
 const { notify } = useNotifications();
 const { connect, setConnected } = useMainStore();
 const { logout } = useSessionStore();
+
+const { t, tc } = useI18n();
 
 const { restartBackend } = useBackendManagement();
 
@@ -80,7 +82,7 @@ async function restoreAssets() {
       set(restoreHard, false);
     }
   } catch (e: any) {
-    const title = i18n.t('asset_update.restore.title').toString();
+    const title = t('asset_update.restore.title').toString();
     const message = e.toString();
     if (message.includes('There are assets that can not')) {
       set(doubleConfirmation, true);

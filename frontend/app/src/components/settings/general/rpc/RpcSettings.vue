@@ -1,20 +1,20 @@
 <template>
   <card class="mt-8">
     <template #title>
-      {{ $tc('general_settings.local_nodes.title') }}
+      {{ tc('general_settings.local_nodes.title') }}
     </template>
 
     <settings-option
       #default="{ error, success, update }"
       setting="ksmRpcEndpoint"
-      :error-message="$tc('general_settings.validation.ksm_rpc.error')"
+      :error-message="tc('general_settings.validation.ksm_rpc.error')"
       :success-message="ksmSuccessMessage"
     >
       <v-text-field
         v-model="ksmRpcEndpoint"
         outlined
         class="general-settings__fields__ksm-rpc-endpoint"
-        :label="$tc('general_settings.labels.ksm_rpc_endpoint')"
+        :label="tc('general_settings.labels.ksm_rpc_endpoint')"
         type="text"
         :success-messages="success"
         :error-messages="error"
@@ -27,14 +27,14 @@
     <settings-option
       #default="{ error, success, update }"
       setting="dotRpcEndpoint"
-      :error-message="$tc('general_settings.validation.dot_rpc.error')"
+      :error-message="tc('general_settings.validation.dot_rpc.error')"
       :success-message="dotSuccessMessage"
     >
       <v-text-field
         v-model="dotRpcEndpoint"
         outlined
         class="general-settings__fields__dot-rpc-endpoint"
-        :label="$tc('general_settings.labels.dot_rpc_endpoint')"
+        :label="tc('general_settings.labels.dot_rpc_endpoint')"
         type="text"
         :success-messages="success"
         :error-messages="error"
@@ -47,54 +47,43 @@
   </card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { defineComponent, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { Defaults } from '@/data/defaults';
-import i18n from '@/i18n';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
-export default defineComponent({
-  name: 'RpcSettings',
-  components: { SettingsOption },
-  setup() {
-    const ksmRpcEndpoint = ref(Defaults.KSM_RPC_ENDPOINT);
-    const dotRpcEndpoint = ref(Defaults.DOT_RPC_ENDPOINT);
-    const { ksmRpcEndpoint: ksmRpc, dotRpcEndpoint: dotRpc } = storeToRefs(
-      useGeneralSettingsStore()
-    );
+const ksmRpcEndpoint = ref(Defaults.KSM_RPC_ENDPOINT);
+const dotRpcEndpoint = ref(Defaults.DOT_RPC_ENDPOINT);
+const { ksmRpcEndpoint: ksmRpc, dotRpcEndpoint: dotRpc } = storeToRefs(
+  useGeneralSettingsStore()
+);
 
-    const ksmSuccessMessage = (endpoint: string) => {
-      if (endpoint) {
-        return i18n.tc('general_settings.validation.ksm_rpc.success_set', 0, {
-          endpoint
-        });
-      }
-      return i18n.tc('general_settings.validation.ksm_rpc.success_unset');
-    };
+const { tc } = useI18n();
 
-    const dotSuccessMessage = (endpoint: string) => {
-      if (endpoint) {
-        return i18n.tc('general_settings.validation.dot_rpc.success_set', 0, {
-          endpoint
-        });
-      }
-      return i18n.tc('general_settings.validation.dot_rpc.success_unset');
-    };
-
-    onMounted(() => {
-      set(ksmRpcEndpoint, get(ksmRpc) || Defaults.KSM_RPC_ENDPOINT);
-      set(dotRpcEndpoint, get(dotRpc) || Defaults.DOT_RPC_ENDPOINT);
+const ksmSuccessMessage = (endpoint: string) => {
+  if (endpoint) {
+    return tc('general_settings.validation.ksm_rpc.success_set', 0, {
+      endpoint
     });
-
-    return {
-      ksmRpcEndpoint,
-      dotRpcEndpoint,
-      ksmSuccessMessage,
-      dotSuccessMessage
-    };
   }
+  return tc('general_settings.validation.ksm_rpc.success_unset');
+};
+
+const dotSuccessMessage = (endpoint: string) => {
+  if (endpoint) {
+    return tc('general_settings.validation.dot_rpc.success_set', 0, {
+      endpoint
+    });
+  }
+  return tc('general_settings.validation.dot_rpc.success_unset');
+};
+
+onMounted(() => {
+  set(ksmRpcEndpoint, get(ksmRpc) || Defaults.KSM_RPC_ENDPOINT);
+  set(dotRpcEndpoint, get(dotRpc) || Defaults.DOT_RPC_ENDPOINT);
 });
 </script>

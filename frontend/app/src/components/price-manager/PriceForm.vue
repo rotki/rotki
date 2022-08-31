@@ -4,7 +4,7 @@
       <v-col cols="12" md="6">
         <asset-select
           :value="value.fromAsset"
-          :label="$t('price_form.from_asset')"
+          :label="tc('price_form.from_asset')"
           outlined
           :disabled="edit"
           :rules="fromAssetRules"
@@ -14,7 +14,7 @@
       <v-col cols="12" md="6">
         <asset-select
           :value="value.toAsset"
-          :label="$t('price_form.to_asset')"
+          :label="tc('price_form.to_asset')"
           :disabled="edit"
           outlined
           :rules="toAssetRules"
@@ -28,7 +28,7 @@
           v-model="price"
           outlined
           :rules="priceRules"
-          :label="$t('common.price')"
+          :label="tc('common.price')"
         />
         <div v-if="price" class="text-caption green--text mt-n6 pb-1 pl-3">
           <i18n tag="div" path="price_form.hint">
@@ -56,7 +56,7 @@
         <date-time-picker
           :value="date"
           outlined
-          :label="$t('common.datetime')"
+          :label="tc('common.datetime')"
           seconds
           :disabled="edit"
           :rules="dateRules"
@@ -67,96 +67,72 @@
   </v-form>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from 'vue';
+import { computed, onMounted, PropType, ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { HistoricalPriceFormPayload } from '@/services/assets/types';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
-export default defineComponent({
-  name: 'PriceForm',
-  props: {
-    value: {
-      required: true,
-      type: Object as PropType<HistoricalPriceFormPayload>
-    },
-    edit: {
-      required: true,
-      type: Boolean
-    }
+const props = defineProps({
+  value: {
+    required: true,
+    type: Object as PropType<HistoricalPriceFormPayload>
   },
-  emits: ['input', 'valid'],
-  setup(props, { emit }) {
-    const { value } = toRefs(props);
-    const { assetSymbol } = useAssetInfoRetrieval();
-
-    const valid = ref(false);
-
-    const date = computed(({ value }) =>
-      value.timestamp ? convertFromTimestamp(value.timestamp, true) : ''
-    );
-    const fromAsset = computed(({ value }) =>
-      get(assetSymbol(value.fromAsset))
-    );
-    const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));
-
-    const price = ref<string>('');
-    const numericPrice = bigNumberifyFromRef(price);
-
-    const input = (price: Partial<HistoricalPriceFormPayload>) => {
-      emit('input', { ...get(value), ...price });
-    };
-
-    watch(valid, value => emit('valid', value));
-
-    watch(value, val => {
-      set(price, val.price);
-    });
-
-    watch(price, val => {
-      input({ price: val });
-    });
-
-    onMounted(() => {
-      set(price, get(value).price);
-    });
-
-    return {
-      date,
-      price,
-      numericPrice,
-      fromAsset,
-      toAsset,
-      valid,
-      input,
-      convertToTimestamp
-    };
-  },
-  data() {
-    return {
-      fromAssetRules: [
-        (v: string) => !!v || this.$t('price_form.from_non_empty').toString()
-      ],
-      toAssetRules: [
-        (v: string) => !!v || this.$t('price_form.to_non_empty').toString()
-      ],
-      priceRules: [
-        (v: string) => !!v || this.$t('price_form.price_non_empty').toString()
-      ],
-      dateRules: [
-        (v: string) => !!v || this.$t('price_form.date_non_empty').toString()
-      ]
-    };
+  edit: {
+    required: true,
+    type: Boolean
   }
 });
+
+const emit = defineEmits(['input', 'valid']);
+
+const { value } = toRefs(props);
+const { assetSymbol } = useAssetInfoRetrieval();
+
+const valid = ref(false);
+
+const date = computed(({ value }) =>
+  value.timestamp ? convertFromTimestamp(value.timestamp, true) : ''
+);
+const fromAsset = computed(({ value }) => get(assetSymbol(value.fromAsset)));
+const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));
+
+const price = ref<string>('');
+const numericPrice = bigNumberifyFromRef(price);
+
+const input = (price: Partial<HistoricalPriceFormPayload>) => {
+  emit('input', { ...get(value), ...price });
+};
+
+watch(valid, value => emit('valid', value));
+
+watch(value, val => {
+  set(price, val.price);
+});
+
+watch(price, val => {
+  input({ price: val });
+});
+
+onMounted(() => {
+  set(price, get(value).price);
+});
+
+const { t, tc } = useI18n();
+
+const fromAssetRules = [
+  (v: string) => !!v || t('price_form.from_non_empty').toString()
+];
+const toAssetRules = [
+  (v: string) => !!v || t('price_form.to_non_empty').toString()
+];
+const priceRules = [
+  (v: string) => !!v || t('price_form.price_non_empty').toString()
+];
+const dateRules = [
+  (v: string) => !!v || t('price_form.date_non_empty').toString()
+];
 </script>

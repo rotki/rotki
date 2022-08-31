@@ -2,13 +2,13 @@
   <settings-option
     #default="{ error, success, update }"
     setting="pnlCsvHaveSummary"
-    :error-message="$tc('account_settings.messages.have_csv_summary')"
+    :error-message="tc('account_settings.messages.have_csv_summary')"
   >
     <v-switch
       v-model="haveCSVSummary"
       class="csv_export_settings__haveCSVSummary"
       :label="
-        $tc('account_settings.csv_export_settings.labels.have_csv_summary')
+        tc('account_settings.csv_export_settings.labels.have_csv_summary')
       "
       color="primary"
       :success-messages="success"
@@ -22,6 +22,7 @@
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
@@ -31,4 +32,6 @@ const { pnlCsvHaveSummary } = storeToRefs(useAccountingSettingsStore());
 onMounted(() => {
   set(haveCSVSummary, get(pnlCsvHaveSummary));
 });
+
+const { tc } = useI18n();
 </script>

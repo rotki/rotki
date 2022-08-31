@@ -8,7 +8,7 @@
       <v-autocomplete
         :value="value"
         :items="poolAssets"
-        :label="$t('liquidity_pool_selector.label')"
+        :label="t('liquidity_pool_selector.label')"
         :filter="filter"
         :dense="dense"
         :outlined="outlined"
@@ -35,7 +35,7 @@
           >
             <span class="font-weight-medium">
               {{
-                $t('uniswap.pool_header', {
+                t('uniswap.pool_header', {
                   version,
                   asset1: getSymbol(data.item.assets[0]),
                   asset2: getSymbol(data.item.assets[1])
@@ -51,7 +51,7 @@
           >
             <v-list-item-title>
               {{
-                $t('uniswap.pool_header', {
+                t('uniswap.pool_header', {
                   version,
                   asset1: getSymbol(item.assets[0]),
                   asset2: getSymbol(item.assets[1])
@@ -65,56 +65,48 @@
   </v-card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { XswapPool } from '@rotki/common/lib/defi/xswap';
 import { get } from '@vueuse/core';
-import { defineComponent, PropType, toRefs } from 'vue';
+import { PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useAssetInfoRetrieval } from '@/store/assets';
 
-export default defineComponent({
-  name: 'UniswapPoolFilter',
-  props: {
-    value: { required: true, type: Array as PropType<string[]> },
-    outlined: { required: false, type: Boolean, default: false },
-    dense: { required: false, type: Boolean, default: false },
-    noPadding: { required: false, type: Boolean, default: false },
-    poolAssets: { required: true, type: Array as PropType<XswapPool[]> },
-    version: {
-      required: false,
-      type: String as PropType<'2' | '3'>,
-      default: '2'
-    }
-  },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { value } = toRefs(props);
-    const { getAssetSymbol: getSymbol } = useAssetInfoRetrieval();
-
-    const input = (value: string[]) => {
-      emit('input', value);
-    };
-
-    const filter = (item: XswapPool, queryText: string) => {
-      const searchString = queryText.toLocaleLowerCase();
-      const asset1 = getSymbol(item.assets[0]).toLocaleLowerCase();
-      const asset2 = getSymbol(item.assets[1]).toLocaleLowerCase();
-      const name = `${asset1}/${asset2}`;
-      return name.indexOf(searchString) > -1;
-    };
-
-    const remove = (asset: XswapPool) => {
-      const addresses = [...get(value)];
-      const index = addresses.findIndex(address => address === asset.address);
-      addresses.splice(index, 1);
-      input(addresses);
-    };
-
-    return {
-      getSymbol,
-      input,
-      filter,
-      remove
-    };
+const props = defineProps({
+  value: { required: true, type: Array as PropType<string[]> },
+  outlined: { required: false, type: Boolean, default: false },
+  dense: { required: false, type: Boolean, default: false },
+  noPadding: { required: false, type: Boolean, default: false },
+  poolAssets: { required: true, type: Array as PropType<XswapPool[]> },
+  version: {
+    required: false,
+    type: String as PropType<'2' | '3'>,
+    default: '2'
   }
 });
+
+const emit = defineEmits(['input']);
+const { value } = toRefs(props);
+const { getAssetSymbol: getSymbol } = useAssetInfoRetrieval();
+
+const input = (value: string[]) => {
+  emit('input', value);
+};
+
+const filter = (item: XswapPool, queryText: string) => {
+  const searchString = queryText.toLocaleLowerCase();
+  const asset1 = getSymbol(item.assets[0]).toLocaleLowerCase();
+  const asset2 = getSymbol(item.assets[1]).toLocaleLowerCase();
+  const name = `${asset1}/${asset2}`;
+  return name.indexOf(searchString) > -1;
+};
+
+const remove = (asset: XswapPool) => {
+  const addresses = [...get(value)];
+  const index = addresses.findIndex(address => address === asset.address);
+  addresses.splice(index, 1);
+  input(addresses);
+};
+
+const { t } = useI18n();
 </script>

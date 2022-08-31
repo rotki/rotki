@@ -3,12 +3,12 @@
     <v-col>
       <card>
         <template #title>
-          {{ $t('premium_settings.title') }}
+          {{ t('premium_settings.title') }}
         </template>
         <template #subtitle>
           <i18n tag="div" path="premium_settings.subtitle">
             <base-external-link
-              :text="$tc('premium_settings.rotki_premium')"
+              :text="tc('premium_settings.rotki_premium')"
               :href="premiumURL"
             />
           </i18n>
@@ -19,7 +19,7 @@
           class="premium-settings__fields__api-key"
           :disabled="premium && !edit"
           :error-messages="errorMessages"
-          :label="$tc('premium_settings.fields.api_key')"
+          :label="tc('premium_settings.fields.api_key')"
           @paste="onApiKeyPaste"
         />
         <revealable-input
@@ -27,12 +27,12 @@
           class="premium-settings__fields__api-secret"
           prepend-icon="mdi-lock"
           :disabled="premium && !edit"
-          :label="$tc('premium_settings.fields.api_secret')"
+          :label="tc('premium_settings.fields.api_secret')"
           @paste="onApiSecretPaste"
         />
         <div v-if="premium" class="premium-settings__premium-active">
           <v-icon color="success">mdi-check-circle</v-icon>
-          <div>{{ $t('premium_settings.premium_active') }}</div>
+          <div>{{ t('premium_settings.premium_active') }}</div>
         </div>
 
         <template #buttons>
@@ -47,8 +47,8 @@
               >
                 {{
                   premium && !edit
-                    ? $t('premium_settings.actions.replace')
-                    : $t('premium_settings.actions.setup')
+                    ? t('premium_settings.actions.replace')
+                    : t('premium_settings.actions.setup')
                 }}
               </v-btn>
             </v-col>
@@ -61,7 +61,7 @@
                 type="submit"
                 @click="confirmDeletePremium = true"
               >
-                {{ $t('premium_settings.actions.delete') }}
+                {{ t('premium_settings.actions.delete') }}
               </v-btn>
             </v-col>
             <v-col v-if="edit && premium" cols="auto">
@@ -71,7 +71,7 @@
                 color="primary"
                 @click="cancelEdit()"
               >
-                {{ $t('common.actions.cancel') }}
+                {{ t('common.actions.cancel') }}
               </v-btn>
             </v-col>
             <v-col v-if="premium && !edit" cols="auto">
@@ -79,7 +79,7 @@
                 v-model="sync"
                 class="premium-settings__sync"
                 hide-details
-                :label="$t('premium_settings.actions.sync')"
+                :label="t('premium_settings.actions.sync')"
                 @change="onSyncChange()"
               />
             </v-col>
@@ -90,10 +90,10 @@
     <confirm-dialog
       :display="confirmDeletePremium"
       confirm-type="warning"
-      :primary-action="$tc('common.actions.delete')"
-      :secondary-action="$tc('common.actions.cancel')"
-      :title="$tc('premium_settings.delete_confirmation.title')"
-      :message="$tc('premium_settings.delete_confirmation.message')"
+      :primary-action="tc('common.actions.delete')"
+      :secondary-action="tc('common.actions.cancel')"
+      :title="tc('premium_settings.delete_confirmation.title')"
+      :message="tc('premium_settings.delete_confirmation.message')"
       @confirm="remove"
       @cancel="confirmDeletePremium = false"
     />
@@ -104,11 +104,11 @@
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { onMounted, Ref, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useInterop } from '@/electron-interop';
-import { default as i18nFn } from '@/i18n';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
 import { PremiumCredentialsPayload } from '@/store/session/types';
@@ -120,6 +120,8 @@ const { update } = useSettingsStore();
 const store = usePremiumStore();
 const { premium, premiumSync } = storeToRefs(store);
 const { setup, deletePremium } = store;
+
+const { t, tc } = useI18n();
 
 const { premiumURL, premiumUserLoggedIn } = useInterop();
 
@@ -181,7 +183,7 @@ const setupPremium = async () => {
   if (!result.success) {
     set(errorMessages, [
       ...get(errorMessages),
-      result.message ?? i18nFn.tc('premium_settings.error.setting_failed')
+      result.message ?? tc('premium_settings.error.setting_failed')
     ]);
     return;
   }
@@ -199,7 +201,7 @@ const remove = async () => {
   if (!result.success) {
     set(errorMessages, [
       ...get(errorMessages),
-      result.message ?? i18nFn.tc('premium_settings.error.removing_failed')
+      result.message ?? tc('premium_settings.error.removing_failed')
     ]);
     return;
   }

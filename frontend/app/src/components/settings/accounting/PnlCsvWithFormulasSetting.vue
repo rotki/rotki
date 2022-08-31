@@ -2,13 +2,13 @@
   <settings-option
     #default="{ error, success, update }"
     setting="pnlCsvWithFormulas"
-    :error-message="$tc('account_settings.messages.export_csv_formulas')"
+    :error-message="tc('account_settings.messages.export_csv_formulas')"
   >
     <v-switch
       v-model="exportCSVFormulas"
       class="csv_export_settings__exportCSVFormulas"
       :label="
-        $tc('account_settings.csv_export_settings.labels.export_csv_formulas')
+        tc('account_settings.csv_export_settings.labels.export_csv_formulas')
       "
       color="primary"
       :success-messages="success"
@@ -22,6 +22,7 @@
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
@@ -31,4 +32,6 @@ const { pnlCsvWithFormulas } = storeToRefs(useAccountingSettingsStore());
 onMounted(() => {
   set(exportCSVFormulas, get(pnlCsvWithFormulas));
 });
+
+const { tc } = useI18n();
 </script>

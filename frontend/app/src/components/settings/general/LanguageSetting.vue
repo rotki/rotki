@@ -3,7 +3,7 @@
     #default="{ error, success, update }"
     setting="language"
     frontend-setting
-    :error-message="$t('general_settings.validation.language.error')"
+    :error-message="t('general_settings.validation.language.error')"
   >
     <v-select
       v-model="language"
@@ -11,7 +11,7 @@
       item-text="label"
       item-value="identifier"
       outlined
-      :label="$t('general_settings.labels.language')"
+      :label="t('general_settings.labels.language')"
       persistent-hint
       :success-messages="success"
       :error-messages="error"
@@ -24,6 +24,7 @@
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { supportedLanguages } from '@/data/supported-language';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { SupportedLanguage } from '@/types/frontend-settings';
@@ -34,4 +35,6 @@ const { language: currentLanguage } = storeToRefs(useFrontendSettingsStore());
 onMounted(() => {
   set(language, get(currentLanguage));
 });
+
+const { t } = useI18n();
 </script>

@@ -3,14 +3,14 @@
     #default="{ error, success, update }"
     setting="displayDateInLocaltime"
     :error-message="
-      $tc('general_settings.validation.display_date_in_localtime.error')
+      tc('general_settings.validation.display_date_in_localtime.error')
     "
   >
     <v-switch
       v-model="displayDateInLocaltime"
       class="general-settings__fields__display-date-in-localtime mb-4 mt-0"
       color="primary"
-      :label="$t('general_settings.labels.display_date_in_localtime')"
+      :label="tc('general_settings.labels.display_date_in_localtime')"
       :success-messages="success"
       :error-messages="error"
       @change="update"
@@ -22,6 +22,7 @@
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const displayDateInLocaltime = ref<boolean>(true);
@@ -32,4 +33,6 @@ const { displayDateInLocaltime: enabled } = storeToRefs(
 onMounted(() => {
   set(displayDateInLocaltime, get(enabled));
 });
+
+const { tc } = useI18n();
 </script>

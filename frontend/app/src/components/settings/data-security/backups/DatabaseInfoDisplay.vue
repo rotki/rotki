@@ -1,29 +1,29 @@
 <template>
   <card>
-    <template #title>{{ $t('database_info_display.title') }}</template>
+    <template #title>{{ t('database_info_display.title') }}</template>
 
     <v-row>
       <v-col>
         <v-row>
           <v-col class="text-h6">
-            {{ $t('database_info_display.userdb') }}
+            {{ t('database_info_display.userdb') }}
           </v-col>
         </v-row>
         <v-row align="start" no-gutters class="mt-2">
           <v-col :class="$style.label" cols="auto">
-            {{ $t('database_info_display.directory') }}
+            {{ t('database_info_display.directory') }}
           </v-col>
           <v-col>{{ directory }}</v-col>
         </v-row>
         <v-row align="start" no-gutters>
           <v-col :class="$style.label" cols="auto">
-            {{ $t('database_info_display.userdb_version') }}
+            {{ t('database_info_display.userdb_version') }}
           </v-col>
           <v-col>{{ userDb.version }}</v-col>
         </v-row>
         <v-row align="start" no-gutters>
           <v-col :class="$style.label" cols="auto">
-            {{ $t('database_info_display.userdb_size') }}
+            {{ t('database_info_display.userdb_size') }}
           </v-col>
           <v-col>{{ userDb.size }}</v-col>
         </v-row>
@@ -31,18 +31,18 @@
       <v-col>
         <v-row>
           <v-col class="text-h6">
-            {{ $t('database_info_display.globaldb') }}
+            {{ t('database_info_display.globaldb') }}
           </v-col>
         </v-row>
         <v-row align="start" no-gutters class="mt-2">
           <v-col :class="$style.label" cols="auto">
-            {{ $t('database_info_display.globaldb_schema') }}
+            {{ t('database_info_display.globaldb_schema') }}
           </v-col>
           <v-col>{{ globalDb.schema }}</v-col>
         </v-row>
         <v-row align="start" no-gutters>
           <v-col :class="$style.label" cols="auto">
-            {{ $t('database_info_display.globaldb_assets') }}
+            {{ t('database_info_display.globaldb_assets') }}
           </v-col>
           <v-col>{{ globalDb.assets }}</v-col>
         </v-row>
@@ -50,8 +50,9 @@
     </v-row>
   </card>
 </template>
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 
 type UserDbInfo = {
   version: string;
@@ -63,23 +64,22 @@ type GlobalDbInfo = {
   assets: string;
 };
 
-export default defineComponent({
-  name: 'DatabaseInfoDisplay',
-  props: {
-    directory: {
-      required: true,
-      type: String
-    },
-    globalDb: {
-      required: true,
-      type: Object as PropType<GlobalDbInfo>
-    },
-    userDb: {
-      required: true,
-      type: Object as PropType<UserDbInfo>
-    }
+defineProps({
+  directory: {
+    required: true,
+    type: String
+  },
+  globalDb: {
+    required: true,
+    type: Object as PropType<GlobalDbInfo>
+  },
+  userDb: {
+    required: true,
+    type: Object as PropType<UserDbInfo>
   }
 });
+
+const { t } = useI18n();
 </script>
 <style module lang="scss">
 .label {

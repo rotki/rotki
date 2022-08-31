@@ -11,7 +11,7 @@
   >
     <div v-if="!isMini" class="text-center app__logo" />
     <div v-else class="app__logo-mini">
-      {{ $t('app.name') }}
+      {{ t('app.name') }}
     </div>
     <navigation-menu :is-mini="isMini" />
     <v-spacer />
@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 import { defineAsyncComponent, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useTheme } from '@/composables/common';
 import { useMainStore } from '@/store/main';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
@@ -41,6 +42,8 @@ const NavigationMenu = defineAsyncComponent(
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = toRefs(useMainStore());
 const { appBarColor } = useTheme();
+
+const { t } = useI18n();
 </script>
 
 <style scoped lang="scss">

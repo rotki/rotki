@@ -5,7 +5,7 @@
         <template #first-col>
           <stat-card-column>
             <template #title>
-              {{ $t('lending.currently_deposited') }}
+              {{ t('lending.currently_deposited') }}
             </template>
             <amount-display
               :value="totalLendingDeposit"
@@ -17,14 +17,14 @@
         <template #second-col>
           <stat-card-column>
             <template #title>
-              {{ $t('lending.effective_interest_rate') }}
+              {{ t('lending.effective_interest_rate') }}
               <v-tooltip bottom max-width="300px">
                 <template #activator="{ on }">
                   <v-icon small class="mb-3 ml-1" v-on="on">
                     mdi-information
                   </v-icon>
                 </template>
-                <div>{{ $t('lending.effective_interest_rate_tooltip') }}</div>
+                <div>{{ t('lending.effective_interest_rate_tooltip') }}</div>
               </v-tooltip>
             </template>
             <percentage-display
@@ -36,7 +36,7 @@
         <template #third-col>
           <stat-card-column lock>
             <template #title>
-              {{ $t('lending.profit_earned') }}
+              {{ t('lending.profit_earned') }}
               <premium-lock v-if="!premium" class="d-inline" />
             </template>
             <amount-display
@@ -52,40 +52,34 @@
     </v-col>
   </v-row>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent } from 'vue';
+import { defineProps } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import StatCardColumn from '@/components/display/StatCardColumn.vue';
 import StatCardWide from '@/components/display/StatCardWide.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { getPremium } from '@/composables/session';
 
-export default defineComponent({
-  name: 'DepositTotals',
-  components: { PremiumLock, StatCardColumn, StatCardWide },
-  props: {
-    loading: {
-      required: true,
-      type: Boolean
-    },
-    totalUsdEarned: {
-      required: true,
-      type: BigNumber
-    },
-    effectiveInterestRate: {
-      required: true,
-      type: String
-    },
-    totalLendingDeposit: {
-      required: true,
-      type: BigNumber
-    }
+defineProps({
+  loading: {
+    required: true,
+    type: Boolean
   },
-  setup() {
-    const premium = getPremium();
-    return {
-      premium
-    };
+  totalUsdEarned: {
+    required: true,
+    type: BigNumber
+  },
+  effectiveInterestRate: {
+    required: true,
+    type: String
+  },
+  totalLendingDeposit: {
+    required: true,
+    type: BigNumber
   }
 });
+const premium = getPremium();
+
+const { t } = useI18n();
 </script>

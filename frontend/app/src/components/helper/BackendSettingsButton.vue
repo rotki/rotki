@@ -15,27 +15,23 @@
             <v-icon>mdi-cog</v-icon>
           </v-btn>
         </template>
-        <span>{{ $t('backend_settings_button.tooltip') }}</span>
+        <span>{{ t('backend_settings_button.tooltip') }}</span>
       </v-tooltip>
     </template>
     <backend-settings v-if="visible" @dismiss="visible = false" />
   </v-bottom-sheet>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, toRefs } from 'vue';
+<script setup lang="ts">
+import { ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import BackendSettings from '@/components/settings/BackendSettings.vue';
 import { useMainStore } from '@/store/main';
 
-export default defineComponent({
-  name: 'BackendSettingsButton',
-  components: { BackendSettings },
-  setup() {
-    const visible = ref<boolean>(false);
-    const { connected } = toRefs(useMainStore());
-    return { visible, connected };
-  }
-});
+const visible = ref<boolean>(false);
+const { connected } = toRefs(useMainStore());
+
+const { t } = useI18n();
 </script>
 
 <style scoped lang="scss">

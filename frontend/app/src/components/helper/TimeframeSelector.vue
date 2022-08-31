@@ -11,7 +11,7 @@
           mdi-lock
         </v-icon>
       </template>
-      <span v-text="$t('overall_balances.premium_hint')" />
+      <span v-text="t('overall_balances.premium_hint')" />
     </v-tooltip>
     <v-chip
       v-for="(timeframe, i) in visibleTimeframes"
@@ -34,6 +34,7 @@ import {
 } from '@rotki/common/lib/settings/graphs';
 import { get } from '@vueuse/core';
 import { PropType, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { getPremium } from '@/composables/session';
 
 import { isPeriodAllowed } from '@/store/settings/utils';
@@ -63,6 +64,8 @@ const worksWithoutPremium = (period: TimeFrameSetting): boolean => {
 const activeClass = (timeframePeriod: TimeFrameSetting): string => {
   return timeframePeriod === get(value) ? 'timeframe-selector--active' : '';
 };
+
+const { t } = useI18n();
 </script>
 
 <style scoped lang="scss">

@@ -6,7 +6,7 @@
       :text="tc('dex_trade.title')"
     />
     <progress-screen v-else-if="loading">
-      <template #message>{{ $t('dex_trades.loading') }}</template>
+      <template #message>{{ tc('dex_trades.loading') }}</template>
     </progress-screen>
     <div v-else>
       <dex-trades-table :refreshing="refreshing">

@@ -65,7 +65,7 @@
               color="primary"
             />
             <div class="pt-5 text-caption">
-              {{ $t('overall_balances.loading') }}
+              {{ t('overall_balances.loading') }}
             </div>
           </div>
         </div>
@@ -86,6 +86,7 @@ import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Loading from '@/components/helper/Loading.vue';
@@ -101,6 +102,7 @@ import { useStatisticsStore } from '@/store/statistics';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
+const { t } = useI18n();
 const { currencySymbol, floatingPrecision } = storeToRefs(
   useGeneralSettingsStore()
 );

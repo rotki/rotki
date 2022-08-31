@@ -22,105 +22,78 @@
         </div>
       </template>
       <span>
-        {{ $t('asset_icon.tooltip', tooltip) }}
+        {{ t('asset_icon.tooltip', tooltip) }}
       </span>
     </v-tooltip>
   </adaptive-wrapper>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { get, set } from '@vueuse/core';
-import {
-  computed,
-  defineAsyncComponent,
-  defineComponent,
-  ref,
-  toRefs,
-  watch
-} from 'vue';
+import { computed, defineAsyncComponent, ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { currencies } from '@/data/currencies';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
-
-export default defineComponent({
-  name: 'AssetIcon',
-  components: {
-    AdaptiveWrapper: defineAsyncComponent(
-      () => import('@/components/display/AdaptiveWrapper.vue')
-    ),
-    GeneratedIcon: defineAsyncComponent(
-      () => import('@/components/helper/display/icons/GeneratedIcon.vue')
-    )
-  },
-  props: {
-    identifier: { required: true, type: String },
-    symbol: { required: false, type: String, default: '' },
-    size: { required: true, type: String },
-    changeable: { required: false, type: Boolean, default: false },
-    styled: { required: false, type: Object, default: () => null },
-    noTooltip: { required: false, type: Boolean, default: false },
-    timestamp: { required: false, type: Number, default: null }
-  },
-  setup(props) {
-    const { symbol, changeable, identifier, timestamp } = toRefs(props);
-    const error = ref<boolean>(false);
-
-    const { assetSymbol, assetName, assetIdentifierForSymbol } =
-      useAssetInfoRetrieval();
-
-    watch([symbol, changeable, identifier], () => set(error, false));
-
-    const currency = computed<string | undefined>(() => {
-      const id = get(identifier);
-      if ([Blockchain.BTC, Blockchain.ETH].includes(id as Blockchain)) {
-        return undefined;
-      }
-      return currencies.find(({ tickerSymbol }) => tickerSymbol === id)
-        ?.unicodeSymbol;
-    });
-
-    const displayAsset = computed<string>(() => {
-      const id = get(identifier);
-      const matchedSymbol = get(assetSymbol(id));
-      if (get(error)) {
-        return get(symbol) || matchedSymbol;
-      }
-      return get(currency) || matchedSymbol || id;
-    });
-
-    const tooltip = computed(() => {
-      const id = get(identifier);
-      return {
-        symbol: get(assetSymbol(id)),
-        name: get(assetName(id))
-      };
-    });
-
-    const url = computed<string>(() => {
-      let id = get(identifier);
-      if (
-        get(symbol) === 'WETH' ||
-        get(assetIdentifierForSymbol('WETH')) === id
-      ) {
-        return `/assets/images/defi/weth.svg`;
-      }
-      const url = `${api.serverUrl}/api/1/assets/${encodeURIComponent(
-        id
-      )}/icon`;
-      const currentTimestamp = get(timestamp) || Date.now();
-      return get(changeable) ? `${url}?t=${currentTimestamp}` : url;
-    });
-
-    return {
-      currency,
-      error,
-      displayAsset,
-      tooltip,
-      url,
-      assetSymbol,
-      assetName
-    };
-  }
+const AdaptiveWrapper = defineAsyncComponent(
+  () => import('@/components/display/AdaptiveWrapper.vue')
+);
+const GeneratedIcon = defineAsyncComponent(
+  () => import('@/components/helper/display/icons/GeneratedIcon.vue')
+);
+const props = defineProps({
+  identifier: { required: true, type: String },
+  symbol: { required: false, type: String, default: '' },
+  size: { required: true, type: String },
+  changeable: { required: false, type: Boolean, default: false },
+  styled: { required: false, type: Object, default: () => null },
+  noTooltip: { required: false, type: Boolean, default: false },
+  timestamp: { required: false, type: Number, default: null }
 });
+const { symbol, changeable, identifier, timestamp } = toRefs(props);
+const error = ref<boolean>(false);
+
+const { assetSymbol, assetName, assetIdentifierForSymbol } =
+  useAssetInfoRetrieval();
+
+watch([symbol, changeable, identifier], () => set(error, false));
+
+const currency = computed<string | undefined>(() => {
+  const id = get(identifier);
+  if ([Blockchain.BTC, Blockchain.ETH].includes(id as Blockchain)) {
+    return undefined;
+  }
+  return currencies.find(({ tickerSymbol }) => tickerSymbol === id)
+    ?.unicodeSymbol;
+});
+
+const displayAsset = computed<string>(() => {
+  const id = get(identifier);
+  const matchedSymbol = get(assetSymbol(id));
+  if (get(error)) {
+    return get(symbol) || matchedSymbol;
+  }
+  return get(currency) || matchedSymbol || id;
+});
+
+const tooltip = computed(() => {
+  const id = get(identifier);
+  return {
+    symbol: get(assetSymbol(id)),
+    name: get(assetName(id))
+  };
+});
+
+const url = computed<string>(() => {
+  let id = get(identifier);
+  if (get(symbol) === 'WETH' || get(assetIdentifierForSymbol('WETH')) === id) {
+    return `/assets/images/defi/weth.svg`;
+  }
+  const url = `${api.serverUrl}/api/1/assets/${encodeURIComponent(id)}/icon`;
+  const currentTimestamp = get(timestamp) || Date.now();
+  return get(changeable) ? `${url}?t=${currentTimestamp}` : url;
+});
+
+const { t } = useI18n();
 </script>

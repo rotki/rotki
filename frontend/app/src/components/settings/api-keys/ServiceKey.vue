@@ -73,6 +73,7 @@
 <script lang="ts">
 import { get, set } from '@vueuse/core';
 import { defineComponent, onMounted, ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { trimOnPaste } from '@/utils/event';
 
@@ -90,6 +91,7 @@ export default defineComponent({
   },
   emits: ['input', 'delete-key', 'save'],
   setup(props, { emit }) {
+    const { t } = useI18n();
     const { value } = toRefs(props);
 
     const deleteKey = () => emit('delete-key');
@@ -141,6 +143,7 @@ export default defineComponent({
     });
 
     return {
+      t,
       editMode,
       currentValue,
       onPaste,

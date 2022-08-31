@@ -15,7 +15,7 @@
           <v-card-title>
             <card-title>
               {{
-                $t('account_balances.detect_tokens.title', {
+                t('account_balances.detect_tokens.title', {
                   length: info.total
                 })
               }}
@@ -43,7 +43,7 @@
               </template>
               <div class="text-center">
                 <div>
-                  {{ $t('account_balances.detect_tokens.tooltip.redetect') }}
+                  {{ t('account_balances.detect_tokens.tooltip.redetect') }}
                 </div>
                 <div v-if="info.timestamp">
                   <i18n
@@ -72,39 +72,34 @@
     </div>
   </div>
 </template>
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { PropType } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { EthDetectedTokensInfo } from '@/services/balances/types';
 
-export default defineComponent({
-  name: 'AccountDetectedTokensDialog',
-  props: {
-    info: {
-      required: true,
-      type: Object as PropType<EthDetectedTokensInfo>
-    },
-    disabled: {
-      required: false,
-      type: Boolean,
-      default: false
-    },
-    loading: {
-      required: false,
-      type: Boolean,
-      default: false
-    }
+defineProps({
+  info: {
+    required: true,
+    type: Object as PropType<EthDetectedTokensInfo>
   },
-  emits: ['refresh'],
-  setup(_, { emit }) {
-    const refresh = () => {
-      emit('refresh');
-    };
-
-    return {
-      refresh
-    };
+  disabled: {
+    required: false,
+    type: Boolean,
+    default: false
+  },
+  loading: {
+    required: false,
+    type: Boolean,
+    default: false
   }
 });
+
+const emit = defineEmits(['refresh']);
+const refresh = () => {
+  emit('refresh');
+};
+
+const { t } = useI18n();
 </script>
 <style module lang="scss">
 .wrapper {

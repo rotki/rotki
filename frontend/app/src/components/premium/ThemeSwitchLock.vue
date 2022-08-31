@@ -21,14 +21,12 @@
       </v-badge>
     </template>
     <span>
-      {{ $t('theme_switch_lock.tooltip') }}
+      {{ t('theme_switch_lock.tooltip') }}
     </span>
   </v-tooltip>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n-composable';
 
-export default defineComponent({
-  name: 'ThemeSwitchLock'
-});
+const { t } = useI18n();
 </script>

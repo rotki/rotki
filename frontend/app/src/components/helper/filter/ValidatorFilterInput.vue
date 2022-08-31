@@ -18,7 +18,7 @@
       dense
       outlined
       item-value="publicKey"
-      :label="$t('validator_filter_input.label')"
+      :label="t('validator_filter_input.label')"
       :open-on-clear="false"
       item-text="publicKey"
       @input="input($event)"
@@ -43,72 +43,61 @@
   </v-card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 import { get } from '@vueuse/core';
-import { defineComponent, PropType, ref, toRefs } from 'vue';
+import { PropType, ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import ValidatorDisplay from '@/components/helper/display/icons/ValidatorDisplay.vue';
 import { useTheme } from '@/composables/common';
 
-export default defineComponent({
-  name: 'ValidatorFilterInput',
-  components: { ValidatorDisplay },
-  props: {
-    value: {
-      required: true,
-      type: Array as PropType<string[]>
-    },
-    items: {
-      required: true,
-      type: Array as PropType<Eth2ValidatorEntry[]>
-    },
-    loading: {
-      required: false,
-      type: Boolean,
-      default: false
-    }
+const props = defineProps({
+  value: {
+    required: true,
+    type: Array as PropType<string[]>
   },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const search = ref('');
-    const { value } = toRefs(props);
-    const input = (value: (Eth2ValidatorEntry | string)[]) => {
-      const selection = value.map(v =>
-        typeof v === 'string' ? v : v.publicKey
-      );
-      emit('input', selection);
-    };
-
-    const filter = (
-      { publicKey, validatorIndex }: Eth2ValidatorEntry,
-      queryText: string
-    ) => {
-      return (
-        publicKey.indexOf(queryText) >= 0 ||
-        validatorIndex.toString().indexOf(queryText) >= 0
-      );
-    };
-
-    const removeValidator = (publicKey: string) => {
-      const selection = [...get(value)];
-      const index = selection.indexOf(publicKey);
-      if (index >= 0) {
-        selection.splice(index, 1);
-      }
-      input(selection);
-    };
-
-    const { dark } = useTheme();
-
-    return {
-      input,
-      filter,
-      removeValidator,
-      search,
-      dark
-    };
+  items: {
+    required: true,
+    type: Array as PropType<Eth2ValidatorEntry[]>
+  },
+  loading: {
+    required: false,
+    type: Boolean,
+    default: false
   }
 });
+
+const emit = defineEmits(['input']);
+
+const search = ref('');
+const { value } = toRefs(props);
+const input = (value: (Eth2ValidatorEntry | string)[]) => {
+  const selection = value.map(v => (typeof v === 'string' ? v : v.publicKey));
+  emit('input', selection);
+};
+
+const filter = (
+  { publicKey, validatorIndex }: Eth2ValidatorEntry,
+  queryText: string
+) => {
+  return (
+    publicKey.indexOf(queryText) >= 0 ||
+    validatorIndex.toString().indexOf(queryText) >= 0
+  );
+};
+
+const removeValidator = (publicKey: string) => {
+  const selection = [...get(value)];
+  const index = selection.indexOf(publicKey);
+  if (index >= 0) {
+    selection.splice(index, 1);
+  }
+  input(selection);
+};
+
+const { dark } = useTheme();
+
+const { t } = useI18n();
 </script>
 
 <style module lang="scss">

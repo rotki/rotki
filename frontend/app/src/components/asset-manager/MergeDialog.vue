@@ -1,15 +1,15 @@
 <template>
   <v-dialog :value="value" max-width="500" persistent @input="input">
     <card>
-      <template #title>{{ $t('merge_dialog.title') }}</template>
-      <template #subtitle>{{ $t('merge_dialog.subtitle') }}</template>
-      <template v-if="!done" #hint>{{ $t('merge_dialog.hint') }}</template>
+      <template #title>{{ t('merge_dialog.title') }}</template>
+      <template #subtitle>{{ t('merge_dialog.subtitle') }}</template>
+      <template v-if="!done" #hint>{{ t('merge_dialog.hint') }}</template>
       <template #buttons>
         <v-spacer />
         <v-btn depressed @click="input(false)">
-          <span v-if="done">{{ $t('common.actions.close') }}</span>
+          <span v-if="done">{{ t('common.actions.close') }}</span>
           <span v-else>
-            {{ $t('common.actions.cancel') }}
+            {{ t('common.actions.cancel') }}
           </span>
         </v-btn>
         <v-btn
@@ -20,21 +20,21 @@
           :loading="pending"
           @click="merge()"
         >
-          {{ $t('merge_dialog.merge') }}
+          {{ t('merge_dialog.merge') }}
         </v-btn>
       </template>
 
-      <div v-if="done">{{ $t('merge_dialog.done') }}</div>
+      <div v-if="done">{{ t('merge_dialog.done') }}</div>
 
       <v-form v-else v-model="valid">
         <v-text-field
           v-model="source"
-          :label="$t('merge_dialog.source.label')"
+          :label="t('merge_dialog.source.label')"
           :rules="sourceRules"
           outlined
           :disabled="pending"
           persistent-hint
-          :hint="$t('merge_dialog.source_hint')"
+          :hint="t('merge_dialog.source_hint')"
           :error-messages="errorMessages"
           @focus="clearErrors()"
         />
@@ -47,7 +47,7 @@
           v-model="target"
           outlined
           :rules="targetRules"
-          :label="$t('merge_dialog.target.label')"
+          :label="tc('merge_dialog.target.label')"
           :disabled="pending"
         />
       </v-form>
@@ -55,87 +55,70 @@
   </v-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import { defineComponent, ref } from 'vue';
-import i18n from '@/i18n';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useAssets } from '@/store/assets';
 
-export default defineComponent({
-  name: 'MergeDialog',
-  props: {
-    value: { required: true, type: Boolean }
-  },
-  emits: ['input'],
-  setup(_, { emit }) {
-    const done = ref(false);
-    const valid = ref(false);
-    const errorMessages = ref<string[]>([]);
-    const target = ref('');
-    const source = ref('');
-    const pending = ref(false);
-
-    const { mergeAssets } = useAssets();
-
-    const reset = () => {
-      set(done, false);
-      set(target, '');
-      set(source, '');
-      set(valid, false);
-      set(pending, false);
-      set(errorMessages, []);
-    };
-
-    const clearErrors = () => {
-      const elements = get(errorMessages).length;
-      for (let i = 0; i < elements; i++) {
-        set(errorMessages, []);
-      }
-    };
-
-    async function merge() {
-      set(pending, true);
-      const result = await mergeAssets({
-        sourceIdentifier: get(source),
-        targetIdentifier: get(target)
-      });
-
-      if (result.success) {
-        set(done, true);
-      } else {
-        set(errorMessages, [
-          ...get(errorMessages),
-          result.message ?? i18n.t('merge_dialog.error').toString()
-        ]);
-      }
-      set(pending, false);
-    }
-
-    const input = (value: boolean) => {
-      emit('input', value);
-      setTimeout(() => reset(), 100);
-    };
-
-    const sourceRules = [
-      (v: string) => !!v || i18n.t('merge_dialog.source.non_empty').toString()
-    ];
-    const targetRules = [
-      (v: string) => !!v || i18n.t('merge_dialog.target.non_empty').toString()
-    ];
-
-    return {
-      done,
-      valid,
-      errorMessages,
-      target,
-      source,
-      pending,
-      sourceRules,
-      targetRules,
-      merge,
-      input,
-      clearErrors
-    };
-  }
+defineProps({
+  value: { required: true, type: Boolean }
 });
+
+const emit = defineEmits(['input']);
+const done = ref(false);
+const valid = ref(false);
+const errorMessages = ref<string[]>([]);
+const target = ref('');
+const source = ref('');
+const pending = ref(false);
+
+const { mergeAssets } = useAssets();
+const { t, tc } = useI18n();
+
+const reset = () => {
+  set(done, false);
+  set(target, '');
+  set(source, '');
+  set(valid, false);
+  set(pending, false);
+  set(errorMessages, []);
+};
+
+const clearErrors = () => {
+  const elements = get(errorMessages).length;
+  for (let i = 0; i < elements; i++) {
+    set(errorMessages, []);
+  }
+};
+
+async function merge() {
+  set(pending, true);
+  const result = await mergeAssets({
+    sourceIdentifier: get(source),
+    targetIdentifier: get(target)
+  });
+
+  if (result.success) {
+    set(done, true);
+  } else {
+    set(errorMessages, [
+      ...get(errorMessages),
+      result.message ?? t('merge_dialog.error').toString()
+    ]);
+  }
+  set(pending, false);
+}
+
+const input = (value: boolean) => {
+  emit('input', value);
+  setTimeout(() => reset(), 100);
+};
+
+const sourceRules = [
+  (v: string) => !!v || t('merge_dialog.source.non_empty').toString()
+];
+const targetRules = [
+  (v: string) => !!v || t('merge_dialog.target.non_empty').toString()
+];
 </script>

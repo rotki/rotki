@@ -19,7 +19,7 @@
     >
       <template #no-data>
         <v-list-item>
-          <span class="subheading">{{ $t('common.actions.create') }}</span>
+          <span class="subheading">{{ t('common.actions.create') }}</span>
           <v-chip
             class="ml-2"
             :color="newTagBackground"
@@ -84,10 +84,11 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, PropType, ref, toRefs, watch } from 'vue';
+import { computed, PropType, ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import TagManager from '@/components/tags/TagManager.vue';
 import { useTagStore } from '@/store/session/tags';
@@ -96,129 +97,115 @@ import { invertColor, randomColor } from '@/utils/Color';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { logger } from '@/utils/logging';
 
-const valueValidator = (value: any) => {
-  if (!checkIfDevelopment()) {
-    return true;
-  }
-  if (!Array.isArray(value)) {
-    return false;
-  }
-  return (value as Array<any>).every(element => typeof element === 'string');
+const props = defineProps({
+  value: {
+    required: true,
+    type: Array as PropType<string[]>,
+    validator: (value: any) => {
+      if (!checkIfDevelopment()) {
+        return true;
+      }
+      if (!Array.isArray(value)) {
+        return false;
+      }
+      return (value as Array<any>).every(
+        element => typeof element === 'string'
+      );
+    }
+  },
+  disabled: { required: false, type: Boolean, default: false },
+  label: { required: false, type: String, default: 'Tags' },
+  outlined: { required: false, type: Boolean, default: false }
+});
+
+const emit = defineEmits(['input']);
+
+const { t } = useI18n();
+const { value } = toRefs(props);
+const store = useTagStore();
+const { tags } = storeToRefs(store);
+
+const manageTags = ref<boolean>(false);
+
+const search = ref<string>('');
+
+const randomScheme = () => {
+  const backgroundColor = randomColor();
+  return {
+    backgroundColor,
+    foregroundColor: invertColor(backgroundColor)
+  };
 };
 
-export default defineComponent({
-  name: 'TagInput',
-  components: { TagIcon, TagManager },
-  props: {
-    value: {
-      required: true,
-      type: Array as PropType<string[]>,
-      validator: valueValidator
-    },
-    disabled: { required: false, type: Boolean, default: false },
-    label: { required: false, type: String, default: 'Tags' },
-    outlined: { required: false, type: Boolean, default: false }
-  },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { value } = toRefs(props);
-    const store = useTagStore();
-    const { tags } = storeToRefs(store);
+const colorScheme = ref(randomScheme());
 
-    const manageTags = ref<boolean>(false);
+const tagExists = (tagName: string): boolean => {
+  return get(tags)
+    .map(({ name }) => name)
+    .includes(tagName);
+};
 
-    const search = ref<string>('');
+const createTag = async (name: string) => {
+  const { backgroundColor, foregroundColor } = get(colorScheme);
+  const tag: Tag = {
+    name,
+    description: '',
+    backgroundColor,
+    foregroundColor
+  };
+  return await store.addTag(tag);
+};
 
-    const randomScheme = () => {
-      const backgroundColor = randomColor();
-      return {
-        backgroundColor,
-        foregroundColor: invertColor(backgroundColor)
-      };
-    };
+const remove = (tag: string) => {
+  const tags = get(value);
+  const index = tags.indexOf(tag);
+  input([...tags.slice(0, index), ...tags.slice(index + 1)]);
+};
 
-    const colorScheme = ref(randomScheme());
-
-    const tagExists = (tagName: string): boolean => {
-      return get(tags)
-        .map(({ name }) => name)
-        .includes(tagName);
-    };
-
-    const createTag = async (name: string) => {
-      const { backgroundColor, foregroundColor } = get(colorScheme);
-      const tag: Tag = {
-        name,
-        description: '',
-        backgroundColor,
-        foregroundColor
-      };
-      return await store.addTag(tag);
-    };
-
-    const remove = (tag: string) => {
-      const tags = get(value);
-      const index = tags.indexOf(tag);
-      input([...tags.slice(0, index), ...tags.slice(index + 1)]);
-    };
-
-    const attemptTagCreation = (element: string) => {
-      if (tagExists(element)) {
-        return;
-      }
-      createTag(element)
-        .then(({ success }) => {
-          if (!success) {
-            remove(element);
-          }
-        })
-        .catch(e => logger.error(e));
-    };
-
-    const input = (_value: (string | Tag)[]) => {
-      const tags: string[] = [];
-      for (let i = 0; i < _value.length; i++) {
-        const element = _value[i];
-        if (typeof element === 'string') {
-          attemptTagCreation(element);
-          tags.push(element);
-        } else {
-          tags.push(element.name);
-        }
-      }
-
-      emit('input', tags);
-    };
-
-    watch(search, (keyword: string | null, previous: string | null) => {
-      if (keyword && !previous) {
-        set(colorScheme, randomScheme());
-      }
-    });
-
-    const newTagBackground = computed<string>(() => {
-      return `#${get(colorScheme).backgroundColor}`;
-    });
-
-    const newTagForeground = computed<string>(() => {
-      return `#${get(colorScheme).foregroundColor}`;
-    });
-
-    const values = computed<Tag[]>(() => {
-      return get(tags).filter(({ name }) => get(value).includes(name));
-    });
-
-    return {
-      values,
-      tags,
-      search,
-      input,
-      newTagBackground,
-      newTagForeground,
-      remove,
-      manageTags
-    };
+const attemptTagCreation = (element: string) => {
+  if (tagExists(element)) {
+    return;
   }
+  createTag(element)
+    .then(({ success }) => {
+      if (!success) {
+        remove(element);
+      }
+    })
+    .catch(e => logger.error(e));
+};
+
+const input = (_value: (string | Tag)[]) => {
+  const tags: string[] = [];
+  for (let i = 0; i < _value.length; i++) {
+    const element = _value[i];
+    if (typeof element === 'string') {
+      attemptTagCreation(element);
+      tags.push(element);
+    } else {
+      tags.push(element.name);
+    }
+  }
+
+  emit('input', tags);
+};
+
+watch(search, (keyword: string | null, previous: string | null) => {
+  if (keyword && !previous) {
+    set(colorScheme, randomScheme());
+  }
+});
+
+const newTagBackground = computed<string>(() => {
+  return `#${get(colorScheme).backgroundColor}`;
+});
+
+const newTagForeground = computed<string>(() => {
+  return `#${get(colorScheme).foregroundColor}`;
+});
+
+const values = computed<Tag[]>(() => {
+  return get(tags).filter(({ name }) => get(value).includes(name));
 });
 </script>
 

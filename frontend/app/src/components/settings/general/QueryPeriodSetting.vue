@@ -38,7 +38,6 @@ import { storeToRefs } from 'pinia';
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useValidation } from '@/composables/validation';
-import i18n from '@/i18n';
 import { monitor } from '@/services/monitoring';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
@@ -46,28 +45,25 @@ const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;
 const maxQueryPeriod = 3600;
 
+const { t, tc } = useI18n();
+
 const rules = {
   queryPeriod: {
     required: helpers.withMessage(
-      i18n
-        .t('frontend_settings.validation.periodic_query.non_empty')
-        .toString(),
+      t('frontend_settings.validation.periodic_query.non_empty').toString(),
       required
     ),
     between: helpers.withMessage(
-      i18n
-        .t('frontend_settings.validation.periodic_query.invalid_period', {
-          start: minQueryPeriod,
-          end: maxQueryPeriod
-        })
-        .toString(),
+      t('frontend_settings.validation.periodic_query.invalid_period', {
+        start: minQueryPeriod,
+        end: maxQueryPeriod
+      }).toString(),
       between(minQueryPeriod, maxQueryPeriod)
     )
   }
 };
 
 const { queryPeriod: currentPeriod } = storeToRefs(useFrontendSettingsStore());
-const { tc } = useI18n();
 
 const resetQueryPeriod = () => {
   set(queryPeriod, get(currentPeriod).toString());

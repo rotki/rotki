@@ -21,7 +21,7 @@
         <date-display :timestamp="item.startDate" />
         <template v-if="item.startDate !== item.endDate">
           <span>
-            {{ $tc('profit_loss_report.actionable.missing_acquisitions.to') }}
+            {{ t('profit_loss_report.actionable.missing_acquisitions.to') }}
             <br />
           </span>
           <date-display :timestamp="item.endDate" />
@@ -59,12 +59,12 @@
     <slot name="actions" />
   </div>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, PropType, Ref, ref, toRefs } from 'vue';
+import { computed, PropType, ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import RowExpander from '@/components/helper/RowExpander.vue';
-import i18n from '@/i18n';
 import { MissingAcquisition, SelectedReport } from '@/types/reports';
 
 type GroupedItems = { [asset: string]: MissingAcquisition[] };
@@ -75,136 +75,108 @@ type MappedGroupedItems = {
   acquisitions: MissingAcquisition[];
 };
 
-const headers = (isPinned: Ref<boolean>) => {
-  return computed<DataTableHeader[]>(() => {
-    const pinnedClass = get(isPinned)
-      ? { class: 'px-2', cellClass: 'px-2' }
-      : {};
-
-    return [
-      {
-        text: i18n.t('common.asset').toString(),
-        value: 'asset',
-        ...pinnedClass
-      },
-      {
-        text: i18n.t('common.datetime').toString(),
-        value: 'time',
-        ...pinnedClass
-      },
-      {
-        text: i18n
-          .t(
-            'profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'
-          )
-          .toString(),
-        value: 'total_missing_acquisition',
-        sortable: false,
-        ...pinnedClass
-      },
-      {
-        text: '',
-        value: 'expand',
-        align: 'end',
-        sortable: false,
-        ...pinnedClass
-      }
-    ];
-  });
-};
-
-const childHeaders = (isPinned: Ref<boolean>) => {
-  return computed<DataTableHeader[]>(() => {
-    const pinnedClass = get(isPinned)
-      ? { class: 'px-2', cellClass: 'px-2' }
-      : {};
-
-    return [
-      {
-        text: i18n.t('common.datetime').toString(),
-        value: 'time',
-        ...pinnedClass
-      },
-      {
-        text: i18n
-          .t(
-            'profit_loss_report.actionable.missing_acquisitions.headers.found_amount'
-          )
-          .toString(),
-        value: 'foundAmount',
-        ...pinnedClass
-      },
-      {
-        text: i18n
-          .t(
-            'profit_loss_report.actionable.missing_acquisitions.headers.missing_amount'
-          )
-          .toString(),
-        value: 'missingAmount',
-        ...pinnedClass
-      }
-    ];
-  });
-};
-
-export default defineComponent({
-  name: 'ReportMissingAcquisitions',
-  components: {
-    RowExpander
+const props = defineProps({
+  report: {
+    required: true,
+    type: Object as PropType<SelectedReport>
   },
-  props: {
-    report: {
-      required: true,
-      type: Object as PropType<SelectedReport>
-    },
-    items: { required: true, type: Array as PropType<MissingAcquisition[]> },
-    isPinned: { required: true, type: Boolean, default: false }
-  },
-  setup(props) {
-    const { items, isPinned } = toRefs(props);
+  items: { required: true, type: Array as PropType<MissingAcquisition[]> },
+  isPinned: { required: true, type: Boolean, default: false }
+});
 
-    const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
-      const grouped: GroupedItems = {};
+const { items, isPinned } = toRefs(props);
 
-      get(items).forEach((item: MissingAcquisition) => {
-        if (grouped[item.asset]) {
-          grouped[item.asset].push(item);
-        } else {
-          grouped[item.asset] = [item];
-        }
-      });
+const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
+  const grouped: GroupedItems = {};
 
-      return Object.keys(grouped).map(key => {
-        const sortedAcquisitions = grouped[key].sort((a, b) => a.time - b.time);
-        const startDate = sortedAcquisitions[0].time;
-        const endDate = sortedAcquisitions[sortedAcquisitions.length - 1].time;
+  get(items).forEach((item: MissingAcquisition) => {
+    if (grouped[item.asset]) {
+      grouped[item.asset].push(item);
+    } else {
+      grouped[item.asset] = [item];
+    }
+  });
 
-        return {
-          asset: key,
-          startDate,
-          endDate,
-          acquisitions: sortedAcquisitions
-        };
-      });
-    });
-
-    const expanded = ref<MappedGroupedItems[]>([]);
-
-    const tableRef = ref<any>(null);
-
-    const tableContainer = computed(() => {
-      return get(tableRef)?.$el;
-    });
+  return Object.keys(grouped).map(key => {
+    const sortedAcquisitions = grouped[key].sort((a, b) => a.time - b.time);
+    const startDate = sortedAcquisitions[0].time;
+    const endDate = sortedAcquisitions[sortedAcquisitions.length - 1].time;
 
     return {
-      headers: headers(isPinned),
-      childHeaders: childHeaders(isPinned),
-      expanded,
-      groupedMissingAcquisitions,
-      tableRef,
-      tableContainer
+      asset: key,
+      startDate,
+      endDate,
+      acquisitions: sortedAcquisitions
     };
-  }
+  });
+});
+
+const expanded = ref<MappedGroupedItems[]>([]);
+
+const tableRef = ref<any>(null);
+
+const tableContainer = computed(() => {
+  return get(tableRef)?.$el;
+});
+
+const { t } = useI18n();
+
+const headers = computed<DataTableHeader[]>(() => {
+  const pinnedClass = get(isPinned) ? { class: 'px-2', cellClass: 'px-2' } : {};
+
+  return [
+    {
+      text: t('common.asset').toString(),
+      value: 'asset',
+      ...pinnedClass
+    },
+    {
+      text: t('common.datetime').toString(),
+      value: 'time',
+      ...pinnedClass
+    },
+    {
+      text: t(
+        'profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'
+      ).toString(),
+      value: 'total_missing_acquisition',
+      sortable: false,
+      ...pinnedClass
+    },
+    {
+      text: '',
+      value: 'expand',
+      align: 'end',
+      sortable: false,
+      ...pinnedClass
+    }
+  ];
+});
+
+const childHeaders = computed<DataTableHeader[]>(() => {
+  const pinnedClass = get(isPinned) ? { class: 'px-2', cellClass: 'px-2' } : {};
+
+  return [
+    {
+      text: t('common.datetime').toString(),
+      value: 'time',
+      ...pinnedClass
+    },
+    {
+      text: t(
+        'profit_loss_report.actionable.missing_acquisitions.headers.found_amount'
+      ).toString(),
+      value: 'foundAmount',
+      ...pinnedClass
+    },
+    {
+      text: t(
+        'profit_loss_report.actionable.missing_acquisitions.headers.missing_amount'
+      ).toString(),
+      value: 'missingAmount',
+      ...pinnedClass
+    }
+  ];
 });
 </script>
 

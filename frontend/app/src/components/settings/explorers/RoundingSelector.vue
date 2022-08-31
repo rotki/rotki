@@ -26,38 +26,27 @@
   </v-select>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { defineComponent } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 
-import i18n from '@/i18n';
+const { t } = useI18n();
 
-export default defineComponent({
-  name: 'RoundingSelector',
-  setup() {
-    const selections = [
-      {
-        value: BigNumber.ROUND_UP,
-        text: i18n.t('rounding_settings.round.up').toString(),
-        description: i18n.t('rounding_settings.round.up_description').toString()
-      },
-      {
-        value: BigNumber.ROUND_DOWN,
-        text: i18n.t('rounding_settings.round.down').toString(),
-        description: i18n
-          .t('rounding_settings.round.down_description')
-          .toString()
-      },
-      {
-        value: BigNumber.ROUND_HALF_EVEN,
-        text: i18n.t('rounding_settings.round.half_even').toString(),
-        description: i18n
-          .t('rounding_settings.round.half_even_description')
-          .toString()
-      }
-    ];
-
-    return { selections };
+const selections = [
+  {
+    value: BigNumber.ROUND_UP,
+    text: t('rounding_settings.round.up').toString(),
+    description: t('rounding_settings.round.up_description').toString()
+  },
+  {
+    value: BigNumber.ROUND_DOWN,
+    text: t('rounding_settings.round.down').toString(),
+    description: t('rounding_settings.round.down_description').toString()
+  },
+  {
+    value: BigNumber.ROUND_HALF_EVEN,
+    text: t('rounding_settings.round.half_even').toString(),
+    description: t('rounding_settings.round.half_even_description').toString()
   }
-});
+];
 </script>

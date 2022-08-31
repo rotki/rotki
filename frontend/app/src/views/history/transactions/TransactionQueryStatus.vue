@@ -35,11 +35,11 @@
               </v-icon>
             </div>
             <div v-if="isAllFinished">
-              {{ $t('transactions.query_status.done_group', { length }) }}
+              {{ t('transactions.query_status.done_group', { length }) }}
             </div>
             <div v-else>
               {{
-                $t('transactions.query_status.group', {
+                t('transactions.query_status.group', {
                   length: queryingLength
                 })
               }}
@@ -94,7 +94,7 @@
         <v-dialog width="1200">
           <template #activator="{ on }">
             <v-btn text class="ml-4" v-on="on">
-              {{ $t('common.details') }}
+              {{ t('common.details') }}
               <v-icon small>mdi-chevron-right</v-icon>
             </v-btn>
           </template>
@@ -102,7 +102,7 @@
             <v-card :class="$style.card">
               <v-card-title class="d-flex justify-space-between pb-0">
                 <div>
-                  {{ $t('transactions.query_status.title') }}
+                  {{ t('transactions.query_status.title') }}
                 </div>
                 <v-btn icon @click="dialog.value = false">
                   <v-icon>mdi-close</v-icon>
@@ -111,11 +111,11 @@
 
               <div class="px-6 pb-4 text-caption">
                 <div v-if="isAllFinished">
-                  {{ $t('transactions.query_status.done_group', { length }) }}
+                  {{ t('transactions.query_status.done_group', { length }) }}
                 </div>
                 <div v-else>
                   {{
-                    $t('transactions.query_status.group', {
+                    t('transactions.query_status.group', {
                       length: queryingLength
                     })
                   }}
@@ -235,7 +235,7 @@ defineProps({
   colspan: { required: true, type: Number }
 });
 
-const { tc } = useI18n();
+const { t, tc } = useI18n();
 
 const statusesData = {
   [EthereumTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: {

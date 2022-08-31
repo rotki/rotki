@@ -2988,16 +2988,6 @@
     "no_messages": "No messages!",
     "title": "Notifications"
   },
-  "open_trades": {
-    "header": {
-      "action": "Action",
-      "fee": "Fee",
-      "fee_currency": "Fee Currency",
-      "pair": "Pair",
-      "rate": "Rate"
-    },
-    "title": "Open Orders"
-  },
   "oracle_cache_management": {
     "clear_error": "Clearing the cache for {fromAsset} to {toAsset} failed: {error}",
     "create_cache": "Cache Pair prices",

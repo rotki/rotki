@@ -10,7 +10,7 @@
       v-model="label"
       class="manual-balances-form__label"
       outlined
-      :label="$t('manual_balances_form.fields.label')"
+      :label="tc('manual_balances_form.fields.label')"
       :error-messages="errors['label']"
       :rules="labelRules"
       :disabled="pending"
@@ -19,13 +19,13 @@
 
     <balance-type-input
       v-model="balanceType"
-      :label="$t('manual_balances_form.fields.balance_type')"
+      :label="tc('manual_balances_form.fields.balance_type')"
       outlined
     />
 
     <asset-select
       v-model="asset"
-      :label="$t('common.asset')"
+      :label="tc('common.asset')"
       :error-messages="errors['asset']"
       class="manual-balances-form__asset"
       outlined
@@ -35,7 +35,7 @@
     />
     <amount-input
       v-model="amount"
-      :label="$t('common.amount')"
+      :label="tc('common.amount')"
       :error-messages="errors['amount']"
       class="manual-balances-form__amount"
       outlined
@@ -46,7 +46,7 @@
     />
     <tag-input
       v-model="tags"
-      :label="$t('manual_balances_form.fields.tags')"
+      :label="tc('manual_balances_form.fields.tags')"
       :disabled="pending"
       outlined
       class="manual-balances-form__tags"
@@ -57,7 +57,7 @@
       outlined
       :error-messages="errors['location']"
       :disabled="pending"
-      :label="$t('common.location')"
+      :label="tc('common.location')"
       @focus="delete errors['location']"
     />
   </v-form>
@@ -66,28 +66,27 @@
 <script lang="ts">
 import { get, set } from '@vueuse/core';
 import { defineComponent, PropType, Ref, ref, toRefs, watch } from 'vue';
-import { IVueI18n } from 'vue-i18n';
+import { useI18n } from 'vue-i18n-composable';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import i18n from '@/i18n';
 import { BalanceType, ManualBalance } from '@/services/balances/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { TradeLocation } from '@/services/history/types';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { bigNumberify } from '@/utils/bignumbers';
 
-const setupRules = (i18n: IVueI18n) => {
+const setupRules = (tc: (key: string) => string) => {
   const amountRules = [
-    (v: string) => !!v || i18n.t('manual_balances_form.validation.amount')
+    (v: string) => !!v || tc('manual_balances_form.validation.amount')
   ];
   const assetRules = [
-    (v: string) => !!v || i18n.t('manual_balances_form.validation.asset')
+    (v: string) => !!v || tc('manual_balances_form.validation.asset')
   ];
   const labelRules = [
-    (v: string) => !!v || i18n.t('manual_balances_form.validation.label_empty')
+    (v: string) => !!v || tc('manual_balances_form.validation.label_empty')
   ];
 
   return {
@@ -103,7 +102,7 @@ const ManualBalancesForm = defineComponent({
   props: {
     edit: {
       required: false,
-      type: Object as PropType<ManualBalance>,
+      type: Object as PropType<ManualBalance | null>,
       default: null
     },
     value: { required: true, type: Boolean },
@@ -111,6 +110,7 @@ const ManualBalancesForm = defineComponent({
   },
   emits: ['clear', 'input'],
   setup(props, { emit }) {
+    const { t, tc } = useI18n();
     const { edit, context } = toRefs(props);
 
     const valid = ref(false);
@@ -211,9 +211,9 @@ const ManualBalancesForm = defineComponent({
         set(errors, {
           ...get(errors),
           label: [
-            i18n
-              .t('manual_balances_form.validation.label_exists', { label })
-              .toString()
+            t('manual_balances_form.validation.label_exists', {
+              label
+            }).toString()
           ]
         });
       } else {
@@ -223,6 +223,8 @@ const ManualBalancesForm = defineComponent({
     });
 
     return {
+      t,
+      tc,
       form,
       valid,
       pending,
@@ -233,7 +235,7 @@ const ManualBalancesForm = defineComponent({
       tags,
       location,
       balanceType,
-      ...setupRules(i18n),
+      ...setupRules(tc),
       input,
       save,
       clear,

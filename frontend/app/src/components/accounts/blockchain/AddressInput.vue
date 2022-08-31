@@ -6,7 +6,7 @@
           <v-checkbox
             v-model="multiple"
             :disabled="disabled"
-            :label="$t('account_form.labels.multiple')"
+            :label="t('account_form.labels.multiple')"
           />
         </v-col>
       </v-row>
@@ -16,7 +16,7 @@
         data-cy="account-address-field"
         outlined
         class="account-form__address"
-        :label="$t('common.account')"
+        :label="t('common.account')"
         :rules="rules"
         :error-messages="errors"
         autocomplete="off"
@@ -28,8 +28,8 @@
         v-model="userAddresses"
         outlined
         :disabled="disabled"
-        :hint="$t('account_form.labels.addresses_hint')"
-        :label="$t('account_form.labels.addresses')"
+        :hint="t('account_form.labels.addresses_hint')"
+        :label="t('account_form.labels.addresses')"
         @paste="onPasteMulti"
       />
       <v-row v-if="multiple" no-gutters>
@@ -37,7 +37,7 @@
           <div
             class="text-caption"
             v-text="
-              $tc('account_form.labels.addresses_entries', entries.length, {
+              tc('account_form.labels.addresses_entries', entries.length, {
                 count: entries.length
               })
             "
@@ -48,127 +48,101 @@
   </v-row>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import {
-  computed,
-  defineComponent,
-  onMounted,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from 'vue';
-import i18n from '@/i18n';
+import { computed, onMounted, PropType, ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { trimOnPaste } from '@/utils/event';
 
-const setupValidationRules = () => {
-  const nonEmptyRule = (value: string) => {
-    return (
-      !!value || i18n.t('account_form.validation.address_non_empty').toString()
-    );
-  };
-
-  const rules = [nonEmptyRule];
-  return { rules };
-};
-
-export default defineComponent({
-  name: 'AddressInput',
-  props: {
-    addresses: {
-      required: true,
-      type: Array as PropType<string[]>
-    },
-    disabled: {
-      required: true,
-      type: Boolean
-    },
-    multi: {
-      required: true,
-      type: Boolean
-    },
-    errorMessages: {
-      required: true,
-      type: Object as PropType<Record<string, string[]>>
-    }
+const props = defineProps({
+  addresses: {
+    required: true,
+    type: Array as PropType<string[]>
   },
-  emits: ['update:addresses'],
-  setup(props, { emit }) {
-    const { errorMessages, addresses, disabled } = toRefs(props);
-    const address = ref('');
-    const userAddresses = ref('');
-    const multiple = ref(false);
-    const entries = computed(() => {
-      const allAddresses = get(userAddresses)
-        .split(',')
-        .map(value => value.trim())
-        .filter(entry => entry.length > 0);
-
-      const entries: { [address: string]: string } = {};
-      for (const address of allAddresses) {
-        const lowerCase = address.toLocaleLowerCase();
-        if (entries[lowerCase]) {
-          continue;
-        }
-        entries[lowerCase] = address;
-      }
-      return Object.values(entries);
-    });
-
-    watch(multiple, () => {
-      set(userAddresses, '');
-    });
-
-    const onPasteMulti = (event: ClipboardEvent) => {
-      if (get(disabled)) return;
-      const paste = trimOnPaste(event);
-      if (paste) {
-        userAddresses.value += paste.replace(/,(0x)/g, ',\n0x');
-      }
-    };
-
-    const onPasteAddress = (event: ClipboardEvent) => {
-      if (get(disabled)) return;
-      const paste = trimOnPaste(event);
-      if (paste) {
-        set(address, paste);
-      }
-    };
-
-    const errors = computed(() => {
-      const messages = get(errorMessages);
-      return messages['address'];
-    });
-
-    const updateAddresses = (addresses: string[]) => {
-      emit('update:addresses', addresses);
-    };
-
-    watch(entries, addresses => updateAddresses(addresses));
-    watch(address, address => {
-      updateAddresses(address ? [address.trim()] : []);
-    });
-
-    const setAddress = (addresses: string[]) => {
-      if (addresses.length === 1) {
-        set(address, addresses[0]);
-      }
-    };
-
-    watch(addresses, addresses => setAddress(addresses));
-    onMounted(() => setAddress(get(addresses)));
-
-    return {
-      address,
-      userAddresses,
-      multiple,
-      entries,
-      errors,
-      ...setupValidationRules(),
-      onPasteMulti,
-      onPasteAddress
-    };
+  disabled: {
+    required: true,
+    type: Boolean
+  },
+  multi: {
+    required: true,
+    type: Boolean
+  },
+  errorMessages: {
+    required: true,
+    type: Object as PropType<Record<string, string[]>>
   }
 });
+
+const emit = defineEmits(['update:addresses']);
+
+const { t, tc } = useI18n();
+const { errorMessages, addresses, disabled } = toRefs(props);
+const address = ref('');
+const userAddresses = ref('');
+const multiple = ref(false);
+const entries = computed(() => {
+  const allAddresses = get(userAddresses)
+    .split(',')
+    .map(value => value.trim())
+    .filter(entry => entry.length > 0);
+
+  const entries: { [address: string]: string } = {};
+  for (const address of allAddresses) {
+    const lowerCase = address.toLocaleLowerCase();
+    if (entries[lowerCase]) {
+      continue;
+    }
+    entries[lowerCase] = address;
+  }
+  return Object.values(entries);
+});
+
+watch(multiple, () => {
+  set(userAddresses, '');
+});
+
+const onPasteMulti = (event: ClipboardEvent) => {
+  if (get(disabled)) return;
+  const paste = trimOnPaste(event);
+  if (paste) {
+    userAddresses.value += paste.replace(/,(0x)/g, ',\n0x');
+  }
+};
+
+const onPasteAddress = (event: ClipboardEvent) => {
+  if (get(disabled)) return;
+  const paste = trimOnPaste(event);
+  if (paste) {
+    set(address, paste);
+  }
+};
+
+const errors = computed(() => {
+  const messages = get(errorMessages);
+  return messages['address'];
+});
+
+const updateAddresses = (addresses: string[]) => {
+  emit('update:addresses', addresses);
+};
+
+watch(entries, addresses => updateAddresses(addresses));
+watch(address, address => {
+  updateAddresses(address ? [address.trim()] : []);
+});
+
+const setAddress = (addresses: string[]) => {
+  if (addresses.length === 1) {
+    set(address, addresses[0]);
+  }
+};
+
+watch(addresses, addresses => setAddress(addresses));
+onMounted(() => setAddress(get(addresses)));
+
+const rules = [
+  (v: string) => {
+    return !!v || t('account_form.validation.address_non_empty').toString();
+  }
+];
 </script>

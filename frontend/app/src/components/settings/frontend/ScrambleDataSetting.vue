@@ -3,12 +3,12 @@
     #default="{ error, success, update }"
     setting="scrambleData"
     session-setting
-    :error-message="$tc('frontend_settings.validation.scramble.error')"
+    :error-message="tc('frontend_settings.validation.scramble.error')"
   >
     <v-switch
       v-model="scrambleData"
       class="general-settings__fields__scramble-data"
-      :label="$t('frontend_settings.label.scramble')"
+      :label="t('frontend_settings.label.scramble')"
       :success-messages="success"
       :error-messages="error"
       @change="update"
@@ -19,6 +19,7 @@
 <script setup lang="ts">
 import { get, set } from '@vueuse/core';
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
 const { scrambleData: enabled } = useSessionSettingsStore();
@@ -27,4 +28,6 @@ const scrambleData = ref<boolean>(false);
 onMounted(() => {
   set(scrambleData, get(enabled));
 });
+
+const { t, tc } = useI18n();
 </script>

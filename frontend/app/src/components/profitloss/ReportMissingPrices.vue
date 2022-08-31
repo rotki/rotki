@@ -33,7 +33,7 @@
               :success-messages="
                 item.saved
                   ? [
-                      $tc(
+                      tc(
                         'profit_loss_report.actionable.missing_prices.price_is_saved'
                       )
                     ]
@@ -61,8 +61,8 @@ import {
   ref,
   toRefs
 } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
-import i18n from '@/i18n';
 import {
   HistoricalPrice,
   HistoricalPriceDeletePayload,
@@ -77,30 +77,6 @@ export type EditableMissingPrice = MissingPrice & {
   saved: boolean;
 };
 
-const headers = computed<DataTableHeader[]>(() => [
-  {
-    text: i18n
-      .t('profit_loss_report.actionable.missing_prices.headers.from_asset')
-      .toString(),
-    value: 'fromAsset'
-  },
-  {
-    text: i18n
-      .t('profit_loss_report.actionable.missing_prices.headers.to_asset')
-      .toString(),
-    value: 'toAsset'
-  },
-  {
-    text: i18n.t('common.datetime').toString(),
-    value: 'time'
-  },
-  {
-    text: i18n.t('common.price').toString(),
-    value: 'price',
-    sortable: false
-  }
-]);
-
 export default defineComponent({
   name: 'ReportMissingPrices',
   props: {
@@ -108,6 +84,7 @@ export default defineComponent({
     isPinned: { required: true, type: Boolean, default: false }
   },
   setup(props) {
+    const { t, tc } = useI18n();
     const { items } = toRefs(props);
     const prices = ref<HistoricalPrice[]>([]);
     const errorMessages: Ref<{ [key: string]: string[] }> = ref({});
@@ -185,7 +162,33 @@ export default defineComponent({
       return get(tableRef)?.$el;
     });
 
+    const headers = computed<DataTableHeader[]>(() => [
+      {
+        text: t(
+          'profit_loss_report.actionable.missing_prices.headers.from_asset'
+        ).toString(),
+        value: 'fromAsset'
+      },
+      {
+        text: t(
+          'profit_loss_report.actionable.missing_prices.headers.to_asset'
+        ).toString(),
+        value: 'toAsset'
+      },
+      {
+        text: t('common.datetime').toString(),
+        value: 'time'
+      },
+      {
+        text: t('common.price').toString(),
+        value: 'price',
+        sortable: false
+      }
+    ]);
+
     return {
+      t,
+      tc,
       headers,
       updatePrice,
       formattedItems,
