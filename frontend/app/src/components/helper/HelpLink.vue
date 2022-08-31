@@ -5,10 +5,10 @@
         icon
         :small="small"
         v-bind="attrs"
-        :href="$interop.isPackaged ? undefined : url"
+        :href="href"
         target="_blank"
         v-on="on"
-        @click="$interop.isPackaged ? openLink() : undefined"
+        @click="onLinkClick"
       >
         <v-icon :small="small">mdi-help-circle</v-icon>
       </v-btn>
@@ -17,28 +17,16 @@
   </v-tooltip>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { defineComponent, toRefs } from 'vue';
-import { interop } from '@/electron-interop';
+<script setup lang="ts">
+import { toRefs } from 'vue';
+import { useLinks } from '@/composables/links';
 
-export default defineComponent({
-  name: 'HelpLink',
-  props: {
-    url: { required: true, type: String },
-    tooltip: { required: true, type: String },
-    small: { required: false, type: Boolean, default: false }
-  },
-  setup(props) {
-    const { url } = toRefs(props);
-
-    const openLink = () => {
-      interop.openUrl(get(url));
-    };
-
-    return {
-      openLink
-    };
-  }
+const props = defineProps({
+  url: { required: true, type: String },
+  tooltip: { required: true, type: String },
+  small: { required: false, type: Boolean, default: false }
 });
+
+const { url } = toRefs(props);
+const { href, onLinkClick } = useLinks(url);
 </script>

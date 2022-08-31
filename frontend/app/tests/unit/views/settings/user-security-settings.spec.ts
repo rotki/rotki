@@ -57,15 +57,7 @@ describe('UserSecuritySettings.vue', () => {
         'confirm-dialog',
         'data-table',
         'card'
-      ],
-      mocks: {
-        $interop: {
-          isPackaged: () => true,
-          config: () => ({
-            logDirectory: ''
-          })
-        }
-      }
+      ]
     });
   }
 

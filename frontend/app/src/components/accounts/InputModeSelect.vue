@@ -39,7 +39,7 @@
       v-text="t('input_mode_select.metamask_import.metamask')"
     />
     <div
-      v-if="isEth && !$interop.isPackaged && !isMetaMaskSupported()"
+      v-if="isEth && !isPackaged && !isMetaMaskSupported()"
       class="mt-3 warning--text text-caption"
     >
       {{ t('input_mode_select.metamask_import.missing') }}
@@ -126,6 +126,7 @@ import {
   XPUB_ADD
 } from '@/components/accounts/const';
 import { AccountInput } from '@/components/accounts/types';
+import { useInterop } from '@/electron-interop';
 import { isMetaMaskSupported } from '@/utils/metamask';
 
 const props = defineProps({
@@ -162,6 +163,7 @@ const copyPageUrl = async () => {
 };
 
 const { t } = useI18n();
+const { isPackaged } = useInterop();
 </script>
 <style lang="css" module>
 .link {
