@@ -469,6 +469,7 @@ WORLD_TO_BINANCE = {
     strethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7'): 'USDT',
     'NFT': 'APENFT',
     'eip155:56/erc20:0x23CE9e926048273eF83be0A3A8Ba9Cb6D45cd978': 'DAR',
+    evm_address_to_identifier('0x8e17ed70334C87eCE574C9d537BC153d8609e2a3', ChainID.BINANCE, EvmTokenKind.ERC20): 'WRX',  # noqa: E501
 }
 
 WORLD_TO_BITFINEX = {

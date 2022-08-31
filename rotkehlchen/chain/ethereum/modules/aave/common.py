@@ -81,14 +81,14 @@ def atoken_to_asset(atoken: EvmToken) -> Optional[Asset]:
         return A_REP
 
     asset_symbol = atoken.symbol[1:]
-    cursor = GlobalDBHandler().conn.cursor()
-    result = cursor.execute(
-        'SELECT A.address from evm_tokens as A LEFT OUTER JOIN common_asset_details as B '
-        'ON A.identifier=B.identifier WHERE A.chain="A" AND B.symbol=? COLLATE NOCASE',
-        (asset_symbol,),
-    ).fetchall()
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        result = cursor.execute(
+            'SELECT A.address from evm_tokens as A LEFT OUTER JOIN common_asset_details as B '
+            'ON A.identifier=B.identifier WHERE A.chain="A" AND B.symbol=? COLLATE NOCASE',
+            (asset_symbol,),
+        ).fetchall()
     if len(result) != 1:
-        log.error(f'Could not find asset from {atoken} since multiple or no results were returned')
+        log.error(f'Could not find asset from {atoken} since multiple or no results were returned')  # noqa: E501
         return None
 
     return Asset(ethaddress_to_identifier(result[0][0]))
@@ -99,12 +99,12 @@ def asset_to_atoken(asset: Asset, version: int) -> Optional[EvmToken]:
         return A_AETH_V1
 
     protocol = 'aave' if version == 1 else 'aave-v2'
-    cursor = GlobalDBHandler().conn.cursor()
-    result = cursor.execute(
-        'SELECT A.identifier from evm_tokens as A LEFT OUTER JOIN common_asset_details as B '
-        'WHERE A.protocol==? AND A.identifier=B.identifier AND B.symbol=?',
-        (protocol, 'a' + asset.symbol),
-    ).fetchall()
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        result = cursor.execute(
+            'SELECT A.identifier from evm_tokens as A LEFT OUTER JOIN common_asset_details as B '
+            'WHERE A.protocol==? AND A.identifier=B.identifier AND B.symbol=?',
+            (protocol, 'a' + asset.symbol),
+        ).fetchall()
     if len(result) != 1:
         log.error(f'Could not derive atoken from {asset} since multiple or no results were returned')  # noqa: E501
         return None
