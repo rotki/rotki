@@ -311,6 +311,24 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     )
     assert_proper_response_with_result(response)
 
+    # and now let's replicate https://github.com/rotki/rotki/issues/4769 by
+    # editing all nodes to have 0% weight.
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
+    result = assert_proper_response_with_result(response)
+    for node in result:
+        response = requests.patch(
+            api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
+            json={
+                'identifier': node['identifier'],
+                'name': node['name'],
+                'endpoint': node['endpoint'],
+                'owned': node['owned'],
+                'weight': '0',
+                'active': node['active'],
+            },
+        )
+        assert_proper_response(response)
+
 
 @pytest.mark.parametrize('sleep_secs', [60])
 def test_configuration(rotkehlchen_api_server):

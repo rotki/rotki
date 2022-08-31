@@ -3348,23 +3348,29 @@ class DBHandler:
             write_cursor.execute('SELECT identifier, weight FROM web3_nodes WHERE owned=0')
         else:
             write_cursor.execute(
-                'SELECT identifier, weight FROM web3_nodes WHERE identifier != ? AND owned=0',
+                'SELECT identifier, weight FROM web3_nodes WHERE identifier !=? AND owned=0',
                 (exclude_identifier,),
             )
         new_weights = []
         nodes_weights = write_cursor.fetchall()
         weight_sum = sum(FVal(node[1]) for node in nodes_weights)
         for node_id, weight in nodes_weights:
+
             if exclude_identifier:
-                new_weights.append((str(FVal(weight) / weight_sum * proportion_to_share), node_id))
+                new_weight = FVal(weight) / weight_sum * proportion_to_share if weight_sum != ZERO else ZERO  # noqa: E501
             else:
-                new_weights.append((str(FVal(weight) / weight_sum), node_id))
+                new_weight = FVal(weight) / weight_sum if weight_sum != ZERO else ZERO
+            new_weights.append((str(new_weight), node_id))
+
         write_cursor.executemany(
             'UPDATE web3_nodes SET weight=? WHERE identifier=?',
             new_weights,
         )
 
     def add_web3_node(self, node: WeightedNode) -> None:
+        """
+        Adds a new web3 node.
+        """
         with self.user_write() as cursor:
             try:
                 cursor.execute(
@@ -3380,6 +3386,12 @@ class DBHandler:
             )
 
     def update_web3_node(self, node: WeightedNode) -> None:
+        """
+        Edits an existing web3 node
+
+        May raise:
+        - InputError if no entry with such
+        """
         with self.user_write() as cursor:
             cursor.execute(
                 'UPDATE web3_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=?',  # noqa: E501
