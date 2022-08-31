@@ -3,6 +3,7 @@
     <app-messages
       :startup-error="startupErrorMessage"
       :macos-unsupported="isMacOsVersionUnsupported"
+      :win-unsupported="isWinVersionUnsupported"
     >
       <theme-checker v-if="premium" @update:dark-mode="updateDarkMode" />
       <app-update-popup />
@@ -66,6 +67,7 @@ const AccountManagement = defineAsyncComponent(
 
 const startupErrorMessage = ref('');
 const isMacOsVersionUnsupported = ref(false);
+const isWinVersionUnsupported = ref(false);
 
 const { connect } = useMainStore();
 const { showAbout, showDrawer } = storeToRefs(useAreaVisibilityStore());
@@ -100,6 +102,8 @@ onBeforeMount(async () => {
         set(startupErrorMessage, message);
       } else if (code === BackendCode.MACOS_VERSION) {
         set(isMacOsVersionUnsupported, true);
+      } else if (code === BackendCode.WIN_VERSION) {
+        set(isWinVersionUnsupported, true);
       }
     },
     onAbout: () => set(showAbout, true),

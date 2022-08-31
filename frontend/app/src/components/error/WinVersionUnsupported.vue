@@ -1,8 +1,8 @@
 <template>
   <error-screen
-    class="macos-unsupported"
-    :header="tc('macos_unsupported.header')"
-    :alternative="tc('macos_unsupported.message')"
+    class="win-unsupported"
+    :header="tc('win_unsupported.header')"
+    :alternative="tc('win_unsupported.message')"
   >
     <v-btn depressed color="primary" @click="closeApp()">
       {{ tc('common.actions.terminate') }}
@@ -20,7 +20,7 @@ const { closeApp } = useInterop();
 </script>
 
 <style scoped lang="scss">
-.macos-unsupported {
+.win-unsupported {
   padding: 2rem 0;
   background-color: white;
 }

@@ -13,6 +13,7 @@
       fatal
     />
     <mac-os-version-unsupported v-if="macosUnsupported" />
+    <win-version-unsupported v-if="winUnsupported" />
   </fragment>
 </template>
 
@@ -28,17 +29,20 @@ export default defineComponent({
     StartupErrorScreen: defineAsyncComponent(
       () => import('@/components/error/StartupErrorScreen.vue')
     ),
-
     MessageDialog: defineAsyncComponent(
       () => import('@/components/dialogs/MessageDialog.vue')
     ),
     MacOsVersionUnsupported: defineAsyncComponent(
       () => import('@/components/error/MacOsVersionUnsupported.vue')
+    ),
+    WinVersionUnsupported: defineAsyncComponent(
+      () => import('@/components/error/WinVersionUnsupported.vue')
     )
   },
   props: {
     startupError: { required: true, type: String },
-    macosUnsupported: { required: true, type: Boolean }
+    macosUnsupported: { required: true, type: Boolean },
+    winUnsupported: { required: true, type: Boolean }
   },
   setup() {
     const store = useMainStore();

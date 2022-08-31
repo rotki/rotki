@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`4722` Show unsupported error when running rotki on Windows 7.
 * :feature:`4449` Add Taproot (P2TR) option when adding Bitcoin xpub.
 * :feature:`2770` Add generic CSV import functionality.
 * :feature:`1830` Bitcoin and Bitcoin Cash addresses are now derived from XPUBs when balances are refreshed.
