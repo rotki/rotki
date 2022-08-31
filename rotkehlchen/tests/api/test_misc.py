@@ -199,8 +199,26 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # try to edit a node
-    response = requests.post(
+    # try to edit an unknown node
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
+        json={
+            'identifier': 666,
+            'name': '1inch',
+            'endpoint': 'ewarwae',
+            'owned': True,
+            'weight': '40',
+            'active': True,
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="Node with identifier 666 doesn't exist",
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # try to edit a node's endpoint
+    response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
             'identifier': 8,
@@ -215,12 +233,38 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
     for node in result:
-        if node['name'] == '1inch':
+        if node['identifier'] == 8:
             assert FVal(node['weight']) == 40
+            assert node['name'] == '1inch'
             assert node['active'] is True
             assert node['endpoint'] == 'ewarwae'
             assert node['owned'] is True
             break
+
+    # try to edit a node's name
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
+        json={
+            'identifier': 8,
+            'name': 'oneinch',
+            'endpoint': 'ewarwae',
+            'owned': True,
+            'weight': '40',
+            'active': True,
+        },
+    )
+    assert_proper_response(response)
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
+    result = assert_proper_response_with_result(response)
+    for node in result:
+        if node['identifier'] == 8:
+            assert FVal(node['weight']) == 40
+            assert node['name'] == 'oneinch'
+            assert node['active'] is True
+            assert node['endpoint'] == 'ewarwae'
+            assert node['owned'] is True
+            break
+
     result = assert_proper_response_with_result(response)
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
@@ -233,7 +277,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         },
     )
     # set owned to false and see that we have the expected amount of nodes
-    response = requests.post(
+    response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
             'identifier': 4,
@@ -254,7 +298,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             break
 
     # Try to edit etherscan weight
-    response = requests.post(
+    response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
             'identifier': 1,
@@ -266,6 +310,24 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         },
     )
     assert_proper_response_with_result(response)
+
+    # and now let's replicate https://github.com/rotki/rotki/issues/4769 by
+    # editing all nodes to have 0% weight.
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
+    result = assert_proper_response_with_result(response)
+    for node in result:
+        response = requests.patch(
+            api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
+            json={
+                'identifier': node['identifier'],
+                'name': node['name'],
+                'endpoint': node['endpoint'],
+                'owned': node['owned'],
+                'weight': '0',
+                'active': node['active'],
+            },
+        )
+        assert_proper_response(response)
 
 
 @pytest.mark.parametrize('sleep_secs', [60])

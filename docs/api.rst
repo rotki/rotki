@@ -860,15 +860,15 @@ Adding information for ethereum nodes
    :statuscode 409: No user is logged or entrie couldn't be created.
    :statuscode 500: Internal rotki error
 
-.. http:post:: /api/(version)/blockchains/ETH/nodes
+.. http:patch:: /api/(version)/blockchains/ETH/nodes
 
-   By doing a POST on this endpoint you will be able to edit an already existing node entry with the information provided.
+   By doing a PATCH on this endpoint you will be able to edit an already existing node entry with the information provided.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/ETH/nodes HTTP/1.1
+      PATCH /api/1/blockchains/ETH/nodes HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json
 
