@@ -219,6 +219,23 @@ export default class PyHandler {
         );
         return;
       }
+    } else if (os.platform() === 'win32') {
+      const release = os.release().split('.');
+      if (release.length > 1) {
+        const major = parseInt(release[0]);
+        const minor = parseInt(release[1]);
+
+        // Win 7 (v6.1) or earlier
+        const v = major + minor * 0.1;
+        if (v < 6.1) {
+          this.setFailureNotification(
+            window,
+            'rotki cannot run on Windows 7 or earlier, since Python3.9 is no longer supported there',
+            BackendCode.WIN_VERSION
+          );
+          return;
+        }
+      }
     }
 
     const port = await selectPort();

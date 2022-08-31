@@ -1,4 +1,5 @@
 export enum BackendCode {
   TERMINATED,
-  MACOS_VERSION
+  MACOS_VERSION,
+  WIN_VERSION
 }

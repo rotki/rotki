@@ -10,7 +10,7 @@
       </v-btn>
       <v-spacer />
       <v-btn depressed @click="terminate">
-        {{ t('connection_failure.terminate') }}
+        {{ t('common.actions.terminate') }}
       </v-btn>
       <v-btn class="ml-4" depressed color="primary" @click="retry">
         {{ t('connection_failure.retry') }}

@@ -1222,6 +1222,7 @@
       "save": "Save",
       "search": "Search",
       "skip": "Skip",
+      "terminate": "Terminate",
       "update": "Update",
       "upgrade": "Upgrade",
       "yes": "Yes"
@@ -1288,7 +1289,6 @@
     "default": "Connect to default",
     "message": "A connection to the rotki backend was not possible, would you like to retry again?",
     "retry": "Retry",
-    "terminate": "Terminate",
     "title": "Connection failure"
   },
   "connection_loading": {
@@ -1666,8 +1666,7 @@
     "backend_error": "There is a problem with the backend.",
     "copy_tooltip": "Copy the error text to the clipboard",
     "message": "Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:",
-    "start_failure": "rotki failed to start",
-    "terminate": "Terminate"
+    "start_failure": "rotki failed to start"
   },
   "eth2_input": {
     "ownership": {
@@ -2680,8 +2679,7 @@
   },
   "macos_unsupported": {
     "header": "Unsupported macOS Version",
-    "message": "rotki's minimum supported macOs version is High Sierra(10.13)",
-    "terminate": "Terminate"
+    "message": "rotki's minimum supported macOs version is High Sierra(10.13)"
   },
   "maker_dao_vault_loan": {
     "borrowing_history": "Borrowing History",
@@ -3931,6 +3929,10 @@
     "types": {
       "make_collateralization_ratio": "Collateralization Ratio Watcher (Maker)"
     }
+  },
+  "win_unsupported": {
+    "header": "Unsupported Windows Version",
+    "message": "rotki's minimum supported Windows version is Windows 8(6.2)"
   },
   "yearn_asset_table": {
     "headers": {

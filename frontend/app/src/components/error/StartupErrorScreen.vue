@@ -7,7 +7,7 @@
     :message="message"
   >
     <v-btn depressed color="primary" @click="terminate()">
-      {{ tc('error_screen.terminate') }}
+      {{ tc('common.actions.terminate') }}
     </v-btn>
   </error-screen>
 </template>
