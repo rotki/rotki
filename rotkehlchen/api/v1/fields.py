@@ -315,22 +315,10 @@ class BlockchainField(fields.Field):
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> SupportedBlockchain:
-        if value in ('btc', 'BTC'):
-            chain_type = SupportedBlockchain.BITCOIN
-        elif value in ('bch', 'BCH'):
-            chain_type = SupportedBlockchain.BITCOIN_CASH
-        elif value in ('eth', 'ETH'):
-            chain_type = SupportedBlockchain.ETHEREUM
-        elif value in ('eth2', 'ETH2'):
-            chain_type = SupportedBlockchain.ETHEREUM_BEACONCHAIN
-        elif value in ('ksm', 'KSM'):
-            chain_type = SupportedBlockchain.KUSAMA
-        elif value in ('dot', 'DOT'):
-            chain_type = SupportedBlockchain.POLKADOT
-        elif value in ('avax', 'AVAX'):
-            chain_type = SupportedBlockchain.AVALANCHE
-        else:
-            raise ValidationError(f'Unrecognized value {value} given for blockchain name')
+        try:
+            chain_type = SupportedBlockchain.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
 
         if self.exclude_types and chain_type in self.exclude_types:
             raise ValidationError(f'Blockchain name {str(value)} is not allowed in this endpoint')

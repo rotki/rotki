@@ -1401,11 +1401,11 @@ class BTCXpubResource(BaseMethodView):
         return self.rest_api.add_xpub(
             xpub_data=XpubData(
                 xpub=xpub,
+                blockchain=blockchain,
                 derivation_path=derivation_path,
                 label=label,
                 tags=tags,
             ),
-            blockchain=blockchain,
             async_query=async_query,
         )
 
@@ -1421,11 +1421,11 @@ class BTCXpubResource(BaseMethodView):
         return self.rest_api.delete_xpub(
             xpub_data=XpubData(
                 xpub=xpub,
+                blockchain=blockchain,
                 derivation_path=derivation_path,
                 label=None,
                 tags=None,
             ),
-            blockchain=blockchain,
             async_query=async_query,
         )
 
@@ -1442,11 +1442,11 @@ class BTCXpubResource(BaseMethodView):
         return self.rest_api.edit_xpub(
             xpub_data=XpubData(
                 xpub=xpub,
+                blockchain=blockchain,
                 derivation_path=derivation_path,
                 label=label,
                 tags=tags,
             ),
-            blockchain=blockchain,
         )
 
 

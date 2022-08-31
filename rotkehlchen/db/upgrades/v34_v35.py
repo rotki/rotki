@@ -4,7 +4,7 @@ from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE, strethaddress_to_
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
 
 
 def _refactor_time_columns(cursor: 'DBCursor') -> None:
@@ -50,13 +50,46 @@ def _rename_assets_identifiers(cursor: 'DBCursor') -> None:
     cursor.executemany('UPDATE OR IGNORE assets SET identifier=? WHERE identifier=?', sqlite_tuples)  # noqa: E501
 
 
+def _change_xpub_mappings_primary_key(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
+    """This upgrade includes xpub_mappings' `blockchain` column in primary key.
+    After this upgrade it will become possible to create mapping for the same bitcoin address
+    and xpub on different blockchains.
+
+    Despite `blockchain` was not previously in the primary key, data in this table should not
+    be broken since it has FOREIGN KEY (which includes `blockchain`) referencing xpubs table.
+    """
+    with conn.read_ctx() as read_cursor:
+        xpub_mappings = read_cursor.execute('SELECT * from xpub_mappings').fetchall()
+    write_cursor.execute("""CREATE TABLE xpub_mappings_copy (
+        address TEXT NOT NULL,
+        xpub TEXT NOT NULL,
+        derivation_path TEXT NOT NULL,
+        account_index INTEGER,
+        derived_index INTEGER,
+        blockchain TEXT NOT NULL,
+        FOREIGN KEY(blockchain, address)
+        REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE
+        FOREIGN KEY(xpub, derivation_path, blockchain) REFERENCES xpubs(
+            xpub,
+            derivation_path,
+            blockchain
+        ) ON DELETE CASCADE
+        PRIMARY KEY (address, xpub, derivation_path, blockchain)
+    );
+    """)
+    write_cursor.executemany('INSERT INTO xpub_mappings_copy VALUES (?, ?, ?, ?, ?, ?)', xpub_mappings)  # noqa: E501
+    write_cursor.execute('DROP TABLE xpub_mappings')
+    write_cursor.execute('ALTER TABLE xpub_mappings_copy RENAME TO xpub_mappings')
+
+
 def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     """Upgrades the DB from v34 to v35
     - Change tables where time is used as column name to timestamp
     - Add user_notes table
     - Renames the asset identifiers to use CAIPS
     """
-    with db.user_write() as cursor:
-        _rename_assets_identifiers(cursor)
-        _refactor_time_columns(cursor)
-        _create_new_tables(cursor)
+    with db.user_write() as write_cursor:
+        _rename_assets_identifiers(write_cursor)
+        _refactor_time_columns(write_cursor)
+        _create_new_tables(write_cursor)
+        _change_xpub_mappings_primary_key(write_cursor=write_cursor, conn=db.conn)

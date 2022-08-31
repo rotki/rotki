@@ -105,12 +105,19 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
 
 def test_maybe_schedule_xpub_derivation(task_manager, database):
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
-    xpub_data = XpubData(
+    xpub_data1 = XpubData(
         xpub=HDKey.from_xpub(xpub=xpub, path='m'),
+        blockchain=SupportedBlockchain.BITCOIN,
+        derivation_path='m/0/0',
+    )
+    xpub_data2 = XpubData(
+        xpub=HDKey.from_xpub(xpub=xpub, path='m'),
+        blockchain=SupportedBlockchain.BITCOIN_CASH,
         derivation_path='m/0/0',
     )
     with database.user_write() as cursor:
-        database.add_bitcoin_xpub(cursor, xpub_data, SupportedBlockchain.BITCOIN)
+        database.add_bitcoin_xpub(cursor, xpub_data1)
+        database.add_bitcoin_xpub(cursor, xpub_data2)
 
     task_manager.potential_tasks = [task_manager._maybe_schedule_xpub_derivation]
     xpub_derive_patch = patch(

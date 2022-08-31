@@ -823,7 +823,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Unrecognized value DDASDAS given for blockchain name',
+        contained_in_msg='Failed to deserialize SupportedBlockchain value DDASDAS',
     )
 
     # Provide no blockchain name

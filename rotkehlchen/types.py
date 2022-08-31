@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import auto
 from typing import (
     Any,
     Callable,
@@ -21,6 +21,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+from rotkehlchen.utils.mixins.serializableenumvalue import SerializableEnumValueMixin
 
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 
@@ -309,7 +310,7 @@ class CovalentTransaction(NamedTuple):
         return self.tx_hash + self.from_address.replace('0x', '') + str(self.nonce)
 
 
-class SupportedBlockchain(Enum):
+class SupportedBlockchain(SerializableEnumValueMixin):
     """These are the blockchains for which account tracking is supported """
     ETHEREUM = 'ETH'
     ETHEREUM_BEACONCHAIN = 'ETH2'

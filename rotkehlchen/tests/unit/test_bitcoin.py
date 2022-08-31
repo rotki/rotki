@@ -292,8 +292,8 @@ def test_from_bad_xpub():
 def test_xpub_data_comparison():
     hdkey1 = HDKey.from_xpub('xpub6DCi5iJ57ZPd5qPzvTm5hUt6X23TJdh9H4NjNsNbt7t7UuTMJfawQWsdWRFhfLwkiMkB1rQ4ZJWLB9YBnzR7kbs9N8b2PsKZgKUHQm1X4or')  # noqa: E501
     hdkey2 = HDKey.from_xpub('xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501
-    xpubdata1 = XpubData(xpub=hdkey1)
-    xpubdata2 = XpubData(xpub=hdkey2)
+    xpubdata1 = XpubData(xpub=hdkey1, blockchain=SupportedBlockchain.BITCOIN)
+    xpubdata2 = XpubData(xpub=hdkey2, blockchain=SupportedBlockchain.BITCOIN)
     mapping = {xpubdata1: 1}
     # there is a reason for both queries (unneeded-not). In the first
     # implementation they did not both work correctly
@@ -302,13 +302,23 @@ def test_xpub_data_comparison():
     assert xpubdata1 in mapping
     assert xpubdata2 not in mapping
 
-    xpubdata1 = XpubData(xpub=hdkey1)
-    xpubdata2 = XpubData(xpub=hdkey1)
+    xpubdata1 = XpubData(xpub=hdkey1, blockchain=SupportedBlockchain.BITCOIN)
+    xpubdata2 = XpubData(xpub=hdkey1, blockchain=SupportedBlockchain.BITCOIN_CASH)
+    mapping = {xpubdata1: 1}
+    # there is a reason for both queries (unneeded-not). In the first
+    # implementation they did not both work correctly
+    assert not xpubdata1 == xpubdata2  # pylint: disable=unneeded-not
+    assert xpubdata1 != xpubdata2
+    assert xpubdata1 in mapping
+    assert xpubdata2 not in mapping
+
+    xpubdata1 = XpubData(xpub=hdkey1, blockchain=SupportedBlockchain.BITCOIN)
+    xpubdata2 = XpubData(xpub=hdkey1, blockchain=SupportedBlockchain.BITCOIN)
     assert xpubdata1 == xpubdata2
     assert not xpubdata1 != xpubdata2  # pylint: disable=unneeded-not
 
-    xpubdata1 = XpubData(xpub=hdkey1, derivation_path='m')
-    xpubdata2 = XpubData(xpub=hdkey1, derivation_path='m/0/0')
+    xpubdata1 = XpubData(xpub=hdkey1, derivation_path='m', blockchain=SupportedBlockchain.BITCOIN)
+    xpubdata2 = XpubData(xpub=hdkey1, derivation_path='m/0/0', blockchain=SupportedBlockchain.BITCOIN)  # noqa: E501
     assert xpubdata1 != xpubdata2
     assert not xpubdata1 == xpubdata2  # pylint: disable=unneeded-not
 

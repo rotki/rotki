@@ -229,8 +229,16 @@ class BlockchainBalances:
         avax_balances = {k: v.serialize() for k, v in self.avax.items()}
 
         with self.db.conn.read_ctx() as cursor:
-            btc_xpub_mappings = self.db.get_addresses_to_xpub_mapping(cursor, list(self.btc.keys()))  # noqa: E501
-            bch_xpub_mappings = self.db.get_addresses_to_xpub_mapping(cursor, list(self.bch.keys()))  # noqa: E501
+            btc_xpub_mappings = self.db.get_addresses_to_xpub_mapping(
+                cursor=cursor,
+                blockchain=SupportedBlockchain.BITCOIN,
+                addresses=list(self.btc.keys()),
+            )
+            bch_xpub_mappings = self.db.get_addresses_to_xpub_mapping(
+                cursor=cursor,
+                blockchain=SupportedBlockchain.BITCOIN_CASH,
+                addresses=list(self.bch.keys()),
+            )
 
         self._serialize_bitcoin_balances(
             xpub_mappings=btc_xpub_mappings,

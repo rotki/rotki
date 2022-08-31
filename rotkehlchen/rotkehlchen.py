@@ -485,11 +485,15 @@ class Rotkehlchen():
         if blockchain not in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             return account_data
 
-        xpub_data = self.data.db.get_bitcoin_xpub_data(cursor)
+        xpub_data = self.data.db.get_bitcoin_xpub_data(
+            cursor=cursor,
+            blockchain=blockchain,  # type: ignore
+        )
         addresses_to_account_data = {x.address: x for x in account_data}
         address_to_xpub_mappings = self.data.db.get_addresses_to_xpub_mapping(
-            cursor,
-            list(addresses_to_account_data.keys()),  # type: ignore
+            cursor=cursor,
+            blockchain=blockchain,  # type: ignore
+            addresses=list(addresses_to_account_data.keys()),  # type: ignore
         )
 
         xpub_mappings: Dict['XpubData', List[BlockchainAccountData]] = {}
