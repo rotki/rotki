@@ -6,10 +6,7 @@
     </template>
     <template v-if="!premium" #default>
       <i18n tag="div" path="uniswap.loading_non_premium">
-        <base-external-link
-          :text="tc('uniswap.premium')"
-          :href="$interop.premiumURL"
-        />
+        <base-external-link :text="tc('uniswap.premium')" :href="premiumURL" />
       </i18n>
     </template>
   </progress-screen>
@@ -146,6 +143,7 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { getPremium, useModules } from '@/composables/session';
+import { useInterop } from '@/electron-interop';
 import { UniswapDetails } from '@/premium/premium';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
@@ -242,6 +240,7 @@ export default defineComponent({
     };
 
     const uniswap = Module.UNISWAP;
+    const { premiumURL } = useInterop();
     return {
       selectedAccount,
       selectedPools,
@@ -263,7 +262,8 @@ export default defineComponent({
       getTokenAddress,
       getIdentifier,
       getAssets,
-      tc
+      tc,
+      premiumURL
     };
   }
 });

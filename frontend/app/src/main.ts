@@ -7,7 +7,6 @@ import '@/filters';
 import '@/main.scss';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
-import { Interop } from '@/plugins/interop';
 import vuetify from '@/plugins/vuetify';
 import { usePremiumApi } from '@/premium/setup-interface';
 import { storePiniaPlugins } from '@/store/debug';
@@ -22,7 +21,6 @@ const isDevelopment = checkIfDevelopment() && !import.meta.env.VITE_TEST;
 Vue.config.productionTip = false;
 Vue.config.devtools = isDevelopment;
 
-Vue.use(Interop);
 Vue.use(PiniaVuePlugin);
 
 Vue.directive('blur', {

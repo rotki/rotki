@@ -12,7 +12,6 @@ import Vuetify from 'vuetify';
 import Card from '@/components/helper/Card.vue';
 import PremiumSettings from '@/components/settings/PremiumSettings.vue';
 import { interop } from '@/electron-interop';
-import { Interop } from '@/plugins/interop';
 import { api } from '@/services/rotkehlchen-api';
 import { usePremiumStore } from '@/store/session/premium';
 import '../../i18n';
@@ -37,7 +36,6 @@ vi.mock('vue', async () => {
 });
 
 Vue.use(Vuetify);
-Vue.use(Interop);
 Vue.use(PiniaVuePlugin);
 
 describe('PremiumSettings.vue', () => {

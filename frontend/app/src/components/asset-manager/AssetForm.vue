@@ -125,7 +125,7 @@
             <template #append>
               <help-link
                 small
-                :url="`${$interop.contributeUrl}#get-coingecko-asset-identifier`"
+                :url="`${contributeUrl}#get-coingecko-asset-identifier`"
                 :tooltip="tc('asset_form.help_coingecko')"
               />
             </template>
@@ -154,7 +154,7 @@
             <template #append>
               <help-link
                 small
-                :url="`${$interop.contributeUrl}#get-cryptocompare-asset-identifier`"
+                :url="`${contributeUrl}#get-cryptocompare-asset-identifier`"
                 :tooltip="tc('asset_form.help_cryptocompare')"
               />
             </template>
@@ -305,7 +305,7 @@ import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
-import { interop } from '@/electron-interop';
+import { interop, useInterop } from '@/electron-interop';
 import {
   EVM_TOKEN,
   evmChainsData,
@@ -637,6 +637,8 @@ export default defineComponent({
       set(timestamp, Date.now());
     };
 
+    const { contributeUrl } = useInterop();
+
     return {
       t,
       tc,
@@ -671,7 +673,8 @@ export default defineComponent({
       chain,
       tokenKind,
       evmChainsData,
-      evmTokenKindsData
+      evmTokenKindsData,
+      contributeUrl
     };
   }
 });

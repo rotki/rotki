@@ -7,11 +7,9 @@
           icon
           target="_blank"
           class="secondary--text text--lighten-4"
-          :href="$interop.isPackaged ? undefined : $interop.premiumURL"
+          :href="href"
           v-on="on"
-          @click="
-            $interop.isPackaged ? $interop.navigateToPremium() : undefined
-          "
+          @click="onLinkClick"
         >
           <v-icon>mdi-white-balance-sunny</v-icon>
         </v-btn>
@@ -27,6 +25,8 @@
 </template>
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n-composable';
+import { useLinks } from '@/composables/links';
 
+const { href, onLinkClick } = useLinks();
 const { t } = useI18n();
 </script>
