@@ -827,6 +827,8 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
     with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
         with db_v34.conn.write_ctx() as write_cursor:
             try_insert_mapping(write_cursor)
+        cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('BIFI',))
+        assert cursor.fetchone() == (1,)
 
     # Migrate the database
     db_v35 = _init_db_with_target_version(
@@ -876,6 +878,13 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         assert cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="view" AND name=?', ('combined_trades_view',),  # noqa: E501
         ).fetchone()[0] == 0
+        cursor.execute(
+            'SELECT COUNT(*) from assets WHERE identifier=?',
+            ('eip155:56/erc20:0xCa3F508B8e4Dd382eE878A314789373D80A5190A',),
+        )
+        assert cursor.fetchone() == (1,)
+        cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('BIFI',))
+        assert cursor.fetchone() == (0,)
 
         # check that ignored assets are now in the current CAIP format.
         new_ignored_assets_ids = cursor.execute('SELECT value FROM multisettings WHERE name="ignored_asset";').fetchall()  # noqa: E501
