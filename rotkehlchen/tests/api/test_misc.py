@@ -199,7 +199,25 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # try to edit a node
+    # try to edit an unknown node
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
+        json={
+            'identifier': 666,
+            'name': '1inch',
+            'endpoint': 'ewarwae',
+            'owned': True,
+            'weight': '40',
+            'active': True,
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="Node with identifier 666 doesn't exist",
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # try to edit a node's endpoint
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
         json={
@@ -215,12 +233,38 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
     for node in result:
-        if node['name'] == '1inch':
+        if node['identifier'] == 8:
             assert FVal(node['weight']) == 40
+            assert node['name'] == '1inch'
             assert node['active'] is True
             assert node['endpoint'] == 'ewarwae'
             assert node['owned'] is True
             break
+
+    # try to edit a node's name
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),
+        json={
+            'identifier': 8,
+            'name': 'oneinch',
+            'endpoint': 'ewarwae',
+            'owned': True,
+            'weight': '40',
+            'active': True,
+        },
+    )
+    assert_proper_response(response)
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
+    result = assert_proper_response_with_result(response)
+    for node in result:
+        if node['identifier'] == 8:
+            assert FVal(node['weight']) == 40
+            assert node['name'] == 'oneinch'
+            assert node['active'] is True
+            assert node['endpoint'] == 'ewarwae'
+            assert node['owned'] is True
+            break
+
     result = assert_proper_response_with_result(response)
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'),

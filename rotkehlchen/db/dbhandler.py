@@ -3380,10 +3380,6 @@ class DBHandler:
             )
 
     def update_web3_node(self, node: WeightedNode) -> None:
-        with self.conn.read_ctx() as cursor:
-            cursor.execute('SELECT COUNT(*) FROM web3_nodes WHERE name=?', (node.node_info.name,))
-            if cursor.fetchone() != (1,):
-                raise InputError(f'Node with name {node.node_info.name} doesn\'t exist')
         with self.user_write() as cursor:
             cursor.execute(
                 'UPDATE web3_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=?',  # noqa: E501
@@ -3396,6 +3392,10 @@ class DBHandler:
                     node.identifier,
                 ),
             )
+
+            if cursor.rowcount == 0:
+                raise InputError(f'Node with identifier {node.identifier} doesn\'t exist')
+
             self._rebalance_web3_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE - node.weight,
