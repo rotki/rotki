@@ -1,20 +1,20 @@
 <template>
   <v-snackbar
-    v-model="notification.display"
+    v-model="visibleNotification.display"
     :class="$style.popup"
-    :timeout="notification.duration"
+    :timeout="visibleNotification.duration"
     top
     right
     :light="!$vuetify.theme.dark"
     app
     rounded
     width="400px"
-    @input="displayed([notification.id])"
+    @input="displayed([visibleNotification.id])"
   >
     <notification
       popup
-      :notification="notification"
-      @dismiss="dismiss(notification.id)"
+      :notification="visibleNotification"
+      @dismiss="dismiss(visibleNotification.id)"
     />
     <v-divider />
     <v-row v-if="queue.length > 0" justify="end">
@@ -49,34 +49,33 @@
 import { get, set } from '@vueuse/core';
 import { nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Notification from '@/components/status/notifications/Notification.vue';
 import { setupNotifications } from '@/composables/notifications';
 import { emptyNotification } from '@/store/notifications';
 
-const notification = ref(emptyNotification());
+const visibleNotification = ref(emptyNotification());
 const { queue, displayed } = setupNotifications();
 const dismiss = async (id: number) => {
   await displayed([id]);
-  set(notification, { ...get(notification), display: false });
+  set(visibleNotification, { ...get(visibleNotification), display: false });
 };
 
 const dismissAll = async () => {
   await displayed(get(queue).map(({ id }) => id));
-  set(notification, { ...get(notification), display: false });
+  set(visibleNotification, { ...get(visibleNotification), display: false });
 };
 
 watch(
   queue,
   () => {
     const data = [...get(queue)];
-    if (!get(notification).display && data.length > 0) {
+    if (!get(visibleNotification).display && data.length > 0) {
       const next = data.shift();
       if (!next) {
         return;
       }
       nextTick(() => {
-        set(notification, next);
+        set(visibleNotification, next);
       });
     }
   },

@@ -45,14 +45,10 @@
           : tc('price_management.dialog.add_title')
       "
       :action-disabled="!valid"
-      @confirm="managePrice(priceForm, editMode)"
+      @confirm="managePrice(formData, editMode)"
       @cancel="hideForm()"
     >
-      <price-form
-        v-model="priceForm"
-        :edit="editMode"
-        @valid="valid = $event"
-      />
+      <price-form v-model="formData" :edit="editMode" @valid="valid = $event" />
     </big-dialog>
   </v-container>
 </template>
@@ -62,7 +58,6 @@ import { get, set } from '@vueuse/core';
 import { onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import PriceForm from '@/components/price-manager/PriceForm.vue';
 import PriceTable from '@/components/price-manager/PriceTable.vue';
 import { useRoute, useRouter } from '@/composables/common';
@@ -82,7 +77,7 @@ const emptyPrice: () => HistoricalPriceFormPayload = () => ({
 });
 
 const refresh = ref(false);
-const priceForm = ref<HistoricalPriceFormPayload>(emptyPrice());
+const formData = ref<HistoricalPriceFormPayload>(emptyPrice());
 const showForm = ref(false);
 const filter = reactive<{
   fromAsset: Nullable<string>;
@@ -102,13 +97,13 @@ const { tc } = useI18n();
 const openForm = (hPrice: HistoricalPrice | null = null) => {
   set(editMode, !!hPrice);
   if (hPrice) {
-    set(priceForm, {
+    set(formData, {
       ...hPrice,
       price: hPrice.price.toFixed() ?? ''
     });
   } else {
     const emptyPriceObj = emptyPrice();
-    set(priceForm, {
+    set(formData, {
       ...emptyPriceObj,
       fromAsset: filter.fromAsset ?? '',
       toAsset: filter.toAsset ?? ''
@@ -119,7 +114,7 @@ const openForm = (hPrice: HistoricalPrice | null = null) => {
 
 const hideForm = function () {
   set(showForm, false);
-  set(priceForm, emptyPrice());
+  set(formData, emptyPrice());
 };
 
 const managePrice = async (
