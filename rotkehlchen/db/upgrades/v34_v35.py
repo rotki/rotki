@@ -91,6 +91,23 @@ def _clean_amm_swaps(cursor: 'DBCursor') -> None:
     cursor.execute('DROP TABLE IF EXISTS amm_swaps;')
 
 
+def _add_blockchain_column_web3_nodes(cursor: 'DBCursor') -> None:
+    cursor.execute('ALTER TABLE web3_nodes RENAME TO web3_nodes_old')
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS web3_nodes(
+        identifier INTEGER NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL,
+        endpoint TEXT NOT NULL,
+        owned INTEGER NOT NULL CHECK (owned IN (0, 1)),
+        active INTEGER NOT NULL CHECK (active IN (0, 1)),
+        weight INTEGER NOT NULL,
+        blockchain TEXT NOT NULL
+    );
+    """)
+    cursor.execute("INSERT INTO web3_nodes SELECT identifier, name, endpoint, owned, active, weight, 'ETH' FROM web3_nodes_old")  # noqa: E501
+    cursor.execute('DROP TABLE web3_nodes_old')
+
+
 def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     """Upgrades the DB from v34 to v35
     - Change tables where time is used as column name to timestamp
@@ -103,3 +120,4 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
         _clean_amm_swaps(write_cursor)
         _create_new_tables(write_cursor)
         _change_xpub_mappings_primary_key(write_cursor=write_cursor, conn=db.conn)
+        _add_blockchain_column_web3_nodes(write_cursor)
