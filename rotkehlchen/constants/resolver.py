@@ -21,19 +21,6 @@ class ChainID(DBEnumMixIn):
     ARBITRUM = 42161
     AVALANCHE = 43114
 
-    @classmethod
-    def deserialize_from_coingecko(cls, chain: str) -> 'ChainID':
-        if chain == 'ethereum':
-            return ChainID.ETHEREUM
-        if chain == 'binance-smart-chain':
-            return ChainID.BINANCE
-        if chain == 'avalanche':
-            return ChainID.AVALANCHE
-        if chain == 'polygon-pos':
-            return ChainID.MATIC
-
-        raise RuntimeError(f'Unknown chain {chain}')
-
     def serialize_for_db(self) -> str:
         return CHAINS_TO_DB_SYMBOL[self]
 

@@ -130,14 +130,6 @@ def mock_dbhandler_add_globaldb_assetids() -> _patch:
     )
 
 
-def mock_dbhandler_ensura_data_integrity() -> _patch:
-    """Just make sure ensure_data_integrity oes nothing for older DB tests"""
-    return patch(
-        'rotkehlchen.db.dbhandler.DBHandler.ensure_data_integrity',
-        lambda x, y: None,
-    )
-
-
 def _use_prepared_db(user_data_dir: Path, filename: str) -> None:
     dir_path = os.path.dirname(os.path.realpath(__file__))
     copyfile(

@@ -7,7 +7,6 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EthereumTransaction
 
@@ -21,9 +20,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-GITCOIN_BULK_CHECKOUT = string_to_evm_address('0x7d655c57f71464B6f83811C55D84009Cd9f5221C')
 
 
 class GitcoinDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
