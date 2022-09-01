@@ -8,7 +8,6 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, Binance
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
@@ -871,12 +870,9 @@ def check_saved_events_for_exchange(
         should_exist: bool,
         queryrange_formatstr: str = '{exchange}_{type}_{exchange}',
 ) -> None:
+    """Check that an exchange has saved events"""
     with db.conn.read_ctx() as cursor:
-        trades = db.get_trades(
-            cursor,
-            filter_query=TradesFilterQuery.make(location=exchange_location),
-            has_premium=True,
-        )
+        trades = cursor.execute('SELECT * FROM trades where location=?;', (exchange_location.serialize_for_db(),)).fetchall()  # noqa: E501
         trades_range = db.get_used_query_range(cursor, queryrange_formatstr.format(exchange=exchange_location, type='trades'))  # noqa: E501
         margins_range = db.get_used_query_range(cursor, queryrange_formatstr.format(exchange=exchange_location, type='margins'))  # noqa: E501
         movements_range = db.get_used_query_range(cursor, queryrange_formatstr.format(exchange=exchange_location, type='asset_movements'))  # noqa: E501

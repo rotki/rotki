@@ -49,6 +49,7 @@ def _rename_assets_identifiers(cursor: 'DBCursor') -> None:
     sqlite_tuples = [(new_id, old_id) for old_id, new_id in old_id_to_new.items()]
     cursor.executemany('UPDATE OR IGNORE assets SET identifier=? WHERE identifier=?', sqlite_tuples)  # noqa: E501
 
+
 def _change_xpub_mappings_primary_key(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
     """This upgrade includes xpub_mappings' `blockchain` column in primary key.
     After this upgrade it will become possible to create mapping for the same bitcoin address

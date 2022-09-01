@@ -740,7 +740,6 @@ class RestAPI():
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.TRADE)
             ignored_ids = mapping.get(ActionType.TRADE, [])
-            table_name = 'trades' if self.rotkehlchen.premium is None else 'combined_trades_view'
             entries_result = []
             for entry in trades_result:
                 entries_result.append(
@@ -752,7 +751,7 @@ class RestAPI():
                 'entries_found': filter_total_found,
                 'entries_total': self.rotkehlchen.data.db.get_entries_count(
                     cursor=cursor,
-                    entries_table=table_name,  # type: ignore
+                    entries_table='trades',
                 ),
                 'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
             }

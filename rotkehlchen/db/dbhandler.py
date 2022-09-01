@@ -2146,8 +2146,6 @@ class DBHandler:
                 'asset_movements',
                 'trades',
                 'ethereum_transactions',
-                'amm_swaps',
-                'combined_trades_view',
                 'ledger_actions',
                 'eth2_daily_staking_details',
                 'entries_notes',
@@ -2202,7 +2200,6 @@ class DBHandler:
 
         dbtx = DBEthTx(self)
         dbtx.delete_transactions(write_cursor, address)
-        write_cursor.execute('DELETE FROM amm_swaps WHERE address=?;', (address,))
         write_cursor.execute('DELETE FROM eth2_deposits WHERE from_address=?;', (address,))
 
     def add_trades(self, write_cursor: 'DBCursor', trades: List[Trade]) -> None:
@@ -2294,9 +2291,8 @@ class DBHandler:
         Also returns how many are the total found for the filter
         """
         trades = self.get_trades(cursor, filter_query=filter_query, has_premium=has_premium)
-        table_name = 'combined_trades_view' if has_premium else 'trades'
         query, bindings = filter_query.prepare(with_pagination=False)
-        query = f'SELECT COUNT(*) from {table_name} ' + query
+        query = 'SELECT COUNT(*) from trades ' + query
         total_found_result = cursor.execute(query, bindings)
         return trades, total_found_result.fetchone()[0]
 
@@ -3181,7 +3177,6 @@ class DBHandler:
                 'SELECT location FROM ledger_actions UNION '
                 'SELECT location FROM margin_positions UNION '
                 'SELECT location FROM user_credentials UNION '
-                'SELECT location FROM amm_swaps UNION '
                 'SELECT location FROM history_events',
             )
             locations = {Location.deserialize_from_db(loc[0]) for loc in cursor}
