@@ -13,7 +13,7 @@
       <template #message>{{ tc('decentralized_overview.loading') }}</template>
     </progress-screen>
     <no-data-screen
-      v-else-if="overview.length === 0"
+      v-else-if="currentOverview.length === 0"
       :full="false"
       class="mt-16"
     >
@@ -26,7 +26,7 @@
     </no-data-screen>
     <v-row class="mt-4">
       <v-col
-        v-for="summary in overview"
+        v-for="summary in currentOverview"
         :key="summary.protocol.name"
         lg="6"
         xl="3"
@@ -42,7 +42,6 @@ import { storeToRefs } from 'pinia';
 import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Overview from '@/components/defi/Overview.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
@@ -51,7 +50,7 @@ import { Section } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 
 const store = useDefiStore();
-const { overview } = storeToRefs(store);
+const { overview: currentOverview } = storeToRefs(store);
 const section = Section.DEFI_OVERVIEW;
 
 const { tc } = useI18n();

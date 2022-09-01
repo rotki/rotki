@@ -11,7 +11,7 @@
           class="overall-balances__net-worth text-center font-weight-medium mb-2"
         >
           <loading
-            v-if="loading"
+            v-if="isLoading"
             class="overall-balances__net-worth__loading text-start ms-2"
           />
           <div :style="`font-size: ${adjustedTotalNetWorthFontSize}em`">
@@ -30,13 +30,13 @@
           >
             <span class="me-2">{{ indicator }}</span>
             <amount-display
-              v-if="!loading"
+              v-if="!isLoading"
               show-currency="symbol"
               :fiat-currency="currencySymbol"
               :value="balanceDelta"
             />
             <percentage-display
-              v-if="!loading"
+              v-if="!isLoading"
               class="ms-2 px-1 text--secondary pe-2"
               :value="percentage"
             />
@@ -53,7 +53,7 @@
           class="d-flex justify-center align-center flex-grow-1 overall-balances__net-worth-chart"
         >
           <net-worth-chart
-            v-if="!loading"
+            v-if="!isLoading"
             :chart-data="timeframeData"
             :timeframe="timeframe"
             :timeframes="allTimeframes"
@@ -88,7 +88,6 @@ import { storeToRefs } from 'pinia';
 import { computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Loading from '@/components/helper/Loading.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import { setupStatusChecking } from '@/composables/common';
@@ -115,7 +114,7 @@ const frontendStore = useFrontendSettingsStore();
 const { visibleTimeframes } = storeToRefs(frontendStore);
 
 const { isSectionRefreshing } = setupStatusChecking();
-const loading = computed(() => {
+const isLoading = computed(() => {
   return (
     get(isSectionRefreshing(Section.BLOCKCHAIN_ETH)) ||
     get(isSectionRefreshing(Section.BLOCKCHAIN_BTC))
@@ -171,14 +170,14 @@ const percentage = computed(() => {
 });
 
 const indicator = computed(() => {
-  if (get(loading)) {
+  if (get(isLoading)) {
     return '';
   }
   return get(balanceDelta).isNegative() ? '▼' : '▲';
 });
 
 const balanceClass = computed(() => {
-  if (get(loading)) {
+  if (get(isLoading)) {
     return 'rotki-grey lighten-3';
   }
   return get(balanceDelta).isNegative() ? 'rotki-red lighten-1' : 'rotki-green';

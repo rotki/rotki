@@ -83,7 +83,7 @@
         <lending-history
           v-else
           :loading="historyRefreshing"
-          :history="lendingHistory"
+          :history="history"
           :floating-precision="floatingPrecision"
           @open-link="openUrl($event)"
         />
@@ -117,7 +117,6 @@ import { useInterop } from '@/electron-interop';
 import {
   AaveEarnedDetails,
   CompoundLendingDetails,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   LendingHistory,
   YearnVaultsProfitDetails
 } from '@/premium/premium';
@@ -185,7 +184,7 @@ const lendingBalances = computed(() => {
   return get(store.aggregatedLendingBalances(protocols, addresses));
 });
 
-const lendingHistory = computed(() => {
+const history = computed(() => {
   let protocols = get(selectedProtocols);
   let addresses = get(selectedAddresses);
   return get(store.lendingHistory(protocols, addresses));
