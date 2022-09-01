@@ -11,6 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_proper_response,
     assert_proper_response_with_result,
 )
 from rotkehlchen.types import Timestamp
@@ -351,28 +352,43 @@ def test_delete_ledger_actions(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'ledgeractionsresource',
-        ), json={'identifier': 2},
+        ), json={'identifiers': [1, 2]},
+    )
+    assert_proper_response(response)
+    # now check to see that the deleted action is no longer present
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ledgeractionsresource',
+        ),
     )
     result = assert_proper_response_with_result(response)
     result = [x['entry'] for x in result['entries']]
-    assert result == [actions[3], actions[1], actions[0]]
+    assert result == [actions[0], actions[1]]
 
-    # Try to delete unknown identifier and see it fails
+    # Try to delete unknown identifier with valid identifiers and see it fails
     identifier = 666
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'ledgeractionsresource',
-        ), json={'identifier': identifier},
+        ), json={'identifiers': [4, 3, identifier]},
     )
     assert_error_response(
         response,
-        contained_in_msg=(
-            f'Tried to remove ledger action with identifier {identifier}'
-            f' but it was not found in the DB',
-        ),
+        contained_in_msg='Tried to delete ledger action(s) but they were not found in the DB',
         status_code=HTTPStatus.CONFLICT,
     )
+    # now check to see that the ledger actions were not deleted.
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ledgeractionsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    result = [x['entry'] for x in result['entries']]
+    assert result == [actions[0], actions[1]]
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

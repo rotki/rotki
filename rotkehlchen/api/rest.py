@@ -853,11 +853,12 @@ class RestAPI():
             result_dict = _wrap_in_ok_result(result_dict)
             return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def delete_trade(self, trade_id: str) -> Response:
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            result, msg = self.rotkehlchen.data.db.delete_trade(cursor, trade_id)
-        if not result:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+    def delete_trades(self, trades_ids: List[str]) -> Response:
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
+                self.rotkehlchen.data.db.delete_trades(cursor, trades_ids)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
@@ -996,20 +997,15 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
-    def delete_ledger_action(self, identifier: int) -> Response:
+    def delete_ledger_actions(self, identifiers: List[int]) -> Response:
         db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            error_msg = db.remove_ledger_action(cursor, identifier=identifier)
-        if error_msg is not None:
-            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
+                db.remove_ledger_actions(cursor, identifiers=identifiers)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        # Success - return all ledger actions after the removal
-        response = self._get_ledger_actions(
-            filter_query=LedgerActionsFilterQuery.make(),
-            only_cache=True,
-        )
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def add_history_event(self, event: HistoryBaseEntry) -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)

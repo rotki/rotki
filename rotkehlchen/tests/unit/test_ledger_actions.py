@@ -79,7 +79,7 @@ def test_ledger_action_can_be_removed(database, function_scope_messages_aggregat
         identifier = db.add_ledger_action(cursor, action)
 
         # Delete ledger action
-        assert db.remove_ledger_action(cursor, identifier) is None
+        assert db.remove_ledger_actions(cursor, [identifier]) is None
 
     with database.conn.read_ctx() as cursor:
         # Check that the change has been committed

@@ -4145,9 +4145,9 @@ Dealing with trades
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      { "trade_id" : "dsadfasdsad"}
+      { "trades_ids" : ["dsadfasdsad"]}
 
-   :reqjson string trade_id: The ``trade_id`` of the trade to delete.
+   :reqjson string trades_ids: The list of identifiers for trades to delete.
 
    **Example Response**:
 
@@ -4161,7 +4161,8 @@ Dealing with trades
           "message": ""
       }
 
-   :resjson bool result: Boolean indicating success or failure of the request.
+   :resjson bool result: Returns ``true`` if all identifiers were found and deleted, otherwise returns ``false``.
+   :resjson string message: Returns ``""`` if ``result`` is ``True`` else returns the error message.
    :statuscode 200: Trades was successfully deleted.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is logged in. The given trade identifier to delete does not exist.
@@ -4458,9 +4459,9 @@ Dealing with ledger actions
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"identifier" : 55}
+      {"identifiers" : [55]}
 
-   :reqjson integer identifier: The ``identifier`` of the action to delete.
+   :reqjson integer identifiers: The list of identifiers of the actions to delete.
 
    **Example Response**:
 
@@ -4469,31 +4470,10 @@ Dealing with ledger actions
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      {
-          "result": {
-              "entries": [{
-                  "entry": {
-                      "identifier": 35,
-                      "timestamp": 1491606401,
-                      "action_type": "income"
-                      "location": "external",
-                      "amount": "2",
-                      "asset": "ETH",
-                      "rate": "650",
-                      "rate_asset": "EUR",
-                      "link": "Optional unique identifier",
-                      "notes": "Eth I received for being pretty"
-                  },
-                  "ignored_in_accounting": false
-              }],
-              "entries_found": 1,
-              "entries_limit": 50,
-          "message": ""
-      }
+      {"result": true, "message": ""}
 
-   :resjson object entries: An array of action objects after deletion. Same schema as the get method.
-   :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
-   :resjson int entries_limit: The actions limit for the account tier of the user. If unlimited then -1 is returned.
+   :resjson bool result: Returns ``true`` if all identifiers were found and deleted, otherwise returns ``false``.
+   :resjson string message: Returns ``""`` if ``result`` is ``True`` else return the error message.
    :statuscode 200: Action was successfully removed.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.

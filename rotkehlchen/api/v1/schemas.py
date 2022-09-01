@@ -726,6 +726,10 @@ class LedgerActionSchema(Schema):
         return {'action': LedgerAction(**data)}
 
 
+class IntegerIdentifierListSchema(Schema):
+    identifiers = DelimitedOrNormalList(fields.Integer(required=True), required=True)
+
+
 class IntegerIdentifierSchema(Schema):
     identifier = fields.Integer(required=True)
 
@@ -781,7 +785,7 @@ class TradePatchSchema(TradeSchema):
 
 
 class TradeDeleteSchema(Schema):
-    trade_id = fields.String(required=True)
+    trades_ids = DelimitedOrNormalList(fields.String(required=True), required=True)
 
 
 class TagSchema(Schema):

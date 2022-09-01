@@ -2327,11 +2327,17 @@ class DBHandler:
 
         return trades
 
-    def delete_trade(self, write_cursor: 'DBCursor', trade_id: str) -> Tuple[bool, str]:
-        write_cursor.execute('DELETE FROM trades WHERE id=?', (trade_id,))
-        if write_cursor.rowcount == 0:
-            return False, 'Tried to delete non-existing trade'
-        return True, ''
+    def delete_trades(self, write_cursor: 'DBCursor', trades_ids: List[str]) -> None:
+        """Removes trades from the database using their `trade_id`.
+        May raise:
+        - InputError if any of the `trade_id` are non-existent.
+        """
+        write_cursor.executemany(
+            'DELETE FROM trades WHERE id=?',
+            [(trade_id,) for trade_id in trades_ids],
+        )
+        if write_cursor.rowcount != len(trades_ids):
+            raise InputError('Tried to delete one or more non-existing trade(s)')
 
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""
