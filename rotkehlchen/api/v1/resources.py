@@ -492,7 +492,7 @@ class EthereumAirdropsResource(BaseMethodView):
 class EthereumNodesResource(BaseMethodView):
 
     put_schema = EthereumNodeSchema()
-    post_schema = EthereumNodeEditSchema()
+    patch_schema = EthereumNodeEditSchema()
     delete_schema = EthereumNodeListDeleteSchema()
 
     @require_loggedin_user()
@@ -521,8 +521,8 @@ class EthereumNodesResource(BaseMethodView):
         return self.rest_api.add_web3_node(node)
 
     @require_loggedin_user()
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(
+    @use_kwargs(patch_schema, location='json_and_query')
+    def patch(
         self,
         identifier: int,
         name: str,
