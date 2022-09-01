@@ -12,11 +12,9 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_timestamp_from_date,
-)
-from rotkehlchen.types import Fee, Location, Price, TradeType
+from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_timestamp
+from rotkehlchen.types import Fee, Location, Price, TimestampMS, TradeType
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -27,7 +25,6 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
             self,
             cursor: DBCursor,
             csv_row: Dict[str, Any],
-            timestamp_format: str = '%Y-%m-%d %H:%M:%S',
     ) -> None:
         """Consume rotki generic trades import CSV file.
         May raise:
@@ -45,10 +42,8 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
         amount_bought = deserialize_asset_amount(csv_row['Buy Amount'])
         location = Location.deserialize(csv_row['Location'])
         trade = Trade(
-            timestamp=deserialize_timestamp_from_date(
-                date=csv_row['Timestamp'],
-                formatstr=timestamp_format,
-                location='Rotki generic trades importer',
+            timestamp=ts_ms_to_sec(
+                TimestampMS(deserialize_timestamp(timestamp=csv_row['Timestamp'])),
             ),
             location=location,
             fee=fee,
@@ -70,7 +65,7 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_rotki_trades(cursor, row, **kwargs)
+                    self._consume_rotki_trades(cursor, row)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During rotki generic trades CSV import, found action with unknown '

@@ -471,6 +471,21 @@ def test_data_import_rotki_generic_trades(rotkehlchen_api_server):
     assert assert_proper_response_with_result(response) is True
     assert_rotki_generic_trades_import_results(rotki)
 
+    # check that passing `timestamp_format` does not break anything
+    json_data = {
+        'source': 'rotki_trades',
+        'file': str(filepath),
+        'timestamp_format': '%Y-%m-%d %H:%M:%S',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    assert assert_proper_response_with_result(response) is True
+    assert_rotki_generic_trades_import_results(rotki)
+
 
 def test_data_import_rotki_generic_events(rotkehlchen_api_server):
     """Test that data import works for Rotki generic events import csv file."""

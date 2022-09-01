@@ -1502,7 +1502,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen):
 
     expected_warnings = [
         'Deserialization error during rotki generic trades CSV import. Failed to deserialize Location value luno. Ignoring entry',  # noqa: E501
-        'During rotki generic trades import, csv row {\'Location\': \'bisq\', \'Base Currency\': \'DAI\', \'Quote Currency\': \'USDT\', \'Type\': \'Buy\', \'Buy Amount\': \'0\', \'Sell Amount\': \'4576.6400\', \'Fee\': \'5.1345\', \'Fee Currency\': \'USD\', \'Description\': \'Trade USDT for DAI\', \'Timestamp\': \'2022-08-03 09:00:00\'} has zero amount bought. Ignoring entry',  # noqa: E501
+        'During rotki generic trades import, csv row {\'Location\': \'bisq\', \'Base Currency\': \'DAI\', \'Quote Currency\': \'USDT\', \'Type\': \'Buy\', \'Buy Amount\': \'0\', \'Sell Amount\': \'4576.6400\', \'Fee\': \'5.1345\', \'Fee Currency\': \'USD\', \'Description\': \'Trade USDT for DAI\', \'Timestamp\': \'1659345600000\'} has zero amount bought. Ignoring entry',  # noqa: E501
     ]
     assert trades == expected_trades
     assert warnings == expected_warnings
@@ -1512,7 +1512,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
     expected_history_events = [
         HistoryBaseEntry(
             identifier=1,
-            event_identifier=b'1xyz',  # placeholder as this field is randomnly generated on import
+            event_identifier=b'1xyz',  # placeholder as this field is randomly generated on import
             sequence_index=0,
             timestamp=TimestampMS(1658912400000),
             location=Location.KUCOIN,
@@ -1526,7 +1526,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             notes='Deposit EUR to Kucoin',
         ), HistoryBaseEntry(
             identifier=2,
-            event_identifier=b'2xyz',  # placeholder as this field is randomnly generated on import
+            event_identifier=b'2xyz',  # placeholder as this field is randomly generated on import
             sequence_index=1,
             timestamp=TimestampMS(1658998800000),
             location=Location.BINANCE,
@@ -1540,7 +1540,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             notes='',
         ), HistoryBaseEntry(
             identifier=3,
-            event_identifier=b'2xyz',  # placeholder as this field is randomnly generated on import
+            event_identifier=b'2xyz',  # placeholder as this field is randomly generated on import
             sequence_index=2,
             timestamp=TimestampMS(1658998800000),
             location=Location.BINANCE,
@@ -1554,7 +1554,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             notes='',
         ), HistoryBaseEntry(
             identifier=4,
-            event_identifier=b'3xyz',  # placeholder as this field is randomnly generated on import
+            event_identifier=b'3xyz',  # placeholder as this field is randomly generated on import
             sequence_index=2,
             timestamp=TimestampMS(1659085200000),
             location=Location.KRAKEN,
@@ -1568,7 +1568,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             notes='',
         ), HistoryBaseEntry(
             identifier=5,
-            event_identifier=b'5xyz',  # placeholder as this field is randomnly generated on import
+            event_identifier=b'5xyz',  # placeholder as this field is randomly generated on import
             sequence_index=4,
             timestamp=TimestampMS(1659430800000),
             location=Location.COINBASE,
