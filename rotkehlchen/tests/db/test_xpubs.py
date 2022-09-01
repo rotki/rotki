@@ -24,6 +24,7 @@ def fixture_setup_db_for_xpub_tests(data_dir, username, sql_vm_instructions_cb):
         derivation_path = 'm/0/0/0'
         xpub_data1 = XpubData(
             xpub=HDKey.from_xpub(xpub=xpub, path='m'),
+            blockchain=SupportedBlockchain.BITCOIN_CASH,
             derivation_path=derivation_path,
             label='xpub1',
             tags=['public', 'desktop'],
@@ -35,7 +36,7 @@ def fixture_setup_db_for_xpub_tests(data_dir, username, sql_vm_instructions_cb):
             object_reference_keys=['xpub.xpub', 'derivation_path'],
         )
 
-        data.db.add_bitcoin_xpub(cursor, xpub_data1, SupportedBlockchain.BITCOIN_CASH)
+        data.db.add_bitcoin_xpub(cursor, xpub_data1)
         addr1 = '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r'
         addr2 = '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe'
         addr3 = '12wxFzpjdymPk3xnHmdDLCTXUT9keY3XRd'
@@ -45,8 +46,8 @@ def fixture_setup_db_for_xpub_tests(data_dir, username, sql_vm_instructions_cb):
         account_data = [BlockchainAccountData(x) for x in [addr1, addr2, addr3, addr4, addr5]]
         data.db.add_blockchain_accounts(
             cursor,
-            blockchain=SupportedBlockchain.BITCOIN_CASH,
             account_data=account_data,
+            blockchain=xpub_data1.blockchain,
         )
         insert_tag_mappings(    # if we got tags add them to the existing addresses too
             write_cursor=cursor,
@@ -55,23 +56,22 @@ def fixture_setup_db_for_xpub_tests(data_dir, username, sql_vm_instructions_cb):
         )
         data.db.ensure_xpub_mappings_exist(
             cursor,
-            xpub=xpub,
-            derivation_path=derivation_path,
+            xpub_data=xpub_data1,
             derived_addresses_data=[
                 XpubDerivedAddressData(0, 0, addr1, ZERO),
                 XpubDerivedAddressData(0, 1, addr2, ZERO),
                 XpubDerivedAddressData(0, 5, addr5, ZERO),
             ],
-            blockchain=SupportedBlockchain.BITCOIN_CASH,
         )
 
         xpub = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
         derivation_path = 'm/0'
         xpub_data2 = XpubData(
             xpub=HDKey.from_xpub(xpub=xpub, path='m'),
+            blockchain=SupportedBlockchain.BITCOIN,
             derivation_path=derivation_path,
         )
-        data.db.add_bitcoin_xpub(cursor, xpub_data2, SupportedBlockchain.BITCOIN)
+        data.db.add_bitcoin_xpub(cursor, xpub_data2)
         addr1 = 'bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5'
         addr2 = 'bc1qnus7355ecckmeyrmvv56mlm42lxvwa4wuq5aev'
         addr3 = 'bc1qup7f8g5k3h5uqzfjed03ztgn8hhe542w69wc0g'
@@ -80,13 +80,12 @@ def fixture_setup_db_for_xpub_tests(data_dir, username, sql_vm_instructions_cb):
         all_addresses.extend([addr1, addr2, addr3, addr4, addr5])
         data.db.add_blockchain_accounts(
             cursor,
-            blockchain=SupportedBlockchain.BITCOIN,
             account_data=[BlockchainAccountData(x) for x in [addr1, addr2, addr3, addr4, addr5]],
+            blockchain=xpub_data2.blockchain,
         )
         data.db.ensure_xpub_mappings_exist(
             cursor,
-            xpub=xpub,
-            derivation_path=derivation_path,
+            xpub_data=xpub_data2,
             derived_addresses_data=[
                 XpubDerivedAddressData(1, 0, addr1, ZERO),
                 XpubDerivedAddressData(1, 1, addr2, ZERO),
@@ -94,7 +93,6 @@ def fixture_setup_db_for_xpub_tests(data_dir, username, sql_vm_instructions_cb):
                 XpubDerivedAddressData(1, 3, addr4, ZERO),
                 XpubDerivedAddressData(1, 7, addr5, ZERO),
             ],
-            blockchain=SupportedBlockchain.BITCOIN,
         )
 
         # Finally also add the same xpub as xpub1 with no derivation path
@@ -102,9 +100,10 @@ def fixture_setup_db_for_xpub_tests(data_dir, username, sql_vm_instructions_cb):
         derivation_path = None
         xpub_data3 = XpubData(
             xpub=HDKey.from_xpub(xpub=xpub, path='m'),
+            blockchain=SupportedBlockchain.BITCOIN,
             derivation_path=derivation_path,
         )
-        data.db.add_bitcoin_xpub(cursor, xpub_data3, SupportedBlockchain.BITCOIN)
+        data.db.add_bitcoin_xpub(cursor, xpub_data3)
 
     return data.db, xpub_data1, xpub_data2, xpub_data3, all_addresses
 
@@ -128,19 +127,29 @@ def test_get_addresses_to_xpub_mapping(setup_db_for_xpub_tests):
     # Also add a non-existing address in there for fun
     all_addresses.append('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
     with db.conn.read_ctx() as cursor:
-        result = db.get_addresses_to_xpub_mapping(cursor, all_addresses)
-    assert len(result) == 8
+        result_bch = db.get_addresses_to_xpub_mapping(
+            cursor=cursor,
+            blockchain=SupportedBlockchain.BITCOIN_CASH,
+            addresses=all_addresses,
+        )
+        result_btc = db.get_addresses_to_xpub_mapping(
+            cursor=cursor,
+            blockchain=SupportedBlockchain.BITCOIN,
+            addresses=all_addresses,
+        )
+    assert len(result_bch) == 3
+    assert len(result_btc) == 5
     for x in all_addresses[:2]:
-        assert result[x].xpub.xpub == xpub1.xpub.xpub
-        assert result[x].derivation_path == xpub1.derivation_path
+        assert result_bch[x].xpub.xpub == xpub1.xpub.xpub
+        assert result_bch[x].derivation_path == xpub1.derivation_path
 
     x = all_addresses[4]
-    assert result[x].xpub.xpub == xpub1.xpub.xpub
-    assert result[x].derivation_path == xpub1.derivation_path
+    assert result_bch[x].xpub.xpub == xpub1.xpub.xpub
+    assert result_bch[x].derivation_path == xpub1.derivation_path
 
     for x in all_addresses[5:10]:
-        assert result[x].xpub.xpub == xpub2.xpub.xpub
-        assert result[x].derivation_path == xpub2.derivation_path
+        assert result_btc[x].xpub.xpub == xpub2.xpub.xpub
+        assert result_btc[x].derivation_path == xpub2.derivation_path
 
 
 def test_delete_bitcoin_xpub(setup_db_for_xpub_tests):
@@ -149,13 +158,23 @@ def test_delete_bitcoin_xpub(setup_db_for_xpub_tests):
     # Also add a non-existing address in there for fun
     all_addresses.append('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
     with db.user_write() as cursor:
-        db.delete_bitcoin_xpub(cursor, xpub1, SupportedBlockchain.BITCOIN_CASH)
-        result = db.get_addresses_to_xpub_mapping(cursor, all_addresses)
+        db.delete_bitcoin_xpub(cursor, xpub1)  # xpub1 is a bch xpub
+        result_bch = db.get_addresses_to_xpub_mapping(
+            cursor=cursor,
+            blockchain=SupportedBlockchain.BITCOIN_CASH,
+            addresses=all_addresses,
+        )
+        result_btc = db.get_addresses_to_xpub_mapping(
+            cursor=cursor,
+            blockchain=SupportedBlockchain.BITCOIN,
+            addresses=all_addresses,
+        )
+        assert len(result_bch) == 0
+        assert len(result_btc) == 5
 
-        assert len(result) == 5
         for x in all_addresses[5:10]:
-            assert result[x].xpub.xpub == xpub2.xpub.xpub
-            assert result[x].derivation_path == xpub2.derivation_path
+            assert result_btc[x].xpub.xpub == xpub2.xpub.xpub
+            assert result_btc[x].derivation_path == xpub2.derivation_path
 
         cursor.execute('SELECT * from tag_mappings;')
         assert len(cursor.fetchall()) == 0
@@ -165,17 +184,19 @@ def test_get_bitcoin_xpub_data(setup_db_for_xpub_tests):
     """Test that retrieving bitcoin xpub data also returns all properly mapped tags"""
     db, xpub1, xpub2, xpub3, _ = setup_db_for_xpub_tests
     with db.conn.read_ctx() as cursor:
-        result = db.get_bitcoin_xpub_data(cursor)
-    assert len(result) == 3
+        result1 = db.get_bitcoin_xpub_data(cursor, SupportedBlockchain.BITCOIN_CASH)
+        result2 = db.get_bitcoin_xpub_data(cursor, SupportedBlockchain.BITCOIN)
+    assert len(result1) == 1
+    assert len(result2) == 2
 
-    assert result[0] == xpub3
-    assert result[2] == xpub2
+    assert result2[0] == xpub3
+    assert result2[1] == xpub2
 
     # Equality won't work due to undefined order of tags list. Check each attribute
-    assert result[1].xpub == xpub1.xpub
-    assert result[1].label == xpub1.label
-    assert result[1].derivation_path == xpub1.derivation_path
-    assert set(result[1].tags) == set(xpub1.tags)
+    assert result1[0].xpub == xpub1.xpub
+    assert result1[0].label == xpub1.label
+    assert result1[0].derivation_path == xpub1.derivation_path
+    assert set(result1[0].tags) == set(xpub1.tags)
 
 
 def test_edit_bitcoin_xpub(setup_db_for_xpub_tests):
@@ -188,16 +209,17 @@ def test_edit_bitcoin_xpub(setup_db_for_xpub_tests):
             cursor,
             XpubData(
                 xpub=xpub.xpub,
+                blockchain=SupportedBlockchain.BITCOIN_CASH,
                 derivation_path=xpub.derivation_path,
                 label='123',
                 tags=['test'],
             ))
-        result = db.get_bitcoin_xpub_data(cursor)
+        result = db.get_bitcoin_xpub_data(cursor, blockchain=SupportedBlockchain.BITCOIN_CASH)
 
-    assert result[1].xpub == xpub.xpub
-    assert result[1].label == '123'
-    assert result[1].derivation_path == xpub.derivation_path
-    assert set(result[1].tags) == {'test'}
+    assert result[0].xpub == xpub.xpub
+    assert result[0].label == '123'
+    assert result[0].derivation_path == xpub.derivation_path
+    assert set(result[0].tags) == {'test'}
 
 
 def test_edit_bitcoin_xpub_not_existing_tag(setup_db_for_xpub_tests):
@@ -210,14 +232,15 @@ def test_edit_bitcoin_xpub_not_existing_tag(setup_db_for_xpub_tests):
                 cursor,
                 XpubData(
                     xpub=xpub.xpub,
+                    blockchain=SupportedBlockchain.BITCOIN_CASH,
                     derivation_path=xpub.derivation_path,
                     label='123',
                     tags=['test'],
                 ),
             )
-        result = db.get_bitcoin_xpub_data(cursor)
+        result = db.get_bitcoin_xpub_data(cursor, SupportedBlockchain.BITCOIN_CASH)
 
-    assert result[1].xpub == xpub.xpub
-    assert result[1].label == xpub.label
-    assert result[1].derivation_path == xpub.derivation_path
-    assert result[1].tags != {'test'}
+    assert result[0].xpub == xpub.xpub
+    assert result[0].label == xpub.label
+    assert result[0].derivation_path == xpub.derivation_path
+    assert result[0].tags != {'test'}

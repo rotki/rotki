@@ -309,7 +309,7 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
         derivation_path,
         blockchain
     ) ON DELETE CASCADE
-    PRIMARY KEY (address, xpub, derivation_path)
+    PRIMARY KEY (address, xpub, derivation_path, blockchain)
 );
 """  # noqa: E501
 

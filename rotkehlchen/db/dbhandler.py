@@ -2985,7 +2985,6 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             xpub_data: XpubData,
-            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """Add the xpub to the DB
 
@@ -3000,20 +2999,19 @@ class DBHandler:
                     xpub_data.xpub.xpub,
                     xpub_data.serialize_derivation_path_for_db(),
                     xpub_data.label,
-                    blockchain.value,
+                    xpub_data.blockchain.value,
                 ),
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
-                f'Xpub {xpub_data.xpub.xpub} for {blockchain.value} with derivation path '
-                f'{xpub_data.derivation_path} is already tracked',
+                f'Xpub {xpub_data.xpub.xpub} for {xpub_data.blockchain.value} with '
+                f'derivation path {xpub_data.derivation_path} is already tracked',
             ) from e
 
     def delete_bitcoin_xpub(
             self,
             write_cursor: 'DBCursor',
             xpub_data: XpubData,
-            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """Deletes an xpub from the DB. Also deletes all derived addresses and mappings
 
@@ -3022,7 +3020,11 @@ class DBHandler:
         """
         write_cursor.execute(
             'SELECT COUNT(*) FROM xpubs WHERE xpub=? AND derivation_path IS ? AND blockchain=?;',
-            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db(), blockchain.value),
+            (
+                xpub_data.xpub.xpub,
+                xpub_data.serialize_derivation_path_for_db(),
+                xpub_data.blockchain.value,
+            ),
         )
         if write_cursor.fetchone()[0] == 0:
             derivation_str = (
@@ -3030,18 +3032,19 @@ class DBHandler:
                 f'derivation path {xpub_data.derivation_path}'
             )
             raise InputError(
-                f'Tried to remove non existing xpub {xpub_data.xpub.xpub} for {blockchain.value} '
-                f'with {derivation_str}',
+                f'Tried to remove non existing xpub {xpub_data.xpub.xpub} '
+                f'for {xpub_data.blockchain.value} with {derivation_str}',
             )
 
         # Delete the tag mappings for all derived addresses
         write_cursor.execute(
             'DELETE FROM tag_mappings WHERE '
             'object_reference IN ('
-            'SELECT address from xpub_mappings WHERE xpub=? and derivation_path IS ?);',
+            'SELECT address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain=?);',  # noqa: E501
             (
                 xpub_data.xpub.xpub,
                 xpub_data.serialize_derivation_path_for_db(),
+                xpub_data.blockchain.value,
             ),
         )
         # Delete the tag mappings for the xpub itself (type ignore is for xpub is not None
@@ -3050,17 +3053,22 @@ class DBHandler:
         # Delete any derived addresses
         write_cursor.execute(
             'DELETE FROM blockchain_accounts WHERE blockchain=? AND account IN ('
-            'SELECT address from xpub_mappings WHERE xpub=? and derivation_path IS ?);',
+            'SELECT address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain=?);',  # noqa: E501
             (
-                blockchain.value,
+                xpub_data.blockchain.value,
                 xpub_data.xpub.xpub,
                 xpub_data.serialize_derivation_path_for_db(),
+                xpub_data.blockchain.value,
             ),
         )
         # And then finally delete the xpub itself
         write_cursor.execute(
-            'DELETE FROM xpubs WHERE xpub=? AND derivation_path IS ?;',
-            (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db()),
+            'DELETE FROM xpubs WHERE xpub=? AND derivation_path IS ? AND blockchain=?;',
+            (
+                xpub_data.xpub.xpub,
+                xpub_data.serialize_derivation_path_for_db(),
+                xpub_data.blockchain.value,
+            ),
         )
 
     def edit_bitcoin_xpub(self, write_cursor: 'DBCursor', xpub_data: XpubData) -> None:
@@ -3080,11 +3088,12 @@ class DBHandler:
                 object_reference_keys=['xpub.xpub', 'derivation_path'],
             )
             write_cursor.execute(
-                'UPDATE xpubs SET label=? WHERE xpub=? AND derivation_path=?',
+                'UPDATE xpubs SET label=? WHERE xpub=? AND derivation_path=? AND blockchain=?',
                 (
                     xpub_data.label,
                     xpub_data.xpub.xpub,
                     xpub_data.serialize_derivation_path_for_db(),
+                    xpub_data.blockchain.value,
                 ),
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -3093,19 +3102,25 @@ class DBHandler:
                 f'derivation path {xpub_data.derivation_path}',
             ) from e
 
-    def get_bitcoin_xpub_data(self, cursor: 'DBCursor') -> List[XpubData]:
+    def get_bitcoin_xpub_data(
+            self,
+            cursor: 'DBCursor',
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+    ) -> List[XpubData]:
         query = cursor.execute(
-            'SELECT A.xpub, A.derivation_path, A.label, group_concat(B.tag_name,",") '
-            'FROM xpubs as A LEFT OUTER JOIN tag_mappings AS B ON '
-            'B.object_reference = A.xpub || A.derivation_path GROUP BY A.xpub || A.derivation_path;',  # noqa: E501
+            'SELECT A.xpub, A.blockchain, A.derivation_path, A.label, '
+            'group_concat(B.tag_name,",") FROM xpubs as A LEFT OUTER JOIN tag_mappings AS B ON '
+            'B.object_reference = A.xpub || A.derivation_path WHERE A.blockchain=? GROUP BY A.xpub || A.derivation_path',  # noqa: E501
+            (blockchain.value,),
         )
         result = []
         for entry in query:
-            tags = deserialize_tags_from_db(entry[3])
+            tags = deserialize_tags_from_db(entry[4])
             result.append(XpubData(
                 xpub=HDKey.from_xpub(entry[0], path='m'),
-                derivation_path=deserialize_derivation_path_for_db(entry[1]),
-                label=entry[2],
+                blockchain=SupportedBlockchain.deserialize(entry[1]),  # type: ignore
+                derivation_path=deserialize_derivation_path_for_db(entry[2]),
+                label=entry[3],
                 tags=tags,
             ))
 
@@ -3124,8 +3139,13 @@ class DBHandler:
         for acc_idx in (0, 1):
             query = cursor.execute(
                 'SELECT derived_index from xpub_mappings WHERE xpub=? AND '
-                'derivation_path IS ? AND account_index=?;',
-                (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db(), acc_idx),
+                'derivation_path IS ? AND account_index=? AND blockchain = ?;',
+                (
+                    xpub_data.xpub.xpub,
+                    xpub_data.serialize_derivation_path_for_db(),
+                    acc_idx,
+                    xpub_data.blockchain.value,
+                ),
             )
             prev_index = -1
             for result in query:
@@ -3142,6 +3162,7 @@ class DBHandler:
     def get_addresses_to_xpub_mapping(
             self,
             cursor: 'DBCursor',
+            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
             addresses: List[BTCAddress],
     ) -> Dict[BTCAddress, XpubData]:
         data = {}
@@ -3149,8 +3170,8 @@ class DBHandler:
             cursor.execute(
                 'SELECT B.address, A.xpub, A.derivation_path FROM xpubs as A '
                 'LEFT OUTER JOIN xpub_mappings as B '
-                'ON B.xpub = A.xpub AND B.derivation_path IS A.derivation_path '
-                'WHERE B.address=?;', (address,),
+                'ON B.xpub = A.xpub AND B.derivation_path IS A.derivation_path AND B.blockchain = A.blockchain '  # noqa: E501
+                'WHERE B.address=? AND B.blockchain=?;', (address, blockchain.value),
             )
             result = cursor.fetchall()
             if len(result) == 0:
@@ -3158,6 +3179,7 @@ class DBHandler:
 
             data[result[0][0]] = XpubData(
                 xpub=HDKey.from_xpub(result[0][1], path='m'),
+                blockchain=blockchain,
                 derivation_path=deserialize_derivation_path_for_db(result[0][2]),
             )
 
@@ -3166,20 +3188,18 @@ class DBHandler:
     def ensure_xpub_mappings_exist(
             self,
             write_cursor: 'DBCursor',
-            xpub: str,
-            derivation_path: Optional[str],
+            xpub_data: XpubData,
             derived_addresses_data: List[XpubDerivedAddressData],
-            blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """Create if not existing the mappings between the addresses and the xpub"""
         tuples = [
             (
                 x.address,
-                xpub,
-                '' if derivation_path is None else derivation_path,
+                xpub_data.xpub.xpub,
+                '' if xpub_data.derivation_path is None else xpub_data.derivation_path,
                 x.account_index,
                 x.derived_index,
-                blockchain.value,
+                xpub_data.blockchain.value,
             ) for x in derived_addresses_data
         ]
         for entry in tuples:

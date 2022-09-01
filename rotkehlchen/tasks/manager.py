@@ -27,7 +27,14 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.types import ChecksumEvmAddress, ExchangeLocationID, Location, Optional, Timestamp
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    ExchangeLocationID,
+    Location,
+    Optional,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
@@ -211,8 +218,17 @@ class TaskManager():
             return
 
         with self.database.conn.read_ctx() as cursor:
-            xpubs = self.database.get_bitcoin_xpub_data(cursor)
-        if len(xpubs) == 0:
+            btc_xpubs = self.database.get_bitcoin_xpub_data(
+                cursor=cursor,
+                blockchain=SupportedBlockchain.BITCOIN,
+            )
+            bch_xpubs = self.database.get_bitcoin_xpub_data(
+                cursor=cursor,
+                blockchain=SupportedBlockchain.BITCOIN_CASH,
+            )
+        should_derive_btc_xpubs = len(btc_xpubs) > 0
+        should_derive_bch_xpubs = len(bch_xpubs) > 0
+        if should_derive_btc_xpubs is False and should_derive_bch_xpubs is False:
             return
 
         log.debug('Scheduling task for Xpub derivation')
@@ -221,8 +237,8 @@ class TaskManager():
             task_name='Derive new xpub addresses for BTC & BCH',
             exception_is_error=True,
             method=self.chain_manager.derive_new_addresses_from_xpubs,
-            should_derive_btc_xpubs=True,
-            should_derive_bch_xpubs=True,
+            should_derive_btc_xpubs=should_derive_btc_xpubs,
+            should_derive_bch_xpubs=should_derive_bch_xpubs,
         )
         self.last_xpub_derivation_ts = now
 

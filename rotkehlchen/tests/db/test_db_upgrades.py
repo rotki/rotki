@@ -778,16 +778,49 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
             cursor.execute(f'SELECT time from {table_name}')
             assert cursor.fetchall() == expected_result
+
+    xpub1 = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
+    xpub2 = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
+
+    def try_insert_mapping(cur):
+        # try to insert a new entry with values (except blockchain) duplicating another entry
+        cur.execute(
+            'INSERT INTO xpub_mappings VALUES (?, ?, ?, ?, ?, ?)',
+            (
+                '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r',
+                xpub1,
+                'm', 0, 0, 'BCH',
+            ),
+        )
+    # it should fail before the upgrade
+    with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
+        with db_v34.conn.write_ctx() as write_cursor:
+            try_insert_mapping(write_cursor)
+
     # Migrate the database
     db_v35 = _init_db_with_target_version(
         target_version=35,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
+    # it should not fail after upgrade since we added `blockchain` to primary key
+    with db_v35.conn.write_ctx() as write_cursor:
+        try_insert_mapping(write_cursor)
+
+    expected_xpubs_mappings = [
+        ('1LZypJUwJJRdfdndwvDmtAjrVYaHko136r', xpub1, 'm', 0, 0, 'BTC'),
+        ('bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5', xpub2, 'm/0', 0, 0, 'BTC'),
+        ('1LZypJUwJJRdfdndwvDmtAjrVYaHko136r', xpub1, 'm', 0, 0, 'BCH'),
+    ]
+
     with db_v35.conn.read_ctx() as cursor:
         for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
             cursor.execute(f'SELECT timestamp from {table_name}')
             assert cursor.fetchall() == expected_result
+
+        # Check that data is correct
+        xpub_mappings_in_db = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
+        assert xpub_mappings_in_db == expected_xpubs_mappings
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

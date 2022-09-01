@@ -1790,13 +1790,9 @@ class RestAPI():
     def _add_xpub(
         self,
         xpub_data: 'XpubData',
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Dict[str, Any]:
         try:
-            XpubManager(self.rotkehlchen.chain_manager).add_bitcoin_xpub(
-                xpub_data=xpub_data,
-                blockchain=blockchain,
-            )
+            XpubManager(self.rotkehlchen.chain_manager).add_bitcoin_xpub(xpub_data=xpub_data)
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
         except TagConstraintError as e:
@@ -1811,16 +1807,14 @@ class RestAPI():
         self,
         xpub_data: 'XpubData',
         async_query: bool,
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
         if async_query is True:
             return self._query_async(
                 command=self._add_xpub,
                 xpub_data=xpub_data,
-                blockchain=blockchain,
             )
 
-        response = self._add_xpub(xpub_data=xpub_data, blockchain=blockchain)
+        response = self._add_xpub(xpub_data=xpub_data)
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)
@@ -1835,14 +1829,12 @@ class RestAPI():
     def _delete_xpub(
         self,
         xpub_data: 'XpubData',
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Dict[str, Any]:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
                 XpubManager(self.rotkehlchen.chain_manager).delete_bitcoin_xpub(
                     write_cursor=cursor,
                     xpub_data=xpub_data,
-                    blockchain=blockchain,
                 )
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
@@ -1854,16 +1846,14 @@ class RestAPI():
         self,
         xpub_data: 'XpubData',
         async_query: bool,
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
         if async_query is True:
             return self._query_async(
                 command=self._delete_xpub,
                 xpub_data=xpub_data,
-                blockchain=blockchain,
             )
 
-        response = self._delete_xpub(xpub_data=xpub_data, blockchain=blockchain)
+        response = self._delete_xpub(xpub_data=xpub_data)
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)
@@ -1878,16 +1868,14 @@ class RestAPI():
     def edit_xpub(
         self,
         xpub_data: 'XpubData',
-        blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
                 XpubManager(self.rotkehlchen.chain_manager).edit_bitcoin_xpub(
                     write_cursor=cursor,
                     xpub_data=xpub_data,
-                    blockchain=blockchain,
                 )
-                data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)
+                data = self.rotkehlchen.get_blockchain_account_data(cursor, xpub_data.blockchain)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
 
