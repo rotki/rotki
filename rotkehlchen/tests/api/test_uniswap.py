@@ -37,7 +37,7 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import AssetAmount, Price, Timestamp
+from rotkehlchen.types import AssetAmount, Price, SupportedBlockchain, Timestamp
 
 # Addresses
 # DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
@@ -69,7 +69,7 @@ def test_get_balances_module_not_activated(
 
 UNISWAP_TEST_OPTIONS = [
     # Test with infura (as own node), many open nodes, and premium + graph
-    (False, (NodeName(name='own', endpoint=INFURA_TEST, owned=True), MYCRYPTO_NODE_NAME)),
+    (False, (NodeName(name='own', endpoint=INFURA_TEST, owned=True, blockchain=SupportedBlockchain.ETHEREUM), MYCRYPTO_NODE_NAME)),  # noqa: E501
     (False, (MYCRYPTO_NODE_NAME, BLOCKSOUT_NODE_NAME, AVADO_POOL_NODE_NAME)),
     (True, ()),
 ]

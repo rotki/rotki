@@ -17,6 +17,7 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
+from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks, ts_now
 
@@ -27,7 +28,7 @@ DB_PASSWORD_VAR = 'DB_PASSWORD'
 
 
 def init_ethereum(rpc_endpoint: str, use_other_nodes: bool, database: DBHandler) -> EthereumManager:
-    nodes_to_connect = database.get_web3_nodes(only_active=True) if use_other_nodes else (WeightedNode(node=NodeName.OWN,weight=ONE))
+    nodes_to_connect = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True) if use_other_nodes else (WeightedNode(node=NodeName.OWN,weight=ONE))
     msg_aggregator = MessagesAggregator()
     etherscan = Etherscan(database=None, msg_aggregator=msg_aggregator)
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)

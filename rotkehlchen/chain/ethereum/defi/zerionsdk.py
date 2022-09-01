@@ -24,7 +24,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.types import ChecksumEvmAddress, Price
+from rotkehlchen.types import ChecksumEvmAddress, Price, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 
@@ -145,6 +145,7 @@ WEIGHTED_NODES_WITH_HIGH_GAS_LIMIT = (
             name='1inch',
             endpoint='https://web3.1inch.exchange',
             owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
         ),
         weight=FVal(0.15),
         active=True,

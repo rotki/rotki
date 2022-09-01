@@ -1559,3 +1559,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 aggregated_balances[asset] += balance
 
         return dict(aggregated_balances)
+
+    def get_chain_manager(
+            self,
+            blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE],  # noqa: E501
+    ) -> Any:
+        """Returns blockchain manager"""
+        attr = blockchain.name.lower()
+        return getattr(self, attr)

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -56,6 +57,6 @@ def data_migration_4(write_cursor: 'DBCursor', rotki: 'Rotkehlchen') -> None:
     """
     read_and_write_nodes_in_database(write_cursor=write_cursor)
     # Connect to the nodes since the migration happens after the ethereum manager initialization
-    nodes_to_connect = rotki.data.db.get_web3_nodes(only_active=True)
+    nodes_to_connect = rotki.data.db.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
     rotki.chain_manager.ethereum.connect_to_multiple_nodes(nodes_to_connect)
     copy_ethereum_rpc_endpoint(write_cursor=write_cursor)

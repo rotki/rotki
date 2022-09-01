@@ -46,7 +46,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
 
 TEST_ACC1 = '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10'
 TEST_V2_ACC2 = '0x915C4580dFFD112db25a6cf06c76cDd9009637b7'
@@ -539,7 +539,12 @@ def check_vault_history(name, expected_history, result_history):
     [
         (
             WeightedNode(
-                node_info=NodeName(name='own', endpoint=INFURA_TEST, owned=True),
+                node_info=NodeName(
+                    name='own',
+                    endpoint=INFURA_TEST,
+                    owned=True,
+                    blockchain=SupportedBlockchain.ETHEREUM,
+                ),
                 weight=ONE,
                 active=True,
             ),

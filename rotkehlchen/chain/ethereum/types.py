@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import Any, Dict, NamedTuple, Tuple, Type
+from typing import Any, Dict, Literal, NamedTuple, Tuple, Type
 
 from eth_typing import HexAddress, HexStr
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
 
 ETHERSCAN_NODE_NAME = 'etherscan'
 
@@ -26,12 +26,14 @@ class NodeName(NamedTuple):
     name: str
     endpoint: str
     owned: bool
+    blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE]  # noqa: E501
 
     def serialize(self) -> Dict[str, Any]:
         return {
             'name': self.name,
             'endpoint': self.endpoint,
             'owned': self.owned,
+            'blockchain': self.blockchain.value,
         }
 
 
@@ -72,6 +74,7 @@ class WeightedNode:
                 name=data['node'],
                 endpoint=data['endpoint'],
                 owned=bool(data['owned']),
+                blockchain=SupportedBlockchain(data['blockchain']),  # type: ignore
             ),
             weight=FVal(data['weight']) / 100,
             active=bool(data['active']),

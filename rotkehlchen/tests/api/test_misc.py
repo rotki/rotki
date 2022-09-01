@@ -14,6 +14,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_response_with_result,
 )
+from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.utils.misc import get_system_spec
 
 
@@ -133,7 +134,8 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
 def test_manage_ethereum_nodes(rotkehlchen_api_server):
     """Test that list of nodes can be correctly updated and queried"""
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
-    nodes_at_start = len(database.get_web3_nodes(only_active=True))
+    blockchain = SupportedBlockchain.ETHEREUM
+    nodes_at_start = len(database.get_web3_nodes(blockchain=blockchain, only_active=True))
     response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
     assert len(result) == 7
@@ -284,7 +286,7 @@ def test_manage_ethereum_nodes(rotkehlchen_api_server):
             'active': False,
         },
     )
-    assert nodes_at_start - len(database.get_web3_nodes(only_active=True)) == 0
+    assert nodes_at_start - len(database.get_web3_nodes(blockchain=blockchain, only_active=True)) == 0  # noqa: E501
     response = requests.get(api_url_for(rotkehlchen_api_server, 'ethereumnodesresource'))
     result = assert_proper_response_with_result(response)
     # Check that the rebalancing didn't get affected by the owned node
