@@ -355,6 +355,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.defi_balances_last_query_ts = Timestamp(0)
         self.defi_balances: Dict[ChecksumEvmAddress, List[DefiProtocolBalances]] = {}
 
+        # All of these locks are used, but the chain ones with dynamic getattr below
         self.defi_lock = Semaphore()
         self.btc_lock = Semaphore()
         self.bch_lock = Semaphore()

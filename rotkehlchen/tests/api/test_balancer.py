@@ -40,10 +40,8 @@ from rotkehlchen.types import AssetAmount, EvmTokenKind, Timestamp, deserialize_
 
 # Top holder of WBTC-WETH pool (0x1eff8af5d577060ba4ac8a29a13525bb0ee2a3d5)
 BALANCER_TEST_ADDR1 = string_to_evm_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')
-BALANCER_TEST_ADDR2 = string_to_evm_address('0x029f388aC4D5C8BfF490550ce0853221030E822b')
-BALANCER_TEST_ADDR3 = string_to_evm_address('0x7716a99194d758c8537F056825b75Dd0C8FDD89f')
-BALANCER_TEST_ADDR4 = string_to_evm_address('0x231DC6af3C66741f6Cf618884B953DF0e83C1A2A')
-BALANCER_TEST_ADDR3_POOL1 = EvmToken.initialize(
+BALANCER_TEST_ADDR2 = string_to_evm_address('0x7716a99194d758c8537F056825b75Dd0C8FDD89f')
+BALANCER_TEST_ADDR2_POOL1 = EvmToken.initialize(
     address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
     chain=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
@@ -54,7 +52,7 @@ BALANCER_TEST_ADDR3_POOL1 = EvmToken.initialize(
         UnderlyingToken(address=string_to_evm_address('0xba100000625a3754423978a60c9317c58a424e3D'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.8)),  # noqa: E501  # BAL
     ],
 )
-BALANCER_TEST_ADDR3_POOL2 = EvmToken.initialize(
+BALANCER_TEST_ADDR2_POOL2 = EvmToken.initialize(
     address=string_to_evm_address('0x574FdB861a0247401B317a3E68a83aDEAF758cf6'),
     chain=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
@@ -143,10 +141,10 @@ def test_get_balances(
             assert FVal(pool_token['weight']) >= ZERO
 
 
-BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1 = (
+BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL1 = (
     BalancerPoolEventsBalance(
-        address=BALANCER_TEST_ADDR3,
-        pool_address_token=BALANCER_TEST_ADDR3_POOL1,
+        address=BALANCER_TEST_ADDR2,
+        pool_address_token=BALANCER_TEST_ADDR2_POOL1,
         profit_loss_amounts=[
             AssetAmount(FVal('-0.039312851799093402')),
             AssetAmount(FVal('0.744372160905819159')),
@@ -158,10 +156,10 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1 = (
                     '0xb9dff9df4e3838c75d354d62c4596d94e5eb8904e07cee07a3b7ffa611c05544',
                 ),
                 log_index=331,
-                address=BALANCER_TEST_ADDR3,
+                address=BALANCER_TEST_ADDR2,
                 timestamp=Timestamp(1597144247),
                 event_type=BalancerBPTEventType.MINT,
-                pool_address_token=BALANCER_TEST_ADDR3_POOL1,
+                pool_address_token=BALANCER_TEST_ADDR2_POOL1,
                 lp_balance=Balance(
                     amount=FVal('0.042569019597126949'),
                     usd_value=FVal('19.779488662371895'),
@@ -176,10 +174,10 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1 = (
                     '0xfa1dfeb83480e51a15137a93cb0eba9ac92c1b6b0ee0bd8551a422c1ed83695b',
                 ),
                 log_index=92,
-                address=BALANCER_TEST_ADDR3,
+                address=BALANCER_TEST_ADDR2,
                 timestamp=Timestamp(1597243001),
                 event_type=BalancerBPTEventType.BURN,
-                pool_address_token=BALANCER_TEST_ADDR3_POOL1,
+                pool_address_token=BALANCER_TEST_ADDR2_POOL1,
                 lp_balance=Balance(
                     amount=FVal('0.042569019597126949'),
                     usd_value=FVal('19.01364749076136579119809947'),
@@ -192,10 +190,10 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1 = (
         ],
     )
 )
-BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL2 = (
+BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL2 = (
     BalancerPoolEventsBalance(
-        address=BALANCER_TEST_ADDR3,
-        pool_address_token=BALANCER_TEST_ADDR3_POOL2,
+        address=BALANCER_TEST_ADDR2,
+        pool_address_token=BALANCER_TEST_ADDR2_POOL2,
         profit_loss_amounts=[
             AssetAmount(FVal('0')),
             AssetAmount(FVal('0')),
@@ -212,10 +210,10 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL2 = (
                     '0x256c042bf7d67a8b9e9566b8797335135015ab6e8d9196b1c39f5da7b8479006',
                 ),
                 log_index=171,
-                address=BALANCER_TEST_ADDR3,
+                address=BALANCER_TEST_ADDR2,
                 timestamp=Timestamp(1598376244),
                 event_type=BalancerBPTEventType.MINT,
-                pool_address_token=BALANCER_TEST_ADDR3_POOL2,
+                pool_address_token=BALANCER_TEST_ADDR2_POOL2,
                 lp_balance=Balance(
                     amount=FVal('1289.21726317692448827'),
                     usd_value=FVal('3833.40'),
@@ -235,10 +233,10 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL2 = (
                     '0x6f9e6d5fd0562121ca4f695ffde661f5c184af421f68585be72ad59cfb8f881d',
                 ),
                 log_index=167,
-                address=BALANCER_TEST_ADDR3,
+                address=BALANCER_TEST_ADDR2,
                 timestamp=Timestamp(1598377474),
                 event_type=BalancerBPTEventType.BURN,
-                pool_address_token=BALANCER_TEST_ADDR3_POOL2,
+                pool_address_token=BALANCER_TEST_ADDR2_POOL2,
                 lp_balance=Balance(
                     amount=FVal('1289.21726317692448827'),
                     usd_value=FVal('2960.665604109508525164251425'),
@@ -320,7 +318,7 @@ TEST_ADDR3_MOCKED_PRICES = {
 }
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR3]])
+@pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR2]])
 @pytest.mark.parametrize('ethereum_modules', [['balancer']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [TEST_ADDR3_MOCKED_PRICES])
@@ -359,22 +357,22 @@ def test_get_events_history_1(
         else:
             result = assert_proper_response_with_result(response)
 
-    address_pool_events_balances = result[BALANCER_TEST_ADDR3]
+    address_pool_events_balances = result[BALANCER_TEST_ADDR2]
 
     assert len(address_pool_events_balances) == 2
     pool_event_balances = [
         pool_events_balance
         for pool_events_balance in address_pool_events_balances
-        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR3_POOL1.evm_address
+        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR2_POOL1.evm_address
     ]
 
     assert len(pool_event_balances) == 1
     pool_events_balance = pool_event_balances[0]
 
-    assert pool_events_balance == BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1.serialize()
+    assert pool_events_balance == BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL1.serialize()
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR3]])
+@pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR2]])
 @pytest.mark.parametrize('ethereum_modules', [['balancer']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('mocked_price_queries', [TEST_ADDR3_MOCKED_PRICES])
@@ -413,16 +411,16 @@ def test_get_events_history_2(
         else:
             result = assert_proper_response_with_result(response)
 
-    address_pool_events_balances = result[BALANCER_TEST_ADDR3]
+    address_pool_events_balances = result[BALANCER_TEST_ADDR2]
 
     assert len(address_pool_events_balances) == 2
     pool_event_balances = [
         pool_events_balance
         for pool_events_balance in address_pool_events_balances
-        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR3_POOL2.evm_address
+        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR2_POOL2.evm_address
     ]
 
     assert len(pool_event_balances) == 1
     pool_events_balance = pool_event_balances[0]
 
-    assert pool_events_balance == BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL2.serialize()
+    assert pool_events_balance == BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL2.serialize()
