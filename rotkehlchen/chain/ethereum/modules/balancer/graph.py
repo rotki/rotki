@@ -42,46 +42,6 @@ TOKENPRICES_QUERY = (
     }}}}
     """
 )
-SWAPS_QUERY = (
-    """
-    swaps
-    (
-        first: $limit,
-        skip: $offset,
-        where: {{
-            userAddress_in: $addresses
-            timestamp_gte: $start_ts,
-            timestamp_lte: $end_ts,
-        }}
-        orderBy: timestamp,
-        orderDirection: asc,
-    ) {{
-        id
-        caller
-        tokenIn
-        tokenInSym
-        tokenAmountIn
-        tokenOut
-        tokenOutSym
-        tokenAmountOut
-        poolAddress {{
-            id
-            tokens {{
-                address
-                symbol
-                name
-                decimals
-            }}
-        }}
-        userAddress {{
-            id
-        }}
-        value
-        feeValue
-        timestamp
-    }}}}
-    """
-)
 ADD_LIQUIDITIES_QUERY = (
     """
     addLiquidities

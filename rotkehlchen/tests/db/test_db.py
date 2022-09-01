@@ -120,7 +120,6 @@ TABLES_AT_INIT = [
     'tags',
     'xpubs',
     'xpub_mappings',
-    'amm_swaps',
     'amm_events',
     'eth2_deposits',
     'eth2_daily_staking_details',

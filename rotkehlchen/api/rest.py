@@ -740,7 +740,6 @@ class RestAPI():
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.TRADE)
             ignored_ids = mapping.get(ActionType.TRADE, [])
-            table_name = 'trades' if self.rotkehlchen.premium is None else 'combined_trades_view'
             entries_result = []
             for entry in trades_result:
                 entries_result.append(
@@ -752,7 +751,7 @@ class RestAPI():
                 'entries_found': filter_total_found,
                 'entries_total': self.rotkehlchen.data.db.get_entries_count(
                     cursor=cursor,
-                    entries_table=table_name,  # type: ignore
+                    entries_table='trades',
                 ),
                 'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
             }
@@ -2870,24 +2869,6 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    def get_uniswap_trades_history(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
-            module_name='uniswap',
-            method='get_trades_history',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
     def get_sushiswap_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
@@ -2908,24 +2889,6 @@ class RestAPI():
             async_query=async_query,
             module_name='sushiswap',
             method='get_events_history',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('sushiswap'),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-    def get_sushiswap_trades_history(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
-            module_name='sushiswap',
-            method='get_trades_history',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('sushiswap'),
             reset_db_data=reset_db_data,
@@ -2989,24 +2952,6 @@ class RestAPI():
             async_query=async_query,
             module_name='balancer',
             method='get_events_history',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('balancer'),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-    def get_balancer_trades_history(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=async_query,
-            module_name='balancer',
-            method='get_trades_history',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('balancer'),
             reset_db_data=reset_db_data,

@@ -11,7 +11,7 @@ import abc
 import logging
 from collections import defaultdict
 from datetime import datetime, time
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Set
 
 from gevent.lock import Semaphore
 
@@ -27,7 +27,6 @@ from rotkehlchen.chain.ethereum.graph import (
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AddressEventsBalances,
     AddressToLPBalances,
-    AddressTrades,
     AggregatedAmount,
     AssetToPrice,
     DDAddressToLPBalances,
@@ -42,10 +41,8 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import (
     SUBGRAPH_REMOTE_ERROR_MSG,
     update_asset_price_in_lp_balances,
 )
-from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import ChainID
-from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -59,19 +56,11 @@ from rotkehlchen.types import (
     Location,
     Price,
     Timestamp,
-    TradeType,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
-from .graph import (
-    BURNS_QUERY,
-    LIQUIDITY_POSITIONS_QUERY,
-    MINTS_QUERY,
-    SUSHISWAP_SWAPS_QUERY,
-    SWAPS_QUERY,
-    TOKEN_DAY_DATAS_QUERY,
-)
+from .graph import BURNS_QUERY, LIQUIDITY_POSITIONS_QUERY, MINTS_QUERY, TOKEN_DAY_DATAS_QUERY
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -81,35 +70,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def add_trades_from_swaps(
-        swaps: List[AMMSwap],
-        trades: List[AMMTrade],
-        both_in: bool,
-        quote_assets: Sequence[Tuple[Any, ...]],
-        token_amount: AssetAmount,
-        token: EvmToken,
-        trade_index: int,
-) -> List[AMMTrade]:
-    bought_amount = AssetAmount(token_amount / 2) if both_in else token_amount
-    for entry in quote_assets:
-        quote_asset = entry[0]
-        sold_amount = entry[1]
-        rate = sold_amount / bought_amount
-        trade = AMMTrade(
-            trade_type=TradeType.BUY,
-            base_asset=token,
-            quote_asset=quote_asset,
-            amount=bought_amount,
-            rate=rate,
-            swaps=swaps,
-            trade_index=trade_index,
-        )
-        trades.append(trade)
-        trade_index += 1
-
-    return trades
 
 
 UNISWAP_TRADES_PREFIX = 'uniswap_trades'
@@ -139,13 +99,9 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         if self.location == Location.UNISWAP:
             self.mint_event = EventType.MINT_UNISWAP
             self.burn_event = EventType.BURN_UNISWAP
-            self.swaps_query = SWAPS_QUERY
-            self.trades_prefix = UNISWAP_TRADES_PREFIX
         elif self.location == Location.SUSHISWAP:
             self.mint_event = EventType.MINT_SUSHISWAP
             self.burn_event = EventType.BURN_SUSHISWAP
-            self.swaps_query = SUSHISWAP_SWAPS_QUERY
-            self.trades_prefix = SUSHISWAP_TRADES_PREFIX
         else:
             raise NotImplementedError(f'AMM platform with location {self.location} not valid.')
 
@@ -244,86 +200,6 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                 unknown_assets.add(known_asset)
 
         return asset_price
-
-    @staticmethod
-    def _tx_swaps_to_trades(swaps: List[AMMSwap]) -> List[AMMTrade]:
-        """
-        Turns a list of a transaction's swaps into a list of trades, taking into account
-        the first and last swaps only for use with the rest of the rotki accounting.
-
-        TODO: This is not nice, but we are constrained by the 1 token in
-        1 token out concept of a trade we have right now. So if in a swap
-        we have both tokens in we will create two trades, with the final
-        amount being divided between the 2 trades. This is only so that
-        the AMM trade can be processed easily in our current trades
-        accounting.
-        Make issue to process this properly as multitrades when we change
-        the trade format
-        """
-        trades: List[AMMTrade] = []
-        both_in = False
-        both_out = False
-        if swaps[0].amount0_in > ZERO and swaps[0].amount1_in > ZERO:
-            both_in = True
-        if swaps[-1].amount0_out > ZERO and swaps[-1].amount1_out > ZERO:
-            both_out = True
-
-        if both_in:
-            quote_assets = [
-                (swaps[0].token0, swaps[0].amount0_in if not both_out else swaps[0].amount0_in / 2),  # noqa: E501
-                (swaps[0].token1, swaps[0].amount1_in if not both_out else swaps[0].amount1_in / 2),  # noqa: E501
-            ]
-        elif swaps[0].amount0_in > ZERO:
-            quote_assets = [(swaps[0].token0, swaps[0].amount0_in)]
-        else:
-            quote_assets = [(swaps[0].token1, swaps[0].amount1_in)]
-
-        trade_index = 0
-        if swaps[-1].amount0_out > ZERO:
-            trades = add_trades_from_swaps(
-                swaps=swaps,
-                trades=trades,
-                both_in=both_in,
-                quote_assets=quote_assets,
-                token_amount=swaps[-1].amount0_out,
-                token=swaps[-1].token0,
-                trade_index=trade_index,
-            )
-            trade_index += len(trades)
-        if swaps[-1].amount1_out > ZERO:
-            trades = add_trades_from_swaps(
-                swaps=swaps,
-                trades=trades,
-                both_in=both_in,
-                quote_assets=quote_assets,
-                token_amount=swaps[-1].amount1_out,
-                token=swaps[-1].token1,
-                trade_index=trade_index,
-            )
-
-        return trades
-
-    @staticmethod
-    def swaps_to_trades(swaps: List[AMMSwap]) -> List[AMMTrade]:
-        trades: List[AMMTrade] = []
-        if not swaps:
-            return trades
-
-        # sort by timestamp and then by log index
-        swaps.sort(key=lambda trade: (trade.timestamp, -trade.log_index), reverse=True)
-        last_tx_hash = swaps[0].tx_hash
-        current_swaps: List[AMMSwap] = []
-        for swap in swaps:
-            if swap.tx_hash != last_tx_hash:
-                trades.extend(AMMSwapPlatform._tx_swaps_to_trades(current_swaps))
-                current_swaps = []
-
-            current_swaps.append(swap)
-            last_tx_hash = swap.tx_hash
-
-        if len(current_swaps) != 0:
-            trades.extend(AMMSwapPlatform._tx_swaps_to_trades(current_swaps))
-        return trades
 
     @staticmethod
     def _update_assets_prices_in_address_balances(
@@ -468,262 +344,6 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
         return address_events
 
-    def _read_subgraph_trades(
-            self,
-            address: ChecksumEvmAddress,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> List[AMMTrade]:
-        """Get the address' trades data querying the AMM subgraph
-
-        Each trade (swap) instantiates an <AMMTrade>.
-
-        The trade pair (i.e. BASE_QUOTE) is determined by `reserve0_reserve1`.
-        Translated to AMM lingo:
-
-        Trade type BUY:
-        - `asset1In` (QUOTE, reserve1) is gt 0.
-        - `asset0Out` (BASE, reserve0) is gt 0.
-
-        Trade type SELL:
-        - `asset0In` (BASE, reserve0) is gt 0.
-        - `asset1Out` (QUOTE, reserve1) is gt 0.
-
-        May raise
-        - RemoteError
-        """
-        trades: List[AMMTrade] = []
-        query_id = '0'
-        query_offset = 0
-        param_types = {
-            '$limit': 'Int!',
-            '$offset': 'Int!',
-            '$address': 'Bytes!',
-            '$start_ts': 'BigInt!',
-            '$end_ts': 'BigInt!',
-            '$id': 'ID!',
-        }
-        param_values = {
-            'limit': GRAPH_QUERY_LIMIT,
-            'offset': 0,
-            'address': address.lower(),
-            'start_ts': str(start_ts),
-            'end_ts': str(end_ts),
-            'id': query_id,
-        }
-        querystr = format_query_indentation(self.swaps_query.format())
-
-        while True:
-            try:
-                result = self.graph.query(
-                    querystr=querystr,
-                    param_types=param_types,
-                    param_values=param_values,
-                )
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e), location=self.location),
-                )
-                raise
-
-            for entry in result['swaps']:
-                swaps = []
-                try:
-                    for swap in entry['transaction']['swaps']:
-                        timestamp = swap['timestamp']
-                        swap_token0 = swap['pair']['token0']
-                        swap_token1 = swap['pair']['token1']
-
-                        try:
-                            token0_deserialized = deserialize_ethereum_address(swap_token0['id'])
-                            token1_deserialized = deserialize_ethereum_address(swap_token1['id'])
-                            from_address_deserialized = deserialize_ethereum_address(swap['sender'])  # noqa
-                            to_address_deserialized = deserialize_ethereum_address(swap['to'])
-                            tx_hash_deserialized = deserialize_evm_tx_hash(swap['id'].split('-')[0])  # noqa: 501
-                        except DeserializationError:
-                            msg = (
-                                f'Failed to deserialize addresses/txn hash in trade from {self.location} graph'  # noqa
-                                f' with token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '  # noqa
-                                f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
-                            )
-                            log.error(msg)
-                            continue
-
-                        token0 = get_or_create_evm_token(
-                            userdb=self.database,
-                            symbol=swap_token0['symbol'],
-                            evm_address=token0_deserialized,
-                            chain=ChainID.ETHEREUM,
-                            name=swap_token0['name'],
-                            decimals=swap_token0['decimals'],
-                        )
-                        token1 = get_or_create_evm_token(
-                            userdb=self.database,
-                            symbol=swap_token1['symbol'],
-                            evm_address=token1_deserialized,
-                            chain=ChainID.ETHEREUM,
-                            name=swap_token1['name'],
-                            decimals=int(swap_token1['decimals']),
-                        )
-
-                        try:
-                            amount0_in = FVal(swap['amount0In'])
-                            amount1_in = FVal(swap['amount1In'])
-                            amount0_out = FVal(swap['amount0Out'])
-                            amount1_out = FVal(swap['amount1Out'])
-                        except ValueError as e:
-                            log.error(
-                                f'Failed to read amounts in {self.location} swap {str(swap)}. '
-                                f'{str(e)}.',
-                            )
-                            continue
-
-                        swaps.append(AMMSwap(
-                            tx_hash=tx_hash_deserialized,
-                            log_index=int(swap['logIndex']),
-                            address=address,
-                            from_address=from_address_deserialized,
-                            to_address=to_address_deserialized,
-                            timestamp=Timestamp(int(timestamp)),
-                            location=self.location,
-                            token0=token0,
-                            token1=token1,
-                            amount0_in=AssetAmount(amount0_in),
-                            amount1_in=AssetAmount(amount1_in),
-                            amount0_out=AssetAmount(amount0_out),
-                            amount1_out=AssetAmount(amount1_out),
-                        ))
-                    query_id = entry['id']
-                except KeyError as e:
-                    log.error(
-                        f'Failed to read trade in {self.location} swap {str(entry)}. '
-                        f'{str(e)}.',
-                    )
-                    continue
-
-                # with the new logic the list of swaps can be empty, in that case don't try
-                # to make trades from the swaps
-                if len(swaps) == 0:
-                    continue
-
-                # Now that we got all swaps for a transaction, create the trade object
-                trades.extend(self._tx_swaps_to_trades(swaps))
-
-            # Check whether an extra request is needed
-            if len(result['swaps']) < GRAPH_QUERY_LIMIT:
-                break
-
-            # Update pagination step
-            if query_offset == GRAPH_QUERY_SKIP_LIMIT:
-                query_offset = 0
-                new_query_id = query_id
-            else:
-                query_offset += GRAPH_QUERY_LIMIT
-                new_query_id = '0'
-            param_values = {
-                **param_values,
-                'id': new_query_id,
-                'offset': query_offset,
-            }
-
-        return trades
-
-    def _get_trades_graph(
-            self,
-            addresses: List[ChecksumEvmAddress],
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> AddressTrades:
-        address_trades = {}
-        for address in addresses:
-            trades = self._get_trades_graph_for_address(address, start_ts, end_ts)
-            if len(trades) != 0:
-                address_trades[address] = trades
-
-        return address_trades
-
-    def _get_trades(
-            self,
-            addresses: List[ChecksumEvmAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            only_cache: bool,
-    ) -> AddressTrades:
-        """Request via graph all trades for new addresses and the latest ones
-        for already existing addresses. Then the requested trade are written in
-        DB and finally all DB trades are read and returned.
-        """
-        address_amm_trades: AddressTrades = {}
-        new_addresses: List[ChecksumEvmAddress] = []
-        existing_addresses: List[ChecksumEvmAddress] = []
-        min_end_ts: Timestamp = to_timestamp
-
-        with self.database.conn.read_ctx() as cursor:
-            if only_cache:
-                return self._fetch_trades_from_db(cursor, addresses, from_timestamp, to_timestamp)
-
-            dbranges = DBQueryRanges(self.database)
-            # Get addresses' last used query range for this AMM's trades
-            for address in addresses:
-                entry_name = f'{self.trades_prefix}_{address}'
-                trades_range = self.database.get_used_query_range(cursor, name=entry_name)
-
-                if not trades_range:
-                    new_addresses.append(address)
-                else:
-                    existing_addresses.append(address)
-                    min_end_ts = min(min_end_ts, trades_range[1])
-
-        with self.database.user_write() as cursor:
-            # Request new addresses' trades
-            if new_addresses:
-                start_ts = Timestamp(0)
-                new_address_trades = self._get_trades_graph(
-                    addresses=new_addresses,
-                    start_ts=start_ts,
-                    end_ts=to_timestamp,
-                )
-                address_amm_trades.update(new_address_trades)
-
-                # Insert last used query range for new addresses
-                for address in new_addresses:
-                    entry_name = f'{self.trades_prefix}_{address}'
-                    dbranges.update_used_query_range(
-                        write_cursor=cursor,
-                        location_string=entry_name,
-                        queried_ranges=[(start_ts, to_timestamp)],
-                    )
-
-            # Request existing DB addresses' trades
-            if existing_addresses and to_timestamp > min_end_ts:
-                address_new_trades = self._get_trades_graph(
-                    addresses=existing_addresses,
-                    start_ts=min_end_ts,
-                    end_ts=to_timestamp,
-                )
-                address_amm_trades.update(address_new_trades)
-
-                # Update last used query range for existing addresses
-                for address in existing_addresses:
-                    entry_name = f'{self.trades_prefix}_{address}'
-                    dbranges.update_used_query_range(
-                        write_cursor=cursor,
-                        location_string=entry_name,
-                        queried_ranges=[(min_end_ts, to_timestamp)],
-                    )
-
-            # Insert all unique swaps to the DB
-            all_swaps = set()
-            for address in filter(lambda x: x in address_amm_trades, addresses):
-                for trade in address_amm_trades[address]:
-                    for swap in trade.swaps:
-                        all_swaps.add(swap)
-
-            self.database.add_amm_swaps(cursor, list(all_swaps))
-
-        with self.database.conn.read_ctx() as cursor:
-            return self._fetch_trades_from_db(cursor, addresses, from_timestamp, to_timestamp)
-
     def _get_unknown_asset_price_graph(
             self,
             unknown_assets: Set[EvmToken],
@@ -794,11 +414,11 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         return asset_price
 
     def get_events_history(
-        self,
-        addresses: List[ChecksumEvmAddress],
-        reset_db_data: bool,
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
+            self,
+            addresses: List[ChecksumEvmAddress],
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> AddressEventsBalances:
         """Get the addresses' events history in the AMM"""
         with self.trades_lock:
@@ -814,52 +434,6 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                 )
 
         return address_events_balances
-
-    def get_trades(
-            self,
-            addresses: List[ChecksumEvmAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            only_cache: bool,
-    ) -> List[AMMTrade]:
-        if len(addresses) == 0:
-            return []
-
-        with self.trades_lock:
-            all_trades = []
-            trade_mapping = self._get_trades(
-                addresses=addresses,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-                only_cache=only_cache,
-            )
-            for _, trades in trade_mapping.items():
-                all_trades.extend(trades)
-
-            return all_trades
-
-    def _fetch_trades_from_db(
-            self,
-            cursor: 'DBCursor',
-            addresses: List[ChecksumEvmAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> AddressTrades:
-        """Fetch all DB AMM trades within the time range"""
-        db_address_trades: AddressTrades = {}
-        for address in addresses:
-            db_swaps = self.database.get_amm_swaps(
-                cursor=cursor,
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-                location=self.location,
-                address=address,
-            )
-            db_trades = self.swaps_to_trades(db_swaps)
-            if db_trades:
-                db_address_trades[address] = db_trades
-
-        return db_address_trades
 
     def _get_balances_graph(
             self,
@@ -1019,26 +593,6 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     name=name,
                     symbol=symbol,
                 )
-
-    @abc.abstractmethod
-    def _get_trades_graph_for_address(
-            self,
-            address: ChecksumEvmAddress,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> List[AMMTrade]:
-        raise NotImplementedError('should only be implemented by subclasses')
-
-    @abc.abstractmethod
-    def get_trades_history(
-        self,
-        addresses: List[ChecksumEvmAddress],
-        reset_db_data: bool,
-        from_timestamp: Timestamp,
-        to_timestamp: Timestamp,
-    ) -> AddressTrades:
-        """Get the addresses' trades history in the AMMswap protocol"""
-        raise NotImplementedError('should only be implemented by subclasses')
 
     @abc.abstractmethod
     def _get_events_balances(

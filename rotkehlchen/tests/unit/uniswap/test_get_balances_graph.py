@@ -62,13 +62,12 @@ def test_multiple_addresses_balances(mock_uniswap):
     assert exp_protocol_balance == protocol_balance
 
 
-@pytest.mark.parametrize("graph_query_limit, no_requests", [(2, 2), (3, 1)])
+@pytest.mark.parametrize('graph_query_limit, no_requests', [(2, 2), (3, 1)])
 def test_pagination(
         mock_uniswap,
         graph_query_limit,
         no_requests,
         mock_graph_query_limit,  # pylint: disable=unused-argument
-        mock_amm_graph_query_limit,  # pylint: disable=unused-argument
 ):
     """Test an extra graph request is done when the number of items in the
     response equals GRAPH_QUERY_LIMIT.

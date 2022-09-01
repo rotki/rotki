@@ -779,6 +779,23 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
             cursor.execute(f'SELECT time from {table_name}')
             assert cursor.fetchall() == expected_result
 
+        used_ranges = cursor.execute('SELECT * from used_query_ranges').fetchall()
+        assert used_ranges == [
+            ('ethtxs_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
+            ('eth2_deposits_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 1602667372, 1637575118),
+            ('kraken_asset_movements_kraken1', 0, 1634850532),
+            ('uniswap_trades_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
+            ('sushiswap_trades_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
+            ('balancer_trades_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118)]
+
+        # check that amm_swaps and combined trades view exist
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', ('amm_swaps',),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="view" AND name=?', ('combined_trades_view',),  # noqa: E501
+        ).fetchone()[0] == 1
+
     xpub1 = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     xpub2 = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
 
@@ -822,6 +839,22 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         xpub_mappings_in_db = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
         assert xpub_mappings_in_db == expected_xpubs_mappings
 
+        # amm swap ranges should be cleared
+        used_ranges = cursor.execute('SELECT * from used_query_ranges').fetchall()
+        assert used_ranges == [
+            ('ethtxs_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
+            ('eth2_deposits_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 1602667372, 1637575118),
+            ('kraken_asset_movements_kraken1', 0, 1634850532),
+        ]
+
+        # check that amm_swaps and combined trades view are deleted
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', ('amm_swaps',),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="view" AND name=?', ('combined_trades_view',),  # noqa: E501
+        ).fetchone()[0] == 0
+
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
     """
@@ -842,6 +875,8 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     cursor = last_db.conn.cursor()
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
     tables_before = {x[0] for x in result}
+    result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
+    views_before = {x[0] for x in result}
 
     last_db.logout()
     # Execute upgrade
@@ -853,17 +888,27 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     cursor = db.conn.cursor()
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
     tables_after_upgrade = {x[0] for x in result}
+    result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
+    views_after_upgrade = {x[0] for x in result}
     # also add latest tables (this will indicate if DB upgrade missed something
     db.conn.executescript(DB_SCRIPT_CREATE_TABLES)
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
     tables_after_creation = {x[0] for x in result}
+    result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
+    views_after_creation = {x[0] for x in result}
 
-    removed_tables = set()
+    removed_tables = {'amm_swaps'}
+    removed_views = {'combined_trades_view'}
     missing_tables = tables_before - tables_after_upgrade
+    missing_views = views_before - views_after_upgrade
     assert missing_tables == removed_tables
+    assert missing_views == removed_views
     assert tables_after_creation - tables_after_upgrade == set()
+    assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
     assert new_tables == {'user_notes'}
+    new_views = views_after_upgrade - views_before
+    assert new_views == set()
 
 
 def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb):

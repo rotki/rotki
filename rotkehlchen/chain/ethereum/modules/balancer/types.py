@@ -5,7 +5,6 @@ from eth_typing.evm import ChecksumAddress
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
-from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -25,7 +24,6 @@ from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 # TODO: improve the prefixes annotation and amend their usage in balancer.py
 BALANCER_EVENTS_PREFIX = 'balancer_events'
-BALANCER_TRADES_PREFIX = 'balancer_trades'
 POOL_MAX_NUMBER_TOKENS = 8
 
 
@@ -73,11 +71,6 @@ class ProtocolBalance(NamedTuple):
     address_to_pool_balances: AddressToPoolBalances
     known_tokens: Set[EvmToken]
     unknown_tokens: Set[EvmToken]
-
-
-AddressToSwaps = Dict[ChecksumEvmAddress, List[AMMSwap]]
-DDAddressToUniqueSwaps = DefaultDict[ChecksumEvmAddress, Set[AMMSwap]]
-AddressToTrades = Dict[ChecksumEvmAddress, List[AMMTrade]]
 
 
 class BalancerInvestEventType(SerializableEnumMixin):

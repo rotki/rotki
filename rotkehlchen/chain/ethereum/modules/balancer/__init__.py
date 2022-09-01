@@ -1,6 +1,5 @@
 __all__ = [
     'BALANCER_EVENTS_PREFIX',
-    'BALANCER_TRADES_PREFIX',
     'BalancerBPTEventPoolToken',
     'BalancerEvent',
     'BalancerPoolBalance',
@@ -12,7 +11,6 @@ __all__ = [
 from .balancer import Balancer
 from .types import (
     BALANCER_EVENTS_PREFIX,
-    BALANCER_TRADES_PREFIX,
     BalancerBPTEventPoolToken,
     BalancerEvent,
     BalancerPoolBalance,

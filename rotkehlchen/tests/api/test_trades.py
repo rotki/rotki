@@ -1,6 +1,3 @@
-import os
-import time
-import warnings as test_warnings
 from http import HTTPStatus
 from typing import Any, Dict
 
@@ -8,7 +5,6 @@ import pytest
 import requests
 
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_WETH
 from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -1146,96 +1142,3 @@ def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges
     result = assert_proper_response_with_result(response)
     result = result['entries']
     assert len(result) == 0
-
-
-@pytest.mark.skipif(
-    'CI' in os.environ,
-    reason='Not really a test. This just measures the combined trades view query',
-)
-@pytest.mark.parametrize('start_with_valid_premium', [False, True])
-def test_measure_trades_api_query(rotkehlchen_api_server, start_with_valid_premium):
-    """Measures the response time of the combined trades view API query.
-    This is required since it's quite a complicated query and takes a lot of time to process
-    so we can use this test to measure any potential optimizations.
-    """
-    trades = [Trade(
-        timestamp=x,
-        location=Location.EXTERNAL,
-        base_asset=A_WETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('1')),
-        rate=Price(FVal('320')),
-        fee=Fee(ZERO),
-        fee_currency=A_EUR,
-        link='',
-        notes='',
-    ) for x in range(1, 10000)]
-    swaps = [AMMSwap(
-        tx_hash='0x' + str(x),
-        log_index=x + i,
-        address='0xfoo',
-        from_address='0xfrom',
-        to_address='0xto',
-        timestamp=11 + x,
-        location=Location.UNISWAP,
-        token0=A_WETH,
-        token1=A_EUR,
-        amount0_in=FVal(5),
-        amount1_in=ZERO,
-        amount0_out=ZERO,
-        amount1_out=FVal(4.95),
-    ) for x in range(2000) for i in range(2)]
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    with rotki.data.db.user_write() as cursor:
-        rotki.data.db.add_trades(cursor, trades)
-        rotki.data.db.add_amm_swaps(cursor, swaps)
-
-    start = time.time()
-    requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'tradesresource',
-        ),
-        json={'only_cache': True},
-    )
-    end = time.time()
-    test_warnings.warn(UserWarning(
-        f'Premium: {start_with_valid_premium}. Full Query Time: {end - start}',
-    ))
-    start = time.time()
-    requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'tradesresource',
-        ),
-        json={'only_cache': True, 'offset': 200, 'limit': 10},
-    )
-    end = time.time()
-    test_warnings.warn(UserWarning(
-        f'Premium: {start_with_valid_premium}. First Page Query Time: {end - start}',
-    ))
-    start = time.time()
-    requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'tradesresource',
-        ),
-        json={'only_cache': True, 'offset': 210, 'limit': 10},
-    )
-    end = time.time()
-    test_warnings.warn(UserWarning(
-        f'Premium: {start_with_valid_premium}. Second Page Query Time: {end - start}',
-    ))
-    start = time.time()
-    requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'tradesresource',
-        ),
-        json={'only_cache': True, 'offset': 220, 'limit': 10},
-    )
-    end = time.time()
-    test_warnings.warn(UserWarning(
-        f'Premium: {start_with_valid_premium}. Third Page Query Time: {end - start}',
-    ))
