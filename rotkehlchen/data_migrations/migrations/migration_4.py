@@ -24,13 +24,14 @@ def read_and_write_nodes_in_database(write_cursor: 'DBCursor') -> None:
         nodes_info = json.loads(f.read())
         for node in nodes_info:
             write_cursor.execute(
-                'INSERT OR IGNORE INTO web3_nodes(name, endpoint, owned, active, weight) VALUES (?, ?, ?, ?, ?);',  # noqa: E501
+                'INSERT OR IGNORE INTO web3_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?);',  # noqa: E501
                 (
                     node['name'],
                     node['endpoint'],
                     node['owned'],
                     node['active'],
                     str(FVal(node['weight'])),
+                    node['blockchain'],
                 ),
             )
 
@@ -39,13 +40,14 @@ def copy_ethereum_rpc_endpoint(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('SELECT value FROM settings WHERE name="eth_rpc_endpoint";')
     if (endpoint := write_cursor.fetchone()) is not None and endpoint[0] != DEFAULT_ETH_RPC:
         write_cursor.execute(
-            'INSERT OR IGNORE INTO web3_nodes(name, endpoint, owned, active, weight) VALUES (?, ?, ?, ?, ?);',  # noqa: E501
+            'INSERT OR IGNORE INTO web3_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?);',  # noqa: E501
             (
                 "my node",
                 endpoint[0],
                 1,
                 1,
                 str(ONE),
+                'ETH',
             ),
         )
     write_cursor.execute('DELETE FROM settings WHERE name="eth_rpc_endpoint"')

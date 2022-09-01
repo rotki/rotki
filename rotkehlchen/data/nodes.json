@@ -4,48 +4,55 @@
         "endpoint": "",
         "weight": 0.30,
         "owned": false,
-        "active": true
+        "active": true,
+        "blockchain": "ETH"
     },
     {
         "name": "mycrypto",
         "endpoint": "https://api.mycryptoapi.com/eth",
         "weight": 0.15,
         "owned": false,
-        "active": true
+        "active": true,
+        "blockchain": "ETH"
     },
     {
         "name": "blockscout",
         "endpoint": "https://mainnet-nethermind.blockscout.com/",
         "weight": 0.10,
         "owned": false,
-        "active": true
+        "active": true,
+        "blockchain": "ETH"
     },
     {
         "name": "avado pool",
         "endpoint": "https://mainnet.eth.cloud.ava.do/",
         "weight": 0.05,
         "owned": false,
-        "active": true
+        "active": true,
+        "blockchain": "ETH"
     },
     {
         "name": "1inch",
         "endpoint": "https://web3.1inch.exchange",
         "weight": 0.15,
         "owned": false,
-        "active": true
+        "active": true,
+        "blockchain": "ETH"
     },
     {
         "name": "myetherwallet",
         "endpoint": "https://names.mewapi.io/rpc/eth",
         "weight": 0.15,
         "owned": false,
-        "active": true
+        "active": true,
+        "blockchain": "ETH"
     },
     {
         "name": "cloudflare",
         "endpoint": "https://cloudflare-eth.com/",
         "weight": 0.10,
         "owned": false,
-        "active": true
+        "active": true,
+        "blockchain": "ETH"
     }
 ]
