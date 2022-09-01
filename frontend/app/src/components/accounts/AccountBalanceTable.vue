@@ -57,12 +57,9 @@
       </template>
       <template v-if="isEth" #item.numOfDetectedTokens="{ item }">
         <div class="d-flex align-center justify-end">
-          <account-detected-tokens-dialog
-            :info="getEthDetectedTokensInfo(item.address)"
-            :disabled="detectingTokens(item.address).value || loading"
-            :loading="detectingTokens(item.address).value"
-            @refresh="fetchDetectedTokens(item.address)"
-          />
+          <div class="mr-2">
+            {{ getEthDetectedTokensInfo(item.address).value.total }}
+          </div>
           <div>
             <v-tooltip top>
               <template #activator="{ on }">
@@ -87,14 +84,16 @@
                 <div>
                   {{ tc('account_balances.detect_tokens.tooltip.redetect') }}
                 </div>
-                <div v-if="getEthDetectedTokensInfo(item.address).timestamp">
+                <div
+                  v-if="getEthDetectedTokensInfo(item.address).value.timestamp"
+                >
                   <i18n
                     path="account_balances.detect_tokens.tooltip.last_detected"
                   >
                     <template #time>
                       <date-display
                         :timestamp="
-                          getEthDetectedTokensInfo(item.address).timestamp
+                          getEthDetectedTokensInfo(item.address).value.timestamp
                         "
                       />
                     </template>
@@ -185,7 +184,6 @@ import { storeToRefs } from 'pinia';
 import { computed, PropType, ref, toRefs, useAttrs, useListeners } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
-import AccountDetectedTokensDialog from '@/components/accounts/AccountDetectedTokensDialog.vue';
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
@@ -359,7 +357,13 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() => {
 });
 
 const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
-  const balances = get(nonExpandedBalances);
+  const balances = get(nonExpandedBalances).map(item => {
+    if (!get(isEth)) return item;
+    return {
+      ...item,
+      numOfDetectedTokens: get(getEthDetectedTokensInfo(item.address)).total
+    };
+  });
   const selectedTags = get(visibleTags);
   if (selectedTags.length === 0) {
     return withL2(balances);

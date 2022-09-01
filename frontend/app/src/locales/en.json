@@ -28,7 +28,6 @@
     },
     "delete_tooltip": "Delete selected account(s)",
     "detect_tokens": {
-      "title": "Detected tokens ({length})",
       "tooltip": {
         "last_detected": "Last detected: {time}",
         "redetect": "Re-detect tokens"
@@ -1147,6 +1146,7 @@
   "closed_trades": {
     "confirmation": {
       "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}",
+      "multiple_message": "Are you sure you want to delete these {length} trades?",
       "title": "Delete Trade"
     },
     "delete_tooltip": "Delete trade",
@@ -2517,6 +2517,7 @@
     },
     "delete": {
       "message": "Are you sure wou want to delete this ledger action?",
+      "multiple_message": "Are you sure you want to delete these {length} ledger actions?",
       "title": "Delete Ledger Action"
     },
     "delete_tooltip": "Delete the ledger action",

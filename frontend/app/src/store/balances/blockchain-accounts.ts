@@ -24,6 +24,7 @@ import {
   GeneralAccountData,
   XpubAccountData
 } from '@/services/types-api';
+import { useIgnoredAssetsStore } from '@/store/assets';
 import { useBalancesStore } from '@/store/balances';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
@@ -1132,23 +1133,27 @@ export const useBlockchainAccountsStore = defineStore(
       }
     };
 
-    const getEthDetectedTokensInfo = (
-      address: string
-    ): EthDetectedTokensInfo => {
-      const info = get(ethDetectedTokensRecord)?.[address] || null;
-      if (!info) {
+    const { isAssetIgnored } = useIgnoredAssetsStore();
+    const getEthDetectedTokensInfo = (address: string) =>
+      computed<EthDetectedTokensInfo>(() => {
+        const info = get(ethDetectedTokensRecord)?.[address] || null;
+        if (!info) {
+          return {
+            tokens: [],
+            total: 0,
+            timestamp: null
+          };
+        }
+
+        const tokens = info.tokens
+          ? info.tokens.filter(item => !get(isAssetIgnored(item)))
+          : [];
         return {
-          tokens: [],
-          total: 0,
-          timestamp: null
+          tokens,
+          total: tokens.length,
+          timestamp: info.lastUpdateTimestamp || null
         };
-      }
-      return {
-        tokens: info.tokens || [],
-        total: info.tokens ? info.tokens.length : 0,
-        timestamp: info.lastUpdateTimestamp || null
-      };
-    };
+      });
 
     watch(ethAddresses, async (curr, prev) => {
       if (!isEqual(curr, prev)) {
