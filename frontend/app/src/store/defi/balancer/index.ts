@@ -14,8 +14,6 @@ import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
-import { dexTradeNumericKeys } from '@/store/defi/const';
-import { DexTrades } from '@/store/defi/types';
 import { OnError } from '@/store/typing';
 import {
   fetchDataAsync,
@@ -28,7 +26,6 @@ import { TaskType } from '@/types/task-type';
 
 export const useBalancerStore = defineStore('defi/balancer', () => {
   const events: Ref<BalancerEvents> = ref({});
-  const trades: Ref<DexTrades> = ref({});
   const balances: Ref<BalancerBalances> = ref({});
 
   const { fetchSupportedAssets, assetSymbol } = useAssetInfoRetrieval();
@@ -171,47 +168,6 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     await fetchSupportedAssets(true);
   };
 
-  const fetchTrades = async (refresh: boolean = false) => {
-    const meta: TaskMeta = {
-      title: i18n.t('actions.defi.balancer_trades.task.title').toString(),
-      numericKeys: dexTradeNumericKeys
-    };
-
-    const onError: OnError = {
-      title: i18n.t('actions.defi.balancer_trades.error.title').toString(),
-      error: message =>
-        i18n
-          .t('actions.defi.balancer_trades.error.description', {
-            message
-          })
-          .toString()
-    };
-
-    await fetchDataAsync(
-      {
-        task: {
-          type: TaskType.BALANCER_TRADES,
-          section: Section.DEFI_BALANCER_TRADES,
-          query: async () => await api.defi.fetchBalancerTrades(),
-          meta: meta,
-          onError: onError
-        },
-        requires: {
-          module: Module.BALANCER,
-          premium: true
-        },
-        state: {
-          isPremium,
-          activeModules: activeModules as Ref<string[]>
-        },
-
-        refresh
-      },
-      trades
-    );
-
-    await fetchSupportedAssets(true);
-  };
   const fetchEvents = async (refresh: boolean = false) => {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.balancer_events.task.title').toString(),
@@ -259,15 +215,12 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     const { resetStatus } = getStatusUpdater(Section.DEFI_BALANCER_BALANCES);
     set(balances, {});
     set(events, {});
-    set(trades, {});
     resetStatus(Section.DEFI_BALANCER_BALANCES);
-    resetStatus(Section.DEFI_BALANCER_TRADES);
     resetStatus(Section.DEFI_BALANCER_EVENTS);
   };
 
   return {
     events,
-    trades,
     balances,
     addresses,
     pools,
@@ -275,7 +228,6 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     eventList,
     profitLoss,
     fetchBalances,
-    fetchTrades,
     fetchEvents,
     reset
   };

@@ -3,7 +3,6 @@ import VueI18n from 'vue-i18n';
 import { SupportedAsset } from "../data";
 import { ProfitLossModel } from "../defi";
 import { BalancerBalanceWithOwner, BalancerEvent, BalancerProfitLoss, Pool } from "../defi/balancer";
-import { DexTrade } from "../defi/dex";
 import { XswapBalance, XswapEventDetails, XswapPool, XswapPoolProfit } from "../defi/xswap";
 import { AssetBalanceWithPrice, BigNumber } from "../index";
 import { Theme , DebugSettings, FrontendSettingsPayload, Themes, TimeUnit } from '../settings';
@@ -47,13 +46,6 @@ export interface DateUtilities {
   getDateInputISOFormat(format: string): string;
   convertToTimestamp(date: string, dateFormat?: string): number;
 }
-
-export type DexTradesApi = {
-  fetchUniswapTrades: (refresh: boolean) => Promise<void>
-  fetchBalancerTrades: (refresh: boolean) => Promise<void>
-  fetchSushiswapTrades: (refresh: boolean) => Promise<void>
-  dexTrades: (addresses: string[]) => Ref<DexTrade[]>
-};
 
 export type CompoundApi = {
   compoundRewards: Ref<ProfitLossModel[]>
@@ -103,7 +95,6 @@ export interface DataUtilities {
   readonly utils: UtilsApi
   readonly statistics: StatisticsApi;
   readonly adex: AdexApi;
-  readonly dexTrades: DexTradesApi,
   readonly compound: CompoundApi,
   readonly balancer: BalancerApi,
   readonly balances: BalancesApi

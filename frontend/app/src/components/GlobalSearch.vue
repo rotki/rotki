@@ -266,10 +266,6 @@ const items = computed<SearchItem[]>(() => {
       texts: [Routes.DEFI.text, Routes.DEFI_LIABILITIES.text]
     },
     {
-      ...Routes.DEFI_DEX_TRADES,
-      texts: [Routes.DEFI.text, Routes.DEFI_DEX_TRADES.text]
-    },
-    {
       ...Routes.DEFI_AIRDROPS,
       texts: [Routes.DEFI.text, Routes.DEFI_AIRDROPS.text]
     },

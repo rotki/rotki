@@ -25,7 +25,6 @@ const tabs: TabContent[] = [
   Routes.DEFI_OVERVIEW,
   Routes.DEFI_DEPOSITS,
   Routes.DEFI_LIABILITIES,
-  Routes.DEFI_DEX_TRADES,
   Routes.DEFI_AIRDROPS
 ];
 

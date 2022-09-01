@@ -83,11 +83,6 @@ export class DefiApi {
     return fetchExternalAsync(this.api, url);
   }
 
-  async fetchUniswapTrades(): Promise<PendingTask> {
-    const url = 'blockchains/ETH/modules/uniswap/history/trades';
-    return fetchExternalAsync(this.api, url);
-  }
-
   async fetchUniswapV2Balances(): Promise<PendingTask> {
     const url = 'blockchains/ETH/modules/uniswap/v2/balances';
     return fetchExternalAsync(this.api, url);
@@ -108,11 +103,6 @@ export class DefiApi {
     return fetchExternalAsync(this.api, url);
   }
 
-  async fetchBalancerTrades(): Promise<PendingTask> {
-    const url = 'blockchains/ETH/modules/balancer/history/trades';
-    return fetchExternalAsync(this.api, url);
-  }
-
   async fetchBalancerEvents(): Promise<PendingTask> {
     const url = '/blockchains/ETH/modules/balancer/history/events';
     return fetchExternalAsync(this.api, url);
@@ -120,11 +110,6 @@ export class DefiApi {
 
   async fetchSushiswapBalances() {
     const url = 'blockchains/ETH/modules/sushiswap/balances';
-    return fetchExternalAsync(this.api, url);
-  }
-
-  async fetchSushiswapTrades(): Promise<PendingTask> {
-    const url = 'blockchains/ETH/modules/sushiswap/history/trades';
     return fetchExternalAsync(this.api, url);
   }
 

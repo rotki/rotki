@@ -8,11 +8,7 @@ import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
 import { Section } from '@/store/const';
-import {
-  dexTradeNumericKeys,
-  uniswapEventsNumericKeys
-} from '@/store/defi/const';
-import { DexTrades } from '@/store/defi/types';
+import { uniswapEventsNumericKeys } from '@/store/defi/const';
 import {
   getBalances,
   getEventDetails,
@@ -32,7 +28,6 @@ import { uniqueStrings } from '@/utils/data';
 export const useUniswapStore = defineStore('defi/uniswap', () => {
   const v2Balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
   const v3Balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
-  const trades = ref<DexTrades>({}) as Ref<DexTrades>;
   const events = ref<XswapEvents>({}) as Ref<XswapEvents>;
 
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
@@ -221,45 +216,6 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     await fetchSupportedAssets(true);
   };
 
-  const fetchTrades = async (refresh: boolean = false) => {
-    const meta: TaskMeta = {
-      title: i18n.tc('actions.defi.uniswap_trades.task.title'),
-      numericKeys: dexTradeNumericKeys
-    };
-
-    const onError: OnError = {
-      title: i18n.tc('actions.defi.uniswap_trades.error.title'),
-      error: message =>
-        i18n.tc('actions.defi.uniswap_trades.error.description', undefined, {
-          error: message
-        })
-    };
-
-    await fetchDataAsync(
-      {
-        task: {
-          type: TaskType.DEFI_UNISWAP_TRADES,
-          section: Section.DEFI_UNISWAP_TRADES,
-          meta,
-          query: async () => await api.defi.fetchUniswapTrades(),
-          onError
-        },
-        state: {
-          isPremium,
-          activeModules
-        },
-        requires: {
-          premium: true,
-          module: Module.UNISWAP
-        },
-        refresh
-      },
-      trades
-    );
-
-    await fetchSupportedAssets(true);
-  };
-
   const fetchEvents = async (refresh: boolean = false) => {
     const meta: TaskMeta = {
       title: i18n.tc('actions.defi.uniswap_events.task.title'),
@@ -303,19 +259,16 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     const { resetStatus } = getStatusUpdater(Section.DEFI_UNISWAP_V3_BALANCES);
     set(v2Balances, {});
     set(v3Balances, {});
-    set(trades, {});
     set(events, {});
 
     resetStatus(Section.DEFI_UNISWAP_V2_BALANCES);
     resetStatus(Section.DEFI_UNISWAP_V3_BALANCES);
-    resetStatus(Section.DEFI_UNISWAP_TRADES);
     resetStatus(Section.DEFI_UNISWAP_EVENTS);
   };
 
   return {
     v2Balances,
     v3Balances,
-    trades,
     events,
     uniswapV2Addresses,
     uniswapV3Addresses,
@@ -328,7 +281,6 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     uniswapPoolProfit,
     fetchV2Balances,
     fetchV3Balances,
-    fetchTrades,
     fetchEvents,
     reset
   };

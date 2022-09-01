@@ -167,11 +167,6 @@ export default defineComponent({
           },
           {
             type: 'item',
-            class: 'defi-dex-trades',
-            ...Routes.DEFI_DEX_TRADES
-          },
-          {
-            type: 'item',
             class: 'defi-airdrops',
             ...Routes.DEFI_AIRDROPS
           }
