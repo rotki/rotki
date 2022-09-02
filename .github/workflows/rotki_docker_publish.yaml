@@ -10,7 +10,7 @@ concurrency:
 jobs:
   docker:
     name: Update ${{ github.repository }}:latest on hub.docker.com
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     environment: docker
     env:
       REGCTL: v0.4.4

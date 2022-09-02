@@ -19,9 +19,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-18.04, macos-11 ]
+        os: [ ubuntu-latest, macos-11 ]
     runs-on: ${{ matrix.os }}
     name: 'Backend tests on ${{ matrix.os }}'
+    environment: test
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -59,7 +60,8 @@ jobs:
     needs: [ 'test-backend' ]
     env:
       CI: true
-    runs-on: ubuntu-18.04
+    environment: test
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -105,6 +107,7 @@ jobs:
         uses: cypress-io/github-action@v2
         env:
           ARGS: "--browser chrome"
+          CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
         with:
           install: false
           command: npm run test:integration-ci
