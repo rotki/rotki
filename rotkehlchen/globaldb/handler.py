@@ -158,11 +158,11 @@ class GlobalDBHandler():
         try:
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 write_cursor.execute(
-                    'INSERT INTO assets('
-                    'identifier, type, started, swapped_for) '
-                    'VALUES(?, ?, ?, ?);',
+                    'INSERT INTO assets(identifier, name, type, started, swapped_for) '
+                    'VALUES(?, ?, ?, ?, ?);',
                     (
                         asset_id,
+                        name,
                         asset_type.serialize_for_db(),
                         started,
                         swapped_for,
@@ -171,11 +171,10 @@ class GlobalDBHandler():
                 if token is not None:
                     GlobalDBHandler.add_evm_token_data(write_cursor, token)
                 write_cursor.execute(
-                    'INSERT INTO common_asset_details(identifier, name, symbol, coingecko, '
-                    'cryptocompare, forked) VALUES(?, ?, ?, ?, ?, ?);',
+                    'INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked)'  # noqa: E501
+                    'VALUES(?, ?, ?, ?, ?);',
                     (
                         asset_id,
-                        name,
                         symbol,
                         coingecko,
                         cryptocompare,
@@ -225,10 +224,10 @@ class GlobalDBHandler():
         if specific_ids is not None:
             specific_ids_query = f'AND A.identifier in ({",".join("?" * len(specific_ids))})'
         querystr = f"""
-        SELECT A.identifier, A.type, B.address, B.decimals, C.name, C.symbol, A.started, null, A.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind FROM assets as A JOIN evm_tokens as B
+        SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, A.started, null, A.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind FROM assets as A JOIN evm_tokens as B
         ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = '{AssetType.EVM_TOKEN.serialize_for_db()}' {specific_ids_query}
         UNION ALL
-        SELECT A.identifier, A.type, null, null, B.name, B.symbol, A.started, B.forked, A.swapped_for, B.coingecko, B.cryptocompare, null, null, null from assets as A JOIN common_asset_details as B
+        SELECT A.identifier, A.type, null, null, A.name, B.symbol, A.started, B.forked, A.swapped_for, B.coingecko, B.cryptocompare, null, null, null from assets as A JOIN common_asset_details as B
         ON B.identifier = A.identifier WHERE A.type != '{AssetType.EVM_TOKEN.serialize_for_db()}' {specific_ids_query};
         """  # noqa: E501
         if specific_ids is not None:
@@ -281,7 +280,7 @@ class GlobalDBHandler():
         """
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT A.identifier, A.type, B.name, B.symbol, A.started, A.swapped_for, '
+                'SELECT A.identifier, A.type, A.name, B.symbol, A.started, A.swapped_for, '
                 'B.coingecko, B.cryptocompare, B.forked from assets AS A JOIN  '
                 'common_asset_details AS B ON A.identifier = B.identifier WHERE A.identifier=?;',
                 (identifier,),
@@ -397,9 +396,9 @@ class GlobalDBHandler():
                 try:  # underlying token does not exist. Track it
                     asset_id = underlying_token.get_identifier(parent_chain=chain)
                     write_cursor.execute(
-                        """INSERT INTO assets(identifier, type, started, swapped_for)
-                        VALUES(?, ?, ?, ?)""",
-                        (asset_id, AssetType.EVM_TOKEN.serialize_for_db(), None, None),
+                        'INSERT INTO assets(identifier, name, type, started, swapped_for)'
+                        'VALUES(?, ?, ?, ?, ?);',
+                        (asset_id, None, AssetType.EVM_TOKEN.serialize_for_db(), None, None),
                     )
                     write_cursor.execute(
                         'INSERT INTO evm_tokens(identifier, address, chain, token_kind)'
@@ -412,10 +411,9 @@ class GlobalDBHandler():
                         ),
                     )
                     write_cursor.execute(
-                        """INSERT INTO common_asset_details(identifier, name, symbol,
-                        coingecko, cryptocompare, forked)
-                        VALUES(?, ?, ?, ?, ?, ?)""",
-                        (asset_id, None, None, None, '', None),
+                        'INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked)'  # noqa: E501
+                        'VALUES(?, ?, ?, ?, ?)',
+                        (asset_id, None, None, '', None),
                     )
                 except sqlite3.IntegrityError as e:
                     raise InputError(
@@ -471,7 +469,7 @@ class GlobalDBHandler():
         cursor = GlobalDBHandler().conn.cursor()
         query = cursor.execute(
             'SELECT A.identifier from assets AS A JOIN common_asset_details as C '
-            'ON A.identifier=C.identifier WHERE A.type=? AND C.name=? AND C.symbol=?;',
+            'ON A.identifier=C.identifier WHERE A.type=? AND A.name=? AND C.symbol=?;',
             (asset_type.serialize_for_db(), name, symbol),
         )
         result = query.fetchall()
@@ -488,7 +486,7 @@ class GlobalDBHandler():
         """
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT A.identifier, B.address, B.chain, B.token_kind, B.decimals, A.name, '
+                'SELECT A.identifier, B.address, B.chain, B.token_kind, B.decimals, C.name, '
                 'A.symbol, C.started, C.swapped_for, A.coingecko, A.cryptocompare, B.protocol '
                 'FROM evm_tokens AS B JOIN '
                 'common_asset_details AS A ON B.identifier = A.identifier '
@@ -527,7 +525,7 @@ class GlobalDBHandler():
         - Protocol for which to return tokens
         """
         querystr = (
-            'SELECT A.identifier, B.address,  B.chain, B.token_kind, B.decimals, C.name, '
+            'SELECT A.identifier, B.address,  B.chain, B.token_kind, B.decimals, A.name, '
             'C.symbol, A.started, A.swapped_for, C.coingecko, C.cryptocompare, B.protocol '
             'FROM evm_tokens as B LEFT OUTER JOIN '
             'assets AS A on B.identifier = A.identifier JOIN common_asset_details AS C ON '
@@ -580,10 +578,8 @@ class GlobalDBHandler():
         mappings = {}
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                f'SELECT evm_tokens.address, common_asset_details.name FROM evm_tokens INNER '
-                f'JOIN common_asset_details ON '
-                f'evm_tokens.identifier = common_asset_details.identifier WHERE address '
-                f'IN ({questionmarks});',
+                f'SELECT evm_tokens.address, assets.name FROM evm_tokens INNER JOIN assets ON '
+                f'evm_tokens.identifier = assets.identifier WHERE address IN ({questionmarks});',
                 addresses,
             )
             for address, name in cursor:
@@ -642,10 +638,9 @@ class GlobalDBHandler():
         try:
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 write_cursor.execute(
-                    'UPDATE common_asset_details SET name=?, symbol=?, coingecko=?, '
+                    'UPDATE common_asset_details SET symbol=?, coingecko=?, '
                     'cryptocompare=?, forked=? WHERE identifier=?;',
                     (
-                        entry.name,
                         entry.symbol,
                         entry.coingecko,
                         entry.cryptocompare,
@@ -654,8 +649,9 @@ class GlobalDBHandler():
                     ),
                 )
                 write_cursor.execute(
-                    'UPDATE assets SET started=?, swapped_for=? WHERE identifier=?;',
+                    'UPDATE assets SET name=?, started=?, swapped_for=? WHERE identifier=?;',
                     (
+                        entry.name,
                         entry.started,
                         entry.swapped_for.identifier if entry.swapped_for else None,
                         entry.identifier,
@@ -750,10 +746,9 @@ class GlobalDBHandler():
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             try:
                 write_cursor.execute(
-                    'UPDATE common_asset_details SET name=?, symbol=?, '
+                    'UPDATE common_asset_details SET symbol=?, '
                     'coingecko=?, cryptocompare=?, forked=? WHERE identifier=?',
                     (
-                        data.get('name'),
                         data.get('symbol'),
                         data.get('coingecko'),
                         data.get('cryptocompare', ''),
@@ -775,8 +770,9 @@ class GlobalDBHandler():
 
             try:
                 write_cursor.execute(
-                    'UPDATE assets SET type=?, started=?, swapped_for=? WHERE identifier=?',
+                    'UPDATE assets SET name=?, type=?, started=?, swapped_for=? WHERE identifier=?',  # noqa: E501
                     (
+                        data.get('name'),
                         data['asset_type'].serialize_for_db(),
                         data.get('started'),
                         swapped_for,
@@ -842,10 +838,10 @@ class GlobalDBHandler():
             common_query_list.append(asset_type.serialize_for_db())
 
         querystr = f"""
-        SELECT A.identifier, A.type, B.address, B.chain, B.token_kind, B.decimals, C.name, C.symbol, A.started, null, A.swapped_for, C.coingecko, C.cryptocompare, B.protocol FROM assets as A LEFT OUTER JOIN evm_tokens as B
+        SELECT A.identifier, A.type, B.address, B.chain, B.token_kind, B.decimals, A.name, C.symbol, A.started, null, A.swapped_for, C.coingecko, C.cryptocompare, B.protocol FROM assets as A LEFT OUTER JOIN evm_tokens as B
         ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE C.symbol=? COLLATE NOCASE AND A.type=?{extra_check_evm}
         UNION ALL
-        SELECT A.identifier, A.type, null, null, null, null, B.name, B.symbol, A.started, B.forked, A.swapped_for, B.coingecko, B.cryptocompare, null FROM assets as A JOIN common_asset_details as B
+        SELECT A.identifier, A.type, null, null, null, null, A.name, B.symbol, A.started, B.forked, A.swapped_for, B.coingecko, B.cryptocompare, null FROM assets as A JOIN common_asset_details as B
         ON B.identifier = A.identifier WHERE B.symbol=? COLLATE NOCASE AND A.type!=?{extra_check_common};
         """  # noqa: E501
         with GlobalDBHandler().conn.read_ctx() as cursor:

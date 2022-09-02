@@ -100,9 +100,9 @@ class AssetsUpdater():
         self.local_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
         self.last_remote_checked_version = None
         self.conflicts: List[Tuple[AssetData, AssetData]] = []
-        self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *type *, *started *, *swapped_for *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?)\).*?')  # noqa: E501
+        self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *name *, *type *, *started *, *swapped_for *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?)\).*?')  # noqa: E501
         self.ethereum_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) +VALUES\(([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?),([^\)]*?)\).*')  # noqa: E501
-        self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *identifier *, *name *, *symbol *, *coingecko *, *cryptocompare *, *forked *\) +VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),(.*?)\).*')  # noqa: E501
+        self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *\) +VALUES\((.*?),(.*?),(.*?),(.*?),(.*?)\).*')  # noqa: E501
         self.string_re = re.compile(r'.*"(.*?)".*')
         self.branch = 'master'
         if not getattr(sys, 'frozen', False):
@@ -191,39 +191,37 @@ class AssetsUpdater():
         return result
 
     def _parse_asset_data(self, insert_text: str) -> ParsedAssetData:
-        match = self.assets_re.match(insert_text)
-        if match is None:
+        assets_match = self.assets_re.match(insert_text)
+        if assets_match is None:
             raise DeserializationError(
                 f'At asset DB update could not parse asset data out of {insert_text}',
             )
-        if len(match.groups()) != 4:
+        if len(assets_match.groups()) != 5:
             raise DeserializationError(
                 f'At asset DB update could not parse asset data out of {insert_text}',
             )
-        raw_type = self._parse_str(match.group(2), 'asset type', insert_text)
-        raw_started = self._parse_optional_int(match.group(3), 'started', insert_text)
+        raw_type = self._parse_str(assets_match.group(3), 'asset type', insert_text)
+        asset_type = AssetType.deserialize_from_db(raw_type)
+        raw_started = self._parse_optional_int(assets_match.group(4), 'started', insert_text)
         started = Timestamp(raw_started) if raw_started else None
-        swapped_for = self._parse_optional_str(match.group(4), 'swapped_for', insert_text)
 
-        match = self.common_asset_details_re.match(insert_text)
-        if match is None:
+        common_details_match = self.common_asset_details_re.match(insert_text)
+        if common_details_match is None:
             raise DeserializationError(
                 f'At asset DB update could not parse common asset '
                 f'details data out of {insert_text}',
             )
-        forked = self._parse_optional_str(match.group(6), 'forked', insert_text)
-        asset_type = AssetType.deserialize_from_db(raw_type)
 
         return ParsedAssetData(
-            identifier=self._parse_str(match.group(1), 'identifier', insert_text),
+            identifier=self._parse_str(common_details_match.group(1), 'identifier', insert_text),
             asset_type=asset_type,
-            name=self._parse_str(match.group(2), 'name', insert_text),
-            symbol=self._parse_str(match.group(3), 'symbol', insert_text),
+            name=self._parse_str(assets_match.group(2), 'name', insert_text),
+            symbol=self._parse_str(common_details_match.group(2), 'symbol', insert_text),
             started=started,
-            swapped_for=swapped_for,
-            coingecko=self._parse_optional_str(match.group(4), 'coingecko', insert_text),
-            cryptocompare=self._parse_optional_str(match.group(5), 'cryptocompare', insert_text),
-            forked=forked,
+            swapped_for=self._parse_optional_str(assets_match.group(5), 'swapped_for', insert_text),  # noqa: E501
+            coingecko=self._parse_optional_str(common_details_match.group(3), 'coingecko', insert_text),  # noqa: E501
+            cryptocompare=self._parse_optional_str(common_details_match.group(4), 'cryptocompare', insert_text),  # noqa: E501
+            forked=self._parse_optional_str(common_details_match.group(5), 'forked', insert_text),
         )
 
     def _parse_ethereum_token_data(

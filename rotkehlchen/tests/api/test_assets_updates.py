@@ -59,12 +59,12 @@ def test_simple_update(rotkehlchen_api_server, globaldb):
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    update_4 = """INSERT INTO assets(identifier,type, started, swapped_for) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "C", 123, NULL); INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "A", "A", "0xC2FEC534c461c45533e142f724d0e3930650929c", 18, NULL); INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare, forked) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "AKB token", "AKB", NULL, "AIDU", NULL);
+    update_4 = """INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "AKB token", "C", 123, NULL);INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "A", "A", "0xC2FEC534c461c45533e142f724d0e3930650929c", 18, NULL);INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked) VALUES("eip155:1/erc20:0xC2FEC534c461c45533e142f724d0e3930650929c", "AKB", NULL, "AIDU", NULL);
 *
-INSERT INTO assets(identifier,type, started, swapped_for) VALUES("121-ada-FADS-as", "F", NULL, NULL); INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare, forked) VALUES("121-ada-FADS-as", "A name", "SYMBOL", "", "", "BTC");
+INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES("121-ada-FADS-as", "A name", "F", NULL, NULL); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked) VALUES("121-ada-FADS-as", "SYMBOL", "", "", "BTC");
 *
-UPDATE common_asset_details SET name="Ευρώ" WHERE identifier="EUR";
-INSERT INTO assets(identifier,type, started, swapped_for) VALUES("EUR", "A", NULL, NULL); INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare, forked) VALUES("EUR", "Ευρώ", "EUR", NULL, NULL, NULL);
+UPDATE assets SET name="Ευρώ" WHERE identifier="EUR";
+INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES("EUR", "Ευρώ", "A", NULL, NULL); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked) VALUES("EUR", "Ευρώ", "EUR", NULL, NULL, NULL);
     """  # noqa: E501
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
@@ -191,13 +191,13 @@ def test_update_conflicts(rotkehlchen_api_server, globaldb):
     """Test that conflicts in an asset update are handled properly"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    update_1 = """INSERT INTO assets(identifier,type, started, swapped_for) VALUES("121-ada-FADS-as", "F", NULL, NULL); INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare, forked) VALUES("121-ada-FADS-as", "A name", "SYMBOL", "", "", "BTC");
+    update_1 = """INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES("121-ada-FADS-as", "A name", "F", NULL, NULL); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked) VALUES("121-ada-FADS-as", "SYMBOL", "", "", "BTC");
 *
-INSERT INTO assets(identifier,type, started, swapped_for) VALUES("eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F", "C", 1573672677, NULL); INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F", "A", "A", "0x6B175474E89094C44Da98b954EedeAC495271d0F", 8, "maker"); INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare, forked) VALUES("eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F", "New Multi Collateral DAI", "NDAI", "dai", NULL, NULL)
+INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES("eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F", "New Multi Collateral DAI", "C", 1573672677, NULL);INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F", "A", "A", "0x6B175474E89094C44Da98b954EedeAC495271d0F", 8, "maker"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked) VALUES("eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F", "NDAI", "dai", NULL, NULL)
 *
-INSERT INTO assets(identifier,type, started, swapped_for) VALUES("DASH", "B", 1337, NULL); INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare, forked) VALUES("DASH", "Dash", "DASH", "dash-coingecko", NULL, "BTC");
+INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES("DASH", "Dash", "B", 1337, NULL); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked) VALUES("DASH", "DASH", "dash-coingecko", NULL, "BTC");
 *
-INSERT INTO assets(identifier,type, started, swapped_for) VALUES("eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F", "C", 1573672677, NULL); INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F", "A", "A", "0x1B175474E89094C44Da98b954EedeAC495271d0F", 18, NULL); INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare, forked) VALUES("eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F", "Conflicting token", "CTK", "ctk", NULL, NULL)
+INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES("eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F", "Conflicting token", "C", 1573672677, NULL);INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F", "A", "A", "0x1B175474E89094C44Da98b954EedeAC495271d0F", 18, NULL);INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked) VALUES("eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F", "CTK", "ctk", NULL, NULL)
 *
     """  # noqa: E501
     globaldb.add_asset(  # add a conflicting token
@@ -484,10 +484,10 @@ def test_foreignkey_conflict(rotkehlchen_api_server, globaldb):
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    update_1 = """INSERT INTO assets(identifier,type, started, swapped_for) VALUES("121-ada-FADS-as", "F", NULL, NULL); INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare, forked) VALUES("121-ada-FADS-as", "A name", "SYMBOL", "", "", "BTC");
+    update_1 = """INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES("121-ada-FADS-as", "A name", "F", NULL, NULL); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked) VALUES("121-ada-FADS-as", "SYMBOL", "", "", "BTC");
 *
 UPDATE assets SET swapped_for="eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972" WHERE identifier="eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d";
-INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "A", "A", "0xa74476443119A942dE498590Fe1f2454d7D4aC0d", 18, NULL);INSERT INTO assets(identifier,type, started, swapped_for) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "C", 1478810650, "eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972"); INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare, forked) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "Golem", "GNT", "golem", NULL, NULL)
+INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "A", "A", "0xa74476443119A942dE498590Fe1f2454d7D4aC0d", 18, NULL);INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "Golem", "C", 1478810650, "eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "GNT", "golem", NULL, NULL)
     """  # noqa: E501
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
@@ -657,10 +657,10 @@ def test_update_from_early_clean_db(rotkehlchen_api_server, globaldb):
     version key set we still upgrade properly and set the assets version properly.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    update_1 = """INSERT INTO assets(identifier,type, started, swapped_for) VALUES("121-ada-FADS-as", "F", NULL, NULL); INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare, forked) VALUES("121-ada-FADS-as", "A name", "SYMBOL", "", "", "BTC");
+    update_1 = """INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES("121-ada-FADS-as", "A name", "F", NULL, NULL); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked) VALUES("121-ada-FADS-as", "SYMBOL", "", "", "BTC");
 *
 UPDATE assets SET swapped_for="eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972" WHERE identifier="eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d";
-INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "A", "A", "0xa74476443119A942dE498590Fe1f2454d7D4aC0d", 18, NULL);INSERT INTO assets(identifier,type, started, swapped_for) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "C", 1478810650, "eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972"); INSERT INTO common_asset_details(identifier, name, symbol, coingecko, cryptocompare, forked) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "Golem", "GNT", "golem", NULL, NULL)
+INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "A", "A", "0xa74476443119A942dE498590Fe1f2454d7D4aC0d", 18, NULL);INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "Golem", "C", 1478810650, "eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked) VALUES("eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d", "GNT", "golem", NULL, NULL)
     """  # noqa: E501
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
