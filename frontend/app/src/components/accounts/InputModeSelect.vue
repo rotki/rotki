@@ -118,7 +118,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { get, useClipboard } from '@vueuse/core';
-import { computed, defineProps, PropType, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import {
   MANUAL_ADD,

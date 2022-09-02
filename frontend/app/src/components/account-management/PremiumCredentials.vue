@@ -63,11 +63,11 @@ const emit = defineEmits([
 ]);
 const { enabled } = toRefs(props);
 
-const updateApiKey = (apiKey: string) => {
+const updateApiKey = (apiKey: string | null) => {
   emit('update:api-key', apiKey?.trim() ?? '');
 };
 
-const updateApiSecret = (apiSecret: string) => {
+const updateApiSecret = (apiSecret: string | null) => {
   emit('update:api-secret', apiSecret?.trim() ?? '');
 };
 

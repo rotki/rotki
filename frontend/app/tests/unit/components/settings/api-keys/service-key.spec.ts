@@ -21,6 +21,14 @@ vi.mock('vue-i18n-composable', async () => {
     })
   };
 });
+vi.mock('vue', async () => {
+  const mod = await vi.importActual<typeof import('vue')>('vue');
+  return {
+    ...mod,
+    useListeners: vi.fn(),
+    useAttrs: vi.fn()
+  };
+});
 
 describe('ServiceKey.vue', () => {
   let wrapper: Wrapper<any>;

@@ -1,12 +1,12 @@
 <template>
   <v-select
-    v-bind="$attrs"
+    v-bind="rootAttrs"
     item-text="value"
     item-value="value"
     outlined
     persistent-hint
     :items="selections"
-    v-on="$listeners"
+    v-on="rootListeners"
   >
     <template #item="{ item, attrs, on }">
       <v-list-item v-bind="attrs" v-on="on">
@@ -28,9 +28,14 @@
 </template>
 
 <script setup lang="ts">
+import { useAttrs, useListeners } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DateFormat } from '@/types/date-format';
+
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+
 const selections = [
   {
     value: DateFormat.DateMonthYearHourMinuteSecond

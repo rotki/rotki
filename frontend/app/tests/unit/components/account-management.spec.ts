@@ -19,6 +19,14 @@ import { bigNumberify } from '@/utils/bignumbers';
 vi.mock('@/electron-interop');
 vi.mock('@/services/rotkehlchen-api');
 vi.mock('@/composables/defi');
+vi.mock('vue', async () => {
+  const mod = await vi.importActual<typeof import('vue')>('vue');
+  return {
+    ...mod,
+    useListeners: vi.fn(),
+    useAttrs: vi.fn()
+  };
+});
 
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);

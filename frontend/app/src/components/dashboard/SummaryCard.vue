@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, defineProps } from 'vue';
+import { defineAsyncComponent } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 const NavigatorLink = defineAsyncComponent(
   () => import('@/components/helper/NavigatorLink.vue')

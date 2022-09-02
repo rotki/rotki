@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineEmits, toRefs } from 'vue';
+import { computed, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 

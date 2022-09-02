@@ -31,7 +31,7 @@
 
 <script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import { computed, defineProps, onMounted, PropType, ref, toRefs } from 'vue';
+import { computed, onMounted, PropType, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { assert } from '@/utils/assertions';

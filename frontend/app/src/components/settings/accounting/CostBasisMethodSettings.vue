@@ -1,12 +1,12 @@
 <template>
   <v-select
-    v-bind="$attrs"
+    v-bind="rootAttrs"
     outlined
     persistent-hint
     item-value="identifier"
     item-text="identifier"
-    :items="selections"
-    v-on="$listeners"
+    :items="costBasisMethodData"
+    v-on="rootListeners"
   >
     <template #item="{ item, attrs, on }">
       <v-list-item v-bind="attrs" v-on="on">
@@ -26,17 +26,12 @@
   </v-select>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useAttrs, useListeners } from 'vue';
 import { costBasisMethodData } from '@/store/reports/consts';
-export default defineComponent({
-  name: 'CostBasisMethodSettings',
-  setup() {
-    return {
-      selections: costBasisMethodData
-    };
-  }
-});
+
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
 </script>
 <style module lang="scss">
 .title {

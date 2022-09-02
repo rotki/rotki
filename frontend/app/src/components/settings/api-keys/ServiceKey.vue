@@ -97,7 +97,7 @@ export default defineComponent({
     const deleteKey = () => emit('delete-key');
     const save = (value: string) => emit('save', value);
 
-    const currentValue = ref<string>('');
+    const currentValue = ref<string | null>(null);
     const editMode = ref<boolean>(false);
     const cancellable = ref<boolean>(false);
 
@@ -109,7 +109,7 @@ export default defineComponent({
     };
 
     const updateStatus = () => {
-      if (get(value) === '') {
+      if (!get(value)) {
         set(cancellable, false);
         set(editMode, true);
       } else {
@@ -121,7 +121,7 @@ export default defineComponent({
 
     const saveHandler = () => {
       if (get(editMode)) {
-        save(get(currentValue));
+        save(get(currentValue)!);
         set(editMode, false);
         set(cancellable, true);
       } else {

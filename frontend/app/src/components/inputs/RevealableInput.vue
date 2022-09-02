@@ -1,6 +1,6 @@
 <template>
   <v-text-field
-    v-bind="$attrs"
+    v-bind="rootAttrs"
     :value="value"
     :prepend-icon="outlined ? null : prependIcon"
     :prepend-inner-icon="outlined ? prependIcon : null"
@@ -13,7 +13,7 @@
     :error-messages="errorMessages"
     :outlined="outlined"
     single-line
-    v-on="$listeners"
+    v-on="rootListeners"
     @input="input"
   >
     <template #append>
@@ -27,64 +27,59 @@
   </v-text-field>
 </template>
 
-<script lang="ts">
-import { defineComponent, PropType, ref } from 'vue';
+<script setup lang="ts">
+import { PropType, ref, useAttrs, useListeners } from 'vue';
 
-const RevealableInput = defineComponent({
-  name: 'RevealableInput',
-  props: {
-    value: {
-      required: false,
-      type: String as PropType<string | null>,
-      default: null
-    },
-    rules: {
-      required: false,
-      default: () => [],
-      type: Array as PropType<((v: string) => boolean | string)[]>
-    },
-    outlined: {
-      required: false,
-      type: Boolean,
-      default: false
-    },
-    disabled: {
-      required: false,
-      type: Boolean,
-      default: false
-    },
-    label: {
-      required: false,
-      type: String,
-      default: ''
-    },
-    hint: {
-      required: false,
-      type: String,
-      default: ''
-    },
-    prependIcon: {
-      required: false,
-      type: String,
-      default: 'mdi-key'
-    },
-    errorMessages: {
-      required: false,
-      type: [String, Array],
-      default: ''
-    }
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+
+defineProps({
+  value: {
+    required: false,
+    type: String as PropType<string | null>,
+    default: null
   },
-  emits: ['input'],
-  setup(_, { emit }) {
-    const revealed = ref(false);
-    const input = (value: string | null) => {
-      emit('input', value);
-    };
-    return {
-      revealed,
-      input
-    };
+  rules: {
+    required: false,
+    default: () => [],
+    type: Array as PropType<((v: string) => boolean | string)[]>
+  },
+  outlined: {
+    required: false,
+    type: Boolean,
+    default: false
+  },
+  disabled: {
+    required: false,
+    type: Boolean,
+    default: false
+  },
+  label: {
+    required: false,
+    type: String,
+    default: ''
+  },
+  hint: {
+    required: false,
+    type: String,
+    default: ''
+  },
+  prependIcon: {
+    required: false,
+    type: String,
+    default: 'mdi-key'
+  },
+  errorMessages: {
+    required: false,
+    type: [String, Array],
+    default: ''
   }
 });
-export default RevealableInput;
+
+const emit = defineEmits<{ (e: 'input', value: string | null): void }>();
+
+const revealed = ref(false);
+const input = (value: string | null) => {
+  emit('input', value);
+};
 </script>
