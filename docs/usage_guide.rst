@@ -151,6 +151,11 @@ By choosing the "General" settings button you can customize some general applica
 General Settings
 ----------------------
 
+Language
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Set the language used on the app. This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. You can contribute to the translation `here <https://rotki.readthedocs.io/en/latest/contribute.html#add-new-language-or-translation>`__.
+
 Anonymous usage analytics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

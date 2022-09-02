@@ -325,6 +325,56 @@ Multiple submodules
 
 The modules system is hierachical and one module may contain multiple submodules. For example uniswap having both v1 and v3 each in their own subdirectories as seen `here <https://github.com/rotki/rotki/tree/develop/rotkehlchen/chain/ethereum/modules/uniswap>`__.
 
+Add a new language or translation
+===================================
+
+Add new language
+----------------
+The translation files is located `here <https://github.com/rotki/rotki/tree/develop/frontend/app/src/locales>`__.
+They are saved with format ``{country_code}.json``, where country code is ``Alpha-2`` code from based on `ISO 3166 country codes <https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes>`__.
+If you want to add new language, you need to create new translation file with that format, and then `fill it <#add-or-edit-translation>`__.
+
+You also need to update the frontend mapping that is defined at this `enum <https://github.com/rotki/rotki/blob/f57522baa737854e6affcbe57bada2b81c4dee83/frontend/app/src/types/frontend-settings.ts#L112>`__, and these `entries <https://github.com/rotki/rotki/blob/f57522baa737854e6affcbe57bada2b81c4dee83/frontend/app/src/data/supported-language.ts>`__.
+
+Add or edit a translation
+-----------------------
+Rotki does translation using `Vue i18n <https://kazupon.github.io/vue-i18n>`__.
+
+Rotki's main language is ``English``. The language file for it is `here <https://github.com/rotki/rotki/blob/develop/frontend/app/src/locales/en.json>`__.
+In order to fill in the translation for another language, you should pay attention to the following things:
+
+1. The ``JSON`` structure from the ``English`` language file is absolute, meaning you can't change the JSON structure (the keys), because this is how rotki reads which value to use. So for translations of other languages, please follow the same structure as the `English` language JSON file. For example:
+
+.. code-block::
+
+    // en.json
+    "exchange_balances": {
+      "add_exchange": "Add exchange",
+      "click_here": "Click here",
+    }
+
+    // es.json
+    "exchange_balances": {
+      "add_exchange": "Añadir intercambio",
+      "click_here": "Haga clic aquí",
+    }
+
+2. You may notice that there are some words that are wrapped inside curly brackets, for example, word ``length`` in sentence ``Use total from {length} asset(s) value``.
+This is how rotki inserts a variable inside a sentence. You **must** keep this variable name, when translating to a different language. What you can do though is to reposition the variable inside the sentence. For example:
+
+.. code-block::
+
+    // en.json
+    "total": {
+      "use_calculated_asset": "Use total from {length} asset(s) value: ",
+    }
+
+    // es.json
+    "total": {
+      "use_calculated_asset": "Utilice el valor total de {length} activos: ",
+    }
+
+3. For missing keys from other language files, by default it will use the value of the master file which is ``English``.
 
 Code Testing
 **************
