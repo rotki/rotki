@@ -126,12 +126,12 @@ OTHER_EVM_CHAINS_ASSETS = {
     'WRX',
 }
 COMMON_ASSETS_INSERT = """INSERT OR IGNORE INTO common_asset_details(
-    identifier, name, symbol, coingecko, cryptocompare, forked
-    ) VALUES(?, ?, ?, ?, ?, ?)
+    identifier, symbol, coingecko, cryptocompare, forked
+    ) VALUES(?, ?, ?, ?, ?)
 """
 ASSETS_INSERT = """INSERT OR IGNORE INTO assets(
-        identifier, type, started, swapped_for
-    )VALUES(?, ?, ?, ?);
+        identifier, name, type, started, swapped_for
+    )VALUES(?, ?, ?, ?, ?);
 """
 EVM_TOKEN_INSERT = """INSERT OR IGNORE INTO evm_tokens(
         identifier, token_kind, chain, address, decimals, protocol
@@ -149,15 +149,15 @@ BINANCE_INSERT = 'INSERT INTO binance_pairs(pair, base_asset, quote_asset, locat
 EVM_TUPLES_CREATION_TYPE = (
     Tuple[
         List[Tuple[str, str, str, str, Any, Any]],
-        List[Tuple[Any, str, Any, Optional[str]]],
-        List[Tuple[Any, Any, Any, Any, Any, None]],
+        List[Tuple[Any, Any, str, Any, Optional[str]]],
+        List[Tuple[Any, Any, Any, Any, None]],
     ]
 )
 
 ASSET_CREATION_TYPE = (
     Tuple[
-        List[Tuple[Any, Any, Any, Any]],
-        List[Tuple[Any, Any, Any, Any, Any, Any]],
+        List[Tuple[Any, Any, Any, Any, Any]],
+        List[Tuple[Any, Any, Any, Any, Any]],
     ]
 )
 
@@ -208,13 +208,13 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
 
         assets_tuple.append((
             entry[0],  # identifier
+            entry[5],  # name
             AssetType.EVM_TOKEN.serialize_for_db(),  # type
             entry[7],  # started
             new_swapped_for,  # swapped for
         ))
         common_asset_details.append((
             entry[0],  # identifier
-            entry[5],  # name
             entry[6],  # symbol
             entry[9],  # coingecko
             entry[10],  # cryptocompare
@@ -252,13 +252,13 @@ def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
             )
         assets_tuple.append((
             entry[0],  # identifier
+            entry[2],  # name
             entry[1],  # type
             entry[4],  # started
             swapped_for,
         ))
         common_asset_details.append((
             entry[0],  # identifier
-            entry[2],  # name
             entry[3],  # symbol
             entry[6],  # coingecko
             entry[7],  # cryptocompare
@@ -414,6 +414,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS assets (
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+            name TEXT,
             type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type),
             started INTEGER,
             swapped_for TEXT,
@@ -423,7 +424,6 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS common_asset_details(
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
-            name TEXT,
             symbol TEXT,
             coingecko TEXT,
             cryptocompare TEXT,

@@ -46,28 +46,28 @@ def test_upgrade_v2_v3(globaldb):
         assert weth_token_data[3] == '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'
         assert weth_token_data[4] == 18
         assert weth_token_data[5] is None
-        weth_asset_data = cursor.execute('SELECT name, symbol, coingecko, cryptocompare, forked FROM common_asset_details WHERE identifier = "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"').fetchone()  # noqa: E501
+        weth_asset_data = cursor.execute('SELECT symbol, coingecko, cryptocompare, forked FROM common_asset_details WHERE identifier = "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"').fetchone()  # noqa: E501
+        assert weth_asset_data[0] == 'LUSD'
+        assert weth_asset_data[1] == 'liquity-usd'
+        assert weth_asset_data[2] == 'LUSD'
+        assert weth_asset_data[3] is None
+        weth_asset_data = cursor.execute('SELECT name, type, started, swapped_for FROM assets WHERE identifier = "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"').fetchone()  # noqa: E501
         assert weth_asset_data[0] == 'LUSD Stablecoin'
-        assert weth_asset_data[1] == 'LUSD'
-        assert weth_asset_data[2] == 'liquity-usd'
-        assert weth_asset_data[3] == 'LUSD'
-        assert weth_asset_data[4] is None
-        weth_asset_data = cursor.execute('SELECT type, started, swapped_for FROM assets WHERE identifier = "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"').fetchone()  # noqa: E501
-        assert AssetType.deserialize_from_db(weth_asset_data[0]) == AssetType.EVM_TOKEN
-        assert weth_asset_data[1] == 1617611299
-        assert weth_asset_data[2] is None
+        assert AssetType.deserialize_from_db(weth_asset_data[1]) == AssetType.EVM_TOKEN
+        assert weth_asset_data[2] == 1617611299
+        assert weth_asset_data[3] is None
 
         # Check that a normal asset also gets correctly mapped
-        weth_asset_data = cursor.execute('SELECT name, symbol, coingecko, cryptocompare, forked FROM common_asset_details WHERE identifier = "BCH"').fetchone()  # noqa: E501
-        assert weth_asset_data[0] == 'Bitcoin Cash'
-        assert weth_asset_data[1] == 'BCH'
-        assert weth_asset_data[2] == 'bitcoin-cash'
-        assert weth_asset_data[3] is None
-        assert weth_asset_data[4] == 'BTC'
-        weth_asset_data = cursor.execute('SELECT type, started, swapped_for FROM assets WHERE identifier = "BCH"').fetchone()  # noqa: E501
-        assert AssetType.deserialize_from_db(weth_asset_data[0]) == AssetType.OWN_CHAIN
-        assert weth_asset_data[1] == 1501593374
+        weth_asset_data = cursor.execute('SELECT symbol, coingecko, cryptocompare, forked FROM common_asset_details WHERE identifier = "BCH"').fetchone()  # noqa: E501
+        assert weth_asset_data[0] == 'BCH'
+        assert weth_asset_data[1] == 'bitcoin-cash'
         assert weth_asset_data[2] is None
+        assert weth_asset_data[3] == 'BTC'
+        weth_asset_data = cursor.execute('SELECT name, type, started, swapped_for FROM assets WHERE identifier = "BCH"').fetchone()  # noqa: E501
+        assert weth_asset_data[0] == 'Bitcoin Cash'
+        assert AssetType.deserialize_from_db(weth_asset_data[1]) == AssetType.OWN_CHAIN
+        assert weth_asset_data[2] == 1501593374
+        assert weth_asset_data[3] is None
 
         ids_in_db = {row[0] for row in cursor.execute('SELECT * FROM user_owned_assets')}
         assert ids_in_db == {

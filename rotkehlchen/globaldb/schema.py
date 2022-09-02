@@ -113,7 +113,6 @@ INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('C', 3);
 DB_CREATE_COMMON_ASSET_DETAILS = """
 CREATE TABLE IF NOT EXISTS common_asset_details(
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
-    name TEXT,
     symbol TEXT,
     coingecko TEXT,
     cryptocompare TEXT,
@@ -128,6 +127,7 @@ CREATE TABLE IF NOT EXISTS common_asset_details(
 DB_CREATE_ASSETS = """
 CREATE TABLE IF NOT EXISTS assets (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+    name TEXT,
     type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type),
     started INTEGER,
     swapped_for TEXT,
