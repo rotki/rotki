@@ -16,6 +16,9 @@ Changelog
 * :feature:`-` Ethereum transactions involving convex finance should now be automatically decoded.
 * :feature:`-` An ethereum address's tokens can now be manually detected by pressing a specific button in the UI.
 * :bug:`-` When force sync fails a proper error message is displayed
+  
+* :release:`1.25.3 <2022-09-02>`
+* :bug:`4781` Failure in one specific binance endpoint during balance query won't fail the entire binance balances query unless it's the main spot balances endpoint.
 * :bug:`4769` Fixed various issues with adding/editing/deleting web3 nodes. Editing the name of a node now works and also setting all open nodes to 0% query probability should no longer throw a 500 error.
 * :bug:`4710` Users will again be able to import CSV from certain importers.
 * :bug:`-` Bisq importer will now use the correct amount in all the imported trades.

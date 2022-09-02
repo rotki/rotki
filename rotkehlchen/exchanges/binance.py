@@ -661,6 +661,14 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return balances
 
+    def _query_margined_fapi(self, balances: DefaultDict[Asset, Balance]) -> DefaultDict[Asset, Balance]:  # noqa: E501
+        """Only a convenience function to give same interface as other query methods"""
+        return self._query_margined_futures_balances('fapi', balances)
+
+    def _query_margined_dapi(self, balances: DefaultDict[Asset, Balance]) -> DefaultDict[Asset, Balance]:  # noqa: E501
+        """Only a convenience function to give same interface as other query methods"""
+        return self._query_margined_futures_balances('dapi', balances)
+
     def _query_margined_futures_balances(
             self,
             api_type: Literal['fapi', 'dapi'],
@@ -816,11 +824,17 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
             returned_balances = self._query_spot_balances(returned_balances)
             if self.location != Location.BINANCEUS:
-                returned_balances = self._query_lending_balances(returned_balances)
-                returned_balances = self._query_cross_collateral_futures_balances(returned_balances)  # noqa: E501
-                returned_balances = self._query_margined_futures_balances('fapi', returned_balances)  # noqa: E501
-                returned_balances = self._query_margined_futures_balances('dapi', returned_balances)  # noqa: E501
-                returned_balances = self._query_pools_balances(returned_balances)
+                for method in (
+                        self._query_lending_balances,
+                        self._query_cross_collateral_futures_balances,
+                        self._query_margined_fapi,
+                        self._query_margined_dapi,
+                        self._query_pools_balances,
+                ):
+                    try:
+                        returned_balances = method(returned_balances)
+                    except RemoteError as e:  # errors in any of these methods should not be fatal
+                        log.warning(f'Failed to query binance method {method.__name__} due to {str(e)}')  # noqa: E501
 
         except RemoteError as e:
             msg = (
