@@ -56,9 +56,6 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
-    EthereumNodeEditSchema,
-    EthereumNodeListDeleteSchema,
-    EthereumNodeSchema,
     EthereumTransactionDecodingSchema,
     EthereumTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
@@ -128,6 +125,10 @@ from rotkehlchen.api.v1.schemas import (
     WatchersAddSchema,
     WatchersDeleteSchema,
     WatchersEditSchema,
+    Web3AddNodeSchema,
+    Web3NodeEditSchema,
+    Web3NodeListDeleteSchema,
+    Web3NodeSchema,
     XpubAddSchema,
     XpubPatchSchema,
 )
@@ -490,20 +491,23 @@ class EthereumAirdropsResource(BaseMethodView):
         return self.rest_api.get_ethereum_airdrops(async_query)
 
 
-class EthereumNodesResource(BaseMethodView):
+class Web3NodesResource(BaseMethodView):
 
-    put_schema = EthereumNodeSchema()
-    patch_schema = EthereumNodeEditSchema()
-    delete_schema = EthereumNodeListDeleteSchema()
-
-    @require_loggedin_user()
-    def get(self) -> Response:
-        return self.rest_api.get_web3_nodes()
+    get_schema = Web3NodeSchema()
+    put_schema = Web3AddNodeSchema()
+    patch_schema = Web3NodeEditSchema()
+    delete_schema = Web3NodeListDeleteSchema()
 
     @require_loggedin_user()
-    @use_kwargs(put_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='view_args')
+    def get(self, blockchain: SupportedBlockchain) -> Response:
+        return self.rest_api.get_web3_nodes(blockchain=blockchain)
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json_and_query_and_view_args')
     def put(
         self,
+        blockchain: SupportedBlockchain,
         name: str,
         endpoint: str,
         owned: bool,
@@ -515,6 +519,7 @@ class EthereumNodesResource(BaseMethodView):
                 name=name,
                 endpoint=endpoint,
                 owned=owned,
+                blockchain=blockchain,  # type: ignore
             ),
             weight=weight,
             active=active,
@@ -522,9 +527,10 @@ class EthereumNodesResource(BaseMethodView):
         return self.rest_api.add_web3_node(node)
 
     @require_loggedin_user()
-    @use_kwargs(patch_schema, location='json_and_query')
+    @use_kwargs(patch_schema, location='json_and_query_and_view_args')
     def patch(
         self,
+        blockchain: SupportedBlockchain,
         identifier: int,
         name: str,
         endpoint: str,
@@ -538,6 +544,7 @@ class EthereumNodesResource(BaseMethodView):
                 name=name,
                 endpoint=endpoint,
                 owned=owned,
+                blockchain=blockchain,  # type: ignore
             ),
             weight=weight,
             active=active,
@@ -545,9 +552,14 @@ class EthereumNodesResource(BaseMethodView):
         return self.rest_api.update_web3_node(node)
 
     @require_loggedin_user()
-    @use_kwargs(delete_schema, location='json_and_query')
-    def delete(self, identifier: int) -> Response:
-        return self.rest_api.delete_web3_node(identifier)
+    @use_kwargs(delete_schema, location='json_and_query_and_view_args')
+    def delete(
+        self,
+        blockchain: SupportedBlockchain,  # pylint: disable=unused-argument
+        identifier: int,
+    ) -> Response:
+        """Note: we only delete by identifier and the blockchain parameter is ignored"""
+        return self.rest_api.delete_web3_node(identifier=identifier, blockchain=blockchain)
 
 
 class ExternalServicesResource(BaseMethodView):

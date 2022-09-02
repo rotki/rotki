@@ -3209,29 +3209,6 @@ class DBHandler:
         now = ts_now()
         return now - last_save > period
 
-    def get_web3_node_by_id(self, identifier: int) -> WeightedNode:
-        """
-        Get node by identifier
-        May raise:
-        - InputError if identifier not present in DB.
-        """
-        with self.conn.read_ctx() as cursor:
-            cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM web3_nodes WHERE identifier=?;', (identifier,))  # noqa: E501
-            entry = cursor.fetchone()
-            if entry is None:
-                raise InputError(f'Node with identifier {identifier} doesn\'t exist')
-            return WeightedNode(
-                identifier=entry[0],
-                node_info=NodeName(
-                    name=entry[1],
-                    endpoint=entry[2],
-                    owned=bool(entry[3]),
-                    blockchain=SupportedBlockchain(entry[6]),  # type: ignore
-                ),
-                weight=FVal(entry[4]),
-                active=bool(entry[5]),
-            )
-
     def get_web3_nodes(
             self,
             blockchain: SupportedBlockchain,
@@ -3328,15 +3305,15 @@ class DBHandler:
         """
         with self.user_write() as cursor:
             cursor.execute(
-                'UPDATE web3_nodes SET name=?, endpoint=?, owned=?, active=?, weight=?, blockchain=? WHERE identifier=?',  # noqa: E501
+                'UPDATE web3_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
                 (
                     node.node_info.name,
                     node.node_info.endpoint,
                     node.node_info.owned,
                     node.active,
                     str(node.weight),
-                    node.node_info.blockchain,
                     node.identifier,
+                    node.node_info.blockchain.value,
                 ),
             )
 
@@ -3350,22 +3327,20 @@ class DBHandler:
                 blockchain=node.node_info.blockchain,
             )
 
-    def delete_web3_node(self, identifier: int) -> None:
+    def delete_web3_node(self, identifier: int, blockchain: SupportedBlockchain) -> None:
         """Delete a web3 node by identifier
         May raise:
         - InputError if no entry with such identifier is in the database.
         """
-        node = self.get_web3_node_by_id(identifier)
-
         with self.user_write() as cursor:
-            cursor.execute('DELETE FROM web3_nodes WHERE identifier=?', (identifier,))
+            cursor.execute('DELETE FROM web3_nodes WHERE identifier=? AND blockchain=?', (identifier, blockchain.value))   # noqa: E501
             if cursor.rowcount == 0:
-                raise InputError(f'node with name {identifier} was not found in the database')
+                raise InputError(f'node with id {identifier} and blockchain {blockchain.value} was not found in the database')  # noqa: E501
             self._rebalance_web3_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE,
                 exclude_identifier=None,
-                blockchain=node.node_info.blockchain,
+                blockchain=blockchain,
             )
 
     def get_user_notes(

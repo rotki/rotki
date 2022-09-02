@@ -52,15 +52,17 @@ class WeightedNode:
             'weight': self.weight.to_percentage(precision=2, with_perc_sign=False),
             'owned': self.node_info.owned,
             'active': self.active,
+            'blockchain': self.node_info.blockchain.value,
         }
 
-    def serialize_for_db(self) -> Tuple[str, str, bool, bool, str]:
+    def serialize_for_db(self) -> Tuple[str, str, bool, bool, str, str]:
         return (
             self.node_info.name,
             self.node_info.endpoint,
             self.node_info.owned,
             self.active,
             str(self.weight),
+            self.node_info.blockchain.value,
         )
 
     @classmethod

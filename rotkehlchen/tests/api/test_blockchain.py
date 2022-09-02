@@ -808,7 +808,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
     """
     Test /api/(version)/blockchains/(name) for edge cases and errors.
 
-    Test for errors when both adding and removing a blockhain account. Both put/delete
+    Test for errors when both adding and removing a blockchain account. Both put/delete
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.chain_manager.cache_ttl_secs = 0
