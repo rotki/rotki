@@ -19,8 +19,8 @@ if TYPE_CHECKING:
     from rotkehlchen.utils.upgrades import UpgradeRecord
 
 
-@pytest.fixture(name='custom_ethereum_tokens')
-def fixture_custom_ethereum_tokens() -> Optional[List[EvmToken]]:
+@pytest.fixture(name='user_ethereum_tokens')
+def fixture_user_ethereum_tokens() -> Optional[List[EvmToken]]:
     return None
 
 

@@ -9,11 +9,11 @@ underlying_address1 = make_ethereum_address()
 underlying_address2 = make_ethereum_address()
 underlying_address3 = make_ethereum_address()
 
-custom_address1 = make_ethereum_address()
-custom_address2 = make_ethereum_address()
+user_token_address1 = make_ethereum_address()
+user_token_address2 = make_ethereum_address()
 INITIAL_TOKENS = [
     EvmToken.initialize(
-        address=custom_address1,
+        address=user_token_address1,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=4,
@@ -31,7 +31,7 @@ INITIAL_TOKENS = [
         ],
     ),
     EvmToken.initialize(
-        address=custom_address2,
+        address=user_token_address2,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
@@ -48,9 +48,9 @@ INITIAL_EXPECTED_TOKENS = [INITIAL_TOKENS[0]] + [
 
 
 underlying_address4 = make_ethereum_address()
-custom_address3 = make_ethereum_address()
-CUSTOM_TOKEN3 = EvmToken.initialize(
-    address=custom_address3,
+user_token_address3 = make_ethereum_address()
+USER_TOKEN3 = EvmToken.initialize(
+    address=user_token_address3,
     chain=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     decimals=15,
@@ -59,7 +59,7 @@ CUSTOM_TOKEN3 = EvmToken.initialize(
     cryptocompare='ICP',
     protocol='aave',
     underlying_tokens=[
-        UnderlyingToken(address=custom_address1, token_kind=EvmTokenKind.ERC20, weight=FVal('0.55')),  # noqa: E501
+        UnderlyingToken(address=user_token_address1, token_kind=EvmTokenKind.ERC20, weight=FVal('0.55')),  # noqa: E501
         UnderlyingToken(address=underlying_address4, token_kind=EvmTokenKind.ERC20, weight=FVal('0.45')),  # noqa: E501
     ],
 )

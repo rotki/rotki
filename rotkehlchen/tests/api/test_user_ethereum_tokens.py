@@ -22,14 +22,14 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.constants import A_MKR
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import (
-    CUSTOM_TOKEN3,
     INITIAL_EXPECTED_TOKENS,
     INITIAL_TOKENS,
-    custom_address1,
+    USER_TOKEN3,
     underlying_address1,
     underlying_address2,
     underlying_address3,
     underlying_address4,
+    user_token_address1,
 )
 from rotkehlchen.types import EvmTokenKind, Location
 
@@ -47,20 +47,20 @@ def assert_token_entry_exists_in_result(
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-@pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
-def test_query_custom_tokens(rotkehlchen_api_server):
-    """Test that using the query custom ethereum tokens endpoint works"""
+@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
+def test_query_user_tokens(rotkehlchen_api_server):
+    """Test that using the query user ethereum tokens endpoint works"""
     # Test querying by address
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
             'ethereumassetsresource',
         ),
-        json={'address': custom_address1, 'chain': str(ChainID.ETHEREUM)},
+        json={'address': user_token_address1, 'chain': str(ChainID.ETHEREUM)},
     )
     result = assert_proper_response_with_result(response)
     expected_result = INITIAL_TOKENS[0].serialize_all_info()
-    expected_result['identifier'] = ethaddress_to_identifier(custom_address1)
+    expected_result['identifier'] = ethaddress_to_identifier(user_token_address1)
     assert result == expected_result
 
     # Test querying all
@@ -94,10 +94,10 @@ def test_query_custom_tokens(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-@pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
-def test_adding_custom_tokens(rotkehlchen_api_server):
-    """Test that the endpoint for adding a custom ethereum token works"""
-    serialized_token = CUSTOM_TOKEN3.serialize_all_info()
+@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
+def test_adding_user_tokens(rotkehlchen_api_server):
+    """Test that the endpoint for adding a user ethereum token works"""
+    serialized_token = USER_TOKEN3.serialize_all_info()
     del serialized_token['identifier']
     response = requests.put(
         api_url_for(
@@ -107,7 +107,7 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         json={'token': serialized_token},
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'identifier': CUSTOM_TOKEN3.identifier}
+    assert result == {'identifier': USER_TOKEN3.identifier}
 
     response = requests.get(
         api_url_for(
@@ -117,7 +117,7 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     expected_tokens = INITIAL_EXPECTED_TOKENS.copy() + [
-        CUSTOM_TOKEN3,
+        USER_TOKEN3,
         EvmToken.initialize(
             address=underlying_address4,
             chain=ChainID.ETHEREUM,
@@ -292,9 +292,9 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-@pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
-def test_editing_custom_tokens(rotkehlchen_api_server):
-    """Test that the endpoint for editing a custom ethereum token works"""
+@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
+def test_editing_user_tokens(rotkehlchen_api_server):
+    """Test that the endpoint for editing a user ethereum token works"""
     new_token1 = INITIAL_TOKENS[0].serialize_all_info()
     del new_token1['identifier']
     new_name = 'Edited token'
@@ -390,9 +390,9 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-@pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
-def test_deleting_custom_tokens(rotkehlchen_api_server):
-    """Test that the endpoint for deleting a custom ethereum token works"""
+@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
+def test_deleting_user_tokens(rotkehlchen_api_server):
+    """Test that the endpoint for deleting a user ethereum token works"""
     token0_id = ethaddress_to_identifier(INITIAL_TOKENS[0].evm_address)
     token1_id = ethaddress_to_identifier(INITIAL_TOKENS[1].evm_address)
     underlying1_id = ethaddress_to_identifier(underlying_address1)
@@ -521,8 +521,8 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-@pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
-def test_custom_tokens_delete_guard(rotkehlchen_api_server):
+@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
+def test_user_tokens_delete_guard(rotkehlchen_api_server):
     """Test that deleting an owned ethereum token is guarded against"""
     user_db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     token0_id = ethaddress_to_identifier(INITIAL_TOKENS[0].evm_address)

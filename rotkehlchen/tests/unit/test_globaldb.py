@@ -60,7 +60,7 @@ bidr_asset_data = AssetData(
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
+@pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
 def test_get_ethereum_token_identifier(globaldb):
     with globaldb.conn.read_ctx() as cursor:
         assert globaldb.get_evm_token_identifier(

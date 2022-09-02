@@ -34,10 +34,10 @@ from rotkehlchen.types import EvmTokenKind, Location
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
-    """Test that the endpoint for adding a custom asset works"""
+def test_add_user_assets(rotkehlchen_api_server, globaldb):
+    """Test that the endpoint for adding a user asset works"""
 
-    custom1 = {
+    user_asset1 = {
         'asset_type': 'own chain',
         'name': 'foo token',
         'symbol': 'FOO',
@@ -48,24 +48,24 @@ def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=custom1,
+        json=user_asset1,
     )
     result = assert_proper_response_with_result(response)
-    custom1_id = result['identifier']
+    user_asset1_id = result['identifier']
 
-    data = globaldb.get_asset_data(identifier=custom1_id, form_with_incomplete_data=False)
-    assert data.identifier == custom1_id
+    data = globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False)
+    assert data.identifier == user_asset1_id
     assert data.asset_type == AssetType.OWN_CHAIN
-    assert data.name == custom1['name']
-    assert data.symbol == custom1['symbol']
-    assert data.started == custom1['started']
+    assert data.name == user_asset1['name']
+    assert data.symbol == user_asset1['symbol']
+    assert data.started == user_asset1['started']
 
-    custom2 = {
+    user_asset2 = {
         'asset_type': 'stellar token',
         'name': 'goo token',
         'symbol': 'GOO',
         'started': 6,
-        'forked': custom1_id,
+        'forked': user_asset1_id,
         'swapped_for': 'ETH',
         'coingecko': 'internet-computer',
         'cryptocompare': 'ICP',
@@ -75,21 +75,21 @@ def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=custom2,
+        json=user_asset2,
     )
     result = assert_proper_response_with_result(response)
-    custom2_id = result['identifier']
+    user_asset2_id = result['identifier']
 
-    data = globaldb.get_asset_data(identifier=custom2_id, form_with_incomplete_data=False)
-    assert data.identifier == custom2_id
+    data = globaldb.get_asset_data(identifier=user_asset2_id, form_with_incomplete_data=False)
+    assert data.identifier == user_asset2_id
     assert data.asset_type == AssetType.STELLAR_TOKEN
-    assert data.name == custom2['name']
-    assert data.symbol == custom2['symbol']
-    assert data.started == custom2['started']
-    assert data.forked == custom2['forked']
-    assert data.swapped_for == custom2['swapped_for']
-    assert data.coingecko == custom2['coingecko']
-    assert data.cryptocompare == custom2['cryptocompare']
+    assert data.name == user_asset2['name']
+    assert data.symbol == user_asset2['symbol']
+    assert data.started == user_asset2['started']
+    assert data.forked == user_asset2['forked']
+    assert data.swapped_for == user_asset2['swapped_for']
+    assert data.coingecko == user_asset2['coingecko']
+    assert data.cryptocompare == user_asset2['cryptocompare']
 
     # try to add a token type/name/symbol combo that exists
     bad_asset = {
@@ -110,7 +110,7 @@ def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
     )
-    # try to add an ethereum token with the custom asset endpoint
+    # try to add an ethereum token with the user asset endpoint
     bad_asset = {
         'asset_type': 'evm token',
         'name': 'Euro',
@@ -196,10 +196,10 @@ def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
-    """Test that the endpoint for editing a custom asset works"""
+def test_editing_user_assets(rotkehlchen_api_server, globaldb):
+    """Test that the endpoint for editing user assets works"""
 
-    custom1 = {
+    user_asset1 = {
         'asset_type': 'own chain',
         'name': 'foo token',
         'symbol': 'FOO',
@@ -210,25 +210,25 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=custom1,
+        json=user_asset1,
     )
     result = assert_proper_response_with_result(response)
-    custom1_id = result['identifier']
+    user_asset1_id = result['identifier']
 
-    data = globaldb.get_asset_data(identifier=custom1_id, form_with_incomplete_data=False)
-    assert data.identifier == custom1_id
+    data = globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False)
+    assert data.identifier == user_asset1_id
     assert data.asset_type == AssetType.OWN_CHAIN
-    assert data.name == custom1['name']
-    assert data.symbol == custom1['symbol']
-    assert data.started == custom1['started']
+    assert data.name == user_asset1['name']
+    assert data.symbol == user_asset1['symbol']
+    assert data.started == user_asset1['started']
 
-    custom1_v2 = {
-        'identifier': custom1_id,
+    user_asset1_v2 = {
+        'identifier': user_asset1_id,
         'asset_type': 'stellar token',
         'name': 'goo token',
         'symbol': 'GOO',
         'started': 6,
-        'forked': custom1_id,
+        'forked': user_asset1_id,
         'swapped_for': 'ETH',
         'coingecko': 'internet-computer',
         'cryptocompare': 'ICP',
@@ -238,21 +238,21 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=custom1_v2,
+        json=user_asset1_v2,
     )
     result = assert_proper_response_with_result(response)
     assert result is True
 
-    data = globaldb.get_asset_data(identifier=custom1_id, form_with_incomplete_data=False)
-    assert data.identifier == custom1_id
+    data = globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False)
+    assert data.identifier == user_asset1_id
     assert data.asset_type == AssetType.STELLAR_TOKEN
-    assert data.name == custom1_v2['name']
-    assert data.symbol == custom1_v2['symbol']
-    assert data.started == custom1_v2['started']
-    assert data.forked == custom1_v2['forked']
-    assert data.swapped_for == custom1_v2['swapped_for']
-    assert data.coingecko == custom1_v2['coingecko']
-    assert data.cryptocompare == custom1_v2['cryptocompare']
+    assert data.name == user_asset1_v2['name']
+    assert data.symbol == user_asset1_v2['symbol']
+    assert data.started == user_asset1_v2['started']
+    assert data.forked == user_asset1_v2['forked']
+    assert data.swapped_for == user_asset1_v2['swapped_for']
+    assert data.coingecko == user_asset1_v2['coingecko']
+    assert data.cryptocompare == user_asset1_v2['cryptocompare']
 
     # try to edit an asset with a non-existing identifier
     bad_asset = {
@@ -274,7 +274,7 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
     )
-    # try to edit an ethereum token with the custom asset endpoint
+    # try to edit an ethereum token with the user asset endpoint
     bad_asset = {
         'identifier': 'EUR',
         'asset_type': 'evm token',
@@ -364,10 +364,10 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
-    """Test that the endpoint for deleting a custom asset works"""
+def test_deleting_user_assets(rotkehlchen_api_server, globaldb):
+    """Test that the endpoint for deleting a user asset works"""
 
-    custom1 = {
+    user_asset1 = {
         'asset_type': 'own chain',
         'name': 'foo token',
         'symbol': 'FOO',
@@ -378,17 +378,17 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=custom1,
+        json=user_asset1,
     )
     result = assert_proper_response_with_result(response)
-    custom1_id = result['identifier']
+    user_asset1_id = result['identifier']
 
-    custom2 = {
+    user_asset2 = {
         'asset_type': 'stellar token',
         'name': 'goo token',
         'symbol': 'GOO',
         'started': 6,
-        'forked': custom1_id,
+        'forked': user_asset1_id,
         'swapped_for': 'ETH',
         'coingecko': 'internet-computer',
         'cryptocompare': 'ICP',
@@ -398,12 +398,12 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=custom2,
+        json=user_asset2,
     )
     result = assert_proper_response_with_result(response)
-    custom2_id = result['identifier']
+    user_asset2_id = result['identifier']
 
-    custom3 = {
+    user_asset3 = {
         'asset_type': 'own chain',
         'name': 'boo token',
         'symbol': 'BOO',
@@ -413,45 +413,45 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=custom3,
+        json=user_asset3,
     )
     result = assert_proper_response_with_result(response)
-    custom3_id = result['identifier']
+    user_asset3_id = result['identifier']
 
-    # Delete custom 3 and assert it works
+    # Delete user asset 3 and assert it works
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json={'identifier': custom3_id},
+        json={'identifier': user_asset3_id},
     )
     assert_proper_response(response)
-    assert globaldb.get_asset_data(identifier=custom3_id, form_with_incomplete_data=False) is None
+    assert globaldb.get_asset_data(identifier=user_asset3_id, form_with_incomplete_data=False) is None  # noqa: E501
 
-    # Delete custom1 and assert it works
+    # Delete user_asset1 and assert it works
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json={'identifier': custom1_id},
+        json={'identifier': user_asset1_id},
     )
     assert_proper_response(response)
-    assert globaldb.get_asset_data(identifier=custom1_id, form_with_incomplete_data=False) is None
+    assert globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False) is None  # noqa: E501
     # Also check that `forked` was updated
-    assert globaldb.get_asset_data(identifier=custom2_id, form_with_incomplete_data=False).forked is None  # noqa: E501
+    assert globaldb.get_asset_data(identifier=user_asset2_id, form_with_incomplete_data=False).forked is None  # noqa: E501
 
-    # Delete custom 2 and assert it works
+    # Delete user asset 2 and assert it works
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json={'identifier': custom2_id},
+        json={'identifier': user_asset2_id},
     )
     assert_proper_response(response)
-    assert globaldb.get_asset_data(identifier=custom2_id, form_with_incomplete_data=False) is None
+    assert globaldb.get_asset_data(identifier=user_asset2_id, form_with_incomplete_data=False) is None  # noqa: E501
 
     # Make sure that deleting unknown asset is detected
     response = requests.delete(
@@ -471,10 +471,10 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_custom_asset_delete_guard(rotkehlchen_api_server):
+def test_user_asset_delete_guard(rotkehlchen_api_server):
     """Test that deleting an owned asset is guarded against"""
     user_db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
-    custom1 = {
+    user_asset1 = {
         'asset_type': 'own chain',
         'name': 'foo token',
         'symbol': 'FOO',
@@ -485,14 +485,14 @@ def test_custom_asset_delete_guard(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=custom1,
+        json=user_asset1,
     )
     result = assert_proper_response_with_result(response)
-    custom1_id = result['identifier']
+    user_asset1_id = result['identifier']
     with user_db.user_write() as cursor:
         user_db.add_manually_tracked_balances(cursor, [ManuallyTrackedBalance(
             id=-1,
-            asset=Asset(custom1_id),
+            asset=Asset(user_asset1_id),
             label='manual1',
             amount=ONE,
             location=Location.EXTERNAL,
@@ -506,7 +506,7 @@ def test_custom_asset_delete_guard(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json={'identifier': custom1_id},
+        json={'identifier': user_asset1_id},
     )
     expected_msg = 'Failed to delete asset with id'
     assert_error_response(
@@ -540,7 +540,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     cursor = rotki.data.db.conn.cursor()
-    custom1 = {
+    user_asset1 = {
         'asset_type': 'own chain',
         'name': 'Dfinity token',
         'symbol': 'ICP',
@@ -551,16 +551,16 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=custom1,
+        json=user_asset1,
     )
     result = assert_proper_response_with_result(response)
-    custom1_id = result['identifier']
+    user_asset1_id = result['identifier']
 
     if only_in_globaldb:
-        cursor.execute('DELETE FROM assets where identifier=?', (custom1_id,))
+        cursor.execute('DELETE FROM assets where identifier=?', (user_asset1_id,))
 
     balances: List[Dict[str, Any]] = [{
-        'asset': custom1_id,
+        'asset': user_asset1_id,
         'label': 'ICP account',
         'amount': '50.315',
         'location': 'blockchain',
@@ -584,11 +584,11 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
     global_cursor = globaldb.conn.cursor()
     if not only_in_globaldb:
         assert global_cursor.execute(
-            'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (custom1_id,),
+            'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (user_asset1_id,),
         ).fetchone()[0] == 1
-        # check the custom asset is in user db
+        # check the user asset asset is in user db
         assert cursor.execute(
-            'SELECT COUNT(*) FROM assets WHERE identifier=?', (custom1_id,),
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (user_asset1_id,),
         ).fetchone()[0] == 1
         # Check that the manual balance is returned
         response = requests.get(
@@ -601,7 +601,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
         assert result['balances'] == expected_balances
         assert cursor.execute(
             'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?;',
-            (custom1_id,),
+            (user_asset1_id,),
         ).fetchone()[0] == 1
 
     response = requests.put(
@@ -609,7 +609,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
             rotkehlchen_api_server,
             'assetsreplaceresource',
         ),
-        json={'source_identifier': custom1_id, 'target_asset': 'ICP'},
+        json={'source_identifier': user_asset1_id, 'target_asset': 'ICP'},
     )
     assert_simple_ok_response(response)
 
@@ -626,14 +626,14 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
         assert result['balances'] == expected_balances
         # check the previous asset is not in userdb anymore
         assert cursor.execute(
-            'SELECT COUNT(*) FROM assets WHERE identifier=?', (custom1_id,),
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (user_asset1_id,),
         ).fetchone()[0] == 0
         assert cursor.execute(
             'SELECT COUNT(*) FROM assets WHERE identifier=?', ('ICP',),
         ).fetchone()[0] == 1
         assert cursor.execute(
             'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?;',
-            (custom1_id,),
+            (user_asset1_id,),
         ).fetchone()[0] == 0
         assert cursor.execute(
             'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?;',
@@ -642,11 +642,11 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
 
     # check the previous asset is not in globaldb owned assets
     assert global_cursor.execute(
-        'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (custom1_id,),
+        'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (user_asset1_id,),
     ).fetchone()[0] == 0
     # check the previous asset is not in globaldb
     assert global_cursor.execute(
-        'SELECT COUNT(*) FROM assets WHERE identifier=?', (custom1_id,),
+        'SELECT COUNT(*) FROM assets WHERE identifier=?', (user_asset1_id,),
     ).fetchone()[0] == 0
 
 
@@ -826,8 +826,8 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('with_custom_path', [False, True])
-def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_custom_path):
-    """Test that the endpoint for exporting custom assets works correctly"""
+def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custom_path):
+    """Test that the endpoint for exporting user assets works correctly"""
     eth_address = make_ethereum_address()
     identifier = ethaddress_to_identifier(eth_address)
     globaldb.add_asset(
@@ -901,8 +901,8 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_cus
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('method', ['post', 'put'])
 @pytest.mark.parametrize('file_type', ['zip', 'json'])
-def test_importing_custom_assets_list(rotkehlchen_api_server, method, file_type):
-    """Test that the endpoint for importing custom assets works correctly"""
+def test_importing_user_assets_list(rotkehlchen_api_server, method, file_type):
+    """Test that the endpoint for importing user assets works correctly"""
     dir_path = Path(__file__).resolve().parent.parent
     if file_type == 'zip':
         filepath = dir_path / 'data' / 'exported_assets.zip'
