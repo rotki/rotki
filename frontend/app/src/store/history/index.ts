@@ -388,12 +388,12 @@ export const useTrades = defineStore('history/trades', () => {
   };
 
   const deleteExternalTrade = async (
-    tradeId: string
+    tradesIds: string[]
   ): Promise<ActionStatus> => {
     let success = false;
     let message = '';
     try {
-      success = await api.history.deleteExternalTrade(tradeId);
+      success = await api.history.deleteExternalTrade(tradesIds);
     } catch (e: any) {
       message = e.message;
     }
@@ -1095,12 +1095,12 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
   };
 
   const deleteLedgerAction = async (
-    identifier: number
+    identifiers: number[]
   ): Promise<ActionStatus> => {
     let success = false;
     let message = '';
     try {
-      success = await api.history.deleteLedgerAction(identifier);
+      success = await api.history.deleteLedgerAction(identifiers);
     } catch (e: any) {
       message = e.message;
     }

@@ -109,10 +109,10 @@ export class HistoryApi {
       .then(handleResponse);
   }
 
-  async deleteExternalTrade(tradeId: string): Promise<boolean> {
+  async deleteExternalTrade(tradesIds: string[]): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>('/trades', {
-        data: axiosSnakeCaseTransformer({ tradeId }),
+        data: axiosSnakeCaseTransformer({ tradesIds }),
         validateStatus: validStatus
       })
       .then(handleResponse);
@@ -302,10 +302,10 @@ export class HistoryApi {
       .then(handleResponse);
   }
 
-  async deleteLedgerAction(identifier: number): Promise<boolean> {
+  async deleteLedgerAction(identifiers: number[]): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>('/ledgeractions', {
-        data: axiosSnakeCaseTransformer({ identifier }),
+        data: axiosSnakeCaseTransformer({ identifiers }),
         validateStatus: validStatus
       })
       .then(handleResponse);

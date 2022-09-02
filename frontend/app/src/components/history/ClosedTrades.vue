@@ -27,11 +27,26 @@
       </template>
       <template #actions>
         <v-row v-if="!locationOverview">
-          <v-col cols="12" sm="6">
-            <ignore-buttons
-              :disabled="selected.length === 0 || loading"
-              @ignore="ignore"
-            />
+          <v-col cols="12" md="6">
+            <v-row>
+              <v-col cols="auto">
+                <ignore-buttons
+                  :disabled="selected.length === 0 || loading"
+                  @ignore="ignore"
+                />
+              </v-col>
+              <v-col>
+                <v-btn
+                  text
+                  outlined
+                  color="red"
+                  :disabled="selected.length === 0"
+                  @click="massDelete"
+                >
+                  <v-icon> mdi-delete-outline </v-icon>
+                </v-btn>
+              </v-col>
+            </v-row>
             <div v-if="selected.length > 0" class="mt-2 ms-1">
               {{ tc('closed_trades.selected', 0, { count: selected.length }) }}
               <v-btn small text @click="selected = []">
@@ -39,8 +54,8 @@
               </v-btn>
             </div>
           </v-col>
-          <v-col cols="12" sm="6">
-            <div class="pb-sm-8">
+          <v-col cols="12" md="6">
+            <div class="pb-md-8">
               <table-filter
                 :matchers="matchers"
                 @update:matches="updateFilter($event)"
@@ -181,11 +196,11 @@
       />
     </big-dialog>
     <confirm-dialog
-      :display="tradeToDelete !== null"
+      :display="tradesToDelete.length > 0"
       :title="tc('closed_trades.confirmation.title')"
       confirm-type="warning"
       :message="confirmationMessage"
-      @cancel="tradeToDelete = null"
+      @cancel="tradesToDelete = []"
       @confirm="deleteTradeHandler()"
     />
   </fragment>
@@ -256,7 +271,7 @@ const dialogTitle: Ref<string> = ref('');
 const dialogSubtitle: Ref<string> = ref('');
 const openDialog: Ref<boolean> = ref(false);
 const editableItem: Ref<TradeEntry | null> = ref(null);
-const tradeToDelete: Ref<TradeEntry | null> = ref(null);
+const tradesToDelete: Ref<TradeEntry[]> = ref([]);
 const confirmationMessage: Ref<string> = ref('');
 const expanded: Ref<TradeEntry[]> = ref([]);
 const valid: Ref<boolean> = ref(false);
@@ -389,22 +404,47 @@ const promptForDelete = (trade: TradeEntry) => {
       amount: trade.amount
     })
   );
-  set(tradeToDelete, trade);
+  set(tradesToDelete, [trade]);
 };
 
-const deleteTradeHandler = async () => {
-  if (!get(tradeToDelete)) {
+const massDelete = () => {
+  const selectedVal = get(selected);
+  if (selectedVal.length === 1) {
+    promptForDelete(selectedVal[0]);
     return;
   }
 
-  const { success } = await deleteExternalTrade(get(tradeToDelete)!.tradeId!);
+  set(tradesToDelete, [...selectedVal]);
+
+  set(
+    confirmationMessage,
+    tc('closed_trades.confirmation.multiple_message', 0, {
+      length: get(tradesToDelete).length
+    })
+  );
+};
+
+const deleteTradeHandler = async () => {
+  const tradesToDeleteVal = get(tradesToDelete);
+  if (tradesToDeleteVal.length === 0) {
+    return;
+  }
+
+  const ids = tradesToDeleteVal.map(trade => trade.tradeId);
+  const { success } = await deleteExternalTrade(ids);
 
   if (!success) {
     return;
   }
 
-  set(tradeToDelete, null);
+  set(tradesToDelete, []);
   set(confirmationMessage, '');
+
+  const selectedVal = [...get(selected)];
+  set(
+    selected,
+    selectedVal.filter(trade => !ids.includes(trade.tradeId))
+  );
 };
 
 const clearDialog = () => {
