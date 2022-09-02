@@ -15,7 +15,6 @@ import {
   balancerApi,
   balancesApi,
   compoundApi,
-  dexTradeApi,
   statisticsApi,
   sushiApi,
   userSettings,
@@ -67,7 +66,6 @@ const data = (): DataUtilities => ({
   balances: balancesApi(),
   balancer: balancerApi(),
   compound: compoundApi(),
-  dexTrades: dexTradeApi(),
   sushi: sushiApi(),
   utils: utilsApi()
 });

@@ -7,7 +7,6 @@ import {
   BalancerApi,
   BalancesApi,
   CompoundApi,
-  DexTradesApi,
   StatisticsApi,
   SushiApi,
   UserSettingsApi,
@@ -32,8 +31,6 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useCompoundStore } from '@/store/defi/compound';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
-import { useDexTradesStore } from '@/store/defi/trades';
-import { useUniswapStore } from '@/store/defi/uniswap';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -159,19 +156,6 @@ export const compoundApi = (): CompoundApi => {
     compoundDebtLoss: debtLoss as ProfitLossRef,
     compoundLiquidationProfit: liquidationProfit as ProfitLossRef,
     compoundInterestProfit: interestProfit as ProfitLossRef
-  };
-};
-
-export const dexTradeApi = (): DexTradesApi => {
-  const store = useDexTradesStore();
-  const { fetchTrades: fetchUniswapTrades } = useUniswapStore();
-  const { fetchTrades: fetchSushiswapTrades } = useSushiswapStore();
-  const { fetchTrades: fetchBalancerTrades } = useBalancerStore();
-  return {
-    dexTrades: addresses => store.dexTrades(addresses),
-    fetchBalancerTrades,
-    fetchSushiswapTrades,
-    fetchUniswapTrades
   };
 };
 

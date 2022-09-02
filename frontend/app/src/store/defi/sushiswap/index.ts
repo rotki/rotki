@@ -8,11 +8,9 @@ import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import {
-  dexTradeNumericKeys,
   uniswapEventsNumericKeys,
   uniswapNumericKeys
 } from '@/store/defi/const';
-import { DexTrades } from '@/store/defi/types';
 import {
   getBalances,
   getEventDetails,
@@ -29,7 +27,6 @@ import { uniqueStrings } from '@/utils/data';
 export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   const balances = ref<XswapBalances>({}) as Ref<XswapBalances>;
   const events = ref<XswapEvents>({});
-  const trades = ref<DexTrades>({});
 
   const isPremium = getPremium();
   const { activeModules } = useModules();
@@ -91,48 +88,6 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     await fetchSupportedAssets(true);
   }
 
-  async function fetchTrades(refresh: boolean = false) {
-    const meta: TaskMeta = {
-      title: i18n.t('actions.defi.sushiswap_trades.task.title').toString(),
-      numericKeys: dexTradeNumericKeys
-    };
-
-    const onError: OnError = {
-      title: i18n.t('actions.defi.sushiswap_trades.error.title').toString(),
-      error: message =>
-        i18n
-          .t('actions.defi.sushiswap_trades.error.description', {
-            message
-          })
-          .toString()
-    };
-
-    await fetchDataAsync(
-      {
-        task: {
-          type: TaskType.SUSHISWAP_TRADES,
-          section: Section.DEFI_SUSHISWAP_TRADES,
-          meta,
-          query: async () => await api.defi.fetchSushiswapTrades(),
-          onError
-        },
-        state: {
-          isPremium,
-          activeModules
-        },
-        requires: {
-          module: Module.SUSHISWAP,
-          premium: true
-        },
-
-        refresh
-      },
-      trades
-    );
-
-    await fetchSupportedAssets(true);
-  }
-
   async function fetchEvents(refresh: boolean = false) {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.sushiswap_events.task.title').toString(),
@@ -185,14 +140,12 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   return {
     balances,
     events,
-    trades,
     addresses,
     pools,
     balanceList,
     eventList,
     poolProfit,
     fetchBalances,
-    fetchTrades,
     fetchEvents,
     reset
   };

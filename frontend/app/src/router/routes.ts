@@ -132,11 +132,6 @@ export const routesRef = computed(() => ({
       .t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap')
       .toString()
   },
-  DEFI_DEX_TRADES: {
-    route: '/defi/dex-trades',
-    icon: 'mdi-shuffle-variant',
-    text: i18n.t('navigation_menu.defi_sub.dex_trades').toString()
-  },
   DEFI_AIRDROPS: {
     route: '/defi/airdrops',
     icon: 'mdi-parachute',

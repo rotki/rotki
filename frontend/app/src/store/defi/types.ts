@@ -6,7 +6,6 @@ import {
   AaveHistoryEvents,
   AaveHistoryTotal
 } from '@rotki/common/lib/defi/aave';
-import { DexTrade } from '@rotki/common/lib/defi/dex';
 import {
   CollateralAssetType,
   DefiBalanceType,
@@ -250,8 +249,4 @@ interface DefiProtocolData {
 
 export interface AllDefiProtocols {
   readonly [asset: string]: DefiProtocolData[];
-}
-
-export interface DexTrades {
-  readonly [address: string]: DexTrade[];
 }

@@ -231,10 +231,6 @@ export default new Router({
             import('../views/defi/DecentralizedBorrowing.vue')
         },
         {
-          path: Routes.DEFI_DEX_TRADES.route,
-          component: async () => import('../views/defi/DexTrades.vue')
-        },
-        {
           path: Routes.DEFI_AIRDROPS.route,
           component: async () => import('../views/defi/Airdrops.vue')
         }

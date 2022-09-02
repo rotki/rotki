@@ -116,10 +116,6 @@ export const Eth2Staking = () => {
   return createFactory(load('Eth2Staking'));
 };
 
-export const DexTradesTable = () => {
-  return createFactory(load('DexTradesTable'));
-};
-
 export const UniswapDetails = () => {
   return createFactory(load('UniswapDetails'));
 };
