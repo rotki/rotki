@@ -17,7 +17,7 @@ env:
 jobs:
   create_draft:
     name: Create Draft
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
@@ -318,7 +318,7 @@ jobs:
 
   docker:
     name: 'Build docker images'
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     environment: docker
     steps:
       - name: Checkout

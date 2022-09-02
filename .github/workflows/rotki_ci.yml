@@ -168,7 +168,8 @@ jobs:
     timeout-minutes: 60
     env:
       CI: true
-    runs-on: ubuntu-18.04
+    environment: test
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -204,7 +205,8 @@ jobs:
     if: |
       contains(needs.check-changes.outputs.frontend_tasks, true) ||
       contains(needs.check-changes.outputs.backend_tasks, true)
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
+    environment: test
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -248,6 +250,7 @@ jobs:
         uses: cypress-io/github-action@v2
         env:
           ARGS: "--browser chrome"
+          CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
         with:
           install: false
           command: npm run test:integration-ci
