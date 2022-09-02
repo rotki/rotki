@@ -47,7 +47,7 @@ export const SupportedAsset = BaseAsset.extend({
   decimals: z.number().nullish(),
   assetType: z.string(),
   forked: z.string().nullish(),
-  evmAddress: z.string().nullish(),
+  address: z.string().nullish(),
 })
 
 export type SupportedAsset = z.infer<typeof SupportedAsset>;

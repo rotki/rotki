@@ -66,8 +66,47 @@ export const useBlockchainBalancesStore = defineStore(
 
     const loopringBalancesState: Ref<AccountAssetBalances> = ref({});
 
-    const blockchainTotalsState: Ref<AssetBalances> = ref({});
-    const blockchainLiabilitiesState: Ref<AssetBalances> = ref({});
+    const defaultTotals = () => ({
+      ETH: {},
+      ETH2: {},
+      BTC: {},
+      BCH: {},
+      KSM: {},
+      DOT: {},
+      AVAX: {}
+    });
+
+    const blockchainTotalsState = ref<Record<Blockchain, AssetBalances>>(
+      defaultTotals()
+    );
+
+    const blockchainLiabilitiesState = ref<Record<Blockchain, AssetBalances>>(
+      defaultTotals()
+    );
+
+    const aggregatedBlockchainTotals = computed<AssetBalances>(() => {
+      const totals = get(blockchainTotalsState);
+
+      let result = {};
+
+      Object.values(totals).forEach(item => {
+        result = { ...result, ...item };
+      });
+
+      return result;
+    });
+
+    const aggregatedBlockchainLiabilities = computed<AssetBalances>(() => {
+      const totals = get(blockchainLiabilitiesState);
+
+      let result = {};
+
+      Object.values(totals).forEach(item => {
+        result = { ...result, ...item };
+      });
+
+      return result;
+    });
 
     const { awaitTask } = useTasks();
     const { notify } = useNotifications();
@@ -121,7 +160,9 @@ export const useBlockchainBalancesStore = defineStore(
           taskType,
           {
             chain,
-            title: `Query ${chain} Balances`,
+            title: i18n.tc('actions.balances.blockchain.task.title', 0, {
+              chain
+            }),
             numericKeys: []
           } as BlockchainMetadata,
           true
@@ -202,28 +243,44 @@ export const useBlockchainBalancesStore = defineStore(
       setStatus(Status.LOADED, section);
     };
 
-    const updateBlockchainTotalsState = (payload: AssetBalances) => {
-      const totals = { ...get(blockchainTotalsState), ...payload };
+    const updateBlockchainTotalsState = (
+      chain: Blockchain,
+      payload: AssetBalances
+    ) => {
+      const totals = { ...payload };
 
       for (const asset in totals) {
         if (totals[asset].amount.isZero()) delete totals[asset];
       }
 
-      set(blockchainTotalsState, totals);
+      const totalsState = {
+        ...get(blockchainTotalsState),
+        [chain]: totals
+      };
+
+      set(blockchainTotalsState, totalsState);
     };
 
-    const updateBlockchainLiabilitiesState = (payload: AssetBalances) => {
-      const totals = { ...get(blockchainLiabilitiesState), ...payload };
+    const updateBlockchainLiabilitiesState = (
+      chain: Blockchain,
+      payload: AssetBalances
+    ) => {
+      const totals = { ...payload };
 
       for (const asset in totals) {
         if (totals[asset].amount.isZero()) delete totals[asset];
       }
 
-      set(blockchainLiabilitiesState, totals);
+      const liabilitiesState = {
+        ...get(blockchainLiabilitiesState),
+        [chain]: liabilities
+      };
+
+      set(blockchainLiabilitiesState, liabilitiesState);
     };
 
     const updateBlockchainBalances = async (payload: {
-      chain?: Blockchain;
+      chain: Blockchain;
       balances: BlockchainBalances;
       ignoreCache?: boolean;
     }) => {
@@ -259,7 +316,7 @@ export const useBlockchainBalancesStore = defineStore(
       ];
 
       updateList.forEach(list => {
-        if (!chain || chain === list.blockchain) {
+        if (chain === list.blockchain) {
           set(
             list.state,
             perAccount[list.blockchain] ?? (list.default ? list.default() : {})
@@ -267,8 +324,8 @@ export const useBlockchainBalancesStore = defineStore(
         }
       });
 
-      updateBlockchainTotalsState(totals.assets);
-      updateBlockchainLiabilitiesState(totals.liabilities);
+      updateBlockchainTotalsState(chain, totals.assets);
+      updateBlockchainLiabilitiesState(chain, totals.liabilities);
 
       const blockchainToRefresh = chain ? [chain] : null;
       const { fetchAccounts } = useBlockchainAccountsStore();
@@ -277,29 +334,37 @@ export const useBlockchainBalancesStore = defineStore(
 
     const adjustBlockchainPrices = async () => {
       const updateTotalsPrices = (
-        state: Ref<AssetBalances>,
-        update: (payload: AssetBalances) => any
+        state: Ref<Record<Blockchain, AssetBalances>>
       ) => {
-        const clonedState = cloneDeep(get(state));
-        for (const asset in clonedState) {
-          const assetPrice = get(prices)[asset];
-          if (!assetPrice) {
-            continue;
-          }
-          clonedState[asset] = {
-            amount: clonedState[asset].amount,
-            usdValue: clonedState[asset].amount.times(assetPrice)
-          };
-        }
+        for (const chain in get(state)) {
+          const balances = get(state)[chain as Blockchain];
+          for (const asset in balances) {
+            const assetPrice = get(prices)[asset];
+            if (!assetPrice) {
+              continue;
+            }
 
-        update(clonedState);
+            const oldState = get(state);
+            const newChain = {
+              ...oldState[chain as Blockchain],
+              [asset]: {
+                amount: balances[asset].amount,
+                usdValue: balances[asset].amount.times(assetPrice)
+              }
+            };
+
+            const newState = {
+              ...oldState,
+              [chain]: newChain
+            };
+
+            set(state, newState);
+          }
+        }
       };
 
-      updateTotalsPrices(blockchainTotalsState, updateBlockchainTotalsState);
-      updateTotalsPrices(
-        blockchainLiabilitiesState,
-        updateBlockchainLiabilitiesState
-      );
+      updateTotalsPrices(blockchainTotalsState);
+      updateTotalsPrices(blockchainLiabilitiesState);
 
       const updateDefaultBlockchainPrices = (
         state: Ref<BlockchainAssetBalances>
@@ -365,21 +430,24 @@ export const useBlockchainBalancesStore = defineStore(
       computed<AssetBalance[]>(() => {
         const ownedAssets: Record<string, Balance> = {};
 
-        forEach(get(blockchainTotalsState), (value: Balance, asset: string) => {
-          const associatedAsset: string = get(
-            getAssociatedAssetIdentifier(asset)
-          );
+        forEach(
+          get(aggregatedBlockchainTotals),
+          (value: Balance, asset: string) => {
+            const associatedAsset: string = get(
+              getAssociatedAssetIdentifier(asset)
+            );
 
-          const ownedAsset = ownedAssets[associatedAsset];
+            const ownedAsset = ownedAssets[associatedAsset];
 
-          ownedAssets[associatedAsset] = !ownedAsset
-            ? {
-                ...value
-              }
-            : {
-                ...balanceSum(ownedAsset, value)
-              };
-        });
+            ownedAssets[associatedAsset] = !ownedAsset
+              ? {
+                  ...value
+                }
+              : {
+                  ...balanceSum(ownedAsset, value)
+                };
+          }
+        );
 
         return Object.keys(ownedAssets)
           .filter(asset => !hideIgnored || !get(isAssetIgnored(asset)))
@@ -471,7 +539,7 @@ export const useBlockchainBalancesStore = defineStore(
         };
 
         forEach(
-          get(blockchainLiabilitiesState),
+          get(aggregatedBlockchainLiabilities),
           (balance: Balance, asset: string) => {
             addToLiabilities({ asset, ...balance });
           }
@@ -663,8 +731,8 @@ export const useBlockchainBalancesStore = defineStore(
       set(dotBalancesState, {});
       set(avaxBalancesState, {});
       set(loopringBalancesState, {});
-      set(blockchainTotalsState, {});
-      set(blockchainLiabilitiesState, {});
+      set(blockchainTotalsState, defaultTotals());
+      set(blockchainLiabilitiesState, defaultTotals());
     };
 
     return {

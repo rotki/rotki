@@ -14,6 +14,7 @@ import { bigNumberSum } from '@/filters';
 import i18n from '@/i18n';
 import {
   BlockchainAssetBalances,
+  BlockchainBalances,
   BtcBalances,
   EthDetectedTokensInfo,
   EthDetectedTokensRecord
@@ -340,7 +341,8 @@ export const useBlockchainAccountsStore = defineStore(
       loopringBalancesState
     } = storeToRefs(blockchainBalancesStore);
 
-    const { fetchBlockchainBalances } = blockchainBalancesStore;
+    const { fetchBlockchainBalances, updateBlockchainBalances } =
+      blockchainBalancesStore;
 
     const addAccounts = async ({
       blockchain,
@@ -398,7 +400,7 @@ export const useBlockchainAccountsStore = defineStore(
         blockchain: Blockchain,
         { address, label, tags, xpub }: AccountPayload,
         modules?: Module[]
-      ) => {
+      ): Promise<string> => {
         try {
           const { taskId } = await api.addBlockchainAccount({
             blockchain,
@@ -408,7 +410,7 @@ export const useBlockchainAccountsStore = defineStore(
             tags
           });
 
-          await awaitTask<boolean, BlockchainMetadata>(
+          const { result } = await awaitTask<string[], BlockchainMetadata>(
             taskId,
             taskType,
             {
@@ -436,16 +438,17 @@ export const useBlockchainAccountsStore = defineStore(
                 addresses: [address]
               });
             }
-            await fetchDetectedTokens(address);
+
+            if (result.length > 0) {
+              return result[0];
+            }
           } else {
-            await fetchBlockchainBalances({
-              blockchain,
-              ignoreCache: true
-            });
+            return '';
           }
         } catch (e) {
           logger.error(e);
         }
+        return '';
       };
 
       const requests = accountsToAdd.map(value =>
@@ -453,19 +456,45 @@ export const useBlockchainAccountsStore = defineStore(
       );
 
       try {
-        await Promise.allSettled(requests);
+        const addresses = await Promise.allSettled(requests);
         useDefiStore().reset();
         useMainStore().resetDefiStatus();
         const { refreshPrices, fetchNfBalances } = useBalancesStore();
         startPromise(fetchNfBalances());
 
-        if (blockchain === Blockchain.ETH) {
+        const postAddAccount = async () => {
+          await fetchAccounts([blockchain]);
+
+          if (blockchain === Blockchain.ETH) {
+            const fetchDetectedTokensRequests = addresses
+              .filter(
+                address => address.status === 'fulfilled' && !!address.value
+              )
+              .map(address =>
+                fetchDetectedTokens(
+                  (address as PromiseFulfilledResult<string>).value
+                )
+              );
+
+            await Promise.allSettled(fetchDetectedTokensRequests);
+          }
+
           await fetchBlockchainBalances({
-            blockchain: Blockchain.ETH2,
-            ignoreCache: false
+            blockchain,
+            ignoreCache: true
           });
-        }
-        await refreshPrices({ ignoreCache: false });
+
+          if (blockchain === Blockchain.ETH) {
+            await fetchBlockchainBalances({
+              blockchain: Blockchain.ETH2,
+              ignoreCache: false
+            });
+          }
+
+          await refreshPrices({ ignoreCache: false });
+        };
+
+        startPromise(postAddAccount());
       } catch (e: any) {
         logger.error(e);
         const title = i18n.tc(
@@ -587,7 +616,10 @@ export const useBlockchainAccountsStore = defineStore(
       );
       try {
         const taskType = TaskType.REMOVE_ACCOUNT;
-        await awaitTask<boolean, BlockchainMetadata>(taskId, taskType, {
+        const { result } = await awaitTask<
+          BlockchainBalances,
+          BlockchainMetadata
+        >(taskId, taskType, {
           title: i18n.tc(
             'actions.balances.blockchain_account_removal.task.title',
             0,
@@ -604,16 +636,13 @@ export const useBlockchainAccountsStore = defineStore(
           numericKeys: []
         } as BlockchainMetadata);
 
+        const balances = BlockchainBalances.parse(result);
+
+        await updateBlockchainBalances({ chain: blockchain, balances });
         useDefiStore().reset();
         useMainStore().resetDefiStatus();
-        const { refreshPrices, fetchNfBalances } = useBalancesStore();
+        const { fetchNfBalances } = useBalancesStore();
         await fetchNfBalances();
-
-        await fetchBlockchainBalances({
-          blockchain,
-          ignoreCache: true
-        });
-        await refreshPrices({ ignoreCache: false });
       } catch (e: any) {
         logger.error(e);
         const title = i18n.tc(
@@ -660,13 +689,16 @@ export const useBlockchainAccountsStore = defineStore(
         );
         if (result) {
           const { resetStatus } = getStatusUpdater(Section.STAKING_ETH2);
-          await fetchBlockchainBalances({
-            blockchain: Blockchain.ETH2,
-            ignoreCache: true
-          });
           resetStatus();
           resetStatus(Section.STAKING_ETH2_DEPOSITS);
           resetStatus(Section.STAKING_ETH2_STATS);
+
+          startPromise(
+            fetchBlockchainBalances({
+              blockchain: Blockchain.ETH2,
+              ignoreCache: true
+            })
+          );
         }
 
         return result;
@@ -1084,7 +1116,7 @@ export const useBlockchainAccountsStore = defineStore(
 
     const ethDetectedTokensRecord = ref<EthDetectedTokensRecord>({});
 
-    const fetchDetectedTokens = async (address?: string) => {
+    const fetchDetectedTokens = async (address: string | null = null) => {
       try {
         if (address) {
           const { awaitTask } = useTasks();
@@ -1115,13 +1147,6 @@ export const useBlockchainAccountsStore = defineStore(
           );
 
           await fetchDetectedTokens();
-
-          startPromise(
-            fetchBlockchainBalances({
-              ignoreCache: true,
-              blockchain: Blockchain.ETH
-            })
-          );
         } else {
           set(
             ethDetectedTokensRecord,

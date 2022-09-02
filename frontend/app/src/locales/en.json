@@ -212,6 +212,9 @@
         "error": {
           "description": "Error at querying blockchain balances: {error}",
           "title": "Querying blockchain balances"
+        },
+        "task": {
+          "title": "Query {chain} balances"
         }
       },
       "blockchain_account_removal": {

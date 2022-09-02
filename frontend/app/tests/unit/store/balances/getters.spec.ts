@@ -77,26 +77,29 @@ describe('balances:getters', () => {
     const { aggregatedBalances } = blockchainBalancesStore;
     const { blockchainTotalsState } = storeToRefs(blockchainBalancesStore);
 
-    const mockBlockchainTotalsState = {
-      DAI: {
-        amount: bigNumberify(100),
-        usdValue: bigNumberify(100)
-      },
-      BTC: {
-        amount: bigNumberify(100),
-        usdValue: bigNumberify(100)
-      },
+    const totalsState = {
+      ...get(blockchainTotalsState),
       ETH: {
-        amount: bigNumberify(100),
-        usdValue: bigNumberify(100)
-      },
-      SAI: {
-        amount: bigNumberify(100),
-        usdValue: bigNumberify(100)
+        DAI: {
+          amount: bigNumberify(100),
+          usdValue: bigNumberify(100)
+        },
+        BTC: {
+          amount: bigNumberify(100),
+          usdValue: bigNumberify(100)
+        },
+        ETH: {
+          amount: bigNumberify(100),
+          usdValue: bigNumberify(100)
+        },
+        SAI: {
+          amount: bigNumberify(100),
+          usdValue: bigNumberify(100)
+        }
       }
     };
 
-    set(blockchainTotalsState, mockBlockchainTotalsState);
+    set(blockchainTotalsState, totalsState);
 
     const actualResult = sortBy(get(aggregatedBalances()), 'asset');
 
