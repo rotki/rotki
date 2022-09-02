@@ -99,7 +99,11 @@ Adding new assets to rotki
 To add new assets for rotki you will have to edit `the SQL file <https://github.com/rotki/assets/tree/develop/updates>`__
 in the last update at the assets repository. SQL sentences for insertion differ depending on if we are adding an ethereum token
 or other types of assets. More information about each type of asset and columns is available at the
-`readme file <https://github.com/rotki/assets#adding-ethereum-tokens>`__.
+`readme file <https://github.com/rotki/assets#adding-evm-tokens>`__.
+
+rotki uses `CAIP-19 <https://github.com/ChainAgnostic/CAIPs/blob/master/CAIPs/caip-19.md>`__ to uniquely identify assets.
+So for example, if we wanted to refer to the Uniswap (UNI) ERC-20 token on the Ethereum mainnet chain,
+the correct identifier would be ``eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984``.
 
 Once you have finished adding assets it would be necessary to update the file containing metadata about the update. To do so run the script:
 
