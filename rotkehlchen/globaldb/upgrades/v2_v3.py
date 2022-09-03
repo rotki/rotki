@@ -491,7 +491,6 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         CREATE TABLE IF NOT EXISTS custom_assets(
             identifier TEXT NOT NULL PRIMARY KEY,
             name TEXT NOT NULL,
-            symbol TEXT,
             notes TEXT,
             type TEXT,
             FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
