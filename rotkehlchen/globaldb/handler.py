@@ -21,11 +21,7 @@ from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import CONSTANT_ASSETS
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
-from rotkehlchen.constants.resolver import (
-    ChainID,
-    evm_address_to_identifier,
-    identifier_to_address_chain,
-)
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -136,38 +132,44 @@ class GlobalDBHandler():
         If it's a custom asset the data should be typed. As given in by marshmallow.
 
         May raise InputError in case of error, meaning asset exists or some constraint hit"""
+        if asset_type == AssetType.EVM_TOKEN:
+            token = cast(EvmToken, data)
+            forked_asset = token.forked
+            name = token.name
+            symbol = token.symbol
+            started = token.started
+            swapped_for = token.swapped_for.identifier if token.swapped_for else None
+            coingecko = token.coingecko
+            cryptocompare = token.cryptocompare
+        else:
+            token = None
+            data = cast(Dict[str, Any], data)
+            forked_asset = data.get('forked', None)
+            # The data should already be typed (as given in by marshmallow)
+            name = data.get('name', None)
+            symbol = data.get('symbol', None)
+            started = data.get('started', None)
+            swapped_for_asset = data.get('swapped_for', None)
+            swapped_for = swapped_for_asset.identifier if swapped_for_asset else None
+            coingecko = data.get('coingecko', None)
+            cryptocompare = data.get('cryptocompare', '')
 
-        details_id: Union[str, ChecksumEvmAddress]
-        forked = None
-        if isinstance(data, EvmToken) and data.forked is not None:
-            forked = data.forked.identifier
-        elif isinstance(data, dict) and (forked_asset := data.get('forked')) is not None:
-            forked = forked_asset.identifier
-
+        forked = forked_asset.identifier if forked_asset is not None else None
         try:
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                if asset_type == AssetType.EVM_TOKEN:
-                    token = cast(EvmToken, data)
-                    GlobalDBHandler().add_evm_token_data(write_cursor, token)
-                    details_id = token.evm_address
-                    name = token.name
-                    symbol = token.symbol
-                    started = token.started
-                    swapped_for = token.swapped_for.identifier if token.swapped_for else None
-                    coingecko = token.coingecko
-                    cryptocompare = token.cryptocompare
-                else:
-                    details_id = asset_id
-                    data = cast(Dict[str, Any], data)
-                    # The data should already be typed (as given in by marshmallow)
-                    name = data.get('name', None)
-                    symbol = data.get('symbol', None)
-                    started = data.get('started', None)
-                    swapped_for_asset = data.get('swapped_for', None)
-                    swapped_for = swapped_for_asset.identifier if swapped_for_asset else None
-                    coingecko = data.get('coingecko', None)
-                    cryptocompare = data.get('cryptocompare', '')
-
+                write_cursor.execute(
+                    'INSERT INTO assets('
+                    'identifier, type, started, swapped_for) '
+                    'VALUES(?, ?, ?, ?);',
+                    (
+                        asset_id,
+                        asset_type.serialize_for_db(),
+                        started,
+                        swapped_for,
+                    ),
+                )
+                if token is not None:
+                    GlobalDBHandler.add_evm_token_data(write_cursor, token)
                 write_cursor.execute(
                     'INSERT INTO common_asset_details(identifier, name, symbol, coingecko, '
                     'cryptocompare, forked) VALUES(?, ?, ?, ?, ?, ?);',
@@ -180,20 +182,9 @@ class GlobalDBHandler():
                         forked,
                     ),
                 )
-                write_cursor.execute(
-                    'INSERT INTO assets('
-                    'identifier, type, started, swapped_for) '
-                    'VALUES(?, ?, ?, ?);',
-                    (
-                        asset_id,
-                        asset_type.serialize_for_db(),
-                        started,
-                        swapped_for,
-                    ),
-                )
         except sqlite3.IntegrityError as e:
             raise InputError(
-                f'Failed to add asset {asset_id} into the assets table for details id {details_id} due to {str(e)}',  # noqa: E501
+                f'Failed to add asset {asset_id} into the assets table due to {str(e)}',
             ) from e
 
     @overload
@@ -406,6 +397,11 @@ class GlobalDBHandler():
                 try:  # underlying token does not exist. Track it
                     asset_id = underlying_token.get_identifier(parent_chain=chain)
                     write_cursor.execute(
+                        """INSERT INTO assets(identifier, type, started, swapped_for)
+                        VALUES(?, ?, ?, ?)""",
+                        (asset_id, AssetType.EVM_TOKEN.serialize_for_db(), None, None),
+                    )
+                    write_cursor.execute(
                         'INSERT INTO evm_tokens(identifier, address, chain, token_kind)'
                         'VALUES(?, ?, ?, ?)',
                         (
@@ -414,11 +410,6 @@ class GlobalDBHandler():
                             chain.serialize_for_db(),
                             underlying_token.token_kind.serialize_for_db(),
                         ),
-                    )
-                    write_cursor.execute(
-                        """INSERT INTO assets(identifier, type, started, swapped_for)
-                        VALUES(?, ?, ?, ?)""",
-                        (asset_id, chain.serialize_for_db(), None, None),
                     )
                     write_cursor.execute(
                         """INSERT INTO common_asset_details(identifier, name, symbol,
@@ -626,10 +617,10 @@ class GlobalDBHandler():
                 # should not really happen since API should check for this
                 msg = (
                     f'Ethereum token with address {entry.evm_address} can not be put '
-                    f'in the DB due to swapped for entry not existing'
+                    f'in the DB due to asset with identifier {entry.identifier} dosent exist'
                 )
             else:
-                msg = f'Ethereum token with address {entry.evm_address} already exists in the DB'  # noqa: E501
+                msg = f'Ethereum token with identifier {entry.identifier} already exists in the DB'  # noqa: E501
             raise InputError(msg) from e
 
         if entry.underlying_tokens is not None:
@@ -724,14 +715,8 @@ class GlobalDBHandler():
     ) -> str:
         """Deletes an EVM token from the global DB
 
-        May raise InputError if the token does not exist in the DB or
-        some other constraint is hit. Such as for example trying to delete
-        a token that is in another token's underlying tokens list.
+        May raise InputError if the token does not exist in the DB.
         """
-        missing_token_err_msg = (
-            f'Tried to delete EVM token with address {address} at chain {chain} '
-            f'but it was not found in the DB',
-        )
         # first get the identifier for the asset
         write_cursor.execute(
             'SELECT identifier from evm_tokens WHERE address=? AND chain=?',
@@ -739,47 +724,12 @@ class GlobalDBHandler():
         )
         result = write_cursor.fetchone()
         if result is None:
-            raise InputError(missing_token_err_msg)
+            raise InputError(
+                f'Tried to delete EVM token with address {address} at chain {chain} '
+                f'but it was not found in the DB',
+            )
         asset_identifier = result[0]
-        try:
-            write_cursor.execute(
-                'DELETE FROM evm_tokens WHERE address=? AND chain=?;',
-                (address, chain.serialize_for_db()),
-            )
-        except sqlite3.IntegrityError as e:
-            raise InputError(
-                f'Tried to delete ethereum token with address {address} '
-                f'but its deletion would violate a constraint so deletion '
-                f'failed. Make sure that this token is not already used by '
-                f'other tokens as an underlying or swapped for token or is '
-                f'not owned by any user in the same system rotki runs',
-            ) from e
-
-        affected_rows = write_cursor.rowcount
-        if affected_rows != 1:
-            raise InputError(missing_token_err_msg)
-
-        # finally delete the assets entry
-        try:
-            write_cursor.execute(
-                'DELETE FROM assets WHERE identifier=?;',
-                (asset_identifier,),
-            )
-        except sqlite3.IntegrityError as e:
-            raise InputError(
-                f'Tried to delete ethereum token with address {address} '
-                f'but its deletion would violate a constraint so deletion '
-                f'failed. Make sure that this token is not already used by '
-                f'other tokens as an underlying or swapped for token',
-            ) from e
-
-        affected_rows = write_cursor.rowcount
-        if affected_rows != 1:
-            raise InputError(
-                f'Tried to delete ethereum token with address {address} '
-                f'from the assets table but it was not found in the DB',
-            )
-
+        GlobalDBHandler().delete_asset_by_identifier(asset_identifier)
         return asset_identifier
 
     @staticmethod
@@ -840,64 +790,6 @@ class GlobalDBHandler():
                 ) from e
 
     @staticmethod
-    def add_common_asset_details(write_cursor: DBCursor, data: Dict[str, Any]) -> None:
-        """Adds a new row in common asset details
-
-        The data should already be typed (as given in by marshmallow).
-
-        May raise sqlite3.IntegrityError
-        """
-        # assuming they are already serialized
-        asset_id = data['identifier']
-        forked_asset = data.get('forked', None)
-        forked = forked_asset.identifier if forked_asset else None
-        write_cursor.execute(
-            'INSERT INTO common_asset_details(asset_id, forked)'
-            'VALUES(?, ?)',
-            (asset_id, forked),
-        )
-
-    @staticmethod
-    def delete_custom_asset(write_cursor: DBCursor, identifier: str) -> None:
-        """Deletes an asset (non-ethereum token) from the global DB
-
-        May raise InputError if the asset does not exist in the DB or
-        some other constraint is hit. Such as for example trying to delete
-        an asset that is in another asset's forked or swapped attribute
-        """
-        try:
-            write_cursor.execute(
-                'DELETE FROM assets WHERE identifier=?;',
-                (identifier,),
-            )
-            write_cursor.execute(
-                'DELETE FROM common_asset_details WHERE identifier=?;',
-                (identifier,),
-            )
-        except sqlite3.IntegrityError as e:
-            asset_data = GlobalDBHandler().get_asset_data(identifier, form_with_incomplete_data=False)  # noqa: E501
-            if asset_data is None:
-                details_str = f'asset with identifier {identifier}'
-            else:
-                details_str = (
-                    f'asset with name "{asset_data.name}" and '
-                    f'symbol "{asset_data.symbol}"'
-                )
-            raise InputError(
-                f'Tried to delete {details_str} '
-                f'but its deletion would violate a constraint so deletion '
-                f'failed. Make sure that this asset is not already used by '
-                f'other assets as a swapped_for or forked asset',
-            ) from e
-
-        affected_rows = write_cursor.rowcount
-        if affected_rows != 1:
-            raise InputError(
-                f'Tried to delete asset with identifier {identifier} '
-                f'but it was not found in the DB',
-            )
-
-    @staticmethod
     def add_user_owned_assets(assets: List['Asset']) -> None:
         """Make sure all assets in the list are included in the user owned assets
 
@@ -917,32 +809,17 @@ class GlobalDBHandler():
             )  # should not ever happen but need to handle with informative log if it does
 
     @staticmethod
-    def delete_asset_by_identifer(identifier: str, asset_type: AssetType) -> None:
+    def delete_asset_by_identifier(identifier: str) -> None:
         """Delete an asset by identifier EVEN if it's in the owned assets table
-
-        May raise InputError if there is a foreign key relation such as the asset
-        is a swapped_for or forked_for of another asset or the identifier is not correct
-        """
-        # Fail early if there is any problem with the asset identifier
-        if asset_type == AssetType.EVM_TOKEN:
-            address, chain = identifier_to_address_chain(identifier)
-
-        globaldb = GlobalDBHandler()
-        with globaldb.conn.write_ctx() as write_cursor:
-            write_cursor.execute('DELETE FROM user_owned_assets WHERE asset_id=?;', (identifier,))
-            write_cursor.execute(
-                'DELETE FROM price_history WHERE from_asset=? OR to_asset=? ;',
-                (identifier, identifier),
-            )
-
-            if asset_type == AssetType.EVM_TOKEN:
-                globaldb.delete_evm_token(
-                    write_cursor=write_cursor,
-                    address=address,
-                    chain=chain,
+         May raise:
+         - InputError if no asset with the provided identifier was found"""
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            write_cursor.execute('DELETE FROM assets WHERE identifier=?;', (identifier,))
+            if write_cursor.rowcount != 1:
+                raise InputError(
+                    f'Tried to delete asset with identifier {identifier} '
+                    f'but it was not found in the DB',
                 )
-            else:
-                globaldb.delete_custom_asset(write_cursor, identifier)
 
     @staticmethod
     def get_assets_with_symbol(
@@ -1279,17 +1156,17 @@ class GlobalDBHandler():
                         return False, msg
 
                     # If versions match drop tables
-                    write_cursor.execute('PRAGMA foreign_keys = OFF;')
-                    write_cursor.execute('DELETE FROM assets;')
-                    write_cursor.execute('DELETE FROM evm_tokens;')
-                    write_cursor.execute('DELETE FROM underlying_tokens_list;')
-                    write_cursor.execute('DELETE FROM common_asset_details;')
-                    write_cursor.execute('DELETE FROM user_owned_assets;')
+                    write_cursor.execute('DELETE FROM assets')
+                    write_cursor.execute('DELETE FROM asset_collections')
                     # Copy assets
+                    write_cursor.execute('PRAGMA foreign_keys = OFF;')
                     write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
                     write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
                     write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
                     write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+                    write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
+                    write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
+                    # Don't copy custom_assets since there are no custom assets in clean_db
                     write_cursor.execute('PRAGMA foreign_keys = ON;')
 
                     user_db_cursor.execute('PRAGMA foreign_keys = OFF;')
@@ -1340,23 +1217,18 @@ class GlobalDBHandler():
                 query = write_cursor.execute('SELECT identifier from clean_db.assets;')
                 shipped_ids = set(query.fetchall())
                 ids = ', '.join([f'"{id[0]}"' for id in shipped_ids])
-                # Get the list of ethereum tokens
-                query = write_cursor.execute('SELECT address, chain, token_kind from clean_db.evm_tokens;')  # noqa: E501
-                shipped_tokens = set(query.fetchall())
-                evm_identifiers = ', '.join([f'"{evm_address_to_identifier(address=id[0], chain=ChainID.deserialize_from_db(id[1]), token_type=EvmTokenKind.deserialize_from_db(id[2]))}"' for id in shipped_tokens])  # noqa: E501
                 # If versions match drop tables
-                write_cursor.execute('PRAGMA foreign_keys = OFF;')
                 write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({ids});')
-                write_cursor.execute(f'DELETE FROM evm_tokens WHERE address IN ({evm_identifiers});')  # noqa: E501
-                write_cursor.execute(
-                    f'DELETE FROM underlying_tokens_list WHERE identifier IN ({evm_identifiers});',
-                )
-                write_cursor.execute(f'DELETE FROM common_asset_details WHERE identifier IN ({ids});')  # noqa: E501
+                write_cursor.execute('DELETE FROM asset_collections')
                 # Copy assets
+                write_cursor.execute('PRAGMA foreign_keys = OFF;')
                 write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
-                write_cursor.execute('INSERT INTO ethereum_tokens SELECT * FROM clean_db.ethereum_tokens;')  # noqa: E501
+                write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
                 write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
                 write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+                write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
+                write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
+                # TODO: think about how to implement multiassets insertion
                 write_cursor.execute('PRAGMA foreign_keys = ON;')
         except sqlite3.Error as e:
             log.error(f'Failed to restore assets in globaldb due to {str(e)}')

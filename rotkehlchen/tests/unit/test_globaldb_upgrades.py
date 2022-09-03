@@ -14,16 +14,14 @@ ASSETS_IN_V2_GLOBALDB = 3095
 def _count_v2_v3_assets_inserted() -> int:
     """Counts and returns how many assets are to be inserted by globaldb_v2_v3_assets.sql"""
     assets_inserted_by_update = 0
-    start_counting = False
     dir_path = Path(__file__).resolve().parent.parent.parent
     with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql', 'r') as f:
         line = ' '
         while line:
             line = f.readline()
-            if start_counting:
-                assets_inserted_by_update += 1
-            if 'INSERT INTO assets' in line:
-                start_counting = True
+            assets_inserted_by_update += 1
+            if ';' in line:
+                break
 
     return assets_inserted_by_update - 1
 
@@ -82,3 +80,17 @@ def test_upgrade_v2_v3(globaldb):
             'EUR',
             'BCH',
         }
+
+        # FLO asset is the one that is not an evm token but has `swapped_for` pointing to an evm
+        # token. Here we check that its `swapped_for` field is updated properly.
+        # 1. Check that FLO asset exists
+        flo_swapped_for = cursor.execute(
+            'SELECT swapped_for FROM assets WHERE identifier="FLO"',
+        ).fetchone()
+        assert flo_swapped_for is not None
+        # 2. Check that its `swapped_for` was updated properly
+        found_assets = cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier = ?', (flo_swapped_for[0],),
+        ).fetchone()[0]
+        # should have found one asset that FLO's swapped_for is pointing to
+        assert found_assets == 1

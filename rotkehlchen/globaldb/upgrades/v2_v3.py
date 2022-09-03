@@ -243,11 +243,18 @@ def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
     for entry in result:
         if entry[0] in OTHER_EVM_CHAINS_ASSETS:
             continue
+        swapped_for = entry[5]
+        if swapped_for is not None and swapped_for.startswith(ETHEREUM_DIRECTIVE):
+            swapped_for = evm_address_to_identifier(
+                address=swapped_for[ETHEREUM_DIRECTIVE_LENGTH:],
+                chain=ChainID.ETHEREUM,
+                token_type=EvmTokenKind.ERC20,
+            )
         assets_tuple.append((
             entry[0],  # identifier
             entry[1],  # type
             entry[4],  # started
-            entry[5],  # swapped for
+            swapped_for,
         ))
         common_asset_details.append((
             entry[0],  # identifier
@@ -410,9 +417,9 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type),
             started INTEGER,
             swapped_for TEXT,
-            FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE
+            FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE SET NULL
         );
-        """)
+        """)  # noqa: E501
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS common_asset_details(
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
@@ -421,9 +428,10 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             coingecko TEXT,
             cryptocompare TEXT,
             forked TEXT,
-            FOREIGN KEY(forked) REFERENCES assets(identifier) ON UPDATE CASCADE
+            FOREIGN KEY(forked) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE SET NULL,
+            FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
         );
-        """)
+        """)  # noqa: E501
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS evm_tokens (
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
@@ -431,22 +439,22 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             chain CHAR(1) NOT NULL DEFAULT('A') REFERENCES chain_ids(chain),
             address VARCHAR[42] NOT NULL,
             decimals INTEGER,
-            protocol TEXT
+            protocol TEXT,
+            FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
         );
-        """)
+        """)  # noqa: E501
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS multiasset_collector(
-            identifier TEXT NOT NULL,
-            child_asset_id TEXT,
-            FOREIGN KEY(child_asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
-            FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE
-            PRIMARY KEY(identifier, child_asset_id)
+        CREATE TABLE IF NOT EXISTS multiasset_mappings(
+            collection_id INTEGER NOT NULL,
+            asset TEXT NOT NULL,
+            FOREIGN KEY(collection_id) REFERENCES asset_collections(id) ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
         );
-        """)
+        """)  # noqa: E501
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS user_owned_assets (
             asset_id VARCHAR[24] NOT NULL PRIMARY KEY,
-            FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
+            FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
         );
         """)
         cursor.execute("""
@@ -456,10 +464,10 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             parent_token_entry TEXT NOT NULL,
             FOREIGN KEY(parent_token_entry) REFERENCES evm_tokens(identifier)
                 ON DELETE CASCADE ON UPDATE CASCADE
-            FOREIGN KEY(identifier) REFERENCES evm_tokens(identifier) ON UPDATE CASCADE
+            FOREIGN KEY(identifier) REFERENCES evm_tokens(identifier) ON UPDATE CASCADE ON DELETE CASCADE
             PRIMARY KEY(identifier, parent_token_entry)
         );
-        """)
+        """)  # noqa: E501
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS price_history (
             from_asset TEXT NOT NULL COLLATE NOCASE,
@@ -473,30 +481,29 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         );
         """)  # noqa: E501
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS asset_collection_properties(
-            identifier TEXT NOT NULL PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS asset_collections(
+            id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
-            symbol TEXT NOT NULL,
-            FOREIGN KEY(identifier) REFERENCES multiasset_collector(identifier) ON UPDATE CASCADE ON DELETE CASCADE
-        );
-        """)  # noqa: E501
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS custom_assets(
-            identifier INTEGER NOT NULL PRIMARY KEY,
-            name TEXT NOT NULL,
-            symbol TEXT,
-            notes TEXT,
-            type TEXT
+            symbol TEXT NOT NULL
         );
         """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS custom_assets(
+            identifier TEXT NOT NULL PRIMARY KEY,
+            name TEXT NOT NULL,
+            notes TEXT,
+            type TEXT,
+            FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+        );
+        """)  # noqa: E501
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS binance_pairs (
         pair TEXT NOT NULL,
         base_asset TEXT NOT NULL,
         quote_asset TEXT NOT NULL,
         location TEXT NOT NULL,
-        FOREIGN KEY(base_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-        FOREIGN KEY(quote_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+        FOREIGN KEY(base_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY(quote_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
         PRIMARY KEY(pair, location)
         );
         """)

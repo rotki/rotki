@@ -41,7 +41,7 @@ def asset_resolver(
         mock_asset_github_response,
         force_reinitialize_asset_resolver,
         use_clean_caching_directory,
-        custom_ethereum_tokens,
+        user_ethereum_tokens,
 ):
     """Run the first initialization of the AssetResolver singleton
 
@@ -70,8 +70,8 @@ def asset_resolver(
             resolver = AssetResolver()
 
     # add any custom ethereum tokens given by the fixtures for a test
-    if custom_ethereum_tokens is not None:
-        for entry in custom_ethereum_tokens:
+    if user_ethereum_tokens is not None:
+        for entry in user_ethereum_tokens:
             asset_id = evm_address_to_identifier(
                 address=entry.evm_address,
                 chain=entry.chain,

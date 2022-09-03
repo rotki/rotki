@@ -1396,12 +1396,11 @@ class RestAPI():
 
     def delete_custom_asset(self, identifier: str) -> Response:
         try:
-            with self.rotkehlchen.data.db.user_write() as cursor:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
                 # Before deleting, also make sure we have up to date global DB owned data
-                self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
-                self.rotkehlchen.data.db.delete_asset_identifier(cursor, identifier)
-                with GlobalDBHandler().conn.write_ctx() as cursor:
-                    GlobalDBHandler().delete_custom_asset(cursor, identifier)
+                self.rotkehlchen.data.db.update_owned_assets_in_globaldb(write_cursor)
+                self.rotkehlchen.data.db.delete_asset_identifier(write_cursor, identifier)
+                GlobalDBHandler().delete_asset_by_identifier(identifier)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 

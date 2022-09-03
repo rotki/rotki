@@ -22,6 +22,7 @@ Changelog
 * :bug:`4769` Fixed various issues with adding/editing/deleting web3 nodes. Editing the name of a node now works and also setting all open nodes to 0% query probability should no longer throw a 500 error.
 * :bug:`4710` Users will again be able to import CSV from certain importers.
 * :bug:`-` Bisq importer will now use the correct amount in all the imported trades.
+* :bug:`-` Addition of same addresses and xpubs on Bitcoin and Bitcoin Cash now should work properly and balances should be correct.
 
 * :release:`1.25.2 <2022-08-17>`
 * :feature:`-` The add button in blockchain accounts & balances is now bigger on larger screens.

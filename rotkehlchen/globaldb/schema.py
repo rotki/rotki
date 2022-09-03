@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS underlying_tokens_list (
     parent_token_entry TEXT NOT NULL,
     FOREIGN KEY(parent_token_entry) REFERENCES evm_tokens(identifier)
         ON DELETE CASCADE ON UPDATE CASCADE
-    FOREIGN KEY(identifier) REFERENCES evm_tokens(identifier) ON UPDATE CASCADE
+    FOREIGN KEY(identifier) REFERENCES evm_tokens(identifier) ON UPDATE CASCADE ON DELETE CASCADE
     PRIMARY KEY(identifier, parent_token_entry)
 );
 """  # noqa: E501
@@ -118,20 +118,20 @@ CREATE TABLE IF NOT EXISTS common_asset_details(
     coingecko TEXT,
     cryptocompare TEXT,
     forked TEXT,
-    FOREIGN KEY(forked) REFERENCES assets(identifier) ON UPDATE CASCADE
+    FOREIGN KEY(forked) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
 );
 """
 
 # We declare the identifier to be case insensitive .This is so that queries like
 # cETH and CETH all work and map to the same asset
-# details_reference is not a FOREIGN key here since it can be for multiple tables
 DB_CREATE_ASSETS = """
 CREATE TABLE IF NOT EXISTS assets (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
     type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type),
     started INTEGER,
     swapped_for TEXT,
-    FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE
+    FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE SET NULL
 );
 """
 
@@ -149,24 +149,24 @@ CREATE TABLE IF NOT EXISTS evm_tokens (
     chain CHAR(1) NOT NULL DEFAULT('A') REFERENCES chain_ids(chain),
     address VARCHAR[42] NOT NULL,
     decimals INTEGER,
-    protocol TEXT
+    protocol TEXT,
+    FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
 );
 """
 
-DB_CREATE_MULTIASSETS = """
-CREATE TABLE IF NOT EXISTS multiasset_collector(
-    identifier TEXT NOT NULL,
-    child_asset_id TEXT,
-    FOREIGN KEY(child_asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
-    FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE
-    PRIMARY KEY(identifier, child_asset_id)
+DB_CREATE_MULTIASSET_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS multiasset_mappings(
+    collection_id INTEGER NOT NULL,
+    asset TEXT NOT NULL,
+    FOREIGN KEY(collection_id) REFERENCES asset_collections(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
 );
-"""
+"""  # noqa: E501
 
 DB_CREATE_USER_OWNED_ASSETS = """
 CREATE TABLE IF NOT EXISTS user_owned_assets (
     asset_id VARCHAR[24] NOT NULL PRIMARY KEY,
-    FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
+    FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
 );
 """
 
@@ -205,8 +205,8 @@ CREATE TABLE IF NOT EXISTS binance_pairs (
     base_asset TEXT NOT NULL,
     quote_asset TEXT NOT NULL,
     location TEXT NOT NULL,
-    FOREIGN KEY(base_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    FOREIGN KEY(quote_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(base_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(quote_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY(pair, location)
 );
 """
@@ -222,22 +222,21 @@ CREATE TABLE IF NOT EXISTS address_book (
 
 DB_CREATE_CUSTOM_ASSET = """
 CREATE TABLE IF NOT EXISTS custom_assets(
-    identifier INTEGER NOT NULL PRIMARY KEY,
+    identifier TEXT NOT NULL PRIMARY KEY,
     name TEXT NOT NULL,
-    symbol TEXT,
     notes TEXT,
-    type TEXT
+    type TEXT,
+    FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
 );
 """
 
-DB_CREATE_ASSET_COLLECTION_PROPERTIES = """
-CREATE TABLE IF NOT EXISTS asset_collection_properties(
-    identifier TEXT NOT NULL PRIMARY KEY,
+DB_CREATE_ASSET_COLLECTIONS = """
+CREATE TABLE IF NOT EXISTS asset_collections(
+    id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
-    symbol TEXT NOT NULL,
-    FOREIGN KEY(identifier) REFERENCES multiasset_collector(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+    symbol TEXT NOT NULL
 );
-"""  # noqa: E501
+"""
 
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
@@ -249,7 +248,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_ASSET_TYPES}
 {DB_CREATE_ASSETS}
 {DB_CREATE_EVM_TOKENS}
-{DB_CREATE_MULTIASSETS}
+{DB_CREATE_MULTIASSET_MAPPINGS}
 {DB_CREATE_COMMON_ASSET_DETAILS}
 {DB_CREATE_USER_OWNED_ASSETS}
 {DB_CREATE_PRICE_HISTORY_SOURCE_TYPES}
@@ -257,7 +256,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_BINANCE_PAIRS}
 {DB_CREATE_ADDRESS_BOOK}
 {DB_CREATE_CUSTOM_ASSET}
-{DB_CREATE_ASSET_COLLECTION_PROPERTIES}
+{DB_CREATE_ASSET_COLLECTIONS}
 COMMIT;
 PRAGMA foreign_keys=on;
 """
