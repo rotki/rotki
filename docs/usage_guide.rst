@@ -219,10 +219,10 @@ Amount Rounding
 
 This setting modifies the rounding mechanism choosing from ``Round up``, ``Round down`` and ``Half even`` (rounds to the nearest value). It can be individually modified how amounts and values are rounded.
 
-Ethereum RPC nodes
-^^^^^^^^^^^^^^^^^^^^^
+RPC nodes
+^^^^^^^^^
 
-This setting allows you to modify the nodes that will be queried to interact with the Ethereum blockchain. We provide a list of public nodes but sometimes they are not available or are overloaded. This is why it is a good idea to have more nodes just in case and to have the possibility to customize the priority with which they are queried.
+This setting allows you to modify the nodes that will be queried to interact with the blockchains. We provide a list of public nodes but sometimes they are not available or are overloaded. This is why it is a good idea to have more nodes just in case and to have the possibility to customize the priority with which they are queried.
 When making queries we always give preference to your own nodes if you have any and then add a small list of randomly selected open nodes in case they are needed. If you don't have your own node then the open nodes are always selected. The weight of the node sets the probability
 of picking it and is represented by a percentage. From that list it is also possible to mark them as active or inactive by using the toggle button.
 
