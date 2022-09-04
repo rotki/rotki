@@ -1269,7 +1269,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         if self.location != Location.BINANCEUS:
             # dont exist for Binance US: https://github.com/rotki/rotki/issues/3664
             fiat_deposits = self._api_query_list_within_time_delta(
-                start_ts=Timestamp(0),
+                start_ts=start_ts,
                 end_ts=end_ts,
                 time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
                 api_type='sapi',
@@ -1278,7 +1278,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             log.debug(f'{self.name} fiat deposit history result', results_num=len(fiat_deposits))
             fiat_withdraws = self._api_query_list_within_time_delta(
-                start_ts=Timestamp(0),
+                start_ts=start_ts,
                 end_ts=end_ts,
                 time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
                 api_type='sapi',
