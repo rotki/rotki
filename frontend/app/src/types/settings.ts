@@ -9,7 +9,8 @@ const EthereumRpcNode = z.object({
     weight => parseFloat(weight as string),
     z.number().nonnegative().max(100)
   ),
-  active: z.boolean()
+  active: z.boolean(),
+  blockchain: z.string().nonempty()
 });
 
 export type EthereumRpcNode = z.infer<typeof EthereumRpcNode>;
@@ -23,5 +24,6 @@ export const getPlaceholderNode = (): EthereumRpcNode => ({
   endpoint: '',
   weight: 0,
   active: true,
-  owned: true
+  owned: true,
+  blockchain: 'ETH'
 });

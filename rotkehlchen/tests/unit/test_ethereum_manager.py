@@ -156,7 +156,7 @@ def test_use_open_nodes(ethereum_manager, database):
     Change test to use a more recent transaction.
     """
     # Wait until all nodes are connected
-    web3_nodes_all = database.get_web3_nodes(only_active=True)
+    web3_nodes_all = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
     web3_nodes = [node for node in web3_nodes_all if node.node_info.name != ETHERSCAN_NODE_NAME]
     ethereum_manager.connect_to_multiple_nodes(web3_nodes)
     wait_until_all_nodes_connected(

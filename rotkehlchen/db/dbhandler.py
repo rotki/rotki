@@ -3209,17 +3209,21 @@ class DBHandler:
         now = ts_now()
         return now - last_save > period
 
-    def get_web3_nodes(self, only_active: bool = False) -> List[WeightedNode]:
+    def get_web3_nodes(
+            self,
+            blockchain: SupportedBlockchain,
+            only_active: bool = False,
+    ) -> List[WeightedNode]:
         """
         Get all the nodes in the database. If only_active is set to true only the nodes that
         have the column active set to True will be returned.
         """
         with self.conn.read_ctx() as cursor:
             if only_active:
-                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active FROM web3_nodes WHERE active=1 AND CAST(weight as decimal) != 0;')  # noqa: E501
+                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM web3_nodes WHERE blockchain=? AND active=1 AND CAST(weight as decimal) != 0;', (blockchain.value,))  # noqa: E501
             else:
                 cursor.execute(
-                    'SELECT identifier, name, endpoint, owned, weight, active FROM web3_nodes;',
+                    'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM web3_nodes WHERE blockchain=?;', (blockchain.value,),  # noqa: E501
                 )
             return [
                 WeightedNode(
@@ -3228,6 +3232,7 @@ class DBHandler:
                         name=entry[1],
                         endpoint=entry[2],
                         owned=bool(entry[3]),
+                        blockchain=SupportedBlockchain(entry[6]),  # type: ignore
                     ),
                     weight=FVal(entry[4]),
                     active=bool(entry[5]),
@@ -3240,6 +3245,7 @@ class DBHandler:
             write_cursor: 'DBCursor',
             proportion_to_share: FVal,
             exclude_identifier: Optional[int],
+            blockchain: SupportedBlockchain,
     ) -> None:
         """
         Weights for nodes have to be in the range between 0 and 1. This function adjusts the
@@ -3249,11 +3255,11 @@ class DBHandler:
         In case of deletion it's omitted and `None`is passed.
         """
         if exclude_identifier is None:
-            write_cursor.execute('SELECT identifier, weight FROM web3_nodes WHERE owned=0')
+            write_cursor.execute('SELECT identifier, weight FROM web3_nodes WHERE owned=0 AND blockchain=?', (blockchain.value,))  # noqa: E501
         else:
             write_cursor.execute(
-                'SELECT identifier, weight FROM web3_nodes WHERE identifier !=? AND owned=0',
-                (exclude_identifier,),
+                'SELECT identifier, weight FROM web3_nodes WHERE identifier !=? AND owned=0 AND blockchain=?',  # noqa: E501
+                (exclude_identifier, blockchain.value),
             )
         new_weights = []
         nodes_weights = write_cursor.fetchall()
@@ -3278,7 +3284,7 @@ class DBHandler:
         with self.user_write() as cursor:
             try:
                 cursor.execute(
-                    'INSERT INTO web3_nodes(name, endpoint, owned, active, weight) VALUES (?, ?, ?, ?, ?)',   # noqa: E501
+                    'INSERT INTO web3_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',   # noqa: E501
                     node.serialize_for_db(),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -3287,6 +3293,7 @@ class DBHandler:
                 write_cursor=cursor,
                 proportion_to_share=ONE - node.weight,
                 exclude_identifier=cursor.lastrowid,
+                blockchain=node.node_info.blockchain,
             )
 
     def update_web3_node(self, node: WeightedNode) -> None:
@@ -3298,7 +3305,7 @@ class DBHandler:
         """
         with self.user_write() as cursor:
             cursor.execute(
-                'UPDATE web3_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=?',  # noqa: E501
+                'UPDATE web3_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
                 (
                     node.node_info.name,
                     node.node_info.endpoint,
@@ -3306,6 +3313,7 @@ class DBHandler:
                     node.active,
                     str(node.weight),
                     node.identifier,
+                    node.node_info.blockchain.value,
                 ),
             )
 
@@ -3316,21 +3324,23 @@ class DBHandler:
                 write_cursor=cursor,
                 proportion_to_share=ONE - node.weight,
                 exclude_identifier=node.identifier,
+                blockchain=node.node_info.blockchain,
             )
 
-    def delete_web3_node(self, identifier: int) -> None:
-        """Delete a web3 node based on name.
+    def delete_web3_node(self, identifier: int, blockchain: SupportedBlockchain) -> None:
+        """Delete a web3 node by identifier
         May raise:
-        - InputError if no entry with such name is in the database.
+        - InputError if no entry with such identifier is in the database.
         """
         with self.user_write() as cursor:
-            cursor.execute('DELETE FROM web3_nodes WHERE identifier=?', (identifier,))
+            cursor.execute('DELETE FROM web3_nodes WHERE identifier=? AND blockchain=?', (identifier, blockchain.value))   # noqa: E501
             if cursor.rowcount == 0:
-                raise InputError(f'node with name {identifier} was not found in the database')
+                raise InputError(f'node with id {identifier} and blockchain {blockchain.value} was not found in the database')  # noqa: E501
             self._rebalance_web3_nodes_weights(
                 write_cursor=cursor,
                 proportion_to_share=ONE,
                 exclude_identifier=None,
+                blockchain=blockchain,
             )
 
     def get_user_notes(

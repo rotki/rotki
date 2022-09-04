@@ -262,7 +262,7 @@ class Rotkehlchen():
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
 
-        ethereum_nodes = self.data.db.get_web3_nodes(only_active=True)
+        ethereum_nodes = self.data.db.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
         # Initialize blockchain querying modules
         ethereum_manager = EthereumManager(
             etherscan=self.etherscan,

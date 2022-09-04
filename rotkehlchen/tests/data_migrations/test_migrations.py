@@ -13,7 +13,7 @@ from rotkehlchen.data_migrations.manager import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
-from rotkehlchen.types import Location, TradeType
+from rotkehlchen.types import Location, SupportedBlockchain, TradeType
 
 
 def _create_invalid_icon(icon_identifier: str, icons_dir: Path) -> Path:
@@ -208,7 +208,7 @@ def test_migration_4(rotkehlchen_api_server):
         assert cursor.fetchone() is None, 'Setting should have been deleted'
     with open(dir_path / 'data' / 'nodes.json', 'r') as f:
         nodes = json.loads(f.read())
-        web3_nodes = database.get_web3_nodes()
+        web3_nodes = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM)
         assert len(web3_nodes) == len(nodes) + 1
         for node in nodes:
             for web3_node in web3_nodes:
@@ -245,7 +245,7 @@ def test_migration_4_no_own_endpoint(rotkehlchen_api_server):
             'SELECT * from settings where name=?', ('eth_rpc_endpoint',),
         )
         assert cursor.fetchone() is None, 'Setting should have been deleted'
-    web3_nodes = database.get_web3_nodes()
+    web3_nodes = database.get_web3_nodes(blockchain=SupportedBlockchain.ETHEREUM)
     with open(dir_path / 'data' / 'nodes.json', 'r') as f:
         nodes = json.loads(f.read())
         assert len(nodes) == len(web3_nodes)

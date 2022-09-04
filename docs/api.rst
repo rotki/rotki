@@ -753,12 +753,12 @@ Getting backend arguments
    :statuscode 200: Querying of the backend configuration was successful
    :statuscode 500: Internal rotki error
 
-Adding information for ethereum nodes
-=====================================
+Adding information for web3 nodes
+=================================
 
-.. http:get:: /api/(version)/blockchains/ETH/nodes
+.. http:get:: /api/(version)/blockchains/(blockchain)/nodes
 
-   By querying this endpoint the information for all the nodes in the database will be returned
+   By querying this endpoint the information for the nodes in the database will be returned
 
    **Example Request**:
 
@@ -769,7 +769,7 @@ Adding information for ethereum nodes
 
    **Example Response**:
 
-   The following is an example response of querying ethereum nodes information.
+   The following is an example response of querying Ethereum nodes information.
 
    .. sourcecode:: http
 
@@ -784,7 +784,8 @@ Adding information for ethereum nodes
                 "endpoint": "",
                 "owned": false,
                 "weight": "40.00",
-                "active": true
+                "active": true,
+                "blockchain": "ETH"
             },
             {
                 "identifier": 2,
@@ -792,7 +793,8 @@ Adding information for ethereum nodes
                 "endpoint": "https://api.mycryptoapi.com/eth",
                 "owned": false,
                 "weight": "20.00",
-                "active": true
+                "active": true,
+                "blockchain": "ETH"
             },
             {
                 "identifier": 3,
@@ -800,7 +802,8 @@ Adding information for ethereum nodes
                 "endpoint": "https://mainnet-nethermind.blockscout.com/",
                 "owned": false,
                 "weight": "20.00",
-                "active": true
+                "active": true,
+                "blockchain": "ETH"
             },
             {
                 "identifier": 4,
@@ -808,13 +811,14 @@ Adding information for ethereum nodes
                 "endpoint": "https://mainnet.eth.cloud.ava.do/",
                 "owned": false,
                 "weight": "20.00",
-                "active": true
+                "active": true,
+                "blockchain": "ETH"
             }
         ],
         "message": ""
       }
 
-   :resjson list result: A list with information about the ethereum nodes.
+   :resjson list result: A list with information about the web3 nodes.
    :resjson string name: Name and primary key of the node.
    :resjson string endpoint: rpc endpoint of the node. Will be used to query it.
    :resjson string weight: Weight of the node in the range of 0 to 100 with 2 decimals.
@@ -825,7 +829,7 @@ Adding information for ethereum nodes
    :statuscode 409: No user is logged.
    :statuscode 500: Internal rotki error
 
-.. http:put:: /api/(version)/blockchains/ETH/nodes
+.. http:put:: /api/(version)/blockchains/(blockchain)/nodes
 
    By doing a PUT on this endpoint you will be able to add a new node to the list of nodes.
 
@@ -855,7 +859,7 @@ Adding information for ethereum nodes
    :statuscode 409: No user is logged or entrie couldn't be created.
    :statuscode 500: Internal rotki error
 
-.. http:patch:: /api/(version)/blockchains/ETH/nodes
+.. http:patch:: /api/(version)/blockchains/(blockchain)/nodes
 
    By doing a PATCH on this endpoint you will be able to edit an already existing node entry with the information provided.
 
@@ -887,7 +891,7 @@ Adding information for ethereum nodes
    :statuscode 409: No user is logged or entrie couldn't be updated.
    :statuscode 500: Internal rotki error
 
-.. http:delete:: /api/(version)/blockchains/ETH/nodes
+.. http:delete:: /api/(version)/blockchains/(blockchain)/nodes
 
    By doing a DELETE on this endpoint you will be able to delete an already existing node.
 
@@ -2912,7 +2916,7 @@ Detecting owned ethereum tokens
 
   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
   :reqjson bool only_cache: Boolean denoting whether to use only cache or re-detect tokens.
-  :reqjson list addresses: A list of addresses to detect tokens for. 
+  :reqjson list addresses: A list of addresses to detect tokens for.
 
 
   **Example Response**:
@@ -8863,7 +8867,7 @@ Adding blockchain accounts
 Adding BTC/BCH xpubs
 ========================
 
-.. http:put:: /api/(version)/blockchains/(blockhain)/xpub
+.. http:put:: /api/(version)/blockchains/(blockchain)/xpub
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``

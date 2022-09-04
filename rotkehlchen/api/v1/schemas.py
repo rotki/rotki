@@ -2348,7 +2348,12 @@ class SnapshotEditingSchema(Schema):
             )
 
 
-class EthereumNodeSchema(Schema):
+class Web3NodeSchema(Schema):
+    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
+
+
+class Web3AddNodeSchema(Schema):
+    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     name = fields.String(
         required=True,
         validate=webargs.validate.NoneOf(
@@ -2362,7 +2367,7 @@ class EthereumNodeSchema(Schema):
     active = fields.Boolean(load_default=False)
 
 
-class EthereumNodeEditSchema(EthereumNodeSchema):
+class Web3NodeEditSchema(Web3AddNodeSchema):
     name = fields.String(
         required=True,
         validate=webargs.validate.NoneOf(
@@ -2391,7 +2396,8 @@ class EthereumNodeEditSchema(EthereumNodeSchema):
             )
 
 
-class EthereumNodeListDeleteSchema(Schema):
+class Web3NodeListDeleteSchema(Schema):
+    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     identifier = fields.Integer(required=True)
 
     @validates_schema

@@ -5,7 +5,7 @@ from rotkehlchen.chain.ethereum.types import (
     string_to_evm_address,
 )
 from rotkehlchen.constants.misc import ONE
-from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
 
 RANGE_PREFIX_ETHTX = 'ethtxs'
 RANGE_PREFIX_ETHINTERNALTX = 'ethinternaltxs'
@@ -26,6 +26,7 @@ ETHERSCAN_NODE = WeightedNode(
         name=ETHERSCAN_NODE_NAME,
         endpoint='',
         owned=False,
+        blockchain=SupportedBlockchain.ETHEREUM,
     ),
     weight=ONE,
     active=True,

@@ -796,6 +796,10 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
             'SELECT COUNT(*) FROM sqlite_master WHERE type="view" AND name=?', ('combined_trades_view',),  # noqa: E501
         ).fetchone()[0] == 1
 
+        with pytest.raises(sqlcipher.OperationalError) as exc_info:  # pylint: disable=no-member
+            cursor.execute('SELECT blockchain FROM web3_nodes;')
+        assert "no such column: blockchain'" in str(exc_info)
+
     xpub1 = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     xpub2 = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
 
@@ -834,6 +838,8 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
             cursor.execute(f'SELECT timestamp from {table_name}')
             assert cursor.fetchall() == expected_result
+        cursor.execute('SELECT blockchain from web3_nodes LIMIT 1')
+        assert cursor.fetchall() == [("ETH",)]
 
         # Check that data is correct
         xpub_mappings_in_db = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
