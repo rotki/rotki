@@ -280,7 +280,7 @@ class Inquirer():
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
     _saddle: Optional['SaddleOracle'] = None
-    _ethereum: Optional['EthereumManager'] = None
+    _ethereum: Optional['EthereumManager'] = None  # TODO: EvmManager
     _oracles: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
     _oracles_not_onchain: Optional[List[CurrentPriceOracle]] = None
@@ -601,6 +601,7 @@ class Inquirer():
             coming_from_latest_price: bool = False,
     ) -> Price:
         """Wrapper around _find_usd_price to ignore oracle queried when getting usd price"""
+        # TODO: must inquirer._ethereum be EvmManager?
         price, _, _ = Inquirer()._find_usd_price(
             asset=asset,
             ignore_cache=ignore_cache,
@@ -664,6 +665,7 @@ class Inquirer():
         is_known_protocol = False
         underlying_tokens = None
         try:
+            # chain=ChainID.ETHEREUM, ## XXX: !!
             token = asset.resolve_to_evm_token()
             if token.protocol is not None:
                 is_known_protocol = token.protocol in KnownProtocolsAssets

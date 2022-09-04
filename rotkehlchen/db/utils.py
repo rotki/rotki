@@ -27,6 +27,7 @@ from rotkehlchen.chain.substrate.utils import is_valid_kusama_address, is_valid_
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
+    EVM_CHAINS,
     BlockchainAccountData,
     BTCAddress,
     ChecksumEvmAddress,
@@ -130,6 +131,7 @@ class BlockchainAccounts(NamedTuple):
     ksm: List[KusamaAddress]
     dot: List[PolkadotAddress]
     avax: List[ChecksumEvmAddress]
+    matic: List[ChecksumEvmAddress]
 
     @overload
     def get(self, blockchain: EVMChain) -> List[ChecksumEvmAddress]:
@@ -152,6 +154,8 @@ class BlockchainAccounts(NamedTuple):
             return self.dot
         if blockchain == SupportedBlockchain.AVALANCHE:
             return self.avax
+        if blockchain == SupportedBlockchain.POLYGON:
+            return self.matic
 
         raise AssertionError(f'Unsupported blockchain: {blockchain}')
 
@@ -334,7 +338,7 @@ def is_valid_db_blockchain_account(
         return True
     if blockchain == SupportedBlockchain.BITCOIN_CASH.value:
         return True
-    if blockchain in (SupportedBlockchain.ETHEREUM.value, SupportedBlockchain.AVALANCHE.value):
+    if blockchain in [x.value for x in EVM_CHAINS]:
         return is_checksum_address(account)
     if blockchain == SupportedBlockchain.KUSAMA.value:
         return is_valid_kusama_address(account)

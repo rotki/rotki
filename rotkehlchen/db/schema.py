@@ -505,6 +505,81 @@ CREATE TABLE IF NOT EXISTS ethtx_address_mappings (
 );
 """  # noqa: E501
 
+DB_CREATE_POLYGON_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS polygon_transactions (
+    tx_hash BLOB NOT NULL PRIMARY KEY,
+    timestamp INTEGER NOT NULL,
+    block_number INTEGER NOT NULL,
+    from_address TEXT NOT NULL,
+    to_address TEXT,
+    value TEXT NOT NULL,
+    gas TEXT NOT NULL,
+    gas_price TEXT NOT NULL,
+    gas_used TEXT NOT NULL,
+    input_data BLOB NOT NULL,
+    nonce INTEGER NOT NULL
+);
+"""
+
+DB_CREATE_POLYGON_INTERNAL_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS polygon_internal_transactions (
+    parent_tx_hash BLOB NOT NULL,
+    trace_id INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    block_number INTEGER NOT NULL,
+    from_address TEXT NOT NULL,
+    to_address TEXT,
+    value TEXT NOT NULL,
+    FOREIGN KEY(parent_tx_hash) REFERENCES polygon_transactions(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(parent_tx_hash, trace_id)
+);
+"""  # noqa: E501
+
+DB_CREATE_POLYGONTX_RECEIPTS = """
+CREATE TABLE IF NOT EXISTS polygontx_receipts (
+    tx_hash BLOB NOT NULL PRIMARY KEY,
+    contract_address TEXT, /* can be null */
+    status INTEGER NOT NULL CHECK (status IN (0, 1)),
+    type INTEGER NOT NULL,
+    FOREIGN KEY(tx_hash) REFERENCES polygon_transactions(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE
+);
+"""  # noqa: E501
+
+DB_CREATE_POLYGONTX_RECEIPT_LOGS = """
+CREATE TABLE IF NOT EXISTS polygontx_receipt_logs (
+    tx_hash BLOB NOT NULL,
+    log_index INTEGER NOT NULL,
+    data BLOB NOT NULL,
+    address TEXT NOT NULL,
+    removed INTEGER NOT NULL CHECK (removed IN (0, 1)),
+    FOREIGN KEY(tx_hash) REFERENCES ethtx_receipts(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(tx_hash, log_index)
+);
+"""
+
+DB_CREATE_POLYGONTX_RECEIPT_LOG_TOPICS = """
+CREATE TABLE IF NOT EXISTS polygontx_receipt_log_topics (
+    tx_hash BLOB NOT NULL,
+    log_index INTEGER NOT NULL,
+    topic BLOB NOT NULL,
+    topic_index INTEGER NOT NULL,
+    FOREIGN KEY(tx_hash, log_index) REFERENCES ethtx_receipt_logs(tx_hash, log_index) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(tx_hash, log_index, topic_index)
+);
+"""  # noqa: E501
+
+DB_CREATE_POLYGONTX_ADDRESS_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS polygontx_address_mappings (
+    address TEXT NOT NULL,
+    tx_hash BLOB NOT NULL,
+    blockchain TEXT NOT NULL,
+    FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
+    FOREIGN KEY(tx_hash) references polygon_transactions(tx_hash) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (address, tx_hash, blockchain)
+);
+"""  # noqa: E501
+
+
 DB_CREATE_USED_QUERY_RANGES = """
 CREATE TABLE IF NOT EXISTS used_query_ranges (
     name VARCHAR[24] NOT NULL PRIMARY KEY,
@@ -751,6 +826,12 @@ BEGIN TRANSACTION;
 {DB_CREATE_ETHTX_RECEIPT_LOGS}
 {DB_CREATE_ETHTX_RECEIPT_LOG_TOPICS}
 {DB_CREATE_ETHTX_ADDRESS_MAPPINGS}
+{DB_CREATE_POLYGON_TRANSACTIONS}
+{DB_CREATE_POLYGON_INTERNAL_TRANSACTIONS}
+{DB_CREATE_POLYGONTX_RECEIPTS}
+{DB_CREATE_POLYGONTX_RECEIPT_LOGS}
+{DB_CREATE_POLYGONTX_RECEIPT_LOG_TOPICS}
+{DB_CREATE_POLYGONTX_ADDRESS_MAPPINGS}
 {DB_CREATE_MARGIN}
 {DB_CREATE_ASSET_MOVEMENTS}
 {DB_CREATE_USED_QUERY_RANGES}

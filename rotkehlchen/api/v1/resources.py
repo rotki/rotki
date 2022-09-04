@@ -55,6 +55,7 @@ from rotkehlchen.api.v1.schemas import (
     CurrentAssetsPriceSchema,
     CustomAssetsQuerySchema,
     DataImportSchema,
+    DefiBalancesSchema,
     DetectTokensSchema,
     EditCustomAssetSchema,
     EditSettingsSchema,
@@ -63,8 +64,8 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
-    EthereumTransactionDecodingSchema,
-    EthereumTransactionQuerySchema,
+    EvmTransactionDecodingSchema,
+    EvmTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangeRatesSchema,
     ExchangesDataResourceSchema,
@@ -459,9 +460,9 @@ class AssociatedLocations(BaseMethodView):
         return self.rest_api.get_associated_locations()
 
 
-class EthereumTransactionsResource(BaseMethodView):
-    get_schema = EthereumTransactionQuerySchema()
-    post_schema = EthereumTransactionDecodingSchema()
+class EvmTransactionsResource(BaseMethodView):
+    get_schema = EvmTransactionQuerySchema()
+    post_schema = EvmTransactionDecodingSchema()
 
     @require_loggedin_user()
     @ignore_kwarg_parser.use_kwargs(get_schema, location='json_and_query_and_view_args')
@@ -472,11 +473,12 @@ class EthereumTransactionsResource(BaseMethodView):
             filter_query: ETHTransactionsFilterQuery,
             event_params: Dict[str, Any],
     ) -> Response:
-        return self.rest_api.get_ethereum_transactions(
+        return self.rest_api.get_evm_transactions(
             async_query=async_query,
             only_cache=only_cache,
             filter_query=filter_query,
             event_params=event_params,
+            # blockchain=blockchain,
         )
 
     @require_loggedin_user()
@@ -491,11 +493,13 @@ class EthereumTransactionsResource(BaseMethodView):
             async_query=async_query,
             ignore_cache=ignore_cache,
             tx_hashes=tx_hashes,
+            # blockchain=blockchain,
         )
 
     @require_loggedin_user()
     def delete(self) -> Response:
         return self.rest_api.purge_ethereum_transaction_data()
+        # return self.rest_api.purge_ethereum_transaction_data(blockchain=blockchain)
 
 
 class EthereumAirdropsResource(BaseMethodView):
@@ -776,7 +780,7 @@ class EthereumAssetsResource(BaseMethodView):
 
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, address: Optional[ChecksumEvmAddress], chain: Optional[ChainID]) -> Response:
-        return self.rest_api.get_custom_ethereum_tokens(address=address, chain=chain)
+        return self.rest_api.get_custom_evm_tokens(address=address, chain=chain)
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_edit_schema, location='json')
@@ -1720,12 +1724,19 @@ class Eth2StakeDetailsResource(BaseMethodView):
 
 class DefiBalancesResource(BaseMethodView):
 
-    get_schema = AsyncQueryArgumentSchema()
+    get_schema = DefiBalancesSchema()
 
     @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_defi_balances(async_query)
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(
+            self,
+            blockchain: SupportedBlockchain,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.get_defi_balances(
+            async_query=async_query,
+            blockchain=blockchain,
+        )
 
 
 class NamedEthereumModuleDataResource(BaseMethodView):

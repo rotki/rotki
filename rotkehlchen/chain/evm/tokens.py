@@ -13,7 +13,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, EVMChain, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
 if TYPE_CHECKING:
@@ -120,7 +120,7 @@ class EvmTokens():
             address=address,
             tokens_num=len(tokens),
         )
-        result = ETH_SCAN[ChainID.ETHEREUM].call(
+        result = ETH_SCAN[self.manager.blockchain].call(
             manager=self.manager,
             method_name='tokensBalance',
             arguments=[address, [x.evm_address for x in tokens]],
@@ -150,7 +150,7 @@ class EvmTokens():
         - RemoteError if no result is queried in multicall
         """
         calls: List[Tuple[ChecksumEvmAddress, str]] = []
-        eth_scan = ETH_SCAN[ChainID.ETHEREUM]
+        eth_scan = ETH_SCAN[SupportedBlockchain.ETHEREUM]
         for address, tokens in chunk:
             tokens_addrs = [token.evm_address for token in tokens]
             calls.append(
@@ -168,7 +168,7 @@ class EvmTokens():
         )
         balances: Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
         for (address, tokens), result in zip(chunk, results):
-            decoded_result = ETH_SCAN[ChainID.ETHEREUM].decode(  # pylint: disable=unsubscriptable-object  # noqa: E501
+            decoded_result = ETH_SCAN[SupportedBlockchain.ETHEREUM].decode(  # pylint: disable=unsubscriptable-object  # noqa: E501
                 result=result,
                 method_name='tokensBalance',
                 arguments=[address, [token.evm_address for token in tokens]],
@@ -207,6 +207,7 @@ class EvmTokens():
             self,
             only_cache: bool,
             addresses: List[ChecksumEvmAddress],
+            blockchain: EVMChain,
     ) -> DetectedTokensType:
         """
         Detect tokens for the given addresses.
@@ -222,19 +223,22 @@ class EvmTokens():
         """
         with self.db.conn.read_ctx() as cursor:
             if only_cache is False:
-                self._detect_tokens(cursor, addresses=addresses)
+                if blockchain == SupportedBlockchain.ETHEREUM:
+                    self._detect_eth_tokens(cursor, addresses=addresses)
+                elif blockchain == SupportedBlockchain.POLYGON:
+                    self._detect_matic_tokens(cursor, addresses=addresses)
 
             addresses_info: DetectedTokensType = {}
             for address in addresses:
                 addresses_info[address] = self.db.get_tokens_for_address(
                     cursor=cursor,
                     address=address,
-                    blockchain=SupportedBlockchain.ETHEREUM,
+                    blockchain=blockchain,
                 )
 
         return addresses_info
 
-    def _detect_tokens(
+    def _detect_eth_tokens(
             self,
             cursor: 'DBCursor',
             addresses: List[ChecksumEvmAddress],
@@ -269,11 +273,13 @@ class EvmTokens():
             # Old contract of Fetch.ai
             string_to_evm_address('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'),
         ]
+        blockchain = SupportedBlockchain.ETHEREUM
         ignored_assets = self.db.get_ignored_assets(cursor=cursor)
         for asset in ignored_assets:  # don't query for the ignored tokens
             if asset.is_evm_token():
                 exceptions.append(EvmToken(asset.identifier).evm_address)
-        all_tokens = GlobalDBHandler().get_ethereum_tokens(
+        all_tokens = GlobalDBHandler().get_evm_tokens(
+            blockchain=blockchain,
             exceptions=exceptions,
             except_protocols=['balancer'],
         )
@@ -296,12 +302,62 @@ class EvmTokens():
                 self.db.save_tokens_for_address(
                     write_cursor=write_cursor,
                     address=address,
-                    blockchain=SupportedBlockchain.ETHEREUM,
+                    blockchain=blockchain,
+                    tokens=detected_tokens,
+                )
+
+    def _detect_matic_tokens(
+            self,
+            cursor: 'DBCursor',
+            addresses: List[ChecksumEvmAddress],
+    ) -> None:
+        """
+        Detect tokens for the given addresses.
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - BadFunctionCallOutput if a local node is used and the contract for the
+          token has no code. That means the chain is not synced
+        """
+        # TODO: add ignored contracts that are already queried by defi SDK.
+        exceptions = []
+        blockchain = SupportedBlockchain.POLYGON
+        ignored_assets = self.db.get_ignored_assets(cursor=cursor)
+        for asset in ignored_assets:  # don't query for the ignored tokens
+            if asset.is_evm_token():
+                exceptions.append(EvmToken(asset.identifier).evm_address)
+        all_tokens = GlobalDBHandler().get_evm_tokens(
+            blockchain=blockchain,
+            exceptions=exceptions,
+            except_protocols=['balancer'],
+        )
+        if self.manager.connected_to_any_web3():
+            chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
+            # skipping etherscan because chunk size is too big for etherscan
+            call_order = self.manager.default_call_order(skip_etherscan=True)
+        else:
+            chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
+            call_order = [ETHERSCAN_NODE]
+        for address in addresses:
+            token_balances = self._query_chunks(
+                address=address,
+                tokens=all_tokens,
+                chunk_size=chunk_size,
+                call_order=call_order,
+            )
+            detected_tokens = list(token_balances.keys())
+            with self.db.user_write() as write_cursor:
+                self.db.save_tokens_for_address(
+                    write_cursor=write_cursor,
+                    address=address,
+                    blockchain=blockchain,
                     tokens=detected_tokens,
                 )
 
     def query_tokens_for_addresses(
             self,
+            blockchain: EVMChain,
             addresses: List[ChecksumEvmAddress],
     ) -> TokenBalancesType:
         """Queries token balances for a list of addresses
@@ -327,7 +383,7 @@ class EvmTokens():
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
-                saved_list, _ = self.db.get_tokens_for_address(cursor, address=address, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
+                saved_list, _ = self.db.get_tokens_for_address(cursor, address=address, blockchain=blockchain)  # noqa: E501
                 if saved_list is None:
                     continue  # Do not query if we know the address has no tokens
                 all_tokens.update(saved_list)

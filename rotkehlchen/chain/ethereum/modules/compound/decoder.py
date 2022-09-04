@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_norma
 from rotkehlchen.constants.assets import A_COMP
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, SupportedBlockchain
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import COMPTROLLER_PROXY, CPT_COMPOUND
@@ -189,7 +189,10 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> Dict[ChecksumEvmAddress, Tuple[Any, ...]]:
-        compound_tokens = GlobalDBHandler().get_ethereum_tokens(protocol='compound')
+        compound_tokens = GlobalDBHandler().get_evm_tokens(
+            blockchain=SupportedBlockchain.ETHEREUM,
+            protocol='compound',
+        )
         mapping: Dict[ChecksumEvmAddress, Tuple[Any, ...]] = {}
         for token in compound_tokens:
             if token == A_COMP:

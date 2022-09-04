@@ -8,10 +8,14 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.aave import ATOKENV1_TO_ASSET, ATOKENV2_ADDRESS_TO_RESERVE_ASSET
+from rotkehlchen.types import SupportedBlockchain
 
 
 def test_aave_reserve_mapping():
-    atokensv1 = GlobalDBHandler().get_ethereum_tokens(protocol='aave')
+    atokensv1 = GlobalDBHandler().get_evm_tokens(
+        blockchain=SupportedBlockchain.ETHEREUM,
+        protocol='aave',
+    )
     for token in atokensv1:
         underlying_asset = ATOKENV1_TO_ASSET[token].resolve_to_crypto_asset()
         if underlying_asset == A_ETH:

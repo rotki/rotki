@@ -109,6 +109,7 @@ class ExternalService(SerializableEnumMixin):
     LOOPRING = 3
     OPENSEA = 4
     COVALENT = 5
+    POLYGONSCAN = 6
 
 
 class ExternalServiceApiCredentials(NamedTuple):
@@ -343,6 +344,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     BITCOIN_CASH = 'BCH'
     KUSAMA = 'KSM'
     AVALANCHE = 'AVAX'
+    POLYGON = 'MATIC'
     POLKADOT = 'DOT'
     OPTIMISM = 'OPTIMISM'
     BINANCE = 'BINANCE'
@@ -352,7 +354,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     ARBITRUM = 'ARBITRUM'
 
     def get_address_type(self) -> Callable:
-        if self in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
+        if self in EVM_CHAINS:
             return ChecksumEvmAddress
         if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
             return Eth2PubKey
@@ -382,6 +384,9 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return 354
         if self == SupportedBlockchain.AVALANCHE:
             return 9000
+        # TODO: where can I get this parameter?
+        # if self == SupportedBlockchain.POLYGON:
+        #     return 9000
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
     def to_chain_id(self) -> ChainID:
@@ -397,7 +402,7 @@ SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.OPTIMISM: ChainID.OPTIMISM,
     SupportedBlockchain.BINANCE: ChainID.BINANCE,
     SupportedBlockchain.GNOSIS: ChainID.GNOSIS,
-    SupportedBlockchain.MATIC: ChainID.MATIC,
+    SupportedBlockchain.POLYGON: ChainID.MATIC,
     SupportedBlockchain.FANTOM: ChainID.FANTOM,
     SupportedBlockchain.ARBITRUM: ChainID.ARBITRUM,
     SupportedBlockchain.AVALANCHE: ChainID.AVALANCHE,
@@ -411,12 +416,19 @@ EVMChain = Literal[  # keep in sync with SUPPORTED_BLOCKCHAIN_TO_CHAINID
     SupportedBlockchain.OPTIMISM,
     SupportedBlockchain.BINANCE,
     SupportedBlockchain.GNOSIS,
-    SupportedBlockchain.MATIC,
+    SupportedBlockchain.POLYGON,
     SupportedBlockchain.FANTOM,
     SupportedBlockchain.ARBITRUM,
     SupportedBlockchain.AVALANCHE,
 ]
 NON_EVM_CHAINS = set(SupportedBlockchain) - set(SUPPORTED_BLOCKCHAIN_TO_CHAINID.keys())
+
+
+EVM_CHAINS = (
+    SupportedBlockchain.ETHEREUM,
+    SupportedBlockchain.AVALANCHE,
+    SupportedBlockchain.POLYGON,
+)
 
 
 class TradeType(DBEnumMixIn):

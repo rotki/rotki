@@ -26,7 +26,7 @@ class NodeName(NamedTuple):
     name: str
     endpoint: str
     owned: bool
-    blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE]  # noqa: E501
+    blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE, SupportedBlockchain.POLYGON]  # noqa: E501
 
     def serialize(self) -> Dict[str, Any]:
         return {

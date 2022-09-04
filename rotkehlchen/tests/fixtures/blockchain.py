@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.types import NodeName
+from rotkehlchen.chain.polygon.manager import PolygonManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress, SubstrateChain
 from rotkehlchen.constants.assets import A_DOT, A_KSM
@@ -15,7 +16,7 @@ from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.covalent import Covalent
-from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.etherscan import Etherscan, Polygonscan
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -82,6 +83,7 @@ def fixture_blockchain_accounts(
         ksm_accounts: List[KusamaAddress],
         dot_accounts: List[PolkadotAddress],
         avax_accounts: List[ChecksumEvmAddress],
+        matic_accounts: List[ChecksumEvmAddress],
 ) -> BlockchainAccounts:
     return BlockchainAccounts(
         eth=ethereum_accounts,
@@ -90,6 +92,7 @@ def fixture_blockchain_accounts(
         ksm=ksm_accounts.copy(),
         dot=dot_accounts.copy(),
         avax=avax_accounts.copy(),
+        matic=matic_accounts.copy(),
     )
 
 
@@ -106,6 +109,11 @@ def fixture_ethereum_manager_connect_at_start() -> Sequence[NodeName]:
 @pytest.fixture(name='etherscan')
 def fixture_etherscan(database, messages_aggregator):
     return Etherscan(database=database, msg_aggregator=messages_aggregator)
+
+
+@pytest.fixture(name='polygonscan')
+def fixture_polygonscan(database, messages_aggregator):
+    return Polygonscan(database=database, msg_aggregator=messages_aggregator)
 
 
 @pytest.fixture(name='covalent_avalanche')
@@ -294,6 +302,29 @@ def fixture_avalanche_manager(
     return avalanche_manager
 
 
+@pytest.fixture(name='polygon_manager')
+def fixture_polygon_manager(
+        polygonscan,
+        messages_aggregator,
+        ethereum_manager_connect_at_start,
+        greenlet_manager,
+        database,
+):
+    manager = PolygonManager(
+        polygonscan=polygonscan,
+        msg_aggregator=messages_aggregator,
+        greenlet_manager=greenlet_manager,
+        connect_at_start=ethereum_manager_connect_at_start,
+        database=database,
+    )
+    wait_until_all_nodes_connected(
+        ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+        ethereum=manager,
+    )
+
+    return manager
+
+
 @pytest.fixture(name='ethereum_modules')
 def fixture_ethereum_modules() -> List[str]:
     return []
@@ -315,6 +346,7 @@ def blockchain(
         kusama_manager,
         polkadot_manager,
         avalanche_manager,
+        polygon_manager,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
@@ -337,6 +369,7 @@ def blockchain(
         kusama_manager=kusama_manager,
         polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,
+        polygon_manager=polygon_manager,
         msg_aggregator=messages_aggregator,
         database=database,
         greenlet_manager=greenlet_manager,

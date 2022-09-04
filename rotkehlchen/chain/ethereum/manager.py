@@ -45,7 +45,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -99,7 +99,7 @@ class EthereumManager(EvmManager):
             etherscan_node=ETHERSCAN_NODE,
             etherscan_node_name=ETHERSCAN_NODE_NAME,
             blockchain=SupportedBlockchain.ETHEREUM,
-            contract_scan=ETH_SCAN[ChainID.ETHEREUM],
+            contract_scan=ETH_SCAN[SupportedBlockchain.ETHEREUM],
             contract_multicall=ETH_MULTICALL,
             contract_multicall_2=ETH_MULTICALL_2,
             rpc_timeout=rpc_timeout,

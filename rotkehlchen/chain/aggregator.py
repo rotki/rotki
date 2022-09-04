@@ -63,6 +63,7 @@ from rotkehlchen.constants.assets import (
     A_ETH2,
     A_KSM,
     A_LQTY,
+    A_MATIC,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -112,6 +113,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.nfts import Nfts
     from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
     from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.polygon.manager import PolygonManager
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -180,6 +182,7 @@ class BlockchainBalances:
     ksm: Dict[KusamaAddress, BalanceSheet] = field(init=False)
     dot: Dict[PolkadotAddress, BalanceSheet] = field(init=False)
     avax: DefaultDict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
+    matic: DefaultDict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
 
     def copy(self) -> 'BlockchainBalances':
         balances = BlockchainBalances(db=self.db)
@@ -190,6 +193,7 @@ class BlockchainBalances:
         balances.ksm = self.ksm.copy()
         balances.dot = self.dot.copy()
         balances.avax = self.avax.copy()
+        balances.matic = self.matic.copy()
         return balances
 
     def __post_init__(self) -> None:
@@ -200,6 +204,7 @@ class BlockchainBalances:
         self.ksm = defaultdict(BalanceSheet)
         self.dot = defaultdict(BalanceSheet)
         self.avax = defaultdict(BalanceSheet)
+        self.matic = defaultdict(BalanceSheet)
 
     def recalculate_totals(self) -> BalanceSheet:
         """Calculate and return new balance totals based on per-account data"""
@@ -218,6 +223,8 @@ class BlockchainBalances:
             new_totals += dot_balances
         for avax_balances in self.avax.values():
             new_totals += avax_balances
+        for matic_balances in self.matic.values():
+            new_totals += matic_balances
         return new_totals
 
     def serialize(self) -> Dict[str, Dict]:
@@ -228,6 +235,7 @@ class BlockchainBalances:
         ksm_balances = {k: v.serialize() for k, v in self.ksm.items()}
         dot_balances = {k: v.serialize() for k, v in self.dot.items()}
         avax_balances = {k: v.serialize() for k, v in self.avax.items()}
+        matic_balances = {k: v.serialize() for k, v in self.matic.items()}
 
         with self.db.conn.read_ctx() as cursor:
             btc_xpub_mappings = self.db.get_addresses_to_xpub_mapping(
@@ -267,6 +275,8 @@ class BlockchainBalances:
             blockchain_balances['DOT'] = dot_balances
         if avax_balances != {}:
             blockchain_balances['AVAX'] = avax_balances
+        if matic_balances != {}:
+            blockchain_balances['MATIC'] = matic_balances
 
         return blockchain_balances
 
@@ -332,6 +342,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             kusama_manager: 'SubstrateManager',
             polkadot_manager: 'SubstrateManager',
             avalanche_manager: 'AvalancheManager',
+            polygon_manager: 'PolygonManager',
             msg_aggregator: MessagesAggregator,
             database: 'DBHandler',
             greenlet_manager: GreenletManager,
@@ -347,6 +358,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.kusama = kusama_manager
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
+        self.polygon = polygon_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.accounts = blockchain_accounts
@@ -364,6 +376,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.ksm_lock = Semaphore()
         self.dot_lock = Semaphore()
         self.avax_lock = Semaphore()
+        self.matic_lock = Semaphore()
 
         # Per account balances
         self.balances = BlockchainBalances(db=database)
@@ -381,6 +394,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             database=self.database,
         )
         self.eth_asset = A_ETH.resolve_to_crypto_asset()
+        self.matic_asset = A_MATIC.resolve_to_crypto_asset()
 
     def __del__(self) -> None:
         del self.ethereum
@@ -612,6 +626,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         should_query_ksm = not blockchain or blockchain == SupportedBlockchain.KUSAMA
         should_query_dot = not blockchain or blockchain == SupportedBlockchain.POLKADOT
         should_query_avax = not blockchain or blockchain == SupportedBlockchain.AVALANCHE
+        should_query_matic = not blockchain or blockchain == SupportedBlockchain.POLYGON
 
         if should_query_eth:
             self.query_ethereum_balances(
@@ -632,6 +647,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self.query_polkadot_balances(ignore_cache=ignore_cache)
         if should_query_avax:
             self.query_avax_balances(ignore_cache=ignore_cache)
+        if should_query_matic:
+            self.query_polygon_balances(ignore_cache=ignore_cache)
         if ignore_cache is True:
             self.derive_new_addresses_from_xpubs(
                 should_derive_bch_xpubs=should_query_bch,
@@ -756,6 +773,39 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self.balances.avax[account] = BalanceSheet(
                 assets=defaultdict(Balance, {A_AVAX: Balance(amount, usd_value)}),
             )
+
+    @protect_with_lock()
+    @cache_response_timewise()
+    def query_polygon_balances(
+            self,  # pylint: disable=unused-argument
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
+        """Queries all the polygon balances and populates the state
+
+        May raise:
+        - RemoteError if an external service such as Etherscan or cryptocompare
+        is queried and there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+        client and the chain is not synced
+        """
+        if len(self.accounts.matic) == 0:
+            return
+
+        # Query polygon MATIC balances
+        matic_usd_price = Inquirer().find_usd_price(A_MATIC)
+        balances = self.polygon.get_multi_balance(self.accounts.matic)
+        for account, balance in balances.items():
+            usd_value = balance * matic_usd_price
+            self.balances.matic[account] = BalanceSheet(
+                assets=defaultdict(Balance, {
+                    self.matic_asset: Balance(balance, usd_value),
+                }),
+            )
+
+        self.query_defi_balances(accounts=self.accounts.matic)
+        # self.query_evm_tokens(manager=self.polygon, balances=self.balances.matic)
+        # self._add_matic_protocol_balances(eth_balances=self.balances.matic)
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -906,13 +956,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     balances.pop(address, None)
                     saved_accounts.remove(address)
 
-    def modify_btc_bch_avax_accounts(
+    def modify_btc_bch_avax_matic_accounts(
             self,
             accounts: Union[List[BTCAddress], List[ChecksumEvmAddress]],
             blockchain: Literal[
                 SupportedBlockchain.BITCOIN,
                 SupportedBlockchain.BITCOIN_CASH,
                 SupportedBlockchain.AVALANCHE,
+                SupportedBlockchain.POLYGON,
             ],
             append_or_remove: Literal['append', 'remove'],
     ) -> None:
@@ -980,10 +1031,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             SupportedBlockchain.BITCOIN,
             SupportedBlockchain.BITCOIN_CASH,
             SupportedBlockchain.AVALANCHE,
+            SupportedBlockchain.POLYGON,
         }:
             # we use `type: ignore` here and in other methods since mypy doesn't understand that
             # types of `blockchain` and `accounts` can be narrowed after if checks
-            self.modify_btc_bch_avax_accounts(
+            self.modify_btc_bch_avax_matic_accounts(
                 accounts=accounts,  # type: ignore
                 blockchain=blockchain,  # type: ignore
                 append_or_remove=append_or_remove,
@@ -1105,7 +1157,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             balances=balances,
         )
 
-    def query_defi_balances(self) -> Dict[ChecksumEvmAddress, List[DefiProtocolBalances]]:
+    def query_defi_balances(
+            self,
+            accounts: List[ChecksumEvmAddress],
+    ) -> Dict[ChecksumEvmAddress, List[DefiProtocolBalances]]:
         """Queries DeFi balances from Zerion contract and updates the state
 
         - RemoteError if an external service such as Etherscan or cryptocompare
@@ -1118,7 +1173,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 return self.defi_balances
 
             # query zerion adapter contract for defi balances
-            self.defi_balances = self.defichad.query_defi_balances(self.accounts.eth)
+            self.defi_balances = self.defichad.query_defi_balances(accounts)
             self.defi_balances_last_query_ts = ts_now()
             return self.defi_balances
 
@@ -1151,7 +1206,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 }),
             )
 
-        self.query_defi_balances()
+        self.query_defi_balances(accounts=self.accounts.eth)
         self.query_evm_tokens(manager=self.ethereum, balances=self.balances.eth)
         self._add_eth_protocol_balances(eth_balances=self.balances.eth)
 
@@ -1313,6 +1368,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_account()
 
+    # TODO: Should work with polygon
     def _add_account_defi_balances_to_token(
             self,
             account: ChecksumEvmAddress,
@@ -1572,7 +1628,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def get_chain_manager(
             self,
-            blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE],  # noqa: E501
+            blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE, SupportedBlockchain.POLYGON],  # noqa: E501
     ) -> Any:
         """Returns blockchain manager"""
         attr = blockchain.name.lower()

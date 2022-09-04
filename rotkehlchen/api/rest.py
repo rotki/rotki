@@ -111,7 +111,7 @@ from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import DBSnapshot
-from rotkehlchen.db.utils import DBAssetBalance, LocationData
+from rotkehlchen.db.utils import BlockchainAccounts, DBAssetBalance, LocationData
 from rotkehlchen.errors.api import (
     AuthenticationError,
     IncorrectApiKeyFormat,
@@ -149,6 +149,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    CHAINID_TO_SUPPORTED_BLOCKCHAIN,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
@@ -678,11 +679,13 @@ class RestAPI():
                 result['per_account'].pop('KSM', None)
                 result['per_account'].pop('DOT', None)
                 result['per_account'].pop('AVAX', None)
+                result['per_account'].pop('MATIC', None)
                 result['per_account'].pop('ETH2', None)
                 result['totals']['assets'].pop('BTC', None)
                 result['totals']['assets'].pop('KSM', None)
                 result['totals']['assets'].pop('DOT', None)
                 result['totals']['assets'].pop('AVAX', None)
+                result['totals']['assets'].pop('MATIC', None)
                 result['totals']['assets'].pop('ETH2', None)
             elif blockchain is not None:
                 native_token = blockchain.value
@@ -1468,7 +1471,7 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @staticmethod
-    def get_custom_ethereum_tokens(
+    def get_custom_evm_tokens(
             address: Optional[ChecksumEvmAddress],
             chain: Optional[ChainID],
     ) -> Response:
@@ -1487,7 +1490,8 @@ class RestAPI():
             return api_response(result, status_code)
 
         # else return all custom tokens
-        tokens = GlobalDBHandler().get_ethereum_tokens()
+        blockchain = CHAINID_TO_SUPPORTED_BLOCKCHAIN[chain]
+        tokens = GlobalDBHandler().get_evm_tokens(blockchain=blockchain)
         return api_response(
             _wrap_in_ok_result([x.to_dict() for x in tokens]),
             status_code=HTTPStatus.OK,
@@ -2535,13 +2539,13 @@ class RestAPI():
 
         return api_response(result, status_code=status_code)
 
-    def _get_defi_balances(self) -> Dict[str, Any]:
+    def _get_defi_balances(self, accounts: BlockchainAccounts) -> Dict[str, Any]:
         """
         This returns the typical async response dict but with the
         extra status code argument for errors
         """
         try:
-            balances = self.rotkehlchen.chains_aggregator.query_defi_balances()
+            balances = self.rotkehlchen.chains_aggregator.query_defi_balances(accounts=accounts)
         except EthSyncError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except RemoteError as e:
@@ -2549,11 +2553,12 @@ class RestAPI():
 
         return {'result': process_result(balances), 'message': ''}
 
-    def get_defi_balances(self, async_query: bool) -> Response:
+    def get_defi_balances(self, async_query: bool, blockchain: SupportedBlockchain) -> Response:
         if async_query is True:
-            return self._query_async(command=self._get_defi_balances)
+            return self._query_async(command=self._get_defi_balances, blockchain=blockchain)
 
-        response = self._get_defi_balances()
+        accounts = self.rotkehlchen.chains_aggregator.accounts.get(blockchain)
+        response = self._get_defi_balances(accounts=accounts)
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)
@@ -3141,13 +3146,16 @@ class RestAPI():
         DBEthTx(self.rotkehlchen.data.db).purge_ethereum_transaction_data()
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def _get_ethereum_transactions(
+    # TODO: Polygonize
+    def _get_evm_transactions(
             self,
             only_cache: bool,
             filter_query: ETHTransactionsFilterQuery,
             event_params: Dict[str, Any],
+            # blockchain: SupportedBlockchain,
     ) -> Dict[str, Any]:
         try:
+
             transactions, total_filter_count = self.rotkehlchen.eth_transactions.query(
                 only_cache=only_cache,
                 filter_query=filter_query,
@@ -3169,6 +3177,7 @@ class RestAPI():
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if transactions is not None:
+                # TODO: Action.POLYGON_TRANSACTION?
                 mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.ETHEREUM_TRANSACTION)  # noqa: E501
                 ignored_ids = mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
                 entries_result = []
@@ -3206,6 +3215,7 @@ class RestAPI():
             result = {
                 'entries': entries_result,
                 'entries_found': total_filter_count,
+                # TODO: Polygonize
                 'entries_total': self.rotkehlchen.data.db.get_entries_count(
                     cursor=cursor,
                     entries_table='ethereum_transactions',
@@ -3215,25 +3225,28 @@ class RestAPI():
 
         return {'result': result, 'message': message, 'status_code': status_code}
 
-    def get_ethereum_transactions(
+    def get_evm_transactions(
             self,
             async_query: bool,
             only_cache: bool,
-            filter_query: ETHTransactionsFilterQuery,
+            filter_query: ETHTransactionsFilterQuery,  # TODO: Evm
             event_params: Dict[str, Any],
+            # blockchain: SupportedBlockchain,
     ) -> Response:
         if async_query is True:
             return self._query_async(
-                command=self._get_ethereum_transactions,
+                command=self._get_evm_transactions,
                 only_cache=only_cache,
                 filter_query=filter_query,
                 event_params=event_params,
+                # blockchain=blockchain,
             )
 
-        response = self._get_ethereum_transactions(
+        response = self._get_evm_transactions(
             only_cache=only_cache,
             filter_query=filter_query,
             event_params=event_params,
+            # blockchain=blockchain,
         )
         result = response['result']
         msg = response['message']
@@ -4546,6 +4559,7 @@ class RestAPI():
             account_tokens_info = evmtokens.detect_tokens(
                 only_cache=only_cache,
                 addresses=addresses,
+                blockchain=manager.blockchain,  # type: ignore
             )
         except (RemoteError, BadFunctionCallOutput) as e:
             return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.CONFLICT)

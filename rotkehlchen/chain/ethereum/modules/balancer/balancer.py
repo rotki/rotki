@@ -34,6 +34,7 @@ from rotkehlchen.types import (
     EvmTokenKind,
     Location,
     Price,
+    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -559,7 +560,10 @@ class Balancer(EthereumModule):
         balancer_events: List[BalancerEvent] = []
         pool_addr_to_token_addr_to_index: PoolAddrToTokenAddrToIndex = {}
         # Create a map that allows getting the index of a token in the pool
-        db_pools = GlobalDBHandler().get_ethereum_tokens(protocol='balancer')
+        db_pools = GlobalDBHandler().get_evm_tokens(
+            blockchain=SupportedBlockchain.ETHEREUM,
+            protocol='balancer',
+        )
         for db_pool in db_pools:
             token_addr_to_index = {
                 pool_token.address: idx

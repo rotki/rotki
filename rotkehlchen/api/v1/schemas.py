@@ -84,6 +84,7 @@ from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    EVM_CHAINS,
     NON_EVM_CHAINS,
     AddressbookEntry,
     AddressbookType,
@@ -215,12 +216,13 @@ class DBOrderBySchema(Schema):
             )
 
 
-class EthereumTransactionQuerySchema(
+class EvmTransactionQuerySchema(
         AsyncQueryArgumentSchema,
         OnlyCacheQuerySchema,
         DBPaginationSchema,
         DBOrderBySchema,
 ):
+    blockchain = BlockchainField(required=True, exclude_types=NON_BITCOIN_CHAINS)
     address = EthereumAddressField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
@@ -288,7 +290,8 @@ class EthereumTransactionQuerySchema(
         }
 
 
-class EthereumTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
+class EvmTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
+    blockchain = BlockchainField(required=True, exclude_types=NON_BITCOIN_CHAINS)
     tx_hashes = fields.List(EVMTransactionHashField(), load_default=None)
 
     @validates_schema
@@ -1313,7 +1316,7 @@ def _validate_blockchain_account_schemas(
     # Make sure no duplicates addresses are given
     given_addresses = set()
     # Make sure EVM based addresses are checksummed
-    if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
+    if data['blockchain'] in EVM_CHAINS:
         for account_data in data['accounts']:
             address_string = address_getter(account_data)
             if not address_string.endswith('.eth'):
@@ -1585,7 +1588,7 @@ class BlockchainAccountsPatchSchema(Schema):
                     given_address=account['address'],
                     blockchain=data['blockchain'],
                 )
-        if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
+        if data['blockchain'] in EVM_CHAINS:
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_eth_address(
                     ethereum=self.ethereum_manager,
@@ -1640,7 +1643,7 @@ class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
                 _transform_btc_or_bch_address(self.ethereum_manager, x, data['blockchain'])
                 for x in data['accounts']
             ]
-        if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
+        if data['blockchain'] in EVM_CHAINS:
             data['accounts'] = [
                 _transform_eth_address(self.ethereum_manager, x) for x in data['accounts']
             ]
@@ -2134,6 +2137,10 @@ class AssetUpdatesRequestSchema(AsyncQueryArgumentSchema):
 class AssetResetRequestSchema(Schema):
     reset = fields.String(required=True)
     ignore_warnings = fields.Boolean(load_default=False)
+
+
+class DefiBalancesSchema(AsyncQueryArgumentSchema):
+    blockchain = BlockchainField(required=True)
 
 
 class NamedEthereumModuleDataSchema(Schema):

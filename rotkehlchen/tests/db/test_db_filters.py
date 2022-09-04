@@ -42,7 +42,7 @@ def test_filter_arguments(and_op, order_by, pagination):
     """This one is just like the ethereum transactions filter test, but also using
     it as a testbed to test combinations of arguments"""
     addresses = [make_ethereum_address(), make_ethereum_address()]
-    address_filter = DBETHTransactionJoinsFilter(and_op=False, addresses=addresses)
+    address_filter = DBETHTransactionJoinsFilter(and_op=False, blockchain='ETH', addresses=addresses)  # noqa: E501
     time_filter = DBTimestampFilter(and_op=True, from_ts=Timestamp(1), to_ts=Timestamp(999))
     location_filter = DBLocationFilter(and_op=True, location=Location.KRAKEN)
     order_by_obj = DBFilterOrder(rules=[('timestamp', True)], case_sensitive=True) if order_by else None  # noqa: E501

@@ -40,8 +40,10 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
+    SUPPORTED_BLOCKCHAIN_TO_CHAINID,
     ChainID,
     ChecksumEvmAddress,
+    EVMChain,
     EvmTokenKind,
     GeneralCacheType,
     Price,
@@ -795,7 +797,8 @@ class GlobalDBHandler():
             return None
 
     @staticmethod
-    def get_ethereum_tokens(
+    def get_evm_tokens(
+            blockchain: EVMChain,
             exceptions: Optional[List[ChecksumEvmAddress]] = None,
             except_protocols: Optional[List[str]] = None,
             protocol: Optional[str] = None,
@@ -813,7 +816,9 @@ class GlobalDBHandler():
             'assets AS A on B.identifier = A.identifier JOIN common_asset_details AS C ON '
             'C.identifier = B.identifier WHERE B.chain = ? '
         )
-        bindings_list: List[Union[str, int, ChecksumEvmAddress]] = [ChainID.ETHEREUM.serialize_for_db()]  # noqa: E501
+
+        chain_id = SUPPORTED_BLOCKCHAIN_TO_CHAINID[blockchain]
+        bindings_list: List[Union[str, int, ChecksumEvmAddress]] = [chain_id.serialize_for_db()]  # noqa: E501
         if exceptions is not None or protocol is not None or except_protocols is not None:
             querystr_additions = []
             if exceptions is not None:

@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.types import ChainID
+from rotkehlchen.types import SupportedBlockchain
 
 MAX_BLOCKTIME_CACHE = 250  # 55 mins with 13 secs avg block time
 ETH_SPECIAL_ADDRESS = string_to_evm_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
@@ -151,14 +151,17 @@ YEARN_ASUSD_VAULT = EthereumConstants().contract('YEARN_ASUSD_VAULT')
 YEARN_USDP_3CRV_VAULT = EthereumConstants().contract('YEARN_USDP_3CRV_VAULT')
 YEARN_PSLP_VAULT = EthereumConstants().contract('YEARN_PSLP_VAULT')
 
-ETH_SCAN = {}
-ETH_SCAN[ChainID.ETHEREUM] = EthereumConstants().contract('ETH_SCAN')
-ETH_SCAN[ChainID.MATIC] = EthereumConstants().contract('ETH_SCAN_MATIC')
+ETH_SCAN = {
+    SupportedBlockchain.ETHEREUM: EthereumConstants().contract('ETH_SCAN'),
+    SupportedBlockchain.POLYGON: EthereumConstants().contract('MATIC_SCAN'),
+}
 # BalanceScanner from mycrypto: https://github.com/MyCryptoHQ/eth-scan
 
 # Multicall from MakerDAO: https://github.com/makerdao/multicall/
 ETH_MULTICALL = EthereumConstants().contract('ETH_MULTICALL')
 ETH_MULTICALL_2 = EthereumConstants().contract('ETH_MULTICALL_2')
+MATIC_MULTICALL = EthereumConstants().contract('MATIC_MULTICALL')
+MATIC_MULTICALL_2 = EthereumConstants().contract('MATIC_MULTICALL_2')
 # Multicall2 on Polygon from https://github.com/makerdao/multicall/pull/24
 
 AAVE_V1_LENDING_POOL = EthereumConstants().contract('AAVE_V1_LENDING_POOL')

@@ -124,6 +124,7 @@ from rotkehlchen.types import (
     BlockchainAccountData,
     BTCAddress,
     ChecksumEvmAddress,
+    EVMChain,
     ExchangeApiCredentials,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -1299,7 +1300,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             address: ChecksumEvmAddress,
-            blockchain: SupportedBlockchain,
+            blockchain: EVMChain,
     ) -> Tuple[Optional[List[EvmToken]], Optional[Timestamp]]:
         """Gets the detected tokens for the given address if the given current time
         is recent enough.
@@ -1321,6 +1322,7 @@ class DBHandler:
                 try:
                     # This method is used directly when querying the balances and it is easier
                     # to resolve the token here
+                    # TODO: make it work with other EVM networks too
                     token = EvmToken(value)
                 except (DeserializationError, UnknownAsset):
                     token = None
@@ -1387,6 +1389,7 @@ class DBHandler:
         ksm_list = []
         dot_list = []
         avax_list = []
+        matic_list = []
 
         supported_blockchains = {blockchain.value for blockchain in SupportedBlockchain}
         cursor.execute(
@@ -1416,10 +1419,12 @@ class DBHandler:
                 ksm_list.append(entry[1])
             elif entry[0] == SupportedBlockchain.AVALANCHE.value:
                 avax_list.append(entry[1])
+            elif entry[0] == SupportedBlockchain.POLYGON.value:
+                matic_list.append(entry[1])
             elif entry[0] == SupportedBlockchain.POLKADOT.value:
                 dot_list.append(entry[1])
 
-        return BlockchainAccounts(eth=eth_list, btc=btc_list, bch=bch_list, ksm=ksm_list, dot=dot_list, avax=avax_list)  # noqa: E501
+        return BlockchainAccounts(eth=eth_list, btc=btc_list, bch=bch_list, ksm=ksm_list, dot=dot_list, avax=avax_list, matic=matic_list)  # noqa: E501
 
     def get_blockchain_account_data(
             self,

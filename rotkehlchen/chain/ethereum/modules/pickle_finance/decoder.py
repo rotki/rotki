@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import PICKLE_JAR_PROTOCOL, EvmTransaction
+from rotkehlchen.types import PICKLE_JAR_PROTOCOL, EvmTransaction, SupportedBlockchain
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_PICKLE
@@ -34,7 +34,10 @@ class PickleFinanceDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        jars = GlobalDBHandler().get_ethereum_tokens(protocol=PICKLE_JAR_PROTOCOL)
+        jars = GlobalDBHandler().get_evm_tokens(
+            blockchain=SupportedBlockchain.ETHEREUM,
+            protocol=PICKLE_JAR_PROTOCOL,
+        )
         self.pickle_contracts = {jar.evm_address for jar in jars}
 
     def _maybe_enrich_pickle_transfers(  # pylint: disable=no-self-use

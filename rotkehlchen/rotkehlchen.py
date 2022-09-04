@@ -39,6 +39,7 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.chain.polygon.manager import PolygonManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateChain
 from rotkehlchen.chain.substrate.utils import (
@@ -60,7 +61,7 @@ from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.covalent import Covalent, chains_id
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
-from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.etherscan import Etherscan, Polygonscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
@@ -256,6 +257,7 @@ class Rotkehlchen():
                 should_submit=settings.submit_usage_analytics,
             )
             self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
+            self.polygonscan = Polygonscan(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
             self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
             # Initialize the price historian singleton
             PriceHistorian(
@@ -310,6 +312,20 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
         )
 
+        # TODO: migrate to multicall3 more, same deployment address
+        # https://github.com/joshstevens19/ethereum-multicall/blob/master/src/multicall.ts
+
+        # TODO: Add polygon nodes to db (web3_nodes table)
+        polygon_nodes = self.data.db.get_web3_nodes(blockchain=SupportedBlockchain.POLYGON, only_active=True)  # noqa: E501
+
+        polygon_manager = PolygonManager(
+            polygonscan=self.polygonscan,
+            msg_aggregator=self.msg_aggregator,
+            greenlet_manager=self.greenlet_manager,
+            connect_at_start=polygon_nodes,
+            database=self.data.db,
+        )
+
         Inquirer().inject_ethereum(ethereum_manager)
         uniswap_v2_oracle = UniswapV2Oracle(ethereum_manager)
         uniswap_v3_oracle = UniswapV3Oracle(ethereum_manager)
@@ -327,6 +343,7 @@ class Rotkehlchen():
             kusama_manager=kusama_manager,
             polkadot_manager=polkadot_manager,
             avalanche_manager=avalanche_manager,
+            polygon_manager=polygon_manager,
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
             greenlet_manager=self.greenlet_manager,

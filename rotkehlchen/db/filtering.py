@@ -16,6 +16,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
     Location,
+    SupportedBlockchain,
     Timestamp,
     TradeType,
 )
@@ -94,6 +95,7 @@ class DBTimestampFilter(DBFilter):
         return filters, bindings
 
 
+# TODO: Generalize for Polygon
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBETHTransactionJoinsFilter(DBFilter):
     """ This join filter does 2 things:
@@ -106,20 +108,26 @@ class DBETHTransactionJoinsFilter(DBFilter):
     filters by history_events' properties
     """
     addresses: Optional[List[ChecksumEvmAddress]]
+    blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.POLYGON]
     should_join_events: bool = False
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
         query_filters, bindings = [], []
+        # TODO: Decide if using different tables per blockchain or attribute
+        if self.blockchain == SupportedBlockchain.ETHEREUM:
+            table = 'ethereum_transactions'
+        elif self.blockchain == SupportedBlockchain.POLYGON:
+            table = 'polygon_transactions'
         if self.should_join_events is True:
             query_filters.append(
                 'LEFT JOIN (SELECT event_identifier, counterparty, asset FROM history_events) '
-                'ON ethereum_transactions.tx_hash=event_identifier',
+                f'ON {table}.tx_hash=event_identifier',
             )
         if self.addresses is not None:
             questionmarks = '?' * len(self.addresses)
             query_filters.append(
                 f'INNER JOIN ethtx_address_mappings WHERE '
-                f'ethereum_transactions.tx_hash=ethtx_address_mappings.tx_hash AND '
+                f'{table}.tx_hash=ethtx_address_mappings.tx_hash AND '
                 f'ethtx_address_mappings.address IN ({",".join(questionmarks)})',
             )
             bindings += self.addresses
@@ -353,9 +361,11 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         else:
             should_join_events = asset is not None or protocols is not None or exclude_ignored_assets is True  # noqa: E501
             if addresses is not None or should_join_events is True:
+                # TODO: Generalize for Polygon
                 filter_query.join_clause = DBETHTransactionJoinsFilter(
                     and_op=False,
                     addresses=addresses,
+                    blockchain=SupportedBlockchain.ETHEREUM,
                     should_join_events=should_join_events,
                 )
 
