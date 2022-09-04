@@ -67,6 +67,7 @@ from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.ethereum.types import WeightedNode
+from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
@@ -4520,14 +4521,15 @@ class RestAPI():
         )
         return api_response(_wrap_in_ok_result(mappings))
 
-    def _detect_ethereum_tokens(
+    def _detect_evm_tokens(
             self,
             only_cache: bool,
             addresses: List[ChecksumEvmAddress],
+            manager: EvmManager,
     ) -> Dict[str, Any]:
         evmtokens = EvmTokens(
             database=self.rotkehlchen.data.db,
-            manager=self.rotkehlchen.chain_manager.ethereum,
+            manager=manager,
         )
         try:
             account_tokens_info = evmtokens.detect_tokens(
@@ -4549,22 +4551,29 @@ class RestAPI():
             'status_code': HTTPStatus.OK,
         }
 
-    def detect_ethereum_tokens(
+    def detect_evm_tokens(
             self,
             async_query: bool,
             only_cache: bool,
             addresses: Optional[List[ChecksumEvmAddress]],
+            blockchain: SupportedBlockchain,
     ) -> Response:
+        manager = self.rotkehlchen.chain_manager.get_chain_manager(blockchain)  # type: ignore
         if addresses is None:
-            addresses = self.rotkehlchen.chain_manager.accounts.eth
+            addresses = self.rotkehlchen.chain_manager.accounts.get(blockchain)  # type: ignore
         if async_query is True:
             return self._query_async(
-                command=self._detect_ethereum_tokens,
+                command=self._detect_evm_tokens,
                 only_cache=only_cache,
                 addresses=addresses,
+                manager=manager,
             )
 
-        response = self._detect_ethereum_tokens(only_cache=only_cache, addresses=addresses)
+        response = self._detect_evm_tokens(
+            only_cache=only_cache,
+            addresses=addresses,  # type: ignore
+            manager=manager,
+        )
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=status_code)

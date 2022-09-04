@@ -253,8 +253,8 @@ def test_query_blockchain_balances_ignore_cache(
     )
     tokens_query = patch.object(
         rotki.chain_manager,
-        'query_ethereum_tokens',
-        wraps=rotki.chain_manager.query_ethereum_tokens,
+        'query_tokens',
+        wraps=rotki.chain_manager.query_tokens,
     )
 
     with ExitStack() as stack:

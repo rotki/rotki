@@ -2575,7 +2575,7 @@ class DetectTokensSchema(
     OnlyCacheQuerySchema,
     OptionalAddressesListSchema,
 ):
-    ...
+    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
 
 
 class UserNotesPutSchema(Schema):

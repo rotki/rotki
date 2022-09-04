@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
-from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
@@ -97,7 +97,7 @@ def generate_multicall_chunks(
 
 
 class EvmTokens():
-    def __init__(self, database: DBHandler, manager: EthereumManager):
+    def __init__(self, database: DBHandler, manager: EvmManager):
         self.db = database
         self.manager = manager
 
