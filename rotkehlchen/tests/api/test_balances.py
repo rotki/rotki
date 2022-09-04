@@ -260,8 +260,8 @@ def test_query_all_balances_ignore_cache(
     )
     tokens_query_patch = patch.object(
         rotki.chain_manager,
-        'query_ethereum_tokens',
-        wraps=rotki.chain_manager.query_ethereum_tokens,
+        'query_tokens',
+        wraps=rotki.chain_manager.query_tokens,
     )
     original_binance_query_dict = binance.api_query_dict
     binance_query_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
@@ -821,11 +821,12 @@ def test_ethereum_tokens_detection(
 ):
     account = ethereum_accounts[0]
 
-    def query_detect_tokens() -> Dict[str, Any]:
+    def query_detect_eth_tokens() -> Dict[str, Any]:
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'detecttokensresource',
+                blockchain='ETH',
             ), json={
                 'async_query': False,
                 'only_cache': True,
@@ -840,7 +841,7 @@ def test_ethereum_tokens_detection(
             'last_update_timestamp': None,
         },
     }
-    assert query_detect_tokens() == empty_tokens_result
+    assert query_detect_eth_tokens() == empty_tokens_result
 
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     with db.user_write() as write_cursor:
@@ -851,7 +852,7 @@ def test_ethereum_tokens_detection(
             tokens=[A_RDN, A_DAI],
         )
     cur_time = ts_now()
-    result = query_detect_tokens()
+    result = query_detect_eth_tokens()
     assert set(result[account]['tokens']) == {A_DAI.identifier, A_RDN.identifier}
     assert result[account]['last_update_timestamp'] >= cur_time
 

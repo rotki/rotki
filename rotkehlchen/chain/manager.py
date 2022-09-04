@@ -111,6 +111,7 @@ if TYPE_CHECKING:
     )
     from rotkehlchen.chain.ethereum.modules.nfts import Nfts
     from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
+    from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -1052,9 +1053,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             dsr_proxy_append: bool,
             balance_result: Dict[ChecksumEvmAddress, Dict[EvmToken, FVal]],
             token_usd_price: Dict[EvmToken, Price],
+            balances: DefaultDict[ChecksumEvmAddress, BalanceSheet],
     ) -> None:
         # Update the per account token balance and usd value
-        eth_balances = self.balances.eth
         for account, token_balances in balance_result.items():
             for token, token_balance in token_balances.items():
                 balance = Balance(
@@ -1062,11 +1063,15 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     usd_value=token_balance * token_usd_price[token],
                 )
                 if dsr_proxy_append is True:
-                    eth_balances[account].assets[token] += balance
+                    balances[account].assets[token] += balance
                 else:
-                    eth_balances[account].assets[token] = balance
+                    balances[account].assets[token] = balance
 
-    def query_ethereum_tokens(self) -> None:
+    def query_tokens(
+            self,
+            manager: 'EvmManager',
+            balances: DefaultDict[ChecksumEvmAddress, BalanceSheet],
+    ) -> None:
         """Queries ethereum token balance via either etherscan or ethereum node
 
         Should come here during addition of a new account or querying of all token
@@ -1078,10 +1083,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        evmtokens = EvmTokens(database=self.database, manager=self.ethereum)
+        evmtokens = EvmTokens(database=self.database, manager=manager)
         try:
             balance_result, token_usd_price = evmtokens.query_tokens_for_addresses(
-                addresses=self.accounts.eth,
+                addresses=self.accounts.get(manager.blockchain),  # type: ignore
             )
         except BadFunctionCallOutput as e:
             log.error(
@@ -1089,14 +1094,15 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 'exception: {}'.format(str(e)),
             )
             raise EthSyncError(
-                'Tried to use the ethereum chain of the provided client to query '
-                'token balances but the chain is not synced.',
+                f'Tried to use the {manager.blockchain.value} chain of the provided '
+                'client to query token balances but the chain is not synced.',
             ) from e
 
         self._update_balances_after_token_query(
             dsr_proxy_append=False,
             balance_result=balance_result,
             token_usd_price=token_usd_price,
+            balances=balances,
         )
 
     def query_defi_balances(self) -> Dict[ChecksumEvmAddress, List[DefiProtocolBalances]]:
@@ -1136,19 +1142,20 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         # Query ethereum ETH balances
         eth_accounts = self.accounts.eth
+        eth_balances = self.balances.eth
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
         balances = self.ethereum.get_multi_balance(eth_accounts)
         for account, balance in balances.items():
             usd_value = balance * eth_usd_price
-            self.balances.eth[account] = BalanceSheet(
+            eth_balances[account] = BalanceSheet(
                 assets=defaultdict(Balance, {
                     self.eth_asset: Balance(balance, usd_value),
                 }),
             )
 
         self.query_defi_balances()
-        self.query_ethereum_tokens()
-        self._add_protocol_balances()
+        self.query_tokens(manager=self.ethereum, balances=eth_balances)
+        self._add_protocol_balances(balances=eth_balances)
 
     def query_ethereum_lp_balances(
             self,
@@ -1209,10 +1216,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 else:
                     balances[loc_key][EvmToken(ethaddress_to_identifier(lp.address))] = lp.user_balance  # noqa: E501
 
-    def _add_protocol_balances(self) -> None:
+    def _add_protocol_balances(self, balances: DefaultDict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
         """Also count token balances that may come from various protocols"""
         # If we have anything in DSR also count it towards total blockchain balances
-        eth_balances = self.balances.eth
         dsr_module = self.get_module('makerdao_dsr')
         if dsr_module is not None:
             current_dsr_report = dsr_module.get_current_dsr()
@@ -1221,20 +1227,20 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 if balance_entry.amount == ZERO:
                     continue
 
-                eth_balances[dsr_account].assets[A_DAI] += balance_entry
+                balances[dsr_account].assets[A_DAI] += balance_entry
 
         # Also count the vault balance and defi saver wallets and add it to the totals
         vaults_module = self.get_module('makerdao_vaults')
         if vaults_module is not None:
-            balances = vaults_module.get_balances()
-            for address, entry in balances.items():
-                if address not in eth_balances:
+            vault_balances = vaults_module.get_balances()
+            for address, entry in vault_balances.items():
+                if address not in balances:
                     self.msg_aggregator.add_error(
                         f'The owner of a vault {address} was not in the tracked addresses.'
                         f' This should not happen and is probably a bug. Please report it.',
                     )
                 else:
-                    eth_balances[address] += entry
+                    balances[address] += entry
 
             proxy_mappings = vaults_module._get_accounts_having_proxy()
             proxy_to_address = {}
@@ -1263,6 +1269,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 dsr_proxy_append=True,
                 balance_result=new_result,
                 token_usd_price=token_usd_price,
+                balances=balances,
             )
 
             # also query defi balances to get liabilities
@@ -1277,7 +1284,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if adex_module is not None and self.premium is not None:
             adex_balances = adex_module.get_balances(addresses=self.queried_addresses_for_module('adex'))  # noqa: E501
             for address, balance in adex_balances.items():
-                eth_balances[address].assets[A_ADX] += balance
+                balances[address].assets[A_ADX] += balance
 
         pickle_module = self.get_module('pickle_finance')
         if pickle_module is not None:
@@ -1286,7 +1293,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             )
             for address, pickle_balances in pickle_balances_per_address.items():
                 for asset_balance in pickle_balances:
-                    eth_balances[address].assets[asset_balance.asset] += asset_balance.balance  # noqa: E501
+                    balances[address].assets[asset_balance.asset] += asset_balance.balance  # noqa: E501
 
         liquity_module = self.get_module('liquity')
         if liquity_module is not None:
@@ -1296,14 +1303,14 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             )
             for address, deposits in liquity_balances.items():
                 collateral = deposits.collateral.balance
-                eth_balances[address].assets[A_ETH] += collateral
+                balances[address].assets[A_ETH] += collateral
             # Get staked amounts
             liquity_staked = liquity_module.liquity_staking_balances(
                 addresses=self.queried_addresses_for_module('liquity'),
             )
             for address, staked_info in liquity_staked.items():
                 deposited_lqty = staked_info.staked.balance
-                eth_balances[address].assets[A_LQTY] += deposited_lqty
+                balances[address].assets[A_LQTY] += deposited_lqty
 
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_account()

@@ -2927,7 +2927,7 @@ Querying all supported assets
       }
 
    :resjson list result: A list of assets that match the query with their respective asset details.
-   :resjson string type: The type of asset. Valid values are ethereum token, own chain, omni token and more. For all valid values check `here <https://github.com/rotki/rotki/blob/8387c96eb77f9904b44a1ddd0eb2acbf3f8d03f6/rotkehlchen/assets/types.py#L10>`_. 
+   :resjson string type: The type of asset. Valid values are ethereum token, own chain, omni token and more. For all valid values check `here <https://github.com/rotki/rotki/blob/8387c96eb77f9904b44a1ddd0eb2acbf3f8d03f6/rotkehlchen/assets/types.py#L10>`_.
    :resjson integer started: An optional unix timestamp denoting when we know the asset started to have a price.
    :resjson string name: The long name of the asset. Does not need to be the same as the unique identifier.
    :resjson string forked: An optional attribute representing another asset out of which this asset forked from. For example ``ETC`` would have ``ETH`` here.
@@ -3173,12 +3173,12 @@ Querying owned assets
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error
 
-Detecting owned ethereum tokens
-===============================
+Detecting owned tokens
+======================
 
-.. http:post:: /api/(version)/blockchains/ETH/tokens/detect
+.. http:post:: /api/(version)/blockchains/(blockchain)/tokens/detect
 
-   Doing POST on the detect tokens endpoint will detect ethereum tokens owned by the provided addresses. If no addresses provided, tokens for all user's ethereum addresses will be detected.
+   Doing POST on the detect tokens endpoint will detect tokens owned by the provided addresses on the specified blockchain. If no addresses provided, tokens for all user's addresses will be detected.
 
     .. note::
           This endpoint can also be queried asynchronously by using ``"async_query": true``

@@ -2648,17 +2648,19 @@ class DetectTokensResource(BaseMethodView):
     post_schema = DetectTokensSchema()
 
     @require_loggedin_user()
-    @use_kwargs(post_schema, location='json')
+    @use_kwargs(post_schema, location='json_and_view_args')
     def post(
             self,
+            blockchain: SupportedBlockchain,
             async_query: bool,
             only_cache: bool,
             addresses: Optional[List[ChecksumEvmAddress]],
     ) -> Response:
-        return self.rest_api.detect_ethereum_tokens(
+        return self.rest_api.detect_evm_tokens(
             async_query=async_query,
             only_cache=only_cache,
             addresses=addresses,
+            blockchain=blockchain,
         )
 
 

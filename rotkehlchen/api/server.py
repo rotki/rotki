@@ -230,7 +230,6 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/defi', DefiBalancesResource),
     ('/blockchains/ETH/airdrops', EthereumAirdropsResource),
     ('/blockchains/ETH/erc20details', ERC20TokenInfo),
-    ('/blockchains/ETH/tokens/detect', DetectTokensResource),
     ('/blockchains/ETH/modules/<string:module_name>/data', NamedEthereumModuleDataResource),
     ('/blockchains/ETH/modules/data', EthereumModuleDataResource),
     ('/blockchains/ETH/modules/data/counterparties', CounterpartiesResource),
@@ -265,6 +264,7 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/loopring/balances', LoopringBalancesResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/blockchains/<string:blockchain>/nodes', Web3NodesResource),
+    ('/blockchains/<string:blockchain>/tokens/detect', DetectTokensResource),
     ('/blockchains/<string:blockchain>/xpub', BTCXpubResource),
     ('/blockchains/AVAX/transactions', AvalancheTransactionsResource),
     (
