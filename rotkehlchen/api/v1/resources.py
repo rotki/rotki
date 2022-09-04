@@ -506,13 +506,13 @@ class Web3NodesResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query_and_view_args')
     def put(
-        self,
-        blockchain: SupportedBlockchain,
-        name: str,
-        endpoint: str,
-        owned: bool,
-        weight: FVal,
-        active: bool,
+            self,
+            blockchain: SupportedBlockchain,
+            name: str,
+            endpoint: str,
+            owned: bool,
+            weight: FVal,
+            active: bool,
     ) -> Response:
         node = WeightedNode(
             node_info=NodeName(
@@ -529,14 +529,14 @@ class Web3NodesResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json_and_query_and_view_args')
     def patch(
-        self,
-        blockchain: SupportedBlockchain,
-        identifier: int,
-        name: str,
-        endpoint: str,
-        owned: bool,
-        weight: FVal,
-        active: bool,
+            self,
+            blockchain: SupportedBlockchain,
+            identifier: int,
+            name: str,
+            endpoint: str,
+            owned: bool,
+            weight: FVal,
+            active: bool,
     ) -> Response:
         node = WeightedNode(
             identifier=identifier,
@@ -554,11 +554,10 @@ class Web3NodesResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_query_and_view_args')
     def delete(
-        self,
-        blockchain: SupportedBlockchain,  # pylint: disable=unused-argument
-        identifier: int,
+            self,
+            blockchain: SupportedBlockchain,  # pylint: disable=unused-argument
+            identifier: int,
     ) -> Response:
-        """Note: we only delete by identifier and the blockchain parameter is ignored"""
         return self.rest_api.delete_web3_node(identifier=identifier, blockchain=blockchain)
 
 
