@@ -3298,8 +3298,8 @@ class DBHandler:
 
     def update_web3_node(self, node: WeightedNode) -> None:
         """
-        Edits an existing web3 node
-
+        Edits an existing web3 node.
+        Note: we don't allow editing the blockchain field.
         May raise:
         - InputError if no entry with such
         """
@@ -3328,7 +3328,7 @@ class DBHandler:
             )
 
     def delete_web3_node(self, identifier: int, blockchain: SupportedBlockchain) -> None:
-        """Delete a web3 node by identifier
+        """Delete a web3 node by identifier and blockchain.
         May raise:
         - InputError if no entry with such identifier is in the database.
         """
