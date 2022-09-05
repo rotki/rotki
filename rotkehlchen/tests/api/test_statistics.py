@@ -163,10 +163,10 @@ def test_query_statistics_asset_balance_errors(rotkehlchen_api_server, rest_api_
     start_time = ts_now()
 
     # Check that no asset given is an error
-    response = requests.get(f'http://localhost:{rest_api_port}/api/1/statistics/balance')
+    response = requests.post(f'http://localhost:{rest_api_port}/api/1/statistics/balance')
     assert_error_response(
         response=response,
-        status_code=HTTPStatus.NOT_FOUND,
+        status_code=HTTPStatus.BAD_REQUEST,
     )
 
     # Check that an invalid asset given is an error

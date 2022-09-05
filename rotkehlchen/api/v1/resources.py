@@ -1152,10 +1152,10 @@ class StatisticsNetvalueResource(BaseMethodView):
 
 class StatisticsAssetBalanceResource(BaseMethodView):
 
-    get_schema = StatisticsAssetBalanceSchema()
+    post_schema = StatisticsAssetBalanceSchema()
 
     @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json')
+    @use_kwargs(post_schema, location='json')
     def post(
             self,
             asset: Asset,
