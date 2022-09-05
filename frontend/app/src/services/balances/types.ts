@@ -1,4 +1,4 @@
-import { Balance, BigNumber } from '@rotki/common';
+import { Balance, NumericString } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { z } from 'zod';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
@@ -11,28 +11,33 @@ export enum BalanceType {
   LIABILITY = 'liability'
 }
 
-export interface ManualBalance {
-  readonly id: number;
-  readonly asset: string;
-  readonly label: string;
-  readonly amount: BigNumber;
-  readonly location: TradeLocation;
-  readonly tags: string[];
-  readonly balanceType: BalanceType;
-}
+export const ManualBalance = z.object({
+  id: z.number().positive(),
+  asset: z.string(),
+  label: z.string(),
+  amount: NumericString,
+  location: TradeLocation,
+  tags: z.array(z.string()).nullable(),
+  balanceType: z.nativeEnum(BalanceType)
+});
 
-export interface ManualBalanceWithValue extends ManualBalance {
-  readonly usdValue: BigNumber;
-}
+export type ManualBalance = z.infer<typeof ManualBalance>;
+
+export const ManualBalanceWithValue = ManualBalance.merge(
+  z.object({ usdValue: NumericString })
+);
+
+export type ManualBalanceWithValue = z.infer<typeof ManualBalanceWithValue>;
 
 export const Balances = z.record(Balance);
 
 export type Balances = z.infer<typeof Balances>;
 
-export interface ManualBalances {
-  readonly balances: ManualBalanceWithValue[];
-  readonly liabilities: Balances[];
-}
+export const ManualBalances = z.object({
+  balances: z.array(ManualBalanceWithValue)
+});
+
+export type ManualBalances = z.infer<typeof ManualBalances>;
 
 const BlockchainTotals = z.object({
   assets: Balances,
@@ -56,8 +61,6 @@ const EthBalance = z.object({
   assets: Balances,
   liabilities: Balances
 });
-
-export type EthBalance = z.infer<typeof EthBalance>;
 
 const BlockchainAssetBalances = z.record(EthBalance);
 
@@ -87,17 +90,10 @@ export type OracleCacheMeta = {
   readonly toTimestamp: string;
 };
 
-export type DataSourceMeta = {
-  readonly id: string;
-  readonly name: string;
-};
-
 export const EthDetectedTokens = z.object({
   tokens: z.array(z.string()).nullish(),
   lastUpdateTimestamp: z.number().nullish()
 });
-
-export type EthDetectedTokens = z.infer<typeof EthDetectedTokens>;
 
 export const EthDetectedTokensRecord = z.record(EthDetectedTokens);
 

@@ -2,14 +2,13 @@ import { BigNumber } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, Ref, ref } from 'vue';
-import i18n from '@/i18n';
+import { useI18n } from 'vue-i18n-composable';
 import {
   BalanceType,
   ManualBalance,
   ManualBalances,
   ManualBalanceWithValue
 } from '@/services/balances/types';
-import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
 import { useBalancePricesStore } from '@/store/balances/prices';
@@ -24,9 +23,14 @@ import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { sortDesc } from '@/utils/bignumbers';
+import { logger } from '@/utils/logging';
 
 export const useManualBalancesStore = defineStore('balances/manual', () => {
   const manualBalancesData: Ref<ManualBalanceWithValue[]> = ref([]);
+
+  const { t, tc } = useI18n();
+  const { notify } = useNotifications();
+  const { awaitTask } = useTasks();
 
   const manualBalances = computed(() => {
     return get(manualBalancesData).filter(
@@ -103,7 +107,6 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   });
 
   const fetchManualBalances = async () => {
-    const { awaitTask } = useTasks();
     const currentStatus: Status = getStatus(Section.MANUAL_BALANCES);
     const section = Section.MANUAL_BALANCES;
     const newStatus =
@@ -117,23 +120,20 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         taskId,
         taskType,
         {
-          title: i18n.tc('actions.manual_balances.task.title'),
-          numericKeys: balanceKeys
+          title: tc('actions.manual_balances.task.title'),
+          numericKeys: []
         }
       );
 
-      set(manualBalancesData, result.balances);
+      const { balances } = ManualBalances.parse(result);
+      set(manualBalancesData, balances);
     } catch (e: any) {
-      const { notify } = useNotifications();
+      logger.error(e);
       notify({
-        title: i18n
-          .t('actions.balances.manual_balances.error.title')
-          .toString(),
-        message: i18n
-          .t('actions.balances.manual_balances.error.message', {
-            message: e.message
-          })
-          .toString(),
+        title: tc('actions.balances.manual_balances.error.title'),
+        message: tc('actions.balances.manual_balances.error.message', 0, {
+          message: e.message
+        }),
         display: true
       });
     } finally {
@@ -145,7 +145,17 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     balance: Omit<ManualBalance, 'id'>
   ): Promise<ActionStatus> => {
     try {
-      const { balances } = await api.balances.addManualBalances([balance]);
+      const taskType = TaskType.MANUAL_BALANCES_ADD;
+      const { taskId } = await api.balances.addManualBalances([balance]);
+      const { result } = await awaitTask<ManualBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: tc('actions.manual_balances.task.title'),
+          numericKeys: []
+        }
+      );
+      const { balances } = ManualBalances.parse(result);
       set(manualBalancesData, balances);
       const { refreshPrices } = useBalancesStore();
       await refreshPrices({
@@ -156,6 +166,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
+      logger.error(e);
       return {
         success: false,
         message: e.message
@@ -167,7 +178,17 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     balance: ManualBalance
   ): Promise<ActionStatus> => {
     try {
-      const { balances } = await api.balances.editManualBalances([balance]);
+      const taskType = TaskType.MANUAL_BALANCES_EDIT;
+      const { taskId } = await api.balances.editManualBalances([balance]);
+      const { result } = await awaitTask<ManualBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: tc('actions.manual_balances.task.title'),
+          numericKeys: []
+        }
+      );
+      const { balances } = ManualBalances.parse(result);
       set(manualBalancesData, balances);
       const { refreshPrices } = useBalancesStore();
       await refreshPrices({
@@ -178,6 +199,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         success: true
       };
     } catch (e: any) {
+      logger.error(e);
       return {
         success: false,
         message: e.message
@@ -192,7 +214,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     } catch (e: any) {
       showError(
         `${e.message}`,
-        i18n.t('actions.balances.manual_delete.error.title').toString()
+        t('actions.balances.manual_delete.error.title').toString()
       );
     }
   };

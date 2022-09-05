@@ -155,8 +155,9 @@ const visibleBalances = computed<ManualBalance[]>(() => {
   }
 
   return get(balances).filter(balance => {
-    if (balance.tags) {
-      return selectedTags.every(tag => balance.tags.includes(tag));
+    const tags = balance.tags;
+    if (tags) {
+      return selectedTags.every(tag => tags.includes(tag));
     }
   });
 });
