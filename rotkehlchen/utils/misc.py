@@ -258,7 +258,7 @@ def hexstr_to_int(value: str) -> int:
     return int_value
 
 
-def hex_or_bytes_to_int(value: Union[bytes, str]) -> int:
+def hex_or_bytes_to_int(value: Union[bytes, str], signed: bool = False) -> int:
     """Turns a bytes/HexBytes or a hexstring into an int
 
     May raise:
@@ -266,7 +266,7 @@ def hex_or_bytes_to_int(value: Union[bytes, str]) -> int:
     type is given.
     """
     if isinstance(value, bytes):
-        int_value = int.from_bytes(value, byteorder='big', signed=False)
+        int_value = int.from_bytes(value, byteorder='big', signed=signed)
     elif isinstance(value, str):
         int_value = hexstr_to_int(value)
     else:
