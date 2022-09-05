@@ -166,9 +166,9 @@ class GlobalDBHandler():
             data: Union[EvmToken, Dict[str, Any]],
     ) -> None:
         """
-        Add an asset in the DB. Either an ethereum token or a custom asset.
+        Add an asset in the DB. Either an ethereum token or a user asset.
 
-        If it's a custom asset the data should be typed. As given in by marshmallow.
+        If it's a user asset the data should be typed. As given in by marshmallow.
 
         May raise InputError in case of error, meaning asset exists or some constraint hit"""
         if asset_type == AssetType.EVM_TOKEN:
@@ -962,8 +962,8 @@ class GlobalDBHandler():
         return asset_identifier
 
     @staticmethod
-    def edit_custom_asset(data: Dict[str, Any]) -> None:
-        """Edits an already existing custom asset in the DB
+    def edit_user_asset(data: Dict[str, Any]) -> None:
+        """Edits an already existing user asset in the DB
 
         The data should already be typed (as given in by marshmallow).
 

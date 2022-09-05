@@ -688,16 +688,16 @@ class AllAssetsResource(BaseMethodView):
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_add_schema, location='json')
     def put(self, asset_type: AssetType, **kwargs: Any) -> Response:
-        return self.rest_api.add_custom_asset(asset_type, **kwargs)
+        return self.rest_api.add_user_asset(asset_type, **kwargs)
 
     @resource_parser.use_kwargs(make_edit_schema, location='json')
     def patch(self, **kwargs: Any) -> Response:
-        return self.rest_api.edit_custom_asset(kwargs)
+        return self.rest_api.edit_user_asset(kwargs)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
     def delete(self, identifier: str) -> Response:
-        return self.rest_api.delete_custom_asset(identifier)
+        return self.rest_api.delete_asset(identifier)
 
 
 class AssetsMappingResource(BaseMethodView):
