@@ -72,7 +72,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { get, useClipboard } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
 import { storeToRefs } from 'pinia';
-import { computed, defineProps, PropType, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import {
   Chains,

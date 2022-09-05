@@ -6,8 +6,8 @@
           <v-btn
             color="primary"
             depressed
-            v-bind="{ ...attrs, ...$attrs }"
-            v-on="{ ...on, ...$listeners }"
+            v-bind="{ ...attrs, ...rootAttrs }"
+            v-on="{ ...on, ...rootListeners }"
           >
             <slot />
           </v-btn>
@@ -29,15 +29,15 @@
     </v-col>
   </v-row>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useAttrs, useListeners } from 'vue';
 
-export default defineComponent({
-  name: 'StatusButton',
-  props: {
-    successMessage: { required: true, type: String },
-    errorMessage: { required: true, type: String },
-    tooltip: { required: false, type: String, default: '' }
-  }
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+
+defineProps({
+  successMessage: { required: true, type: String },
+  errorMessage: { required: true, type: String },
+  tooltip: { required: false, type: String, default: '' }
 });
 </script>

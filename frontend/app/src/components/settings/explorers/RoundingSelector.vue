@@ -1,12 +1,12 @@
 ﻿<template>
   <v-select
-    v-bind="$attrs"
+    v-bind="rootAttrs"
     item-text="text"
     item-value="value"
     outlined
     persistent-hint
     :items="selections"
-    v-on="$listeners"
+    v-on="rootListeners"
   >
     <template #item="{ item, attrs, on }">
       <v-list-item v-bind="attrs" v-on="on">
@@ -28,8 +28,11 @@
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
+import { useAttrs, useListeners } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
 const { t } = useI18n();
 
 const selections = [

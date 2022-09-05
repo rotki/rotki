@@ -30,7 +30,7 @@
   </table-expand-container>
 </template>
 <script setup lang="ts">
-import { defineProps, PropType } from 'vue';
+import { PropType } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';

@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineEmits, PropType, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { LocationDataSnapshotPayload } from '@/store/balances/types';

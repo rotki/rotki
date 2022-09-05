@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineProps, PropType, toRefs } from 'vue';
+import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { tradeLocations } from '@/components/history/consts';
 import LocationIcon from '@/components/history/LocationIcon.vue';

@@ -6,6 +6,15 @@ import Vuetify from 'vuetify';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useSessionStore } from '@/store/session';
 
+vi.mock('vue', async () => {
+  const mod = await vi.importActual<typeof import('vue')>('vue');
+  return {
+    ...mod,
+    useListeners: vi.fn(),
+    useAttrs: vi.fn()
+  };
+});
+
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 

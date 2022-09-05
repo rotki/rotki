@@ -59,7 +59,7 @@
 <script setup lang="ts">
 import { Nullable } from '@rotki/common';
 import { get, set } from '@vueuse/core';
-import { computed, defineProps, PropType, ref, toRefs, watch } from 'vue';
+import { computed, PropType, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import FilterEntry from '@/components/history/filtering/FilterEntry.vue';
 import {

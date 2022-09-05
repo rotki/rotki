@@ -11,9 +11,9 @@ import cloneDeep from 'lodash/cloneDeep';
 import isEmpty from 'lodash/isEmpty';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, Ref, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { bigNumberSum } from '@/filters';
-import i18n from '@/i18n';
 import {
   BlockchainAssetBalances,
   BlockchainBalances,
@@ -47,42 +47,39 @@ import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 
+const defaultTotals = () => ({
+  ETH: {},
+  ETH2: {},
+  BTC: {},
+  BCH: {},
+  KSM: {},
+  DOT: {},
+  AVAX: {}
+});
+
+const defaultBtcBalances = (): BtcBalances => ({
+  standalone: {},
+  xpubs: []
+});
+
 export const useBlockchainBalancesStore = defineStore(
   'balances/blockchain',
   () => {
     const ethBalancesState: Ref<BlockchainAssetBalances> = ref({});
     const eth2BalancesState: Ref<BlockchainAssetBalances> = ref({});
-    const btcBalancesState: Ref<BtcBalances> = ref({
-      standalone: {},
-      xpubs: []
-    });
-    const bchBalancesState: Ref<BtcBalances> = ref({
-      standalone: {},
-      xpubs: []
-    });
+    const btcBalancesState: Ref<BtcBalances> = ref(defaultBtcBalances());
+    const bchBalancesState: Ref<BtcBalances> = ref(defaultBtcBalances());
     const ksmBalancesState: Ref<BlockchainAssetBalances> = ref({});
     const dotBalancesState: Ref<BlockchainAssetBalances> = ref({});
     const avaxBalancesState: Ref<BlockchainAssetBalances> = ref({});
-
     const loopringBalancesState: Ref<AccountAssetBalances> = ref({});
 
-    const defaultTotals = () => ({
-      ETH: {},
-      ETH2: {},
-      BTC: {},
-      BCH: {},
-      KSM: {},
-      DOT: {},
-      AVAX: {}
-    });
-
-    const blockchainTotalsState = ref<Record<Blockchain, AssetBalances>>(
+    const blockchainTotalsState: Ref<Record<Blockchain, AssetBalances>> = ref(
       defaultTotals()
     );
 
-    const blockchainLiabilitiesState = ref<Record<Blockchain, AssetBalances>>(
-      defaultTotals()
-    );
+    const blockchainLiabilitiesState: Ref<Record<Blockchain, AssetBalances>> =
+      ref(defaultTotals());
 
     const aggregatedBlockchainTotals = computed<AssetBalances>(() => {
       const totals = get(blockchainTotalsState);
@@ -118,6 +115,8 @@ export const useBlockchainBalancesStore = defineStore(
     const manualBalancesStore = useManualBalancesStore();
     const { manualBalances, manualLiabilities } =
       storeToRefs(manualBalancesStore);
+
+    const { t, tc } = useI18n();
 
     const fetchBlockchainBalances = async (
       payload: BlockchainBalancePayload = {
@@ -160,7 +159,7 @@ export const useBlockchainBalancesStore = defineStore(
           taskType,
           {
             chain,
-            title: i18n.tc('actions.balances.blockchain.task.title', 0, {
+            title: tc('actions.balances.blockchain.task.title', 0, {
               chain
             }),
             numericKeys: []
@@ -179,15 +178,11 @@ export const useBlockchainBalancesStore = defineStore(
         await Promise.all(chains.map(fetch));
       } catch (e: any) {
         logger.error(e);
-        const message = i18n.tc(
-          'actions.balances.blockchain.error.description',
-          0,
-          {
-            error: e.message
-          }
-        );
+        const message = tc('actions.balances.blockchain.error.description', 0, {
+          error: e.message
+        });
         notify({
-          title: i18n.tc('actions.balances.blockchain.error.title'),
+          title: tc('actions.balances.blockchain.error.title'),
           message,
           display: true
         });
@@ -223,7 +218,7 @@ export const useBlockchainBalancesStore = defineStore(
           taskId,
           taskType,
           {
-            title: i18n.t('actions.balances.loopring.task.title').toString(),
+            title: t('actions.balances.loopring.task.title').toString(),
             numericKeys: balanceKeys
           }
         );
@@ -231,12 +226,10 @@ export const useBlockchainBalancesStore = defineStore(
         set(loopringBalancesState, result);
       } catch (e: any) {
         notify({
-          title: i18n.t('actions.balances.loopring.error.title').toString(),
-          message: i18n
-            .t('actions.balances.loopring.error.description', {
-              error: e.message
-            })
-            .toString(),
+          title: t('actions.balances.loopring.error.title').toString(),
+          message: t('actions.balances.loopring.error.description', {
+            error: e.message
+          }).toString(),
           display: true
         });
       }
@@ -725,8 +718,8 @@ export const useBlockchainBalancesStore = defineStore(
     const reset = () => {
       set(ethBalancesState, {});
       set(eth2BalancesState, {});
-      set(btcBalancesState, { standalone: {}, xpubs: [] });
-      set(bchBalancesState, { standalone: {}, xpubs: [] });
+      set(btcBalancesState, defaultBtcBalances());
+      set(bchBalancesState, defaultBtcBalances());
       set(ksmBalancesState, {});
       set(dotBalancesState, {});
       set(avaxBalancesState, {});

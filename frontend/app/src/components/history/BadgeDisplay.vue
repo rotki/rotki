@@ -4,19 +4,19 @@
     :color="`${color} lighten-5`"
     :text-color="color"
     class="font-weight-black rounded py-0 px-2 text-overline"
-    v-bind="$attrs"
-    v-on="$listeners"
+    v-bind="rootAttrs"
+    v-on="rootListeners"
   >
     <slot />
   </v-chip>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useAttrs, useListeners } from 'vue';
 
-export default defineComponent({
-  name: 'BadgeDisplay',
-  props: {
-    color: { required: false, type: String, default: 'grey-darken' }
-  }
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+
+defineProps({
+  color: { required: false, type: String, default: 'grey-darken' }
 });
 </script>
