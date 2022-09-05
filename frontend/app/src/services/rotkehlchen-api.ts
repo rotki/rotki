@@ -263,7 +263,7 @@ export class RotkehlchenApi {
   async queryPeriodicData(): Promise<PeriodicClientQueryResult> {
     const response = await this.axios.get<
       ActionResult<PeriodicClientQueryResult>
-    >('/periodic/', {
+    >('/periodic', {
       validateStatus: validWithSessionStatus,
       transformResponse: basicAxiosTransformer
     });
@@ -371,7 +371,7 @@ export class RotkehlchenApi {
     payload: Partial<AllBalancePayload>
   ): Promise<PendingTask> {
     const response = await this.axios.get<ActionResult<PendingTask>>(
-      '/balances/',
+      '/balances',
       {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true,
@@ -385,7 +385,7 @@ export class RotkehlchenApi {
   }
 
   async queryTasks(): Promise<TaskStatus> {
-    const response = await this.axios.get<ActionResult<TaskStatus>>(`/tasks/`, {
+    const response = await this.axios.get<ActionResult<TaskStatus>>(`/tasks`, {
       validateStatus: validTaskStatus,
       transformResponse: basicAxiosTransformer
     });
@@ -451,7 +451,7 @@ export class RotkehlchenApi {
     toTimestamp: number
   ): Promise<TimedBalances> {
     const balances = await this.axios.post<ActionResult<TimedBalances>>(
-      `/statistics/balance/`,
+      `/statistics/balance`,
       axiosSnakeCaseTransformer({
         fromTimestamp,
         toTimestamp,
@@ -800,7 +800,7 @@ export class RotkehlchenApi {
 
   async exportHistoryCSV(directory: string): Promise<boolean> {
     const response = await this.axios.get<ActionResult<boolean>>(
-      '/history/export/',
+      '/history/export',
       {
         params: {
           directory_path: directory
@@ -813,7 +813,7 @@ export class RotkehlchenApi {
   }
 
   async consumeMessages(): Promise<Messages> {
-    const response = await this.axios.get<ActionResult<Messages>>('/messages/');
+    const response = await this.axios.get<ActionResult<Messages>>('/messages');
 
     return handleResponse(response);
   }
@@ -846,7 +846,7 @@ export class RotkehlchenApi {
 
   async queryExternalServices(): Promise<ExternalServiceKeys> {
     const response = await this.axios.get<ActionResult<ExternalServiceKeys>>(
-      '/external_services/',
+      '/external_services',
       {
         validateStatus: validWithSessionStatus,
         transformResponse: basicAxiosTransformer
@@ -861,7 +861,7 @@ export class RotkehlchenApi {
     keys: ExternalServiceKey[]
   ): Promise<ExternalServiceKeys> {
     const response = await this.axios.put<ActionResult<ExternalServiceKeys>>(
-      '/external_services/',
+      '/external_services',
       axiosSnakeCaseTransformer({
         services: keys
       }),
@@ -879,7 +879,7 @@ export class RotkehlchenApi {
     serviceToDelete: ExternalServiceName
   ): Promise<ExternalServiceKeys> {
     const response = await this.axios.delete<ActionResult<ExternalServiceKeys>>(
-      '/external_services/',
+      '/external_services',
       {
         data: {
           services: [serviceToDelete]
@@ -1190,7 +1190,7 @@ export class RotkehlchenApi {
 
   async downloadCSV(): Promise<ActionStatus> {
     try {
-      const response = await this.axios.get('/history/download/', {
+      const response = await this.axios.get('/history/download', {
         responseType: 'blob',
         validateStatus: validTaskStatus
       });
@@ -1265,7 +1265,7 @@ export class RotkehlchenApi {
 
   async erc20details(address: string): Promise<PendingTask> {
     const response = await this.axios.get<ActionResult<PendingTask>>(
-      '/blockchains/ETH/erc20details/',
+      '/blockchains/ETH/erc20details',
       {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true,

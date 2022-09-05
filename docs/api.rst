@@ -2078,7 +2078,7 @@ Get supported oracles
 Query supported ethereum modules
 =====================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/
+.. http:get:: /api/(version)/blockchains/ETH/modules
 
    Doing a GET on this endpoint will return all supported ethereum modules
 
@@ -2670,7 +2670,7 @@ Querying all balances
    .. note::
       This endpoint uses a cache. If queried within the ``CACHE_TIME`` the cached value will be returned. If you want to skip the cache add the ``ignore_cache: true`` argument. Can also be passed as a query argument.
 
-.. http:get:: /api/(version)/balances/
+.. http:get:: /api/(version)/balances
 
    Doing a GET on the balances endpoint will query all balances/debt across all locations for the user. That is exchanges, blockchains and all manually tracked balances. And it will return an overview of all queried balances. This also includes any debt/liabilities.
 
@@ -2679,7 +2679,7 @@ Querying all balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/balances/ HTTP/1.1
+      GET /api/1/balances HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -3702,7 +3702,7 @@ Statistics for netvalue over time
 Statistics for asset balance over time
 ======================================
 
-.. http:post:: /api/(version)/statistics/balance/
+.. http:post:: /api/(version)/statistics/balance
 
    .. note::
       This endpoint is only available for premium users
@@ -4626,7 +4626,7 @@ Dealing with BaseHistoryEntry events
 Querying messages to show to the user
 =====================================
 
-.. http:get:: /api/(version)/messages/
+.. http:get:: /api/(version)/messages
 
    Doing a GET on the messages endpoint will pop all errors and warnings from the message queue and return them. The message queue is a queue where all errors and warnings that are supposed to be see by the user are saved and are supposed to be popped and read regularly.
 
@@ -4635,7 +4635,7 @@ Querying messages to show to the user
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/messages/ HTTP/1.1
+      GET /api/1/messages HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
@@ -4662,7 +4662,7 @@ Querying messages to show to the user
 Querying complete action history
 ================================
 
-.. http:get:: /api/(version)/history/
+.. http:get:: /api/(version)/history
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -4677,7 +4677,7 @@ Querying complete action history
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/history/ HTTP/1.1
+      GET /api/1/history HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -4956,6 +4956,23 @@ Export action history to CSV
    :statuscode 400: Provided JSON is in some way malformed or given string is not a directory.
    :statuscode 409: No user is currently logged in. No history has been processed. No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal rotki error.
+
+
+Download action history CSV
+================================
+
+.. http:get:: /api/(version)/history/download
+
+
+   Doing a GET on the history download endpoint will download the last previously queried history to CSV files and return it in a zip file. If history has not been queried before an error is returned.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/download HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
 
 Get missing acquisitions and prices
@@ -5342,7 +5359,7 @@ Purge PnL report and all its data
 Querying periodic data
 ======================
 
-.. http:get:: /api/(version)/periodic/
+.. http:get:: /api/(version)/periodic
 
 
    Doing a GET on the periodic data endpoint will return data that would be usually frequently queried by an application. Check the example response to see what these data would be.
@@ -5351,7 +5368,7 @@ Querying periodic data
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/periodic/ HTTP/1.1
+      GET /api/1/periodic HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
@@ -10165,7 +10182,7 @@ Data imports
 ERC20 token info
 ====================
 
-.. http:get:: /api/(version)/blockchains/ETH/erc20details/
+.. http:get:: /api/(version)/blockchains/ETH/erc20details
 
    Doing a GET to this endpoint will return basic information about a token by calling the ``decimals/name/symbol`` methods.
 
@@ -10177,7 +10194,7 @@ ERC20 token info
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/erc20details/ HTTP/1.1
+      GET /api/1/blockchains/ETH/erc20details HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 

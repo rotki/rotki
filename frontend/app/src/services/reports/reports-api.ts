@@ -29,7 +29,7 @@ export class ReportsApi {
     start
   }: ProfitLossReportPeriod): Promise<PendingTask> {
     const response = await this.axios.get<ActionResult<PendingTask>>(
-      '/history/',
+      '/history',
       {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true,
@@ -105,7 +105,7 @@ export class ReportsApi {
   }
 
   async fetchReports(): Promise<Reports> {
-    const response = await this.axios.get<ActionResult<Reports>>('/reports/', {
+    const response = await this.axios.get<ActionResult<Reports>>('/reports', {
       validateStatus: validStatus,
       transformResponse: setupTransformer([])
     });
