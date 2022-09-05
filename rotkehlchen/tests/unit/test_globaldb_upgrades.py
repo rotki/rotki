@@ -30,7 +30,7 @@ def _count_v2_v3_assets_inserted() -> int:
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('globaldb_version', [2])
 @pytest.mark.parametrize('target_globaldb_version', [2])
-@pytest.mark.parametrize('reaload_custom_assets', [False])
+@pytest.mark.parametrize('reload_user_assets', [False])
 def test_upgrade_v2_v3(globaldb):
     """At the start of this test global DB is upgraded to v3"""
     # Check the state before upgrading

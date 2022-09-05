@@ -1392,7 +1392,7 @@ class RestAPI():
         types = [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
         return api_response(_wrap_in_ok_result(types), status_code=HTTPStatus.OK)
 
-    def add_custom_asset(self, asset_type: AssetType, **kwargs: Any) -> Response:
+    def add_user_asset(self, asset_type: AssetType, **kwargs: Any) -> Response:
         globaldb = GlobalDBHandler()
         # There is no good way to figure out if an asset already exists in the DB
         # Best approximation we can do is this.
@@ -1429,9 +1429,9 @@ class RestAPI():
         )
 
     @staticmethod
-    def edit_custom_asset(data: Dict[str, Any]) -> Response:
+    def edit_user_asset(data: Dict[str, Any]) -> Response:
         try:
-            GlobalDBHandler().edit_custom_asset(data)
+            GlobalDBHandler().edit_user_asset(data)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -1439,7 +1439,7 @@ class RestAPI():
         AssetResolver().assets_cache.remove(data['identifier'])
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def delete_custom_asset(self, identifier: str) -> Response:
+    def delete_asset(self, identifier: str) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as write_cursor:
                 # Before deleting, also make sure we have up to date global DB owned data

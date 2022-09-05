@@ -29,8 +29,8 @@ def fixture_user_ethereum_tokens() -> Optional[Union[List[EvmToken], Callable]]:
     return None
 
 
-@pytest.fixture(name='reaload_custom_assets')
-def fixture_reaload_custom_assets() -> bool:
+@pytest.fixture(name='reload_user_assets')
+def fixture_reload_user_assets() -> bool:
     return True
 
 
@@ -61,7 +61,7 @@ def fixture_globaldb(
         globaldb_version,
         tmpdir_factory,
         sql_vm_instructions_cb,
-        reaload_custom_assets,
+        reload_user_assets,
         target_globaldb_version,
         globaldb_upgrades,
 ):
@@ -77,7 +77,7 @@ def fixture_globaldb(
     new_global_dir = new_data_dir / 'global_data'
     new_global_dir.mkdir(parents=True, exist_ok=True)
     copyfile(source_db_path, new_global_dir / 'global.db')
-    if reaload_custom_assets is False:
+    if reload_user_assets is False:
         with (
             patch('rotkehlchen.globaldb.upgrades.manager.UPGRADES_LIST', globaldb_upgrades),
             patch('rotkehlchen.globaldb.utils.GLOBAL_DB_VERSION', target_globaldb_version),
