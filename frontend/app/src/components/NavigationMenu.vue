@@ -229,6 +229,15 @@ export default defineComponent({
 
 <style scoped lang="scss">
 ::v-deep {
+  .v-list-item {
+    border-radius: 0.5rem;
+    padding: 0 0.75rem;
+
+    &:before {
+      border-radius: 0.5rem;
+    }
+  }
+
   .v-list-group {
     &__header {
       &__append-icon {

@@ -13,8 +13,10 @@
     dense
     item-value="name"
     multiple
+    clearable
     :hide-details="hideDetails"
     @input="input"
+    @click:clear="input([])"
   >
     <template #selection="{ item, selected, select }">
       <v-chip
@@ -36,11 +38,6 @@
       <span class="tag-input__tag__description ml-4">
         {{ item.description }}
       </span>
-    </template>
-    <template #append-outer>
-      <v-btn icon text class="tag-filter__clear" @click="input([])">
-        <v-icon>mdi-close</v-icon>
-      </v-btn>
     </template>
   </v-autocomplete>
 </template>

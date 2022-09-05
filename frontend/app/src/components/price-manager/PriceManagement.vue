@@ -14,6 +14,7 @@
             outlined
             :label="tc('price_management.from_asset')"
             clearable
+            hide-details
           />
         </v-col>
         <v-col cols="12" md="6">
@@ -22,6 +23,7 @@
             outlined
             :label="tc('price_management.to_asset')"
             clearable
+            hide-details
           />
         </v-col>
       </v-row>

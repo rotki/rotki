@@ -2907,7 +2907,8 @@
     "search": "Search",
     "tabs": {
       "general": "General",
-      "in_this_page": "In \"{page}\" "
+      "in_this_page": "In \"{page}\" ",
+      "in_this_page_tooltip": "Notes specialize for  \"{page}\" section"
     },
     "tooltip": "Notes"
   },
