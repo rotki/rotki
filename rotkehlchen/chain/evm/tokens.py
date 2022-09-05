@@ -97,10 +97,10 @@ def generate_multicall_chunks(
     return multicall_chunks
 
 
-class EthTokens():
-    def __init__(self, database: DBHandler, ethereum: EthereumManager):
+class EvmTokens():
+    def __init__(self, database: DBHandler, manager: EthereumManager):
         self.db = database
-        self.ethereum = ethereum
+        self.manager = manager
 
     def _get_token_balances(
             self,
@@ -117,12 +117,12 @@ class EthTokens():
           token has no code. That means the chain is not synced
         """
         log.debug(
-            'Querying ethereum chain for multi token address balances',
-            eth_address=address,
+            'Querying evm chain for multi token address balances',
+            address=address,
             tokens_num=len(tokens),
         )
         result = ETH_SCAN[ChainID.ETHEREUM].call(
-            manager=self.ethereum,
+            manager=self.manager,
             method_name='tokensBalance',
             arguments=[address, [x.evm_address for x in tokens]],
             call_order=call_order,
@@ -164,7 +164,7 @@ class EthTokens():
                 ),
             )
         results = multicall(
-            ethereum=self.ethereum,
+            ethereum=self.manager,
             calls=calls,
             call_order=call_order,
         )
@@ -278,10 +278,10 @@ class EthTokens():
             exceptions=exceptions,
             except_protocols=['balancer'],
         )
-        if self.ethereum.connected_to_any_web3():
+        if self.manager.connected_to_any_web3():
             chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
             # skipping etherscan because chunk size is too big for etherscan
-            call_order = self.ethereum.default_call_order(skip_etherscan=True)
+            call_order = self.manager.default_call_order(skip_etherscan=True)
         else:
             chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
             call_order = [ETHERSCAN_NODE]
@@ -313,10 +313,10 @@ class EthTokens():
         all_tokens = set()
         addresses_to_tokens: Dict[ChecksumEvmAddress, List[EvmToken]] = {}
 
-        if self.ethereum.connected_to_any_web3():
+        if self.manager.connected_to_any_web3():
             chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
             # skipping etherscan because chunk size is too big for etherscan
-            call_order = self.ethereum.default_call_order(skip_etherscan=True)
+            call_order = self.manager.default_call_order(skip_etherscan=True)
         else:
             chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
             call_order = [ETHERSCAN_NODE]
