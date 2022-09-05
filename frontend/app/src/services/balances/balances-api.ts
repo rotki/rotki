@@ -92,30 +92,28 @@ export class BalancesApi {
 
   async addManualBalances(
     balances: Omit<ManualBalance, 'id'>[]
-  ): Promise<ManualBalances> {
-    return this.axios
-      .put<ActionResult<ManualBalances>>(
-        'balances/manual',
-        axiosSnakeCaseTransformer({ balances }),
-        {
-          transformResponse: balanceAxiosTransformer,
-          validateStatus: validWithParamsSessionAndExternalService
-        }
-      )
-      .then(handleResponse);
+  ): Promise<PendingTask> {
+    const response = await this.axios.put<ActionResult<PendingTask>>(
+      'balances/manual',
+      axiosSnakeCaseTransformer({ balances, asyncQuery: true }),
+      {
+        transformResponse: balanceAxiosTransformer,
+        validateStatus: validWithParamsSessionAndExternalService
+      }
+    );
+    return handleResponse(response);
   }
 
-  async editManualBalances(balances: ManualBalance[]): Promise<ManualBalances> {
-    return this.axios
-      .patch<ActionResult<ManualBalances>>(
-        'balances/manual',
-        axiosSnakeCaseTransformer({ balances }),
-        {
-          transformResponse: balanceAxiosTransformer,
-          validateStatus: validWithParamsSessionAndExternalService
-        }
-      )
-      .then(handleResponse);
+  async editManualBalances(balances: ManualBalance[]): Promise<PendingTask> {
+    const response = await this.axios.patch<ActionResult<PendingTask>>(
+      'balances/manual',
+      axiosSnakeCaseTransformer({ balances, asyncQuery: true }),
+      {
+        transformResponse: balanceAxiosTransformer,
+        validateStatus: validWithParamsSessionAndExternalService
+      }
+    );
+    return handleResponse(response);
   }
 
   async deleteManualBalances(ids: number[]): Promise<ManualBalances> {
