@@ -88,7 +88,7 @@ def atoken_to_asset(atoken: EvmToken) -> Optional[Asset]:
             (asset_symbol,),
         ).fetchall()
     if len(result) != 1:
-        log.error(f'Could not find asset from {atoken} since multiple or no results were returned')  # noqa: E501
+        log.error(f'Could not find asset from {atoken} since multiple or no results were returned')
         return None
 
     return Asset(ethaddress_to_identifier(result[0][0]))
