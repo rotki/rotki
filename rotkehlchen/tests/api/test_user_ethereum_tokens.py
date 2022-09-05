@@ -285,7 +285,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg=f'Given cryptocompare identifier {bad_identifier} isnt valid',
+        contained_in_msg=f'Given cryptocompare identifier {bad_identifier} is not valid',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -383,7 +383,7 @@ def test_editing_user_tokens(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg=f'Given cryptocompare identifier {bad_identifier} isnt valid',
+        contained_in_msg=f'Given cryptocompare identifier {bad_identifier} is not valid',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

@@ -790,7 +790,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
         )])
         return price
 
-    def all_coins(self) -> Dict[str, Any]:
+    def all_coins(self) -> Dict[str, Dict[str, Any]]:
         """
         Gets the mapping of all the cryptocompare coins
 
