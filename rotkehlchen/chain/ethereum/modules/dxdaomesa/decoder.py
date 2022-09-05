@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
@@ -14,6 +13,7 @@ from rotkehlchen.chain.ethereum.utils import (
     ethaddress_to_asset,
     multicall_specific,
 )
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
@@ -45,7 +45,7 @@ class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         with open(os.path.join(dir_path, 'data', 'contracts.json'), 'r') as f:
             contracts = json.loads(f.read())
 
-        self.contract = EthereumContract(
+        self.contract = EvmContract(
             address=contracts['DXDAOMESA']['address'],
             abi=contracts['DXDAOMESA']['abi'],
             deployed_block=contracts['DXDAOMESA']['deployed_block'],

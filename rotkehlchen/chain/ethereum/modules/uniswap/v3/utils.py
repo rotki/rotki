@@ -10,7 +10,6 @@ from web3.exceptions import BadFunctionCallOutput
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import AssetToPrice, LiquidityPoolAsset
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import (
     TokenDetails,
@@ -22,6 +21,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
 )
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV3Oracle
 from rotkehlchen.chain.ethereum.utils import multicall_2
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_USDC
 from rotkehlchen.constants.ethereum import (
     UNISWAP_V3_FACTORY,
@@ -100,7 +100,7 @@ def uniswap_v3_lp_token_balances(
 
     May raise RemoteError if querying NFT manager contract fails.
     """
-    nft_manager_contract = EthereumContract(
+    nft_manager_contract = EvmContract(
         address=UNISWAP_V3_NFT_MANAGER.address,
         abi=UNISWAP_V3_NFT_MANAGER.abi,
         deployed_block=UNISWAP_V3_NFT_MANAGER.deployed_block,
@@ -108,7 +108,7 @@ def uniswap_v3_lp_token_balances(
     balances: List[NFTLiquidityPool] = []
     try:
         amount_of_positions = nft_manager_contract.call(
-            ethereum=ethereum,
+            manager=ethereum,
             method_name='balanceOf',
             arguments=[address],
         )
@@ -184,7 +184,7 @@ def uniswap_v3_lp_token_balances(
             for position in positions
         ]
         pool_contracts = [
-            EthereumContract(
+            EvmContract(
                 address=pool_address,
                 abi=UNISWAP_V3_POOL_ABI,
                 deployed_block=UNISWAP_V3_FACTORY.deployed_block,

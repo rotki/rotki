@@ -144,7 +144,7 @@ class Aave(EthereumModule):
 
                     if balance_entry.protocol.name == 'Aave':
                         reserve_result = AAVE_V1_LENDING_POOL.call(
-                            ethereum=self.ethereum,
+                            manager=self.ethereum,
                             method_name='getReserveData',
                             arguments=[reserve_address],
                         )
@@ -155,7 +155,7 @@ class Aave(EthereumModule):
                         )
                     else:  # Aave V2
                         reserve_result = AAVE_V2_LENDING_POOL.call(
-                            ethereum=self.ethereum,
+                            manager=self.ethereum,
                             method_name='getReserveData',
                             arguments=[reserve_address],
                         )

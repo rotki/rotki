@@ -38,11 +38,11 @@ from web3.exceptions import (
 from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import multicall_2
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.ethereum import (
     ENS_REVERSE_RECORDS,
@@ -532,7 +532,7 @@ class EthereumManager():
             eth_addresses=accounts,
         )
         result = ETH_SCAN[ChainID.ETHEREUM].call(
-            ethereum=self,
+            manager=self,
             method_name='etherBalances',
             arguments=[accounts],
             call_order=call_order if call_order is not None else self.default_call_order(),
@@ -606,7 +606,7 @@ class EthereumManager():
         chunks = get_chunks(lst=addresses, n=MAX_ADDRESSES_IN_REVERSE_ENS_QUERY)
         for chunk in chunks:
             result = ENS_REVERSE_RECORDS.call(
-                ethereum=self,
+                manager=self,
                 method_name='getNames',
                 arguments=[chunk],
             )
@@ -1157,7 +1157,7 @@ class EthereumManager():
         properties = ('decimals', 'symbol', 'name')
         info: Dict[str, Any] = {}
 
-        contract = EthereumContract(address=address, abi=ERC20TOKEN_ABI, deployed_block=0)
+        contract = EvmContract(address=address, abi=ERC20TOKEN_ABI, deployed_block=0)
         try:
             # Output contains call status and result
             output = multicall_2(
@@ -1184,7 +1184,7 @@ class EthereumManager():
                 f'{address} failed to decode as ERC20 token. '
                 f'Trying with token ABI using bytes. {str(e)}',
             )
-            contract = EthereumContract(address=address, abi=UNIV1_LP_ABI, deployed_block=0)
+            contract = EvmContract(address=address, abi=UNIV1_LP_ABI, deployed_block=0)
             decoded = [
                 contract.decode(x[1], method_name)[0]  # pylint: disable=E1136
                 if x[0] and len(x[1]) else None

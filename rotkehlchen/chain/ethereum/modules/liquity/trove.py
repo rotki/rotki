@@ -7,7 +7,6 @@ from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.graph import (
     SUBGRAPH_REMOTE_ERROR_MSG,
@@ -15,6 +14,7 @@ from rotkehlchen.chain.ethereum.graph import (
     format_query_indentation,
 )
 from rotkehlchen.chain.ethereum.utils import multicall_2, token_normalized_value_decimals
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD, A_USD
 from rotkehlchen.constants.ethereum import LIQUITY_TROVE_MANAGER
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
@@ -205,7 +205,7 @@ class Liquity(HasDSProxy):
         self,
         addresses_list: List[ChecksumEvmAddress],
     ) -> Dict[ChecksumEvmAddress, Trove]:
-        contract = EthereumContract(
+        contract = EvmContract(
             address=LIQUITY_TROVE_MANAGER.address,
             abi=LIQUITY_TROVE_MANAGER.abi,
             deployed_block=LIQUITY_TROVE_MANAGER.deployed_block,

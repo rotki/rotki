@@ -9,8 +9,8 @@ from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.utils import multicall, multicall_specific, token_normalized_value
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USD, A_USDC, A_USDT, A_WETH
 from rotkehlchen.constants.ethereum import (
     SINGLE_SIDE_USD_POOL_LIMIT,
@@ -311,13 +311,13 @@ class UniswapV3Oracle(UniswapOracle):
             if query[0] == ZERO_ADDRESS:
                 continue
             pool_address = to_checksum_address(query[0])
-            pool_contract = EthereumContract(
+            pool_contract = EvmContract(
                 address=pool_address,
                 abi=UNISWAP_V3_POOL_ABI,
                 deployed_block=UNISWAP_FACTORY_DEPLOYED_BLOCK,
             )
             pool_liquidity = pool_contract.call(
-                ethereum=self.eth_manager,
+                manager=self.eth_manager,
                 method_name='liquidity',
                 arguments=[],
                 call_order=None,
@@ -338,7 +338,7 @@ class UniswapV3Oracle(UniswapOracle):
         May raise:
         - DefiPoolError
         """
-        pool_contract = EthereumContract(
+        pool_contract = EvmContract(
             address=pool_addr,
             abi=UNISWAP_V3_POOL_ABI,
             deployed_block=UNISWAP_FACTORY_DEPLOYED_BLOCK,
@@ -395,7 +395,7 @@ class UniswapV2Oracle(UniswapOracle):
         token_1: EvmToken,
     ) -> List[str]:
         result = UNISWAP_V2_FACTORY.call(
-            ethereum=self.eth_manager,
+            manager=self.eth_manager,
             method_name='getPair',
             arguments=[
                 token_0.evm_address,
@@ -415,7 +415,7 @@ class UniswapV2Oracle(UniswapOracle):
         May raise:
         - DefiPoolError
         """
-        pool_contract = EthereumContract(
+        pool_contract = EvmContract(
             address=pool_addr,
             abi=UNISWAP_V2_LP_ABI,
             deployed_block=10000835,  # Factory deployment block

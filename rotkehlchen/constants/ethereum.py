@@ -4,8 +4,8 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.resolver import ChainID
 
 MAX_BLOCKTIME_CACHE = 250  # 55 mins with 13 secs avg block time
@@ -39,7 +39,7 @@ class EthereumConstants():
         return EthereumConstants().contracts
 
     @staticmethod
-    def contract_or_none(name: str) -> Optional[EthereumContract]:
+    def contract_or_none(name: str) -> Optional[EvmContract]:
         """Gets details of an ethereum contract from the contracts json file
 
         Returns None if missing
@@ -48,14 +48,14 @@ class EthereumConstants():
         if contract is None:
             return None
 
-        return EthereumContract(
+        return EvmContract(
             address=contract['address'],
             abi=contract['abi'],
             deployed_block=contract['deployed_block'],
         )
 
     @staticmethod
-    def contract(name: str) -> EthereumContract:
+    def contract(name: str) -> EvmContract:
         """Gets details of an ethereum contract from the contracts json file
 
         Missing contract is an error

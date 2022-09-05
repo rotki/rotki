@@ -6,11 +6,11 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName, WeightedNode
 from rotkehlchen.chain.ethereum.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.ethereum.utils import multicall_specific
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -54,7 +54,7 @@ def pairs_from_ethereum(ethereum: EthereumManager) -> Dict[str, Any]:
     with contracts_file.open('r') as f:
         contracts = json.loads(f.read())
 
-    univ2factory = EthereumContract(
+    univ2factory = EvmContract(
         address=contracts['UNISWAPV2FACTORY']['address'],
         abi=contracts['UNISWAPV2FACTORY']['abi'],
         deployed_block=0,  # whatever

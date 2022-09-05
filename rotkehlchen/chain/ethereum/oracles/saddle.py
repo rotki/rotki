@@ -56,7 +56,7 @@ class SaddleOracle(CurrentPriceOracleInterface):
             )
 
         aleth_eth_price = SADDLE_ALETH_POOL.call(
-            ethereum=self.eth_manager,
+            manager=self.eth_manager,
             method_name='calculateSwap',
             arguments=[1, 0, 1000000000000000000],
             block_identifier=block_identifier,
