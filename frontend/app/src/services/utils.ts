@@ -154,7 +154,7 @@ export function validWithSessionStatus(status: number): boolean {
  * @return The validity of the status code
  */
 export function validAccountOperationStatus(status: number): boolean {
-  return isValid([200, 300, 400, 401, 409], status);
+  return isValid([200, 300, 400, 401, 409, 542], status);
 }
 
 /**
