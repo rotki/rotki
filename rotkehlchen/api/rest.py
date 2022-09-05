@@ -3748,38 +3748,6 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=status_code)
 
-    def _get_avax_token_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
-        avax_manager = self.rotkehlchen.chain_manager.avalanche
-        try:
-            info = avax_manager.get_basic_contract_info(address=address)
-        except BadFunctionCallOutput:
-            return wrap_in_fail_result(
-                f'Address {address} seems to not be a deployed contract',
-                status_code=HTTPStatus.CONFLICT,
-            )
-        return _wrap_in_ok_result(info)
-
-    def get_avax_token_information(
-        self,
-        token_address: ChecksumEvmAddress,
-        async_query: bool,
-    ) -> Response:
-
-        if async_query is True:
-            return self._query_async(command=self._get_avax_token_info, address=token_address)
-
-        response = self._get_avax_token_info(token_address)
-
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # Success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=status_code)
-
     def get_nfts(self, async_query: bool, ignore_cache: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,

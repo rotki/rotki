@@ -2347,15 +2347,6 @@ class AvalancheTransactionsResource(BaseMethodView):
         )
 
 
-class ERC20TokenInfoAVAX(BaseMethodView):
-    get_schema = ERC20InfoSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, address: ChecksumEvmAddress, async_query: bool) -> Response:
-        return self.rest_api.get_avax_token_information(address, async_query)
-
-
 class NFTSResource(BaseMethodView):
     get_schema = AsyncIgnoreCacheQueryArgumentSchema()
 
