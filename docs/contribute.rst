@@ -330,9 +330,9 @@ Add a new language or translation
 
 Add new language
 ----------------
-The translation files is located `here <https://github.com/rotki/rotki/tree/develop/frontend/app/src/locales>`__.
-They are saved with format ``{country_code}.json``, where country code is ``Alpha-2`` code from based on `ISO 3166 country codes <https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes>`__.
-If you want to add new language, you need to create new translation file with that format, and then `fill it <#add-or-edit-translation>`__.
+The translation files are located `here <https://github.com/rotki/rotki/tree/develop/frontend/app/src/locales>`__.
+They are saved with format ``{country_code}.json``, where country code is ``Alpha-2`` code based on `ISO 3166 country codes <https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes>`__.
+If you want to add a new language, you need to create a new language file with that format, and then `fill it <#add-or-edit-translation>`__.
 
 You also need to update the frontend mapping that is defined at this `enum <https://github.com/rotki/rotki/blob/f57522baa737854e6affcbe57bada2b81c4dee83/frontend/app/src/types/frontend-settings.ts#L112>`__, and these `entries <https://github.com/rotki/rotki/blob/f57522baa737854e6affcbe57bada2b81c4dee83/frontend/app/src/data/supported-language.ts>`__.
 
@@ -359,7 +359,7 @@ In order to fill in the translation for another language, you should pay attenti
       "click_here": "Haga clic aquí",
     }
 
-2. You may notice that there are some words that are wrapped inside curly brackets, for example, word ``length`` in sentence ``Use total from {length} asset(s) value``.
+2. You may notice that there are some words that are wrapped inside curly brackets, for example the word ``length`` in the sentence ``Use total from {length} asset(s) value``.
 This is how rotki inserts a variable inside a sentence. You **must** keep this variable name, when translating to a different language. What you can do though is to reposition the variable inside the sentence. For example:
 
 .. code-block::
