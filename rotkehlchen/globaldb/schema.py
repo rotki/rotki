@@ -108,8 +108,11 @@ INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('B', 2);
 INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('C', 3);
 """
 
-# Using asset_id as a primary key here since nothing else is guaranteed to be unique
-# Advantage we have here is that by deleting the parent asset this also gets deleted
+# The common_assets_details contains information common for all the crypto-assets
+# leaving to the assets table information that is shared among the custom assets.
+# For every assets row we have a row in the common_assets_details table or in the
+# custom_assets table. The identifier of the asset is primary key since this allows as to do
+# a delete on cascade when deleting the row in the asset table.
 DB_CREATE_COMMON_ASSET_DETAILS = """
 CREATE TABLE IF NOT EXISTS common_asset_details(
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
@@ -142,6 +145,14 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 """
 
+# The evm_tokens contains information to represent the tokens on every evm chain. It uses the
+# asset identifier to reference the asset table allowing for a delete on cascade. Token kind
+# and chain are two enum fields where token_kind represent the type of token e.g. ERC20 or ERC721.
+# chain is also an enum and it maps to the different chains e.g. ETHEREUM, BINANCE, AVALANCHE...
+# Protocol is a text field that we fill with pre selected values in the code and allows to group
+# assets by their protocol. All the curve assets are identified by this field and the uniswap pool
+# tokens as well. The decimals field is allowed to be NULL since for some tokens is not possible to
+# get them or set a value. In the code for tokens that are not NFTs we agree to use 18 as default.
 DB_CREATE_EVM_TOKENS = """
 CREATE TABLE IF NOT EXISTS evm_tokens (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
@@ -154,6 +165,11 @@ CREATE TABLE IF NOT EXISTS evm_tokens (
 );
 """
 
+# The multiassets_mappings table and asset_collections work together. This table allows to create
+# a rellation between the representation of the same asset in different chains. For example for
+# USDC we would create a row in asset_collections and then we would create as many entries in
+# the multiasset_mappings as USDC tokens we have in our database. This table allows to create a
+# relation between all the assets that should be treated as the same.
 DB_CREATE_MULTIASSET_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS multiasset_mappings(
     collection_id INTEGER NOT NULL,
@@ -220,6 +236,16 @@ CREATE TABLE IF NOT EXISTS address_book (
 );
 """
 
+# Similar to the common_assets_details this table is used for custom assets that the user wants to
+# to track. Also we use the asset identifier to relate this table with the assets table allowing
+# a delete on cascade. The notes fields allows for adding relevant information about the asset
+# by the user. The type field is a string field that is filled by the user. This allows to create
+# something like tags so the user can visually see what kind of assets (s)he has. All the
+# available types can be queried by selecting with the unique clause the type column and then
+# show them to the user.
+# The way to create a custom asset would be:
+# 1. Create a row in the assets table with the type custom asset
+# 2. Create a row in the custom_assets that references the previously created row
 DB_CREATE_CUSTOM_ASSET = """
 CREATE TABLE IF NOT EXISTS custom_assets(
     identifier TEXT NOT NULL PRIMARY KEY,
@@ -230,6 +256,12 @@ CREATE TABLE IF NOT EXISTS custom_assets(
 );
 """
 
+# asset_collections allows to set common information for related assets as descrbed in the
+# multiasset_mappings table. The reason to have custom name and symbol is that for some tokens
+# those properties are not the same across different chains. For example in gnosis chain USDC uses
+# USD//C as symnol for the USDC token. This table covers this problem create a common name and
+# symbol for those assets allowing a clean representation for the users and working as common
+# row to relate all the related asstes.
 DB_CREATE_ASSET_COLLECTIONS = """
 CREATE TABLE IF NOT EXISTS asset_collections(
     id INTEGER PRIMARY KEY,
