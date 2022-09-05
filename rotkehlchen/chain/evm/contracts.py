@@ -27,20 +27,20 @@ if TYPE_CHECKING:
 WEB3 = Web3()
 
 
-class EthereumContract(NamedTuple):
+class EvmContract(NamedTuple):
     address: ChecksumEvmAddress
     abi: List[Dict[str, Any]]
     deployed_block: int
 
     def call(
             self,
-            ethereum: 'EthereumManager',
+            manager: 'EthereumManager',
             method_name: str,
             arguments: Optional[List[Any]] = None,
             call_order: Optional[Sequence['WeightedNode']] = None,
             block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
-        return ethereum.call_contract(
+        return manager.call_contract(
             contract_address=self.address,
             abi=self.abi,
             method_name=method_name,
@@ -51,14 +51,14 @@ class EthereumContract(NamedTuple):
 
     def get_logs(
             self,
-            ethereum: 'EthereumManager',
+            manager: 'EthereumManager',
             event_name: str,
             argument_filters: Dict[str, Any],
             from_block: int,
             to_block: Union[int, Literal['latest']] = 'latest',
             call_order: Optional[Sequence['WeightedNode']] = None,
     ) -> Any:
-        return ethereum.get_logs(
+        return manager.get_logs(
             contract_address=self.address,
             abi=self.abi,
             event_name=event_name,

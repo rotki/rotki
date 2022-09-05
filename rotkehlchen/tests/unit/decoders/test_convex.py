@@ -10,7 +10,6 @@ from rotkehlchen.accounting.structures.base import (
 )
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_POOLS, CPT_CONVEX
@@ -18,6 +17,7 @@ from rotkehlchen.chain.ethereum.modules.convex.decoder import BOOSTER
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import multicall
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_CRV, A_CVX, A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
@@ -34,7 +34,7 @@ def test_convex_pools(ethereum_manager):
     to the current hardcoded info."""
     booster_contract = EthereumConstants.contract('CONVEX_BOOSTER')
     pools_count = booster_contract.call(
-        ethereum=ethereum_manager,
+        manager=ethereum_manager,
         method_name='poolLength',
     )
     calls_to_booster = []
@@ -51,7 +51,7 @@ def test_convex_pools(ethereum_manager):
     )
     convex_rewards_addrs = []
     convex_lp_tokens_addrs = []
-    lp_tokens_contract = EthereumContract(  # only need it to encode and decode
+    lp_tokens_contract = EvmContract(  # only need it to encode and decode
         address=ZERO_ADDRESS,
         abi=EthereumConstants.abi('CONVEX_LP_TOKEN'),
         deployed_block=0,

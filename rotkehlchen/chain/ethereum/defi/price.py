@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import (
     A_CRV_3CRV,
     A_CRV_3CRVSUSD,
@@ -46,7 +47,6 @@ from rotkehlchen.constants.ethereum import (
     YEARN_YCRV_VAULT,
     YEARN_YFI_VAULT,
     EthereumConstants,
-    EthereumContract,
 )
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
@@ -80,8 +80,8 @@ HARVEST_VAULTS = (
 
 def _handle_yearn_curve_vault(
         ethereum: 'EthereumManager',
-        curve_contract: EthereumContract,
-        yearn_contract: EthereumContract,
+        curve_contract: EvmContract,
+        yearn_contract: EvmContract,
         div_decimals: int,
         asset_price: FVal,
 ) -> FVal:
@@ -110,7 +110,7 @@ def _handle_yearn_curve_vault(
 
 def _handle_curvepool_price(
         ethereum: 'EthereumManager',
-        contract: EthereumContract,
+        contract: EvmContract,
         div_decimals: int,
         asset_price: FVal,
 ) -> FVal:
@@ -137,7 +137,7 @@ def _handle_curvepool_price(
 
 def handle_underlying_price_yearn_vault(
         ethereum: 'EthereumManager',
-        contract: EthereumContract,
+        contract: EvmContract,
         div_decimals: int,
         asset_price: Price,
 ) -> FVal:

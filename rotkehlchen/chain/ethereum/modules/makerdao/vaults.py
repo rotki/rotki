@@ -643,7 +643,7 @@ class MakerdaoVaults(HasDSProxy):
         queries fail for some reason
         """
         result = MAKERDAO_GET_CDPS.call(
-            ethereum=self.ethereum,
+            manager=self.ethereum,
             method_name='getCdpsAsc',
             arguments=[MAKERDAO_CDP_MANAGER.address, proxy_address],
         )

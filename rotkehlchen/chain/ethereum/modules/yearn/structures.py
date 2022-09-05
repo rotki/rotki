@@ -3,7 +3,7 @@ from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.constants.ethereum import EthereumContract
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import (
     deserialize_optional_to_fval,
@@ -156,6 +156,6 @@ class YearnVaultEvent:
 
 class YearnVault(NamedTuple):
     name: str
-    contract: EthereumContract
+    contract: EvmContract
     underlying_token: EvmToken
     token: EvmToken

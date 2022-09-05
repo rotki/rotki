@@ -17,9 +17,9 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.contracts import EthereumContract
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.types import WeightedNode
+    from rotkehlchen.chain.evm.contracts import EvmContract
 
 
 logger = logging.getLogger(__name__)
@@ -123,7 +123,7 @@ def multicall(
     output = []
     for call_chunk in calls_chunked:
         multicall_result = ETH_MULTICALL.call(
-            ethereum=ethereum,
+            manager=ethereum,
             method_name='aggregate',
             arguments=[call_chunk],
             call_order=call_order,
@@ -148,7 +148,7 @@ def multicall_2(
     is set to False any call in the list of calls is allowed to fail.
     """
     return ETH_MULTICALL_2.call(
-        ethereum=ethereum,
+        manager=ethereum,
         method_name='tryAggregate',
         arguments=[require_success, calls],
         call_order=call_order,
@@ -158,7 +158,7 @@ def multicall_2(
 
 def multicall_specific(
         ethereum: 'EthereumManager',
-        contract: 'EthereumContract',
+        contract: 'EvmContract',
         method_name: str,
         arguments: List[Any],
         call_order: Optional[Sequence['WeightedNode']] = None,

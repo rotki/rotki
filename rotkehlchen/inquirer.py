@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.curve_pools import get_curve_pools
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import multicall_2, token_normalized_value_decimals
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
@@ -587,7 +587,7 @@ class Inquirer():
             prices.append(price)
 
         # Query virtual price of LP share and balances in the pool for each token
-        contract = EthereumContract(
+        contract = EvmContract(
             address=pool.pool_address,
             abi=CURVE_POOL_ABI,
             deployed_block=0,
@@ -672,7 +672,7 @@ class Inquirer():
         underlying_token = EvmToken(ethaddress_to_identifier(maybe_underlying_token[0].address))
         underlying_token_price = self.find_usd_price(underlying_token)
         # Get the price per share from the yearn contract
-        contract = EthereumContract(
+        contract = EvmContract(
             address=token.evm_address,
             abi=YEARN_VAULT_V2_ABI,
             deployed_block=0,

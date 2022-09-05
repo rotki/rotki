@@ -122,7 +122,7 @@ class EthTokens():
             tokens_num=len(tokens),
         )
         result = ETH_SCAN[ChainID.ETHEREUM].call(
-            ethereum=self.ethereum,
+            manager=self.ethereum,
             method_name='tokensBalance',
             arguments=[address, [x.evm_address for x in tokens]],
             call_order=call_order,

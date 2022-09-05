@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
@@ -13,6 +12,7 @@ from rotkehlchen.chain.ethereum.defi.structures import (
 )
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS, ZERION_ABI
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -217,7 +217,7 @@ class ZerionSDK():
     ) -> None:
         self.ethereum = ethereum_manager
         self.msg_aggregator = msg_aggregator
-        self.contract = EthereumContract(
+        self.contract = EvmContract(
             address=ZERION_ADAPTER_ADDRESS,
             abi=ZERION_ABI,
             deployed_block=1586199170,
@@ -231,7 +231,7 @@ class ZerionSDK():
 
         try:
             protocol_names = self.contract.call(
-                ethereum=self.ethereum,
+                manager=self.ethereum,
                 method_name='getProtocolNames',
                 arguments=[],
             )
@@ -255,7 +255,7 @@ class ZerionSDK():
                     weight=ONE,
                 )
                 return self.contract.call(
-                    ethereum=self.ethereum,
+                    manager=self.ethereum,
                     method_name='getBalances',
                     arguments=[account],
                     call_order=(own_node, ) + WEIGHTED_NODES_WITH_HIGH_GAS_LIMIT,
@@ -278,7 +278,7 @@ class ZerionSDK():
         ))
         for protocol_names in protocol_chunks:
             contract_result = self.contract.call(
-                ethereum=self.ethereum,
+                manager=self.ethereum,
                 method_name='getProtocolBalances',
                 arguments=[account, protocol_names],
             )

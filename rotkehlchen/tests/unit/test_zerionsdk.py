@@ -59,7 +59,7 @@ def test_protocol_names_are_known(
 ):
     zerion = ZerionSDK(ethereum_manager, function_scope_messages_aggregator, database)
     protocol_names = zerion.contract.call(
-        ethereum=zerion.ethereum,
+        manager=zerion.ethereum,
         method_name='getProtocolNames',
         arguments=[],
     )
