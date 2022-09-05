@@ -37,7 +37,7 @@ class BalancesTestSetup(NamedTuple):
     binance_patch: _patch
     etherscan_patch: _patch
     beaconchain_patch: _patch
-    ethtokens_max_chunks_patch: _patch
+    evmtokens_max_chunks_patch: _patch
     bitcoin_patch: _patch
     defi_balances_addition_method_patch: Optional[_patch]
     defichad_query_balances_patch: Optional[_patch]
@@ -55,7 +55,7 @@ class BalancesTestSetup(NamedTuple):
 
     def enter_ethereum_patches(self, stack: ExitStack):
         stack.enter_context(self.etherscan_patch)
-        stack.enter_context(self.ethtokens_max_chunks_patch)
+        stack.enter_context(self.evmtokens_max_chunks_patch)
         stack.enter_context(self.beaconchain_patch)
         if self.defi_balances_addition_method_patch is not None:
             stack.enter_context(self.defi_balances_addition_method_patch)
@@ -213,9 +213,9 @@ def setup_balances(
         original_queries=original_queries,
         original_requests_get=requests.get,
     )
-    # For ethtoken detection we can have bigger chunk length during tests since it's mocked anyway
-    ethtokens_max_chunks_patch = patch(
-        'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT',
+    # For evmtoken detection we can have bigger chunk length during tests since it's mocked anyway
+    evmtokens_max_chunks_patch = patch(
+        'rotkehlchen.chain.evm.tokens.ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT',
         new=800,
     )
 
@@ -243,7 +243,7 @@ def setup_balances(
         poloniex_patch=poloniex_patch,
         binance_patch=binance_patch,
         etherscan_patch=etherscan_patch,
-        ethtokens_max_chunks_patch=ethtokens_max_chunks_patch,
+        evmtokens_max_chunks_patch=evmtokens_max_chunks_patch,
         bitcoin_patch=bitcoin_patch,
         beaconchain_patch=beaconchain_patch,
         defi_balances_addition_method_patch=defi_balances_addition_method_patch,

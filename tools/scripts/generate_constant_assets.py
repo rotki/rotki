@@ -57,7 +57,7 @@ class ContextManager():
         self.id_to_variable[identifier] = var_name
         return generated_text
 
-    def add_ethtoken_initialization(self, var_name: str, identifier: str) -> str:
+    def add_evmtoken_initialization(self, var_name: str, identifier: str) -> str:
         generated_text = ''
         _, chain, address = identifier.split(':')
         chain = int(chain.split('/')[0])
@@ -133,7 +133,7 @@ def main() -> None:
                 initial_split = line.split(' = EvmToken(\'')
                 var_name = initial_split[0]
                 identifier = initial_split[1].split('\'')[0]
-                generated_text += ctx.add_ethtoken_initialization(var_name, identifier)
+                generated_text += ctx.add_evmtoken_initialization(var_name, identifier)
                 continue
 
             # else just copy text

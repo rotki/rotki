@@ -60,8 +60,8 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.names import search_for_addresses_names
-from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.types import WeightedNode
+from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
@@ -4395,12 +4395,12 @@ class RestAPI():
             only_cache: bool,
             addresses: List[ChecksumEvmAddress],
     ) -> Dict[str, Any]:
-        ethtokens = EthTokens(
+        evmtokens = EvmTokens(
             database=self.rotkehlchen.data.db,
-            ethereum=self.rotkehlchen.chain_manager.ethereum,
+            manager=self.rotkehlchen.chain_manager.ethereum,
         )
         try:
-            account_tokens_info = ethtokens.detect_tokens(
+            account_tokens_info = evmtokens.detect_tokens(
                 only_cache=only_cache,
                 addresses=addresses,
             )

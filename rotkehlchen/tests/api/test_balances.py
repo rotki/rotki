@@ -277,7 +277,7 @@ def test_query_all_balances_ignore_cache(
         stack.enter_context(setup.binance_patch)
         etherscan_mock = stack.enter_context(setup.etherscan_patch)
         stack.enter_context(setup.bitcoin_patch)
-        stack.enter_context(setup.ethtokens_max_chunks_patch)
+        stack.enter_context(setup.evmtokens_max_chunks_patch)
         stack.enter_context(setup.beaconchain_patch)
         function_call_counters = [
             stack.enter_context(eth_query_patch),

@@ -47,8 +47,8 @@ from rotkehlchen.chain.ethereum.modules import (
 )
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerPoolBalance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
-from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
@@ -1077,9 +1077,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        ethtokens = EthTokens(database=self.database, ethereum=self.ethereum)
+        evmtokens = EvmTokens(database=self.database, manager=self.ethereum)
         try:
-            balance_result, token_usd_price = ethtokens.query_tokens_for_addresses(
+            balance_result, token_usd_price = evmtokens.query_tokens_for_addresses(
                 addresses=self.accounts.eth,
             )
         except BadFunctionCallOutput as e:
@@ -1240,9 +1240,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 proxy_to_address[proxy_address] = user_address
                 proxy_addresses.append(proxy_address)
 
-            ethtokens = EthTokens(database=self.database, ethereum=self.ethereum)
+            evmtokens = EvmTokens(database=self.database, manager=self.ethereum)
             try:
-                balance_result, token_usd_price = ethtokens.query_tokens_for_addresses(
+                balance_result, token_usd_price = evmtokens.query_tokens_for_addresses(
                     addresses=proxy_addresses,
                 )
             except BadFunctionCallOutput as e:

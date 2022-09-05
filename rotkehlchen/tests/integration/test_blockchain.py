@@ -10,8 +10,8 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
-from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.evm.tokens import EvmTokens
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.tests.utils.blockchain import mock_beaconchain, mock_etherscan_query
@@ -45,8 +45,8 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         original_queries=None,
         extra_flags=None,
     )
-    ethtokens_max_chunks_patch = patch(
-        'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT',
+    evmtokens_max_chunks_patch = patch(
+        'rotkehlchen.chain.evm.tokens.ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT',
         new=800,
     )
     beaconchain_patch = mock_beaconchain(
@@ -100,20 +100,20 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         wraps=mock_add_defi_balances_to_account,
     )
 
-    with etherscan_patch, ethtokens_max_chunks_patch:
+    with etherscan_patch, evmtokens_max_chunks_patch:
         blockchain.add_blockchain_accounts(
             blockchain=SupportedBlockchain.ETHEREUM,
             accounts=[addr1, addr2],
         )
-        ethtokens = EthTokens(database=blockchain.database, ethereum=blockchain.ethereum)
-        ethtokens.detect_tokens(
+        evmtokens = EvmTokens(database=blockchain.database, manager=blockchain.ethereum)
+        evmtokens.detect_tokens(
             only_cache=False,
             addresses=[addr1, addr2],
         )
 
     assert addr1 in blockchain.accounts.eth
 
-    with etherscan_patch, ethtokens_max_chunks_patch, defi_balances_mock, add_defi_mock, beaconchain_patch:  # noqa: E501
+    with etherscan_patch, evmtokens_max_chunks_patch, defi_balances_mock, add_defi_mock, beaconchain_patch:  # noqa: E501
         greenlets = [
             # can't call query_ethereum_balances directly since we have to update totals
             gevent.spawn_later(0.01 * x, blockchain.query_balances, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
