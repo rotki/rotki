@@ -1,5 +1,5 @@
 import abc
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.types import Price, Timestamp
@@ -57,3 +57,12 @@ class HistoricalPriceOracleInterface(CurrentPriceOracleInterface):
         - RemoteError
         """
         ...
+
+    @abc.abstractmethod
+    def all_coins(self) -> Dict[str, Dict[str, Any]]:
+        """Historical price oracles (coingecko, cryptocompare) implement this
+        to return all of their supported assets.
+
+        May raise
+        - RemoteError
+        """

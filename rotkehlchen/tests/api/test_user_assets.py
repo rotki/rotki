@@ -186,7 +186,7 @@ def test_add_user_assets(rotkehlchen_api_server, globaldb):
         ),
         json=bad_asset,
     )
-    expected_msg = f'Given cryptocompare identifier {bad_id} isnt valid'
+    expected_msg = f'Given cryptocompare identifier {bad_id} is not valid'
     assert_error_response(
         response=response,
         contained_in_msg=expected_msg,
@@ -354,7 +354,7 @@ def test_editing_user_assets(rotkehlchen_api_server, globaldb):
         ),
         json=bad_asset,
     )
-    expected_msg = f'Given cryptocompare identifier {bad_id} isnt valid'
+    expected_msg = f'Given cryptocompare identifier {bad_id} is not valid'
     assert_error_response(
         response=response,
         contained_in_msg=expected_msg,

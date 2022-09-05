@@ -125,6 +125,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+    from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -1679,26 +1680,27 @@ class UnderlyingTokenInfoSchema(Schema):
     weight = FloatingPercentageField(required=True)
 
 
-def _validate_external_ids(
+def _validate_single_oracle_id(
         data: Dict[str, Any],
-        coingecko_obj: 'Coingecko',
-        cryptocompare_obj: 'Cryptocompare',
+        oracle_name: Literal['coingecko', 'cryptocompare'],
+        oracle_obj: 'HistoricalPriceOracleInterface',
 ) -> None:
-    coingecko = data.get('coingecko')
-    if coingecko and coingecko not in coingecko_obj.all_coins():
-        raise ValidationError(
-            f'Given coingecko identifier {coingecko} is not valid. Make sure the identifier '
-            f'is correct and in this list https://api.coingecko.com/api/v3/coins/list',
-            field_name='coingecko',
-        )
+    coin_key = data.get(oracle_name)
+    if coin_key:
+        try:
+            all_coins = oracle_obj.all_coins()
+        except RemoteError as e:
+            raise ValidationError(
+                f'Could not validate {oracle_name} identifer {coin_key} due to '
+                f'problem communicating with {oracle_name}: {str(e)}',
+            ) from e
 
-    cryptocompare = data.get('cryptocompare')
-    if cryptocompare and cryptocompare not in cryptocompare_obj.all_coins():
-        raise ValidationError(
-            f'Given cryptocompare identifier {cryptocompare} isnt valid. Make sure the identifier '
-            f'is correct and in this list https://min-api.cryptocompare.com/data/all/coinlist',
-            field_name='cryptocompare',
-        )
+        if coin_key not in all_coins:
+            raise ValidationError(
+                f'Given {oracle_name} identifier {coin_key} is not valid. Make sure the '
+                f'identifier is correct and in the list of valid {oracle_name} identifiers',
+                field_name=oracle_name,
+            )
 
 
 class AssetSchema(Schema):
@@ -1731,7 +1733,8 @@ class AssetSchema(Schema):
     ) -> None:
         if self.identifier_required is True and data['identifier'] is None:
             raise ValidationError(message='Asset schema identifier should be given', field_name='identifier')  # noqa: E501
-        _validate_external_ids(data, self.coingecko_obj, self.cryptocompare_obj)
+        _validate_single_oracle_id(data, 'coingecko', self.coingecko_obj)
+        _validate_single_oracle_id(data, 'cryptocompare', self.cryptocompare_obj)
 
 
 class EvmTokenSchema(RequiredEthereumAddressSchema):
@@ -1793,7 +1796,8 @@ class EvmTokenSchema(RequiredEthereumAddressSchema):
             # most probably validation happens at ModifyEvmTokenSchema
             # so this is not needed. Kind of an ugly way to do this but can't
             # find a way around it at the moment
-            _validate_external_ids(data, self.coingecko_obj, self.cryptocompare_obj)  # type: ignore  # noqa:E501
+            _validate_single_oracle_id(data, 'coingecko', self.coingecko_obj)
+            _validate_single_oracle_id(data, 'cryptocompare', self.cryptocompare_obj)  # type: ignore  # noqa: E501
 
     @post_load
     def transform_data(  # pylint: disable=no-self-use
@@ -1838,10 +1842,15 @@ class ModifyEvmTokenSchema(Schema):
         token: fields.Nested = self.declared_fields['token']  # type: ignore
         serialized_token = data['token'].serialize_all_info()
         serialized_token.pop('identifier')
-        _validate_external_ids(
+        _validate_single_oracle_id(
             data=serialized_token,
-            coingecko_obj=token.schema.coingecko_obj,
-            cryptocompare_obj=token.schema.cryptocompare_obj,
+            oracle_name='coingecko',
+            oracle_obj=token.schema.coingecko_obj,
+        )
+        _validate_single_oracle_id(
+            data=serialized_token,
+            oracle_name='cryptocompare',
+            oracle_obj=token.schema.cryptocompare_obj,
         )
 
 

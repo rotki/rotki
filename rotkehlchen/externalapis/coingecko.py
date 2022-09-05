@@ -467,6 +467,11 @@ class Coingecko(HistoricalPriceOracleInterface):
         return parsed_data
 
     def all_coins(self) -> Dict[str, Dict[str, Any]]:
+        """Returns all coingecko assets
+
+        May raise:
+        - RemoteError if there is an error with reaching coingecko
+        """
         if self.all_coins_cache is None:
             response = self._query(module='coins/list')
             self.all_coins_cache = {}
