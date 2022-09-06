@@ -15,7 +15,7 @@ Changelog
 * :feature:`4704` Management of ignored assets is now moved to asset settings.
 * :feature:`-` Ethereum transactions involving convex finance should now be automatically decoded.
 * :feature:`-` An ethereum address's tokens can now be manually detected by pressing a specific button in the UI.
-* :feature:`-` Decoders for Uniswap V2 and Uniswap V3 will be now available.
+* :feature:`-` Transactions involving uniswap v2 and uniswap v3 will now be properly decoded in the ethereum transactions view
 * :bug:`-` When force sync fails a proper error message is displayed
   
 * :release:`1.25.3 <2022-09-02>`

@@ -31,8 +31,9 @@ class Uniswapv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     ) -> None:
         """Search for both events. Since the order is not guaranteed try reshuffle in both cases"""
         if tx_log.topics[0] == SWAP_SIGNATURE:
-            # When the router chains multiple swaps in one transaction only the last swap has as
-            # buyer this topic. In this case we know is the last swap and the receiver is the user
+            # When the router chains multiple swaps in one transaction only the last swap has
+            # the buyer in the topic. In that case we know it is the last swap and the receiver is
+            # the user
             maybe_buyer = hex_or_bytes_to_address(tx_log.topics[2])
             out_event = in_event = None
 
@@ -54,7 +55,7 @@ class Uniswapv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             for event in decoded_events:
                 # When we look for the spend event we have to take into consideration the case
                 # where not all the ETH is converted. The ETH that is not converted is returned
-                # in a internal transaction to the user.
+                # in an internal transaction to the user.
                 if (
                     event.event_type == HistoryEventType.SPEND and
                     (
@@ -77,6 +78,7 @@ class Uniswapv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     event.counterparty = CPT_UNISWAP_V2
                     event.notes = f'Receive {event.balance.amount} {event.asset.symbol} in uniswap-v2 from {event.location_label}'  # noqa: E501
                     in_event = event
+
             maybe_reshuffle_events(out_event=out_event, in_event=in_event)
 
     # -- DecoderInterface methods

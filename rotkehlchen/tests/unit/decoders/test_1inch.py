@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V1, CPT_ONEINCH_V2
+from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_CHI, A_PAN
@@ -52,8 +53,8 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             asset=A_USDC,
             balance=Balance(amount=FVal('138.75')),
             location_label=ADDY,
-            notes=f'Swap 138.75 USDC in 1inch-v1 from {ADDY}',
-            counterparty=CPT_ONEINCH_V1,
+            notes=f'Swap 138.75 USDC in uniswap-v2 from {ADDY}',
+            counterparty=CPT_UNISWAP_V2,
         ), HistoryBaseEntry(
             event_identifier=tx_hash,
             sequence_index=91,
