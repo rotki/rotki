@@ -42,12 +42,14 @@ from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.chain.ethereum.utils import multicall_2
+from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.ethereum import (
     ENS_REVERSE_RECORDS,
     ERC20TOKEN_ABI,
+    ETH_MULTICALL,
+    ETH_MULTICALL_2,
     ETH_SCAN,
     UNIV1_LP_ABI,
 )
@@ -236,6 +238,75 @@ class EthereumManager():
             },
         }
         self.database = database
+
+        # Contracts
+        self.contract_scan = ETH_SCAN[ChainID.ETHEREUM]
+        self.contract_multicall = ETH_MULTICALL
+        self.contract_multicall_2 = ETH_MULTICALL_2
+
+    def multicall(
+            self,
+            calls: List[Tuple[ChecksumEvmAddress, str]],
+            # only here to comply with multicall_2
+            require_success: bool = True,  # pylint: disable=unused-argument
+            call_order: Optional[Sequence['WeightedNode']] = None,
+            block_identifier: BlockIdentifier = 'latest',
+            calls_chunk_size: int = MULTICALL_CHUNKS,
+    ) -> Any:
+        """Uses MULTICALL contract. Failure of one call is a failure of the entire multicall.
+        source: https://etherscan.io/address/0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441#code"""
+
+        calls_chunked = list(get_chunks(calls, n=calls_chunk_size))
+        output = []
+        for call_chunk in calls_chunked:
+            multicall_result = self.contract_multicall.call(
+                manager=self,
+                method_name='aggregate',
+                arguments=[call_chunk],
+                call_order=call_order,
+                block_identifier=block_identifier,
+            )
+            _, chunk_output = multicall_result
+            output += chunk_output
+        return output
+
+    def multicall_2(
+            self,
+            calls: List[Tuple[ChecksumEvmAddress, str]],
+            require_success: bool,
+            call_order: Optional[Sequence['WeightedNode']] = None,
+            block_identifier: BlockIdentifier = 'latest',
+            # only here to comply with multicall
+            calls_chunk_size: int = MULTICALL_CHUNKS,  # pylint: disable=unused-argument
+    ) -> List[Tuple[bool, bytes]]:
+        """
+        Uses MULTICALL_2 contract. If require success is set to False any call in the list
+        of calls is allowed to fail.
+        source: https://etherscan.io/address/0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696#code"""
+        return self.contract_multicall_2.call(
+            manager=self,
+            method_name='tryAggregate',
+            arguments=[require_success, calls],
+            call_order=call_order,
+            block_identifier=block_identifier,
+        )
+
+    def multicall_specific(
+            self,
+            contract: 'EvmContract',
+            method_name: str,
+            arguments: List[Any],
+            call_order: Optional[Sequence['WeightedNode']] = None,
+            decode_result: bool = True,
+    ) -> Any:
+        calls = [(
+            contract.address,
+            contract.encode(method_name=method_name, arguments=i),
+        ) for i in arguments]
+        output = self.multicall(calls, True, call_order)
+        if decode_result is False:
+            return output
+        return [contract.decode(x, method_name, arguments[0]) for x in output]
 
     def connected_to_any_web3(self) -> bool:
         return len(self.web3_mapping) != 0
@@ -541,7 +612,7 @@ class EthereumManager():
             'Querying ethereum chain for ETH balance',
             eth_addresses=accounts,
         )
-        result = ETH_SCAN[ChainID.ETHEREUM].call(
+        result = self.contract_scan.call(
             manager=self,
             method_name='etherBalances',
             arguments=[accounts],
@@ -1170,8 +1241,7 @@ class EthereumManager():
         contract = EvmContract(address=address, abi=ERC20TOKEN_ABI, deployed_block=0)
         try:
             # Output contains call status and result
-            output = multicall_2(
-                ethereum=self,
+            output = self.multicall_2(
                 require_success=False,
                 calls=[(address, contract.encode(method_name=prop)) for prop in properties],
             )

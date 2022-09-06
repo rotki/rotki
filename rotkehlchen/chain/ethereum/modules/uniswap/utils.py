@@ -11,7 +11,6 @@ from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import _decode_result
 from rotkehlchen.chain.ethereum.types import WeightedNode
-from rotkehlchen.chain.ethereum.utils import multicall, multicall_2
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import UNISWAP_V2_LP_ABI, ZERION_ABI
@@ -163,7 +162,7 @@ def find_uniswap_v2_lp_price(
     address = token.evm_address
     contract = EvmContract(address=address, abi=UNISWAP_V2_LP_ABI, deployed_block=0)
     methods = ['token0', 'token1', 'totalSupply', 'getReserves', 'decimals']
-    multicall_method = multicall_2  # choose which multicall to use
+    multicall_method = ethereum.multicall_2  # choose which multicall to use
     if isinstance(block_identifier, int):
         if block_identifier <= 7929876:
             log.error(
@@ -173,11 +172,10 @@ def find_uniswap_v2_lp_price(
             return None
 
         if block_identifier <= 12336033:
-            multicall_method = multicall
+            multicall_method = ethereum.multicall
 
     try:
         output = multicall_method(
-            ethereum=ethereum,
             require_success=True,
             calls=[(address, contract.encode(method_name=method)) for method in methods],
             block_identifier=block_identifier,
@@ -193,7 +191,7 @@ def find_uniswap_v2_lp_price(
     decoded = []
     for (method_output, method_name) in zip(output, methods):
         call_success = True
-        if multicall_method == multicall_2:
+        if multicall_method == ethereum.multicall_2:
             call_success = method_output[0]
             call_result = method_output[1]
         else:

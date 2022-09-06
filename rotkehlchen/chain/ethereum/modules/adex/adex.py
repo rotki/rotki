@@ -16,7 +16,6 @@ from rotkehlchen.chain.ethereum.graph import (
 )
 from rotkehlchen.chain.ethereum.utils import (
     generate_address_via_create2,
-    multicall_specific,
     token_normalized_value_decimals,
 )
 from rotkehlchen.constants import ZERO
@@ -836,8 +835,7 @@ class Adex(EthereumModule):
         if len(addresses) == 0:
             return {}
 
-        result = multicall_specific(
-            ethereum=self.ethereum,
+        result = self.ethereum.multicall_specific(
             contract=self.staking_pool,
             method_name='balanceOf',
             arguments=[[x] for x in addresses],

@@ -10,11 +10,7 @@ from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.chain.ethereum.utils import (
-    asset_normalized_value,
-    multicall,
-    token_normalized_value,
-)
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_BAL,
@@ -140,8 +136,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
         - RemoteError if query to the node failed
         - DeserializationError if the query returns unexpected output
         """
-        output = multicall(
-            ethereum=self.ethereum,
+        output = self.ethereum.multicall(
             calls=[(
                 MAKERDAO_CDP_MANAGER.address,
                 MAKERDAO_CDP_MANAGER.encode(method_name='urns', arguments=[cdp_id]),

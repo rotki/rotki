@@ -7,7 +7,6 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.manager import CURVE_POOLS_MAPPING_TYPE, EthereumManager
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.chain.ethereum.utils import multicall_specific
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.ethereum import (
@@ -174,8 +173,7 @@ def update_curve_registry_pools_cache(
         manager=ethereum_manager,
         method_name='pool_count',
     )
-    registry_pools_result = multicall_specific(
-        ethereum=ethereum_manager,
+    registry_pools_result = ethereum_manager.multicall_specific(
         contract=registry_contract,
         method_name='pool_list',
         arguments=[(x,) for x in range(registry_pool_count)],
@@ -186,21 +184,18 @@ def update_curve_registry_pools_cache(
         decoded_pool_addr = hex_or_bytes_to_address(pool_addr_encoded)  # already checksumed
         pool_addresses.append(decoded_pool_addr)
 
-    registry_lp_tokens_result = multicall_specific(
-        ethereum=ethereum_manager,
+    registry_lp_tokens_result = ethereum_manager.multicall_specific(
         contract=registry_contract,
         method_name='get_lp_token',
         arguments=[(x,) for x in pool_addresses],
         decode_result=False,  # don't decode since decoding unchecksums address
     )
-    registry_coins_result = multicall_specific(
-        ethereum=ethereum_manager,
+    registry_coins_result = ethereum_manager.multicall_specific(
         contract=registry_contract,
         method_name='get_coins',
         arguments=[(x,) for x in pool_addresses],
     )
-    registry_underlying_coins_result = multicall_specific(
-        ethereum=ethereum_manager,
+    registry_underlying_coins_result = ethereum_manager.multicall_specific(
         contract=registry_contract,
         method_name='get_underlying_coins',
         arguments=[(x,) for x in pool_addresses],
@@ -256,8 +251,7 @@ def update_curve_metapools_cache(
         manager=ethereum_manager,
         method_name='pool_count',
     )
-    pool_addrs_result = multicall_specific(
-        ethereum=ethereum_manager,
+    pool_addrs_result = ethereum_manager.multicall_specific(
         contract=factory_contract,
         method_name='pool_list',
         arguments=[(x,) for x in range(pool_count)],
@@ -269,8 +263,7 @@ def update_curve_metapools_cache(
 
     # either a pool of stablecoins or a pair `stablecoin - other curve pool token`
     # so no need to query underlying tokens
-    pool_coins_result = multicall_specific(
-        ethereum=ethereum_manager,
+    pool_coins_result = ethereum_manager.multicall_specific(
         contract=factory_contract,
         method_name='get_coins',
         arguments=[(x,) for x in pool_addresses],

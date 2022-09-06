@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
-from rotkehlchen.chain.ethereum.utils import multicall_2, token_normalized_value_decimals
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_PICKLE
 from rotkehlchen.constants.ethereum import PICKLE_DILL, PICKLE_DILL_REWARDS
@@ -76,8 +76,7 @@ class PickleFinance(EthereumModule):
             (PICKLE_DILL.address, self.dill_contract.encode(method_name='locked', arguments=[x]))
             for x in addresses
         ]
-        outputs = multicall_2(
-            ethereum=self.ethereum,
+        outputs = self.ethereum.multicall_2(
             require_success=False,
             calls=rewards_calls + balance_calls,
         )

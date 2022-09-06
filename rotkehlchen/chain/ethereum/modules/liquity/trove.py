@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.graph import (
     Graph,
     format_query_indentation,
 )
-from rotkehlchen.chain.ethereum.utils import multicall_2, token_normalized_value_decimals
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD, A_USD
 from rotkehlchen.constants.ethereum import LIQUITY_TROVE_MANAGER
@@ -220,8 +220,7 @@ class Liquity(HasDSProxy):
             (LIQUITY_TROVE_MANAGER.address, contract.encode(method_name='Troves', arguments=[x]))
             for x in addresses
         ]
-        outputs = multicall_2(
-            ethereum=self.ethereum,
+        outputs = self.ethereum.multicall_2(
             require_success=False,
             calls=calls,
         )
