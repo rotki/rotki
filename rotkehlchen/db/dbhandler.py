@@ -1388,10 +1388,7 @@ class DBHandler:
             tokens: List[EvmToken],
     ) -> None:
         """Saves detected tokens for an address"""
-        old_details = self._get_address_details_json(write_cursor, address)
         new_details = {}
-        if old_details and 'univ2_lp_tokens' in old_details:
-            new_details['univ2_lp_tokens'] = old_details['univ2_lp_tokens']
         new_details['tokens'] = [x.identifier for x in tokens]
         now = ts_now()
         write_cursor.execute(
