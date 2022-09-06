@@ -111,7 +111,8 @@ export type VersionUpdateCheckFrequency = z.infer<
 
 export enum SupportedLanguage {
   EN = 'en',
-  ES = 'es'
+  ES = 'es',
+  GR = 'gr'
 }
 
 const SupportedLanguageEnum = z.nativeEnum(SupportedLanguage);

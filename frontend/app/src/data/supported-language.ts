@@ -10,5 +10,10 @@ export const supportedLanguages = [
     identifier: SupportedLanguage.ES,
     label: 'Spanish',
     countries: ['es']
+  },
+  {
+    identifier: SupportedLanguage.GR,
+    label: 'Greek',
+    countries: ['gr']
   }
 ];
