@@ -59,9 +59,12 @@ from rotkehlchen.constants.limits import (
     FREE_USER_NOTES_LIMIT,
 )
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
+    EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+    EVM_ACCOUNTS_DETAILS_TOKENS,
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
@@ -113,7 +116,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.serialization.deserialize import deserialize_hex_color_code
+from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, deserialize_timestamp
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
@@ -1286,72 +1289,48 @@ class DBHandler:
                 f'{blockchain.value} accounts that do not exist',
             )
 
-    def _get_address_details(
-            self,
-            cursor: 'DBCursor',
-            address: ChecksumEvmAddress,
-    ) -> Tuple[Optional[Dict[str, Any]], Optional[Timestamp]]:
-        query = cursor.execute(
-            'SELECT tokens_list, timestamp FROM ethereum_accounts_details WHERE account = ?',
-            (address,),
-        )
-        result = query.fetchall()
-        if len(result) == 0:
-            return None, None  # no saved entry
-
-        last_update_ts = Timestamp(result[0][1])
-        try:
-            json_ret = json.loads(result[0][0])
-        except json.decoder.JSONDecodeError as e:
-            # This should never happen
-            self.msg_aggregator.add_warning(
-                f'Found undecodeable json {result[0][0]} in the DB for {address}.'
-                f'Error: {str(e)}',
-            )
-            return None, last_update_ts
-
-        if not isinstance(json_ret, dict):
-            # This can happen if the DB is old and still has only a list of saved tokens
-            return None, last_update_ts  # In that case just consider it outdated
-
-        return json_ret, last_update_ts
-
     def get_tokens_for_address(
             self,
             cursor: 'DBCursor',
             address: ChecksumEvmAddress,
+            chain: ChainID,
     ) -> Tuple[Optional[List[EvmToken]], Optional[Timestamp]]:
         """Gets the detected tokens for the given address if the given current time
         is recent enough.
 
-        If not, or if there is no saved entry, return None
+        If not, or if there is no saved entry, return None.
+        May raise:
+        - DeserializationError: If the timestamp stored in the evm_accounts_details is not valid
         """
-        json_ret, last_update_ts = self._get_address_details(cursor, address)
-        if json_ret is None:
-            return None, last_update_ts
-        tokens_list = json_ret.get('tokens', None)
-        if tokens_list is None:
-            return None, last_update_ts
+        last_update_ts = None
+        cursor.execute(
+            'SELECT value FROM evm_accounts_details WHERE account=? AND chain=? AND key=?',
+            (address, chain.serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS),
+        )
+        if (cursor_value := cursor.fetchone()) is not None:
+            last_update_ts = deserialize_timestamp(cursor_value[0])
 
-        if not isinstance(tokens_list, list):
-            # This should never happen
-            self.msg_aggregator.add_warning(
-                f'Found non-list tokens_list {json_ret} in the DB for {address}.',
-            )
-            return None, last_update_ts
+        if last_update_ts is None:
+            return None, None
 
-        if len(tokens_list) == 0:
+        cursor.execute(
+            'SELECT value FROM evm_accounts_details WHERE account=? AND chain=? AND key=?',
+            (address, chain.serialize_for_db(), EVM_ACCOUNTS_DETAILS_TOKENS),
+        )
+
+        tokens_ids = cursor.fetchall()
+        if len(tokens_ids) == 0:
             return None, last_update_ts
 
         returned_list = []
-        for x in tokens_list:
+        for (token_identifier,) in tokens_ids:
             try:
-                token = EvmToken.from_identifier(x)
+                token = EvmToken.from_identifier(token_identifier)
             except (DeserializationError, UnknownAsset):
                 token = None
             if token is None:
                 self.msg_aggregator.add_warning(
-                    f'Could not deserialize {x} as a token when reading latest '
+                    f'Could not deserialize {token_identifier} as a token when reading latest '
                     f'tokens list of {address}',
                 )
                 continue
@@ -1360,41 +1339,43 @@ class DBHandler:
 
         return returned_list, last_update_ts
 
-    def _get_address_details_json(self, cursor: 'DBCursor', address: ChecksumEvmAddress) -> Optional[Dict[str, Any]]:  # noqa: E501
-        query = cursor.execute(
-            'SELECT tokens_list, timestamp FROM ethereum_accounts_details WHERE account = ?',
-            (address,),
-        )
-        result = query.fetchall()
-        if len(result) == 0:
-            return None  # no saved entry
-
-        try:
-            json_ret = json.loads(result[0][0])
-        except json.decoder.JSONDecodeError as e:
-            # This should never happen
-            self.msg_aggregator.add_warning(
-                f'Found undecodeable json {result[0][0]} in the DB for {address}.'
-                f'Error: {str(e)}',
-            )
-            return None
-
-        return json_ret
-
     def save_tokens_for_address(
             self,
             write_cursor: 'DBCursor',
             address: ChecksumEvmAddress,
+            chain: ChainID,
             tokens: List[EvmToken],
     ) -> None:
         """Saves detected tokens for an address"""
-        new_details = {}
-        new_details['tokens'] = [x.identifier for x in tokens]
         now = ts_now()
+        insert_rows: List[Tuple[ChecksumEvmAddress, str, str, Union[str, Timestamp]]] = [
+            (
+                address,
+                chain.serialize_for_db(),
+                EVM_ACCOUNTS_DETAILS_TOKENS,
+                x.identifier,
+            )
+            for x in tokens
+        ]
+        # Also add the update row for the timestamp
+        insert_rows.append(
+            (
+                address,
+                chain.serialize_for_db(),
+                EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+                now,
+            ),
+        )
+        # Delete previous entries for tokens
         write_cursor.execute(
-            'INSERT OR REPLACE INTO ethereum_accounts_details '
-            '(account, tokens_list, timestamp) VALUES (?, ?, ?)',
-            (address, json.dumps(new_details), now),
+            'DELETE FROM evm_accounts_details WHERE account=? AND chain=? AND KEY=?',
+            (address, chain.serialize_for_db(), EVM_ACCOUNTS_DETAILS_TOKENS),
+        )
+        # Timestamp will get replaced
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO evm_accounts_details '
+            '(account, chain, key, value) VALUES (?, ?, ?, ?)',
+            insert_rows,
         )
 
     def get_blockchain_accounts(self, cursor: 'DBCursor') -> BlockchainAccounts:
@@ -2183,7 +2164,7 @@ class DBHandler:
             'DELETE FROM used_query_ranges WHERE name = ?',
             (f'{ETH2_DEPOSITS_PREFIX}_{address}',),
         )
-        write_cursor.execute('DELETE FROM ethereum_accounts_details WHERE account = ?', (address,))
+        write_cursor.execute('DELETE FROM evm_accounts_details WHERE account = ?', (address,))
         write_cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
         write_cursor.execute('DELETE FROM adex_events WHERE address = ?', (address,))
         write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))

@@ -6,6 +6,10 @@ from rotkehlchen.constants.resolver import (
     ChainID,
     evm_address_to_identifier,
 )
+from rotkehlchen.db.constants import (
+    EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+    EVM_ACCOUNTS_DETAILS_TOKENS,
+)
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.types import EvmTokenKind
 
@@ -20,13 +24,11 @@ def _refactor_time_columns(write_cursor: 'DBCursor') -> None:
     to be changed were:
     - timed_balances
     - timed_location_data
-    - ethereum_accounts_details
     - trades
     - asset_movements
     """
     write_cursor.execute('ALTER TABLE timed_balances RENAME COLUMN time TO timestamp')
     write_cursor.execute('ALTER TABLE timed_location_data RENAME COLUMN time TO timestamp')
-    write_cursor.execute('ALTER TABLE ethereum_accounts_details RENAME COLUMN time TO timestamp')
     write_cursor.execute('ALTER TABLE trades RENAME COLUMN time TO timestamp')
     write_cursor.execute('ALTER TABLE asset_movements RENAME COLUMN time TO timestamp')
 
@@ -62,14 +64,7 @@ def _rename_assets_identifiers(write_cursor: 'DBCursor') -> None:
         elif identifier in OTHER_EVM_CHAINS_ASSETS:
             old_id_to_new[identifier] = OTHER_EVM_CHAINS_ASSETS[identifier]
     sqlite_tuples = [(new_id, old_id) for old_id, new_id in old_id_to_new.items()]
-    # Make sure that the new ids don't exist already in the user db. This is the first version
-    # that allows the version 3 of the schema so we need to make sure that all the assets
-    # comply with the correct format. I (yabirgb) added this DELETE from just for safety
-    # but this shouldn't happen during the migration since the new ids shouldn't exist in the
-    # database before this upgrade as stated by Alexey in this line
-    # https://github.com/rotki/rotki/blob/e68665fcb4f8a6455bab16595a8db75c7faa8b56/rotkehlchen/globaldb/handler.py#L66  # noqa: E501
-    write_cursor.executemany('DELETE FROM assets WHERE identifier=?', [(x,) for x in old_id_to_new.values()])  # noqa: E501
-    write_cursor.executemany('UPDATE OR IGNORE assets SET identifier=? WHERE identifier=?', sqlite_tuples)  # noqa: E501
+    write_cursor.executemany('UPDATE assets SET identifier=? WHERE identifier=?', sqlite_tuples)  # noqa: E501
 
 
 def _change_xpub_mappings_primary_key(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
@@ -154,26 +149,50 @@ def _update_ignored_assets_identifiers_to_caip_format(cursor: 'DBCursor') -> Non
 
 def _rename_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
     """ethereum_accounts_details has the column tokens_list as a json list with identifiers
-    using the _ceth_ formath. Those need to be upgraded to the CAIPS format.
+    using the _ceth_ format. Those need to be upgraded to the CAIPS format.
+    The approach we took was to refactor this table adding a key-value table with the chain
+    attribute to map properties of accounts to differt chains
     """
-    cursor.execute('SELECT account, tokens_list FROM ethereum_accounts_details')
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS evm_accounts_details (
+        account VARCHAR[42] NOT NULL,
+        chain CHAR(1) NOT NULL DEFAULT('A'),
+        key TEXT NOT NULL,
+        value TEXT NOT NULL,
+        PRIMARY KEY (account, chain, key, value)
+    );
+    """)
+    cursor.execute('SELECT account, tokens_list, time FROM ethereum_accounts_details')
     update_rows = []
-    for address, token_list in cursor:
+    for address, token_list, timestamp in cursor:
         tokens = json.loads(token_list)
-        new_ids = []
         for token in tokens.get('tokens', []):
-            new_ids.append(
-                evm_address_to_identifier(
-                    address=token[ETHEREUM_DIRECTIVE_LENGTH:],
-                    chain=ChainID.ETHEREUM,
-                    token_type=EvmTokenKind.ERC20,
+            new_id = evm_address_to_identifier(
+                address=token[ETHEREUM_DIRECTIVE_LENGTH:],
+                chain=ChainID.ETHEREUM,
+                token_type=EvmTokenKind.ERC20,
+            )
+            update_rows.append(
+                (
+                    address,
+                    ChainID.ETHEREUM.serialize_for_db(),
+                    EVM_ACCOUNTS_DETAILS_TOKENS,
+                    new_id,
                 ),
             )
-        update_rows.append((json.dumps({'tokens': new_ids}), address))
+        update_rows.append(
+            (
+                address,
+                ChainID.ETHEREUM.serialize_for_db(),
+                EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+                timestamp,
+            ),
+        )
     cursor.executemany(
-        'UPDATE ethereum_accounts_details SET tokens_list=? WHERE account=?',
+        'INSERT OR IGNORE INTO evm_accounts_details(account, chain, key, value) VALUES(?, ?, ?, ?);',
         update_rows,
     )
+    cursor.execute('DROP TABLE ethereum_accounts_details')
 
 
 def upgrade_v34_to_v35(db: 'DBHandler') -> None:

@@ -122,9 +122,9 @@ CREATE TABLE IF NOT EXISTS common_asset_details(
 );
 """
 
-# For every assets row we have a row in the common_asset_details table or in the
-# custom_assets table. The identifier of the asset is primary key since this allows us to do
-# a delete on cascade when deleting the row in the asset table.
+# For every assets row we have either a row in the common_asset_details table or in the
+# custom_assets table. The identifier of the asset is the primary key of the table
+# and allows to create the relation with common_asset_details table and the evm_tokens table
 # We declare the identifier to be case insensitive .This is so that queries like
 # cETH and CETH all work and map to the same asset
 DB_CREATE_ASSETS = """
@@ -145,14 +145,14 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 """
 
-# The evm_tokens contains information to represent the tokens on every evm chain. It uses the
-# asset identifier to reference the asset table allowing for a delete on cascade. Token kind
+# The evm_tokens table contains information to represent the tokens on every evm chain. It uses
+# the asset identifier to reference the asset table allowing for a delete on cascade. Token kind
 # and chain are two enum fields where token_kind represent the type of token e.g. ERC20 or ERC721.
 # chain is also an enum and it maps to the different chains e.g. ETHEREUM, BINANCE, AVALANCHE...
 # Protocol is a text field that we fill with pre selected values in the code and allows to group
 # assets by their protocol. All the curve assets are identified by this field and the uniswap pool
 # tokens as well. The decimals field is allowed to be NULL since for some tokens is not possible to
-# get them or set a value. In the code for tokens that are not NFTs we agree to use 18 as default.
+# get them or set a value. In the code for tokens that are not NFTs use 18 as default.
 DB_CREATE_EVM_TOKENS = """
 CREATE TABLE IF NOT EXISTS evm_tokens (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
@@ -165,9 +165,9 @@ CREATE TABLE IF NOT EXISTS evm_tokens (
 );
 """
 
-# The multiassets_mappings table and asset_collections work together. This table allows to create
-# a rellation between the representation of the same asset in different chains. For example for
-# USDC we would create a row in asset_collections and then we would create as many entries in
+# The multiassets_mappings table and asset_collections table work together. This table allows to
+# create a relation between the representation of the same asset in different chains. For example
+# for USDC we would create a row in asset_collections and then we would create as many entries in
 # the multiasset_mappings as USDC tokens we have in our database. This table allows to create a
 # relation between all the assets that should be treated as the same.
 DB_CREATE_MULTIASSET_MAPPINGS = """
@@ -250,11 +250,11 @@ CREATE TABLE IF NOT EXISTS address_book (
 );
 """
 
-# Similar to the common_asset_details this table is used for custom assets that the user wants to
-# to track. Also we use the asset identifier to relate this table with the assets table allowing
-# a cascade on delete. The notes fields allows for adding relevant information about the asset
-# by the user. The type field is a string field that is filled by the user. This allows to create
-# something like a label so the user can visually see what kind of assets (s)he has. All the
+# Similar to the common_asset_details table this table is used for custom assets that the user
+# wants to to track. Also we use the asset identifier to relate this table with the assets table
+# allowing a cascade on delete. The notes fields allows for adding relevant information about the
+# asset by the user. The type field is a string field that is filled by the user. This allows to
+# createsomething like a label so the user can visually see what kind of assets (s)he has. All the
 # available types can be queried by selecting with the unique distinct the type column and then
 # show them to the user.
 # The way to create a custom asset would be:

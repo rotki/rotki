@@ -313,11 +313,18 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
 );
 """  # noqa: E501
 
-DB_CREATE_ETHEREUM_ACCOUNTS_DETAILS = """
-CREATE TABLE IF NOT EXISTS ethereum_accounts_details (
-    account VARCHAR[42] NOT NULL PRIMARY KEY,
-    tokens_list TEXT NOT NULL,
-    timestamp INTEGER NOT NULL
+
+# Store information about the tokens queried for each combination of account and chain. Previously
+# we were using a json and a tiemstamp column. Now the table is designed to have a key-value
+# structure where we use the key `token` to identify the tokens queried per address and the
+# key `last_queried_timestamp` to determine when the last query was executed
+DB_CREATE_EVM_ACCOUNTS_DETAILS = """
+CREATE TABLE IF NOT EXISTS evm_accounts_details (
+    account VARCHAR[42] NOT NULL,
+    chain CHAR(1) NOT NULL DEFAULT('A'),
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    PRIMARY KEY (account, chain, key, value)
 );
 """
 
@@ -733,7 +740,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_USER_CREDENTIALS_MAPPINGS}
 {DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS}
 {DB_CREATE_BLOCKCHAIN_ACCOUNTS}
-{DB_CREATE_ETHEREUM_ACCOUNTS_DETAILS}
+{DB_CREATE_EVM_ACCOUNTS_DETAILS}
 {DB_CREATE_MULTISETTINGS}
 {DB_CREATE_MANUALLY_TRACKED_BALANCES}
 {DB_CREATE_TRADES}
