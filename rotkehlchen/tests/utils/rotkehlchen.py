@@ -10,6 +10,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import (
@@ -136,7 +137,7 @@ def setup_balances(
             for token in token_balances:
                 eth_map[acc][token] = token_balances[token][idx]
             if populate_detected_tokens is True:
-                rotki.data.db.save_tokens_for_address(write_cursor, acc, list(token_balances.keys()))  # noqa: E501
+                rotki.data.db.save_tokens_for_address(write_cursor, acc, ChainID.ETHEREUM, list(token_balances.keys()))  # noqa: E501
 
     defi_balances_addition_method_patch = None
     if liabilities is not None:

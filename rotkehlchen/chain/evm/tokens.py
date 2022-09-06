@@ -231,6 +231,7 @@ class EvmTokens():
                 addresses_info[address] = self.db.get_tokens_for_address(
                     cursor=cursor,
                     address=address,
+                    chain=ChainID.ETHEREUM,
                 )
 
         return addresses_info
@@ -294,7 +295,12 @@ class EvmTokens():
             )
             detected_tokens = list(token_balances.keys())
             with self.db.user_write() as write_cursor:
-                self.db.save_tokens_for_address(write_cursor, address, detected_tokens)
+                self.db.save_tokens_for_address(
+                    write_cursor=write_cursor,
+                    address=address,
+                    chain=ChainID.ETHEREUM,
+                    tokens=detected_tokens,
+                )
 
     def query_tokens_for_addresses(
             self,
@@ -323,7 +329,7 @@ class EvmTokens():
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
-                saved_list, _ = self.db.get_tokens_for_address(cursor, address=address)
+                saved_list, _ = self.db.get_tokens_for_address(cursor, address=address, chain=ChainID.ETHEREUM)  # noqa: E501
                 if saved_list is None:
                     continue  # Do not query if we know the address has no tokens
                 all_tokens.update(saved_list)

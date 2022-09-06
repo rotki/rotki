@@ -764,14 +764,12 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
     upgraded_tables = (
         'timed_balances',
         'timed_location_data',
-        'ethereum_accounts_details',
         'trades',
         'asset_movements',
     )
     expected_timestamps = (
         [(1658564495,)],
         [(1637574520,)],
-        [(1637574640,)],
         [(1595640208,), (1595640208,), (1595640208,)],
         [(1,)],
     )
@@ -840,6 +838,13 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
             ('BIFI',),
         )
         assert cursor.fetchone() == (1,)
+
+    with db_v34.user_write() as write_cursor:
+        # when opening the database with this version of develop we introduced the new assets
+        # in the database. that is not possible in the user database due to
+        # https://github.com/rotki/rotki/blob/develop/rotkehlchen/globaldb/upgrades/manager.py#L40
+        write_cursor.execute('DELETE FROM assets WHERE identifier LIKE "eip155:%"')
+
     # Migrate the database
     db_v35 = _init_db_with_target_version(
         target_version=35,
@@ -906,9 +911,9 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         assert new_ignored_assets_ids == expected_new_ignored_assets_ids
 
         # Check that token_list for accounts has been correctly upgraded
-        cursor.execute('SELECT tokens_list from ethereum_accounts_details WHERE account="0x45E6CA515E840A4e9E02A3062F99216951825eB2"')  # noqa: E501
-        tokens = json.loads(cursor.fetchone()[0])
-        assert tokens['tokens'] == ['eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e']
+        cursor.execute('SELECT value from evm_accounts_details WHERE account="0x45E6CA515E840A4e9E02A3062F99216951825eB2" AND chain="A" AND key="tokens"')  # noqa: E501
+        token = cursor.fetchone()[0]
+        assert token == 'eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e'
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
@@ -921,7 +926,8 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     this is just to reminds us not to forget to add create table statements.
     """
     msg_aggregator = MessagesAggregator()
-    _use_prepared_db(user_data_dir, 'v34_rotkehlchen.db')
+    base_database = 'v34_rotkehlchen.db'
+    _use_prepared_db(user_data_dir, base_database)
     last_db = _init_db_with_target_version(
         target_version=34,
         user_data_dir=user_data_dir,
@@ -934,6 +940,11 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     views_before = {x[0] for x in result}
 
     last_db.logout()
+
+    # The last copy of the database has been populated with the assets copied from the globaldb
+    # during the migration 34_45. Take a clean copy of it to execute the upgrade
+    _use_prepared_db(user_data_dir, base_database)
+
     # Execute upgrade
     db = _init_db_with_target_version(
         target_version=35,
@@ -952,7 +963,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
     views_after_creation = {x[0] for x in result}
 
-    removed_tables = {'amm_swaps'}
+    removed_tables = {'amm_swaps', 'ethereum_accounts_details'}
     removed_views = {'combined_trades_view'}
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
@@ -961,7 +972,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'user_notes'}
+    assert new_tables == {'user_notes', 'evm_accounts_details'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
 
