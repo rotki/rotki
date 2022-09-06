@@ -108,11 +108,8 @@ INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('B', 2);
 INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('C', 3);
 """
 
-# The common_assets_details contains information common for all the crypto-assets
-# leaving to the assets table information that is shared among the custom assets.
-# For every assets row we have a row in the common_assets_details table or in the
-# custom_assets table. The identifier of the asset is primary key since this allows as to do
-# a delete on cascade when deleting the row in the asset table.
+# The common_asset_details contains information common for all the crypto-assets
+# leaving to the assets table information that is shared among all the assets.
 DB_CREATE_COMMON_ASSET_DETAILS = """
 CREATE TABLE IF NOT EXISTS common_asset_details(
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
@@ -125,6 +122,9 @@ CREATE TABLE IF NOT EXISTS common_asset_details(
 );
 """
 
+# For every assets row we have a row in the common_asset_details table or in the
+# custom_assets table. The identifier of the asset is primary key since this allows us to do
+# a delete on cascade when deleting the row in the asset table.
 # We declare the identifier to be case insensitive .This is so that queries like
 # cETH and CETH all work and map to the same asset
 DB_CREATE_ASSETS = """
@@ -178,6 +178,20 @@ CREATE TABLE IF NOT EXISTS multiasset_mappings(
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
 );
 """  # noqa: E501
+
+# asset_collections allows to set common information for related assets as descrbed in the
+# multiasset_mappings table. The reason to have custom name and symbol is that for some tokens
+# those properties are not the same across different chains. For example in gnosis chain USDC uses
+# USD//C as symnol for the USDC token. This table covers this problem create a common name and
+# symbol for those assets allowing a clean representation for the users and working as common
+# row to relate all the related asstes.
+DB_CREATE_ASSET_COLLECTIONS = """
+CREATE TABLE IF NOT EXISTS asset_collections(
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    symbol TEXT NOT NULL
+);
+"""
 
 DB_CREATE_USER_OWNED_ASSETS = """
 CREATE TABLE IF NOT EXISTS user_owned_assets (
@@ -236,12 +250,12 @@ CREATE TABLE IF NOT EXISTS address_book (
 );
 """
 
-# Similar to the common_assets_details this table is used for custom assets that the user wants to
+# Similar to the common_asset_details this table is used for custom assets that the user wants to
 # to track. Also we use the asset identifier to relate this table with the assets table allowing
-# a delete on cascade. The notes fields allows for adding relevant information about the asset
+# a cascade on delete. The notes fields allows for adding relevant information about the asset
 # by the user. The type field is a string field that is filled by the user. This allows to create
-# something like tags so the user can visually see what kind of assets (s)he has. All the
-# available types can be queried by selecting with the unique clause the type column and then
+# something like a label so the user can visually see what kind of assets (s)he has. All the
+# available types can be queried by selecting with the unique distinct the type column and then
 # show them to the user.
 # The way to create a custom asset would be:
 # 1. Create a row in the assets table with the type custom asset
