@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Any
 
 import pytest
 import requests
@@ -9,6 +10,15 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response_with_result,
 )
+
+
+def assert_default_erc20_info_response(result: Any) -> None:
+    assert len(result.keys()) == 3
+    for prop, value in result.items():
+        if prop == 'decimals':
+            assert value == 18
+        else:
+            assert value is None
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -40,11 +50,9 @@ def test_query_token_with_info(rotkehlchen_api_server):
     )
 
     result_2 = assert_proper_response_with_result(response_2)
-    assert len(result_2.keys()) == 3
-    assert all((value is None for value in result_2.values()))
+    assert_default_erc20_info_response(result_2)
 
     # Test an address that is not a contract
-
     response_3 = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -55,8 +63,7 @@ def test_query_token_with_info(rotkehlchen_api_server):
     )
 
     result_3 = assert_proper_response_with_result(response_3)
-    assert len(result_3.keys()) == 3
-    assert all((value is None for value in result_3.values()))
+    assert_default_erc20_info_response(result_3)
 
     # Test an address that is not valid (this one has extra chars)
     response_4 = requests.get(
