@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Decimals now defaults to 18 when token contract info query fails.
+
 * :release:`1.25.3 <2022-09-02>`
 * :bug:`4781` Failure in one specific binance endpoint during balance query won't fail the entire binance balances query unless it's the main spot balances endpoint.
 * :bug:`4769` Fixed various issues with adding/editing/deleting web3 nodes. Editing the name of a node now works and also setting all open nodes to 0% query probability should no longer throw a 500 error.

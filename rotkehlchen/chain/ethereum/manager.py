@@ -41,7 +41,6 @@ from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.ethereum import (
@@ -78,8 +77,8 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
 from rotkehlchen.utils.network import request_get_dict
 
-from .constants import ETHERSCAN_NODE
-from .types import ETHERSCAN_NODE_NAME, NodeName, WeightedNode
+from .constants import DEFAULT_TOKEN_DECIMALS, ETHERSCAN_NODE
+from .types import ETHERSCAN_NODE_NAME, NodeName, WeightedNode, string_to_ethereum_address
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
 
 if TYPE_CHECKING:
@@ -1166,11 +1165,11 @@ class EthereumManager():
             # the same length as the tuple of properties
             output = [(False, b'')] * len(properties)
         try:
-            decoded = [
-                contract.decode(x[1], method_name)[0]  # pylint: disable=E1136
-                if x[0] and len(x[1]) else None
-                for (x, method_name) in zip(output, properties)
-            ]
+            decoded = self._process_contract_info(
+                output=output,
+                properties=properties,
+                contract=contract,
+            )
         except (OverflowError, InsufficientDataBytes) as e:
             # This can happen when contract follows the ERC20 standard methods
             # but name and symbol return bytes instead of string. UNIV1 LP is such a case
@@ -1181,11 +1180,11 @@ class EthereumManager():
                 f'Trying with token ABI using bytes. {str(e)}',
             )
             contract = EthereumContract(address=address, abi=UNIV1_LP_ABI, deployed_block=0)
-            decoded = [
-                contract.decode(x[1], method_name)[0]  # pylint: disable=E1136
-                if x[0] and len(x[1]) else None
-                for (x, method_name) in zip(output, properties)
-            ]
+            decoded = self._process_contract_info(
+                output=output,
+                properties=properties,
+                contract=contract,
+            )
             log.debug(f'{address} was succesfuly decoded as ERC20 token')
 
         for prop, value in zip(properties, decoded):
@@ -1195,3 +1194,31 @@ class EthereumManager():
 
         self.contract_info_cache[address] = info
         return info
+
+    def _process_contract_info(
+            self,
+            output: List[Tuple[bool, bytes]],
+            properties: Tuple[str, str, str],
+            contract: EthereumContract,
+    ) -> List[Optional[Union[int, str, bytes]]]:
+        """Decodes information i.e. (decimals, symbol, name) about the token contract.
+        - `decimals` property defaults to 18.
+        - `name` and `symbol` default to None.
+
+        May raise:
+        - OverflowError
+        - InsufficientDataBytes
+        """
+        decoded_contract_info = []
+        for method_name, method_value in zip(properties, output):
+            if method_value[0] is True and len(method_value[1]) != 0:
+                decoded_contract_info.append(contract.decode(method_value[1], method_name)[0])
+                continue
+
+            # for missing methods, use default decimals for decimals or None for others
+            if method_name == 'decimals':
+                decoded_contract_info.append(DEFAULT_TOKEN_DECIMALS)
+            else:
+                decoded_contract_info.append(None)
+
+        return decoded_contract_info
