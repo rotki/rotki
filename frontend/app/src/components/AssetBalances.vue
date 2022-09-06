@@ -3,7 +3,7 @@
     :headers="tableHeaders"
     :items="balances"
     :loading="loading"
-    :loading-text="t('asset_balances.loading')"
+    :loading-text="tc('asset_balances.loading')"
     :custom-sort="sortItems"
     sort-by="usdValue"
   >

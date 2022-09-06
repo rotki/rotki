@@ -1,6 +1,11 @@
 <template>
   <dashboard-expandable-table>
     <template #title>
+      <refresh-button
+        :loading="refreshing || loading"
+        :tooltip="tc('nft_balance_table.refresh')"
+        @refresh="refresh"
+      />
       {{ tc('nft_balance_table.title') }}
       <v-btn :to="nonFungibleRoute" icon class="ml-2">
         <v-icon>mdi-chevron-right</v-icon>
@@ -22,7 +27,7 @@
             <v-icon>mdi-dots-vertical</v-icon>
           </menu-tooltip-button>
         </template>
-        <visible-columns-selector group="NFT" />
+        <visible-columns-selector :group="group" />
       </v-menu>
     </template>
     <template #shortDetails>
@@ -43,7 +48,7 @@
       </template>
       <template #item.priceInAsset="{ item }">
         <amount-display
-          v-if="item.priceAsset !== currency"
+          v-if="item.priceAsset !== currencySymbol"
           :value="item.priceInAsset"
           :asset="item.priceAsset"
         />
@@ -80,13 +85,18 @@
   </dashboard-expandable-table>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineAsyncComponent, defineComponent, Ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
+import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
+import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { Routes } from '@/router/routes';
 import { useBalancesStore } from '@/store/balances';
@@ -94,144 +104,99 @@ import { Section } from '@/store/const';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import {
-  DashboardTablesVisibleColumns,
-  DashboardTableType
-} from '@/types/frontend-settings';
+import { DashboardTableType } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
 
-const tableHeaders = (
-  symbol: Ref<string>,
-  dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>
-) => {
-  return computed<DataTableHeader[]>(() => {
-    const visibleColumns = get(dashboardTablesVisibleColumns)[
-      DashboardTableType.NFT
-    ];
+const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.route;
 
-    const { t } = useI18n();
+const statistics = useStatisticsStore();
+const { totalNetWorthUsd } = storeToRefs(statistics);
+const balancesStore = useBalancesStore();
+const { nfBalances: balances } = storeToRefs(balancesStore);
+const { nfTotalValue, fetchNfBalances } = balancesStore;
+const { shouldShowLoadingScreen, isSectionRefreshing } = setupStatusChecking();
 
-    const headers: DataTableHeader[] = [
-      {
-        text: t('common.name').toString(),
-        value: 'name',
-        cellClass: 'text-no-wrap'
-      },
-      {
-        text: t('nft_balance_table.column.price_in_asset').toString(),
-        value: 'priceInAsset',
-        align: 'end',
-        width: '75%',
-        class: 'text-no-wrap'
-      },
-      {
-        text: t('common.price_in_symbol', {
-          symbol: get(symbol)
-        }).toString(),
-        value: 'usdPrice',
-        align: 'end',
-        class: 'text-no-wrap'
-      }
-    ];
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const total = nfTotalValue();
+const { tc } = useI18n();
 
-    if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
-      headers.push({
-        text: t('nft_balance_table.column.percentage').toString(),
-        value: 'percentageOfTotalNetValue',
-        align: 'end',
-        class: 'text-no-wrap',
-        sortable: false
-      });
+const group = DashboardTableType.NFT;
+const loading = shouldShowLoadingScreen(Section.NON_FUNGIBLE_BALANCES);
+const refreshing = isSectionRefreshing(Section.NON_FUNGIBLE_BALANCES);
+
+const tableHeaders = computed<DataTableHeader[]>(() => {
+  const visibleColumns = get(dashboardTablesVisibleColumns)[group];
+
+  const headers: DataTableHeader[] = [
+    {
+      text: tc('common.name'),
+      value: 'name',
+      cellClass: 'text-no-wrap'
+    },
+    {
+      text: tc('nft_balance_table.column.price_in_asset'),
+      value: 'priceInAsset',
+      align: 'end',
+      width: '75%',
+      class: 'text-no-wrap'
+    },
+    {
+      text: tc('common.price_in_symbol', 0, {
+        symbol: get(currencySymbol)
+      }),
+      value: 'usdPrice',
+      align: 'end',
+      class: 'text-no-wrap'
     }
+  ];
 
-    if (
-      visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)
-    ) {
-      headers.push({
-        text: t(
-          'dashboard_asset_table.headers.percentage_of_total_current_group',
-          {
-            group: 'NFT'
-          }
-        ).toString(),
-        value: 'percentageOfTotalCurrentGroup',
-        align: 'end',
-        class: 'text-no-wrap',
-        sortable: false
-      });
-    }
+  if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
+    headers.push({
+      text: tc('nft_balance_table.column.percentage'),
+      value: 'percentageOfTotalNetValue',
+      align: 'end',
+      class: 'text-no-wrap',
+      sortable: false
+    });
+  }
 
-    return headers;
-  });
+  if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
+    headers.push({
+      text: tc(
+        'dashboard_asset_table.headers.percentage_of_total_current_group',
+        0,
+        {
+          group
+        }
+      ),
+      value: 'percentageOfTotalCurrentGroup',
+      align: 'end',
+      class: 'text-no-wrap',
+      sortable: false
+    });
+  }
+
+  return headers;
+});
+
+const percentageOfTotalNetValue = (value: BigNumber) => {
+  return calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);
 };
 
-export default defineComponent({
-  name: 'NftBalanceTable',
-  components: {
-    NftDetails: defineAsyncComponent(
-      () => import('@/components/helper/NftDetails.vue')
-    ),
-    RowAppend: defineAsyncComponent(
-      () => import('@/components/helper/RowAppend.vue')
-    ),
-    VisibleColumnsSelector: defineAsyncComponent(
-      () => import('@/components/dashboard/VisibleColumnsSelector.vue')
-    ),
-    MenuTooltipButton: defineAsyncComponent(
-      () => import('@/components/helper/MenuTooltipButton.vue')
-    ),
-    DashboardExpandableTable: defineAsyncComponent(
-      () => import('@/components/dashboard/DashboardExpandableTable.vue')
-    )
-  },
-  setup() {
-    const statistics = useStatisticsStore();
-    const { totalNetWorthUsd } = storeToRefs(statistics);
-    const balancesStore = useBalancesStore();
-    const { nfBalances: balances } = storeToRefs(balancesStore);
-    const { nfTotalValue, fetchNfBalances } = balancesStore;
+const percentageOfCurrentGroup = (value: BigNumber) => {
+  return calculatePercentage(value, get(total));
+};
 
-    const { shouldShowLoadingScreen } = setupStatusChecking();
+const refresh = async () => {
+  return await fetchNfBalances({ ignoreCache: true });
+};
 
-    const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { dashboardTablesVisibleColumns } = storeToRefs(
+  useFrontendSettingsStore()
+);
 
-    const total = nfTotalValue();
-
-    const percentageOfTotalNetValue = (value: BigNumber) => {
-      return calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);
-    };
-
-    const percentageOfCurrentGroup = (value: BigNumber) => {
-      return calculatePercentage(value, get(total));
-    };
-
-    const refresh = async () => {
-      return await fetchNfBalances({ ignoreCache: true });
-    };
-
-    const { dashboardTablesVisibleColumns } = storeToRefs(
-      useFrontendSettingsStore()
-    );
-
-    const filteredBalances = computed(() => {
-      return get(balances).filter(item => !item.isLp);
-    });
-
-    const { tc } = useI18n();
-
-    return {
-      filteredBalances,
-      tableHeaders: tableHeaders(currencySymbol, dashboardTablesVisibleColumns),
-      currency: currencySymbol,
-      refresh,
-      total,
-      loading: shouldShowLoadingScreen(Section.NON_FUNGIBLE_BALANCES),
-      nonFungibleRoute: Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.route,
-      percentageOfTotalNetValue,
-      percentageOfCurrentGroup,
-      tc
-    };
-  }
+const filteredBalances = computed(() => {
+  return get(balances).filter(item => !item.isLp);
 });
 </script>
