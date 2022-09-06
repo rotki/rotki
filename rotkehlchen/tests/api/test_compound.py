@@ -499,6 +499,7 @@ EXPECTED_EVENTS = [CompoundEvent(
 )]
 
 
+@pytest.mark.skip('Skipped due to https://github.com/graphprotocol/compound-v2-subgraph/issues/21')
 @pytest.mark.parametrize('ethereum_accounts', [TEST_ACCOUNTS])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
