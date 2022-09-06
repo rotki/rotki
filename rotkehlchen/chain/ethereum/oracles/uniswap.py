@@ -9,7 +9,7 @@ from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
-from rotkehlchen.chain.ethereum.utils import multicall, multicall_specific, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USD, A_USDC, A_USDT, A_WETH
 from rotkehlchen.constants.ethereum import (
@@ -294,8 +294,7 @@ class UniswapV3Oracle(UniswapOracle):
         token_0: EvmToken,
         token_1: EvmToken,
     ) -> List[str]:
-        result = multicall_specific(
-            ethereum=self.eth_manager,
+        result = self.eth_manager.multicall_specific(
             contract=UNISWAP_V3_FACTORY,
             method_name='getPool',
             arguments=[[
@@ -355,8 +354,7 @@ class UniswapV3Oracle(UniswapOracle):
                 pool_contract.encode(method_name='token1'),
             ),
         ]
-        output = multicall(
-            ethereum=self.eth_manager,
+        output = self.eth_manager.multicall(
             calls=calls,
             require_success=True,
             block_identifier=block_identifier,
@@ -432,8 +430,7 @@ class UniswapV2Oracle(UniswapOracle):
                 pool_contract.encode(method_name='token1'),
             ),
         ]
-        output = multicall(
-            ethereum=self.eth_manager,
+        output = self.eth_manager.multicall(
             calls=calls,
             require_success=True,
             block_identifier=block_identifier,

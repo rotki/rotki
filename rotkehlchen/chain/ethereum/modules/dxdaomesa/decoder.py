@@ -8,11 +8,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.utils import (
-    asset_normalized_value,
-    ethaddress_to_asset,
-    multicall_specific,
-)
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
@@ -184,8 +180,7 @@ class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         if not self.base.is_tracked(owner):
             return None, None
 
-        result = multicall_specific(
-            ethereum=self.ethereum,
+        result = self.ethereum.multicall_specific(
             contract=self.contract,
             method_name='tokenIdToAddressMap',
             arguments=[[topic_data[1]], [topic_data[2]]],

@@ -16,7 +16,6 @@ from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_POOLS, CP
 from rotkehlchen.chain.ethereum.modules.convex.decoder import BOOSTER
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.chain.ethereum.utils import multicall
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_CRV, A_CVX, A_ETH
@@ -45,8 +44,7 @@ def test_convex_pools(ethereum_manager):
                 booster_contract.encode('poolInfo', [i]),
             ),
         )
-    booster_result = multicall(
-        ethereum=ethereum_manager,
+    booster_result = ethereum_manager.multicall(
         calls=calls_to_booster,
     )
     convex_rewards_addrs = []
@@ -69,8 +67,7 @@ def test_convex_pools(ethereum_manager):
     for lp_token_addr in convex_lp_tokens_addrs:
         calls_to_lp_tokens.append((lp_token_addr, lp_tokens_contract.encode('symbol')))
 
-    lp_tokens_result = multicall(
-        ethereum=ethereum_manager,
+    lp_tokens_result = ethereum_manager.multicall(
         calls=calls_to_lp_tokens,
     )
 

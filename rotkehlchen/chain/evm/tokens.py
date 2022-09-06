@@ -6,7 +6,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_evm_address
-from rotkehlchen.chain.ethereum.utils import multicall, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.dbhandler import DBHandler
@@ -163,8 +163,7 @@ class EvmTokens():
                     ),
                 ),
             )
-        results = multicall(
-            ethereum=self.manager,
+        results = self.manager.multicall(
             calls=calls,
             call_order=call_order,
         )

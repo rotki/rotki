@@ -9,7 +9,6 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName, WeightedNode
 from rotkehlchen.chain.ethereum.uniswap.utils import uniswap_lp_token_balances
-from rotkehlchen.chain.ethereum.utils import multicall_specific
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.dbhandler import DBHandler
@@ -64,7 +63,7 @@ def pairs_from_ethereum(ethereum: EthereumManager) -> Dict[str, Any]:
     pairs = []
     for idx, chunk in enumerate(chunks):
         print(f'Querying univ2 pairs chunk {idx + 1} / {len(chunks)}')
-        result = multicall_specific(ethereum, univ2factory, 'allPairs', chunk)
+        result = ethereum.multicall_specific(univ2factory, 'allPairs', chunk)
         try:
             pairs.extend([deserialize_ethereum_address(x[0]) for x in result])
         except DeserializationError:

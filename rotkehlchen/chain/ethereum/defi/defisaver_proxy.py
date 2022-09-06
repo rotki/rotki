@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from rotkehlchen.chain.ethereum.utils import multicall
 from rotkehlchen.constants.ethereum import DS_PROXY_REGISTRY
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -79,8 +78,7 @@ class HasDSProxy(EthereumModule):
         May raise:
         - RemoteError if query to the node failed
         """
-        output = multicall(
-            ethereum=self.ethereum,
+        output = self.ethereum.multicall(
             calls=[(
                 DS_PROXY_REGISTRY.address,
                 DS_PROXY_REGISTRY.encode(method_name='proxies', arguments=[address]),

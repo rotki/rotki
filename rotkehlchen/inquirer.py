@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optiona
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.chain.ethereum.utils import multicall_2, token_normalized_value_decimals
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ONE, ZERO
 from rotkehlchen.constants.assets import (
@@ -605,8 +605,7 @@ class Inquirer():
             (pool_address, contract.encode(method_name='balances', arguments=[i]))
             for i in range(len(tokens))
         ]
-        output = multicall_2(
-            ethereum=self._ethereum,
+        output = self._ethereum.multicall_2(
             require_success=False,
             calls=calls,
         )

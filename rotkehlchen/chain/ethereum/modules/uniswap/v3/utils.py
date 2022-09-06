@@ -20,7 +20,6 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
     NFTLiquidityPool,
 )
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV3Oracle
-from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_USDC
 from rotkehlchen.constants.ethereum import (
@@ -126,8 +125,7 @@ def uniswap_v3_lp_token_balances(
         try:
             # Get tokens IDs from the Positions NFT contract using the user address and
             # the indexes i.e from 0 to (total number of user positions in the chunk - 1)
-            tokens_ids_multicall = multicall_2(
-                ethereum=ethereum,
+            tokens_ids_multicall = ethereum.multicall_2(
                 require_success=False,
                 calls=[
                     (
@@ -151,8 +149,7 @@ def uniswap_v3_lp_token_balances(
         ]
         try:
             # Get the user liquidity position using the token ID retrieved.
-            positions_multicall = multicall_2(
-                ethereum=ethereum,
+            positions_multicall = ethereum.multicall_2(
                 require_success=False,
                 calls=[
                     (
@@ -194,8 +191,7 @@ def uniswap_v3_lp_token_balances(
         try:
             # Get the liquidity pool's state i.e `slot0` by iterating through
             # a pair of the LP address and its contract and reading the `slot0`
-            slots_0_multicall = multicall_2(
-                ethereum=ethereum,
+            slots_0_multicall = ethereum.multicall_2(
                 require_success=False,
                 calls=[
                     (entry[0], entry[1].encode('slot0'))
@@ -258,8 +254,7 @@ def uniswap_v3_lp_token_balances(
         # Use the value of the liquidity to get the total amount of tokens in LPs.
         total_tokens_in_pools = []
         try:
-            liquidity_in_pools_multicall = multicall_2(
-                ethereum=ethereum,
+            liquidity_in_pools_multicall = ethereum.multicall_2(
                 require_success=False,
                 calls=[
                     (entry[0], entry[1].encode('liquidity'))
