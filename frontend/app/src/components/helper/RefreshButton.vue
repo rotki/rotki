@@ -25,22 +25,15 @@
     <span>{{ tooltip }}</span>
   </v-tooltip>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue';
-
-export default defineComponent({
-  props: {
-    loading: { required: true, type: Boolean },
-    tooltip: { required: true, type: String }
-  },
-  emits: ['refresh'],
-  setup(_, { emit }) {
-    const refresh = () => {
-      emit('refresh');
-    };
-    return {
-      refresh
-    };
-  }
+<script setup lang="ts">
+defineProps({
+  loading: { required: true, type: Boolean },
+  tooltip: { required: true, type: String }
 });
+
+const emit = defineEmits(['refresh']);
+
+const refresh = () => {
+  emit('refresh');
+};
 </script>

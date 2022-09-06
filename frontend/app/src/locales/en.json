@@ -2823,6 +2823,7 @@
       "percentage": "% of net Value",
       "price_in_asset": "Price in asset"
     },
+    "refresh": "Refresh the NFT balances",
     "title": "NFT Balances"
   },
   "nft_gallery": {

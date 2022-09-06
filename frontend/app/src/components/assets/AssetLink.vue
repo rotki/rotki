@@ -4,31 +4,28 @@
   </v-btn>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { defineComponent, toRefs } from 'vue';
+import { toRefs } from 'vue';
 import { useRouter } from '@/composables/common';
 import { Routes } from '@/router/routes';
 
-export default defineComponent({
-  name: 'AssetLink',
-  props: {
-    asset: { required: true, type: String },
-    icon: { required: false, default: false, type: Boolean },
-    text: { required: false, default: false, type: Boolean }
-  },
-  setup(props) {
-    const { asset } = toRefs(props);
-    const router = useRouter();
-    const navigateToDetails = async () => {
-      await router.push({
-        path: Routes.ASSETS.route.replace(':identifier', get(asset))
-      });
-    };
-
-    return {
-      navigateToDetails
-    };
-  }
+const props = defineProps({
+  asset: { required: true, type: String },
+  icon: { required: false, default: false, type: Boolean },
+  text: { required: false, default: false, type: Boolean }
 });
+
+const { asset } = toRefs(props);
+
+const router = useRouter();
+
+const navigateToDetails = async () => {
+  await router.push({
+    path: Routes.ASSETS.route.replace(
+      ':identifier',
+      encodeURIComponent(get(asset))
+    )
+  });
+};
 </script>

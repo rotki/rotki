@@ -6,6 +6,15 @@ import AssetBalances from '@/components/AssetBalances.vue';
 import { useSessionStore } from '@/store/session';
 import '../../i18n';
 
+vi.mock('vue', async () => {
+  const mod = await vi.importActual<typeof import('vue')>('vue');
+  return {
+    ...mod,
+    useListeners: vi.fn(),
+    useAttrs: vi.fn()
+  };
+});
+
 Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 

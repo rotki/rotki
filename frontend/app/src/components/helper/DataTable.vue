@@ -1,7 +1,7 @@
 <template>
   <v-data-table
     ref="tableRef"
-    v-bind="$attrs"
+    v-bind="rootAttrs"
     :must-sort="mustSort"
     :sort-desc="sortDesc"
     :items="items"
@@ -11,7 +11,9 @@
     :footer-props="footerProps"
     :items-per-page="itemsPerPage"
     :hide-default-footer="hideDefaultFooter"
-    v-on="$listeners"
+    :loading="loading"
+    :loading-text="loadingText"
+    v-on="rootListeners"
     @update:items-per-page="onItemsPerPageChange($event)"
     @update:page="scrollToTop"
   >
@@ -48,70 +50,61 @@
   </v-data-table>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { get, useElementBounding } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { defineComponent, PropType, ref, toRefs } from 'vue';
+import { PropType, ref, toRefs, useAttrs, useListeners } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import { footerProps } from '@/config/datatable.common';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-export default defineComponent({
-  name: 'DataTable',
-  props: {
-    sortDesc: { required: false, type: Boolean, default: true },
-    mustSort: { required: false, type: Boolean, default: true },
-    items: { required: true, type: Array },
-    headers: { required: true, type: Array as PropType<DataTableHeader[]> },
-    expanded: { required: false, type: Array, default: () => [] },
-    itemClass: { required: false, type: [String, Function], default: () => '' },
-    hideDefaultFooter: { required: false, type: Boolean, default: false },
-    container: { required: false, type: HTMLDivElement, default: () => null }
-  },
-  setup(props) {
-    let frontendSettingsStore = useFrontendSettingsStore();
-    const { itemsPerPage } = storeToRefs(frontendSettingsStore);
-    const { container } = toRefs(props);
-
-    const tableRef = ref<any>(null);
-
-    const onItemsPerPageChange = async (newValue: number) => {
-      if (get(itemsPerPage) === newValue) return;
-
-      await frontendSettingsStore.updateSetting({
-        itemsPerPage: newValue
-      });
-    };
-
-    const scrollToTop = () => {
-      const { top } = useElementBounding(tableRef);
-      const { top: containerTop } = useElementBounding(container);
-
-      const wrapper = get(container) ?? document.body;
-      const table = get(tableRef);
-
-      if (!table || !wrapper) return;
-
-      if (get(container)) {
-        wrapper.scrollTop =
-          get(top) +
-          wrapper.scrollTop -
-          get(containerTop) -
-          table.$el.scrollTop;
-      } else {
-        wrapper.scrollTop = get(top) + wrapper.scrollTop - 64;
-      }
-    };
-
-    return {
-      tableRef,
-      itemsPerPage,
-      footerProps,
-      onItemsPerPageChange,
-      scrollToTop
-    };
-  }
+const props = defineProps({
+  sortDesc: { required: false, type: Boolean, default: true },
+  mustSort: { required: false, type: Boolean, default: true },
+  items: { required: true, type: Array },
+  headers: { required: true, type: Array as PropType<DataTableHeader[]> },
+  expanded: { required: false, type: Array, default: () => [] },
+  itemClass: { required: false, type: [String, Function], default: () => '' },
+  hideDefaultFooter: { required: false, type: Boolean, default: false },
+  container: { required: false, type: HTMLDivElement, default: () => null },
+  loading: { required: false, type: Boolean, default: false },
+  loadingText: { required: false, type: String, default: '' }
 });
+
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
+const frontendSettingsStore = useFrontendSettingsStore();
+const { itemsPerPage } = storeToRefs(frontendSettingsStore);
+const { container } = toRefs(props);
+
+const tableRef = ref<any>(null);
+
+const onItemsPerPageChange = async (newValue: number) => {
+  if (get(itemsPerPage) === newValue) return;
+
+  await frontendSettingsStore.updateSetting({
+    itemsPerPage: newValue
+  });
+};
+
+const scrollToTop = () => {
+  const { top } = useElementBounding(tableRef);
+  const { top: containerTop } = useElementBounding(container);
+
+  const tableContainer = get(container);
+  const wrapper = tableContainer ?? document.body;
+  const table = get(tableRef);
+
+  if (!table || !wrapper) return;
+
+  const tableTop = get(top);
+  if (get(container)) {
+    wrapper.scrollTop =
+      tableTop + wrapper.scrollTop - get(containerTop) - table.$el.scrollTop;
+  } else {
+    wrapper.scrollTop = tableTop + wrapper.scrollTop - 64;
+  }
+};
 </script>
 
 <style scoped lang="scss">
@@ -155,5 +148,6 @@ export default defineComponent({
     }
   }
 }
+
 /* stylelint-enable selector-class-pattern,selector-nested-pattern,no-descending-specificity */
 </style>
