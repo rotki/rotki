@@ -11,6 +11,8 @@
         class="pa-0 ma-0 dashboard-asset-table__search"
         single-line
         hide-details
+        clearable
+        @click:clear="search = ''"
       />
       <v-menu
         id="dashboard-asset-table__column-filter"
@@ -89,7 +91,7 @@
         </span>
       </template>
       <template
-        v-if="balances.length > 0 && search.length < 1"
+        v-if="balances.length > 0 && (!search || search.length < 1)"
         #body.append="{ isMobile }"
       >
         <row-append

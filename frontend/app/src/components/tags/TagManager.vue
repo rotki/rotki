@@ -21,51 +21,54 @@
 
     <v-divider />
 
-    <card outlined-body flat>
-      <template #title>
-        {{ tc('tag_manager.my_tags') }}
-      </template>
-      <template #search>
-        <v-row justify="end">
-          <v-col cols="12" sm="5">
-            <v-text-field
-              v-model="search"
-              outlined
-              dense
-              class="mb-4"
-              prepend-inner-icon="mdi-magnify"
-              :label="tc('common.actions.search')"
-              single-line
-              hide-details
-            />
-          </v-col>
-        </v-row>
-      </template>
-      <data-table
-        :items="tags"
-        item-key="name"
-        :headers="headers"
-        :search="search"
-      >
-        <template #item.name="{ item }">
-          <tag-icon :tag="item" />
+    <div class="mx-n4">
+      <card outlined-body flat>
+        <template #title>
+          {{ tc('tag_manager.my_tags') }}
         </template>
-        <template #item.action="{ item }">
-          <v-row v-if="!item.readOnly" no-gutters>
-            <v-col>
-              <v-icon small class="mr-2" @click="editItem(item)">
-                mdi-pencil
-              </v-icon>
-            </v-col>
-            <v-col>
-              <v-icon small class="mr-2" @click="deleteItem(item)">
-                mdi-delete
-              </v-icon>
+        <template #search>
+          <v-row justify="end">
+            <v-col cols="12" sm="5">
+              <v-text-field
+                v-model="search"
+                outlined
+                dense
+                class="mb-4"
+                prepend-inner-icon="mdi-magnify"
+                :label="tc('common.actions.search')"
+                single-line
+                hide-details
+                clearable
+              />
             </v-col>
           </v-row>
         </template>
-      </data-table>
-    </card>
+        <data-table
+          :items="tags"
+          item-key="name"
+          :headers="headers"
+          :search="search"
+        >
+          <template #item.name="{ item }">
+            <tag-icon :tag="item" />
+          </template>
+          <template #item.action="{ item }">
+            <v-row v-if="!item.readOnly" no-gutters>
+              <v-col>
+                <v-icon small class="mr-2" @click="editItem(item)">
+                  mdi-pencil
+                </v-icon>
+              </v-col>
+              <v-col>
+                <v-icon small class="mr-2" @click="deleteItem(item)">
+                  mdi-delete
+                </v-icon>
+              </v-col>
+            </v-row>
+          </template>
+        </data-table>
+      </card>
+    </div>
 
     <confirm-dialog
       :title="tc('tag_manager.confirmation.title')"

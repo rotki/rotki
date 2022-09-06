@@ -24,9 +24,22 @@
             <v-tab>
               {{ t('notes_menu.tabs.general') }}
             </v-tab>
-            <v-tab v-if="locationName" class="ml-2">
-              {{ t('notes_menu.tabs.in_this_page', { page: locationName }) }}
-            </v-tab>
+            <v-tooltip bottom>
+              <template #activator="{ on }">
+                <v-tab v-if="locationName" class="ml-2" v-on="on">
+                  {{
+                    t('notes_menu.tabs.in_this_page', { page: locationName })
+                  }}
+                </v-tab>
+              </template>
+              <div>
+                {{
+                  t('notes_menu.tabs.in_this_page_tooltip', {
+                    page: locationName
+                  })
+                }}
+              </div>
+            </v-tooltip>
           </v-tabs>
         </v-col>
         <v-col cols="auto" class="pr-2">

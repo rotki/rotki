@@ -83,10 +83,10 @@ export default defineComponent({
       });
     };
 
-    const { top } = useElementBounding(tableRef);
-    const { top: containerTop } = useElementBounding(container);
-
     const scrollToTop = () => {
+      const { top } = useElementBounding(tableRef);
+      const { top: containerTop } = useElementBounding(container);
+
       const wrapper = get(container) ?? document.body;
       const table = get(tableRef);
 
@@ -99,7 +99,7 @@ export default defineComponent({
           get(containerTop) -
           table.$el.scrollTop;
       } else {
-        wrapper.scrollTop = get(top) - 64;
+        wrapper.scrollTop = get(top) + wrapper.scrollTop - 64;
       }
     };
 

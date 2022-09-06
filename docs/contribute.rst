@@ -335,10 +335,11 @@ Add a new language or translation
 Add new language
 ----------------
 The translation files are located `here <https://github.com/rotki/rotki/tree/develop/frontend/app/src/locales>`__.
-They are saved with format ``{country_code}.json``, where country code is ``Alpha-2`` code based on `ISO 3166 country codes <https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes>`__.
+They are saved with format ``{language_code}.json``. You can see the list `here <https://www.w3schools.com/tags/ref_language_codes.asp>`__.
 If you want to add a new language, you need to create a new language file with that format, and then `fill it <#add-or-edit-translation>`__.
 
 You also need to update the frontend mapping that is defined at this `enum <https://github.com/rotki/rotki/blob/f57522baa737854e6affcbe57bada2b81c4dee83/frontend/app/src/types/frontend-settings.ts#L112>`__, and these `entries <https://github.com/rotki/rotki/blob/f57522baa737854e6affcbe57bada2b81c4dee83/frontend/app/src/data/supported-language.ts>`__.
+The ``countries`` field will be used to show the countries flag on the app. You can see the list `here <https://www.w3schools.com/tags/ref_country_codes.asp>`__.
 
 Add or edit a translation
 -----------------------

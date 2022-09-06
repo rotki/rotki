@@ -6,7 +6,7 @@
       </template>
 
       <usage-analytics-setting />
-      <language-setting />
+      <language-setting class="mb-6" />
       <version-update-frequency-setting />
       <balance-save-frequency-setting />
       <date-display-format-setting />
@@ -54,7 +54,7 @@ import DateDisplayFormatSetting from '@/components/settings/general/DateDisplayF
 import DateInputFormatSetting from '@/components/settings/general/DateInputFormatSetting.vue';
 import DisplayDateInLocaltimeSetting from '@/components/settings/general/DisplayDateInLocaltimeSetting.vue';
 import FloatingPrecisionSetting from '@/components/settings/general/FloatingPrecisionSetting.vue';
-import LanguageSetting from '@/components/settings/general/LanguageSetting.vue';
+import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import MainCurrencySetting from '@/components/settings/general/MainCurrencySetting.vue';
 import NumericSeparatorsSettings from '@/components/settings/general/NumericSeparatorsSettings.vue';
 import EthereumRpcNodeManager from '@/components/settings/general/rpc/EthereumRpcNodeManager.vue';

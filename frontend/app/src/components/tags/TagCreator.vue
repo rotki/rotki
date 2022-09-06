@@ -48,14 +48,10 @@
       </v-col>
     </v-row>
     <v-row align="center" justify="center" no-gutters>
-      <v-col cols="6">
-        <v-row>
-          <v-col cols="12">
-            <div class="text-h6 text-center">
-              {{ t('tag_creator.labels.foreground') }}
-            </div>
-          </v-col>
-        </v-row>
+      <v-col md="6">
+        <div class="mb-3 text-h6 text-center">
+          {{ t('tag_creator.labels.foreground') }}
+        </div>
         <v-row no-gutters>
           <v-col cols="12" class="tag-creator__color-picker">
             <v-color-picker
@@ -71,14 +67,10 @@
           </v-col>
         </v-row>
       </v-col>
-      <v-col cols="6">
-        <v-row>
-          <v-col cols="12">
-            <div class="text-h6 text-center">
-              {{ t('tag_creator.labels.background') }}
-            </div>
-          </v-col>
-        </v-row>
+      <v-col md="6">
+        <div class="mb-3 text-h6 text-center">
+          {{ t('tag_creator.labels.background') }}
+        </div>
         <v-row no-gutters>
           <v-col cols="12" class="tag-creator__color-picker">
             <v-color-picker
@@ -96,7 +88,16 @@
       </v-col>
     </v-row>
     <v-row class="mb-2">
-      <v-col cols="12">
+      <v-col cols="12" class="d-flex justify-end">
+        <v-btn
+          v-if="editMode"
+          class="mr-4"
+          width="100"
+          depressed
+          @click="cancel"
+        >
+          {{ t('common.actions.cancel') }}
+        </v-btn>
         <v-btn
           class="tag-creator__buttons__save"
           width="100"
@@ -106,9 +107,6 @@
           @click="save"
         >
           {{ t('common.actions.save') }}
-        </v-btn>
-        <v-btn v-if="editMode" width="100" depressed @click="cancel">
-          {{ t('common.actions.cancel') }}
         </v-btn>
       </v-col>
     </v-row>

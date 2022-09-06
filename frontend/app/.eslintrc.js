@@ -75,7 +75,7 @@ module.exports = {
       process.env.NODE_ENV === 'development' ? 'warn' : 'error',
       {
         ignoreNodes: ['md-icon', 'v-icon'],
-        ignorePattern: '^[-#:()&]+$',
+        ignorePattern: '^[-#:()&/]+$',
         ignoreText: ['EUR', 'HKD', 'USD']
       }
     ],

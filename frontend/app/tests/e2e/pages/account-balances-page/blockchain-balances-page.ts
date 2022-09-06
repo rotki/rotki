@@ -42,9 +42,9 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
   isEntryVisible(position: number, balance: FixtureBlockchainBalance) {
     // account balances card section for particular blockchain type should be visible
     // sometime the table need long time to be loaded
-    cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"]`, {
-      timeout: 300000
-    }).as('blockchain-section');
+    cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"]`).as(
+      'blockchain-section'
+    );
 
     cy.get('@blockchain-section').should('exist');
 
@@ -87,6 +87,13 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
       const tableClass = `[data-cy="blockchain-balances-${blockchainBalance.symbol}"]`;
       cy.get('body').then($body => {
         if ($body.find(tableClass).length > 0) {
+          if (blockchainBalance.symbol === Blockchain.ETH) {
+            cy.wait(15000);
+          }
+          cy.get(`${tableClass} .v-data-table__progress`, {
+            timeout: 240000
+          }).should('not.be.exist');
+
           cy.get(
             `${tableClass} tr:contains(${blockchainBalance.symbol}) td:nth-child(4) [data-cy="display-amount"]`,
             { timeout: 120000 }
@@ -112,7 +119,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
       .find('tr')
       .eq(position + (this.isGroupped(balance) ? 0 : 1))
       .find('button.actions__edit')
-      .click({ timeout: 240000 });
+      .click();
 
     cy.get('[data-cy="blockchain-balance-form"]').as('edit-form');
     cy.get('@edit-form')
@@ -132,7 +139,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
 
     cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"]`)
       .find('[data-cy="account-balances__delete-button"]')
-      .click({ timeout: 120000 });
+      .click();
 
     this.confirmDelete();
 

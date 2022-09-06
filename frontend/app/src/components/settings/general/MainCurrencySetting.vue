@@ -24,7 +24,8 @@
           v-on="on"
         >
           <v-list-item-avatar
-            class="general-settings__currency-list primary--text"
+            class="general-settings__currency-list primary--text font-weight-bold"
+            :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
           >
             {{ item.unicodeSymbol }}
           </v-list-item-avatar>
@@ -63,4 +64,9 @@ const successMessage = (symbol: string) =>
 onMounted(() => {
   set(selectedCurrency, get(currency));
 });
+
+const calculateFontSize = (symbol: string) => {
+  const length = symbol.length;
+  return `${2.4 - length * 0.4}em`;
+};
 </script>

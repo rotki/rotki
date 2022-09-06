@@ -4,7 +4,7 @@
       v-bind="rootAttrs"
       :headers="tableHeaders"
       :items="visibleBalances"
-      :loading="accountOperation || loading"
+      :loading="accountOperation || loading || detectingTokens(null).value"
       :loading-text="tc('account_balances.data_table.loading')"
       single-expand
       item-key="index"
@@ -572,8 +572,8 @@ const { getEthDetectedTokensInfo, fetchDetectedTokens } =
 
 const { fetchBlockchainBalances } = useBlockchainBalancesStore();
 
-const detectingTokens = (address: string) =>
-  isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, { address });
+const detectingTokens = (address: string | null) =>
+  isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, address ? { address } : {});
 
 const fetchDetectedTokensAndQueryBalance = async (address: string) => {
   await fetchDetectedTokens(address);

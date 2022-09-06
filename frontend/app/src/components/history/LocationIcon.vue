@@ -25,7 +25,7 @@
         {{ item.icon }}
       </v-icon>
     </adaptive-wrapper>
-    <span v-if="!icon" :class="horizontal ? 'ml-3' : null" class="mt-1">
+    <span v-if="!icon" :class="horizontal ? 'ml-3' : null">
       {{ item.name }}
     </span>
   </span>

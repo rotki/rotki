@@ -7,13 +7,12 @@
   >
     <v-row>
       <v-col>
-        <v-row>
+        <v-row class="pt-1">
           <v-col cols="12" sm="3">
             <date-time-picker
               v-model="datetime"
               required
               outlined
-              class="pt-1"
               seconds
               limit-now
               data-cy="date"
@@ -75,129 +74,135 @@
                 />
               </v-col>
             </v-row>
-            <amount-input
-              v-model="amount"
-              required
-              outlined
-              :rules="amountRules"
-              data-cy="amount"
-              :label="t('common.amount')"
-              persistent-hint
-              :hint="t('external_trade_form.amount.hint')"
-              :error-messages="errorMessages['amount']"
-              @focus="delete errorMessages['amount']"
-            />
-            <div
-              :class="`external-trade-form__grouped-amount-input d-flex ${
-                selectedCalculationInput === 'quoteAmount'
-                  ? 'flex-column-reverse'
-                  : 'flex-column'
-              }`"
-            >
+            <div class="mt-4">
               <amount-input
-                ref="rateInput"
-                v-model="rate"
-                :disabled="selectedCalculationInput !== 'rate'"
-                :label="t('external_trade_form.rate.label')"
-                :loading="fetching"
-                :rules="rateRules"
-                data-cy="rate"
-                :hide-details="selectedCalculationInput !== 'rate'"
-                :class="`${
-                  selectedCalculationInput === 'rate'
-                    ? 'v-input--is-enabled'
-                    : ''
-                }`"
-                filled
+                v-model="amount"
+                required
+                outlined
+                :rules="amountRules"
+                data-cy="amount"
+                :label="t('common.amount')"
                 persistent-hint
-                :error-messages="errorMessages['rate']"
-                @focus="delete errorMessages['rate']"
+                :hint="t('external_trade_form.amount.hint')"
+                :error-messages="errorMessages['amount']"
+                @focus="delete errorMessages['amount']"
               />
-              <amount-input
-                ref="quoteAmountInput"
-                v-model="quoteAmount"
-                :disabled="selectedCalculationInput !== 'quoteAmount'"
-                :rules="quoteAmountRules"
-                data-cy="quote-amount"
-                :hide-details="selectedCalculationInput !== 'quoteAmount'"
-                :class="`${
+              <div
+                :class="`external-trade-form__grouped-amount-input d-flex ${
                   selectedCalculationInput === 'quoteAmount'
-                    ? 'v-input--is-enabled'
-                    : ''
+                    ? 'flex-column-reverse'
+                    : 'flex-column'
                 }`"
-                :label="t('external_trade_form.quote_amount.label')"
-                filled
-                :error-messages="errorMessages['quote_amount']"
-                @focus="delete errorMessages['quote_amount']"
-              />
-              <v-btn
-                class="external-trade-form__grouped-amount-input__swap-button"
-                fab
-                small
-                dark
-                color="primary"
-                data-cy="grouped-amount-input__swap-button"
-                @click="swapAmountInput"
               >
-                <v-icon>mdi-swap-vertical</v-icon>
-              </v-btn>
-            </div>
-            <div
-              v-if="shouldRenderSummary"
-              class="text-caption green--text mt-n5"
-            >
-              <v-icon small class="mr-2 green--text">
-                mdi-comment-quote
-              </v-icon>
-              <i18n
-                v-if="type === 'buy'"
-                path="external_trade_form.summary.buy"
+                <amount-input
+                  ref="rateInput"
+                  v-model="rate"
+                  :disabled="selectedCalculationInput !== 'rate'"
+                  :label="t('external_trade_form.rate.label')"
+                  :loading="fetching"
+                  :rules="rateRules"
+                  data-cy="rate"
+                  :hide-details="selectedCalculationInput !== 'rate'"
+                  :class="`${
+                    selectedCalculationInput === 'rate'
+                      ? 'v-input--is-enabled'
+                      : ''
+                  }`"
+                  filled
+                  persistent-hint
+                  :error-messages="errorMessages['rate']"
+                  @focus="delete errorMessages['rate']"
+                />
+                <amount-input
+                  ref="quoteAmountInput"
+                  v-model="quoteAmount"
+                  :disabled="selectedCalculationInput !== 'quoteAmount'"
+                  :rules="quoteAmountRules"
+                  data-cy="quote-amount"
+                  :hide-details="selectedCalculationInput !== 'quoteAmount'"
+                  :class="`${
+                    selectedCalculationInput === 'quoteAmount'
+                      ? 'v-input--is-enabled'
+                      : ''
+                  }`"
+                  :label="t('external_trade_form.quote_amount.label')"
+                  filled
+                  :error-messages="errorMessages['quote_amount']"
+                  @focus="delete errorMessages['quote_amount']"
+                />
+                <v-btn
+                  class="external-trade-form__grouped-amount-input__swap-button"
+                  fab
+                  small
+                  dark
+                  color="primary"
+                  data-cy="grouped-amount-input__swap-button"
+                  @click="swapAmountInput"
+                >
+                  <v-icon>mdi-swap-vertical</v-icon>
+                </v-btn>
+              </div>
+              <div
+                v-if="shouldRenderSummary"
+                class="text-caption green--text mt-n5"
               >
-                <template #label>
-                  <strong>{{ t('external_trade_form.summary.label') }}</strong>
-                </template>
-                <template #amount>
-                  <strong>
-                    <amount-display :value="numericAmount" :tooltip="false" />
-                  </strong>
-                </template>
-                <template #base>
-                  <strong>{{ getAssetSymbol(base) }}</strong>
-                </template>
-                <template #quote>
-                  <strong>{{ getAssetSymbol(quote) }}</strong>
-                </template>
-                <template #rate>
-                  <strong>
-                    <amount-display :value="numericRate" :tooltip="false" />
-                  </strong>
-                </template>
-              </i18n>
-              <i18n
-                v-if="type === 'sell'"
-                tag="span"
-                path="external_trade_form.summary.sell"
-              >
-                <template #label>
-                  <strong>{{ t('external_trade_form.summary.label') }}</strong>
-                </template>
-                <template #amount>
-                  <strong>
-                    <amount-display :value="numericAmount" :tooltip="false" />
-                  </strong>
-                </template>
-                <template #base>
-                  <strong>{{ getAssetSymbol(base) }}</strong>
-                </template>
-                <template #quote>
-                  <strong>{{ getAssetSymbol(quote) }}</strong>
-                </template>
-                <template #rate>
-                  <strong>
-                    <amount-display :value="numericRate" :tooltip="false" />
-                  </strong>
-                </template>
-              </i18n>
+                <v-icon small class="mr-2 green--text">
+                  mdi-comment-quote
+                </v-icon>
+                <i18n
+                  v-if="type === 'buy'"
+                  path="external_trade_form.summary.buy"
+                >
+                  <template #label>
+                    <strong>
+                      {{ t('external_trade_form.summary.label') }}
+                    </strong>
+                  </template>
+                  <template #amount>
+                    <strong>
+                      <amount-display :value="numericAmount" :tooltip="false" />
+                    </strong>
+                  </template>
+                  <template #base>
+                    <strong>{{ getAssetSymbol(base) }}</strong>
+                  </template>
+                  <template #quote>
+                    <strong>{{ getAssetSymbol(quote) }}</strong>
+                  </template>
+                  <template #rate>
+                    <strong>
+                      <amount-display :value="numericRate" :tooltip="false" />
+                    </strong>
+                  </template>
+                </i18n>
+                <i18n
+                  v-if="type === 'sell'"
+                  tag="span"
+                  path="external_trade_form.summary.sell"
+                >
+                  <template #label>
+                    <strong>
+                      {{ t('external_trade_form.summary.label') }}
+                    </strong>
+                  </template>
+                  <template #amount>
+                    <strong>
+                      <amount-display :value="numericAmount" :tooltip="false" />
+                    </strong>
+                  </template>
+                  <template #base>
+                    <strong>{{ getAssetSymbol(base) }}</strong>
+                  </template>
+                  <template #quote>
+                    <strong>{{ getAssetSymbol(quote) }}</strong>
+                  </template>
+                  <template #rate>
+                    <strong>
+                      <amount-display :value="numericRate" :tooltip="false" />
+                    </strong>
+                  </template>
+                </i18n>
+              </div>
             </div>
           </v-col>
         </v-row>
@@ -638,7 +643,7 @@ export default ExternalTradeForm;
 .external-trade-form {
   &__action-hint {
     width: 60px;
-    margin-top: -24px;
+    margin-top: -2rem;
   }
 
   &__grouped-amount-input {

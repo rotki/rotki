@@ -2,12 +2,12 @@
   <fragment>
     <div class="d-flex overflow-hidden">
       <sync-indicator />
-      <global-search v-if="!xsOnly" />
+      <global-search v-if="smAndUp" />
       <back-button :can-navigate-back="canNavigateBack" />
     </div>
     <v-spacer />
     <div class="d-flex overflow-hidden fill-height align-center">
-      <v-btn v-if="isDevelopment && !xsOnly" to="/playground" icon>
+      <v-btn v-if="isDevelopment && smAndUp" to="/playground" icon>
         <v-icon>mdi-crane</v-icon>
       </v-btn>
       <app-update-indicator />
@@ -19,19 +19,27 @@
         :visible="showPinned"
         @visible:update="showPinned = $event"
       />
-      <theme-control v-if="!xsOnly" :dark-mode-enabled="darkModeEnabled" />
+      <theme-control v-if="smAndUp" :dark-mode-enabled="darkModeEnabled" />
       <notification-indicator
         :visible="showNotificationBar"
         class="app__app-bar__button"
         @click="showNotificationBar = !showNotificationBar"
       />
       <currency-dropdown class="app__app-bar__button" />
-      <privacy-mode-dropdown v-if="!xsOnly" class="app__app-bar__button" />
+      <privacy-mode-dropdown v-if="smAndUp" class="app__app-bar__button" />
       <user-dropdown class="app__app-bar__button" />
       <help-indicator
-        v-if="!xsOnly"
+        v-if="smAndUp"
         :visible="showHelpBar"
         @visible:update="showHelpBar = $event"
+      />
+      <language-setting
+        v-if="smAndUp"
+        class="ml-2"
+        :class="$style.language"
+        dense
+        label=""
+        :show-label="false"
       />
     </div>
   </fragment>
@@ -49,6 +57,9 @@ import { checkIfDevelopment } from '@/utils/env-utils';
 
 const isDevelopment = checkIfDevelopment();
 
+const LanguageSetting = defineAsyncComponent(
+  () => import('@/components/settings/general/language/LanguageSetting.vue')
+);
 const ThemeControl = defineAsyncComponent(
   () => import('@/components/premium/ThemeControl.vue')
 );
@@ -87,7 +98,7 @@ const PrivacyModeDropdown = defineAsyncComponent(
 );
 
 const { currentBreakpoint } = useTheme();
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+const smAndUp = computed(() => get(currentBreakpoint).smAndUp);
 
 const { darkModeEnabled } = useDarkMode();
 const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =
@@ -99,3 +110,8 @@ const canNavigateBack = computed(() => {
   return canNavigateBack && window.history.length > 1;
 });
 </script>
+<style module lang="scss">
+.language {
+  width: 110px;
+}
+</style>

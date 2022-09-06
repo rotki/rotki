@@ -2,7 +2,7 @@
   <div class="d-flex flex-grow-1">
     <v-tooltip v-if="showTooltips" right>
       <template #activator="{ on }">
-        <v-list-item-icon class="mr-6" v-on="on">
+        <v-list-item-icon class="my-3 mr-4" v-on="on">
           <asset-icon
             v-if="!!cryptoIcon"
             :identifier="identifier"
@@ -29,7 +29,7 @@
       </template>
       <span>{{ text }}</span>
     </v-tooltip>
-    <v-list-item-icon v-else class="mr-6">
+    <v-list-item-icon v-else class="my-3 mr-4">
       <asset-icon v-if="!!cryptoIcon" :identifier="identifier" size="24px" />
       <v-img
         v-else-if="image"
