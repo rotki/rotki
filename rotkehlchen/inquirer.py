@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.ethereum.defi.curve_pools import get_curve_pools
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
+from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import multicall_2, token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ONE, ZERO
@@ -78,6 +78,7 @@ from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     UNISWAP_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
+    GeneralCacheType,
     KnownProtocolsAssets,
     Price,
     Timestamp,
@@ -558,18 +559,25 @@ class Inquirer():
         """
         assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
 
-        pools = get_curve_pools()
-        if lp_token.evm_address not in pools:
+        pool_addresses_in_cache = GlobalDBHandler().get_general_cache_values(
+            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token.evm_address],
+        )
+        if len(pool_addresses_in_cache) == 0:
             return None
-        pool = pools[lp_token.evm_address]
+        # pool address is guaranteed to be checksumed due to how we save it
+        pool_address = string_to_evm_address(pool_addresses_in_cache[0])
+        pool_tokens_addresses = GlobalDBHandler().get_general_cache_values(
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address],
+        )
         tokens = []
         # Translate addresses to tokens
         try:
-            for asset in pool.assets:
-                asset_identifier = ethaddress_to_identifier(asset)
-                if asset == '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
+            for token_address_str in pool_tokens_addresses:
+                token_address = string_to_evm_address(token_address_str)
+                if token_address == '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
                     tokens.append(A_WETH)
                 else:
+                    asset_identifier = ethaddress_to_identifier(token_address)
                     tokens.append(EvmToken(asset_identifier))
         except UnknownAsset:
             return None
@@ -588,14 +596,14 @@ class Inquirer():
 
         # Query virtual price of LP share and balances in the pool for each token
         contract = EvmContract(
-            address=pool.pool_address,
+            address=pool_address,
             abi=CURVE_POOL_ABI,
             deployed_block=0,
         )
-        calls = [(pool.pool_address, contract.encode(method_name='get_virtual_price'))]
+        calls = [(pool_address, contract.encode(method_name='get_virtual_price'))]
         calls += [
-            (pool.pool_address, contract.encode(method_name='balances', arguments=[i]))
-            for i in range(len(pool.assets))
+            (pool_address, contract.encode(method_name='balances', arguments=[i]))
+            for i in range(len(tokens))
         ]
         output = multicall_2(
             ethereum=self._ethereum,
@@ -622,14 +630,14 @@ class Inquirer():
             log.debug(f'Failed to decode get_virtual_price while finding curve price. {output}')
             return None
         data.append(FVal(virtual_price_decoded[0]))  # pylint: disable=unsubscriptable-object
-        for i in range(len(pool.assets)):
+        for i, token in enumerate(tokens):
             amount_decoded = contract.decode(output[i + 1][1], 'balances', arguments=[i])
             if not _check_curve_contract_call(amount_decoded):
                 log.debug(f'Failed to decode balances {i} while finding curve price. {output}')
                 return None
             # https://github.com/PyCQA/pylint/issues/4739
             amount = amount_decoded[0]  # pylint: disable=unsubscriptable-object
-            normalized_amount = token_normalized_value_decimals(amount, tokens[i].decimals)
+            normalized_amount = token_normalized_value_decimals(amount, token.decimals)
             data.append(normalized_amount)
 
         # Prices and data should verify this relation for the following operations

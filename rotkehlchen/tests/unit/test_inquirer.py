@@ -33,7 +33,7 @@ from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import EvmTokenKind, Price, Timestamp
+from rotkehlchen.types import EvmTokenKind, GeneralCacheType, Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 UNDERLYING_ASSET_PRICES = {
@@ -337,10 +337,29 @@ def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
-    address = '0xb19059ebb43466C323583928285a49f558E572Fd'
-    identifier = ethaddress_to_identifier(address)
+    lp_token_address = '0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c'
+    pool_address = '0xc5424B857f758E906013F3555Dad202e4bdB4567'
+    identifier = ethaddress_to_identifier(lp_token_address)
     inquirer_defi.inject_ethereum(ethereum_manager)
-
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        GlobalDBHandler().set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+            values=[lp_token_address],
+        )
+        GlobalDBHandler().set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_address],
+            values=[pool_address],
+        )
+        GlobalDBHandler().set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address],
+            values=[
+                '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                '0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb',
+            ],
+        )
     price = inquirer_defi.find_curve_pool_price(EvmToken(identifier))
     assert price is not None
     # Check that the protocol is correctly caught by the inquirer

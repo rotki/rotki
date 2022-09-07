@@ -38,6 +38,7 @@ from web3.exceptions import (
 from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
@@ -79,7 +80,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
 from rotkehlchen.utils.network import request_get_dict
 
-from .constants import ETHERSCAN_NODE
 from .types import ETHERSCAN_NODE_NAME, NodeName, WeightedNode
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
 
@@ -88,6 +88,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+CURVE_POOLS_MAPPING_TYPE = Dict[
+    ChecksumEvmAddress,  # lp token address
+    Tuple[
+        ChecksumEvmAddress,  # pool address
+        List[ChecksumEvmAddress],  # list of coins addresses
+        Optional[List[ChecksumEvmAddress]],  # optional list of underlying coins addresses
+    ],
+]
 
 
 def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:

@@ -35,6 +35,11 @@ from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.accounting.aggregator import EVMAccountingAggregator
 from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
+    clear_curve_pools_cache,
+    update_curve_metapools_cache,
+    update_curve_registry_pools_cache,
+)
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
@@ -364,6 +369,7 @@ class Rotkehlchen():
             deactivate_premium=self.deactivate_premium_status,
             activate_premium=self.activate_premium_status,
             query_balances=self.query_balances,
+            update_curve_pools_cache=self.update_curve_pools_cache,
             msg_aggregator=self.msg_aggregator,
         )
 
@@ -965,3 +971,33 @@ class Rotkehlchen():
             return  # only for cryptocompare for now
 
         self.cryptocompare.create_cache(from_asset, to_asset, purge_old)
+
+    def update_curve_pools_cache(self) -> None:
+        """Updates curve pools cache.
+        1. Deletes all previous cache values
+        2. Queries information about curve pools' addresses, lp tokens and used coins
+        3. Saves queried information in the cache in globaldb
+        """
+
+        # Using shared cursor to not end up having partially populated cache
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            # Delete current cache. Need to do this in case curve removes some pools
+            clear_curve_pools_cache(write_cursor=write_cursor)
+            # write new values to the cache
+            update_curve_registry_pools_cache(
+                write_cursor=write_cursor,
+                ethereum_manager=self.chain_manager.ethereum,
+            )
+            update_curve_metapools_cache(
+                write_cursor=write_cursor,
+                ethereum_manager=self.chain_manager.ethereum,
+            )
+            try:
+                curve_decoder = self.evm_tx_decoder.decoders['Curve']
+            except KeyError as e:
+                raise InputError(
+                    'Expected to find Curve decoder but it was not loaded. '
+                    'Please open an issue on github.com/rotki/rotki/issues if you saw this.',
+                ) from e
+            new_mappings = curve_decoder.reload()
+            self.evm_tx_decoder.address_mappings.update(new_mappings)

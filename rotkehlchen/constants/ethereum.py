@@ -191,6 +191,10 @@ SADDLE_ALETH_POOL = EthereumConstants().contract('SADDLE_ALETH_POOL')
 
 ENS_REVERSE_RECORDS = EthereumConstants.contract('ENS_REVERSE_RECORDS')
 
+CURVE_ADDRESS_PROVIDER = EthereumConstants.contract('CURVE_ADDRESS_PROVIDER')
+CURVE_REGISTRY_ABI = EthereumConstants.abi('CURVE_REGISTRY')
+CURVE_METAPOOL_FACTORY_ABI = EthereumConstants.abi('CURVE_METAPOOL_FACTORY')
+
 RAY_DIGITS = 27
 # If an on-chain pool single-side asset liquidity is less than this, ignore the pool
 SINGLE_SIDE_USD_POOL_LIMIT = 5000

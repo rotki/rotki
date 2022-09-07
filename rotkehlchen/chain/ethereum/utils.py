@@ -119,6 +119,8 @@ def multicall(
         block_identifier: BlockIdentifier = 'latest',
         calls_chunk_size: int = MULTICALL_CHUNKS,
 ) -> Any:
+    """Uses MULTICALL contract. Failure of one call is a failure of the entire multicall.
+    source: https://etherscan.io/address/0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441#code"""
     calls_chunked = list(get_chunks(calls, n=calls_chunk_size))
     output = []
     for call_chunk in calls_chunked:
@@ -144,9 +146,9 @@ def multicall_2(
         calls_chunk_size: int = MULTICALL_CHUNKS,  # pylint: disable=unused-argument
 ) -> List[Tuple[bool, bytes]]:
     """
-    Use a MULTICALL_2 contract for an aggregated query. If require_success
+    Uses MULTICALL_2 contract. If require_success
     is set to False any call in the list of calls is allowed to fail.
-    """
+    source: https://etherscan.io/address/0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696#code"""
     return ETH_MULTICALL_2.call(
         manager=ethereum,
         method_name='tryAggregate',
@@ -162,12 +164,15 @@ def multicall_specific(
         method_name: str,
         arguments: List[Any],
         call_order: Optional[Sequence['WeightedNode']] = None,
+        decode_result: bool = True,
 ) -> Any:
     calls = [(
         contract.address,
         contract.encode(method_name=method_name, arguments=i),
     ) for i in arguments]
     output = multicall(ethereum, calls, True, call_order)
+    if decode_result is False:
+        return output
     return [contract.decode(x, method_name, arguments[0]) for x in output]
 
 

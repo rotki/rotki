@@ -62,6 +62,7 @@ def fixture_task_manager(
         eth_transactions=eth_transactions,
         deactivate_premium=lambda: None,
         query_balances=lambda: None,
+        update_curve_pools_cache=lambda: None,
         activate_premium=lambda _: None,
         msg_aggregator=messages_aggregator,
     )
@@ -301,3 +302,23 @@ def test_update_snapshot_balances(task_manager):
                 )
     except gevent.Timeout as e:
         raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501
+
+
+def test_update_curve_pools(task_manager):
+    """Check that task for curve pools cache update is scheduled properly."""
+    task_manager.potential_tasks = [task_manager._maybe_update_curve_pools]
+    query_balances_patch = patch.object(
+        task_manager,
+        'update_curve_pools_cache',
+    )
+    timeout = 5
+    try:
+        with gevent.Timeout(timeout):
+            with query_balances_patch as query_mock:
+                task_manager.schedule()
+                while True:
+                    if query_mock.call_count == 1:
+                        break
+                    gevent.sleep(.2)
+    except gevent.Timeout as e:
+        raise AssertionError(f'Update curve pools was not completed within {timeout} seconds') from e  # noqa: E501
