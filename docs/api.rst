@@ -10411,6 +10411,7 @@ Show NFT Balances
                     {
                         "id": "unique id",
                         "name": "a name",
+                        "collection_name": "A collection name",
                         "manually_input": true,
                         "price_asset": "ETH",
                         "price_in_asset": "1",
@@ -10420,6 +10421,7 @@ Show NFT Balances
                     }, {
                         "id": "unique id 2",
                         "name": null,
+                        "collection_name": "A collection name",
                         "manually_input": false,
                         "price_asset": "USD",
                         "price_in_asset": "150.55",
@@ -10432,7 +10434,7 @@ Show NFT Balances
         }
 
 
-   :resjson object addresses: A mapping of ethereum addresses to list assets and balances. Name can also be null.
+   :resjson object addresses: A mapping of ethereum addresses to list assets and balances. ``name`` can also be null. ``collection_name`` can be null if nft does not have a collection.
    :statuscode 200: NFT balances successfully queried
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in or nft module is not activated.
