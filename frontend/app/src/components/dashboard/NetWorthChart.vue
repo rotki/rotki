@@ -187,9 +187,14 @@ export default defineComponent({
       return range;
     };
 
-    const updateChart = (calculate: boolean = true) => {
+    const updateChart = (
+      updateRange: boolean = true,
+      calculate: boolean = true
+    ) => {
       chart?.update('resize');
-      range?.update('resize');
+      if (updateRange) {
+        range?.update('resize');
+      }
 
       if (calculate) {
         calculateXRange();
@@ -275,7 +280,7 @@ export default defineComponent({
       return getTimeframeByRange(min, max);
     });
 
-    watch(activeTimeframe, () => updateChart(false));
+    watch(activeTimeframe, () => updateChart(true, false));
 
     const transformData = ({ times, data }: NetValue) => {
       const newBalances: ValueOverTime[] = [];
@@ -447,6 +452,7 @@ export default defineComponent({
     };
 
     const oneDayTimestamp = 24 * 60 * 60 * 1000;
+
     const createChart = (): Chart => {
       const context = getCanvasCtx();
       const datasets = createDatasets();
@@ -502,6 +508,13 @@ export default defineComponent({
       return new Chart(context, config);
     };
 
+    watch(dataTimeRange, dataTimeRange => {
+      if (!chart) return;
+      chart.options.plugins!.zoom!.zoom!.drag!.enabled =
+        dataTimeRange.range > oneDayTimestamp;
+      updateChart(false, false);
+    });
+
     const createRange = () => {
       const context = getRangeCanvasCtx();
       const datasets = createDatasets(true);
@@ -546,7 +559,7 @@ export default defineComponent({
     });
 
     watch(dark, () => {
-      updateChart(false);
+      updateChart(true, false);
     });
 
     const mouseDownCoor = ref<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -611,7 +624,7 @@ export default defineComponent({
 
       xAxis.min = min;
       xAxis.max = max;
-      calculateXRange();
+      updateChart(false, true);
     };
 
     type ActiveRangeButton = 'start' | 'end' | 'both';
@@ -720,7 +733,7 @@ export default defineComponent({
         xAxis.max = limitedMax;
       }
 
-      calculateXRange();
+      updateChart(false, true);
     };
 
     const mouseup = () => {

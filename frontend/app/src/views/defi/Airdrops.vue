@@ -16,7 +16,7 @@
       <blockchain-account-selector
         v-model="selectedAccounts"
         multiple
-        class="mt-6"
+        class="pt-2 mt-4"
         hint
         dense
         outlined

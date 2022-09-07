@@ -7,37 +7,27 @@
         class="d-flex align-center"
       >
         <span v-if="index > 0" class="px-1">/</span>
-        <span :class="!dense ? $style['big-flag'] : null">
+        <span :class="styles.flag">
           {{ getFlagEmoji(country) }}
         </span>
       </div>
     </div>
-    <div v-if="showLabel" class="ml-3">
+    <div class="ml-3">
       {{ label }}
     </div>
   </div>
 </template>
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { PropType, useCssModule } from 'vue';
 
 defineProps({
   countries: {
     required: true,
     type: Array as PropType<string[]>
   },
-  dense: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
   label: {
     required: true,
     type: String
-  },
-  showLabel: {
-    required: false,
-    type: Boolean,
-    default: true
   }
 });
 
@@ -48,10 +38,12 @@ const getFlagEmoji = (code: string) => {
     .map(char => 127397 + char.charCodeAt(0));
   return String.fromCodePoint(...codePoints);
 };
+
+const styles = useCssModule();
 </script>
 
 <style lang="scss" module>
-.big-flag {
+.flag {
   font-size: 1.5rem;
 }
 </style>

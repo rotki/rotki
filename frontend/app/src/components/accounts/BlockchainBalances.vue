@@ -1,6 +1,10 @@
 <template>
   <div>
-    <price-refresh />
+    <v-row justify="end">
+      <v-col cols="auto">
+        <price-refresh />
+      </v-col>
+    </v-row>
     <card class="blockchain-balances mt-8" outlined-body>
       <template #title>
         {{ t('blockchain_balances.title') }}

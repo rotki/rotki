@@ -70,7 +70,6 @@
       @cancel="closeDialog()"
     >
       <asset-form
-        v-if="token"
         ref="form"
         v-model="validForm"
         :edit="token"

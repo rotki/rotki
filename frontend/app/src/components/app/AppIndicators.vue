@@ -33,14 +33,6 @@
         :visible="showHelpBar"
         @visible:update="showHelpBar = $event"
       />
-      <language-setting
-        v-if="smAndUp"
-        class="ml-2"
-        :class="$style.language"
-        dense
-        label=""
-        :show-label="false"
-      />
     </div>
   </fragment>
 </template>
@@ -57,9 +49,6 @@ import { checkIfDevelopment } from '@/utils/env-utils';
 
 const isDevelopment = checkIfDevelopment();
 
-const LanguageSetting = defineAsyncComponent(
-  () => import('@/components/settings/general/language/LanguageSetting.vue')
-);
 const ThemeControl = defineAsyncComponent(
   () => import('@/components/premium/ThemeControl.vue')
 );

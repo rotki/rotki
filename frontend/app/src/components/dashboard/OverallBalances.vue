@@ -10,10 +10,6 @@
         <div
           class="overall-balances__net-worth text-center font-weight-medium mb-2"
         >
-          <loading
-            v-if="isLoading"
-            class="overall-balances__net-worth__loading text-start ms-2"
-          />
           <div :style="`font-size: ${adjustedTotalNetWorthFontSize}em`">
             <amount-display
               class="ps-4"
@@ -26,20 +22,28 @@
         <div class="overall-balances__net-worth-change py-2">
           <span
             :class="balanceClass"
-            class="pa-1 px-2 d-flex flex-row overall-balances__net-worth-change__pill"
+            class="pa-1 px-2 overall-balances__net-worth-change__pill"
           >
-            <span class="me-2">{{ indicator }}</span>
-            <amount-display
-              v-if="!isLoading"
-              show-currency="symbol"
-              :fiat-currency="currencySymbol"
-              :value="balanceDelta"
+            <loading
+              v-if="isLoading"
+              class="overall-balances__net-worth__loading d-flex justify-center mt-n2"
             />
-            <percentage-display
-              v-if="!isLoading"
-              class="ms-2 px-1 text--secondary pe-2"
-              :value="percentage"
-            />
+            <span v-else class="d-flex flex-row">
+              <span class="me-2">
+                <v-icon>{{ indicator }}</v-icon>
+              </span>
+              <amount-display
+                v-if="!isLoading"
+                show-currency="symbol"
+                :fiat-currency="currencySymbol"
+                :value="balanceDelta"
+              />
+              <percentage-display
+                v-if="!isLoading"
+                class="ms-2 px-1 text--secondary pe-2"
+                :value="percentage"
+              />
+            </span>
           </span>
         </div>
         <timeframe-selector
@@ -173,7 +177,7 @@ const indicator = computed(() => {
   if (get(isLoading)) {
     return '';
   }
-  return get(balanceDelta).isNegative() ? '▼' : '▲';
+  return get(balanceDelta).isNegative() ? 'mdi-menu-down' : 'mdi-menu-up';
 });
 
 const balanceClass = computed(() => {
@@ -253,6 +257,7 @@ onMounted(() => {
     width: 100%;
 
     &__loader {
+      min-height: 268px;
       display: flex;
       height: 100%;
       flex-direction: column;
