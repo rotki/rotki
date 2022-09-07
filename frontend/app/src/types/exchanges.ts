@@ -26,8 +26,7 @@ export enum SupportedExchange {
   GEMINI = 'gemini'
 }
 
-export const SupportedExchangeType = z.nativeEnum(SupportedExchange);
-export type SupportedExchangeType = z.infer<typeof SupportedExchangeType>;
+const SupportedExchangeType = z.nativeEnum(SupportedExchange);
 
 export const SUPPORTED_EXCHANGES = Object.values(SupportedExchange);
 

@@ -18,7 +18,7 @@ import { useI18n } from 'vue-i18n-composable';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
-import { useLedgerActions } from '@/store/history';
+import { useLedgerActions } from '@/store/history/ledger-actions';
 import LedgerActionContent from '@/views/history/ledger-actions/LedgerActionContent.vue';
 
 const { fetchLedgerActions } = useLedgerActions();

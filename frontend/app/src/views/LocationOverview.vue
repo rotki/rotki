@@ -33,11 +33,9 @@ import LocationValueRow from '@/components/locations/LocationValueRow.vue';
 import { setupLocationInfo } from '@/composables/balances';
 import { isSectionLoading } from '@/composables/common';
 import { Section } from '@/store/const';
-import {
-  useAssetMovements,
-  useLedgerActions,
-  useTrades
-} from '@/store/history';
+import { useAssetMovements } from '@/store/history/asset-movements';
+import { useLedgerActions } from '@/store/history/ledger-actions';
+import { useTrades } from '@/store/history/trades';
 import DepositsWithdrawalsContent from '@/views/history/deposits-withdrawals/DepositsWithdrawalsContent.vue';
 import LedgerActionContent from '@/views/history/ledger-actions/LedgerActionContent.vue';
 

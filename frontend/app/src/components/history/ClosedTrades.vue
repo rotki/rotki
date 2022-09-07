@@ -242,7 +242,7 @@ import {
 } from '@/services/history/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
-import { useTrades } from '@/store/history';
+import { useTrades } from '@/store/history/trades';
 import { IgnoreActionType, TradeEntry } from '@/store/history/types';
 import { Collection } from '@/types/collection';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
