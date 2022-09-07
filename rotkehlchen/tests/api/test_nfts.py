@@ -18,6 +18,8 @@ from rotkehlchen.tests.utils.api import (
 TEST_ACC1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 TEST_ACC2 = '0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF'
 TEST_ACC3 = '0xC21A5ee89D306353e065a6dd5779470DE395DBaC'
+TEST_ACC4 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
+NFT_ID_FOR_TEST_ACC4 = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041'  # noqa: E501
 
 
 @flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
@@ -135,3 +137,23 @@ def test_nft_ids_are_unique(rotkehlchen_api_server):
     all_ids = ids_1 + ids_2
     set_of_ids = set(all_ids)
     assert len(all_ids) == len(set_of_ids)
+
+
+@flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4]])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+def test_nft_balances(rotkehlchen_api_server):
+    """Check that nfts balances return the expected fields."""
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'nftsbalanceresource',
+    ), json={'async_query': False})
+
+    result = assert_proper_response_with_result(response)
+    for nfts_balances in result.values():
+        for nft_balance in nfts_balances:
+            if nft_balance['id'] == NFT_ID_FOR_TEST_ACC4:
+                assert nft_balance['name'] == 'yabir.eth'
+                assert nft_balance['collection_name'] == 'ENS: Ethereum Name Service'
+                assert nft_balance['is_lp'] is False

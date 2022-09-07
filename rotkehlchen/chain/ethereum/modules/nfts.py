@@ -150,6 +150,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                     result[address].append({
                         'id': nft.token_identifier,
                         'name': nft.name,
+                        'collection_name': nft.collection.name if nft.collection is not None else None,  # noqa: E501
                         'manually_input': False,
                         'price_asset': 'USD',
                         'price_in_asset': uniswap_v3_lp.user_balance.usd_value,
@@ -162,6 +163,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                     result[address].append({
                         'id': nft.token_identifier,
                         'name': nft.name,
+                        'collection_name': nft.collection.name if nft.collection is not None else None,  # noqa: E501
                         'manually_input': True,
                         'price_asset': cached_price_data['price_asset'],
                         'price_in_asset': FVal(cached_price_data['price_in_asset']),
@@ -173,6 +175,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                     result[address].append({
                         'id': nft.token_identifier,
                         'name': nft.name,
+                        'collection_name': nft.collection.name if nft.collection is not None else None,  # noqa: E501
                         'manually_input': False,
                         'price_asset': 'ETH',
                         'price_in_asset': nft.price_eth,
@@ -186,6 +189,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                         result[address].append({
                             'id': nft.token_identifier,
                             'name': nft.name,
+                            'collection_name': nft.collection.name if nft.collection is not None else None,   # noqa: E501
                             'manually_input': False,
                             'price_asset': 'USD',
                             'price_in_asset': ZERO,
@@ -195,7 +199,6 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):  # lgtm [py/miss
                         })
                     # Always write detected nfts in the DB to have name and address associated
                     db_data.append((nft.token_identifier, nft.name, None, None, 0, address))  # noqa: E501
-
         # save opensea data in the DB
         if len(db_data) != 0:
             with self.db.user_write() as cursor:
