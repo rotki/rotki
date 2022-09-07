@@ -1,6 +1,12 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Tuple
 
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE, strethaddress_to_identifier
+from rotkehlchen.constants.resolver import (
+    ETHEREUM_DIRECTIVE,
+    ETHEREUM_DIRECTIVE_LENGTH,
+    ChainID,
+    evm_address_to_identifier,
+)
+from rotkehlchen.types import EvmTokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -44,7 +50,11 @@ def _rename_assets_identifiers(cursor: 'DBCursor') -> None:
     old_id_to_new = {}
     for (identifier,) in cursor:
         if identifier.startswith(ETHEREUM_DIRECTIVE):
-            old_id_to_new[identifier] = strethaddress_to_identifier(identifier[6:])
+            old_id_to_new[identifier] = evm_address_to_identifier(
+                address=identifier[ETHEREUM_DIRECTIVE_LENGTH:],
+                chain=ChainID.ETHEREUM,
+                token_type=EvmTokenKind.ERC20,
+            )
 
     sqlite_tuples = [(new_id, old_id) for old_id, new_id in old_id_to_new.items()]
     cursor.executemany('UPDATE OR IGNORE assets SET identifier=? WHERE identifier=?', sqlite_tuples)  # noqa: E501
@@ -108,6 +118,28 @@ def _add_blockchain_column_web3_nodes(cursor: 'DBCursor') -> None:
     cursor.execute('DROP TABLE web3_nodes_old')
 
 
+def _update_ignored_assets_identifiers_to_caip_format(cursor: 'DBCursor') -> None:
+    cursor.execute('SELECT value FROM multisettings WHERE name="ignored_asset";')
+    old_ids_to_caip_ids_mappings: List[Tuple[str, str]] = []
+    for (old_identifier,) in cursor:
+        if old_identifier is not None and old_identifier.startswith(ETHEREUM_DIRECTIVE):
+            old_ids_to_caip_ids_mappings.append(
+                (
+                    evm_address_to_identifier(
+                        address=old_identifier[ETHEREUM_DIRECTIVE_LENGTH:],
+                        chain=ChainID.ETHEREUM,
+                        token_type=EvmTokenKind.ERC20,
+                    ),
+                    old_identifier,
+                ),
+            )
+
+    cursor.executemany(
+        'UPDATE multisettings SET value=? WHERE value=? AND name="ignored_asset"',
+        old_ids_to_caip_ids_mappings,
+    )
+
+
 def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     """Upgrades the DB from v34 to v35
     - Change tables where time is used as column name to timestamp
@@ -116,6 +148,7 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     """
     with db.user_write() as write_cursor:
         _rename_assets_identifiers(write_cursor)
+        _update_ignored_assets_identifiers_to_caip_format(write_cursor)
         _refactor_time_columns(write_cursor)
         _clean_amm_swaps(write_cursor)
         _create_new_tables(write_cursor)
