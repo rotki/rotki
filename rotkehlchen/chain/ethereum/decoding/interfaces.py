@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Tuple
 
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -48,3 +48,9 @@ class DecoderInterface(metaclass=ABCMeta):
         by the decoding process
         """
         return []
+
+    def reload(self) -> Mapping[ChecksumEvmAddress, Tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
+        """Subclasses may implement this to be able to reload some of the decoder's properties
+        Returns only new mappings of addresses to decode functions
+        """
+        return {}
