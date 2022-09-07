@@ -349,7 +349,7 @@ export default defineComponent({
     value: { required: true, type: Boolean },
     edit: {
       required: false,
-      type: Object as PropType<ManagedAsset>,
+      type: Object as PropType<ManagedAsset | null>,
       default: null
     },
     saving: { required: false, type: Boolean, default: false }

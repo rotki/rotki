@@ -12,8 +12,7 @@
       item-value="identifier"
       outlined
       hide-details
-      :dense="dense"
-      :label="rootAttrs.label ?? t('general_settings.labels.language')"
+      :label="t('general_settings.labels.language')"
       persistent-hint
       :success-messages="success"
       :error-messages="error"
@@ -22,16 +21,12 @@
     >
       <template #item="{ item }">
         <language-selector-item
-          :dense="dense"
-          :show-label="showLabel"
           :countries="item.countries ?? [item.identifier]"
           :label="item.label"
         />
       </template>
       <template #selection="{ item }">
         <language-selector-item
-          :dense="dense"
-          :show-label="showLabel"
           :countries="item.countries ?? [item.identifier]"
           :label="item.label"
         />
