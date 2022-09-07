@@ -774,6 +774,12 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         [(1595640208,), (1595640208,), (1595640208,)],
         [(1,)],
     )
+    expected_old_ignored_assets_ids = [
+        ('_ceth_0x4Fabb145d64652a948d72533023f6E7A623C7C53',),
+        ('_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',),
+        ('_ceth_0xB8c77482e45F1F44dE1745F52C74426C631bDD52',),
+        ('_ceth_0xdAC17F958D2ee523a2206206994597C13D831ec7',),
+    ]
     with db_v34.conn.read_ctx() as cursor:
         for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
             cursor.execute(f'SELECT time from {table_name}')
@@ -799,6 +805,10 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         with pytest.raises(sqlcipher.OperationalError) as exc_info:  # pylint: disable=no-member
             cursor.execute('SELECT blockchain FROM web3_nodes;')
         assert "no such column: blockchain'" in str(exc_info)
+
+        # check that ignored assets are present in the previous format.
+        old_ignored_assets_ids = cursor.execute('SELECT value FROM multisettings WHERE name="ignored_asset";').fetchall()  # noqa: E501
+        assert old_ignored_assets_ids == expected_old_ignored_assets_ids
 
     xpub1 = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     xpub2 = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
@@ -833,6 +843,12 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         ('bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5', xpub2, 'm/0', 0, 0, 'BTC'),
         ('1LZypJUwJJRdfdndwvDmtAjrVYaHko136r', xpub1, 'm', 0, 0, 'BCH'),
     ]
+    expected_new_ignored_assets_ids = [
+        ('eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53',),
+        ('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',),
+        ('eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52',),
+        ('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7',),
+    ]
 
     with db_v35.conn.read_ctx() as cursor:
         for table_name, expected_result in zip(upgraded_tables, expected_timestamps):
@@ -860,6 +876,10 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         assert cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="view" AND name=?', ('combined_trades_view',),  # noqa: E501
         ).fetchone()[0] == 0
+
+        # check that ignored assets are now in the current CAIP format.
+        new_ignored_assets_ids = cursor.execute('SELECT value FROM multisettings WHERE name="ignored_asset";').fetchall()  # noqa: E501
+        assert new_ignored_assets_ids == expected_new_ignored_assets_ids
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
