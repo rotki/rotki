@@ -1,4 +1,4 @@
-from enum import auto
+from enum import Enum, auto
 from typing import (
     Any,
     Callable,
@@ -567,3 +567,14 @@ class EvmTokenKind(DBEnumMixIn):
     ERC20 = auto()
     ERC721 = auto()
     UNKNOWN = auto()
+
+
+class GeneralCacheType(Enum):
+    CURVE_LP_TOKENS = auto()
+    CURVE_POOL_ADDRESS = auto()  # get pool addr by lp token
+    CURVE_POOL_TOKENS = auto()  # get pool tokens by pool addr
+
+    def serialize(self) -> str:
+        # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
+        # `_` with ` ` and we don't need spaces here
+        return self.name
