@@ -19,7 +19,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
-import { useTrades } from '@/store/history';
+import { useTrades } from '@/store/history/trades';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { refreshPeriod } = storeToRefs(useFrontendSettingsStore());

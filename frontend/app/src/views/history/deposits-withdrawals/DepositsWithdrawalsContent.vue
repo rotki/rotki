@@ -154,7 +154,8 @@ import {
 } from '@/services/history/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
-import { useAssetMovements, useHistory } from '@/store/history';
+import { useHistory } from '@/store/history';
+import { useAssetMovements } from '@/store/history/asset-movements';
 import {
   AssetMovementEntry,
   IgnoreActionType,

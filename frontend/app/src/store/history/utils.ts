@@ -1,4 +1,9 @@
-import { EntryMeta, EntryWithMeta } from '@/services/history/types';
+import {
+  EntryMeta,
+  EntryWithMeta,
+  HistoryRequestPayload
+} from '@/services/history/types';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';
 import { uniqueStrings } from '@/utils/data';
 import { isValidEthAddress } from '@/utils/text';
@@ -40,3 +45,16 @@ export function filterAddressesFromWords(words: string[]): string[] {
     })
     .filter(uniqueStrings);
 }
+
+export const defaultHistoricPayloadState = <
+  T extends Object
+>(): HistoryRequestPayload<T> => {
+  const store = useFrontendSettingsStore();
+
+  return {
+    limit: store.itemsPerPage,
+    offset: 0,
+    orderByAttributes: ['timestamp' as keyof T],
+    ascending: [false]
+  };
+};

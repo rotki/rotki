@@ -84,7 +84,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     ];
 
     cy.get('[data-cy=blockchain-asset-balances] .v-data-table__empty-wrapper', {
-      timeout: 240000
+      timeout: 300000
     }).should('not.exist');
 
     blockchainBalances.forEach(blockchainBalance => {

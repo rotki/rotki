@@ -1,5 +1,4 @@
 import { NotificationData } from '@rotki/common/lib/messages';
-import { acceptHMRUpdate } from 'pinia';
 import { computed } from 'vue';
 import { useNotifications } from '@/store/notifications';
 
@@ -22,7 +21,3 @@ export const setupNotifications = () => {
     displayed
   };
 };
-
-if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useNotifications, import.meta.hot));
-}

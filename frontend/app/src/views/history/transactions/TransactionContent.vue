@@ -243,7 +243,7 @@ import {
   TransactionRequestPayload
 } from '@/services/history/types';
 import { Section } from '@/store/const';
-import { useTransactions } from '@/store/history';
+import { useTransactions } from '@/store/history/transactions';
 import {
   EthTransactionEntry,
   EthTransactionEventEntry,

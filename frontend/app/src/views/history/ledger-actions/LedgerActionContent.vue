@@ -215,7 +215,8 @@ import {
 } from '@/services/history/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
-import { useHistory, useLedgerActions } from '@/store/history';
+import { useHistory } from '@/store/history';
+import { useLedgerActions } from '@/store/history/ledger-actions';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';

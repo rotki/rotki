@@ -16,7 +16,7 @@ import { useI18n } from 'vue-i18n-composable';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
-import { useAssetMovements } from '@/store/history';
+import { useAssetMovements } from '@/store/history/asset-movements';
 import DepositsWithdrawalsContent from '@/views/history/deposits-withdrawals/DepositsWithdrawalsContent.vue';
 
 const { fetchAssetMovements } = useAssetMovements();
