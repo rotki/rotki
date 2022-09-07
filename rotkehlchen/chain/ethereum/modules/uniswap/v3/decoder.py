@@ -39,20 +39,26 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         """
         out_event = in_event = None
         if tx_log.topics[0] == SWAP_SIGNATURE:
-
             received_eth = ZERO
             for event in decoded_events:
                 if event.asset == A_ETH and event.event_type == HistoryEventType.RECEIVE:
                     received_eth += event.balance.amount
 
             buyer = hex_or_bytes_to_address(tx_log.topics[2])
-            # the amount returned in the event is negative as it is the amount leaving the pool
-            amount_received = hex_or_bytes_to_int(tx_log.data[0:32], signed=True)
-            amount_sent = hex_or_bytes_to_int(tx_log.data[32:64], signed=True)
-            if amount_received > 0:
-                amount_received, amount_sent = amount_sent, amount_received
+            # Uniswap V3 represents the delta of tokens in the pool with a signed integer
+            # for each token. In the transaction we have the difference of tokens in the pool
+            # for the token0 [0:32] and the token1 [32:64]. If that difference is negative it
+            # means that the tokens are leaving the pool (the user receives them) and if it is
+            # positive they get into the pool (the user sends them to the pool)
+            delta_token_0 = hex_or_bytes_to_int(tx_log.data[0:32], signed=True)
+            delta_token_1 = hex_or_bytes_to_int(tx_log.data[32:64], signed=True)
+            if delta_token_0 > 0:
+                amount_received, amount_sent = delta_token_1, delta_token_0
+            else:
+                amount_received, amount_sent = delta_token_0, delta_token_1
+            # We take the absolute value since we have it negative and we need it positive
             amount_received = abs(amount_received)
-            amount_sent = abs(amount_sent)
+
             for event in decoded_events:
                 # When swapping token for ETH the WETH contract is called by the router and the
                 # swap is not executed with the user in the topic but the router. This is when
