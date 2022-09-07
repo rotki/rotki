@@ -6,10 +6,10 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.ethereum.modules.constants import AMM_POSSIBLE_COUNTERPARTIES
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
-from rotkehlchen.constants.decoders import AMM_POSSIBLE_COUNTERPARTIES
 from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
@@ -79,9 +79,9 @@ class Oneinchv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.event_subtype == HistoryEventSubType.SPEND and
                 event.counterparty in AMM_POSSIBLE_COUNTERPARTIES
             ):
-                # It is possible that in the same transaction we find events decoded by the
-                # uniswap and then the 1inch decoder (as it appears at the end). In those cases
-                # we need to take the out event as a uniswap event
+                # It is possible that in the same transaction we find events decoded by another amm
+                # such as uniswap and then the 1inch decoder (as it appears at the end). In those
+                # cases we need to take the out event as the other amm event
                 out_event = event
 
         maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)

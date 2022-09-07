@@ -33,7 +33,7 @@ class Uniswapv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         where the user sends and receives any asset. The spend asset is the swap executed and
         the received is the result of calling the swap method in the uniswap contract.
         We need to make sure that the events related to the swap are consecutive and for that
-        we make use of the maybe_reshuffle_events.
+        we make use of the maybe_reshuffle_events() function.
         """
         if tx_log.topics[0] == SWAP_SIGNATURE:
             # When the router chains multiple swaps in one transaction only the last swap has
@@ -85,7 +85,8 @@ class Uniswapv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     in_event = event
                 elif (
                     event.event_type == HistoryEventType.RECEIVE and
-                    event.balance.amount != asset_normalized_value(amount_out, event.asset)
+                    event.balance.amount != asset_normalized_value(amount_out, event.asset) and
+                    event.asset == A_ETH and transaction.from_address == event.location_label
                 ):
                     # Those are assets returned due to a change in the swap price
                     event.event_type = HistoryEventType.TRANSFER
