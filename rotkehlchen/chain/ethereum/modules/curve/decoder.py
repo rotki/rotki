@@ -1,11 +1,10 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
-from rotkehlchen.chain.ethereum.defi.curve_pools import get_curve_pools
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
@@ -13,6 +12,7 @@ from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 from .constants import CPT_CURVE
+from .pools_cache import read_curve_pools
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
@@ -44,9 +44,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        curve_pools = get_curve_pools()
-        self.curve_pools = {curve_pool.pool_address for curve_pool in curve_pools.values()}
-        self.curve_lps = set(curve_pools.keys())
+        self.curve_pools = read_curve_pools()
 
     def _decode_curve_remove_events(
         self,
@@ -227,3 +225,13 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def counterparties(self) -> List[str]:
         return [CPT_CURVE]
+
+    def reload(self) -> Mapping[ChecksumEvmAddress, Tuple[Any, ...]]:
+        new_curve_pools = read_curve_pools()
+        curve_pools_diff = new_curve_pools - self.curve_pools
+        new_mapping: Mapping[ChecksumEvmAddress, Tuple[Callable]] = {
+            pool_addr: (self._decode_curve_events,)
+            for pool_addr in curve_pools_diff
+        }
+        self.curve_pools = new_curve_pools  # update self pools
+        return new_mapping  # return new mappings to add them to EVMTransactionDecoder
