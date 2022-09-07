@@ -29,7 +29,12 @@ class Uniswapv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             decoded_events: List[HistoryBaseEntry],
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> None:
-        """Search for both events. Since the order is not guaranteed try reshuffle in both cases"""
+        """Decode trade for uniswap v2. The approach is to read the events and detect the ones
+        where the user sends and receives any asset. The spend asset is the swap executed and
+        the received is the result of calling the swap method in the uniswap contract.
+        We need to make sure that the events related to the swap are consecutive and for that
+        we make use of the maybe_reshuffle_events.
+        """
         if tx_log.topics[0] == SWAP_SIGNATURE:
             # When the router chains multiple swaps in one transaction only the last swap has
             # the buyer in the topic. In that case we know it is the last swap and the receiver is
@@ -78,6 +83,14 @@ class Uniswapv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     event.counterparty = CPT_UNISWAP_V2
                     event.notes = f'Receive {event.balance.amount} {event.asset.symbol} in uniswap-v2 from {event.location_label}'  # noqa: E501
                     in_event = event
+                elif (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.balance.amount != asset_normalized_value(amount_out, event.asset)
+                ):
+                    # Those are assets returned due to a change in the swap price
+                    event.event_type = HistoryEventType.TRANSFER
+                    event.counterparty = CPT_UNISWAP_V2
+                    event.notes = f'Refund of {event.balance.amount} {event.asset.symbol} in uniswap-v2 due to price change'  # noqa: E501
 
             maybe_reshuffle_events(out_event=out_event, in_event=in_event)
 

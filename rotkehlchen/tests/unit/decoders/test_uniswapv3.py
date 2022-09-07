@@ -13,7 +13,13 @@ from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import EthereumInternalTransaction, EthereumTransaction, Location, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    EthereumInternalTransaction,
+    EthereumTransaction,
+    Location,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
@@ -268,7 +274,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_manager, eth_transac
             asset=A_ETH,
             balance=Balance(amount=FVal('49.523026278486536412'), usd_value=ZERO),
             location_label='0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599',
-            notes='Receive 49.523026278486536412 ETH in uniswap-v3 from 0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599',
+            notes='Receive 49.523026278486536412 ETH in uniswap-v3 from 0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
         ),
     ]

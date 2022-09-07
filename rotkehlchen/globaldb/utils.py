@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 GLOBAL_DB_VERSION = 3
-MIN_SUPPORTED_GLOBAL_DB_VERSION = 3
+MIN_SUPPORTED_GLOBAL_DB_VERSION = 2
 
 
 def _get_setting_value(cursor: 'DBCursor', name: str, default_value: int) -> int:
