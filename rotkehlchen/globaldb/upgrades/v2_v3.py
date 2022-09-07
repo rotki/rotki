@@ -507,6 +507,14 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         PRIMARY KEY(pair, location)
         );
         """)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS general_cache (
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            last_queried_ts INTEGER NOT NULL,
+            PRIMARY KEY(key, value)
+        );
+        """)
 
         # And now input the modified data back to the new tables
         cursor.executescript('PRAGMA foreign_keys=off;')
