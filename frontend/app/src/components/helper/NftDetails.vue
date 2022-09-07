@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div class="d-flex align-center" :class="$style.wrapper">
-      <div class="my-2" :class="$style.preview">
+    <div class="d-flex align-center" :class="css.wrapper">
+      <div class="my-2" :class="css.preview">
         <template v-if="imageUrl">
           <video
             v-if="isVideo(imageUrl)"
@@ -20,47 +20,39 @@
           />
         </template>
       </div>
-      <div class="ml-4" :class="$style.name">
+      <div class="ml-4" :class="css.name">
         {{ name }}
       </div>
     </div>
   </div>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, defineComponent, toRefs } from 'vue';
+import { computed, toRefs, useCssModule } from 'vue';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { getNftBalance, isVideo } from '@/utils/nft';
 
-export default defineComponent({
-  name: 'NftDetails',
-  props: {
-    identifier: {
-      required: true,
-      type: String
-    }
-  },
-  setup(props) {
-    const { identifier } = toRefs(props);
-
-    const balanceData = computed<NonFungibleBalance | null>(() => {
-      return getNftBalance(get(identifier));
-    });
-
-    const imageUrl = computed<string | null>(() => {
-      return get(balanceData)?.imageUrl ?? '/assets/images/placeholder.svg';
-    });
-
-    const name = computed<string>(() => {
-      return get(balanceData)?.name ?? get(identifier);
-    });
-
-    return {
-      imageUrl,
-      name,
-      isVideo
-    };
+const props = defineProps({
+  identifier: {
+    required: true,
+    type: String
   }
+});
+
+const css = useCssModule();
+
+const { identifier } = toRefs(props);
+
+const balanceData = computed<NonFungibleBalance | null>(() => {
+  return getNftBalance(identifier);
+});
+
+const imageUrl = computed<string | null>(() => {
+  return get(balanceData)?.imageUrl ?? '/assets/images/placeholder.svg';
+});
+
+const name = computed<string>(() => {
+  return get(balanceData)?.name ?? get(identifier);
 });
 </script>
 

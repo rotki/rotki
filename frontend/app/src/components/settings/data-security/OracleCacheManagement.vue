@@ -131,7 +131,7 @@ import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import OracleEntry from '@/components/settings/OracleEntry.vue';
 import { OracleCacheMeta } from '@/services/balances/types';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';

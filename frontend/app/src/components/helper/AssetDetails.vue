@@ -15,7 +15,7 @@
 import { get } from '@vueuse/core';
 import { computed, defineComponent, toRefs } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 
 export default defineComponent({
   name: 'AssetDetails',

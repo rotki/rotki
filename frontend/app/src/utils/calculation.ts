@@ -1,6 +1,6 @@
 import { Balance, BigNumber } from '@rotki/common';
 import { get } from '@vueuse/core';
-import { useIgnoredAssetsStore } from '@/store/assets';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { Zero } from '@/utils/bignumbers';
 
 export const assetSum = (balances: { [asset: string]: Balance }) => {

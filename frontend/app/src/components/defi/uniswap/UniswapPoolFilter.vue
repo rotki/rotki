@@ -70,7 +70,7 @@ import { XswapPool } from '@rotki/common/lib/defi/xswap';
 import { get } from '@vueuse/core';
 import { PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 
 const props = defineProps({
   value: { required: true, type: Array as PropType<string[]> },

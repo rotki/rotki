@@ -1,4 +1,4 @@
-import { get } from '@vueuse/core';
+import { get, MaybeRef } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { useBalancesStore } from '@/store/balances';
 import { NonFungibleBalance } from '@/store/balances/types';
@@ -16,10 +16,11 @@ export const isNft = (address?: string) => {
 };
 
 export const getNftBalance = (
-  identifier: string
+  identifier: MaybeRef<string>
 ): NonFungibleBalance | null => {
   const { nfBalances } = storeToRefs(useBalancesStore());
+  const id = get(identifier);
 
   const balances = get(nfBalances) as NonFungibleBalance[];
-  return balances.find(item => item.id === identifier) || null;
+  return balances.find(item => item.id === id) || null;
 };

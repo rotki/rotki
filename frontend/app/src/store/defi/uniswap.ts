@@ -6,7 +6,8 @@ import { computed, Ref, ref } from 'vue';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
 import { uniswapEventsNumericKeys } from '@/store/defi/const';
 import {

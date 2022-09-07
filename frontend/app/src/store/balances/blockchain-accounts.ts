@@ -10,8 +10,8 @@ import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, Ref, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { bigNumberSum } from '@/filters';
-import i18n from '@/i18n';
 import {
   BlockchainAssetBalances,
   BlockchainBalances,
@@ -25,7 +25,7 @@ import {
   GeneralAccountData,
   XpubAccountData
 } from '@/services/types-api';
-import { useIgnoredAssetsStore } from '@/store/assets';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useBalancesStore } from '@/store/balances';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
@@ -217,18 +217,18 @@ export const useBlockchainAccountsStore = defineStore(
     const { awaitTask, isTaskRunning } = useTasks();
     const { notify } = useNotifications();
     const { setMessage } = useMainStore();
+    const { fetchEnsNames, fetchEthNames } = useEthNamesStore();
+    const { t, tc } = useI18n();
 
     const fetchAccounts = async (blockchains: Blockchain[] | null = null) => {
       const error = (error: any, blockchain: Blockchain) => {
         logger.error(error);
         notify({
-          title: i18n.t('actions.get_accounts.error.title').toString(),
-          message: i18n
-            .t('actions.get_accounts.error.description', {
-              blockchain: Blockchain[blockchain],
-              message: error.message
-            })
-            .toString(),
+          title: t('actions.get_accounts.error.title').toString(),
+          message: t('actions.get_accounts.error.description', {
+            blockchain: Blockchain[blockchain],
+            message: error.message
+          }).toString(),
           display: true
         });
       };
@@ -254,7 +254,7 @@ export const useBlockchainAccountsStore = defineStore(
 
             if (blockchain === Blockchain.ETH) {
               const addresses = accounts.map(account => account.address);
-              const { fetchEnsNames } = useEthNamesStore();
+
               startPromise(fetchEnsNames(addresses, true));
             }
           } else {
@@ -379,12 +379,12 @@ export const useBlockchainAccountsStore = defineStore(
       }
 
       if (accountsToAdd.length === 0) {
-        const title = i18n.tc(
+        const title = tc(
           'actions.balances.blockchain_accounts_add.no_new.title',
           0,
           { blockchain }
         );
-        const description = i18n.tc(
+        const description = tc(
           'actions.balances.blockchain_accounts_add.no_new.description'
         );
         notify({
@@ -414,12 +414,12 @@ export const useBlockchainAccountsStore = defineStore(
             taskId,
             taskType,
             {
-              title: i18n.tc(
+              title: tc(
                 'actions.balances.blockchain_accounts_add.task.title',
                 0,
                 { blockchain }
               ),
-              description: i18n.tc(
+              description: tc(
                 'actions.balances.blockchain_accounts_add.task.description',
                 0,
                 { address }
@@ -497,12 +497,12 @@ export const useBlockchainAccountsStore = defineStore(
         startPromise(postAddAccount());
       } catch (e: any) {
         logger.error(e);
-        const title = i18n.tc(
+        const title = tc(
           'actions.balances.blockchain_accounts_add.error.title',
           0,
           { blockchain }
         );
-        const description = i18n.tc(
+        const description = tc(
           'actions.balances.blockchain_accounts_add.error.description',
           0,
           {
@@ -559,7 +559,6 @@ export const useBlockchainAccountsStore = defineStore(
         }
       }
 
-      const { fetchEthNames } = useEthNamesStore();
       if (blockchain === Blockchain.ETH) {
         startPromise(fetchEthNames());
       }
@@ -573,14 +572,10 @@ export const useBlockchainAccountsStore = defineStore(
         }
         const { taskId } = await api.deleteXpub(payload);
         await awaitTask<boolean, BlockchainMetadata>(taskId, taskType, {
-          title: i18n.tc('actions.balances.xpub_removal.task.title'),
-          description: i18n.tc(
-            'actions.balances.xpub_removal.task.description',
-            0,
-            {
-              xpub: payload.xpub
-            }
-          ),
+          title: tc('actions.balances.xpub_removal.task.title'),
+          description: tc('actions.balances.xpub_removal.task.description', 0, {
+            xpub: payload.xpub
+          }),
           blockchain: payload.blockchain,
           numericKeys: []
         } as BlockchainMetadata);
@@ -590,8 +585,8 @@ export const useBlockchainAccountsStore = defineStore(
         });
       } catch (e: any) {
         logger.error(e);
-        const title = i18n.tc('actions.balances.xpub_removal.error.title');
-        const description = i18n.tc(
+        const title = tc('actions.balances.xpub_removal.error.title');
+        const description = tc(
           'actions.balances.xpub_removal.error.description',
           0,
           {
@@ -620,14 +615,14 @@ export const useBlockchainAccountsStore = defineStore(
           BlockchainBalances,
           BlockchainMetadata
         >(taskId, taskType, {
-          title: i18n.tc(
+          title: tc(
             'actions.balances.blockchain_account_removal.task.title',
             0,
             {
               blockchain
             }
           ),
-          description: i18n.tc(
+          description: tc(
             'actions.balances.blockchain_account_removal.task.description',
             0,
             { count: accounts.length }
@@ -645,12 +640,12 @@ export const useBlockchainAccountsStore = defineStore(
         await fetchNfBalances();
       } catch (e: any) {
         logger.error(e);
-        const title = i18n.tc(
+        const title = tc(
           'actions.balances.blockchain_account_removal.error.title',
           0,
           { count: accounts.length, blockchain }
         );
-        const description = i18n.tc(
+        const description = tc(
           'actions.balances.blockchain_account_removal.error.description',
           0,
           {
@@ -680,10 +675,10 @@ export const useBlockchainAccountsStore = defineStore(
           taskId,
           taskType,
           {
-            title: i18n.t('actions.add_eth2_validator.task.title').toString(),
-            description: i18n
-              .t('actions.add_eth2_validator.task.description', { id })
-              .toString(),
+            title: t('actions.add_eth2_validator.task.title').toString(),
+            description: t('actions.add_eth2_validator.task.description', {
+              id
+            }).toString(),
             numericKeys: []
           }
         );
@@ -705,13 +700,11 @@ export const useBlockchainAccountsStore = defineStore(
       } catch (e: any) {
         logger.error(e);
         setMessage({
-          description: i18n
-            .t('actions.add_eth2_validator.error.description', {
-              id,
-              message: e.message
-            })
-            .toString(),
-          title: i18n.t('actions.add_eth2_validator.error.title').toString(),
+          description: t('actions.add_eth2_validator.error.description', {
+            id,
+            message: e.message
+          }).toString(),
+          title: t('actions.add_eth2_validator.error.title').toString(),
           success: false
         });
         return false;
@@ -745,13 +738,11 @@ export const useBlockchainAccountsStore = defineStore(
       } catch (e: any) {
         logger.error(e);
         const message: Message = {
-          description: i18n
-            .t('actions.edit_eth2_validator.error.description', {
-              id,
-              message: e.message
-            })
-            .toString(),
-          title: i18n.t('actions.edit_eth2_validator.error.title').toString(),
+          description: t('actions.edit_eth2_validator.error.description', {
+            id,
+            message: e.message
+          }).toString(),
+          title: t('actions.edit_eth2_validator.error.title').toString(),
           success: false
         };
         await setMessage(message);
@@ -787,12 +778,10 @@ export const useBlockchainAccountsStore = defineStore(
       } catch (e: any) {
         logger.error(e);
         setMessage({
-          description: i18n
-            .t('actions.delete_eth2_validator.error.description', {
-              message: e.message
-            })
-            .toString(),
-          title: i18n.t('actions.delete_eth2_validator.error.title').toString(),
+          description: t('actions.delete_eth2_validator.error.description', {
+            message: e.message
+          }).toString(),
+          title: t('actions.delete_eth2_validator.error.title').toString(),
           success: false
         });
         return false;
@@ -1127,14 +1116,10 @@ export const useBlockchainAccountsStore = defineStore(
           ]);
 
           const taskMeta = {
-            title: i18n
-              .t('actions.balances.detect_tokens.task.title')
-              .toString(),
-            description: i18n
-              .t('actions.balances.detect_tokens.task.description', {
-                address
-              })
-              .toString(),
+            title: t('actions.balances.detect_tokens.task.title').toString(),
+            description: t('actions.balances.detect_tokens.task.description', {
+              address
+            }).toString(),
             numericKeys: [],
             address
           };

@@ -12,7 +12,7 @@ import { computed, ComputedRef, ref, Ref } from 'vue';
 import { getPremium, useModules } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
 import { OnError } from '@/store/typing';
 import {

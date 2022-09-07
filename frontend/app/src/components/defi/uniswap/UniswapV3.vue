@@ -181,7 +181,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking, useTheme } from '@/composables/common';
 import { getPremium, useModules } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';

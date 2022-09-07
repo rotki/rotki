@@ -28,7 +28,7 @@ describe('blockchain balances', () => {
     dashboardPage = new DashboardPage();
     tagManager = new TagManager();
 
-    app.fasterLogin(username);
+    app.fasterLogin(username, '1234', true);
 
     cy.fixture('account-balances/blockchain-balances').then(balances => {
       blockchainBalances = balances.map((balance: { blockchain: string }) => {
@@ -50,7 +50,6 @@ describe('blockchain balances', () => {
   });
 
   it('add an ETH account and view the account balance', () => {
-    cy.disableModules();
     cy.get('[data-cy="add-blockchain-balance"]').should('be.visible');
     cy.get('[data-cy="add-blockchain-balance"]').click();
     tagManager.addTag(

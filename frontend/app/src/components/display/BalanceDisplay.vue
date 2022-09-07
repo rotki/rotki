@@ -36,7 +36,7 @@ import { Balance } from '@rotki/common';
 import { get } from '@vueuse/core';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import AssetLink from '@/components/assets/AssetLink.vue';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 
 export default defineComponent({
   name: 'BalanceDisplay',

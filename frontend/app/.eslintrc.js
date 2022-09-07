@@ -18,6 +18,7 @@ module.exports = {
   parser: 'vue-eslint-parser',
 
   rules: {
+    'prettier/prettier': 'error',
     'vuetify/no-deprecated-classes': 'error',
     'vuetify/grid-unknown-attributes': 'error',
     'vuetify/no-legacy-grid': 'error',

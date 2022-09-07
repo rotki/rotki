@@ -41,7 +41,7 @@ import PremiumCard from '@/components/display/PremiumCard.vue';
 import { isSectionLoading } from '@/composables/common';
 import { getPremium } from '@/composables/session';
 import { AaveBorrowingDetails } from '@/premium/premium';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
 import { AaveLoan } from '@/store/defi/types';
 

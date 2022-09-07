@@ -10,9 +10,9 @@ import { get, set } from '@vueuse/core';
 import { forEach } from 'lodash';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { bigNumberSum } from '@/filters';
-import i18n from '@/i18n';
 import {
   BlockchainAssetBalances,
   BtcBalances,
@@ -20,7 +20,8 @@ import {
 } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
-import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
@@ -53,24 +54,32 @@ import { logger } from '@/utils/logging';
 export const useBalancesStore = defineStore('balances', () => {
   const nonFungibleBalancesState = ref<NonFungibleBalances>({});
 
+  const { t } = useI18n();
+
   const pricesStore = useBalancePricesStore();
   const { prices } = storeToRefs(pricesStore);
   const {
     updateBalancesPrices,
     fetchPrices,
     fetchExchangeRates,
-    exchangeRate
+    exchangeRate,
+    reset: resetPrices
   } = pricesStore;
 
   const manualBalancesStore = useManualBalancesStore();
   const { manualBalancesData, manualBalances, manualBalanceByLocation } =
     storeToRefs(manualBalancesStore);
-  const { fetchManualBalances } = manualBalancesStore;
+  const { fetchManualBalances, reset: resetManualBalances } =
+    manualBalancesStore;
 
   const exchangeStore = useExchangeBalancesStore();
   const { exchanges, exchangeBalances, connectedExchanges } =
     storeToRefs(exchangeStore);
-  const { getBalances: getExchangeBalances, setExchanges } = exchangeStore;
+  const {
+    getBalances: getExchangeBalances,
+    setExchanges,
+    reset: resetExchangeBalances
+  } = exchangeStore;
 
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -464,7 +473,7 @@ export const useBalancesStore = defineStore('balances', () => {
         taskId,
         taskType,
         {
-          title: i18n.t('actions.nft_balances.task.title').toString(),
+          title: t('actions.nft_balances.task.title').toString(),
           numericKeys: []
         }
       );
@@ -474,12 +483,10 @@ export const useBalancesStore = defineStore('balances', () => {
     } catch (e: any) {
       logger.error(e);
       notify({
-        title: i18n.t('actions.nft_balances.error.title').toString(),
-        message: i18n
-          .t('actions.nft_balances.error.message', {
-            message: e.message
-          })
-          .toString(),
+        title: t('actions.nft_balances.error.title').toString(),
+        message: t('actions.nft_balances.error.message', {
+          message: e.message
+        }).toString(),
         display: true
       });
       setStatus(Status.NONE, section);
@@ -493,17 +500,15 @@ export const useBalancesStore = defineStore('balances', () => {
     try {
       const { taskId } = await api.queryBalancesAsync(payload);
       await addTask(taskId, TaskType.QUERY_BALANCES, {
-        title: i18n.t('actions.balances.all_balances.task.title').toString(),
+        title: t('actions.balances.all_balances.task.title').toString(),
         ignoreResult: true
       });
     } catch (e: any) {
       notify({
-        title: i18n.t('actions.balances.all_balances.error.title').toString(),
-        message: i18n
-          .t('actions.balances.all_balances.error.message', {
-            message: e.message
-          })
-          .toString(),
+        title: t('actions.balances.all_balances.error.title').toString(),
+        message: t('actions.balances.all_balances.error.message', {
+          message: e.message
+        }).toString(),
         display: true
       });
     }
@@ -548,6 +553,9 @@ export const useBalancesStore = defineStore('balances', () => {
   const reset = () => {
     resetBlockchainBalancesStore();
     resetBlockchainAccountsStore();
+    resetExchangeBalances();
+    resetManualBalances();
+    resetPrices();
     set(nonFungibleBalancesState, {});
   };
 

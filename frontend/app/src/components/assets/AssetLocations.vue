@@ -63,7 +63,7 @@ import DataTable from '@/components/helper/DataTable.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { CURRENCY_USD } from '@/data/currencies';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancesStore } from '@/store/balances';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { AssetBreakdown } from '@/store/balances/types';

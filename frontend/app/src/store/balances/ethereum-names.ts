@@ -2,7 +2,7 @@ import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
-import i18n from '@/i18n';
+import { useI18n } from 'vue-i18n-composable';
 import { api } from '@/services/rotkehlchen-api';
 import {
   EthAddressBookLocation,
@@ -20,6 +20,7 @@ import { isValidEthAddress } from '@/utils/text';
 
 export const useEthNamesStore = defineStore('ethNames', () => {
   const { enableEthNames } = storeToRefs(useFrontendSettingsStore());
+
   const ensAddresses = ref<string[]>([]);
   const ethNames = ref<EthNames>({});
 
@@ -35,6 +36,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
 
   const { awaitTask } = useTasks();
   const { notify } = useNotifications();
+  const { t, tc } = useI18n();
 
   const updateEnsAddresses = (newAddresses: string[]): boolean => {
     const newEnsAddresses = [...get(ensAddresses), ...newAddresses]
@@ -71,7 +73,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
           latestEnsAddresses
         );
         await awaitTask<EthNames, TaskMeta>(taskId, taskType, {
-          title: i18n.t('ens_names.task.title').toString(),
+          title: tc('ens_names.task.title'),
           numericKeys: []
         });
       } else {
@@ -88,21 +90,17 @@ export const useEthNamesStore = defineStore('ethNames', () => {
       ...get(ensAddresses)
     ].filter(uniqueStrings);
 
-    const notifyError = (error?: any) => {
-      logger.error(error);
-      const message = error?.message ?? error ?? '';
-      notify({
-        title: i18n.t('eth_names.error.title').toString(),
-        message: i18n.t('eth_names.error.message', { message }).toString(),
-        display: true
-      });
-    };
-
     try {
       const result = await api.balances.getEthNames(addresses);
       set(ethNames, result);
     } catch (e: any) {
-      notifyError(e);
+      logger.error(e);
+      const message = e?.message ?? e ?? '';
+      notify({
+        title: tc('eth_names.error.title'),
+        message: tc('eth_names.error.message', 0, { message }),
+        display: true
+      });
     }
   };
 
@@ -134,10 +132,10 @@ export const useEthNamesStore = defineStore('ethNames', () => {
       logger.error(error);
       const message = error?.message ?? error ?? '';
       notify({
-        title: i18n.t('eth_address_book.actions.fetch.error.title').toString(),
-        message: i18n
-          .t('eth_address_book.actions.fetch.error.message', { message })
-          .toString(),
+        title: t('eth_address_book.actions.fetch.error.title').toString(),
+        message: t('eth_address_book.actions.fetch.error.message', {
+          message
+        }).toString(),
         display: true
       });
     };
@@ -182,6 +180,13 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     }
   };
 
+  const reset = () => {
+    set(ensAddresses, []);
+    set(ethNames, {});
+    set(ethAddressBookGlobal, []);
+    set(ethAddressBookPrivate, []);
+  };
+
   return {
     fetchEnsNames,
     ethNames,
@@ -192,7 +197,8 @@ export const useEthNamesStore = defineStore('ethNames', () => {
     fetchEthAddressBook,
     addEthAddressBook,
     updateEthAddressBook,
-    deleteEthAddressBook
+    deleteEthAddressBook,
+    reset
   };
 });
 

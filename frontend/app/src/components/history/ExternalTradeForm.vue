@@ -290,7 +290,7 @@ import { useI18n } from 'vue-i18n-composable';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { NewTrade, Trade, TradeType } from '@/services/history/types';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { TradeEntry } from '@/store/history/types';
 import { useTasks } from '@/store/tasks';

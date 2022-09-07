@@ -65,7 +65,7 @@ import {
   VueConstructor
 } from 'vue';
 import { useTheme } from '@/composables/common';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 
 export default defineComponent({
   name: 'NavigationMenuItem',

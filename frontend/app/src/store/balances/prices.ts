@@ -2,8 +2,8 @@ import { BigNumber } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
-import i18n from '@/i18n';
 import { Balances } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
@@ -27,8 +27,11 @@ import { convertFromTimestamp } from '@/utils/date';
 
 export const useBalancePricesStore = defineStore('balances/prices', () => {
   const prices = ref<AssetPrices>({});
+  const exchangeRates = ref<ExchangeRates>({});
+
   const { awaitTask, isTaskRunning } = useTasks();
   const { notify } = useNotifications();
+  const { t } = useI18n();
 
   const fetchPrices = async (payload: FetchPricePayload) => {
     const { aggregatedAssets } = useBlockchainBalancesStore();
@@ -50,7 +53,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         taskId,
         taskType,
         {
-          title: i18n.t('actions.session.fetch_prices.task.title').toString(),
+          title: t('actions.session.fetch_prices.task.title').toString(),
           numericKeys: null
         },
         true
@@ -67,14 +70,10 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         chunkArray<string>(assets, 100).map(asset => fetch(asset))
       );
     } catch (e: any) {
-      const title = i18n
-        .t('actions.session.fetch_prices.error.title')
-        .toString();
-      const message = i18n
-        .t('actions.session.fetch_prices.error.message', {
-          error: e.message
-        })
-        .toString();
+      const title = t('actions.session.fetch_prices.error.title').toString();
+      const message = t('actions.session.fetch_prices.error.message', {
+        error: e.message
+      }).toString();
       notify({
         title,
         message,
@@ -98,7 +97,6 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     return balances;
   };
 
-  const exchangeRates = ref<ExchangeRates>({});
   const fetchExchangeRates = async () => {
     try {
       const { taskId } = await api.getFiatExchangeRates(
@@ -106,7 +104,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       );
 
       const meta: TaskMeta = {
-        title: i18n.t('actions.balances.exchange_rates.task.title').toString(),
+        title: t('actions.balances.exchange_rates.task.title').toString(),
         numericKeys: []
       };
 
@@ -119,12 +117,10 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       set(exchangeRates, ExchangeRates.parse(result));
     } catch (e: any) {
       notify({
-        title: i18n.t('actions.balances.exchange_rates.error.title').toString(),
-        message: i18n
-          .t('actions.balances.exchange_rates.error.message', {
-            message: e.message
-          })
-          .toString(),
+        title: t('actions.balances.exchange_rates.error.title').toString(),
+        message: t('actions.balances.exchange_rates.error.message', {
+          message: e.message
+        }).toString(),
         display: true
       });
     }
@@ -156,16 +152,17 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         taskId,
         taskType,
         {
-          title: i18n
-            .t('actions.balances.historic_fetch_price.task.title')
-            .toString(),
-          description: i18n
-            .t('actions.balances.historic_fetch_price.task.description', {
+          title: t(
+            'actions.balances.historic_fetch_price.task.title'
+          ).toString(),
+          description: t(
+            'actions.balances.historic_fetch_price.task.description',
+            {
               fromAsset,
               toAsset,
               date: convertFromTimestamp(timestamp)
-            })
-            .toString(),
+            }
+          ).toString(),
           numericKeys: null
         },
         true
@@ -187,9 +184,9 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     if (get(isTaskRunning(taskType))) {
       return {
         success: false,
-        message: i18n
-          .t('actions.balances.create_oracle_cache.already_running')
-          .toString()
+        message: t(
+          'actions.balances.create_oracle_cache.already_running'
+        ).toString()
       };
     }
     try {
@@ -203,13 +200,11 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         taskId,
         taskType,
         {
-          title: i18n
-            .t('actions.balances.create_oracle_cache.task', {
-              fromAsset,
-              toAsset,
-              source
-            })
-            .toString(),
+          title: t('actions.balances.create_oracle_cache.task', {
+            fromAsset,
+            toAsset,
+            source
+          }).toString(),
           numericKeys: null
         },
         true
@@ -221,14 +216,12 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     } catch (e: any) {
       return {
         success: false,
-        message: i18n
-          .t('actions.balances.create_oracle_cache.failed', {
-            fromAsset,
-            toAsset,
-            source,
-            error: e.message
-          })
-          .toString()
+        message: t('actions.balances.create_oracle_cache.failed', {
+          fromAsset,
+          toAsset,
+          source,
+          error: e.message
+        }).toString()
       };
     }
   };
@@ -245,6 +238,11 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     return await api.balances.deletePriceCache(source, fromAsset, toAsset);
   };
 
+  const reset = () => {
+    set(prices, {});
+    set(exchangeRates, {});
+  };
+
   return {
     prices,
     fetchPrices,
@@ -255,7 +253,8 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     getHistoricPrice,
     createOracleCache,
     getPriceCache,
-    deletePriceCache
+    deletePriceCache,
+    reset
   };
 });
 

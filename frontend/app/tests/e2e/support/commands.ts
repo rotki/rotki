@@ -150,7 +150,7 @@ const addLedgerAction = (action: ExternalLedgerAction) => {
 const addEtherscanKey = (key: string) => {
   return cy
     .request({
-      url: 'http://localhost:22221/api/1/external_services/',
+      url: 'http://localhost:22221/api/1/external_services',
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json; charset=utf-8'

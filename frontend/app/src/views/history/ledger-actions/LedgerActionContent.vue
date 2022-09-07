@@ -213,7 +213,7 @@ import {
   NewLedgerAction,
   TradeLocation
 } from '@/services/history/types';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
 import { useHistory, useLedgerActions } from '@/store/history';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';

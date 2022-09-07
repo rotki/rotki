@@ -3808,7 +3808,7 @@
     "assets_non_premium": "Upgrade to {0} to see assets information",
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "loading_non_premium": "Loading the liquidity pool balances might take a while... Consider upgrading to {0} for faster load times.",
-    "pool_header": "UNI_v{version} {asset1}/{asset2}",
+    "pool_header": "UNIv{version} {asset1}/{asset2}",
     "premium": "premium",
     "price_range": "Price Range",
     "title": "Uniswap v{v} Pools"

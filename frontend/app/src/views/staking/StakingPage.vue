@@ -125,7 +125,7 @@ import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useRouter } from '@/composables/common';
 import { Routes } from '@/router/routes';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import AdexPage from '@/views/staking/AdexPage.vue';
 import Eth2Page from '@/views/staking/Eth2Page.vue';
 import KrakenPage from '@/views/staking/KrakenPage.vue';

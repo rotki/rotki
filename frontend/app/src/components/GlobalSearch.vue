@@ -118,7 +118,7 @@ import { setupLocationInfo } from '@/composables/balances';
 import { useRouter, useTheme } from '@/composables/common';
 import { interop } from '@/electron-interop';
 import { routesRef } from '@/router/routes';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancesStore } from '@/store/balances';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
