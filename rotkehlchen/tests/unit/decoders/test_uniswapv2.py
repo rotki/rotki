@@ -285,7 +285,7 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_manager, eth_transactio
             sequence_index=1,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.RECEIVE,
+            event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
             balance=Balance(
@@ -293,8 +293,8 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_manager, eth_transactio
                 usd_value=ZERO,
             ),
             location_label='0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
-            notes='Receive 0.008104374914845978 ETH 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D -> 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
-            counterparty='0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+            notes='Refund of 0.008104374914845978 ETH in uniswap-v2 due to price change',  # noqa: E501
+            counterparty=CPT_UNISWAP_V2,
         ), HistoryBaseEntry(
             event_identifier=HistoryBaseEntry.deserialize_event_identifier(tx_hex),
             sequence_index=2,
