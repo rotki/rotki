@@ -174,7 +174,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { EthereumToken, ManagedAsset } from '@/services/assets/types';
-import { useIgnoredAssetsStore } from '@/store/assets';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { useMainStore } from '@/store/main';
 import { ActionStatus } from '@/store/types';

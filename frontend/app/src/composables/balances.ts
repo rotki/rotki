@@ -3,7 +3,7 @@ import { get } from '@vueuse/core';
 import { tradeLocations } from '@/components/history/consts';
 import { Routes } from '@/router/routes';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { assert } from '@/utils/assertions';
 
 export const setupLocationInfo = () => {

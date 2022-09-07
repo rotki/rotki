@@ -19,7 +19,7 @@
   },
   "account_balances": {
     "confirm_delete": {
-        "description_address": "Είστε σίγουροι οτι θέλτε να διαγράψετε {count} διεύθυνσ(η/εις)",
+      "description_address": "Είστε σίγουροι οτι θέλτε να διαγράψετε {count} διεύθυνσ(η/εις)",
       "description_xpub": "Είστε σίγουροι οτι θέλτε να διαγράψετε {address}",
       "title": "Διαγραφή λογαριασμού"
     },

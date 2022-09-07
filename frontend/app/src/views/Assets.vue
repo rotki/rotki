@@ -50,7 +50,8 @@ import AssetValueRow from '@/components/assets/AssetValueRow.vue';
 import { getPremium } from '@/composables/session';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
-import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 
 const props = defineProps({
   identifier: { required: true, type: String }

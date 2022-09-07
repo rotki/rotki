@@ -7,7 +7,7 @@ import {
   SearchMatcher
 } from '@/components/history/filtering/types';
 import { TradeType } from '@/services/history/types';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useHistory } from '@/store/history';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';

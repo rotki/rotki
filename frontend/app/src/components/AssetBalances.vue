@@ -59,7 +59,7 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { bigNumberSum } from '@/filters';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { getSortItems } from '@/utils/assets';
 

@@ -79,7 +79,7 @@ import {
   SearchMatcher
 } from '@/components/history/filtering/types';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { krakenStakingEventTypeData } from '@/store/staking/consts';

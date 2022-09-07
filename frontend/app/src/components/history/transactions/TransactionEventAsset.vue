@@ -27,7 +27,7 @@
 <script lang="ts">
 import { get } from '@vueuse/core';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { EthTransactionEventEntry } from '@/store/history/types';
 import { TransactionEventType } from '@/types/transaction';
 import { getEventType } from '@/utils/history';

@@ -22,7 +22,8 @@ import {
 } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { chainSection, samePriceAssets } from '@/store/balances/const';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';

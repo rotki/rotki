@@ -219,6 +219,10 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     }
   };
 
+  const reset = () => {
+    set(manualBalancesData, []);
+  };
+
   return {
     manualBalancesData,
     manualBalances,
@@ -228,7 +232,8 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     fetchManualBalances,
     addManualBalance,
     editManualBalance,
-    deleteManualBalance
+    deleteManualBalance,
+    reset
   };
 });
 

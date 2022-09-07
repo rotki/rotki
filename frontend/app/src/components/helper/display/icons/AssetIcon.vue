@@ -35,7 +35,7 @@ import { computed, defineAsyncComponent, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { currencies } from '@/data/currencies';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 const AdaptiveWrapper = defineAsyncComponent(
   () => import('@/components/display/AdaptiveWrapper.vue')
 );

@@ -28,7 +28,7 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import ListItem from '@/components/helper/ListItem.vue';
 import { useRouter } from '@/composables/common';
 import { Routes } from '@/router/routes';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 
 const AssetDetailsBase = defineComponent({
   name: 'AssetDetailsBase',

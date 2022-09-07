@@ -4,11 +4,11 @@ import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { lastLogin } from '@/components/account-management/utils';
 import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop, useInterop } from '@/electron-interop';
-import i18n from '@/i18n';
 import { SupportedExternalExchanges } from '@/services/balances/types';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
@@ -18,8 +18,10 @@ import {
   ALL_MODULES
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
-import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancesStore } from '@/store/balances';
+import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import { useHistory, useTransactions } from '@/store/history';
@@ -101,6 +103,8 @@ export const useSessionStore = defineStore('session', () => {
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { fetch, refreshPrices } = useBalancesStore();
 
+  const { t } = useI18n();
+
   const periodicCheck = async () => {
     if (get(periodicRunning)) {
       return;
@@ -130,12 +134,10 @@ export const useSessionStore = defineStore('session', () => {
       set(connectedEthNodes, connectedNodes);
     } catch (e: any) {
       notify({
-        title: i18n.t('actions.session.periodic_query.error.title').toString(),
-        message: i18n
-          .t('actions.session.periodic_query.error.message', {
-            message: e.message
-          })
-          .toString(),
+        title: t('actions.session.periodic_query.error.title').toString(),
+        message: t('actions.session.periodic_query.error.message', {
+          message: e.message
+        }).toString(),
         display: true
       });
     } finally {
@@ -341,9 +343,7 @@ export const useSessionStore = defineStore('session', () => {
         newPassword
       );
       setMessage({
-        description: i18n
-          .t('actions.session.password_change.success')
-          .toString(),
+        description: t('actions.session.password_change.success').toString(),
         success: true
       });
 
@@ -358,9 +358,9 @@ export const useSessionStore = defineStore('session', () => {
       };
     } catch (e: any) {
       setMessage({
-        description: i18n
-          .t('actions.session.password_change.error', { message: e.message })
-          .toString()
+        description: t('actions.session.password_change.error', {
+          message: e.message
+        }).toString()
       });
       return {
         success: false,
@@ -379,7 +379,7 @@ export const useSessionStore = defineStore('session', () => {
         taskId,
         taskType,
         {
-          title: i18n.t('actions.session.fetch_nfts.task.title').toString(),
+          title: t('actions.session.fetch_nfts.task.title').toString(),
           numericKeys: []
         }
       );
@@ -436,6 +436,7 @@ export const useSessionStore = defineStore('session', () => {
     useQueriedAddressesStore().reset();
     useTagStore().reset();
     useWatchersStore().reset();
+    useEthNamesStore().reset();
   };
 
   return {

@@ -28,7 +28,7 @@
 import { BigNumber } from '@rotki/common';
 import { get } from '@vueuse/core';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { bigNumberify } from '@/utils/bignumbers';
 import { isValidEthAddress } from '@/utils/text';
 

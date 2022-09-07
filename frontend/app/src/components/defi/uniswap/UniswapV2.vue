@@ -49,13 +49,15 @@
       <template #item="{ item }">
         <card>
           <template v-if="item.assets.length > 0" #title>
-            {{
-              tc('uniswap.pool_header', 0, {
-                version: '2',
-                asset1: getSymbol(item.assets[0].asset),
-                asset2: getSymbol(item.assets[1].asset)
-              })
-            }}
+            <span class="text-none">
+              {{
+                tc('uniswap.pool_header', 0, {
+                  version: '2',
+                  asset1: getSymbol(item.assets[0].asset),
+                  asset2: getSymbol(item.assets[1].asset)
+                })
+              }}
+            </span>
           </template>
           <template #details>
             <uniswap-pool-details :balance="item" />
@@ -145,7 +147,7 @@ import { setupStatusChecking } from '@/composables/common';
 import { getPremium, useModules } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { UniswapDetails } from '@/premium/premium';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';

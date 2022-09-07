@@ -20,7 +20,7 @@ import { truncateAddress } from '@/filters';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { CompoundBalances, CompoundLoan } from '@/services/defi/types/compound';
 import { YearnVaultsHistory } from '@/services/defi/types/yearn';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section, Status } from '@/store/const';
 import { useAaveStore } from '@/store/defi/aave';
 import { useCompoundStore } from '@/store/defi/compound';

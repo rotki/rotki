@@ -83,13 +83,15 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
       { blockchain: 'Bitcoin', symbol: Blockchain.BTC, renderedValue: Zero }
     ];
 
+    cy.get('[data-cy=blockchain-asset-balances] .v-data-table__empty-wrapper', {
+      timeout: 240000
+    }).should('not.exist');
+
     blockchainBalances.forEach(blockchainBalance => {
       const tableClass = `[data-cy="blockchain-balances-${blockchainBalance.symbol}"]`;
+      cy.get(tableClass).scrollIntoView();
       cy.get('body').then($body => {
         if ($body.find(tableClass).length > 0) {
-          if (blockchainBalance.symbol === Blockchain.ETH) {
-            cy.wait(15000);
-          }
           cy.get(`${tableClass} .v-data-table__progress`, {
             timeout: 240000
           }).should('not.be.exist');

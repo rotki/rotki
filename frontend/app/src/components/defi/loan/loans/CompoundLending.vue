@@ -41,7 +41,7 @@ import PremiumCard from '@/components/display/PremiumCard.vue';
 import { getPremium } from '@/composables/session';
 import { CompoundBorrowingDetails } from '@/premium/premium';
 import { CompoundLoan } from '@/services/defi/types/compound';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { uniqueStrings } from '@/utils/data';
 
 export default defineComponent({

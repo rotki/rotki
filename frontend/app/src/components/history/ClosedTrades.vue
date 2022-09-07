@@ -240,7 +240,7 @@ import {
   TradeLocation,
   TradeRequestPayload
 } from '@/services/history/types';
-import { useAssetInfoRetrieval } from '@/store/assets';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
 import { useTrades } from '@/store/history';
 import { IgnoreActionType, TradeEntry } from '@/store/history/types';

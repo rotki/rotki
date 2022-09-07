@@ -38,8 +38,15 @@ export class RotkiApp {
     this.loadEnv();
   }
 
-  fasterLogin(username: string, password: string = '1234') {
+  fasterLogin(
+    username: string,
+    password: string = '1234',
+    disableModules: boolean
+  ) {
     cy.createAccount(username, password);
+    if (disableModules) {
+      cy.disableModules();
+    }
     this.loadEnv();
     this.visit();
     this.login(username, password);

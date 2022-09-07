@@ -61,7 +61,8 @@ import { get, set, useTimeoutFn } from '@vueuse/core';
 import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { compareAssets, getValidSelectorFromEvmAddress } from '@/utils/assets';
 
 export default defineComponent({

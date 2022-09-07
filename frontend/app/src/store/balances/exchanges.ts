@@ -3,10 +3,11 @@ import { get, set } from '@vueuse/core';
 import { forEach } from 'lodash';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ComputedRef, Ref, ref } from 'vue';
-import i18n from '@/i18n';
+import { useI18n } from 'vue-i18n-composable';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval, useIgnoredAssetsStore } from '@/store/assets';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancesStore } from '@/store/balances/index';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import {
@@ -37,6 +38,8 @@ export const useExchangeBalancesStore = defineStore(
   () => {
     const connectedExchanges: Ref<Exchange[]> = ref([]);
     const exchangeBalances: Ref<ExchangeData> = ref({});
+
+    const { t, tc } = useI18n();
 
     const { awaitTask, isTaskRunning, metadata } = useTasks();
     const { notify } = useNotifications();
@@ -163,11 +166,11 @@ export const useExchangeBalancesStore = defineStore(
         return success;
       } catch (e: any) {
         showError(
-          i18n.tc('actions.balances.exchange_removal.description', 0, {
+          tc('actions.balances.exchange_removal.description', 0, {
             exchange,
             error: e.message
           }),
-          i18n.tc('actions.balances.exchange_removal.title')
+          tc('actions.balances.exchange_removal.title')
         );
         return false;
       }
@@ -202,11 +205,9 @@ export const useExchangeBalancesStore = defineStore(
         );
         const meta: ExchangeMeta = {
           location,
-          title: i18n
-            .t('actions.balances.exchange_balances.task.title', {
-              location
-            })
-            .toString(),
+          title: t('actions.balances.exchange_balances.task.title', {
+            location
+          }).toString(),
           numericKeys: balanceKeys
         };
 
@@ -222,17 +223,13 @@ export const useExchangeBalancesStore = defineStore(
           [location]: result
         });
       } catch (e: any) {
-        const message = i18n
-          .t('actions.balances.exchange_balances.error.message', {
-            location,
-            error: e.message
-          })
-          .toString();
-        const title = i18n
-          .t('actions.balances.exchange_balances.error.title', {
-            location
-          })
-          .toString();
+        const message = t('actions.balances.exchange_balances.error.message', {
+          location,
+          error: e.message
+        }).toString();
+        const title = t('actions.balances.exchange_balances.error.title', {
+          location
+        }).toString();
 
         notify({
           title,
@@ -291,13 +288,11 @@ export const useExchangeBalancesStore = defineStore(
         return success;
       } catch (e: any) {
         showError(
-          i18n
-            .t('actions.balances.exchange_setup.description', {
-              exchange: exchange.location,
-              error: e.message
-            })
-            .toString(),
-          i18n.t('actions.balances.exchange_setup.title').toString()
+          t('actions.balances.exchange_setup.description', {
+            exchange: exchange.location,
+            error: e.message
+          }).toString(),
+          t('actions.balances.exchange_setup.title').toString()
         );
         return false;
       }
