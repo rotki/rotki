@@ -1,3 +1,4 @@
+import json
 from typing import TYPE_CHECKING, List, Tuple
 
 from rotkehlchen.constants.resolver import (
@@ -55,6 +56,8 @@ def _rename_assets_identifiers(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('SELECT identifier FROM assets')
     old_id_to_new = {}
     for (identifier,) in write_cursor:
+        # We only need to update the ethereum assets and those that will be replaced by evm assets
+        # Any other asset should keep the identifier they have now.
         if identifier.startswith(ETHEREUM_DIRECTIVE):
             old_id_to_new[identifier] = evm_address_to_identifier(
                 address=identifier[ETHEREUM_DIRECTIVE_LENGTH:],
@@ -63,6 +66,7 @@ def _rename_assets_identifiers(write_cursor: 'DBCursor') -> None:
             )
         elif identifier in OTHER_EVM_CHAINS_ASSETS:
             old_id_to_new[identifier] = OTHER_EVM_CHAINS_ASSETS[identifier]
+
     sqlite_tuples = [(new_id, old_id) for old_id, new_id in old_id_to_new.items()]
     write_cursor.executemany('UPDATE assets SET identifier=? WHERE identifier=?', sqlite_tuples)  # noqa: E501
 
@@ -189,7 +193,7 @@ def _rename_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
             ),
         )
     cursor.executemany(
-        'INSERT OR IGNORE INTO evm_accounts_details(account, chain, key, value) VALUES(?, ?, ?, ?);',
+        'INSERT OR IGNORE INTO evm_accounts_details(account, chain, key, value) VALUES(?, ?, ?, ?);',  # noqa: E501
         update_rows,
     )
     cursor.execute('DROP TABLE ethereum_accounts_details')

@@ -1299,45 +1299,34 @@ class DBHandler:
         is recent enough.
 
         If not, or if there is no saved entry, return None.
-        May raise:
-        - DeserializationError: If the timestamp stored in the evm_accounts_details is not valid
         """
-        last_update_ts = None
+        last_queried_ts = None
         cursor.execute(
-            'SELECT value FROM evm_accounts_details WHERE account=? AND chain=? AND key=?',
-            (address, chain.serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS),
+            'SELECT key, value FROM evm_accounts_details WHERE account=? AND chain=? AND (key=? OR key=?)',  # noqa: E501
+            (address, chain.serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS),  # noqa: E501
         )
-        if (cursor_value := cursor.fetchone()) is not None:
-            last_update_ts = deserialize_timestamp(cursor_value[0])
-
-        if last_update_ts is None:
-            return None, None
-
-        cursor.execute(
-            'SELECT value FROM evm_accounts_details WHERE account=? AND chain=? AND key=?',
-            (address, chain.serialize_for_db(), EVM_ACCOUNTS_DETAILS_TOKENS),
-        )
-
-        tokens_ids = cursor.fetchall()
-        if len(tokens_ids) == 0:
-            return None, last_update_ts
 
         returned_list = []
-        for (token_identifier,) in tokens_ids:
-            try:
-                token = EvmToken.from_identifier(token_identifier)
-            except (DeserializationError, UnknownAsset):
-                token = None
-            if token is None:
-                self.msg_aggregator.add_warning(
-                    f'Could not deserialize {token_identifier} as a token when reading latest '
-                    f'tokens list of {address}',
-                )
-                continue
+        for (key, value) in cursor:
+            if key == EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS:
+                last_queried_ts = deserialize_timestamp(value)
+            else:
+                try:
+                    token = EvmToken.from_identifier(value)
+                except (DeserializationError, UnknownAsset):
+                    token = None
+                if token is None:
+                    self.msg_aggregator.add_warning(
+                        f'Could not deserialize {value} as a token when reading latest '
+                        f'tokens list of {address}',
+                    )
+                    continue
+                returned_list.append(token)
 
-            returned_list.append(token)
+        if len(returned_list) == 0 and last_queried_ts is None:
+            return None, None
 
-        return returned_list, last_update_ts
+        return returned_list, last_queried_ts
 
     def save_tokens_for_address(
             self,
