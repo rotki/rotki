@@ -3131,6 +3131,12 @@
       "subtitle": "Manage colors for the app theme",
       "title": "Theme"
     },
+    "theme_switch": {
+      "auto": "Auto (Detect Device Theme)",
+      "dark": "Dark",
+      "light": "Light",
+      "tooltip": "Switch to {mode} mode"
+    },
     "unsupported_app_version": {
       "minimum_supported": "The minimum supported version is v{v}",
       "subtitle": "This version of rotki is no longer supported by the premium components.",

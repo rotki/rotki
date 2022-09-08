@@ -3,54 +3,31 @@
     <theme-switch
       v-if="premium && componentsLoaded"
       :dark-mode-enabled="darkModeEnabled"
-      :class="{ [$style.menu]: menu }"
-    />
+      :in-menu="menu"
+    >
+      <slot />
+    </theme-switch>
     <theme-switch-lock v-else />
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import { defineComponent } from 'vue';
 import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
 import { ThemeSwitch } from '@/premium/premium';
 import { usePremiumStore } from '@/store/session/premium';
 
-export default defineComponent({
-  name: 'ThemeControl',
-  components: {
-    ThemeSwitch,
-    ThemeSwitchLock
+defineProps({
+  darkModeEnabled: {
+    required: true,
+    type: Boolean
   },
-  props: {
-    darkModeEnabled: {
-      required: true,
-      type: Boolean
-    },
-    menu: {
-      required: false,
-      type: Boolean,
-      default: false
-    }
-  },
-  setup() {
-    const { premium, componentsLoaded } = storeToRefs(usePremiumStore());
-
-    return {
-      premium,
-      componentsLoaded
-    };
+  menu: {
+    required: false,
+    type: Boolean,
+    default: false
   }
 });
-</script>
 
-<style lang="scss" module>
-.menu {
-  :global {
-    .v-icon {
-      color: var(--v-primary-base) !important;
-      caret-color: var(--v-primary-base) !important;
-    }
-  }
-}
-</style>
+const { premium, componentsLoaded } = storeToRefs(usePremiumStore());
+</script>

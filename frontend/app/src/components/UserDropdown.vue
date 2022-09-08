@@ -50,14 +50,9 @@
           </v-list-item-title>
         </v-list-item>
 
-        <v-list-item v-if="xsOnly">
-          <v-list-item-avatar>
-            <theme-control :dark-mode-enabled="darkModeEnabled" menu />
-          </v-list-item-avatar>
-          <v-list-item-title>
-            {{ t('user_dropdown.switch_theme') }}
-          </v-list-item-title>
-        </v-list-item>
+        <theme-control v-if="xsOnly" :dark-mode-enabled="darkModeEnabled" menu>
+          {{ t('user_dropdown.switch_theme') }}
+        </theme-control>
 
         <v-divider class="mx-4" />
         <v-list-item
