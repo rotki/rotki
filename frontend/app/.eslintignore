@@ -8,3 +8,4 @@ tsconfig.eslint.json
 dist
 build
 coverage
+src/auto-imports.d.ts

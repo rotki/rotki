@@ -24,11 +24,11 @@
     "@typescript-eslint/eslint-plugin": "5.33.1",
     "@typescript-eslint/parser": "5.33.1",
     "core-js": "3.20.3",
-    "eslint": "8.13.0",
+    "eslint": "8.23.0",
     "eslint-config-prettier": "8.5.0",
     "eslint-import-resolver-alias": "1.1.2",
     "eslint-plugin-import": "2.26.0",
-    "prettier": "2.6.2",
+    "prettier": "2.7.1",
     "rimraf": "3.0.2",
     "typescript": "4.7.4"
   },
@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "bignumber.js": "9.1.0",
-    "zod": "3.12.0"
+    "zod": "3.19.0"
   },
   "peerDependencies": {
     "vue": "2.7.10"
