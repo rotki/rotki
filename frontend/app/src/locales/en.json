@@ -1222,6 +1222,7 @@
     "price": "Price",
     "price_in_symbol": "Price in {symbol}",
     "protocol": "Protocol",
+    "select_address": "Select address(es)",
     "total": "Total",
     "tx": "Tx",
     "tx_hash": "Tx Hash",
@@ -2749,9 +2750,6 @@
     "not_active": "{module} module(s) not active. Please visit the {link}. {text}",
     "settings_link": "Module settings"
   },
-  "module_queried_address": {
-    "label": "Select address(es)"
-  },
   "module_selector": {
     "label": "Select module(s)"
   },
@@ -3018,11 +3016,34 @@
     "title": "Claimable POAP Delivery NFTs"
   },
   "premium_components": {
+    "aave_borrowing": {
+      "total_earned": "Total Earned",
+      "total_earned_hint": "By debt repayment from liquidation",
+      "total_lost": "Total Lost",
+      "total_lost_hint": "By debt interest and liquidation"
+    },
+    "aave_earned": {
+      "total": "Aave: Total earned",
+      "total_hint": "From deposit interest"
+    },
     "common": {
+      "after": "After",
       "apr": "APR",
+      "asset": "Asset",
+      "before": "Before",
+      "collateral": "Collateral",
+      "debt": "Debt",
       "no_entries_found": "No {title} entries found",
       "pool": "Pool",
-      "profit_loss": "Profit/Loss"
+      "profit_loss": "Profit/Loss",
+      "select_address": "@:common.select_address",
+      "stake": "Stake"
+    },
+    "compound": {
+      "debt_loss": "Debt Loss",
+      "interest_profit": "Interest Profit",
+      "liquidation_profit": "Liquidation profit",
+      "rewards": "Rewards"
     },
     "eth2_staking": {
       "based_of_performance": "Based of performance of",
@@ -3109,6 +3130,11 @@
       "unclaimed_rewards": "Unclaimed rewards"
     },
     "statistics": {
+      "asset_amount_and_value_over_time": "Asset amount and value over time",
+      "max_visible": "Maximum assets to show",
+      "max_visible_required": "You cannot show more than {availableAssets} assets",
+      "min_visible_required": "You have to show at least one asset.",
+      "netvalue_over_time": "Netvalue over time",
       "no_balance_snapshot_data_available": "No balance snapshot data available.",
       "range_selector": {
         "clear": "Clear",
@@ -3118,7 +3144,10 @@
         "no_entries_available_before": "There are no entries available before"
       },
       "refresh_the_net_value_data": "Refresh the net value data",
-      "show_graph_for_selected_range": "Show the graph for the selected range"
+      "show_graph_for_selected_range": "Show the graph for the selected range",
+      "value_distribution_by_asset": "Value distribution by asset",
+      "value_distribution_by_location": "Value distribution by location",
+      "visible_percentage": "% of visible items only:"
     },
     "theme_manager": {
       "dark_theme": "Dark Theme",
@@ -3130,6 +3159,12 @@
       "select_color": "Select Color",
       "subtitle": "Manage colors for the app theme",
       "title": "Theme"
+    },
+    "theme_switch": {
+      "auto": "Auto (Detect Device Theme)",
+      "dark": "Dark",
+      "light": "Light",
+      "tooltip": "Switch to {mode} mode"
     },
     "unsupported_app_version": {
       "minimum_supported": "The minimum supported version is v{v}",

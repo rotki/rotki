@@ -2749,9 +2749,6 @@
     "not_active": "{module} module(s) not active. Please visit the {link}. {text}",
     "settings_link": "Module settings"
   },
-  "module_queried_address": {
-    "label": "Select address(es)"
-  },
   "module_selector": {
     "label": "Select module(s)"
   },
