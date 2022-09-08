@@ -756,11 +756,15 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v34_rotkehlchen.db')
-    db_v34 = _init_db_with_target_version(
-        target_version=34,
-        user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
-    )
+
+    # Make sure that assets from the globaldb at version 3 are not copied in the test database
+    with patch('rotkehlchen.db.dbhandler.DBHandler.add_globaldb_assetids', return_value=lambda *args: None):  # noqa: E501
+        db_v34 = _init_db_with_target_version(
+            target_version=34,
+            user_data_dir=user_data_dir,
+            msg_aggregator=msg_aggregator,
+        )
+
     upgraded_tables = (
         'timed_balances',
         'timed_location_data',
@@ -832,18 +836,12 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
             try_insert_mapping(write_cursor)
         cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('BIFI',))
         assert cursor.fetchone() == (1,)
-        # check that assets are update correctly in the user db
+        # check that assets are updated correctly in the user db
         cursor.execute(
             'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?',
             ('BIFI',),
         )
         assert cursor.fetchone() == (1,)
-
-    with db_v34.user_write() as write_cursor:
-        # when opening the database with this version of develop we introduced the new assets
-        # in the database. that is not possible in the user database due to
-        # https://github.com/rotki/rotki/blob/develop/rotkehlchen/globaldb/upgrades/manager.py#L40
-        write_cursor.execute('DELETE FROM assets WHERE identifier LIKE "eip155:%"')
 
     # Migrate the database
     db_v35 = _init_db_with_target_version(
@@ -941,11 +939,8 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
 
     last_db.logout()
 
-    # The last copy of the database has been populated with the assets copied from the globaldb
-    # during the migration 34_45. Take a clean copy of it to execute the upgrade
-    _use_prepared_db(user_data_dir, base_database)
-
     # Execute upgrade
+    _use_prepared_db(user_data_dir, base_database)
     db = _init_db_with_target_version(
         target_version=35,
         user_data_dir=user_data_dir,

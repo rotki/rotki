@@ -179,12 +179,12 @@ CREATE TABLE IF NOT EXISTS multiasset_mappings(
 );
 """  # noqa: E501
 
-# asset_collections allows to set common information for related assets as descrbed in the
-# multiasset_mappings table. The reason to have custom name and symbol is that for some tokens
-# those properties are not the same across different chains. For example in gnosis chain USDC uses
-# USD//C as symnol for the USDC token. This table covers this problem create a common name and
-# symbol for those assets allowing a clean representation for the users and working as common
-# row to relate all the related asstes.
+# The asset_collections table allows to set common information for related assets as described in
+# the multiasset_mappings table. The reason to have a custom name and symbol is that for some
+# tokens those properties are not the same across different chains. For example in gnosis chain
+# USDC uses USD//C as symbol for the USDC token. This table addresses this problem by creating a
+# common name and symbol for those assets allowing a clean representation for the users and
+# working as common row to connect all the related assets.
 DB_CREATE_ASSET_COLLECTIONS = """
 CREATE TABLE IF NOT EXISTS asset_collections(
     id INTEGER PRIMARY KEY,

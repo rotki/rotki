@@ -314,10 +314,10 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
 """  # noqa: E501
 
 
-# Store information about the tokens queried for each combination of account and chain. Previously
-# we were using a json and a tiemstamp column. Now the table is designed to have a key-value
-# structure where we use the key `token` to identify the tokens queried per address and the
-# key `last_queried_timestamp` to determine when the last query was executed
+# Store information about the tokens queried for each combination of account and chain.
+# The table is designed to have a key-value structure where we use the key `token` to
+# identify the tokens queried per address and the key `last_queried_timestamp` to
+# determine when the last query was executed
 DB_CREATE_EVM_ACCOUNTS_DETAILS = """
 CREATE TABLE IF NOT EXISTS evm_accounts_details (
     account VARCHAR[42] NOT NULL,
