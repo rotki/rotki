@@ -77,10 +77,16 @@ class Uniswapv3Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     event.notes = f'Swap {event.balance.amount} {event.asset.symbol} in uniswap-v3 from {event.location_label}'  # noqa: E501
                     out_event = event
                 elif (
-                    event.event_type == HistoryEventType.RECEIVE and
-                    (event.location_label == buyer or event.asset == A_ETH) and
-                    event.balance.amount == asset_normalized_value(amount=amount_received, asset=event.asset)  # noqa: E501
+                    (
+                        (event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.TRANSFER)) and  # noqa: E501
+                        (event.location_label == buyer or event.asset == A_ETH) and
+                        event.balance.amount == asset_normalized_value(amount=amount_received, asset=event.asset)  # noqa: E501
+                    )
                 ):
+                    # In this branch of the condition we also add the transfer to correctly decode
+                    # the case where ETH was sent to the user in a multi-step swap that was decoded
+                    # by the event in the previous step. The check for the location label and the
+                    # amount ensure that we are decoding the right event.
                     event.event_type = HistoryEventType.TRADE
                     event.event_subtype = HistoryEventSubType.RECEIVE
                     event.counterparty = CPT_UNISWAP_V3
