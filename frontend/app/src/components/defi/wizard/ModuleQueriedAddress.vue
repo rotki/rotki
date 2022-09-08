@@ -4,7 +4,7 @@
     outlined
     :value="selectedAccounts"
     flat
-    :label="tc('module_queried_address.label')"
+    :label="tc('common.select_address')"
     multiple
     :chains="[ETH]"
     :loading="loading"
