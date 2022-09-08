@@ -1310,17 +1310,19 @@ class DBHandler:
         for (key, value) in cursor:
             if key == EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS:
                 last_queried_ts = deserialize_timestamp(value)
-            else:
+            else:  # should be EVM_ACCOUNTS_DETAILS_TOKENS
                 try:
                     token = EvmToken.from_identifier(value)
                 except (DeserializationError, UnknownAsset):
                     token = None
+
                 if token is None:
                     self.msg_aggregator.add_warning(
                         f'Could not deserialize {value} as a token when reading latest '
                         f'tokens list of {address}',
                     )
                     continue
+
                 returned_list.append(token)
 
         if len(returned_list) == 0 and last_queried_ts is None:
