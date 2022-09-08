@@ -75,7 +75,7 @@ class Uniswapv2Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     out_event = event
                 elif (
                     (maybe_buyer == transaction.from_address or event.asset == A_ETH) and
-                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.TRANSFER) and
                     event.balance.amount == asset_normalized_value(amount_out, event.asset)
                 ):
                     event.event_type = HistoryEventType.TRADE
