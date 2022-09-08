@@ -14,7 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Price, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
 if TYPE_CHECKING:
@@ -231,7 +231,7 @@ class EvmTokens():
                 addresses_info[address] = self.db.get_tokens_for_address(
                     cursor=cursor,
                     address=address,
-                    chain=ChainID.ETHEREUM,
+                    blockchain=SupportedBlockchain.ETHEREUM,
                 )
 
         return addresses_info
@@ -298,7 +298,7 @@ class EvmTokens():
                 self.db.save_tokens_for_address(
                     write_cursor=write_cursor,
                     address=address,
-                    chain=ChainID.ETHEREUM,
+                    blockchain=SupportedBlockchain.ETHEREUM,
                     tokens=detected_tokens,
                 )
 
@@ -329,7 +329,7 @@ class EvmTokens():
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
-                saved_list, _ = self.db.get_tokens_for_address(cursor, address=address, chain=ChainID.ETHEREUM)  # noqa: E501
+                saved_list, _ = self.db.get_tokens_for_address(cursor, address=address, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
                 if saved_list is None:
                     continue  # Do not query if we know the address has no tokens
                 all_tokens.update(saved_list)

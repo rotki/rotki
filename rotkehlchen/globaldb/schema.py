@@ -270,20 +270,6 @@ CREATE TABLE IF NOT EXISTS custom_assets(
 );
 """
 
-# asset_collections allows to set common information for related assets as descrbed in the
-# multiasset_mappings table. The reason to have custom name and symbol is that for some tokens
-# those properties are not the same across different chains. For example in gnosis chain USDC uses
-# USD//C as symnol for the USDC token. This table covers this problem create a common name and
-# symbol for those assets allowing a clean representation for the users and working as common
-# row to relate all the related asstes.
-DB_CREATE_ASSET_COLLECTIONS = """
-CREATE TABLE IF NOT EXISTS asset_collections(
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    symbol TEXT NOT NULL
-);
-"""
-
 DB_CREATE_GENERAL_CACHE = """
 CREATE TABLE IF NOT EXISTS general_cache (
     key TEXT NOT NULL,
