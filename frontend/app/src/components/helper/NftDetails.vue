@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="d-flex align-center" :class="css.wrapper">
-      <div class="my-2" :class="css.preview">
+      <div class="my-2" :class="css.preview" :style="styled">
         <template v-if="imageUrl">
           <video
             v-if="isVideo(imageUrl)"
@@ -20,8 +20,30 @@
           />
         </template>
       </div>
-      <div class="ml-4" :class="css.name">
-        {{ name }}
+      <div class="ml-5">
+        <v-skeleton-loader
+          v-if="loading"
+          class="mt-1"
+          width="100"
+          type="text"
+        />
+        <div v-else-if="name" class="font-weight-medium" :class="css.name">
+          {{ name }}
+        </div>
+        <div v-else>
+          <div class="d-flex">
+            <div>{{ t('nft_balance_table.contract_address') }}:</div>
+            <div class="pl-1 font-weight-medium">
+              <hash-link :text="fallbackData.address" />
+            </div>
+          </div>
+          <div class="d-flex">
+            <div>{{ t('nft_balance_table.token_id') }}:</div>
+            <div class="pl-1 font-weight-medium">
+              {{ fallbackData.tokenId }}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -29,14 +51,18 @@
 <script setup lang="ts">
 import { get } from '@vueuse/core';
 import { computed, toRefs, useCssModule } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
 import { NonFungibleBalance } from '@/store/balances/types';
+import { useTasks } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 import { getNftBalance, isVideo } from '@/utils/nft';
 
 const props = defineProps({
   identifier: {
     required: true,
     type: String
-  }
+  },
+  styled: { required: false, type: Object, default: () => null }
 });
 
 const css = useCssModule();
@@ -51,9 +77,25 @@ const imageUrl = computed<string | null>(() => {
   return get(balanceData)?.imageUrl ?? '/assets/images/placeholder.svg';
 });
 
-const name = computed<string>(() => {
-  return get(balanceData)?.name ?? get(identifier);
+const name = computed<string | null>(() => {
+  const data = get(balanceData);
+  return data?.name || data?.collectionName || null;
 });
+
+const { isTaskRunning } = useTasks();
+const loading = isTaskRunning(TaskType.NF_BALANCES);
+
+const fallbackData = computed(() => {
+  const id = get(identifier);
+
+  const data = id.split('_');
+  return {
+    address: data[2],
+    tokenId: data[3]
+  };
+});
+
+const { t } = useI18n();
 </script>
 
 <style module lang="scss">

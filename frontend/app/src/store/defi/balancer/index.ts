@@ -3,9 +3,9 @@ import {
   BalancerBalanceWithOwner,
   BalancerEvent,
   BalancerEvents,
-  BalancerProfitLoss,
-  Pool
+  BalancerProfitLoss
 } from '@rotki/common/lib/defi/balancer';
+import { XswapPool } from '@rotki/common/lib/defi/xswap';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ComputedRef, ref, Ref } from 'vue';
@@ -28,7 +28,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
   const events: Ref<BalancerEvents> = ref({});
   const balances: Ref<BalancerBalances> = ref({});
 
-  const { fetchSupportedAssets, assetSymbol } = useAssetInfoRetrieval();
+  const { fetchSupportedAssets } = useAssetInfoRetrieval();
   const { activeModules } = useModules();
   const isPremium = getPremium();
 
@@ -49,7 +49,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
   });
 
   const pools = computed(() => {
-    const pools: Record<string, Pool> = {};
+    const pools: Record<string, XswapPool> = {};
     const events = get(eventList());
     const balances = get(balanceList);
 
@@ -57,10 +57,10 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
       if (pools[address]) {
         continue;
       }
-      const name = tokens.map(token => get(assetSymbol(token.token))).join('/');
+      const assets = tokens.map(token => token.token);
       pools[address] = {
-        name: name,
-        address: address
+        assets,
+        address
       };
     }
 
@@ -70,7 +70,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
         continue;
       }
       pools[pool.address] = {
-        name: pool.name,
+        assets: pool.assets,
         address: pool.address
       };
     }
@@ -84,15 +84,13 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
         for (let i = 0; i < item.length; i++) {
           const entry = item[i];
           if (!balancerProfitLoss[entry.poolAddress]) {
-            const name = entry.poolTokens
-              .map(token => get(assetSymbol(token.token)))
-              .join('/');
+            const assets = entry.poolTokens.map(token => token.token);
             balancerProfitLoss[entry.poolAddress] = {
               pool: {
                 address: entry.poolAddress,
-                name: name
+                assets
               },
-              tokens: entry.poolTokens.map(token => token.token),
+              tokens: assets,
               profitLossAmount: entry.profitLossAmounts,
               usdProfitLoss: entry.usdProfitLoss
             };
@@ -109,14 +107,12 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
       filterAddresses(perAddressEvents, addresses, item => {
         for (let i = 0; i < item.length; i++) {
           const poolDetail = item[i];
-          const name = poolDetail.poolTokens
-            .map(pool => get(assetSymbol(pool.token)))
-            .join('/');
+          const assets = poolDetail.poolTokens.map(pool => pool.token);
           result.push(
             ...poolDetail.events.map(value => ({
               ...value,
               pool: {
-                name: name,
+                assets,
                 address: poolDetail.poolAddress
               }
             }))

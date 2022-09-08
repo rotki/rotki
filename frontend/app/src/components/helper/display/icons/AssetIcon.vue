@@ -1,8 +1,14 @@
 <template>
-  <adaptive-wrapper>
+  <adaptive-wrapper :circle="circle" :padding="padding">
     <v-tooltip top open-delay="400" :disabled="noTooltip">
       <template #activator="{ on, attrs }">
-        <div v-bind="attrs" :style="styled" class="d-flex" v-on="on">
+        <div
+          v-bind="attrs"
+          :style="styled"
+          class="d-flex"
+          :class="{ [css.circle]: circle }"
+          v-on="on"
+        >
           <generated-icon
             v-if="!!currency || error"
             :asset="displayAsset"
@@ -31,7 +37,14 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { get, set } from '@vueuse/core';
-import { computed, defineAsyncComponent, ref, toRefs, watch } from 'vue';
+import {
+  computed,
+  defineAsyncComponent,
+  ref,
+  toRefs,
+  useCssModule,
+  watch
+} from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { currencies } from '@/data/currencies';
 import { api } from '@/services/rotkehlchen-api';
@@ -49,7 +62,9 @@ const props = defineProps({
   changeable: { required: false, type: Boolean, default: false },
   styled: { required: false, type: Object, default: () => null },
   noTooltip: { required: false, type: Boolean, default: false },
-  timestamp: { required: false, type: Number, default: null }
+  timestamp: { required: false, type: Number, default: null },
+  circle: { required: false, type: Boolean, default: false },
+  padding: { required: false, type: String, default: '2px' }
 });
 const { symbol, changeable, identifier, timestamp } = toRefs(props);
 const error = ref<boolean>(false);
@@ -99,4 +114,12 @@ const url = computed<string>(() => {
 });
 
 const { t } = useI18n();
+
+const css = useCssModule();
 </script>
+<style module lang="scss">
+.circle {
+  border-radius: 50%;
+  overflow: hidden;
+}
+</style>

@@ -131,7 +131,9 @@ const input = (valid: boolean) => {
   emit('input', valid);
 };
 
-const updateForm = (partial: Partial<BalanceSnapshotPayload>) => {
+const updateForm = (
+  partial: Partial<BalanceSnapshotPayload & { location: string }>
+) => {
   emit('update:form', {
     ...(get(form) as BalanceSnapshotPayload),
     ...partial

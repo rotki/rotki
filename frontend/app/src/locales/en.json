@@ -2821,8 +2821,10 @@
       "percentage": "% of net Value",
       "price_in_asset": "Price in asset"
     },
+    "contract_address": "Contract address",
     "refresh": "Refresh the NFT balances",
-    "title": "NFT Balances"
+    "title": "NFT Balances",
+    "token_id": "Token ID"
   },
   "nft_gallery": {
     "empty_filter": "No NFTs matching the filter parameters",
@@ -3843,7 +3845,6 @@
     "assets_non_premium": "Upgrade to {0} to see assets information",
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "loading_non_premium": "Loading the liquidity pool balances might take a while... Consider upgrading to {0} for faster load times.",
-    "pool_header": "UNIv{version} {asset1}/{asset2}",
     "premium": "premium",
     "price_range": "Price Range",
     "title": "Uniswap v{v} Pools"

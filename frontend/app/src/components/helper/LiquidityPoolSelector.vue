@@ -34,7 +34,7 @@
             @click:close="remove(data.item)"
           >
             <span class="font-weight-medium">
-              {{ data.item.name }}
+              {{ getPoolName(type, data.item.assets) }}
             </span>
           </v-chip>
         </template>
@@ -44,7 +44,7 @@
             class="font-weight-medium"
           >
             <v-list-item-title>
-              {{ item.name }}
+              {{ getPoolName(type, item.assets) }}
             </v-list-item-title>
           </v-list-item-content>
         </template>
@@ -54,32 +54,35 @@
 </template>
 
 <script setup lang="ts">
-import { Pool } from '@rotki/common/lib/defi/balancer';
+import { LpType } from '@rotki/common/lib/defi';
+import { XswapPool } from '@rotki/common/lib/defi/xswap';
 import { get } from '@vueuse/core';
 import { PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { setupLiquidityPosition } from '@/composables/defi';
 
 const props = defineProps({
-  pools: { required: true, type: Array as PropType<Pool[]> },
+  pools: { required: true, type: Array as PropType<XswapPool[]> },
   value: { required: true, type: Array as PropType<string[]> },
   outlined: { required: false, type: Boolean, default: false },
   dense: { required: false, type: Boolean, default: false },
-  noPadding: { required: false, type: Boolean, default: false }
+  noPadding: { required: false, type: Boolean, default: false },
+  type: { required: true, type: String as PropType<LpType> }
 });
 
 const emit = defineEmits(['input']);
-const { value } = toRefs(props);
+const { value, type } = toRefs(props);
 const input = (_value: string[]) => emit('input', _value);
 
-const filter = (item: Pool, queryText: string) => {
+const { getPoolName } = setupLiquidityPosition();
+
+const filter = (item: XswapPool, queryText: string) => {
   const searchString = queryText.toLocaleLowerCase();
-  const asset1 = item.name.toLocaleLowerCase();
-  const asset2 = item.name.toLocaleLowerCase();
-  const name = `${asset1}/${asset2}`;
+  const name = getPoolName(get(type), item.assets).toLowerCase();
   return name.indexOf(searchString) > -1;
 };
 
-const remove = (asset: Pool) => {
+const remove = (asset: XswapPool) => {
   const addresses = [...get(value)];
   const index = addresses.findIndex(address => address === asset.address);
   addresses.splice(index, 1);

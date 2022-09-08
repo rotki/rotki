@@ -7,7 +7,7 @@
         class="d-flex align-center"
       >
         <span v-if="index > 0" class="px-1">/</span>
-        <span :class="styles.flag">
+        <span :class="css.flag">
           {{ getFlagEmoji(country) }}
         </span>
       </div>
@@ -39,7 +39,7 @@ const getFlagEmoji = (code: string) => {
   return String.fromCodePoint(...codePoints);
 };
 
-const styles = useCssModule();
+const css = useCssModule();
 </script>
 
 <style lang="scss" module>

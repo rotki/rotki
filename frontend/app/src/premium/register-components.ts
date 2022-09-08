@@ -28,9 +28,8 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import LpPoolIcon from '@/components/display/defi/LpPoolIcon.vue';
 import EventTypeDisplay from '@/components/display/EventTypeDisplay.vue';
-import BalancerPoolAsset from '@/components/display/icons/BalancerPoolAsset.vue';
-import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -95,7 +94,6 @@ export function registerComponents() {
   Vue.component('DateDisplay', DateDisplay);
   Vue.component('LocationDisplay', LocationDisplay);
   Vue.component('RefreshHeader', RefreshHeader);
-  Vue.component('UniswapPoolAsset', UniswapPoolAsset);
   // version 5
   Vue.component('AssetSelect', AssetSelect);
   // version 6
@@ -105,7 +103,6 @@ export function registerComponents() {
   // version 9
   Vue.component('Card', Card);
   Vue.component('LiquidityPoolSelector', LiquidityPoolSelector);
-  Vue.component('BalancerPoolAsset', BalancerPoolAsset);
   Vue.component('TradeLocationSelector', TradeLocationSelector);
   Vue.component('TableFilter', TableFilter);
   // version 10
@@ -130,6 +127,8 @@ export function registerComponents() {
   // Version 18 - 1.25
   Vue.component('MenuTooltipButton', MenuTooltipButton);
   Vue.component('GraphTooltipWrapper', GraphTooltipWrapper);
+  // Version 19 - 1.26
+  Vue.component('LpPoolIcon', LpPoolIcon);
   vuetifyRegister();
   logger.info('Components registered');
 }

@@ -198,7 +198,8 @@ export const NonFungibleBalance = PriceInformation.merge(
     name: z.string().nullable(),
     id: z.string().nonempty(),
     imageUrl: z.string().nullable(),
-    isLp: z.boolean().nullish()
+    isLp: z.boolean().nullish(),
+    collectionName: z.string().nullable()
   })
 );
 
@@ -253,7 +254,6 @@ export type BalanceSnapshotPayload = {
   assetIdentifier: string;
   amount: string;
   usdValue: string;
-  location: string;
 };
 
 export const LocationDataSnapshot = z.object({

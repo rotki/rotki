@@ -1,8 +1,10 @@
 import { BigNumber } from '@rotki/common';
+import { LpType } from '@rotki/common/lib/defi';
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import { bigNumberSum } from '@/filters';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswapStore } from '@/store/defi/uniswap';
@@ -13,6 +15,7 @@ export const setupLiquidityPosition = () => {
   const { uniswapV2Balances, uniswapV3Balances } = useUniswapStore();
   const { balanceList: sushiswapBalances } = useSushiswapStore();
   const { balanceList: balancerBalances } = storeToRefs(useBalancerStore());
+  const { getAssetSymbol } = useAssetInfoRetrieval();
 
   const lpAggregatedBalances = (includeNft: boolean = true) =>
     computed(() => {
@@ -21,7 +24,8 @@ export const setupLiquidityPosition = () => {
         usdValue: item.userBalance.usdValue,
         asset: item.nftId,
         premiumOnly: true,
-        type: 'nft'
+        type: 'nft',
+        lpType: LpType.UNISWAP_V3
       }));
 
       const mappedUniswapV2Balances = get(uniswapV2Balances([])).map(item => ({
@@ -29,7 +33,8 @@ export const setupLiquidityPosition = () => {
         usdValue: item.userBalance.usdValue,
         asset: createEvmIdentifierFromAddress(item.address),
         premiumOnly: false,
-        type: 'token'
+        type: 'token',
+        lpType: LpType.UNISWAP_V2
       }));
 
       const mappedSushiswapBalances = get(sushiswapBalances([])).map(item => ({
@@ -37,7 +42,8 @@ export const setupLiquidityPosition = () => {
         usdValue: item.userBalance.usdValue,
         asset: createEvmIdentifierFromAddress(item.address),
         premiumOnly: true,
-        type: 'token'
+        type: 'token',
+        lpType: LpType.SUSHISWAP
       }));
 
       const mappedBalancerBalances = get(balancerBalances).map(item => ({
@@ -49,7 +55,8 @@ export const setupLiquidityPosition = () => {
           ...asset,
           asset: asset.token
         })),
-        type: 'token'
+        type: 'token',
+        lpType: LpType.BALANCER
       }));
 
       return [
@@ -69,8 +76,48 @@ export const setupLiquidityPosition = () => {
       );
     });
 
+  const getPoolName = (type: LpType, assets: string[]) => {
+    const concatAssets = (assets: string[]) => {
+      return assets.map(asset => getAssetSymbol(asset)).join('/');
+    };
+
+    const data = [
+      {
+        identifier: LpType.UNISWAP_V2,
+        name: (assets: string[]) => {
+          return `UNIv2 ${concatAssets(assets)}`;
+        }
+      },
+      {
+        identifier: LpType.UNISWAP_V3,
+        name: (assets: string[]) => {
+          return `UNIv3 ${concatAssets(assets)}`;
+        }
+      },
+      {
+        identifier: LpType.SUSHISWAP,
+        name: (assets: string[]) => {
+          return `SLP ${concatAssets(assets)}`;
+        }
+      },
+      {
+        identifier: LpType.BALANCER,
+        name: (assets: string[]) => {
+          return concatAssets(assets);
+        }
+      }
+    ];
+
+    const selected = data.find(({ identifier }) => identifier === get(type));
+
+    if (!selected) return concatAssets(assets);
+
+    return selected.name(get(assets));
+  };
+
   return {
     lpAggregatedBalances,
-    lpTotal
+    lpTotal,
+    getPoolName
   };
 };

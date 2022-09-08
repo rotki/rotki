@@ -1,7 +1,7 @@
 import {default as BigNumber} from "bignumber.js";
 import {z} from "zod";
 import {Balance, NumericString} from "../../index";
-
+import { XswapPool } from '../xswap';
 
 const BalancerUnderlyingToken = z.object({
   token: z.string(),
@@ -38,13 +38,6 @@ const PoolAmounts = z.record(NumericString)
 
 export type PoolAmounts = z.infer<typeof PoolAmounts>
 
-const Pool = z.object({
-  name: z.string(),
-  address: z.string()
-})
-
-export type Pool = z.infer<typeof Pool>
-
 const BalancerEvent =z.object({
   txHash: z.string(),
   logIndex: z.number(),
@@ -52,7 +45,7 @@ const BalancerEvent =z.object({
   eventType: z.enum(['mint', 'burn']),
   lpBalance: Balance,
   amounts: PoolAmounts,
-  pool: Pool.optional()
+  pool: XswapPool.optional()
 })
 
 export type BalancerEvent = z.infer<typeof BalancerEvent>
@@ -69,8 +62,9 @@ export const BalancerEvents = z.record(z.array(BalancerPoolDetails))
 export type BalancerEvents = z.infer<typeof BalancerEvents>
 
 export interface BalancerProfitLoss {
-  readonly pool: Pool;
+  readonly pool: XswapPool;
   readonly tokens: string[];
   readonly usdProfitLoss: BigNumber;
   readonly profitLossAmount: PoolAmounts;
+
 }

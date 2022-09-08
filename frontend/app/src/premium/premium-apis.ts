@@ -22,6 +22,7 @@ import {
 import { get, toRefs } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, ComputedRef, Ref } from 'vue';
+import { setupLiquidityPosition } from '@/composables/defi';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -179,6 +180,7 @@ export const sushiApi = (): SushiApi => {
 
 export const utilsApi = (): UtilsApi => {
   return {
-    truncate: truncateAddress
+    truncate: truncateAddress,
+    getPoolName: setupLiquidityPosition().getPoolName
   };
 };
