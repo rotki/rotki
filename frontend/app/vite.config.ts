@@ -2,11 +2,11 @@
 import { builtinModules } from 'module';
 import { join, resolve } from 'path';
 import vue from '@vitejs/plugin-vue2';
+import AutoImport from 'unplugin-auto-import/vite';
 import { VuetifyResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig, splitVendorChunkPlugin } from 'vite';
-
-import checker from 'vite-plugin-checker';
+import { checker } from 'vite-plugin-checker';
 // @ts-ignore
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -60,6 +60,19 @@ export default defineConfig({
     vue(),
     checker({
       vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST)
+    }),
+    AutoImport({
+      imports: [
+        'vue',
+        'vue/macros',
+        '@vueuse/core',
+        { 'vue-i18n-composable': ['useI18n'] },
+        { '@vueuse/shared': ['get', 'set'] }
+      ],
+      dts: 'src/auto-imports.d.ts',
+      //todo: cleanup export before enabling
+      //dirs: ['src/composables', 'src/store']
+      vueTemplate: true
     }),
     Components({
       dts: true,
