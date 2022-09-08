@@ -48,8 +48,8 @@ BALANCER_TEST_ADDR2_POOL1 = EvmToken.initialize(
     symbol='BPT',
     protocol='balancer',
     underlying_tokens=[
-        UnderlyingToken(address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.2)),  # noqa: E501  # WETH
         UnderlyingToken(address=string_to_evm_address('0xba100000625a3754423978a60c9317c58a424e3D'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.8)),  # noqa: E501  # BAL
+        UnderlyingToken(address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.2)),  # noqa: E501  # WETH
     ],
 )
 BALANCER_TEST_ADDR2_POOL2 = EvmToken.initialize(
@@ -60,12 +60,12 @@ BALANCER_TEST_ADDR2_POOL2 = EvmToken.initialize(
     protocol='balancer',
     underlying_tokens=[
         UnderlyingToken(address=string_to_evm_address('0x0D8775F648430679A709E98d2b0Cb6250d2887EF'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.1)),  # noqa: E501  # BAT
-        UnderlyingToken(address=string_to_evm_address('0x514910771AF9Ca656af840dff83E8264EcF986CA'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.35)),  # noqa: E501  # LINK
+        UnderlyingToken(address=string_to_evm_address('0xdd974D5C2e2928deA5F71b9825b8b646686BD200'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.1)),  # noqa: E501  # KNC
         UnderlyingToken(address=string_to_evm_address('0x80fB784B7eD66730e8b1DBd9820aFD29931aab03'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.1)),  # noqa: E501  # LEND
+        UnderlyingToken(address=string_to_evm_address('0x514910771AF9Ca656af840dff83E8264EcF986CA'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.35)),  # noqa: E501  # LINK
         UnderlyingToken(address=string_to_evm_address('0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.1)),  # noqa: E501  # MKR
         UnderlyingToken(address=string_to_evm_address('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.1)),  # noqa: E501  # SNX
         UnderlyingToken(address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.15)),  # noqa: E501  # WETH
-        UnderlyingToken(address=string_to_evm_address('0xdd974D5C2e2928deA5F71b9825b8b646686BD200'), token_kind=EvmTokenKind.ERC20, weight=FVal(0.1)),  # noqa: E501  # KNC
     ],
 )
 
@@ -146,8 +146,8 @@ BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL1 = (
         address=BALANCER_TEST_ADDR2,
         pool_address_token=BALANCER_TEST_ADDR2_POOL1,
         profit_loss_amounts=[
-            AssetAmount(FVal('-0.039312851799093402')),
             AssetAmount(FVal('0.744372160905819159')),
+            AssetAmount(FVal('-0.039312851799093402')),
         ],
         usd_profit_loss=FVal('-0.76584117161052920880190053'),
         events=[
@@ -165,8 +165,8 @@ BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL1 = (
                     usd_value=FVal('19.779488662371895'),
                 ),
                 amounts=[
-                    AssetAmount(FVal('0.05')),
                     AssetAmount(FVal('0')),
+                    AssetAmount(FVal('0.05')),
                 ],
             ),
             BalancerEvent(
@@ -183,8 +183,8 @@ BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL1 = (
                     usd_value=FVal('19.01364749076136579119809947'),
                 ),
                 amounts=[
-                    AssetAmount(FVal('0.010687148200906598')),
                     AssetAmount(FVal('0.744372160905819159')),
+                    AssetAmount(FVal('0.010687148200906598')),
                 ],
             ),
         ],
@@ -200,8 +200,8 @@ BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL2 = (
             AssetAmount(FVal('0')),
             AssetAmount(FVal('0')),
             AssetAmount(FVal('0')),
-            AssetAmount(FVal('-2.756044298156096352')),
             AssetAmount(FVal('0')),
+            AssetAmount(FVal('-2.756044298156096352')),
         ],
         usd_profit_loss=FVal('-872.734395890491474835748575'),
         events=[
@@ -224,8 +224,8 @@ BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL2 = (
                     AssetAmount(FVal('0')),
                     AssetAmount(FVal('0')),
                     AssetAmount(FVal('0')),
-                    AssetAmount(FVal('10')),
                     AssetAmount(FVal('0')),
+                    AssetAmount(FVal('10')),
                 ],
             ),
             BalancerEvent(
@@ -247,8 +247,8 @@ BALANCER_TEST_ADDR2_EXPECTED_HISTORY_POOL2 = (
                     AssetAmount(FVal('0')),
                     AssetAmount(FVal('0')),
                     AssetAmount(FVal('0')),
-                    AssetAmount(FVal('7.243955701843903648')),
                     AssetAmount(FVal('0')),
+                    AssetAmount(FVal('7.243955701843903648')),
                 ],
             ),
         ],
