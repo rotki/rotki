@@ -99,7 +99,7 @@ TABLES_AT_INIT = [
     'user_credentials',
     'user_credentials_mappings',
     'blockchain_accounts',
-    'evm_accounts_details',
+    'accounts_details',
     'multisettings',
     'trades',
     'ethereum_transactions',

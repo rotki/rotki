@@ -59,12 +59,11 @@ from rotkehlchen.constants.limits import (
     FREE_USER_NOTES_LIMIT,
 )
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
+    ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+    ACCOUNTS_DETAILS_TOKENS,
     BINANCE_MARKETS_KEY,
-    EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
-    EVM_ACCOUNTS_DETAILS_TOKENS,
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
@@ -1293,7 +1292,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             address: ChecksumEvmAddress,
-            chain: ChainID,
+            blockchain: SupportedBlockchain,
     ) -> Tuple[Optional[List[EvmToken]], Optional[Timestamp]]:
         """Gets the detected tokens for the given address if the given current time
         is recent enough.
@@ -1302,15 +1301,15 @@ class DBHandler:
         """
         last_queried_ts = None
         cursor.execute(
-            'SELECT key, value FROM evm_accounts_details WHERE account=? AND chain=? AND (key=? OR key=?)',  # noqa: E501
-            (address, chain.serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS),  # noqa: E501
+            'SELECT key, value FROM accounts_details WHERE account=? AND blockchain=? AND (key=? OR key=?)',  # noqa: E501
+            (address, blockchain.serialize(), ACCOUNTS_DETAILS_LAST_QUERIED_TS, ACCOUNTS_DETAILS_TOKENS),  # noqa: E501
         )
 
         returned_list = []
         for (key, value) in cursor:
-            if key == EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS:
+            if key == ACCOUNTS_DETAILS_LAST_QUERIED_TS:
                 last_queried_ts = deserialize_timestamp(value)
-            else:  # should be EVM_ACCOUNTS_DETAILS_TOKENS
+            else:  # should be ACCOUNTS_DETAILS_TOKENS
                 try:
                     token = EvmToken.from_identifier(value)
                 except (DeserializationError, UnknownAsset):
@@ -1334,7 +1333,7 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             address: ChecksumEvmAddress,
-            chain: ChainID,
+            blockchain: SupportedBlockchain,
             tokens: List[EvmToken],
     ) -> None:
         """Saves detected tokens for an address"""
@@ -1342,8 +1341,8 @@ class DBHandler:
         insert_rows: List[Tuple[ChecksumEvmAddress, str, str, Union[str, Timestamp]]] = [
             (
                 address,
-                chain.serialize_for_db(),
-                EVM_ACCOUNTS_DETAILS_TOKENS,
+                blockchain.serialize(),
+                ACCOUNTS_DETAILS_TOKENS,
                 x.identifier,
             )
             for x in tokens
@@ -1352,20 +1351,20 @@ class DBHandler:
         insert_rows.append(
             (
                 address,
-                chain.serialize_for_db(),
-                EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+                blockchain.serialize(),
+                ACCOUNTS_DETAILS_LAST_QUERIED_TS,
                 now,
             ),
         )
         # Delete previous entries for tokens
         write_cursor.execute(
-            'DELETE FROM evm_accounts_details WHERE account=? AND chain=? AND KEY=?',
-            (address, chain.serialize_for_db(), EVM_ACCOUNTS_DETAILS_TOKENS),
+            'DELETE FROM accounts_details WHERE account=? AND blockchain=? AND KEY=?',
+            (address, blockchain.serialize(), ACCOUNTS_DETAILS_TOKENS),
         )
         # Timestamp will get replaced
         write_cursor.executemany(
-            'INSERT OR REPLACE INTO evm_accounts_details '
-            '(account, chain, key, value) VALUES (?, ?, ?, ?)',
+            'INSERT OR REPLACE INTO accounts_details '
+            '(account, blockchain, key, value) VALUES (?, ?, ?, ?)',
             insert_rows,
         )
 
@@ -2155,7 +2154,7 @@ class DBHandler:
             'DELETE FROM used_query_ranges WHERE name = ?',
             (f'{ETH2_DEPOSITS_PREFIX}_{address}',),
         )
-        write_cursor.execute('DELETE FROM evm_accounts_details WHERE account = ?', (address,))
+        write_cursor.execute('DELETE FROM accounts_details WHERE account = ?', (address,))
         write_cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
         write_cursor.execute('DELETE FROM adex_events WHERE address = ?', (address,))
         write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))

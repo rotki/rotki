@@ -14,7 +14,6 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -848,7 +847,7 @@ def test_ethereum_tokens_detection(
         db.save_tokens_for_address(
             write_cursor=write_cursor,
             address=account,
-            chain=ChainID.ETHEREUM,
+            blockchain=SupportedBlockchain.ETHEREUM,
             tokens=[A_RDN, A_DAI],
         )
     cur_time = ts_now()

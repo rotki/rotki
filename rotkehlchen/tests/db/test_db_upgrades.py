@@ -909,7 +909,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         assert new_ignored_assets_ids == expected_new_ignored_assets_ids
 
         # Check that token_list for accounts has been correctly upgraded
-        cursor.execute('SELECT value from evm_accounts_details WHERE account="0x45E6CA515E840A4e9E02A3062F99216951825eB2" AND chain="A" AND key="tokens"')  # noqa: E501
+        cursor.execute('SELECT value from accounts_details WHERE account="0x45E6CA515E840A4e9E02A3062F99216951825eB2" AND blockchain="eth" AND key="tokens"')  # noqa: E501
         token = cursor.fetchone()[0]
         assert token == 'eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e'
 
@@ -926,11 +926,14 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     msg_aggregator = MessagesAggregator()
     base_database = 'v34_rotkehlchen.db'
     _use_prepared_db(user_data_dir, base_database)
-    last_db = _init_db_with_target_version(
-        target_version=34,
-        user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
-    )
+    # Patch the add_globaldb_assetids method only for the migration 34->35
+    # TODO: Remove this patch after 1.26
+    with patch('rotkehlchen.db.dbhandler.DBHandler.add_globaldb_assetids', return_value=lambda *args: None):  # noqa: E501
+        last_db = _init_db_with_target_version(
+            target_version=34,
+            user_data_dir=user_data_dir,
+            msg_aggregator=msg_aggregator,
+        )
     cursor = last_db.conn.cursor()
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
     tables_before = {x[0] for x in result}
@@ -940,7 +943,6 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     last_db.logout()
 
     # Execute upgrade
-    _use_prepared_db(user_data_dir, base_database)
     db = _init_db_with_target_version(
         target_version=35,
         user_data_dir=user_data_dir,
@@ -967,7 +969,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'user_notes', 'evm_accounts_details'}
+    assert new_tables == {'user_notes', 'accounts_details'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
 

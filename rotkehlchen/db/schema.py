@@ -318,13 +318,13 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
 # The table is designed to have a key-value structure where we use the key `token` to
 # identify the tokens queried per address and the key `last_queried_timestamp` to
 # determine when the last query was executed
-DB_CREATE_EVM_ACCOUNTS_DETAILS = """
-CREATE TABLE IF NOT EXISTS evm_accounts_details (
+DB_CREATE_ACCOUNTS_DETAILS = """
+CREATE TABLE IF NOT EXISTS accounts_details (
     account VARCHAR[42] NOT NULL,
-    chain CHAR(1) NOT NULL DEFAULT('A'),
+    blockchain TEXT NOT NULL,
     key TEXT NOT NULL,
     value TEXT NOT NULL,
-    PRIMARY KEY (account, chain, key, value)
+    PRIMARY KEY (account, blockchain, key, value)
 );
 """
 
@@ -740,7 +740,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_USER_CREDENTIALS_MAPPINGS}
 {DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS}
 {DB_CREATE_BLOCKCHAIN_ACCOUNTS}
-{DB_CREATE_EVM_ACCOUNTS_DETAILS}
+{DB_CREATE_ACCOUNTS_DETAILS}
 {DB_CREATE_MULTISETTINGS}
 {DB_CREATE_MANUALLY_TRACKED_BALANCES}
 {DB_CREATE_TRADES}

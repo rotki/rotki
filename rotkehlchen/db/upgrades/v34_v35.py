@@ -7,12 +7,9 @@ from rotkehlchen.constants.resolver import (
     ChainID,
     evm_address_to_identifier,
 )
-from rotkehlchen.db.constants import (
-    EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
-    EVM_ACCOUNTS_DETAILS_TOKENS,
-)
+from rotkehlchen.db.constants import ACCOUNTS_DETAILS_LAST_QUERIED_TS, ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
-from rotkehlchen.types import EvmTokenKind
+from rotkehlchen.types import EvmTokenKind, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -155,15 +152,15 @@ def _rename_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
     """ethereum_accounts_details has the column tokens_list as a json list with identifiers
     using the _ceth_ format. Those need to be upgraded to the CAIPS format.
     The approach we took was to refactor this table adding a key-value table with the chain
-    attribute to map properties of accounts to differt chains
+    attribute to map properties of accounts to different chains
     """
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS evm_accounts_details (
+    CREATE TABLE IF NOT EXISTS accounts_details (
         account VARCHAR[42] NOT NULL,
-        chain CHAR(1) NOT NULL DEFAULT('A'),
+        blockchain TEXT NOT NULL,
         key TEXT NOT NULL,
         value TEXT NOT NULL,
-        PRIMARY KEY (account, chain, key, value)
+        PRIMARY KEY (account, blockchain, key, value)
     );
     """)
     cursor.execute('SELECT account, tokens_list, time FROM ethereum_accounts_details')
@@ -179,21 +176,21 @@ def _rename_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
             update_rows.append(
                 (
                     address,
-                    ChainID.ETHEREUM.serialize_for_db(),
-                    EVM_ACCOUNTS_DETAILS_TOKENS,
+                    SupportedBlockchain.ETHEREUM.serialize(),
+                    ACCOUNTS_DETAILS_TOKENS,
                     new_id,
                 ),
             )
         update_rows.append(
             (
                 address,
-                ChainID.ETHEREUM.serialize_for_db(),
-                EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
+                SupportedBlockchain.ETHEREUM.serialize(),
+                ACCOUNTS_DETAILS_LAST_QUERIED_TS,
                 timestamp,
             ),
         )
     cursor.executemany(
-        'INSERT OR IGNORE INTO evm_accounts_details(account, chain, key, value) VALUES(?, ?, ?, ?);',  # noqa: E501
+        'INSERT OR IGNORE INTO accounts_details(account, blockchain, key, value) VALUES(?, ?, ?, ?);',  # noqa: E501
         update_rows,
     )
     cursor.execute('DROP TABLE ethereum_accounts_details')
