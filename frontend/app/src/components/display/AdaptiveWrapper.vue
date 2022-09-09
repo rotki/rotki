@@ -9,33 +9,32 @@
     <slot />
   </component>
 </template>
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { get } from '@vueuse/core';
+import { computed, toRefs } from 'vue';
 import { useTheme } from '@/composables/common';
 
-export default defineComponent({
-  name: 'AdaptiveWrapper',
-  props: {
-    component: { required: false, type: String, default: 'div' },
-    height: { required: false, type: String, default: 'auto' },
-    width: { required: false, type: String, default: 'auto' }
-  },
-  setup() {
-    const { dark } = useTheme();
-
-    return {
-      dark
-    };
-  }
+const props = defineProps({
+  component: { required: false, type: String, default: 'div' },
+  height: { required: false, type: String, default: 'auto' },
+  width: { required: false, type: String, default: 'auto' },
+  circle: { required: false, type: Boolean, default: false },
+  padding: { required: false, type: String, default: '2px' }
 });
+
+const { dark } = useTheme();
+
+const { circle, padding } = toRefs(props);
+
+const radius = computed(() => (get(circle) ? '50%' : '4px'));
 </script>
 <style scoped lang="scss">
 .wrapper {
-  padding: 2px;
+  padding: v-bind(padding);
 
   &--inverted {
     background: white;
-    border-radius: 4px;
+    border-radius: v-bind(radius);
   }
 }
 </style>

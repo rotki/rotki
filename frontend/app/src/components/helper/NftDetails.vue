@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="d-flex align-center" :class="css.wrapper">
-      <div class="my-2" :class="css.preview">
+      <div class="my-2" :class="css.preview" :style="styled">
         <template v-if="imageUrl">
           <video
             v-if="isVideo(imageUrl)"
@@ -20,8 +20,30 @@
           />
         </template>
       </div>
-      <div class="ml-4" :class="css.name">
-        {{ name }}
+      <div class="ml-5">
+        <v-skeleton-loader
+          v-if="loading"
+          class="mt-1"
+          width="100"
+          type="text"
+        />
+        <div v-else-if="name" class="font-weight-medium" :class="css.name">
+          {{ name }}
+        </div>
+        <div v-else>
+          <div class="d-flex">
+            <div>{{ t('nft_balance_table.contract_address') }}:</div>
+            <div class="pl-1 font-weight-medium">
+              <hash-link :text="fallbackData.address" />
+            </div>
+          </div>
+          <div class="d-flex">
+            <div>{{ t('nft_balance_table.token_id') }}:</div>
+            <div class="pl-1 font-weight-medium">
+              {{ fallbackData.tokenId }}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -29,14 +51,18 @@
 <script setup lang="ts">
 import { get } from '@vueuse/core';
 import { computed, toRefs, useCssModule } from 'vue';
+import { useI18n } from 'vue-i18n-composable';
+import { setupStatusChecking } from '@/composables/common';
 import { NonFungibleBalance } from '@/store/balances/types';
+import { Section } from '@/store/const';
 import { getNftBalance, isVideo } from '@/utils/nft';
 
 const props = defineProps({
   identifier: {
     required: true,
     type: String
-  }
+  },
+  styled: { required: false, type: Object, default: () => null }
 });
 
 const css = useCssModule();
@@ -51,9 +77,33 @@ const imageUrl = computed<string | null>(() => {
   return get(balanceData)?.imageUrl ?? '/assets/images/placeholder.svg';
 });
 
-const name = computed<string>(() => {
-  return get(balanceData)?.name ?? get(identifier);
+const getCollectionName = (data: NonFungibleBalance | null): string | null => {
+  if (!data || !data.collectionName) {
+    return null;
+  }
+  const tokenId = data.id.split('_')[3];
+  return `${data.collectionName} #${tokenId}`;
+};
+
+const name = computed<string | null>(() => {
+  const data = get(balanceData) as NonFungibleBalance | null;
+  return data?.name || getCollectionName(data) || null;
 });
+
+const { shouldShowLoadingScreen: isLoading } = setupStatusChecking();
+const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
+
+const fallbackData = computed(() => {
+  const id = get(identifier);
+
+  const data = id.split('_');
+  return {
+    address: data[2],
+    tokenId: data[3]
+  };
+});
+
+const { t } = useI18n();
 </script>
 
 <style module lang="scss">

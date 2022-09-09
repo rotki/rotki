@@ -151,7 +151,6 @@ const save = async (): Promise<boolean> => {
 
   payload.balancesSnapshot = data.balancesSnapshot.map(item => ({
     ...item,
-    location: '',
     amount: item.amount.toFixed(),
     usdValue: item.usdValue.toFixed()
   }));

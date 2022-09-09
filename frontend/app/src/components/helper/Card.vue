@@ -7,11 +7,11 @@
     }"
     v-on="rootListeners"
   >
-    <v-card-title v-if="$slots.title">
+    <v-card-title v-if="$slots.title" :class="{ 'pt-6': $slots.icon }">
       <slot v-if="$slots.icon" name="icon" />
       <card-title
         :class="{
-          'ps-1': $slots.icon,
+          'ps-3': $slots.icon,
           [$style.title]: $slots.icon
         }"
       >
@@ -20,10 +20,10 @@
       <v-spacer v-if="$slots.details" />
       <slot name="details" />
     </v-card-title>
-    <v-card-subtitle v-if="$slots.subtitle">
+    <v-card-subtitle v-if="$slots.subtitle" :class="{ 'ms-14': $slots.icon }">
       <div
         :class="{
-          'ps-13': $slots.icon,
+          'pt-2': $slots.icon,
           [$style.subtitle]: $slots.icon
         }"
       >
@@ -105,6 +105,7 @@ const bodyStyle = computed(() => {
 
 .subtitle {
   margin-top: -40px;
+  margin-left: 18px;
 }
 
 .options {

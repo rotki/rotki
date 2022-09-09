@@ -16,6 +16,7 @@ export function getPools(
 ): XswapPool[] {
   const pools: XswapPool[] = [];
   const known: { [address: string]: boolean } = {};
+
   for (const account in balances) {
     const accountBalances = balances[account];
     if (!accountBalances || accountBalances.length === 0) {

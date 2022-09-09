@@ -34,10 +34,10 @@
         />
       </v-col>
       <v-col>
-        <uniswap-pool-filter
+        <liquidity-pool-selector
           v-model="selectedPools"
-          :pool-assets="poolAssets"
-          version="3"
+          :pools="poolAssets"
+          :type="lpType"
           flat
           dense
           outlined
@@ -53,13 +53,7 @@
       <template #item="{ item }">
         <card>
           <template v-if="item.assets.length > 0" #title>
-            {{
-              tc('uniswap.pool_header', 0, {
-                version: '3',
-                asset1: getSymbol(item.assets[0].asset),
-                asset2: getSymbol(item.assets[1].asset)
-              })
-            }}
+            {{ getPoolName(lpType, getAssets(item.assets)) }}
           </template>
           <template #details>
             <uniswap-pool-details :balance="item" />
@@ -68,15 +62,11 @@
             <hash-link :text="item.address" />
           </template>
           <template #icon>
-            <uniswap-pool-asset :assets="getAssets(item.assets)" />
+            <lp-pool-icon :assets="getAssets(item.assets)" :type="lpType" />
           </template>
 
           <div>
-            <nft-details
-              v-if="item.nftId"
-              class="mt-4"
-              :identifier="item.nftId"
-            />
+            <nft-details v-if="item.nftId" :identifier="item.nftId" />
 
             <div class="d-flex flex-wrap">
               <div class="mt-6 mr-16">
@@ -164,8 +154,10 @@
 <script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { LpType } from '@rotki/common/lib/defi';
 import { XswapAsset } from '@rotki/common/lib/defi/xswap';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
@@ -173,12 +165,11 @@ import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
-import UniswapPoolFilter from '@/components/defi/uniswap/UniswapPoolFilter.vue';
-import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking, useTheme } from '@/composables/common';
+import { setupLiquidityPosition } from '@/composables/defi';
 import { getPremium, useModules } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -192,14 +183,16 @@ const modules = [uniswap];
 
 const selectedAccount = ref<GeneralAccount | null>(null);
 const selectedPools = ref<string[]>([]);
-const {
-  fetchV3Balances: fetchBalances,
-  uniswapV3Addresses: addresses,
-  uniswapV3Balances: uniswapBalances,
-  uniswapV3PoolAssets: poolAssets
-} = useUniswapStore();
+
+const store = useUniswapStore();
+
+const { fetchV3Balances: fetchBalances, uniswapV3Balances: uniswapBalances } =
+  store;
+
+const { uniswapV3Addresses: addresses, uniswapV3PoolAssets: poolAssets } =
+  storeToRefs(store);
 const { isModuleEnabled } = useModules();
-const { getAssetSymbol: getSymbol, getTokenAddress } = useAssetInfoRetrieval();
+const { getTokenAddress } = useAssetInfoRetrieval();
 const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
 const { tc } = useI18n();
 
@@ -240,6 +233,9 @@ const getAssets = (assets: XswapAsset[]) => {
 onMounted(async () => {
   await fetchBalances(false);
 });
+
+const { getPoolName } = setupLiquidityPosition();
+const lpType = LpType.UNISWAP_V3;
 </script>
 
 <style module lang="scss">

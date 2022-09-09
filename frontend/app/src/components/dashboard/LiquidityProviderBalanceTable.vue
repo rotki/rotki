@@ -51,13 +51,17 @@
     >
       <template #item.name="{ item }">
         <div v-if="item.type === 'nft'">
-          <nft-details :identifier="item.asset" />
-        </div>
-        <div v-else>
-          <asset-details
-            :asset="item.asset"
-            :asset-styled="{ padding: '2px 0.75rem' }"
+          <nft-details
+            :identifier="item.asset"
+            :styled="{ margin: '1px 4px' }"
           />
+        </div>
+
+        <div v-else class="d-flex align-center py-4">
+          <lp-pool-icon :type="item.lpType" :assets="getAssets(item.assets)" />
+          <div class="pl-4 font-weight-medium">
+            {{ getPoolName(item.lpType, getAssets(item.assets)) }}
+          </div>
         </div>
       </template>
       <template #item.usdValue="{ item }">
@@ -95,7 +99,7 @@
 </template>
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { XswapBalance } from '@rotki/common/lib/defi/xswap';
+import { XswapAsset, XswapBalance } from '@rotki/common/lib/defi/xswap';
 import { get } from '@vueuse/core';
 import { isEqual } from 'lodash';
 import { storeToRefs } from 'pinia';
@@ -201,7 +205,7 @@ const {
 const { fetchBalances: fetchSushiswapBalances } = useSushiswapStore();
 const { fetchBalances: fetchBalancerBalances } = useBalancerStore();
 
-const { lpAggregatedBalances, lpTotal } = setupLiquidityPosition();
+const { lpAggregatedBalances, lpTotal, getPoolName } = setupLiquidityPosition();
 const balances = lpAggregatedBalances(true);
 const totalInUsd = lpTotal(true);
 
@@ -282,4 +286,8 @@ watch(premium, async (curr, prev) => {
     await fetch(true);
   }
 });
+
+const getAssets = (assets: XswapAsset[]) => {
+  return assets.map(({ asset }) => asset);
+};
 </script>

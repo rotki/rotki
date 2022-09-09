@@ -24,7 +24,7 @@ export type XswapBalance = z.infer<typeof XswapBalance>;
 export const XswapBalances = z.record(z.array(XswapBalance));
 export type XswapBalances = z.infer<typeof XswapBalances>;
 
-enum XswapEventType {
+export enum XswapEventType {
   MINT = 'mint',
   BURN = 'burn',
 }
@@ -51,10 +51,12 @@ interface XswapPoolDetails {
   readonly usdProfitLoss: BigNumber;
 }
 
-export interface XswapPool {
-  readonly address: string;
-  readonly assets: string[];
-}
+export const XswapPool = z.object({
+  address: z.string(),
+  assets: z.array(z.string())
+})
+
+export type XswapPool = z.infer<typeof XswapPool>;
 
 export interface XswapEvents {
   readonly [address: string]: XswapPoolDetails[];

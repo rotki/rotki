@@ -202,6 +202,12 @@ onMounted(() => {
     set(timeframe, TimeFramePeriod.TWO_WEEKS);
   }
 });
+
+const { showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
+const chartSectionHeight = computed<string>(() => {
+  const height = 208 + (get(showGraphRangeSelector) ? 60 : 0);
+  return `${height}px`;
+});
 </script>
 <style scoped lang="scss">
 .overall-balances {
@@ -257,7 +263,7 @@ onMounted(() => {
     width: 100%;
 
     &__loader {
-      min-height: 268px;
+      min-height: v-bind(chartSectionHeight);
       display: flex;
       height: 100%;
       flex-direction: column;

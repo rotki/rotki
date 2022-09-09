@@ -34,10 +34,10 @@
         />
       </v-col>
       <v-col>
-        <uniswap-pool-filter
+        <liquidity-pool-selector
           v-model="selectedPools"
-          :pool-assets="poolAssets"
-          uniswap="2"
+          :pools="poolAssets"
+          :type="lpType"
           flat
           dense
           outlined
@@ -49,15 +49,7 @@
       <template #item="{ item }">
         <card>
           <template v-if="item.assets.length > 0" #title>
-            <span class="text-none">
-              {{
-                tc('uniswap.pool_header', 0, {
-                  version: '2',
-                  asset1: getSymbol(item.assets[0].asset),
-                  asset2: getSymbol(item.assets[1].asset)
-                })
-              }}
-            </span>
+            {{ getPoolName(lpType, getAssets(item.assets)) }}
           </template>
           <template #details>
             <uniswap-pool-details :balance="item" />
@@ -66,10 +58,10 @@
             <hash-link :text="item.address" />
           </template>
           <template #icon>
-            <uniswap-pool-asset :assets="getAssets(item.assets)" />
+            <lp-pool-icon :assets="getAssets(item.assets)" :type="lpType" />
           </template>
 
-          <div class="mt-4">
+          <div class="mt-2">
             <div>
               <div class="text--secondary text-body-2">
                 {{ tc('common.balance') }}
@@ -130,8 +122,10 @@
 <script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { LpType } from '@rotki/common/lib/defi';
 import { XswapAsset, XswapBalance } from '@rotki/common/lib/defi/xswap';
 import { get } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
@@ -139,11 +133,11 @@ import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
-import UniswapPoolFilter from '@/components/defi/uniswap/UniswapPoolFilter.vue';
-import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
+import LpPoolIcon from '@/components/display/defi/LpPoolIcon.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
+import { setupLiquidityPosition } from '@/composables/defi';
 import { getPremium, useModules } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { UniswapDetails } from '@/premium/premium';
@@ -158,17 +152,21 @@ const chains = [Blockchain.ETH];
 const selectedAccount = ref<GeneralAccount | null>(null);
 const selectedPools = ref<string[]>([]);
 
+const store = useUniswapStore();
+
 const {
   fetchEvents,
   fetchV2Balances: fetchBalances,
-  uniswapV2Addresses: addresses,
   uniswapV2Balances: uniswapBalances,
-  uniswapV2PoolAssets: poolAssets,
   uniswapEvents,
   uniswapPoolProfit
-} = useUniswapStore();
+} = store;
+
+const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets } =
+  storeToRefs(store);
+
 const { isModuleEnabled } = useModules();
-const { getAssetSymbol: getSymbol, getTokenAddress } = useAssetInfoRetrieval();
+const { getTokenAddress } = useAssetInfoRetrieval();
 const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
 
 const { tc } = useI18n();
@@ -227,4 +225,7 @@ const getAssets = (assets: XswapAsset[]) => {
 onMounted(async () => {
   await Promise.all([fetchBalances(false), fetchEvents(false)]);
 });
+
+const { getPoolName } = setupLiquidityPosition();
+const lpType = LpType.UNISWAP_V2;
 </script>

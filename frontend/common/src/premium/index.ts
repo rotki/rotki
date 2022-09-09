@@ -1,8 +1,8 @@
 import { Ref } from "vue";
 import VueI18n from 'vue-i18n';
 import { SupportedAsset } from "../data";
-import { ProfitLossModel } from "../defi";
-import { BalancerBalanceWithOwner, BalancerEvent, BalancerProfitLoss, Pool } from "../defi/balancer";
+import { LpType, ProfitLossModel } from "../defi";
+import { BalancerBalanceWithOwner, BalancerEvent, BalancerProfitLoss } from "../defi/balancer";
 import { XswapBalance, XswapEventDetails, XswapPool, XswapPoolProfit } from "../defi/xswap";
 import { AssetBalanceWithPrice, BigNumber } from "../index";
 import { Theme , DebugSettings, FrontendSettingsPayload, Themes, TimeUnit } from '../settings';
@@ -58,7 +58,7 @@ export type BalancerApi = {
   balancerProfitLoss: (addresses: string[]) => Ref<BalancerProfitLoss[]>,
   balancerEvents: (addresses: string[]) => Ref<BalancerEvent[]>,
   balancerBalances: Ref<BalancerBalanceWithOwner[]>,
-  balancerPools: Ref<Pool[]>,
+  balancerPools: Ref<XswapPool[]>,
   balancerAddresses: Ref<string[]>,
   fetchBalancerBalances: (refresh: boolean) => Promise<void>,
   fetchBalancerEvents: (refresh: boolean) => Promise<void>
@@ -87,7 +87,8 @@ export type AssetsApi = {
 };
 
 export type UtilsApi = {
-  truncate(text: string, length: number): string
+  truncate(text: string, length: number): string,
+  getPoolName(type: LpType, assets: string[]): string
 };
 
 export interface DataUtilities {
