@@ -52,9 +52,9 @@
 import { get } from '@vueuse/core';
 import { computed, toRefs, useCssModule } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { setupStatusChecking } from '@/composables/common';
 import { NonFungibleBalance } from '@/store/balances/types';
-import { useTasks } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
+import { Section } from '@/store/const';
 import { getNftBalance, isVideo } from '@/utils/nft';
 
 const props = defineProps({
@@ -77,13 +77,21 @@ const imageUrl = computed<string | null>(() => {
   return get(balanceData)?.imageUrl ?? '/assets/images/placeholder.svg';
 });
 
+const getCollectionName = (data: NonFungibleBalance | null): string | null => {
+  if (!data || !data.collectionName) {
+    return null;
+  }
+  const tokenId = data.id.split('_')[3];
+  return `${data.collectionName} #${tokenId}`;
+};
+
 const name = computed<string | null>(() => {
-  const data = get(balanceData);
-  return data?.name || data?.collectionName || null;
+  const data = get(balanceData) as NonFungibleBalance | null;
+  return data?.name || getCollectionName(data) || null;
 });
 
-const { isTaskRunning } = useTasks();
-const loading = isTaskRunning(TaskType.NF_BALANCES);
+const { shouldShowLoadingScreen: isLoading } = setupStatusChecking();
+const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const fallbackData = computed(() => {
   const id = get(identifier);

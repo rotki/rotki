@@ -40,7 +40,7 @@ import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
-import { setStatus } from '@/store/utils';
+import { getStatusUpdater, setStatus } from '@/store/utils';
 import { Writeable } from '@/types';
 import { Exchange, ExchangeData, ExchangeInfo } from '@/types/exchanges';
 import { Module } from '@/types/modules';
@@ -464,9 +464,11 @@ export const useBalancesStore = defineStore('balances', () => {
     if (!activeModules.includes(Module.NFTS)) {
       return;
     }
-    const section = Section.NON_FUNGIBLE_BALANCES;
+    const { isFirstLoad, setStatus, resetStatus } = getStatusUpdater(
+      Section.NON_FUNGIBLE_BALANCES
+    );
     try {
-      setStatus(Status.LOADING, section);
+      setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
       const taskType = TaskType.NF_BALANCES;
       const { taskId } = await api.balances.fetchNfBalances(payload);
       const { result } = await awaitTask<NonFungibleBalances, TaskMeta>(
@@ -479,7 +481,7 @@ export const useBalancesStore = defineStore('balances', () => {
       );
 
       set(nonFungibleBalancesState, NonFungibleBalances.parse(result));
-      setStatus(Status.LOADED, section);
+      setStatus(Status.LOADED);
     } catch (e: any) {
       logger.error(e);
       notify({
@@ -489,7 +491,7 @@ export const useBalancesStore = defineStore('balances', () => {
         }).toString(),
         display: true
       });
-      setStatus(Status.NONE, section);
+      resetStatus();
     }
   };
 
