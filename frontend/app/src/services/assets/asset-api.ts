@@ -99,7 +99,7 @@ export class AssetApi {
     data.append('file', file);
     data.append('asset', identifier);
     return this.axios
-      .post<ActionResult<boolean>>(`/assets/icon`, data, {
+      .post<ActionResult<boolean>>(`/assets/icon/modify`, data, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -109,7 +109,7 @@ export class AssetApi {
 
   setIcon(asset: string, file: string): Promise<boolean> {
     return this.axios
-      .put<ActionResult<boolean>>(`/assets/icon`, {
+      .put<ActionResult<boolean>>(`/assets/icon/modify`, {
         file,
         asset
       })
@@ -118,7 +118,7 @@ export class AssetApi {
 
   refreshIcon(asset: string): Promise<boolean> {
     return this.axios
-      .patch<ActionResult<boolean>>(`/assets/icon`, {
+      .patch<ActionResult<boolean>>(`/assets/icon/modify`, {
         asset
       })
       .then(handleResponse);

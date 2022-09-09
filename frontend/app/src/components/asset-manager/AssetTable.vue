@@ -261,6 +261,9 @@ const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 const filteredTokens = computed<ManagedAsset[]>(() => {
   const showOwned = get(onlyShowOwned);
   const hideIgnored = get(hideIgnoredAssets);
+
+  if (!showOwned && !hideIgnored) return get(tokens);
+
   return get(tokens).filter(item => {
     return (
       (!showOwned ||
