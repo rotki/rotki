@@ -342,7 +342,7 @@ You also need to update the frontend mapping that is defined at this `enum <http
 The ``countries`` field will be used to show the countries flag on the app. You can see the list `here <https://www.w3schools.com/tags/ref_country_codes.asp>`__.
 
 Add or edit a translation
------------------------
+-------------------------
 Rotki does translation using `Vue i18n <https://kazupon.github.io/vue-i18n>`__.
 
 Rotki's main language is ``English``. The language file for it is `here <https://github.com/rotki/rotki/blob/develop/frontend/app/src/locales/en.json>`__.

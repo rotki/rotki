@@ -5381,7 +5381,7 @@ Querying periodic data
       {
           "result": {
               "last_balance_save": 1572345881,
-              "connected_eth_nodes": ['nodeX', 'nodeY'],
+              "connected_eth_nodes": ["nodeX", "nodeY"],
               "last_data_upload_ts": 0
           }
           "message": ""
@@ -8866,13 +8866,13 @@ Adding blockchain accounts
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-    {
+      {
         "result": [
             "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
             "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"
         ],
         "message": ""
-    }
+      }
 
    :resjson list result: A list containing accounts' addresses that were added during a request.
    :statuscode 200: Accounts successfully added

@@ -5,15 +5,16 @@
         <v-card-title>
           <card-title>{{ t('common.price') }}</card-title>
         </v-card-title>
-        <v-card-text class="text-end text-h5 font-weight-medium">
+        <v-card-text class="text-end text-h5 font-weight-medium pt-4">
           <amount-display
-            class="pt-4"
-            tooltip
+            v-if="info.usdPrice && info.usdPrice.gte(0)"
             show-currency="symbol"
             fiat-currency="USD"
+            tooltip
             :price-asset="symbol"
             :value="info.usdPrice"
           />
+          <span v-else>-</span>
         </v-card-text>
       </v-card>
     </v-col>
@@ -22,8 +23,8 @@
         <v-card-title>
           <card-title>{{ t('assets.amount') }}</card-title>
         </v-card-title>
-        <v-card-text class="text-end text-h5 font-weight-medium">
-          <amount-display class="pt-4" :value="info.amount" :asset="symbol" />
+        <v-card-text class="text-end text-h5 font-weight-medium pt-4">
+          <amount-display :value="info.amount" :asset="symbol" />
         </v-card-text>
       </v-card>
     </v-col>
@@ -32,9 +33,8 @@
         <v-card-title>
           <card-title>{{ t('assets.value') }}</card-title>
         </v-card-title>
-        <v-card-text class="text-end text-h5 font-weight-medium">
+        <v-card-text class="text-end text-h5 font-weight-medium pt-4">
           <amount-display
-            class="pt-4"
             show-currency="symbol"
             :fiat-currency="identifier"
             :amount="info.amount"

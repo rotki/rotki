@@ -1309,7 +1309,7 @@ Changelog
 * :feature:`1201` Changing the password when premium sync is enabled, will now display a warning to users about the change affecting synced instances.
 * :feature:`1178` Users can now select which accounts they want to track for the activated defi modules. If none are selected all accounts are queried.
 * :feature:`1084` Users can now select which of the available defi modules they want to activate.
-* :bug:`1285` Properly track SNX tokens by pointing to the `migrated <https://blog.synthetix.io/proxy-contract-cutover-on-may-10/`__ proxy contract
+* :bug:`1285` Properly track SNX tokens by pointing to the `migrated <https://blog.synthetix.io/proxy-contract-cutover-on-may-10/>`__ proxy contract
 * :feature:`820` Multiple open ethereum nodes will be now also queried along with your own ethereum node or etherscan. But in smaller frequency so as not to spam those services. The additional nodes rotki now queries are:
   - MyCrypto
   - Blockscout
@@ -1685,7 +1685,7 @@ Changelog
 * :bug:`443` Fix bug in deserialization of non-exact floating point kraken timestamp values which could lead to a crash during tax report generation.
 
 * :release:`1.0.1 <2019-08-02>`
-* :feature:`425` Users can now provide arguments to the backend via a config file. For more information check the `docs <https://rotkehlchen.readthedocs.io/en/latest/usage_guide.html#set-the-backend-s-arguments`__.
+* :feature:`425` Users can now provide arguments to the backend via a config file. For more information check the `docs <https://rotkehlchen.readthedocs.io/en/latest/usage_guide.html#set-the-backend-s-arguments>`__.
 * :feature:`-` Added support for the following tokens
 
   - `Luna Coin <https://coinmarketcap.com/currencies/luna-coin/>`__
