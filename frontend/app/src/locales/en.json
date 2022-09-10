@@ -4,6 +4,12 @@
     "history": "Aave History"
   },
   "about": {
+    "app_version": "App Version:",
+    "components": {
+      "build": "Build:",
+      "title": "Premium Components",
+      "version": "Premium Version:"
+    },
     "copy_tooltip": "Copy the application information",
     "data_directory": "Data Directory:",
     "electron": "Electron:",

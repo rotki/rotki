@@ -12,7 +12,8 @@ module.exports = {
     'plugin:vue/essential',
     '@vue/typescript',
     'plugin:@intlify/vue-i18n/recommended',
-    '@vue/prettier'
+    '@vue/prettier',
+    './.eslintrc-auto-import.json'
   ],
 
   parser: 'vue-eslint-parser',

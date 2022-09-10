@@ -1,5 +1,5 @@
 <template>
-  <v-card class="about pb-6" width="500px" light>
+  <v-card class="pb-6" width="500px" light :class="css.about">
     <div class="pt-6 pb-3 text-h2 font-weight-black white--text primary">
       <span class="px-6">{{ tc('app.name') }}</span>
       <span class="d-block mb-3 pl-6 text-caption">
@@ -13,7 +13,7 @@
         max-width="72px"
         src="/assets/images/rotkehlchen_no_text.png"
       />
-      <div class="d-flex flex-row align-center about__version mt-4">
+      <div class="d-flex flex-row align-center mt-4" :class="css.version">
         <div class="font-weight-bold">{{ version.version }}</div>
         <div class="font-weight-regular ml-4">
           <base-external-link
@@ -25,74 +25,105 @@
         <app-update-indicator />
       </div>
       <v-divider class="mt-4 mb-2" />
-      <div class="d-flex flex-row align-center">
-        <div class="font-weight-medium about__label">
-          {{ tc('about.data_directory') }}
-        </div>
-        <div class="text-truncate">{{ dataDirectory }}</div>
-        <v-spacer />
-        <div v-if="isPackaged" class="ml-2">
-          <v-tooltip top open-delay="400">
-            <template #activator="{ on, attrs }">
-              <v-btn
-                v-bind="attrs"
-                icon
-                x-small
-                v-on="on"
-                @click="openPath(dataDirectory)"
-              >
-                <v-icon x-small>mdi-launch</v-icon>
-              </v-btn>
-            </template>
-            <span>{{ tc('about.open_data_dir_tooltip') }}</span>
-          </v-tooltip>
-        </div>
-      </div>
       <v-row align="center">
         <v-col>
-          <div class="d-flex flex-row">
-            <div class="font-weight-medium about__label">
-              {{ tc('about.frontend_version') }}
-            </div>
-            <div>{{ frontendVersion }}</div>
-          </div>
-
-          <div v-if="webVersion">
-            <div class="d-flex flex-row">
-              <div class="font-weight-medium about__label">
-                {{ tc('about.platform') }}
-              </div>
-              <div>{{ webVersion.platform }}</div>
-            </div>
-            <div class="d-flex flex-row">
-              <div class="font-weight-medium about__label">
-                {{ tc('about.user_agent') }}
-              </div>
-              <div>{{ webVersion.userAgent }}</div>
-            </div>
-          </div>
-          <div v-else-if="electronVersion">
-            <div class="d-flex flex-row">
-              <div class="font-weight-medium about__label">
-                {{ tc('about.platform') }}
-              </div>
-              <div>
-                {{ electronVersion.os }} {{ electronVersion.arch }}
-                {{ electronVersion.osVersion }}
-              </div>
-            </div>
-            <div class="d-flex flex-row">
-              <div class="font-weight-medium about__label">
-                {{ tc('about.electron') }}
-              </div>
-              <div>{{ electronVersion.electron }}</div>
-            </div>
-          </div>
+          <table :class="css.full">
+            <tbody>
+              <tr>
+                <td class="font-weight-medium" :class="css.label">
+                  {{ tc('about.data_directory') }}
+                </td>
+                <td>
+                  <div class="d-flex flex-row">
+                    <div class="text-truncate" :class="css.directory">
+                      {{ dataDirectory }}
+                    </div>
+                    <v-spacer />
+                    <div v-if="isPackaged" class="ml-2">
+                      <v-tooltip top open-delay="400">
+                        <template #activator="{ on, attrs }">
+                          <v-btn
+                            v-bind="attrs"
+                            icon
+                            x-small
+                            v-on="on"
+                            @click="openPath(dataDirectory)"
+                          >
+                            <v-icon x-small>mdi-launch</v-icon>
+                          </v-btn>
+                        </template>
+                        <span>{{ tc('about.open_data_dir_tooltip') }}</span>
+                      </v-tooltip>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="font-weight-medium" :class="css.label">
+                  {{ tc('about.frontend_version') }}
+                </td>
+                <td>
+                  {{ frontendVersion }}
+                </td>
+              </tr>
+              <tr v-if="webVersion">
+                <td class="font-weight-medium" :class="css.label">
+                  {{ tc('about.platform') }}
+                </td>
+                <td>{{ webVersion.platform }}</td>
+              </tr>
+              <tr v-if="webVersion">
+                <td class="font-weight-medium" :class="css.label">
+                  {{ tc('about.user_agent') }}
+                </td>
+                <td>{{ webVersion.userAgent }}</td>
+              </tr>
+              <tr v-if="electronVersion">
+                <td class="font-weight-medium" :class="css.label">
+                  {{ tc('about.platform') }}
+                </td>
+                <td>
+                  {{ electronVersion.os }} {{ electronVersion.arch }}
+                  {{ electronVersion.osVersion }}
+                </td>
+              </tr>
+              <tr v-if="electronVersion">
+                <td class="font-weight-medium" :class="css.label">
+                  {{ tc('about.electron') }}
+                </td>
+                <td>
+                  {{ electronVersion.electron }}
+                </td>
+              </tr>
+              <tr v-if="componentsVersion">
+                <td colspan="2">
+                  <v-divider class="mt-4 mb-2" />
+                  <div class="font-weight-bold mb-1">
+                    {{ tc('about.components.title') }}
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="componentsVersion?.version">
+                <td class="font-weight-medium" :class="css.label">
+                  {{ tc('about.components.version') }}
+                </td>
+                <td>{{ componentsVersion.version }}</td>
+              </tr>
+              <tr v-if="componentsVersion?.build">
+                <td class="font-weight-medium" :class="css.label">
+                  {{ tc('about.components.build') }}
+                </td>
+                <td>
+                  <date-display :timestamp="componentsVersion.build / 1000" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </v-col>
         <v-col cols="auto">
           <v-tooltip open-delay="400" top>
             <template #activator="{ on, attrs }">
-              <v-btn icon v-bind="attrs" v-on="on" @click="copy">
+              <v-btn icon v-bind="attrs" v-on="on" @click="copy()">
                 <v-icon>mdi-content-copy</v-icon>
               </v-btn>
             </template>
@@ -104,92 +135,115 @@
   </v-card>
 </template>
 
-<script lang="ts">
-import { asyncComputed, get, useClipboard } from '@vueuse/core';
-import { computed, defineComponent, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+<script setup lang="ts">
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
+import { getPremium } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { SystemVersion } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/main';
 import { WebVersion } from '@/types';
 
-export default defineComponent({
-  name: 'About',
-  components: { AppUpdateIndicator, BaseExternalLink },
-  setup() {
-    const store = useMainStore();
-    const { version: getVersion, isPackaged, openPath } = useInterop();
-    const { tc } = useI18n();
+const css = useCssModule();
 
-    const { version, dataDirectory } = toRefs(store);
-    const versionInfo = asyncComputed<SystemVersion | WebVersion>(() =>
-      getVersion()
-    );
+const store = useMainStore();
+const { version: getVersion, isPackaged, openPath } = useInterop();
+const { tc } = useI18n();
 
-    const webVersion = computed<WebVersion | null>(() => {
-      const info = get(versionInfo);
-      if (!info || !('userAgent' in info)) {
-        return null;
-      }
-      return info;
-    });
+const { version, dataDirectory } = toRefs(store);
+const versionInfo = asyncComputed<SystemVersion | WebVersion>(() =>
+  getVersion()
+);
 
-    const electronVersion = computed<SystemVersion | null>(() => {
-      const info = get(versionInfo);
-      if (!info || 'userAgent' in info) {
-        return null;
-      }
-      return info;
-    });
-
-    // eslint-disable-next-line no-undef
-    const frontendVersion = __APP_VERSION__;
-
-    const copy = async () => {
-      let versionText = '';
-      versionText += `App Version: ${get(version).version}\r\n`;
-      versionText += `Frontend Version: ${frontendVersion}\r\n`;
-
-      const web = get(webVersion);
-      const app = get(electronVersion);
-
-      if (web) {
-        versionText += `Platform: ${web.platform}\r\n`;
-        versionText += `User Agent: ${web.userAgent}\r\n`;
-      } else if (app) {
-        versionText += `Platform: ${app.os} ${app.arch} ${app.osVersion}\r\n`;
-        versionText += `Electron: ${app.electron}\r\n`;
-      }
-
-      const { copy } = useClipboard({ source: versionText });
-      await copy();
-    };
-
-    return {
-      webVersion,
-      electronVersion,
-      version,
-      dataDirectory,
-      frontendVersion,
-      isPackaged,
-      tc,
-      copy,
-      openPath
-    };
+const premium = getPremium();
+const componentsVersion = computed(() => {
+  if (!get(premium)) {
+    return null;
   }
+
+  // @ts-ignore
+  const cmp = window.PremiumComponents;
+  if (!cmp) {
+    return null;
+  }
+  return {
+    version: cmp.version as string,
+    build: cmp.build as number
+  };
 });
+
+const webVersion = computed<WebVersion | null>(() => {
+  const info = get(versionInfo);
+  if (!info || !('userAgent' in info)) {
+    return null;
+  }
+  return info;
+});
+
+const electronVersion = computed<SystemVersion | null>(() => {
+  const info = get(versionInfo);
+  if (!info || 'userAgent' in info) {
+    return null;
+  }
+  return info;
+});
+
+// eslint-disable-next-line no-undef
+const frontendVersion = __APP_VERSION__;
+
+const versionText = computed(() => {
+  const appVersion = tc('about.app_version');
+  const frontendVersion = tc('about.frontend_version');
+  let versionText = '';
+  versionText += `${appVersion} ${get(version).version}\r\n`;
+  versionText += `${frontendVersion} ${frontendVersion}\r\n`;
+
+  const web = get(webVersion);
+  const app = get(electronVersion);
+
+  const platform = tc('about.platform');
+
+  if (web) {
+    const userAgent = tc('about.user_agent');
+    versionText += `${platform} ${web.platform}\r\n`;
+    versionText += `${userAgent} ${web.userAgent}\r\n`;
+  } else if (app) {
+    const electron = tc('about.electron');
+    versionText += `${platform} ${app.os} ${app.arch} ${app.osVersion}\r\n`;
+    versionText += `${electron} ${app.electron}\r\n`;
+  }
+
+  if (get(premium)) {
+    const cmp = get(componentsVersion);
+    if (cmp) {
+      const cmpVersion = tc('about.components.version');
+      const cmpBuild = tc('about.components.build');
+
+      versionText += `${cmpVersion} ${cmp.version}\r\n`;
+      versionText += `${cmpBuild} ${cmp.build}\r\n`;
+    }
+  }
+
+  return versionText;
+});
+
+const { copy } = useClipboard({ source: versionText });
 </script>
 
-<style scoped lang="scss">
-.about {
-  &__version {
-    height: 36px;
-  }
+<style module lang="scss">
+.version {
+  height: 36px;
+}
 
-  &__label {
-    min-width: 120px;
-  }
+.label {
+  min-width: 130px;
+}
+
+.directory {
+  max-width: 200px;
+}
+
+.full {
+  width: 100%;
 }
 </style>

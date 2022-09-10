@@ -72,7 +72,10 @@ export default defineConfig({
       dts: 'src/auto-imports.d.ts',
       //todo: cleanup export before enabling
       //dirs: ['src/composables', 'src/store']
-      vueTemplate: true
+      vueTemplate: true,
+      eslintrc: {
+        enabled: true
+      }
     }),
     Components({
       dts: true,

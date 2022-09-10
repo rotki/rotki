@@ -14,7 +14,7 @@
       v-else
       :refreshing="primaryRefreshing"
       :secondary-refreshing="secondaryRefreshing"
-      :validators="eth2Validators"
+      :validators="eth2Validators.entries"
       :filter-type="filterType"
       :filter="selection"
       :eth2-details="details"
