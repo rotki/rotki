@@ -1344,9 +1344,9 @@ Liquidity Pools
   :alt: Defi Liquidity Pools
   :align: center
 
-Rotki allows it's users to keep track of their Liquidity Pools.
+Rotki allows its users to keep track of their Liquidity Pools.
 
-These are supported Liquidity Pools balances by Rotki:
+These are the supported Liquidity Pools balances by Rotki:
 
 - Uniswap v2
 - Uniswap v3 (Underlying assets available to premium users only)
