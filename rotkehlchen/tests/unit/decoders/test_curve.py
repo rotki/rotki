@@ -15,7 +15,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import (
-    EthereumInternalTransaction,
+    EvmInternalTransaction,
     EthereumTransaction,
     GeneralCacheType,
     Location,
@@ -518,7 +518,7 @@ def test_curve_remove_liquidity_with_internal(database, evm_transaction_decoder)
             ),
         ],
     )
-    internal_tx = EthereumInternalTransaction(
+    internal_tx = EvmInternalTransaction(
         parent_tx_hash=evmhash,
         trace_id=27,
         timestamp=Timestamp(1591043988),

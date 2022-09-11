@@ -14,7 +14,7 @@ from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
-    EthereumInternalTransaction,
+    EvmInternalTransaction,
     EthereumTransaction,
     Location,
     Timestamp,
@@ -213,7 +213,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_manager, eth_transac
         ],
     )
 
-    internal_tx = EthereumInternalTransaction(
+    internal_tx = EvmInternalTransaction(
         parent_tx_hash=evmhash,
         trace_id=27,
         timestamp=Timestamp(1646375440),

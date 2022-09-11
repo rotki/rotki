@@ -13,7 +13,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     BlockchainAccountData,
-    EthereumInternalTransaction,
+    EvmInternalTransaction,
     EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -156,7 +156,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
     ]
 
     assert internal_tx_in_db == [
-        EthereumInternalTransaction(
+        EvmInternalTransaction(
             parent_tx_hash=GENESIS_HASH,
             trace_id=0,
             timestamp=ETHEREUM_BEGIN,

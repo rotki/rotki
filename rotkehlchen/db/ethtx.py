@@ -18,7 +18,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_timestamp
 from rotkehlchen.types import (
     ChecksumEvmAddress,
-    EthereumInternalTransaction,
+    EvmInternalTransaction,
     EthereumTransaction,
     EVMTxHash,
     Timestamp,
@@ -92,7 +92,7 @@ class DBEthTx():
     def add_ethereum_internal_transactions(
             self,
             write_cursor: 'DBCursor',
-            transactions: List[EthereumInternalTransaction],
+            transactions: List[EvmInternalTransaction],
             relevant_address: ChecksumEvmAddress,
     ) -> None:
         """Adds ethereum transactions to the database"""
@@ -130,7 +130,7 @@ class DBEthTx():
     def get_ethereum_internal_transactions(
             self,
             parent_tx_hash: EVMTxHash,
-    ) -> List[EthereumInternalTransaction]:
+    ) -> List[EvmInternalTransaction]:
         """Get all internal transactions under a parent tx_hash"""
         cursor = self.db.conn.cursor()
         results = cursor.execute(
@@ -139,7 +139,7 @@ class DBEthTx():
         )
         transactions = []
         for result in results:
-            tx = EthereumInternalTransaction(
+            tx = EvmInternalTransaction(
                 parent_tx_hash=make_evm_tx_hash(result[0]),
                 trace_id=result[1],
                 timestamp=result[2],

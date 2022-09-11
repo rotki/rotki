@@ -27,7 +27,7 @@ from rotkehlchen.types import (
     AssetAmount,
     AssetMovementCategory,
     ChecksumEvmAddress,
-    EthereumInternalTransaction,
+    EvmInternalTransaction,
     EthereumTransaction,
     Fee,
     HexColorCode,
@@ -39,7 +39,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.evm.manager import EvmManager
 
 
 logger = logging.getLogger(__name__)
@@ -497,7 +497,8 @@ def deserialize_optional(input_val: Optional[X], fn: Callable[[X], Y]) -> Option
 def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: Literal[True],
-) -> EthereumInternalTransaction:
+        manager: Optional['EvmManager'] = None,
+) -> EvmInternalTransaction:
     ...
 
 
@@ -540,7 +541,7 @@ def deserialize_evm_transaction(
         value = read_integer(data, 'value', source)
 
         if internal:
-            return EthereumInternalTransaction(
+            return EvmInternalTransaction(
                 parent_tx_hash=tx_hash,
                 trace_id=int(data['traceId']),
                 timestamp=timestamp,

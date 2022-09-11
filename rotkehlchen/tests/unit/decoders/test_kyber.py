@@ -12,7 +12,7 @@ from rotkehlchen.constants.assets import A_CRV, A_ETH, A_USDC
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
-    EthereumInternalTransaction,
+    EvmInternalTransaction,
     EthereumTransaction,
     Location,
     Timestamp,
@@ -71,7 +71,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
             ),
         ],
     )
-    internal_tx = EthereumInternalTransaction(
+    internal_tx = EvmInternalTransaction(
         parent_tx_hash=evmhash,
         trace_id=27,
         timestamp=Timestamp(1591043988),

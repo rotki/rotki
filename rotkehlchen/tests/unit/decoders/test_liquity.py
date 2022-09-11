@@ -12,7 +12,7 @@ from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
-    EthereumInternalTransaction,
+    EvmInternalTransaction,
     EthereumTransaction,
     Location,
     Timestamp,
@@ -310,7 +310,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
             ),
         ],
     )
-    internal_tx = EthereumInternalTransaction(
+    internal_tx = EvmInternalTransaction(
         parent_tx_hash=evmhash,
         trace_id=19,
         timestamp=Timestamp(1646375440),
