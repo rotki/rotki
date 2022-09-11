@@ -18,7 +18,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     ChecksumEvmAddress,
-    EthereumTransaction,
+    EvmTransaction,
     Location,
     Timestamp,
     TimestampMS,
@@ -68,10 +68,10 @@ def make_ethereum_address() -> ChecksumEvmAddress:
     return to_checksum_address('0x' + make_random_bytes(20).hex())
 
 
-def make_ethereum_transaction(tx_hash: Optional[bytes] = None) -> EthereumTransaction:
+def make_ethereum_transaction(tx_hash: Optional[bytes] = None) -> EvmTransaction:
     if tx_hash is None:
         tx_hash = make_random_bytes(42)
-    return EthereumTransaction(
+    return EvmTransaction(
         tx_hash=make_evm_tx_hash(tx_hash),
         timestamp=Timestamp(0),
         block_number=0,
@@ -109,7 +109,7 @@ def make_ethereum_event(
 
 
 def generate_tx_entries_response(
-    data: List[Tuple[EthereumTransaction, List[HistoryBaseEntry]]],
+    data: List[Tuple[EvmTransaction, List[HistoryBaseEntry]]],
 ) -> List:
     result = []
     for tx, events in data:

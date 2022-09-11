@@ -25,7 +25,7 @@ from rotkehlchen.chain.ethereum.modules.convex.constants import (
 )
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 
@@ -33,7 +33,7 @@ class ConvexDecoder(DecoderInterface):
     @staticmethod
     def _decode_convex_events(
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
@@ -90,7 +90,7 @@ class ConvexDecoder(DecoderInterface):
     def _maybe_enrich_convex_transfers(
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             event: HistoryBaseEntry,
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> bool:

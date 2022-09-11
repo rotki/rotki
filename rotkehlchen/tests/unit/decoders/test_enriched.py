@@ -13,7 +13,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import EthereumTransaction, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import EvmTransaction, Location, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
@@ -26,7 +26,7 @@ def test_1inch_claim(database, ethereum_manager, eth_transactions):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1646375440,
         block_number=14351442,
@@ -123,7 +123,7 @@ def test_gnosis_chain_bridge(database, ethereum_manager, eth_transactions):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1646375440,
         block_number=14351442,
@@ -234,7 +234,7 @@ def test_gitcoin_claim(database, ethereum_manager, eth_transactions):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1646375440,
         block_number=14351442,

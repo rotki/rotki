@@ -28,7 +28,7 @@ from rotkehlchen.types import (
     AssetMovementCategory,
     ChecksumEvmAddress,
     EvmInternalTransaction,
-    EthereumTransaction,
+    EvmTransaction,
     Fee,
     HexColorCode,
     Optional,
@@ -507,7 +507,7 @@ def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: Literal[False],
         manager: Optional['EvmManager'] = None,
-) -> EthereumTransaction:
+) -> EvmTransaction:
     ...
 
 
@@ -515,7 +515,7 @@ def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: bool,
         manager: Optional['EvmManager'] = None,
-) -> Union[EthereumTransaction, EthereumInternalTransaction]:
+) -> Union[EvmTransaction, EvmInternalTransaction]:
     """Reads dict data of a transaction and deserializes it.
     If the transaction is not from etherscan then it's missing some data
     so evm manager is used to fetch it.
@@ -563,7 +563,7 @@ def deserialize_evm_transaction(
         else:
             gas_used = read_integer(data, 'gasUsed', source)
         nonce = read_integer(data, 'nonce', source)
-        return EthereumTransaction(
+        return EvmTransaction(
             timestamp=timestamp,
             block_number=block_number,
             tx_hash=tx_hash,

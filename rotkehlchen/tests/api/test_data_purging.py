@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.exchanges import (
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import (
     BlockchainAccountData,
-    EthereumTransaction,
+    EvmTransaction,
     Location,
     SupportedBlockchain,
     make_evm_tx_hash,
@@ -67,7 +67,7 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
         )
         db.add_ethereum_transactions(
             cursor,
-            [EthereumTransaction(
+            [EvmTransaction(
                 tx_hash=make_evm_tx_hash(bytes()),
                 timestamp=1,
                 block_number=1,

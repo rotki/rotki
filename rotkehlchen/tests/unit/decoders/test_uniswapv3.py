@@ -15,7 +15,7 @@ from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     EvmInternalTransaction,
-    EthereumTransaction,
+    EvmTransaction,
     Location,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -32,7 +32,7 @@ def test_uniswap_v3_swap(database, ethereum_manager, eth_transactions):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0x1c50c336329a7ee41f722ce5d848ebd066b72bf44a1eaafcaa92e8c0282049d2'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1646375440,
         block_number=14351442,
@@ -160,7 +160,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_manager, eth_transac
     msg_aggregator = MessagesAggregator()
     tx_hex = '0x116b3a9c0b2a4857605e336438c8e4c91897a9ef2af23178f9dbceba85264bd9'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1646375440,
         block_number=14351442,

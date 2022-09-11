@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 from .constants import CPT_CURVE
@@ -49,7 +49,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def _decode_curve_remove_events(
         self,
         tx_log: EthereumTxReceiptLog,
-        transaction: EthereumTransaction,
+        transaction: EvmTransaction,
         decoded_events: List[HistoryBaseEntry],
         user_address: ChecksumEvmAddress,
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
@@ -154,7 +154,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def _decode_curve_events(  # pylint: disable=no-self-use
         self,
         tx_log: EthereumTxReceiptLog,
-        transaction: EthereumTransaction,
+        transaction: EvmTransaction,
         decoded_events: List[HistoryBaseEntry],
         all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
         action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
@@ -191,7 +191,7 @@ class CurveDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             self,
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             event: HistoryBaseEntry,
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> bool:

@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
-from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_VOTIUM
@@ -21,7 +21,7 @@ class VotiumDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def _decode_claim(  # pylint: disable=no-self-use
         self,
         tx_log: EthereumTxReceiptLog,
-        transaction: EthereumTransaction,  # pylint: disable=unused-argument
+        transaction: EvmTransaction,  # pylint: disable=unused-argument
         decoded_events: List[HistoryBaseEntry],
         all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
         action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument

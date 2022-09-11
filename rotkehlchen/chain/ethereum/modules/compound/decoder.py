@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_norma
 from rotkehlchen.constants.assets import A_COMP
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import COMPTROLLER_PROXY, CPT_COMPOUND
@@ -42,7 +42,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def _decode_mint(
             self,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             tx_log: EthereumTxReceiptLog,
             decoded_events: List[HistoryBaseEntry],
             compound_token: EvmToken,
@@ -123,7 +123,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def decode_compound_token_movement(
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
@@ -141,7 +141,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def decode_comp_claim(
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument

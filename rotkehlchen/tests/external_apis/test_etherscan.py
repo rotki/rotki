@@ -14,7 +14,7 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     BlockchainAccountData,
     EvmInternalTransaction,
-    EthereumTransaction,
+    EvmTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
     SupportedBlockchain,
@@ -86,7 +86,7 @@ def test_deserialize_transaction_from_etherscan():
     # Make sure that a missing to address due to contract creation is handled
     data = {'blockNumber': 54092, 'timeStamp': 1439048640, 'hash': '0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4', 'nonce': 0, 'blockHash': '0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159', 'transactionIndex': 0, 'from': '0x5153493bB1E1642A63A098A65dD3913daBB6AE24', 'to': '', 'value': 11901464239480000000000000, 'gas': 2000000, 'gasPrice': 10000000000000, 'isError': 0, 'txreceipt_status': '', 'input': '0x313233', 'contractAddress': '0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae', 'cumulativeGasUsed': 1436963, 'gasUsed': 1436963, 'confirmations': 8569454}  # noqa: E501
     transaction = deserialize_evm_transaction(data, internal=False, manager=None)
-    assert transaction == EthereumTransaction(
+    assert transaction == EvmTransaction(
         tx_hash=deserialize_evm_tx_hash(data['hash']),
         timestamp=1439048640,
         block_number=54092,
@@ -128,7 +128,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
         internal_tx_in_db = dbtx.get_ethereum_internal_transactions(parent_tx_hash=GENESIS_HASH)
 
     assert regular_tx_in_db == [
-        EthereumTransaction(
+        EvmTransaction(
             tx_hash=GENESIS_HASH,
             timestamp=ETHEREUM_BEGIN,
             block_number=0,
@@ -140,7 +140,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             gas_used=0,
             input_data=b'',
             nonce=0,
-        ), EthereumTransaction(
+        ), EvmTransaction(
             tx_hash=deserialize_evm_tx_hash('0x352b93ac19dfbfd65d4d8385cded959d7a156c3f352a71a5a49560b088e1c8df'),  # noqa: E501
             timestamp=Timestamp(1443534531),
             block_number=307793,

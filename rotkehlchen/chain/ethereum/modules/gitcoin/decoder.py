@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EthereumTransaction
+from rotkehlchen.types import EvmTransaction
 
 from .constants import CPT_GITCOIN
 
@@ -35,7 +35,7 @@ class GitcoinDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             self,
             token: EvmToken,  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,  # pylint: disable=unused-argument
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             event: HistoryBaseEntry,
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> bool:

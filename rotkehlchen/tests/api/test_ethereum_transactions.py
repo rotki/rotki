@@ -44,7 +44,7 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import EthereumTransaction, EVMTxHash, Timestamp, make_evm_tx_hash
+from rotkehlchen.types import EvmTransaction, EVMTxHash, Timestamp, make_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 EXPECTED_AFB7_TXS = [{
@@ -560,7 +560,7 @@ def test_query_transactions_over_limit(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
     all_transactions_num = FREE_ETH_TX_LIMIT + 50
-    transactions = [EthereumTransaction(
+    transactions = [EvmTransaction(
         tx_hash=make_evm_tx_hash(x.to_bytes(2, byteorder='little')),
         timestamp=x,
         block_number=x,
@@ -573,7 +573,7 @@ def test_query_transactions_over_limit(
         input_data=x.to_bytes(2, byteorder='little'),
         nonce=x,
     ) for x in range(FREE_ETH_TX_LIMIT - 10)]
-    extra_transactions = [EthereumTransaction(
+    extra_transactions = [EvmTransaction(
         tx_hash=make_evm_tx_hash((x + 500).to_bytes(2, byteorder='little')),
         timestamp=x,
         block_number=x,
@@ -640,7 +640,7 @@ def test_query_transactions_from_to_address(
     end_ts = 1598453214
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
-    transactions = [EthereumTransaction(
+    transactions = [EvmTransaction(
         tx_hash=make_evm_tx_hash(b'1'),
         timestamp=0,
         block_number=0,
@@ -652,7 +652,7 @@ def test_query_transactions_from_to_address(
         gas_used=1,
         input_data=b'',
         nonce=0,
-    ), EthereumTransaction(
+    ), EvmTransaction(
         tx_hash=make_evm_tx_hash(b'2'),
         timestamp=0,
         block_number=0,
@@ -664,7 +664,7 @@ def test_query_transactions_from_to_address(
         gas_used=1,
         input_data=b'',
         nonce=1,
-    ), EthereumTransaction(
+    ), EvmTransaction(
         tx_hash=make_evm_tx_hash(b'3'),
         timestamp=0,
         block_number=0,
@@ -725,7 +725,7 @@ def test_query_transactions_removed_address(
     end_ts = 1598453214
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
-    transactions = [EthereumTransaction(
+    transactions = [EvmTransaction(
         tx_hash=make_evm_tx_hash(b'1'),
         timestamp=0,
         block_number=0,
@@ -737,7 +737,7 @@ def test_query_transactions_removed_address(
         gas_used=1,
         input_data=b'',
         nonce=0,
-    ), EthereumTransaction(
+    ), EvmTransaction(
         tx_hash=make_evm_tx_hash(b'2'),
         timestamp=0,
         block_number=0,
@@ -749,7 +749,7 @@ def test_query_transactions_removed_address(
         gas_used=1,
         input_data=b'',
         nonce=1,
-    ), EthereumTransaction(  # should remain after deleting account[0]
+    ), EvmTransaction(  # should remain after deleting account[0]
         tx_hash=make_evm_tx_hash(b'3'),
         timestamp=0,
         block_number=0,
@@ -761,7 +761,7 @@ def test_query_transactions_removed_address(
         gas_used=1,
         input_data=b'',
         nonce=55,
-    ), EthereumTransaction(  # should remain after deleting account[0]
+    ), EvmTransaction(  # should remain after deleting account[0]
         tx_hash=make_evm_tx_hash(b'4'),
         timestamp=0,
         block_number=0,
@@ -773,7 +773,7 @@ def test_query_transactions_removed_address(
         gas_used=1,
         input_data=b'',
         nonce=0,
-    ), EthereumTransaction(  # should remain after deleting account[0]
+    ), EvmTransaction(  # should remain after deleting account[0]
         tx_hash=make_evm_tx_hash(b'5'),
         timestamp=0,
         block_number=0,

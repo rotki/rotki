@@ -37,7 +37,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmInternalTransaction,
-    EthereumTransaction,
+    EvmTransaction,
     EVMTxHash,
     ExternalService,
     Timestamp,
@@ -122,7 +122,7 @@ class Etherscan(ExternalServiceWithApiKey):
             action: str,
             options: Optional[Dict[str, Any]] = None,
             timeout: Optional[Tuple[int, int]] = None,
-    ) -> Union[List[Dict[str, Any]], str, List[EthereumTransaction], Dict[str, Any]]:
+    ) -> Union[List[Dict[str, Any]], str, List[EvmTransaction], Dict[str, Any]]:
         """Queries etherscan
 
         May raise:
@@ -255,7 +255,7 @@ class Etherscan(ExternalServiceWithApiKey):
             action: Literal['txlist'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Iterator[List[EthereumTransaction]]:
+    ) -> Iterator[List[EvmTransaction]]:
         ...
 
     def get_transactions(
@@ -264,7 +264,7 @@ class Etherscan(ExternalServiceWithApiKey):
             action: Literal['txlist', 'txlistinternal'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Union[Iterator[List[EthereumTransaction]], Iterator[List[EvmInternalTransaction]]]:
+    ) -> Union[Iterator[List[EvmTransaction]], Iterator[List[EvmInternalTransaction]]]:
         """Gets a list of transactions (either normal or internal) for account.
 
         May raise:
@@ -279,7 +279,7 @@ class Etherscan(ExternalServiceWithApiKey):
             to_block = self.get_blocknumber_by_time(to_ts)
             options['endBlock'] = str(to_block)
 
-        transactions: Union[Sequence[EthereumTransaction], Sequence[EvmInternalTransaction]] = []  # noqa: E501
+        transactions: Union[Sequence[EvmTransaction], Sequence[EvmInternalTransaction]] = []  # noqa: E501
         is_internal = action == 'txlistinternal'
         while True:
             result = self._query(module='account', action=action, options=options)

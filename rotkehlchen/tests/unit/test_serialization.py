@@ -13,7 +13,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_hex_or_int,
 )
 from rotkehlchen.types import (
-    EthereumTransaction,
+    EvmTransaction,
     Location,
     Timestamp,
     TradeType,
@@ -131,7 +131,7 @@ def test_deserialize_deployment_ethereum_transaction():
         internal=False,
         manager=None,
     )
-    expected = EthereumTransaction(
+    expected = EvmTransaction(
         timestamp=Timestamp(0),
         block_number=1,
         tx_hash=deserialize_evm_tx_hash(data['hash']),

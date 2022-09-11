@@ -73,7 +73,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     ChecksumEvmAddress,
-    EthereumTransaction,
+    EvmTransaction,
     EVMTxHash,
     SupportedBlockchain,
     Timestamp,
@@ -920,7 +920,7 @@ class EthereumManager():
             self,
             web3: Optional[Web3],
             tx_hash: EVMTxHash,
-    ) -> EthereumTransaction:
+    ) -> EvmTransaction:
         if web3 is None:
             tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
         else:
@@ -939,7 +939,7 @@ class EthereumManager():
             self,
             tx_hash: EVMTxHash,
             call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> EthereumTransaction:
+    ) -> EvmTransaction:
         return self.query(
             method=self._get_transaction_by_hash,
             call_order=call_order if call_order is not None else self.default_call_order(),

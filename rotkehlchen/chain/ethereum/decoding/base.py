@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.types import EthereumTransaction, Location
+from rotkehlchen.types import EvmTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 from .constants import NAUGHTY_ERC721
@@ -102,7 +102,7 @@ class BaseDecoderTools():
             self,
             token: EvmToken,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
     ) -> Optional[HistoryBaseEntry]:
         """
         Caller should know this is a transfer of either an ERC20 or an ERC721 token.
