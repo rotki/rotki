@@ -6,7 +6,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
@@ -60,7 +60,7 @@ class HasDSProxy(EthereumModule):
         result = DS_PROXY_REGISTRY.call(self.ethereum, 'proxies', arguments=[address])
         if int(result, 16) != 0:
             try:
-                return deserialize_ethereum_address(result)
+                return deserialize_evm_address(result)
             except DeserializationError as e:
                 msg = f'Failed to deserialize {result} DS proxy for address {address}'
                 log.error(msg)
@@ -94,7 +94,7 @@ class HasDSProxy(EthereumModule):
             )[0]
             if int(result, 16) != 0:
                 try:
-                    proxy_address = deserialize_ethereum_address(result)
+                    proxy_address = deserialize_evm_address(result)
                     mapping[address] = proxy_address
                 except DeserializationError as e:
                     msg = f'Failed to deserialize {result} DSproxy for address {address}. {str(e)}'

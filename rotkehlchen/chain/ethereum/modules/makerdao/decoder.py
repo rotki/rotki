@@ -67,7 +67,7 @@ from rotkehlchen.constants.ethereum import (
     RAY_DIGITS,
 )
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
@@ -155,7 +155,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             if int(result, 16) == 0:
                 raise DeserializationError('Could not deserialize {result} as address}')
 
-            address = deserialize_ethereum_address(result)
+            address = deserialize_evm_address(result)
             mapping[method_name] = address
 
         return mapping['urns'], mapping['owns']

@@ -66,8 +66,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_ethereum_address,
-    deserialize_ethereum_transaction,
+    deserialize_evm_address,
+    deserialize_evm_transaction,
     deserialize_int_from_hex,
 )
 from rotkehlchen.serialization.serialize import process_result
@@ -799,7 +799,7 @@ class EthereumManager():
             arguments.append(blockchain.ens_coin_type())
 
         try:
-            deserialized_resolver_addr = deserialize_ethereum_address(resolver_addr)
+            deserialized_resolver_addr = deserialize_evm_address(resolver_addr)
         except DeserializationError:
             log.error(
                 f'Error deserializing address {resolver_addr} while doing'
@@ -821,7 +821,7 @@ class EthereumManager():
         if blockchain != SupportedBlockchain.ETHEREUM:
             return HexStr(address.hex())
         try:
-            return deserialize_ethereum_address(address)
+            return deserialize_evm_address(address)
         except DeserializationError:
             log.error(f'Error deserializing address {address}')
             return None
@@ -927,7 +927,7 @@ class EthereumManager():
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
 
         try:
-            transaction = deserialize_ethereum_transaction(data=tx_data, internal=False, ethereum=self)  # noqa: E501
+            transaction = deserialize_evm_transaction(data=tx_data, internal=False, manager=self)  # noqa: E501
         except (DeserializationError, ValueError) as e:
             raise RemoteError(
                 f'Couldnt deserialize ethereum transaction data from {tx_data}. Error: {str(e)}',
@@ -1123,7 +1123,7 @@ class EthereumManager():
                             if same_event:
                                 events.pop()
 
-                        new_events[e_idx]['address'] = deserialize_ethereum_address(
+                        new_events[e_idx]['address'] = deserialize_evm_address(
                             event['address'],
                         )
                         new_events[e_idx]['blockNumber'] = block_number

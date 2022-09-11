@@ -7,7 +7,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_ethereum_address,
+    deserialize_evm_address,
     deserialize_timestamp,
 )
 from rotkehlchen.types import make_evm_tx_hash
@@ -68,8 +68,8 @@ def deserialize_adex_event_from_db(
         )
 
     tx_hash = make_evm_tx_hash(event_tuple[0])
-    address = deserialize_ethereum_address(event_tuple[1])
-    identity_address = deserialize_ethereum_address(event_tuple[2])
+    address = deserialize_evm_address(event_tuple[1])
+    identity_address = deserialize_evm_address(event_tuple[2])
     timestamp = deserialize_timestamp(event_tuple[3])
     pool_id = event_tuple[5]
     amount = deserialize_asset_amount(event_tuple[6])

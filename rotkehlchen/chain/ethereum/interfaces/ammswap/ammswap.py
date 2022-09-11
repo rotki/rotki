@@ -49,7 +49,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     AssetAmount,
     ChecksumEvmAddress,
@@ -279,9 +279,9 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                 token1_ = event['pair']['token1']
 
                 try:
-                    token0_deserialized = deserialize_ethereum_address(token0_['id'])
-                    token1_deserialized = deserialize_ethereum_address(token1_['id'])
-                    pool_deserialized = deserialize_ethereum_address(event['pair']['id'])
+                    token0_deserialized = deserialize_evm_address(token0_['id'])
+                    token1_deserialized = deserialize_evm_address(token1_['id'])
+                    pool_deserialized = deserialize_evm_address(event['pair']['id'])
                     tx_hash_deserialized = deserialize_evm_tx_hash(event['transaction']['id'])
                 except DeserializationError as e:
                     msg = (
@@ -391,7 +391,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
             for tdd in result_data:
                 try:
-                    token_address = deserialize_ethereum_address(tdd['token']['id'])
+                    token_address = deserialize_evm_address(tdd['token']['id'])
                 except DeserializationError as e:
                     msg = (
                         f'Error deserializing address {tdd["token"]["id"]} '
@@ -487,8 +487,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                 lp_total_supply = FVal(lp_pair['totalSupply'])
                 user_lp_balance = FVal(lp['liquidityTokenBalance'])
                 try:
-                    user_address = deserialize_ethereum_address(lp['user']['id'])
-                    lp_address = deserialize_ethereum_address(lp_pair['id'])
+                    user_address = deserialize_evm_address(lp['user']['id'])
+                    lp_address = deserialize_evm_address(lp_pair['id'])
                 except DeserializationError as e:
                     msg = (
                         f'Failed to Deserialize address. Skipping {self.location} '
@@ -506,7 +506,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                 liquidity_pool_assets = []
                 for token in token0, token1:
                     try:
-                        deserialized_eth_address = deserialize_ethereum_address(token['id'])
+                        deserialized_eth_address = deserialize_evm_address(token['id'])
                     except DeserializationError as e:
                         msg = (
                             f'Failed to deserialize token address {token["id"]} '

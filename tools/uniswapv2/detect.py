@@ -14,7 +14,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.greenlets import GreenletManager
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
@@ -65,7 +65,7 @@ def pairs_from_ethereum(ethereum: EthereumManager) -> Dict[str, Any]:
         print(f'Querying univ2 pairs chunk {idx + 1} / {len(chunks)}')
         result = ethereum.multicall_specific(univ2factory, 'allPairs', chunk)
         try:
-            pairs.extend([deserialize_ethereum_address(x[0]) for x in result])
+            pairs.extend([deserialize_evm_address(x[0]) for x in result])
         except DeserializationError:
             print('Error deserializing address while fetching uniswap v2 pool tokens')
             sys.exit(1)
@@ -105,9 +105,9 @@ def pairs_and_token_details_from_graph() -> Dict[str, Any]:
         result = graph.query(querystr, param_types=param_types, param_values=param_values)
         for entry in result['pairs']:
             try:
-                deserialized_entry = deserialize_ethereum_address(entry['id'])
-                deserialized_token_0 = deserialize_ethereum_address(entry['token0']['id'])
-                deserialized_token_1 = deserialize_ethereum_address(entry['token1']['id'])
+                deserialized_entry = deserialize_evm_address(entry['id'])
+                deserialized_token_0 = deserialize_evm_address(entry['token0']['id'])
+                deserialized_token_1 = deserialize_evm_address(entry['token1']['id'])
             except DeserializationError:
                 print('Error deserializing address while fetching uniswap v2 pool tokens')
                 sys.exit(1)

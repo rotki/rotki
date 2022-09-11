@@ -12,7 +12,7 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_ethereum_address,
+    deserialize_evm_address,
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
@@ -67,8 +67,8 @@ def deserialize_bpt_event(
     if total_weight == ZERO:
         raise DeserializationError('Pool weight is zero.')
 
-    user_address = deserialize_ethereum_address(raw_user_address)
-    pool_address = deserialize_ethereum_address(raw_pool_address)
+    user_address = deserialize_evm_address(raw_user_address)
+    pool_address = deserialize_evm_address(raw_pool_address)
 
     underlying_tokens = []
     for raw_token in raw_pool_tokens:
@@ -81,7 +81,7 @@ def deserialize_bpt_event(
         except KeyError as e:
             raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-        token_address = deserialize_ethereum_address(raw_token_address)
+        token_address = deserialize_evm_address(raw_token_address)
 
         token = get_or_create_evm_token(
             userdb=userdb,
@@ -144,15 +144,15 @@ def deserialize_invest_event(
     except KeyError as e:
         raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-    user_address = deserialize_ethereum_address(raw_user_address)
-    pool_address = deserialize_ethereum_address(raw_pool_address)
+    user_address = deserialize_evm_address(raw_user_address)
+    pool_address = deserialize_evm_address(raw_pool_address)
     try:
         pool_address_token = EvmToken(ethaddress_to_identifier(pool_address))
     except UnknownAsset as e:
         raise DeserializationError(
             f'Balancer pool token with address {pool_address} should have been in the DB',
         ) from e
-    token_address = deserialize_ethereum_address(raw_token_address)
+    token_address = deserialize_evm_address(raw_token_address)
 
     invest_event = BalancerInvestEvent(
         tx_hash=tx_hash,
@@ -186,8 +186,8 @@ def deserialize_pool_share(
     if total_weight == ZERO:
         raise DeserializationError('Pool weight is zero.')
 
-    user_address = deserialize_ethereum_address(raw_user_address)
-    pool_address = deserialize_ethereum_address(raw_address)
+    user_address = deserialize_evm_address(raw_user_address)
+    pool_address = deserialize_evm_address(raw_address)
 
     pool_tokens = []
     pool_token_balances = []
@@ -202,7 +202,7 @@ def deserialize_pool_share(
         except KeyError as e:
             raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-        token_address = deserialize_ethereum_address(raw_token_address)
+        token_address = deserialize_evm_address(raw_token_address)
 
         token = get_or_create_evm_token(
             userdb=userdb,
@@ -278,7 +278,7 @@ def deserialize_token_price(
     except KeyError as e:
         raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-    token_address = deserialize_ethereum_address(token_address)
+    token_address = deserialize_evm_address(token_address)
 
     return token_address, usd_price
 
@@ -293,6 +293,6 @@ def deserialize_token_day_data(
     except KeyError as e:
         raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-    token_address = deserialize_ethereum_address(token_address)
+    token_address = deserialize_evm_address(token_address)
 
     return token_address, usd_price

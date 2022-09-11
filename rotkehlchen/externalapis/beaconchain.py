@@ -21,7 +21,7 @@ from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -342,7 +342,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                     msg_aggregator=self.msg_aggregator,
                 )
                 deposits.append(Eth2Deposit(
-                    from_address=deserialize_ethereum_address(entry['from_address']),
+                    from_address=deserialize_evm_address(entry['from_address']),
                     pubkey=entry['publickey'],
                     withdrawal_credentials=entry['withdrawal_credentials'],
                     value=Balance(
