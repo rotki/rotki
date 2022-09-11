@@ -18,14 +18,10 @@ from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
 from ens.exceptions import InvalidName
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
-from eth_abi.exceptions import InsufficientDataBytes
-from eth_typing import HexStr
+from eth_typing import BlockNumber, HexStr
 from web3 import Web3
 from web3._utils.abi import get_abi_output_types
-from web3._utils.contracts import find_matching_event_abi
-from web3._utils.filters import construct_event_filter_params
-from web3.exceptions import BadFunctionCallOutput
-from web3.types import BlockIdentifier, FilterParams
+from web3.types import FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS, ETHERSCAN_NODE
@@ -36,25 +32,14 @@ from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
 )
 from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
-from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.manager import EvmManager
-from rotkehlchen.constants import ONE
 from rotkehlchen.constants.ethereum import (
     ENS_REVERSE_RECORDS,
-    ERC20TOKEN_ABI,
-    ERC721TOKEN_ABI,
     ETH_MULTICALL,
     ETH_MULTICALL_2,
     ETH_SCAN,
-    UNIV1_LP_ABI,
 )
-from rotkehlchen.errors.misc import (
-    BlockchainQueryError,
-    InputError,
-    NotERC721Conformant,
-    RemoteError,
-)
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -89,6 +74,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+CURVE_POOLS_MAPPING_TYPE = Dict[
+    ChecksumEvmAddress,  # lp token address
+    Tuple[
+        ChecksumEvmAddress,  # pool address
+        List[ChecksumEvmAddress],  # list of coins addresses
+        Optional[List[ChecksumEvmAddress]],  # optional list of underlying coins addresses
+    ],
+]
 
 
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
@@ -199,9 +194,9 @@ class EthereumManager(EvmManager):
             contract_scan=ETH_SCAN[ChainID.ETHEREUM],
             contract_multicall=ETH_MULTICALL,
             contract_multicall_2=ETH_MULTICALL_2,
+            graph_url='https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks',
             rpc_timeout=rpc_timeout,
         )
-        # A cache for the erc20 contract info to not requery same one
         self.contract_info_cache: Dict[ChecksumEvmAddress, Dict[str, Any]] = {
             # hard coding contract info we know can't be queried properly
             # https://github.com/rotki/rotki/issues/4420
@@ -212,159 +207,11 @@ class EthereumManager(EvmManager):
             },
         }
 
-    def multicall(
-            self,
-            calls: List[Tuple[ChecksumEvmAddress, str]],
-            # only here to comply with multicall_2
-            require_success: bool = True,  # pylint: disable=unused-argument
-            call_order: Optional[Sequence['WeightedNode']] = None,
-            block_identifier: BlockIdentifier = 'latest',
-            calls_chunk_size: int = MULTICALL_CHUNKS,
-    ) -> Any:
-        """Uses MULTICALL contract. Failure of one call is a failure of the entire multicall.
-        source: https://etherscan.io/address/0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441#code"""
-
-        calls_chunked = list(get_chunks(calls, n=calls_chunk_size))
-        output = []
-        for call_chunk in calls_chunked:
-            multicall_result = self.contract_multicall.call(
-                manager=self,
-                method_name='aggregate',
-                arguments=[call_chunk],
-                call_order=call_order,
-                block_identifier=block_identifier,
-            )
-            _, chunk_output = multicall_result
-            output += chunk_output
-        return output
-
-    def multicall_2(
-            self,
-            calls: List[Tuple[ChecksumEvmAddress, str]],
-            require_success: bool,
-            call_order: Optional[Sequence['WeightedNode']] = None,
-            block_identifier: BlockIdentifier = 'latest',
-            # only here to comply with multicall
-            calls_chunk_size: int = MULTICALL_CHUNKS,  # pylint: disable=unused-argument
-    ) -> List[Tuple[bool, bytes]]:
-        """
-        Uses MULTICALL_2 contract. If require success is set to False any call in the list
-        of calls is allowed to fail.
-        source: https://etherscan.io/address/0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696#code
-
-        May raise:
-        - RemoteError
-        - BlockchainQueryError if web3 is used and there is a VM execution error
-        """
-        return self.contract_multicall_2.call(
-            manager=self,
-            method_name='tryAggregate',
-            arguments=[require_success, calls],
-            call_order=call_order,
-            block_identifier=block_identifier,
-        )
-
-    def multicall_specific(
-            self,
-            contract: 'EvmContract',
-            method_name: str,
-            arguments: List[Any],
-            call_order: Optional[Sequence['WeightedNode']] = None,
-            decode_result: bool = True,
-    ) -> Any:
-        calls = [(
-            contract.address,
-            contract.encode(method_name=method_name, arguments=i),
-        ) for i in arguments]
-        output = self.multicall(calls, True, call_order)
-        if decode_result is False:
-            return output
-        return [contract.decode(x, method_name, arguments[0]) for x in output]
-
-    def connected_to_any_web3(self) -> bool:
-        return len(self.web3_mapping) != 0
-
-    def get_own_node_web3(self) -> Optional[Web3]:
-        for node, web3_instance in self.web3_mapping.items():
-            if node.owned:
-                return web3_instance
-        return None
-
-    def get_own_node_info(self) -> Optional[NodeName]:
-        for node in self.web3_mapping:
-            if node.owned:
-                return node
-        return None
-
-    def get_connected_nodes(self) -> List[NodeName]:
-        return list(self.web3_mapping.keys())
-
-    def connect_to_multiple_nodes(self, nodes: Sequence[WeightedNode]) -> None:
-        self.web3_mapping = {}
-        for weighted_node in nodes:
-            if weighted_node.node_info.name == ETHERSCAN_NODE_NAME:
-                continue
-
-            task_name = f'Attempt connection to {str(weighted_node.node_info.name)} ethereum node'
-            self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name=task_name,
-                exception_is_error=True,
-                method=self.attempt_connect,
-                node=weighted_node.node_info,
-                mainnet_check=True,
-            )
-
-    def _get_latest_block_number(self, web3: Optional[Web3]) -> int:
-        if web3 is not None:
-            return web3.eth.block_number
-
-        # else
-        return self.etherscan.get_latest_block_number()
-
-    def get_latest_block_number(self, call_order: Optional[Sequence[WeightedNode]] = None) -> int:
-        return self.query(
-            method=self._get_latest_block_number,
-            call_order=call_order if call_order is not None else self.default_call_order(),
-        )
-
-    def get_historical_eth_balance(
-            self,
-            address: ChecksumEvmAddress,
-            block_number: int,
-    ) -> Optional[FVal]:
-        """Attempts to get a historical eth balance from the local own node only.
-        If there is no node or the node can't query historical balance (not archive) then
-        returns None"""
-        web3 = self.get_own_node_web3()
-        if web3 is None:
-            return None
-
-        try:
-            result = web3.eth.get_balance(address, block_identifier=block_number)
-        except (
-                requests.exceptions.RequestException,
-                BlockchainQueryError,
-                KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
-        ):
-            return None
-
-        try:
-            balance = from_wei(FVal(result))
-        except ValueError:
-            return None
-
-        return balance
-
     def have_archive(self, requery: bool = False) -> bool:
-        """Checks to see if our own connected node is an archive node
-
-        If requery is True it always queries the node. Otherwise it remembers last query.
-        """
         if self.queried_archive_connection and requery is False:
             return self.archive_connection
 
-        balance = self.get_historical_eth_balance(
+        balance = self.get_historical_balance(
             address=string_to_evm_address('0x50532e4Be195D1dE0c2E6DfA46D9ec0a4Fee6861'),
             block_number=87042,
         )
@@ -372,55 +219,24 @@ class EthereumManager(EvmManager):
         self.queried_archive_connection = True
         return self.archive_connection
 
-    def get_multieth_balance(
-            self,
-            accounts: List[ChecksumEvmAddress],
-            call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> Dict[ChecksumEvmAddress, FVal]:
-        """Returns a dict with keys being accounts and balances in ETH
+    def query_highest_block(self) -> BlockNumber:
+        url = 'https://api.blockcypher.com/v1/eth/main'
+        log.debug('Querying blockcypher for ETH highest block', url=url)
+        eth_resp: Optional[Dict[str, str]]
+        try:
+            eth_resp = request_get_dict(url)
+        except (RemoteError, UnableToDecryptRemoteData, requests.exceptions.RequestException):
+            eth_resp = None
 
-        May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
-        """
-        balances: Dict[ChecksumEvmAddress, FVal] = {}
-        log.debug(
-            'Querying ethereum chain for ETH balance',
-            eth_addresses=accounts,
-        )
-        result = self.contract_scan.call(
-            manager=self,
-            method_name='etherBalances',
-            arguments=[accounts],
-            call_order=call_order if call_order is not None else self.default_call_order(),
-        )
-        balances = {}
-        for idx, account in enumerate(accounts):
-            balances[account] = from_wei(result[idx])
-        return balances
+        block_number: Optional[int]
+        if eth_resp and 'height' in eth_resp:
+            block_number = int(eth_resp['height'])
+            log.debug('ETH highest block result', block=block_number)
+        else:
+            block_number = self.etherscan.get_latest_block_number()
+            log.debug('ETH highest block result', block=block_number)
 
-    def get_code(
-            self,
-            account: ChecksumEvmAddress,
-            call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> str:
-        return self.query(
-            method=self._get_code,
-            call_order=call_order if call_order is not None else self.default_call_order(),
-            account=account,
-        )
-
-    def _get_code(self, web3: Optional[Web3], account: ChecksumEvmAddress) -> str:
-        """Gets the deployment bytecode at the given address
-
-        May raise:
-        - RemoteError if Etherscan is used and there is a problem querying it or
-        parsing its response
-        """
-        if web3 is None:
-            return self.etherscan.get_code(account)
-
-        return hex_or_bytes_to_str(web3.eth.getCode(account))
+        return BlockNumber(block_number)
 
     def ens_reverse_lookup(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses
@@ -574,538 +390,3 @@ class EthereumManager(EvmManager):
         except DeserializationError:
             log.error(f'Error deserializing address {address}')
             return None
-
-    def _call_contract_etherscan(
-            self,
-            contract_address: ChecksumEvmAddress,
-            abi: List,
-            method_name: str,
-            arguments: Optional[List[Any]] = None,
-    ) -> Any:
-        """Performs an eth_call to an ethereum contract via etherscan
-
-        May raise:
-        - RemoteError if there is a problem with
-        reaching etherscan or with the returned result
-        """
-        web3 = Web3()
-        contract = web3.eth.contract(address=contract_address, abi=abi)
-        input_data = contract.encodeABI(method_name, args=arguments if arguments else [])
-        result = self.etherscan.eth_call(
-            to_address=contract_address,
-            input_data=input_data,
-        )
-        if result == '0x':
-            raise BlockchainQueryError(
-                f'Error doing call on contract {contract_address} for {method_name} '
-                f'with arguments: {str(arguments)} via etherscan. Returned 0x result',
-            )
-
-        fn_abi = contract._find_matching_fn_abi(
-            fn_identifier=method_name,
-            args=arguments,
-        )
-        output_types = get_abi_output_types(fn_abi)
-        output_data = web3.codec.decode_abi(output_types, bytes.fromhex(result[2:]))
-
-        if len(output_data) == 1:
-            # due to https://github.com/PyCQA/pylint/issues/4114
-            return output_data[0]  # pylint: disable=unsubscriptable-object
-        return output_data
-
-    def _get_transaction_by_hash(
-            self,
-            web3: Optional[Web3],
-            tx_hash: EVMTxHash,
-    ) -> EvmTransaction:
-        if web3 is None:
-            tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
-        else:
-            tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
-
-        try:
-            transaction = deserialize_evm_transaction(data=tx_data, internal=False, manager=self)  # noqa: E501
-        except (DeserializationError, ValueError) as e:
-            raise RemoteError(
-                f'Couldnt deserialize ethereum transaction data from {tx_data}. Error: {str(e)}',
-            ) from e
-
-        return transaction
-
-    def get_transaction_by_hash(
-            self,
-            tx_hash: EVMTxHash,
-            call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> EvmTransaction:
-        return self.query(
-            method=self._get_transaction_by_hash,
-            call_order=call_order if call_order is not None else self.default_call_order(),
-            tx_hash=tx_hash,
-        )
-
-    def call_contract(
-            self,
-            contract_address: ChecksumEvmAddress,
-            abi: List,
-            method_name: str,
-            arguments: Optional[List[Any]] = None,
-            call_order: Optional[Sequence[WeightedNode]] = None,
-            block_identifier: BlockIdentifier = 'latest',
-    ) -> Any:
-        return self.query(
-            method=self._call_contract,
-            call_order=call_order if call_order is not None else self.default_call_order(),
-            contract_address=contract_address,
-            abi=abi,
-            method_name=method_name,
-            arguments=arguments,
-            block_identifier=block_identifier,
-        )
-
-    def _call_contract(
-            self,
-            web3: Optional[Web3],
-            contract_address: ChecksumEvmAddress,
-            abi: List,
-            method_name: str,
-            arguments: Optional[List[Any]] = None,
-            block_identifier: BlockIdentifier = 'latest',
-    ) -> Any:
-        """Performs an eth_call to an ethereum contract
-
-        May raise:
-        - RemoteError if etherscan is used and there is a problem with
-        reaching it or with the returned result
-        - BlockchainQueryError if web3 is used and there is a VM execution error
-        """
-        if web3 is None:
-            return self._call_contract_etherscan(
-                contract_address=contract_address,
-                abi=abi,
-                method_name=method_name,
-                arguments=arguments,
-            )
-
-        contract = web3.eth.contract(address=contract_address, abi=abi)
-        try:
-            method = getattr(contract.caller(block_identifier=block_identifier), method_name)
-            result = method(*arguments if arguments else [])
-        except (ValueError, BadFunctionCallOutput) as e:
-            raise BlockchainQueryError(
-                f'Error doing call on contract {contract_address}: {str(e)}',
-            ) from e
-        return result
-
-    def get_logs(
-            self,
-            contract_address: ChecksumEvmAddress,
-            abi: List,
-            event_name: str,
-            argument_filters: Dict[str, Any],
-            from_block: int,
-            to_block: Union[int, Literal['latest']] = 'latest',
-            call_order: Optional[Sequence[WeightedNode]] = None,
-    ) -> List[Dict[str, Any]]:
-        if call_order is None:  # Default call order for logs
-            call_order = [ETHERSCAN_NODE]
-            if (node_info := self.get_own_node_info()) is not None:
-                call_order.append(
-                    WeightedNode(
-                        node_info=node_info,
-                        active=True,
-                        weight=ONE,
-                    ),
-                )
-        return self.query(
-            method=self._get_logs,
-            call_order=call_order,
-            contract_address=contract_address,
-            abi=abi,
-            event_name=event_name,
-            argument_filters=argument_filters,
-            from_block=from_block,
-            to_block=to_block,
-        )
-
-    def _get_logs(
-            self,
-            web3: Optional[Web3],
-            contract_address: ChecksumEvmAddress,
-            abi: List,
-            event_name: str,
-            argument_filters: Dict[str, Any],
-            from_block: int,
-            to_block: Union[int, Literal['latest']] = 'latest',
-    ) -> List[Dict[str, Any]]:
-        """Queries logs of an ethereum contract
-
-        May raise:
-        - RemoteError if etherscan is used and there is a problem with
-        reaching it or with the returned result
-        """
-        event_abi = find_matching_event_abi(abi=abi, event_name=event_name)
-        _, filter_args = construct_event_filter_params(
-            event_abi=event_abi,
-            abi_codec=Web3().codec,
-            contract_address=contract_address,
-            argument_filters=argument_filters,
-            fromBlock=from_block,
-            toBlock=to_block,
-        )
-        if event_abi['anonymous']:
-            # web3.py does not handle the anonymous events correctly and adds the first topic
-            filter_args['topics'] = filter_args['topics'][1:]
-        events: List[Dict[str, Any]] = []
-        start_block = from_block
-        if web3 is not None:
-            events = _query_web3_get_logs(
-                web3=web3,
-                filter_args=filter_args,
-                from_block=from_block,
-                to_block=to_block,
-                contract_address=contract_address,
-                event_name=event_name,
-                argument_filters=argument_filters,
-            )
-        else:  # etherscan
-            until_block = (
-                self.etherscan.get_latest_block_number() if to_block == 'latest' else to_block
-            )
-            blocks_step = 300000
-            while start_block <= until_block:
-                while True:  # loop to continuously reduce block range if need b
-                    end_block = min(start_block + blocks_step, until_block)
-                    try:
-                        new_events = self.etherscan.get_logs(
-                            contract_address=contract_address,
-                            topics=filter_args['topics'],  # type: ignore
-                            from_block=start_block,
-                            to_block=end_block,
-                        )
-                    except RemoteError as e:
-                        if 'Please select a smaller result dataset' in str(e):
-
-                            blocks_step = blocks_step // 2
-                            if blocks_step < 100:
-                                raise  # stop trying
-                            # else try with the smaller step
-                            continue
-
-                        # else some other error
-                        raise
-
-                    break  # we must have a result
-
-                # Turn all Hex ints to ints
-                for e_idx, event in enumerate(new_events):
-                    try:
-                        block_number = deserialize_int_from_hex(
-                            symbol=event['blockNumber'],
-                            location='etherscan log query',
-                        )
-                        log_index = deserialize_int_from_hex(
-                            symbol=event['logIndex'],
-                            location='etherscan log query',
-                        )
-                        # Try to see if the event is a duplicate that got returned
-                        # in the previous iteration
-                        for previous_event in reversed(events):
-                            if previous_event['blockNumber'] < block_number:
-                                break
-
-                            same_event = (
-                                previous_event['logIndex'] == log_index and
-                                previous_event['transactionHash'] == event['transactionHash']
-                            )
-                            if same_event:
-                                events.pop()
-
-                        new_events[e_idx]['address'] = deserialize_evm_address(
-                            event['address'],
-                        )
-                        new_events[e_idx]['blockNumber'] = block_number
-                        new_events[e_idx]['timeStamp'] = deserialize_int_from_hex(
-                            symbol=event['timeStamp'],
-                            location='etherscan log query',
-                        )
-                        new_events[e_idx]['gasPrice'] = deserialize_int_from_hex(
-                            symbol=event['gasPrice'],
-                            location='etherscan log query',
-                        )
-                        new_events[e_idx]['gasUsed'] = deserialize_int_from_hex(
-                            symbol=event['gasUsed'],
-                            location='etherscan log query',
-                        )
-                        new_events[e_idx]['logIndex'] = log_index
-                        new_events[e_idx]['transactionIndex'] = deserialize_int_from_hex(
-                            symbol=event['transactionIndex'],
-                            location='etherscan log query',
-                        )
-                    except DeserializationError as e:
-                        raise RemoteError(
-                            'Couldnt decode an etherscan event due to {str(e)}}',
-                        ) from e
-
-                # etherscan will only return 1000 events in one go. If more than 1000
-                # are returned such as when no filter args are provided then continue
-                # the query from the last block
-                if len(new_events) == 1000:
-                    start_block = new_events[-1]['blockNumber']
-                else:
-                    start_block = end_block + 1
-                events.extend(new_events)
-
-        return events
-
-    def get_event_timestamp(self, event: Dict[str, Any]) -> Timestamp:
-        """Reads an event returned either by etherscan or web3 and gets its timestamp
-
-        Etherscan events contain a timestamp. Normal web3 events don't so it needs to
-        be queried from the block number
-
-        WE could also add this to the get_logs() call but would add unnecessary
-        rpc calls for get_block_by_number() for each log entry. Better have it
-        lazy queried like this.
-
-        TODO: Perhaps better approach would be a log event class for this
-        """
-        if 'timeStamp' in event:
-            # event from etherscan
-            return Timestamp(event['timeStamp'])
-
-        # event from web3
-        block_number = event['blockNumber']
-        block_data = self.get_block_by_number(block_number)
-        return Timestamp(block_data['timestamp'])
-
-    def _get_blocknumber_by_time_from_subgraph(self, ts: Timestamp) -> int:
-        """Queries Ethereum Blocks Subgraph for closest block at or before given timestamp"""
-        response = self.blocks_subgraph.query(
-            f"""
-            {{
-                blocks(
-                    first: 1, orderBy: timestamp, orderDirection: desc,
-                    where: {{timestamp_lte: "{ts}"}}
-                ) {{
-                    id
-                    number
-                    timestamp
-                }}
-            }}
-            """,
-        )
-        try:
-            result = int(response['blocks'][0]['number'])
-        except (IndexError, KeyError) as e:
-            raise RemoteError(
-                f'Got unexpected ethereum blocks subgraph response: {response}',
-            ) from e
-        else:
-            return result
-
-    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True) -> int:
-        """Searches for the blocknumber of a specific timestamp
-        - Performs the etherscan api call by default first
-        - If RemoteError raised or etherscan flag set to false
-            -> queries blocks subgraph
-        """
-        if etherscan:
-            try:
-                return self.etherscan.get_blocknumber_by_time(ts)
-            except RemoteError:
-                pass
-        return self._get_blocknumber_by_time_from_subgraph(ts)
-
-    def get_erc20_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
-        """
-        Query an erc20 contract address and return basic information as:
-        - Decimals
-        - name
-        - symbol
-        At all times, the dictionary returned contains the keys; decimals, name & symbol.
-        Although the values might be None.
-
-        if it is provided in the contract. This method may raise:
-        - BadFunctionCallOutput: If there is an error calling a bad address
-        """
-        cache = self.contract_info_cache.get(address)
-        if cache is not None:
-            return cache
-
-        properties = ('decimals', 'symbol', 'name')
-        info: Dict[str, Any] = {}
-
-        contract = EvmContract(address=address, abi=ERC20TOKEN_ABI, deployed_block=0)
-        try:
-            # Output contains call status and result
-            output = self.multicall_2(
-                require_success=False,
-                calls=[(address, contract.encode(method_name=prop)) for prop in properties],
-            )
-        except RemoteError:
-            # If something happens in the connection the output should have
-            # the same length as the tuple of properties
-            output = [(False, b'')] * len(properties)
-        try:
-            decoded = self._process_contract_info(
-                output=output,
-                properties=properties,
-                contract=contract,
-                token_kind=EvmTokenKind.ERC20,
-            )
-        except (OverflowError, InsufficientDataBytes) as e:
-            # This can happen when contract follows the ERC20 standard methods
-            # but name and symbol return bytes instead of string. UNIV1 LP is such a case
-            # It can also happen if the method is missing and they are all hitting
-            # the fallback function. old WETH contract is such a case
-            log.error(
-                f'{address} failed to decode as ERC20 token. '
-                f'Trying with token ABI using bytes. {str(e)}',
-            )
-            contract = EvmContract(address=address, abi=UNIV1_LP_ABI, deployed_block=0)
-            decoded = self._process_contract_info(
-                output=output,
-                properties=properties,
-                contract=contract,
-                token_kind=EvmTokenKind.ERC20,
-            )
-            log.debug(f'{address} was succesfuly decoded as ERC20 token')
-
-        for prop, value in zip(properties, decoded):
-            if isinstance(value, bytes):
-                value = value.rstrip(b'\x00').decode()
-            info[prop] = value
-
-        self.contract_info_cache[address] = info
-        return info
-
-    def get_erc721_contract_info(self, address: ChecksumEvmAddress) -> Dict[str, Any]:
-        """
-        Query an erc721 contract address and return basic information.
-        - name
-        - symbol
-        At all times, the dictionary returned contains the keys; name & symbol.
-        Although the values might be None. https://eips.ethereum.org/EIPS/eip-721
-        According to the standard both name and symbol are optional.
-
-        if it is provided in the contract. This method may raise:
-        - BadFunctionCallOutput: If there is an error calling a bad address
-        - NotERC721Conformant: If the address can't be decoded as an ERC721 contract
-        """
-        cache = self.contract_info_cache.get(address)
-        if cache is not None:
-            return cache
-
-        properties = ('symbol', 'name')
-        info: Dict[str, Any] = {}
-
-        contract = EvmContract(address=address, abi=ERC721TOKEN_ABI, deployed_block=0)
-        try:
-            # Output contains call status and result
-            output = self.multicall_2(
-                require_success=False,
-                calls=[(address, contract.encode(method_name=prop)) for prop in properties],
-            )
-        except RemoteError:
-            # If something happens in the connection the output should have
-            # the same length as the tuple of properties
-            output = [(False, b'')] * len(properties)
-        try:
-            decoded = self._process_contract_info(
-                output=output,
-                properties=properties,
-                contract=contract,
-                token_kind=EvmTokenKind.ERC721,
-            )
-        except (OverflowError, InsufficientDataBytes) as e:
-            raise NotERC721Conformant(f'{address} token does not conform to the ERC721 spec') from e  # noqa: E501
-
-        for prop, value in zip(properties, decoded):
-            if isinstance(value, bytes):
-                value = value.rstrip(b'\x00').decode()
-            info[prop] = value
-
-        self.contract_info_cache[address] = info
-        return info
-
-    def _update_curve_decoder(self, tx_decoder: 'EVMTransactionDecoder') -> None:
-        try:
-            curve_decoder = tx_decoder.decoders['Curve']
-        except KeyError as e:
-            raise InputError(
-                'Expected to find Curve decoder but it was not loaded. '
-                'Please open an issue on github.com/rotki/rotki/issues if you saw this.',
-            ) from e
-        new_mappings = curve_decoder.reload()
-        tx_decoder.address_mappings.update(new_mappings)
-
-    @protect_with_lock()
-    def curve_protocol_cache_is_queried(
-            self,
-            tx_decoder: Optional['EVMTransactionDecoder'],
-    ) -> bool:
-        """
-        Make sure that information that needs to be queried is queried and if not query it.
-        Returns true if the cache was modified or false otherwise.
-        If the tx_decoder provided is None no information for the decoders is reloaded
-
-        Updates curve pools cache.
-        1. Deletes all previous cache values
-        2. Queries information about curve pools' addresses, lp tokens and used coins
-        3. Saves queried information in the cache in globaldb
-        """
-        if should_update_curve_cache() is False:
-            if tx_decoder is not None:
-                self._update_curve_decoder(tx_decoder)
-            return False
-
-        # Using shared cursor to not end up having partially populated cache
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            # Delete current cache. Need to do this in case curve removes some pools
-            clear_curve_pools_cache(write_cursor=write_cursor)
-            # write new values to the cache
-            update_curve_registry_pools_cache(
-                write_cursor=write_cursor,
-                ethereum_manager=self,
-            )
-            update_curve_metapools_cache(
-                write_cursor=write_cursor,
-                ethereum_manager=self,
-            )
-
-        if tx_decoder is not None:
-            self._update_curve_decoder(tx_decoder)
-
-        return True
-
-    def _process_contract_info(
-            self,
-            output: List[Tuple[bool, bytes]],
-            properties: Tuple[str, ...],
-            contract: EvmContract,
-            token_kind: EvmTokenKind,
-    ) -> List[Optional[Union[int, str, bytes]]]:
-        """Decodes information i.e. (decimals, symbol, name) about the token contract.
-        - `decimals` property defaults to 18.
-        - `name` and `symbol` default to None.
-
-        May raise:
-        - OverflowError
-        - InsufficientDataBytes
-        """
-        decoded_contract_info = []
-        for method_name, method_value in zip(properties, output):
-            if method_value[0] is True and len(method_value[1]) != 0:
-                decoded_contract_info.append(contract.decode(method_value[1], method_name)[0])
-                continue
-
-            if token_kind == EvmTokenKind.ERC20:
-                # for missing erc20 methods, use default decimals for decimals or None for others
-                if method_name == 'decimals':
-                    decoded_contract_info.append(DEFAULT_TOKEN_DECIMALS)
-                else:
-                    decoded_contract_info.append(None)
-            else:  # for all others default to None
-                decoded_contract_info.append(None)
-
-        return decoded_contract_info

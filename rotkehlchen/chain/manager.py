@@ -1137,7 +1137,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         # Query ethereum ETH balances
         eth_accounts = self.accounts.eth
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
-        balances = self.ethereum.get_multieth_balance(eth_accounts)
+        balances = self.ethereum.get_multi_balance(eth_accounts)
         for account, balance in balances.items():
             usd_value = balance * eth_usd_price
             self.balances.eth[account] = BalanceSheet(

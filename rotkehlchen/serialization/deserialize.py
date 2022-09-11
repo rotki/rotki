@@ -39,7 +39,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.evm.manager import EvmManager
 
 
 logger = logging.getLogger(__name__)
@@ -498,7 +498,7 @@ def deserialize_optional(input_val: Optional[X], fn: Callable[[X], Y]) -> Option
 def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: Literal[True],
-        manager: Optional['EthereumManager'] = None,
+        manager: Optional['EvmManager'] = None,
 ) -> EvmInternalTransaction:
     ...
 
@@ -507,7 +507,7 @@ def deserialize_evm_transaction(
 def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: Literal[False],
-        manager: Optional['EthereumManager'] = None,
+        manager: Optional['EvmManager'] = None,
 ) -> EvmTransaction:
     ...
 
@@ -515,7 +515,7 @@ def deserialize_evm_transaction(
 def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: bool,
-        manager: Optional['EthereumManager'] = None,
+        manager: Optional['EvmManager'] = None,
 ) -> Union[EvmTransaction, EvmInternalTransaction]:
     """Reads dict data of a transaction and deserializes it.
     If the transaction is not from etherscan then it's missing some data
