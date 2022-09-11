@@ -4,8 +4,9 @@ import pytest
 
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
-from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
+from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.chain.ethereum.types import NodeName
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress, SubstrateChain

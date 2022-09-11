@@ -8,10 +8,10 @@ import gevent
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
-from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
+from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_evm_address
+from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx

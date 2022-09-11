@@ -9,13 +9,12 @@ from flaky import flaky
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType
-from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.modules.uniswap import (
     UNISWAP_EVENTS_PREFIX,
     UniswapPoolEvent,
     UniswapPoolEventsBalance,
 )
-from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.chain.ethereum.types import NodeName, string_to_evm_address
 from rotkehlchen.constants.assets import A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
