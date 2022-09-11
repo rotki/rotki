@@ -17,7 +17,7 @@ from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import BTCAddress, ChecksumEvmAddress
@@ -370,14 +370,14 @@ def mock_etherscan_query(
                     scan_output_types = get_abi_output_types(scan_fn_abi)
                     result_bytes = []
                     for call_entry in decoded_input[0]:  # pylint: disable=unsubscriptable-object
-                        call_contract_address = deserialize_ethereum_address(call_entry[0])
+                        call_contract_address = deserialize_evm_address(call_entry[0])
                         assert call_contract_address == contract.address, 'balances multicall should only contain calls to scan contract'  # noqa: E501
                         call_data = call_entry[1]
                         scan_decoded_input = web3.codec.decode_abi(scan_input_types, call_data[4:])
-                        account_address = deserialize_ethereum_address(scan_decoded_input[0])  # pylint: disable=unsubscriptable-object  # noqa: E501
+                        account_address = deserialize_evm_address(scan_decoded_input[0])  # pylint: disable=unsubscriptable-object  # noqa: E501
                         token_values = []
                         for token_addy_str in scan_decoded_input[1]:  # pylint: disable=unsubscriptable-object # noqa: E501
-                            token_address = deserialize_ethereum_address(token_addy_str)
+                            token_address = deserialize_evm_address(token_addy_str)
                             token = _get_token(token_address)
                             if token is None:
                                 value = 0  # if token is missing from mapping return 0 value
@@ -423,7 +423,7 @@ def mock_etherscan_query(
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
                 args = []
                 for account_address in decoded_input[0]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                    account_address = deserialize_ethereum_address(account_address)
+                    account_address = deserialize_evm_address(account_address)
                     args.append(int(eth_map[account_address]['ETH']))
                 result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
@@ -442,10 +442,10 @@ def mock_etherscan_query(
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
                 args = []
                 for account_address in decoded_input[0]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                    account_address = deserialize_ethereum_address(account_address)
+                    account_address = deserialize_evm_address(account_address)
                     x = []
                     for token_address in decoded_input[1]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                        token_address = deserialize_ethereum_address(token_address)
+                        token_address = deserialize_evm_address(token_address)
                         value_to_add = 0
                         for given_asset, value in eth_map[account_address].items():
                             given_asset = _get_token(given_asset)
@@ -476,10 +476,10 @@ def mock_etherscan_query(
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
                 args = []
-                account_address = deserialize_ethereum_address(decoded_input[0])  # pylint: disable=unsubscriptable-object  # noqa: E501
+                account_address = deserialize_evm_address(decoded_input[0])  # pylint: disable=unsubscriptable-object  # noqa: E501
                 x = []
                 for token_address in decoded_input[1]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                    token_address = deserialize_ethereum_address(token_address)
+                    token_address = deserialize_evm_address(token_address)
                     value_to_add = 0
                     for given_asset, value in eth_map[account_address].items():
                         given_asset = _get_token(given_asset)

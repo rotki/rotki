@@ -77,7 +77,7 @@ from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, shift_num_right_by, ts_now
@@ -651,7 +651,7 @@ class MakerdaoVaults(HasDSProxy):
         vaults = []
         for idx, identifier in enumerate(result[0]):
             try:
-                urn = deserialize_ethereum_address(result[1][idx])
+                urn = deserialize_evm_address(result[1][idx])
             except DeserializationError as e:
                 raise RemoteError(
                     f'Failed to deserialize address {result[1][idx]} '

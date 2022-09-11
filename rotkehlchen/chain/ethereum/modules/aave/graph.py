@@ -15,7 +15,7 @@ from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
@@ -317,7 +317,7 @@ def _parse_atoken_balance_history(
 
         try:
             address_s = '0x' + pairs[2]
-            reserve_address = deserialize_ethereum_address(address_s)
+            reserve_address = deserialize_evm_address(address_s)
         except DeserializationError:
             log.error(
                 f'Error deserializing reserve address {address_s}',
@@ -369,7 +369,7 @@ def _get_reserve_asset_and_decimals(
 ) -> Optional[Tuple[Asset, int]]:
     try:
         # The ID of reserve is the address of the asset and the address of the market's LendingPoolAddressProvider, in lower case  # noqa: E501
-        reserve_address = deserialize_ethereum_address(entry[reserve_key]['id'][:42])
+        reserve_address = deserialize_evm_address(entry[reserve_key]['id'][:42])
     except DeserializationError:
         log.error(f'Failed to Deserialize reserve address {entry[reserve_key]["id"]}')
         return None
@@ -447,7 +447,7 @@ class AaveGraphInquirer(AaveInquirer):
             try:
                 result.append(AaveUserReserve(
                     # The ID of reserve is the address of the asset and the address of the market's LendingPoolAddressProvider, in lower case  # noqa: E501
-                    address=deserialize_ethereum_address(reserve['id'][:42]),
+                    address=deserialize_evm_address(reserve['id'][:42]),
                     symbol=reserve['symbol'],
                 ))
             except DeserializationError:
@@ -481,7 +481,7 @@ class AaveGraphInquirer(AaveInquirer):
 
             try:
                 address_s = '0x' + pairs[2]
-                reserve_address = deserialize_ethereum_address(address_s)
+                reserve_address = deserialize_evm_address(address_s)
             except DeserializationError:
                 log.error(
                     f'Failed to deserialize reserve address {address_s} '

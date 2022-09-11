@@ -390,7 +390,7 @@ def deserialize_hex_color_code(symbol: str) -> HexColorCode:
     return HexColorCode(symbol)
 
 
-def deserialize_ethereum_address(symbol: str) -> ChecksumEvmAddress:
+def deserialize_evm_address(symbol: str) -> ChecksumEvmAddress:
     """Deserialize a symbol, check that it's a valid ethereum address
     and return it checksummed.
 
@@ -401,7 +401,7 @@ def deserialize_ethereum_address(symbol: str) -> ChecksumEvmAddress:
         return to_checksum_address(symbol)
     except ValueError as e:
         raise DeserializationError(
-            f'Invalid ethereum address: {symbol}',
+            f'Invalid evm address: {symbol}',
         ) from e
 
 
@@ -494,50 +494,49 @@ def deserialize_optional(input_val: Optional[X], fn: Callable[[X], Y]) -> Option
 
 
 @overload
-def deserialize_ethereum_transaction(
+def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: Literal[True],
-        ethereum: Optional['EthereumManager'] = None,
 ) -> EthereumInternalTransaction:
     ...
 
 
 @overload
-def deserialize_ethereum_transaction(
+def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: Literal[False],
-        ethereum: Optional['EthereumManager'] = None,
+        manager: Optional['EvmManager'] = None,
 ) -> EthereumTransaction:
     ...
 
 
-def deserialize_ethereum_transaction(
+def deserialize_evm_transaction(
         data: Dict[str, Any],
         internal: bool,
-        ethereum: Optional['EthereumManager'] = None,
+        manager: Optional['EvmManager'] = None,
 ) -> Union[EthereumTransaction, EthereumInternalTransaction]:
     """Reads dict data of a transaction and deserializes it.
     If the transaction is not from etherscan then it's missing some data
-    so ethereum manager is used to fetch it.
+    so evm manager is used to fetch it.
 
     Can raise DeserializationError if something is wrong
     """
-    source = 'etherscan' if ethereum is None else 'web3'
+    source = 'etherscan' if manager is None else 'web3'
     try:
         tx_hash = deserialize_evm_tx_hash(data['hash'])
         block_number = read_integer(data, 'blockNumber', source)
         if 'timeStamp' not in data:
-            if ethereum is None:
-                raise DeserializationError('Got in deserialize ethereum transaction without timestamp and without ethereum manager')  # noqa: E501
+            if manager is None:
+                raise DeserializationError('Got in deserialize evm transaction without timestamp and without evm manager')  # noqa: E501
 
-            block_data = ethereum.get_block_by_number(block_number)
+            block_data = manager.get_block_by_number(block_number)
             timestamp = Timestamp(read_integer(block_data, 'timestamp', source))
         else:
             timestamp = deserialize_timestamp(data['timeStamp'])
 
-        from_address = deserialize_ethereum_address(data['from'])
+        from_address = deserialize_evm_address(data['from'])
         is_empty_to_address = data['to'] != '' and data['to'] is not None
-        to_address = deserialize_ethereum_address(data['to']) if is_empty_to_address else None
+        to_address = deserialize_evm_address(data['to']) if is_empty_to_address else None
         value = read_integer(data, 'value', source)
 
         if internal:
@@ -555,10 +554,10 @@ def deserialize_ethereum_transaction(
         gas_price = read_integer(data=data, key='gasPrice', api=source)
         input_data = read_hash(data, 'input', source)
         if 'gasUsed' not in data:
-            if ethereum is None:
-                raise DeserializationError('Got in deserialize ethereum transaction without gasUsed and without ethereum manager')  # noqa: E501
+            if manager is None:
+                raise DeserializationError('Got in deserialize evm transaction without gasUsed and without evm manager')  # noqa: E501
             tx_hash = deserialize_evm_tx_hash(data['hash'])
-            receipt_data = ethereum.get_transaction_receipt(tx_hash)
+            receipt_data = manager.get_transaction_receipt(tx_hash)
             gas_used = read_integer(receipt_data, 'gasUsed', source)
         else:
             gas_used = read_integer(data, 'gasUsed', source)
@@ -578,7 +577,7 @@ def deserialize_ethereum_transaction(
         )
     except KeyError as e:
         raise DeserializationError(
-            f'ethereum {"internal" if internal else ""}transaction from {source} missing expected key {str(e)}',  # noqa: E501
+            f'evm {"internal" if internal else ""}transaction from {source} missing expected key {str(e)}',  # noqa: E501
         ) from e
 
 

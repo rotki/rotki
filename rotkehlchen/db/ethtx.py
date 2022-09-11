@@ -15,10 +15,7 @@ from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_ethereum_address,
-    deserialize_timestamp,
-)
+from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_timestamp
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EthereumInternalTransaction,
@@ -298,7 +295,7 @@ class DBEthTx():
         status = data.get('status', 1)  # status may be missing for older txs. Assume 1.
         if status is None:
             status = 1
-        contract_address = deserialize_ethereum_address(data['contractAddress']) if data['contractAddress'] else None  # noqa: E501
+        contract_address = deserialize_evm_address(data['contractAddress']) if data['contractAddress'] else None  # noqa: E501
         write_cursor.execute(
             'INSERT INTO ethtx_receipts (tx_hash, contract_address, status, type) '
             'VALUES(?, ?, ?, ?) ',
@@ -313,7 +310,7 @@ class DBEthTx():
                 tx_hash_b,
                 log_index,
                 hexstring_to_bytes(log_entry['data']),
-                deserialize_ethereum_address(log_entry['address']),
+                deserialize_evm_address(log_entry['address']),
                 int(log_entry['removed']),
             ))
 

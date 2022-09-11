@@ -23,7 +23,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, Price, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
@@ -358,7 +358,7 @@ class ZerionSDK():
         decimals = metadata[3]
         normalized_value = token_normalized_value_decimals(balance_value, decimals)
         token_symbol = metadata[2]
-        token_address = deserialize_ethereum_address(metadata[0])
+        token_address = deserialize_evm_address(metadata[0])
         token_name = metadata[1]
 
         special_handling = self.handle_protocols(
@@ -422,7 +422,7 @@ class ZerionSDK():
             return None
 
         return DefiBalance(
-            token_address=deserialize_ethereum_address(token_address),
+            token_address=deserialize_evm_address(token_address),
             token_name=token_name,
             token_symbol=token_symbol,
             balance=Balance(amount=normalized_balance, usd_value=normalized_balance * usd_price),

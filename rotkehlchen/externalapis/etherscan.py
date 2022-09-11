@@ -30,7 +30,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_ethereum_transaction,
+    deserialize_evm_transaction,
     deserialize_int_from_str,
     deserialize_timestamp,
 )
@@ -289,10 +289,10 @@ class Etherscan(ExternalServiceWithApiKey):
                 try:
                     # Handle genesis block transactions
                     if entry['hash'].startswith('GENESIS') is False:
-                        tx = deserialize_ethereum_transaction(  # type: ignore
+                        tx = deserialize_evm_transaction(  # type: ignore
                             data=entry,
                             internal=is_internal,
-                            ethereum=None,
+                            manager=None,
                         )
                     else:
                         # Handling genesis transactions
@@ -302,10 +302,10 @@ class Etherscan(ExternalServiceWithApiKey):
                         entry['from'] = ZERO_ADDRESS
                         entry['hash'] = GENESIS_HASH
                         entry['traceId'] = trace_id
-                        internal_tx = deserialize_ethereum_transaction(
+                        internal_tx = deserialize_evm_transaction(
                             data=entry,
                             internal=True,
-                            ethereum=None,
+                            manager=None,
                         )
                         with self.db.user_write() as cursor:  # type: ignore  # db always here
                             dbtx.add_ethereum_internal_transactions(

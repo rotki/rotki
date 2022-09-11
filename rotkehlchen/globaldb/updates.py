@@ -19,7 +19,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -261,7 +261,7 @@ class AssetsUpdater():
             token_kind = None
 
         return (
-            deserialize_ethereum_address(self._parse_str(match.group(4), 'address', insert_text)),
+            deserialize_evm_address(self._parse_str(match.group(4), 'address', insert_text)),
             self._parse_optional_int(match.group(5), 'decimals', insert_text),
             self._parse_optional_str(match.group(6), 'protocol', insert_text),
             chain,

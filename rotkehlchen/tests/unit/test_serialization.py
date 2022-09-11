@@ -8,8 +8,8 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import read_hash
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
-    deserialize_ethereum_address,
-    deserialize_ethereum_transaction,
+    deserialize_evm_address,
+    deserialize_evm_transaction,
     deserialize_int_from_hex_or_int,
 )
 from rotkehlchen.types import (
@@ -126,16 +126,16 @@ def test_deserialize_deployment_ethereum_transaction():
         'input': '',
         'nonce': 1,
     }
-    tx = deserialize_ethereum_transaction(
+    tx = deserialize_evm_transaction(
         data=data,
         internal=False,
-        ethereum=None,
+        manager=None,
     )
     expected = EthereumTransaction(
         timestamp=Timestamp(0),
         block_number=1,
         tx_hash=deserialize_evm_tx_hash(data['hash']),
-        from_address=deserialize_ethereum_address(data['from']),
+        from_address=deserialize_evm_address(data['from']),
         to_address=None,
         value=data['value'],
         gas=data['gas'],

@@ -28,10 +28,7 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import (
-    deserialize_ethereum_address,
-    deserialize_timestamp,
-)
+from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_timestamp
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
@@ -268,10 +265,10 @@ class Adex(EthereumModule):
             ) from e
 
         try:
-            address = deserialize_ethereum_address(user_address)
+            address = deserialize_evm_address(user_address)
             identity_address = inverse_identity_address_map[address]
-            tx_address = deserialize_ethereum_address(tx_address)
-            token_address = deserialize_ethereum_address(token_address)
+            tx_address = deserialize_evm_address(tx_address)
+            token_address = deserialize_evm_address(token_address)
         except (KeyError, DeserializationError) as e:
             if isinstance(e, KeyError):
                 msg = f'Missing key in event: {str(e)}.'
@@ -340,7 +337,7 @@ class Adex(EthereumModule):
         - KeyError
         - DeserializationError
         """
-        identity_address = deserialize_ethereum_address(raw_event['owner'])
+        identity_address = deserialize_evm_address(raw_event['owner'])
         address = identity_address_map[identity_address]
         event_id = raw_event['id']
         if not isinstance(event_id, str):
@@ -357,7 +354,7 @@ class Adex(EthereumModule):
             raise DeserializationError(f'Unexpected format in {case} event id: {event_id}') from e
 
         if case in ('unbond', 'unbond_request'):
-            tx_address = deserialize_ethereum_address(tx_address)
+            tx_address = deserialize_evm_address(tx_address)
 
             if address != tx_address:
                 raise DeserializationError(
