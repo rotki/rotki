@@ -20,7 +20,6 @@ from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber, HexStr
 from web3 import Web3
-from web3._utils.abi import get_abi_output_types
 from web3.types import FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
@@ -39,27 +38,15 @@ from rotkehlchen.constants.ethereum import (
     ETH_MULTICALL_2,
     ETH_SCAN,
 )
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_evm_address,
-    deserialize_evm_transaction,
-    deserialize_int_from_hex,
-)
-from rotkehlchen.types import (
-    ChainID,
-    ChecksumEvmAddress,
-    EvmTokenKind,
-    EvmTransaction,
-    EVMTxHash,
-    SupportedBlockchain,
-    Timestamp,
-)
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -88,84 +75,6 @@ CURVE_POOLS_MAPPING_TYPE = Dict[
 
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
 MAX_ADDRESSES_IN_REVERSE_ENS_QUERY = 80
-
-
-def _query_web3_get_logs(
-        web3: Web3,
-        filter_args: FilterParams,
-        from_block: int,
-        to_block: Union[int, Literal['latest']],
-        contract_address: ChecksumEvmAddress,
-        event_name: str,
-        argument_filters: Dict[str, Any],
-) -> List[Dict[str, Any]]:
-    until_block = web3.eth.block_number if to_block == 'latest' else to_block
-    events: List[Dict[str, Any]] = []
-    start_block = from_block
-    # we know that in most of its early life the Eth2 contract address returns a
-    # a lot of results. So limit the query range to not hit the infura limits every time
-    # supress https://lgtm.com/rules/1507386916281/ since it does not apply here
-    infura_eth2_log_query = (
-        'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # noqa: E501 lgtm [py/incomplete-url-substring-sanitization]
-        contract_address == ETH2_DEPOSIT.address
-    )
-    block_range = initial_block_range = WEB3_LOGQUERY_BLOCK_RANGE
-    if infura_eth2_log_query:
-        block_range = initial_block_range = 75000
-
-    while start_block <= until_block:
-        filter_args['fromBlock'] = start_block
-        end_block = min(start_block + block_range, until_block)
-        filter_args['toBlock'] = end_block
-        log.debug(
-            'Querying web3 node for contract event',
-            contract_address=contract_address,
-            event_name=event_name,
-            argument_filters=argument_filters,
-            from_block=filter_args['fromBlock'],
-            to_block=filter_args['toBlock'],
-        )
-        # As seen in https://github.com/rotki/rotki/issues/1787, the json RPC, if it
-        # is infura can throw an error here which we can only parse by catching the  exception
-        try:
-            new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
-        except (ValueError, KeyError) as e:
-            if isinstance(e, ValueError):
-                try:
-                    decoded_error = json.loads(str(e).replace("'", '"'))
-                except json.JSONDecodeError:
-                    # reraise the value error if the error is not json
-                    raise e from None
-
-                msg = decoded_error.get('message', '')
-            else:  # temporary hack for key error seen from pokt
-                msg = 'query returned more than 10000 results'
-
-            # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
-            if msg in ('query returned more than 10000 results', 'query timeout exceeded'):
-                block_range = block_range // 2
-                if block_range < 50:
-                    raise  # stop retrying if block range gets too small
-                # repeat the query with smaller block range
-                continue
-            # else, well we tried .. reraise the error
-            raise e
-
-        # Turn all HexBytes into hex strings
-        for e_idx, event in enumerate(new_events_web3):
-            new_events_web3[e_idx]['blockHash'] = event['blockHash'].hex()
-            new_topics = []
-            for topic in event['topics']:
-                new_topics.append(topic.hex())
-            new_events_web3[e_idx]['topics'] = new_topics
-            new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].hex()
-
-        start_block = end_block + 1
-        events.extend(new_events_web3)
-        # end of the loop, end of 1 query. Reset the block range to max
-        block_range = initial_block_range
-
-    return events
 
 
 class EthereumManager(EvmManager):
@@ -237,6 +146,84 @@ class EthereumManager(EvmManager):
             log.debug('ETH highest block result', block=block_number)
 
         return BlockNumber(block_number)
+
+    def _query_web3_get_logs(
+            self,
+            web3: Web3,
+            filter_args: FilterParams,
+            from_block: int,
+            to_block: Union[int, Literal['latest']],
+            contract_address: ChecksumEvmAddress,
+            event_name: str,
+            argument_filters: Dict[str, Any],
+    ) -> List[Dict[str, Any]]:
+        until_block = web3.eth.block_number if to_block == 'latest' else to_block
+        events: List[Dict[str, Any]] = []
+        start_block = from_block
+        # we know that in most of its early life the Eth2 contract address returns a
+        # a lot of results. So limit the query range to not hit the infura limits every time
+        # supress https://lgtm.com/rules/1507386916281/ since it does not apply here
+        infura_eth2_log_query = (
+            'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # noqa: E501 lgtm [py/incomplete-url-substring-sanitization]
+            contract_address == ETH2_DEPOSIT.address
+        )
+        block_range = initial_block_range = WEB3_LOGQUERY_BLOCK_RANGE
+        if infura_eth2_log_query:
+            block_range = initial_block_range = 75000
+
+        while start_block <= until_block:
+            filter_args['fromBlock'] = start_block
+            end_block = min(start_block + block_range, until_block)
+            filter_args['toBlock'] = end_block
+            log.debug(
+                'Querying web3 node for contract event',
+                contract_address=contract_address,
+                event_name=event_name,
+                argument_filters=argument_filters,
+                from_block=filter_args['fromBlock'],
+                to_block=filter_args['toBlock'],
+            )
+            # As seen in https://github.com/rotki/rotki/issues/1787, the json RPC, if it
+            # is infura can throw an error here which we can only parse by catching the exception
+            try:
+                new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
+            except (ValueError, KeyError) as e:
+                if isinstance(e, ValueError):
+                    try:
+                        decoded_error = json.loads(str(e).replace("'", '"'))
+                    except json.JSONDecodeError:
+                        # reraise the value error if the error is not json
+                        raise e from None
+
+                    msg = decoded_error.get('message', '')
+                else:  # temporary hack for key error seen from pokt
+                    msg = 'query returned more than 10000 results'
+
+                # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
+                if msg in ('query returned more than 10000 results', 'query timeout exceeded'):
+                    block_range = block_range // 2
+                    if block_range < 50:
+                        raise  # stop retrying if block range gets too small
+                    # repeat the query with smaller block range
+                    continue
+                # else, well we tried .. reraise the error
+                raise e
+
+            # Turn all HexBytes into hex strings
+            for e_idx, event in enumerate(new_events_web3):
+                new_events_web3[e_idx]['blockHash'] = event['blockHash'].hex()
+                new_topics = []
+                for topic in event['topics']:
+                    new_topics.append(topic.hex())
+                new_events_web3[e_idx]['topics'] = new_topics
+                new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].hex()
+
+            start_block = end_block + 1
+            events.extend(new_events_web3)
+            # end of the loop, end of 1 query. Reset the block range to max
+            block_range = initial_block_range
+
+        return events
 
     def ens_reverse_lookup(self, addresses: List[ChecksumEvmAddress]) -> Dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses

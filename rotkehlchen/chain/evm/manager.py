@@ -34,14 +34,12 @@ from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.ethereum.manager import _query_web3_get_logs
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, UNIV1_LP_ABI
-from rotkehlchen.constants.resolver import ChainID
-from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -695,7 +693,7 @@ class EvmManager(metaclass=ABCMeta, LockableQueryMixIn):
         events: List[Dict[str, Any]] = []
         start_block = from_block
         if web3 is not None:
-            events = _query_web3_get_logs(
+            events = self._query_web3_get_logs(
                 web3=web3,
                 filter_args=filter_args,
                 from_block=from_block,
@@ -994,3 +992,16 @@ class EvmManager(metaclass=ABCMeta, LockableQueryMixIn):
         If requery is True it always queries the node. Otherwise it remembers last query.
         """
         ...
+
+    def _query_web3_get_logs(  # pylint: disable=unused-argument
+            self,
+            web3: Web3,
+            filter_args: FilterParams,
+            from_block: int,
+            to_block: Union[int, Literal['latest']],
+            contract_address: ChecksumEvmAddress,
+            event_name: str,
+            argument_filters: Dict[str, Any],
+    ) -> List[Dict[str, Any]]:
+        log.warning("EvmManager._query_web3_get_logs() is not implemented. Returning 0 events.")
+        return [{}]
