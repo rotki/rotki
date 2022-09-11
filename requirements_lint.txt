@@ -1,7 +1,7 @@
 mypy==0.971
 mypy-extensions==0.4.3
-pylint==2.15.0
-astroid==2.12.5  # engine of pylint, upgrade them together
+pylint==2.15.2
+astroid==2.12.9  # engine of pylint, upgrade them together
 flake8==5.0.4
 flake8-commas==2.1.0
 flake8-bugbear==22.8.23
