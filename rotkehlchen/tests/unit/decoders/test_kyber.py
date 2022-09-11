@@ -13,7 +13,7 @@ from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     EvmInternalTransaction,
-    EthereumTransaction,
+    EvmTransaction,
     Location,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -30,7 +30,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
     msg_aggregator = MessagesAggregator()
     tx_hex = '0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1591043988,
         block_number=10182160,
@@ -154,7 +154,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
     msg_aggregator = MessagesAggregator()
     tx_hex = '0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1644182638,
         block_number=14154915,

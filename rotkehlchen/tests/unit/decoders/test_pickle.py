@@ -12,7 +12,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import EthereumTransaction, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import EvmTransaction, Location, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
@@ -25,7 +25,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1646375440,
         block_number=14318825,
@@ -138,7 +138,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1646375440,
         block_number=14355951,

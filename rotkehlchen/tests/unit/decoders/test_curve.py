@@ -16,7 +16,7 @@ from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import (
     EvmInternalTransaction,
-    EthereumTransaction,
+    EvmTransaction,
     GeneralCacheType,
     Location,
     Timestamp,
@@ -66,7 +66,7 @@ def test_curve_deposit(database, evm_transaction_decoder):
     tx_hex = '0x523b7df8e168315e97a836a3d516d639908814785d7df1ef1745de3e55501982'
     location_label = '0x57bF3B0f29E37619623994071C9e12091919675c'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1650276061,
         block_number=14608535,
@@ -204,7 +204,7 @@ def test_curve_deposit_eth(database, evm_transaction_decoder):
     tx_hex = '0x51c052c8fb60f092f98ffc3cab6340c7c5348ee3b339582feba1c17cbd97ea56'
     location_label = '0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1650276061,
         block_number=14608535,
@@ -353,7 +353,7 @@ def test_curve_remove_liquidity(database, evm_transaction_decoder):
     tx_hex = '0xd63dccdbebeede3a1f50b97c0a8592255203a0559880b80377daa39f915741b0'
     location_label = '0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1650276061,
         block_number=14608535,
@@ -477,7 +477,7 @@ def test_curve_remove_liquidity_with_internal(database, evm_transaction_decoder)
     tx_hex = '0x30bb99f3e34fb1fbcf009320af7e290caf18b04b207319e15aa8ffbf645f4ad9'
     location_label = '0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1650276061,
         block_number=14647221,
@@ -591,7 +591,7 @@ def test_curve_remove_imbalanced(database, evm_transaction_decoder):
     tx_hex = '0xd8832abcf4773abe24d8cda5581fb53bfb3850c535c1956d1d120a72a4ebcbd8'
     location_label = '0x2fac74A3a04B031F240923621a578724C40678af'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1650276061,
         block_number=14647221,

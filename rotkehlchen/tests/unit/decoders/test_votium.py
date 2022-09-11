@@ -12,7 +12,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import EthereumTransaction, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import EvmTransaction, Location, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
@@ -25,7 +25,7 @@ def test_votium_claim(database, ethereum_manager, eth_transactions):
     msg_aggregator = MessagesAggregator()
     tx_hex = '0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1646375440,
         block_number=14318825,

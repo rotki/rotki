@@ -16,7 +16,7 @@ from rotkehlchen.tests.utils.ethereum import (
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import (
     BlockchainAccountData,
-    EthereumTransaction,
+    EvmTransaction,
     SupportedBlockchain,
     deserialize_evm_tx_hash,
     make_evm_tx_hash,
@@ -77,7 +77,7 @@ def test_get_transaction_receipt(
         )
         db.add_ethereum_transactions(
             cursor,
-            [EthereumTransaction(  # need to add the tx first
+            [EvmTransaction(  # need to add the tx first
                 tx_hash=tx_hash,
                 timestamp=1,  # all other fields don't matter for this test
                 block_number=1,
@@ -133,7 +133,7 @@ def test_get_transaction_by_hash(ethereum_manager, call_order, ethereum_manager_
         hexstring_to_bytes('0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c'),
         call_order=call_order,
     )
-    expected_tx = EthereumTransaction(
+    expected_tx = EvmTransaction(
         tx_hash=make_evm_tx_hash(b'[\x18\x0e=\xcc\x19\xcd)\xc9\x18\xb9\x8c\x87o\x199>\x07\xb7L\x07\xfdr\x81\x02\xebbA\xdb<-\\'),  # noqa: E501
         timestamp=1633128954,
         block_number=13336285,

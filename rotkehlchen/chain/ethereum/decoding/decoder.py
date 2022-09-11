@@ -28,13 +28,7 @@ from rotkehlchen.errors.serialization import ConversionError, DeserializationErr
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-    EthereumTransaction,
-    EVMTxHash,
-    Location,
-    TimestampMS,
-)
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, EVMTxHash, Location, TimestampMS
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     from_wei,
@@ -164,7 +158,7 @@ class EVMTransactionDecoder():
             self,
             token: Optional[EvmToken],
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
             action_items: List[ActionItem],
     ) -> Optional[HistoryBaseEntry]:
@@ -178,7 +172,7 @@ class EVMTransactionDecoder():
     def decode_by_address_rules(
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],
             all_logs: List[EthereumTxReceiptLog],
             action_items: List[ActionItem],
@@ -212,7 +206,7 @@ class EVMTransactionDecoder():
     def decode_transaction(
             self,
             write_cursor: 'DBCursor',
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             tx_receipt: EthereumTxReceipt,
     ) -> List[HistoryBaseEntry]:
         """Decodes an ethereum transaction and its receipt and saves result in the DB"""
@@ -295,7 +289,7 @@ class EVMTransactionDecoder():
     def get_or_decode_transaction_events(
             self,
             write_cursor: 'DBCursor',
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             tx_receipt: EthereumTxReceipt,
             ignore_cache: bool,
     ) -> List[HistoryBaseEntry]:
@@ -327,7 +321,7 @@ class EVMTransactionDecoder():
 
     def _maybe_decode_internal_transactions(
         self,
-        tx: EthereumTransaction,
+        tx: EvmTransaction,
         tx_receipt: EthereumTxReceipt,
         events: List[HistoryBaseEntry],
         ts_ms: TimestampMS,
@@ -370,7 +364,7 @@ class EVMTransactionDecoder():
 
     def _maybe_decode_simple_transactions(
             self,
-            tx: EthereumTransaction,
+            tx: EvmTransaction,
             tx_receipt: EthereumTxReceipt,
     ) -> List[HistoryBaseEntry]:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
@@ -454,7 +448,7 @@ class EVMTransactionDecoder():
             self,
             token: Optional[EvmToken],
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Optional[HistoryBaseEntry]:
@@ -500,7 +494,7 @@ class EVMTransactionDecoder():
             self,
             token: Optional[EvmToken],
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             action_items: List[ActionItem],
     ) -> Optional[HistoryBaseEntry]:
@@ -576,7 +570,7 @@ class EVMTransactionDecoder():
             self,
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Optional[HistoryBaseEntry]:
@@ -611,7 +605,7 @@ class EVMTransactionDecoder():
             self,
             token: EvmToken,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             event: HistoryBaseEntry,
             action_items: List[ActionItem],
     ) -> None:
@@ -636,7 +630,7 @@ class EVMTransactionDecoder():
             self,
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EvmTransaction,
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Optional[HistoryBaseEntry]:

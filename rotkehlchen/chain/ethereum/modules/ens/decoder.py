@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -45,7 +45,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):  # lgtm[py/missing-ca
     def _decode_name_renewed(
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument

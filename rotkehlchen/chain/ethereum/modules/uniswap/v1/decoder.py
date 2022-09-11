@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.types import EthereumTransaction
+from rotkehlchen.types import EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 from ..constants import CPT_UNISWAP_V1
@@ -24,7 +24,7 @@ class Uniswapv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             self,
             token: Optional[EvmToken],  # pylint: disable=unused-argument
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> None:

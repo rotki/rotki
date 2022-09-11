@@ -19,7 +19,7 @@ from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     BlockchainAccountData,
-    EthereumTransaction,
+    EvmTransaction,
     EVMTxHash,
     SupportedBlockchain,
     Timestamp,
@@ -157,7 +157,7 @@ def setup_ethereum_transactions_test(
         database: DBHandler,
         transaction_already_queried: bool,
         one_receipt_in_db: bool = False,
-) -> Tuple[List[EthereumTransaction], List[EthereumTxReceipt]]:
+) -> Tuple[List[EvmTransaction], List[EthereumTxReceipt]]:
     dbethtx = DBEthTx(database)
     tx_hash1 = deserialize_evm_tx_hash('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
     addr1 = string_to_evm_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
@@ -172,7 +172,7 @@ def setup_ethereum_transactions_test(
             ],
         )
 
-    transaction1 = EthereumTransaction(
+    transaction1 = EvmTransaction(
         tx_hash=tx_hash1,
         timestamp=Timestamp(1630532276),
         block_number=13142218,
@@ -186,7 +186,7 @@ def setup_ethereum_transactions_test(
         nonce=13,
     )
     tx_hash2 = deserialize_evm_tx_hash('0x6beab9409a8f3bd11f82081e99e856466a7daf5f04cca173192f79e78ed53a77')  # noqa: E501
-    transaction2 = EthereumTransaction(
+    transaction2 = EvmTransaction(
         tx_hash=tx_hash2,
         timestamp=Timestamp(1631013757),
         block_number=13178342,

@@ -194,8 +194,8 @@ T_TradeID = str
 TradeID = NewType('TradeID', T_TradeID)
 
 
-class EthereumTransaction(NamedTuple):
-    """Represent an Ethereum transaction"""
+class EvmTransaction(NamedTuple):
+    """Represent an EVM transaction"""
     tx_hash: EVMTxHash
     timestamp: Timestamp
     block_number: int
@@ -224,7 +224,7 @@ class EthereumTransaction(NamedTuple):
         return hash(self.identifier)
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, EthereumTransaction):
+        if not isinstance(other, EvmTransaction):
             return False
 
         return hash(self) == hash(other)

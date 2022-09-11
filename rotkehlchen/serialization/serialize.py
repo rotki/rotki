@@ -71,8 +71,8 @@ from rotkehlchen.types import (
     AssetMovementCategory,
     BlockchainAccountData,
     CostBasisMethod,
-    EthereumTransaction,
     EvmTokenKind,
+    EvmTransaction,
     ExchangeLocationID,
     Location,
     TradeType,
@@ -131,7 +131,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         return entry.serialize()
     if isinstance(entry, (
             Trade,
-            EthereumTransaction,
+            EvmTransaction,
             MakerdaoVault,
             DSRAccountReport,
             Balance,

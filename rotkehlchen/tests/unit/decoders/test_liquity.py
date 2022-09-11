@@ -13,7 +13,7 @@ from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     EvmInternalTransaction,
-    EthereumTransaction,
+    EvmTransaction,
     Location,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -32,7 +32,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
     tx_hex = '0xdb9a541a4af7d5d46d7ea5fe4a2a752dcb731d64d052f86f630e97362063602c'
     user_address = '0x9ba961989Dd6609Ed091f512bE947118c40F2291'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1646375440,
         block_number=14318825,
@@ -158,7 +158,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
     tx_hex = '0x40bb08427a3b99fb9896cf14858d82d361a6e7a8fb7dd6d2000511ac3dca5707'
     user_address = '0x648E180e246741363639B1496762763dd25649db'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1646375440,
         block_number=14318825,
@@ -261,7 +261,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
     tx_hex = '0x6be5312c21855c3cc324b5b6ce9f9f65dbd488e270e84ac5e6fb96c74d83fe4e'
     user_address = '0x648E180e246741363639B1496762763dd25649db'
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1646375440,
         block_number=14318825,

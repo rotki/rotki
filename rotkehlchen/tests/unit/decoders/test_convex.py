@@ -22,7 +22,7 @@ from rotkehlchen.constants.assets import A_CRV, A_CVX, A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import EthereumTransaction, Location, deserialize_evm_tx_hash
+from rotkehlchen.types import EvmTransaction, Location, deserialize_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
@@ -91,7 +91,7 @@ def test_booster_deposit(database, ethereum_manager, eth_transactions):
     tx_hex = '0x8f643dc245ce64085197692ed98309a94fd176a1e7394e8967ae7bfa10ad1f8f'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = string_to_evm_address('0xC960338B529e0353F570f62093Fd362B8FB55f0B')
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=0,
         block_number=0,
@@ -184,7 +184,7 @@ def test_booster_withdraw(database, ethereum_manager, eth_transactions):
     tx_hex = '0x79fcbafa4367e0563d3e614f774c5e4257c4e41f124ae8288980a310e2b2b547'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = string_to_evm_address('0x53913A03a065f685097f8E8f40284D58016bB0F9')
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=0,
         block_number=0,
@@ -301,7 +301,7 @@ def test_cvxcrv_get_reward(database, ethereum_manager, eth_transactions):
     tx_hex = '0x5e62ce39159fcdf528905d044e5387c8f21a1eca015d08cebc652bfb9c183611'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = string_to_evm_address('0xFb305A40Dac406BdCF3b85F6311e5430770f44bA')
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=1655675488,
         block_number=14998088,
@@ -450,7 +450,7 @@ def test_cvxcrv_withdraw(database, ethereum_manager, eth_transactions):
     tx_hex = '0x0a804804cc62f615b72dff55e8c245d9b69aa8f8ed3de549101ae128a4ae432b'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = string_to_evm_address('0xe81FC42336c9314A9Be1EDB3F50eA9e275C93df3')
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=0,
         block_number=0,
@@ -551,7 +551,7 @@ def test_cvxcrv_stake(database, ethereum_manager, eth_transactions):
     tx_hex = '0x3cc0b25887e2f0dac7f86fabd81aaafb1e041e84dbe8167885073c443320ad5f'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = string_to_evm_address('0x2AcEcBF2Ee5BFc8eed599D58835EE9A7c45F3E2c')
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=0,
         block_number=0,
@@ -667,7 +667,7 @@ def test_cvx_stake(database, ethereum_manager, eth_transactions):
     tx_hex = '0xc33246acb86798b81fe650061061d32751c53879d46ece6991fb4a3eda808103'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = string_to_evm_address('0x5B186c93A50D3CB435fE2933427d36E6Dc688e4b')
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=0,
         block_number=0,
@@ -783,7 +783,7 @@ def test_cvx_get_reward(database, ethereum_manager, eth_transactions):
     tx_hex = '0xdaead2f96859462b5800584ecdcf30f2b83a1ca2c36c49a838b23e43c61d803f'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = '0x95c5582D781d507A084c9E5f885C77BabACf8EeA'
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=0,
         block_number=0,
@@ -915,7 +915,7 @@ def test_cvx_withdraw(database, ethereum_manager, eth_transactions):
     tx_hex = '0xe725bd6e00b840f4fb8f73cd7286bfa18b04a24ca9278cac7249218ee9f420a8'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = string_to_evm_address('0x84BCE169c271e1c1777715bb0dd38Ad9e6381BAa')
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=0,
         block_number=0,
@@ -1007,7 +1007,7 @@ def test_claimzap_abracadabras(database, ethereum_manager, eth_transactions):
     tx_hex = '0xe03d27127fda879144ea4cc587470bd37040be9921ff6a90f48d4efd0cb4fe13'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = string_to_evm_address('0x999EcCEa3C4f9219B1B1B42b4830e62c26004B40')
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=0,
         block_number=0,
@@ -1090,7 +1090,7 @@ def test_claimzap_cvx_locker(database, ethereum_manager, eth_transactions):
     tx_hex = '0x53e092e6f25e540d6323af851a1e889276096d58ec25495aef4500467ef2753c'
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = string_to_evm_address('0x0C3Cc503EaE928Ed6B5b01B8a9EE8de2855d03Ac')
-    transaction = EthereumTransaction(
+    transaction = EvmTransaction(
         tx_hash=evmhash,
         timestamp=0,
         block_number=0,

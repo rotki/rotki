@@ -20,7 +20,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ChecksumEvmAddress,
-    EthereumTransaction,
+    EvmTransaction,
     EVMTxHash,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -115,7 +115,7 @@ class EthTransactions:
             filter_query: ETHTransactionsFilterQuery,
             has_premium: bool = False,
             only_cache: bool = False,
-    ) -> Tuple[List[EthereumTransaction], int]:
+    ) -> Tuple[List[EvmTransaction], int]:
         """Queries for all transactions of an ethereum address or of all addresses.
 
         Returns a list of all transactions filtered and sorted according to the parameters.

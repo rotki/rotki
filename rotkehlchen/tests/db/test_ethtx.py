@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import (
     BlockchainAccountData,
     EvmInternalTransaction,
-    EthereumTransaction,
+    EvmTransaction,
     SupportedBlockchain,
     Timestamp,
     make_evm_tx_hash,
@@ -40,7 +40,7 @@ def test_add_get_ethereum_transactions(data_dir, username, sql_vm_instructions_c
             ],
         )
 
-    tx1 = EthereumTransaction(
+    tx1 = EvmTransaction(
         tx_hash=make_evm_tx_hash(b'1'),
         timestamp=Timestamp(1451606400),
         block_number=1,
@@ -53,7 +53,7 @@ def test_add_get_ethereum_transactions(data_dir, username, sql_vm_instructions_c
         input_data=MOCK_INPUT_DATA,
         nonce=1,
     )
-    tx2 = EthereumTransaction(
+    tx2 = EvmTransaction(
         tx_hash=tx2_hash,
         timestamp=Timestamp(1451706400),
         block_number=3,
@@ -66,7 +66,7 @@ def test_add_get_ethereum_transactions(data_dir, username, sql_vm_instructions_c
         input_data=MOCK_INPUT_DATA,
         nonce=1,
     )
-    tx3 = EthereumTransaction(
+    tx3 = EvmTransaction(
         tx_hash=make_evm_tx_hash(b'3'),
         timestamp=Timestamp(1452806400),
         block_number=5,
@@ -138,7 +138,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username, sql_vm_in
             ],
         )
 
-    tx1 = EthereumTransaction(
+    tx1 = EvmTransaction(
         tx_hash=make_evm_tx_hash(b'1'),
         timestamp=Timestamp(1451606400),
         block_number=1,
@@ -151,7 +151,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username, sql_vm_in
         input_data=MOCK_INPUT_DATA,
         nonce=1,
     )
-    tx2 = EthereumTransaction(
+    tx2 = EvmTransaction(
         tx_hash=make_evm_tx_hash(b'2'),
         timestamp=Timestamp(1451706400),
         block_number=3,
@@ -164,7 +164,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username, sql_vm_in
         input_data=MOCK_INPUT_DATA,
         nonce=1,
     )
-    tx3 = EthereumTransaction(
+    tx3 = EvmTransaction(
         tx_hash=make_evm_tx_hash(b'3'),
         timestamp=Timestamp(1452806400),
         block_number=5,
@@ -177,7 +177,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username, sql_vm_in
         input_data=MOCK_INPUT_DATA,
         nonce=3,
     )
-    tx4 = EthereumTransaction(
+    tx4 = EvmTransaction(
         tx_hash=make_evm_tx_hash(b'4'),
         timestamp=Timestamp(1628064001),
         block_number=6,
@@ -190,7 +190,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username, sql_vm_in
         input_data=MOCK_INPUT_DATA,
         nonce=55,
     )
-    tx5 = EthereumTransaction(
+    tx5 = EvmTransaction(
         tx_hash=make_evm_tx_hash(b'5'),
         timestamp=Timestamp(1629064001),
         block_number=7,

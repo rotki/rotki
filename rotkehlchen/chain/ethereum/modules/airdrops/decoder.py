@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
-from rotkehlchen.types import ChecksumEvmAddress, EthereumTransaction, Location
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 from .constants import (
@@ -68,7 +68,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def _decode_uniswap_claim(  # pylint: disable=no-self-use
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
@@ -93,7 +93,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def _decode_fox_claim(  # pylint: disable=no-self-use
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
@@ -118,7 +118,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def _decode_badger_claim(  # pylint: disable=no-self-use
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
@@ -143,7 +143,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def _decode_oneinch_claim(  # pylint: disable=no-self-use
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
@@ -168,7 +168,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def _decode_fpis_claim(  # pylint: disable=no-self-use
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
@@ -201,7 +201,7 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def _decode_elfi_claim(  # pylint: disable=no-self-use
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument

@@ -19,7 +19,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address, deser
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmInternalTransaction,
-    EthereumTransaction,
+    EvmTransaction,
     EVMTxHash,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -46,7 +46,7 @@ class DBEthTx():
     def add_ethereum_transactions(
             self,
             write_cursor: 'DBCursor',
-            ethereum_transactions: List[EthereumTransaction],
+            ethereum_transactions: List[EvmTransaction],
             relevant_address: Optional[ChecksumEvmAddress],
     ) -> None:
         """Adds ethereum transactions to the database"""
@@ -157,7 +157,7 @@ class DBEthTx():
             cursor: 'DBCursor',
             filter_: ETHTransactionsFilterQuery,
             has_premium: bool,
-    ) -> List[EthereumTransaction]:
+    ) -> List[EvmTransaction]:
         """Returns a list of ethereum transactions optionally filtered by
         the given filter query
 
@@ -176,7 +176,7 @@ class DBEthTx():
         ethereum_transactions = []
         for result in results:
             try:
-                tx = EthereumTransaction(
+                tx = EvmTransaction(
                     tx_hash=make_evm_tx_hash(result[0]),
                     timestamp=deserialize_timestamp(result[1]),
                     block_number=result[2],
@@ -205,7 +205,7 @@ class DBEthTx():
             cursor: 'DBCursor',
             filter_: ETHTransactionsFilterQuery,
             has_premium: bool,
-    ) -> Tuple[List[EthereumTransaction], int]:
+    ) -> Tuple[List[EvmTransaction], int]:
         """Gets all ethereum transactions for the query from the D.
 
         Also returns how many are the total found for the filter.
@@ -437,7 +437,7 @@ class DBEthTx():
     def get_or_create_genesis_transaction(
             self,
             account: ChecksumEvmAddress,
-    ) -> EthereumTransaction:
+    ) -> EvmTransaction:
         with self.db.conn.read_ctx() as cursor:
             tx_in_db = self.get_ethereum_transactions(
                 cursor=cursor,
@@ -447,7 +447,7 @@ class DBEthTx():
         if len(tx_in_db) == 1:
             tx = tx_in_db[0]
         else:
-            tx = EthereumTransaction(
+            tx = EvmTransaction(
                 timestamp=ETHEREUM_BEGIN,
                 block_number=0,
                 tx_hash=GENESIS_HASH,
