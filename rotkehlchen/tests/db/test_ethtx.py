@@ -11,7 +11,7 @@ from rotkehlchen.tests.utils.constants import (
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import (
     BlockchainAccountData,
-    EthereumInternalTransaction,
+    EvmInternalTransaction,
     EthereumTransaction,
     SupportedBlockchain,
     Timestamp,
@@ -203,7 +203,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username, sql_vm_in
         input_data=MOCK_INPUT_DATA,
         nonce=55,
     )
-    internal_tx1 = EthereumInternalTransaction(
+    internal_tx1 = EvmInternalTransaction(
         parent_tx_hash=make_evm_tx_hash(b'3'),
         trace_id=1,
         timestamp=Timestamp(1452806400),
@@ -212,7 +212,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username, sql_vm_in
         to_address=address_4,
         value=0,
     )
-    internal_tx2 = EthereumInternalTransaction(
+    internal_tx2 = EvmInternalTransaction(
         parent_tx_hash=make_evm_tx_hash(b'5'),
         trace_id=21,
         timestamp=Timestamp(1629064001),
@@ -221,7 +221,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username, sql_vm_in
         to_address=make_ethereum_address(),
         value=0,
     )
-    internal_tx3 = EthereumInternalTransaction(
+    internal_tx3 = EvmInternalTransaction(
         parent_tx_hash=make_evm_tx_hash(b'4'),
         trace_id=25,
         timestamp=Timestamp(1628064001),
@@ -230,7 +230,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username, sql_vm_in
         to_address=ETH_ADDRESS3,
         value=10,
     )
-    internal_tx4 = EthereumInternalTransaction(
+    internal_tx4 = EvmInternalTransaction(
         parent_tx_hash=make_evm_tx_hash(b'4'),
         trace_id=26,
         timestamp=Timestamp(1628064001),

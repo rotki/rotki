@@ -36,7 +36,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     ChecksumEvmAddress,
-    EthereumInternalTransaction,
+    EvmInternalTransaction,
     EthereumTransaction,
     EVMTxHash,
     ExternalService,
@@ -245,7 +245,7 @@ class Etherscan(ExternalServiceWithApiKey):
             action: Literal['txlistinternal'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Iterator[List[EthereumInternalTransaction]]:
+    ) -> Iterator[List[EvmInternalTransaction]]:
         ...
 
     @overload
@@ -264,7 +264,7 @@ class Etherscan(ExternalServiceWithApiKey):
             action: Literal['txlist', 'txlistinternal'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Union[Iterator[List[EthereumTransaction]], Iterator[List[EthereumInternalTransaction]]]:
+    ) -> Union[Iterator[List[EthereumTransaction]], Iterator[List[EvmInternalTransaction]]]:
         """Gets a list of transactions (either normal or internal) for account.
 
         May raise:
@@ -279,7 +279,7 @@ class Etherscan(ExternalServiceWithApiKey):
             to_block = self.get_blocknumber_by_time(to_ts)
             options['endBlock'] = str(to_block)
 
-        transactions: Union[Sequence[EthereumTransaction], Sequence[EthereumInternalTransaction]] = []  # noqa: E501
+        transactions: Union[Sequence[EthereumTransaction], Sequence[EvmInternalTransaction]] = []  # noqa: E501
         is_internal = action == 'txlistinternal'
         while True:
             result = self._query(module='account', action=action, options=options)

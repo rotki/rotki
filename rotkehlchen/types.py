@@ -234,8 +234,8 @@ class EthereumTransaction(NamedTuple):
         return self.tx_hash.hex()
 
 
-class EthereumInternalTransaction(NamedTuple):
-    """Represent an internal Ethereum transaction"""
+class EvmInternalTransaction(NamedTuple):
+    """Represent an internal EVM transaction"""
     parent_tx_hash: EVMTxHash
     trace_id: int
     timestamp: Timestamp
@@ -254,7 +254,7 @@ class EthereumInternalTransaction(NamedTuple):
         return hash(self.identifier)
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, EthereumInternalTransaction):
+        if not isinstance(other, EvmInternalTransaction):
             return False
 
         return hash(self) == hash(other)
