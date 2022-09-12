@@ -15,9 +15,19 @@
       class="d-flex flex-row align-baseline"
       type="text"
     >
+      <span
+        v-if="comparisonSymbol"
+        class="mr-1 amount-display__comparison-symbol"
+      >
+        {{ comparisonSymbol }}
+      </span>
       <amount-currency
-        v-if="!isRenderValueNaN && currencyLocation === 'before'"
-        class="mr-1 ml-1"
+        v-if="
+          !isRenderValueNaN &&
+          currencyLocation === 'before' &&
+          shownCurrency !== 'none'
+        "
+        class="mr-1"
         :show-currency="shownCurrency"
         :currency="currency"
         :asset="symbol"
@@ -64,7 +74,11 @@
         </v-tooltip>
       </span>
       <amount-currency
-        v-if="!isRenderValueNaN && currencyLocation === 'after'"
+        v-if="
+          !isRenderValueNaN &&
+          currencyLocation === 'after' &&
+          shownCurrency !== 'none'
+        "
         class="ml-1 amount-display__currency"
         :asset-padding="assetPadding"
         :show-currency="shownCurrency"
@@ -255,19 +269,33 @@ const formatValue = (value: BigNumber): string => {
     );
   }
 
+  return formattedValue;
+};
+
+const comparisonSymbol = computed(() => {
+  if (get(isPriceAsset)) {
+    return '';
+  }
+
+  const value = get(renderValue);
+
+  const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
+  const price = get(convertFiat) ? convertValue(value) : value;
   const decimals = price.decimalPlaces() ?? 0;
   const hiddenDecimals = decimals > floatingPrecisionUsed;
+
   if (hiddenDecimals && get(rounding) === BigNumber.ROUND_UP) {
-    return `< ${formattedValue}`;
+    return '<';
   } else if (
     price.abs().lt(1) &&
     hiddenDecimals &&
     get(rounding) === BigNumber.ROUND_DOWN
   ) {
-    return `> ${formattedValue}`;
+    return '>';
   }
-  return formattedValue;
-};
+
+  return '';
+});
 
 const formattedValue = computed(() => {
   if (get(isPriceAsset)) {
