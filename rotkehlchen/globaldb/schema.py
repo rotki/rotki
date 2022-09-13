@@ -93,8 +93,11 @@ CREATE TABLE IF NOT EXISTS common_asset_details(
     coingecko TEXT,
     cryptocompare TEXT,
     forked TEXT,
+    started INTEGER,
+    swapped_for TEXT,
     FOREIGN KEY(forked) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE SET NULL,
-    FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE SET NULL
 );
 """
 
@@ -107,10 +110,7 @@ DB_CREATE_ASSETS = """
 CREATE TABLE IF NOT EXISTS assets (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
     name TEXT,
-    type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type),
-    started INTEGER,
-    swapped_for TEXT,
-    FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE SET NULL
+    type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type)
 );
 """
 
@@ -239,7 +239,6 @@ CREATE TABLE IF NOT EXISTS address_book (
 DB_CREATE_CUSTOM_ASSET = """
 CREATE TABLE IF NOT EXISTS custom_assets(
     identifier TEXT NOT NULL PRIMARY KEY,
-    name TEXT NOT NULL,
     notes TEXT,
     type TEXT,
     FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
