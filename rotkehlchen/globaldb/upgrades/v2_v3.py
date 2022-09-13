@@ -126,12 +126,12 @@ OTHER_EVM_CHAINS_ASSETS = {
     'ELV': 'eip155:56/erc20:0xE942C48044FB1C7f4C9eB456f6097fa4A1A17B8f',
 }
 COMMON_ASSETS_INSERT = """INSERT OR IGNORE INTO common_asset_details(
-    identifier, symbol, coingecko, cryptocompare, forked
-    ) VALUES(?, ?, ?, ?, ?)
+    identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for
+    ) VALUES(?, ?, ?, ?, ?, ?, ?)
 """
 ASSETS_INSERT = """INSERT OR IGNORE INTO assets(
-        identifier, name, type, started, swapped_for
-    )VALUES(?, ?, ?, ?, ?);
+        identifier, name, type
+    )VALUES(?, ?, ?);
 """
 EVM_TOKEN_INSERT = """INSERT OR IGNORE INTO evm_tokens(
         identifier, token_kind, chain, address, decimals, protocol
@@ -210,8 +210,6 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
             entry[0],  # identifier
             entry[5],  # name
             AssetType.EVM_TOKEN.serialize_for_db(),  # type
-            entry[7],  # started
-            new_swapped_for,  # swapped for
         ))
         common_asset_details.append((
             entry[0],  # identifier
@@ -219,6 +217,8 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
             entry[9],  # coingecko
             entry[10],  # cryptocompare
             None,  # forked, none for eth
+            entry[7],  # started
+            new_swapped_for,  # swapped for
         ))
 
     return (
@@ -254,8 +254,6 @@ def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
             entry[0],  # identifier
             entry[2],  # name
             entry[1],  # type
-            entry[4],  # started
-            swapped_for,
         ))
         common_asset_details.append((
             entry[0],  # identifier
@@ -263,6 +261,8 @@ def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
             entry[6],  # coingecko
             entry[7],  # cryptocompare
             entry[8],  # forked
+            entry[4],  # started
+            swapped_for,
         ))
 
     return (
@@ -393,10 +393,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         CREATE TABLE IF NOT EXISTS assets (
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
             name TEXT,
-            type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type),
-            started INTEGER,
-            swapped_for TEXT,
-            FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE SET NULL
+            type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type)
         );
         """)  # noqa: E501
         cursor.execute("""
@@ -406,8 +403,11 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             coingecko TEXT,
             cryptocompare TEXT,
             forked TEXT,
+            started INTEGER,
+            swapped_for TEXT,
             FOREIGN KEY(forked) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE SET NULL,
-            FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+            FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE SET NULL
         );
         """)  # noqa: E501
         cursor.execute("""
@@ -468,7 +468,6 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS custom_assets(
             identifier TEXT NOT NULL PRIMARY KEY,
-            name TEXT NOT NULL,
             notes TEXT,
             type TEXT,
             FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
@@ -513,5 +512,5 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         # other chains. And populates them properly via sql statements
         with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql', 'r') as f:
             sql_sentences = f.read()
-            cursor.executescript(sql_sentences)
+            # cursor.executescript(sql_sentences)
         connection.commit()
