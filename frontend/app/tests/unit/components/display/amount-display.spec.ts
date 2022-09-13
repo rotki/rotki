@@ -90,7 +90,10 @@ describe('AmountDisplay.vue', () => {
 
     test('displays amount as it is without fiat conversion', async () => {
       wrapper = createWrapper(bigNumberify(1.20540001), Zero, null);
-      expect(wrapper.find('.amount-display__value').text()).toBe('< 1.21');
+      expect(wrapper.find('.amount-display__comparison-symbol').text()).toBe(
+        '<'
+      );
+      expect(wrapper.find('.amount-display__value').text()).toBe('1.21');
       expect(wrapper.find('.amount-display__full-value').text()).toBe(
         '1.20540001'
       );
