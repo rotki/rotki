@@ -1,41 +1,31 @@
 # This python file was generated automatically by
-# /home/yabirgb/work/rotki/tools/scripts/generate_constant_assets.py at 11/08/2022 16:17:32.
+# /Users/eniola/work/rotki/tools/scripts/generate_constant_assets.py at 15/09/2022 09:51:02.
 # Do not edit manually!
 
-from typing import List
+from typing import List, Union
 
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import AssetWithSymbol, CryptoAsset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
 
-CONSTANT_ASSETS: List[Asset] = []
+CONSTANT_ASSETS: List[Union[AssetWithSymbol, CryptoAsset, EvmToken]] = []
 
-A_USD = Asset.initialize(
+A_USD = AssetWithSymbol.initialize(
     identifier='USD',
     asset_type=AssetType.FIAT,
     name="United States Dollar",
     symbol='USD',
-    started=None,
-    forked=None,
-    swapped_for=None,
-    coingecko=None,
-    cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_USD)
-A_EUR = Asset.initialize(
+A_EUR = AssetWithSymbol.initialize(
     identifier='EUR',
     asset_type=AssetType.FIAT,
     name="Euro",
     symbol='EUR',
-    started=Timestamp(915148800),
-    forked=None,
-    swapped_for=None,
-    coingecko=None,
-    cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_EUR)
-A_BTC = Asset.initialize(
+A_BTC = CryptoAsset.initialize(
     identifier='BTC',
     asset_type=AssetType.OWN_CHAIN,
     name="Bitcoin",
@@ -47,7 +37,7 @@ A_BTC = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_BTC)
-A_BCH = Asset.initialize(
+A_BCH = CryptoAsset.initialize(
     identifier='BCH',
     asset_type=AssetType.OWN_CHAIN,
     name="Bitcoin Cash",
@@ -59,7 +49,7 @@ A_BCH = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_BCH)
-A_BSV = Asset.initialize(
+A_BSV = CryptoAsset.initialize(
     identifier='BSV',
     asset_type=AssetType.OWN_CHAIN,
     name="Bitcoin Satoshi's Vision",
@@ -71,7 +61,7 @@ A_BSV = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_BSV)
-A_ETH = Asset.initialize(
+A_ETH = CryptoAsset.initialize(
     identifier='ETH',
     asset_type=AssetType.OWN_CHAIN,
     name="Ethereum",
@@ -83,7 +73,7 @@ A_ETH = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_ETH)
-A_ETH2 = Asset.initialize(
+A_ETH2 = CryptoAsset.initialize(
     identifier='ETH2',
     asset_type=AssetType.OWN_CHAIN,
     name="Staked ETH in Phase 0",
@@ -95,7 +85,7 @@ A_ETH2 = Asset.initialize(
     cryptocompare='ETH',
 )
 CONSTANT_ASSETS.append(A_ETH2)
-A_ETC = Asset.initialize(
+A_ETC = CryptoAsset.initialize(
     identifier='ETC',
     asset_type=AssetType.OWN_CHAIN,
     name="Ethereum classic",
@@ -107,7 +97,7 @@ A_ETC = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_ETC)
-A_KSM = Asset.initialize(
+A_KSM = CryptoAsset.initialize(
     identifier='KSM',
     asset_type=AssetType.OWN_CHAIN,
     name="Kusama",
@@ -119,7 +109,7 @@ A_KSM = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_KSM)
-A_AVAX = Asset.initialize(
+A_AVAX = CryptoAsset.initialize(
     identifier='AVAX',
     asset_type=AssetType.OWN_CHAIN,
     name="Avalanche",
@@ -131,7 +121,7 @@ A_AVAX = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_AVAX)
-A_DOGE = Asset.initialize(
+A_DOGE = CryptoAsset.initialize(
     identifier='DOGE',
     asset_type=AssetType.OWN_CHAIN,
     name="Dogecoin",
@@ -143,7 +133,7 @@ A_DOGE = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_DOGE)
-A_BSQ = Asset.initialize(
+A_BSQ = CryptoAsset.initialize(
     identifier='BSQ',
     asset_type=AssetType.OTHER,
     name="Bisq DAO Token",
@@ -155,7 +145,7 @@ A_BSQ = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_BSQ)
-A_KFEE = Asset.initialize(
+A_KFEE = CryptoAsset.initialize(
     identifier='KFEE',
     asset_type=AssetType.OWN_CHAIN,
     name="Kraken fees",
@@ -167,7 +157,7 @@ A_KFEE = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_KFEE)
-A_SOL = Asset.initialize(
+A_SOL = CryptoAsset.initialize(
     identifier='SOL-2',
     asset_type=AssetType.OWN_CHAIN,
     name="Solana",
@@ -1965,7 +1955,7 @@ CONSTANT_ASSETS.append(A_FARM_CRVRENWBTC)
 
 
 # Needed by independentreserve
-A_XRP = Asset.initialize(
+A_XRP = CryptoAsset.initialize(
     identifier='XRP',
     asset_type=AssetType.OWN_CHAIN,
     name="Ripple",
@@ -1977,7 +1967,7 @@ A_XRP = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_XRP)
-A_ADA = Asset.initialize(
+A_ADA = CryptoAsset.initialize(
     identifier='ADA',
     asset_type=AssetType.OWN_CHAIN,
     name="Cardano",
@@ -1989,7 +1979,7 @@ A_ADA = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_ADA)
-A_DOT = Asset.initialize(
+A_DOT = CryptoAsset.initialize(
     identifier='DOT',
     asset_type=AssetType.OWN_CHAIN,
     name="Polkadot",
@@ -2001,7 +1991,7 @@ A_DOT = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_DOT)
-A_LTC = Asset.initialize(
+A_LTC = CryptoAsset.initialize(
     identifier='LTC',
     asset_type=AssetType.OWN_CHAIN,
     name="Litecoin",
@@ -2013,7 +2003,7 @@ A_LTC = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_LTC)
-A_EOS = Asset.initialize(
+A_EOS = CryptoAsset.initialize(
     identifier='EOS',
     asset_type=AssetType.OWN_CHAIN,
     name="EOS.io",
@@ -2025,7 +2015,7 @@ A_EOS = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_EOS)
-A_XLM = Asset.initialize(
+A_XLM = CryptoAsset.initialize(
     identifier='XLM',
     asset_type=AssetType.OWN_CHAIN,
     name="Stellar Lumens",
@@ -2080,54 +2070,34 @@ A_OMG = EvmToken.initialize(
 )
 CONSTANT_ASSETS.append(A_OMG)
 
-A_AUD = Asset.initialize(
+A_AUD = AssetWithSymbol.initialize(
     identifier='AUD',
     asset_type=AssetType.FIAT,
     name="Australian Dollar",
     symbol='AUD',
-    started=None,
-    forked=None,
-    swapped_for=None,
-    coingecko=None,
-    cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_AUD)
-A_NZD = Asset.initialize(
+A_NZD = AssetWithSymbol.initialize(
     identifier='NZD',
     asset_type=AssetType.FIAT,
     name="New Zealand Dollar",
     symbol='NZD',
-    started=None,
-    forked=None,
-    swapped_for=None,
-    coingecko=None,
-    cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_NZD)
-A_SGD = Asset.initialize(
+A_SGD = AssetWithSymbol.initialize(
     identifier='SGD',
     asset_type=AssetType.FIAT,
     name="Singapore Dollar",
     symbol='SGD',
-    started=None,
-    forked=None,
-    swapped_for=None,
-    coingecko=None,
-    cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_SGD)
 
 # Needed by cryptocompare.py
-A_KRW = Asset.initialize(
+A_KRW = AssetWithSymbol.initialize(
     identifier='KRW',
     asset_type=AssetType.FIAT,
     name="Korean won",
     symbol='KRW',
-    started=None,
-    forked=None,
-    swapped_for=None,
-    coingecko=None,
-    cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_KRW)
 
@@ -2162,7 +2132,7 @@ A_ELFI = EvmToken.initialize(
 CONSTANT_ASSETS.append(A_ELFI)
 
 # Needed by iconomi
-A_AUST = Asset.initialize(
+A_AUST = CryptoAsset.initialize(
     identifier='AUST',
     asset_type=AssetType.OTHER,
     name="AnchorUST",
@@ -2232,7 +2202,7 @@ A_DXD = EvmToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_DXD)
-SWAPPEDFOR_0X0BA45A8B5D5575935B8158A88C631E9F9C95A2E5 = Asset.initialize(
+SWAPPEDFOR_0X0BA45A8B5D5575935B8158A88C631E9F9C95A2E5 = CryptoAsset.initialize(
     identifier='eip155:1/erc20:0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0',
     asset_type=AssetType.EVM_TOKEN,
     name="Tellor",
