@@ -10,7 +10,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import TRACE, add_logging_level
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
-
 add_logging_level('TRACE', TRACE)
 
 class ContextManager():
@@ -23,7 +22,7 @@ class ContextManager():
             sql_vm_instructions_cb=0,
         )
 
-    def add_asset_initialization(self, var_name: str, identifier: str) -> str:
+    def add_crypto_asset_initialization(self, var_name: str, identifier: str) -> str:
         generated_text = ''
         asset_data = self.globaldb.get_asset_data(identifier=identifier, form_with_incomplete_data=False)  # noqa: E501
         var_forked = 'None'
@@ -32,14 +31,14 @@ class ContextManager():
                 var_forked = self.id_to_variable[asset_data.forked]
             else:
                 var_forked = f'{identifier.upper()}_forked'
-                generated_text += self.add_asset_initialization(var_forked, asset_data.forked.identifier)  # noqa: E501
+                generated_text += self.add_crypto_asset_initialization(var_forked, asset_data.forked.identifier)  # noqa: E501
         var_swappedfor = 'None'
         if asset_data.swapped_for:
             if asset_data.swapped_for in self.id_to_variable:
                 var_swappedfor = self.id_to_variable[asset_data.swapped_for]
             else:
                 var_swappedfor = f'{identifier.upper()}_swappedfor'
-                generated_text += self.add_asset_initialization(var_swappedfor, asset_data.swapped_for.identifier)  # noqa:E501
+                generated_text += self.add_crypto_asset_initialization(var_swappedfor, asset_data.swapped_for.identifier)  # noqa:E501
 
         name = f'"{asset_data.name}"' if asset_data.name else None
         symbol = f'\'{asset_data.symbol}\'' if asset_data.symbol else None
@@ -47,7 +46,7 @@ class ContextManager():
         coingecko = f'\'{asset_data.coingecko}\'' if asset_data.coingecko else None
         cryptocompare = f'\'{asset_data.cryptocompare}\'' if asset_data.cryptocompare else None
         generated_text += (
-            f'{var_name} = Asset.initialize(\n'
+            f'{var_name} = CryptoAsset.initialize(\n'
             f'    identifier=\'{identifier}\',\n'
             f'    asset_type=AssetType.{asset_data.asset_type.name},\n'
             f'    name={name},\n'
@@ -62,7 +61,7 @@ class ContextManager():
         )
 
         if identifier in self.id_to_variable:
-            raise ValueError(f'Asset with identifier {identifier} and var_name {var_name} is defined twice')  # noqa: E501
+            raise ValueError(f'Crypto asset with identifier {identifier} and var_name {var_name} is defined twice')  # noqa: E501
         self.id_to_variable[identifier] = var_name
         return generated_text
 
@@ -77,7 +76,7 @@ class ContextManager():
                 var_swappedfor = self.id_to_variable[token.swapped_for]
             else:
                 var_swappedfor = f'swappedfor_{address}'.upper()
-                generated_text += self.add_asset_initialization(var_swappedfor, token.swapped_for.identifier)  # noqa: E501
+                generated_text += self.add_crypto_asset_initialization(var_swappedfor, token.swapped_for.identifier)  # noqa: E501
 
         name = f'"{token.name}"' if token.name else None
         symbol = f'\'{token.symbol}\'' if token.symbol else None
@@ -113,6 +112,26 @@ class ContextManager():
         self.id_to_variable[identifier] = var_name
         return generated_text
 
+    def add_asset_with_symbol_initialization(self, var_name: str, identifier: str) -> str:
+        generated_text = ''
+        asset_data = self.globaldb.get_asset_data(identifier=identifier, form_with_incomplete_data=False)  # noqa: E501
+        name = f'"{asset_data.name}"' if asset_data.name else None
+        symbol = f'\'{asset_data.symbol}\'' if asset_data.symbol else None
+        generated_text += (
+            f'{var_name} = AssetWithSymbol.initialize(\n'
+            f'    identifier=\'{identifier}\',\n'
+            f'    asset_type=AssetType.{asset_data.asset_type.name},\n'
+            f'    name={name},\n'
+            f'    symbol={symbol},\n'
+            f')\n'
+            f'CONSTANT_ASSETS.append({var_name})\n'
+        )
+
+        if identifier in self.id_to_variable:
+            raise ValueError(f'AssetWithSymbol with identifier {identifier} and var_name {var_name} is defined twice')  # noqa: E501
+        self.id_to_variable[identifier] = var_name
+        return generated_text
+
 
 def main() -> None:
     """Goes through the assets template, reads the built-in assets DB and generates
@@ -131,11 +150,18 @@ def main() -> None:
     with open(template_file, 'r') as f:
         for line in f:
             line = line.strip('\n\r')
-            if 'Asset(\'' in line:
-                initial_split = line.split(' = Asset(\'')
+            if 'CryptoAsset(\'' in line:
+                initial_split = line.split(' = CryptoAsset(\'')
                 var_name = initial_split[0]
                 identifier = initial_split[1].split('\'')[0]
-                generated_text += ctx.add_asset_initialization(var_name, identifier)
+                generated_text += ctx.add_crypto_asset_initialization(var_name, identifier)
+                continue
+
+            if 'AssetWithSymbol(\'' in line:
+                initial_split = line.split(' = AssetWithSymbol(\'')
+                var_name = initial_split[0]
+                identifier = initial_split[1].split('\'')[0]
+                generated_text += ctx.add_asset_with_symbol_initialization(var_name, identifier)
                 continue
 
             if 'EvmToken(\'' in line:

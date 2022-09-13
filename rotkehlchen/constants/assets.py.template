@@ -1,27 +1,27 @@
-from typing import List
+from typing import List, Union
 
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import AssetWithSymbol, CryptoAsset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.types import ChainID
 from rotkehlchen.types import EvmTokenKind, Timestamp
 
-CONSTANT_ASSETS: List[Asset] = []
+CONSTANT_ASSETS: List[Union[AssetWithSymbol, CryptoAsset, EvmToken]] = []
 
-A_USD = Asset('USD')
-A_EUR = Asset('EUR')
-A_BTC = Asset('BTC')
-A_BCH = Asset('BCH')
-A_BSV = Asset('BSV')
-A_ETH = Asset('ETH')
-A_ETH2 = Asset('ETH2')
-A_ETC = Asset('ETC')
-A_KSM = Asset('KSM')
-A_AVAX = Asset('AVAX')
-A_DOGE = Asset('DOGE')
-A_BSQ = Asset('BSQ')
-A_KFEE = Asset('KFEE')
-A_SOL = Asset('SOL-2')
+A_USD = AssetWithSymbol('USD')
+A_EUR = AssetWithSymbol('EUR')
+A_BTC = CryptoAsset('BTC')
+A_BCH = CryptoAsset('BCH')
+A_BSV = CryptoAsset('BSV')
+A_ETH = CryptoAsset('ETH')
+A_ETH2 = CryptoAsset('ETH2')
+A_ETC = CryptoAsset('ETC')
+A_KSM = CryptoAsset('KSM')
+A_AVAX = CryptoAsset('AVAX')
+A_DOGE = CryptoAsset('DOGE')
+A_BSQ = CryptoAsset('BSQ')
+A_KFEE = CryptoAsset('KFEE')
+A_SOL = CryptoAsset('SOL-2')
 
 
 A_BAL = EvmToken('eip155:1/erc20:0xba100000625a3754423978a60c9317c58a424e3D')
@@ -170,29 +170,29 @@ A_FARM_CRVRENWBTC = EvmToken('eip155:1/erc20:0x9aA8F427A17d6B0d91B6262989EdC7D45
 
 
 # Needed by independentreserve
-A_XRP = Asset('XRP')
-A_ADA = Asset('ADA')
-A_DOT = Asset('DOT')
-A_LTC = Asset('LTC')
-A_EOS = Asset('EOS')
-A_XLM = Asset('XLM')
+A_XRP = CryptoAsset('XRP')
+A_ADA = CryptoAsset('ADA')
+A_DOT = CryptoAsset('DOT')
+A_LTC = CryptoAsset('LTC')
+A_EOS = CryptoAsset('EOS')
+A_XLM = CryptoAsset('XLM')
 A_GRT = EvmToken('eip155:1/erc20:0xc944E90C64B2c07662A292be6244BDf05Cda44a7')
 A_PMGT = EvmToken('eip155:1/erc20:0xAFFCDd96531bCd66faED95FC61e443D08F79eFEf')
 A_OMG = EvmToken('eip155:1/erc20:0xd26114cd6EE289AccF82350c8d8487fedB8A0C07')
 
-A_AUD = Asset('AUD')
-A_NZD = Asset('NZD')
-A_SGD = Asset('SGD')
+A_AUD = AssetWithSymbol('AUD')
+A_NZD = AssetWithSymbol('NZD')
+A_SGD = AssetWithSymbol('SGD')
 
 # Needed by cryptocompare.py
-A_KRW = Asset('KRW')
+A_KRW = AssetWithSymbol('KRW')
 
 # Needed by airdrops.py
 A_CVX = EvmToken('eip155:1/erc20:0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B')
 A_ELFI = EvmToken('eip155:1/erc20:0x5c6D51ecBA4D8E4F20373e3ce96a62342B125D6d')
 
 # Needed by iconomi
-A_AUST = Asset('AUST')
+A_AUST = CryptoAsset('AUST')
 
 # Needed by loopring.py
 A_HT = EvmToken('eip155:1/erc20:0x6f259637dcD74C767781E37Bc6133cd6A68aa161')
