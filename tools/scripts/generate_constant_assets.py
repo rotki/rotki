@@ -1,18 +1,27 @@
 from pathlib import Path
 from typing import Dict
 
+from gevent import monkey  # isort:skip # noqa
+monkey.patch_all()  # isort:skip # noqa
+
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.resolver import ChainID, strethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import TRACE, add_logging_level
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
+
+add_logging_level('TRACE', TRACE)
 
 class ContextManager():
     """Manages the parsing context of the assets template"""
 
     def __init__(self) -> None:
         self.id_to_variable: Dict[str, str] = {}
-        self.globaldb = GlobalDBHandler(default_data_directory())
+        self.globaldb = GlobalDBHandler(
+            data_dir=default_data_directory(),
+            sql_vm_instructions_cb=0,
+        )
 
     def add_asset_initialization(self, var_name: str, identifier: str) -> str:
         generated_text = ''
