@@ -143,7 +143,8 @@ export default defineComponent({
       },
       {
         text: '',
-        value: 'actions'
+        value: 'actions',
+        sortable: false
       }
     ]);
 
