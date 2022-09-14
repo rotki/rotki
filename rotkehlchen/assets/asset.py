@@ -608,6 +608,10 @@ WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
     strethaddress_to_identifier('0xfB7B4564402E5500dB5bB6d63Ae671302777C75a'): 'DEXT',
     strethaddress_to_identifier('0x27702a26126e0B3702af63Ee09aC4d1A084EF628'): 'ALEPH',
+    strethaddress_to_identifier('0x362bc847A3a9637d3af6624EeC853618a43ed7D2'): 'PRQ',
+    strethaddress_to_identifier('0x0258F474786DdFd37ABCE6df6BBb1Dd5dfC4434a'): 'ORN',
+    strethaddress_to_identifier('0xdeFA4e8a7bcBA345F687a2f1456F5Edd9CE97202'): 'KNC',
+    strethaddress_to_identifier('0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68'): 'INV',
 }
 
 WORLD_TO_COINBASE = {
@@ -621,6 +625,10 @@ WORLD_TO_COINBASE = {
     'STX-2': 'STX',
     strethaddress_to_identifier('0xec67005c4E498Ec7f55E092bd1d35cbC47C91892'): 'MLN',
     strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
+    strethaddress_to_identifier('0x362bc847A3a9637d3af6624EeC853618a43ed7D2'): 'PRQ',
+    strethaddress_to_identifier('0x0258F474786DdFd37ABCE6df6BBb1Dd5dfC4434a'): 'ORN',
+    strethaddress_to_identifier('0xdeFA4e8a7bcBA345F687a2f1456F5Edd9CE97202'): 'KNC',
+    strethaddress_to_identifier('0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68'): 'INV',
 }
 
 WORLD_TO_UPHOLD = {
