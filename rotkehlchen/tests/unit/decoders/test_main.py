@@ -14,6 +14,7 @@ def test_decoders_initialization(evm_transaction_decoder):
         'Oneinchv1',
         'Oneinchv2',
         'PickleFinance',
+        'Sushiswap',
         'Uniswapv1',
         'Uniswapv2',
         'Uniswapv3',
@@ -54,4 +55,5 @@ def test_decoders_initialization(evm_transaction_decoder):
         'dxdaomesa',
         '1inch-v1',
         'convex',
+        'sushiswap-v2',
     }
