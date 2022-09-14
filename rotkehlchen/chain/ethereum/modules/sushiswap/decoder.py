@@ -4,7 +4,7 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
-from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
+from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import decode_uniswap_v2_like_swap
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.types import EvmTransaction
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 SWAP_SIGNATURE = b'\xd7\x8a\xd9_\xa4l\x99KeQ\xd0\xda\x85\xfc\'_\xe6\x13\xce7e\x7f\xb8\xd5\xe3\xd10\x84\x01Y\xd8"'  # noqa: E501
 
 
-class Uniswapv2Decoder(DecoderInterface):
+class SushiswapDecoder(DecoderInterface):
 
     def __init__(
             self,
@@ -47,7 +47,7 @@ class Uniswapv2Decoder(DecoderInterface):
                 tx_log=tx_log,
                 decoded_events=decoded_events,
                 transaction=transaction,
-                counterparty=CPT_UNISWAP_V2,
+                counterparty=CPT_SUSHISWAP_V2,
                 database=self.database,
                 ethereum_manager=self.ethereum_manager,
             )
@@ -60,4 +60,4 @@ class Uniswapv2Decoder(DecoderInterface):
         ]
 
     def counterparties(self) -> List[str]:
-        return [CPT_UNISWAP_V2]
+        return [CPT_SUSHISWAP_V2]
