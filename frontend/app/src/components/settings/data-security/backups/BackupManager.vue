@@ -227,7 +227,6 @@ const setupBackupActions = (
   const saving = ref(false);
 
   const backup = async () => {
-    const { t } = useI18n();
     try {
       set(saving, true);
       const filepath = await api.backups.createBackup();

@@ -4,18 +4,19 @@
     top
     :disabled="asset.length <= assetPadding"
     open-delay="400"
+    tag="div"
   >
     <template #activator="{ on, attrs }">
       <span v-bind="attrs" :style="assetStyle" v-on="on">
         {{ asset }}
       </span>
     </template>
-    <span>
+    <span data-cy="display-currency">
       {{ asset }}
     </span>
   </v-tooltip>
 
-  <span v-else :style="assetStyle">
+  <span v-else :style="assetStyle" data-cy="display-currency">
     {{ displayAsset }}
   </span>
 </template>

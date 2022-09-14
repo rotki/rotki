@@ -18,20 +18,25 @@
       <span
         v-if="comparisonSymbol"
         class="mr-1 amount-display__comparison-symbol"
+        data-cy="display-comparison-symbol"
       >
         {{ comparisonSymbol }}
       </span>
-      <amount-currency
+      <div
         v-if="
           !isRenderValueNaN &&
           currencyLocation === 'before' &&
-          shownCurrency !== 'none'
+          (shownCurrency !== 'none' || symbol)
         "
         class="mr-1"
-        :show-currency="shownCurrency"
-        :currency="currency"
-        :asset="symbol"
-      />
+      >
+        <amount-currency
+          class="amount-display__currency"
+          :show-currency="shownCurrency"
+          :currency="currency"
+          :asset="symbol"
+        />
+      </div>
       <span>
         <v-tooltip top open-delay="200ms">
           <template #activator="{ on, attrs }">
@@ -52,6 +57,7 @@
                 showExponential
               "
               class="amount-display__full-value"
+              data-cy="display-full-value"
             >
               {{ fullFormattedValue }}
             </div>
@@ -73,18 +79,22 @@
           </div>
         </v-tooltip>
       </span>
-      <amount-currency
+      <div
         v-if="
           !isRenderValueNaN &&
           currencyLocation === 'after' &&
-          shownCurrency !== 'none'
+          (shownCurrency !== 'none' || symbol)
         "
-        class="ml-1 amount-display__currency"
-        :asset-padding="assetPadding"
-        :show-currency="shownCurrency"
-        :currency="renderedCurrency"
-        :asset="symbol"
-      />
+        class="ml-1"
+      >
+        <amount-currency
+          :asset-padding="assetPadding"
+          class="amount-display__currency"
+          :show-currency="shownCurrency"
+          :currency="renderedCurrency"
+          :asset="symbol"
+        />
+      </div>
     </v-skeleton-loader>
   </div>
 </template>
