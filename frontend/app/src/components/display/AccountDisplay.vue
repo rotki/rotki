@@ -9,13 +9,6 @@
         </v-col>
 
         <v-col
-          class="font-weight-bold mr-1 account-display__label text-no-wrap"
-        >
-          <span class="text-truncate">
-            {{ account.label }}
-          </span>
-        </v-col>
-        <v-col
           cols="auto"
           :class="{ 'blur-content': !shouldShowAmount }"
           class="text-no-wrap"

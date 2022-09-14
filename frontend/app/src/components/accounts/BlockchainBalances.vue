@@ -33,14 +33,17 @@
         :primary-action="tc('common.actions.save')"
         :secondary-action="tc('common.actions.cancel')"
         :action-disabled="!valid"
+        :loading="get(isAccountOperationRunning()) || pending"
         @confirm="saveAccount()"
         @cancel="clearDialog()"
       >
         <account-form
           ref="form"
           v-model="valid"
+          :pending="pending"
           :edit="accountToEdit"
           :context="context"
+          @update:pending="pending = $event"
         />
       </big-dialog>
       <asset-balances
@@ -246,6 +249,7 @@ const dialogSubtitle = ref('');
 const valid = ref(false);
 const openDialog = ref(false);
 const form = ref<AccountFormType | null>(null);
+const pending = ref<boolean>(false);
 
 const createAccount = () => {
   set(accountToEdit, null);
@@ -398,11 +402,15 @@ const isBlockchainLoading = computed<boolean>(() => {
   return get(isQueryingBlockchain) || get(isLoopringLoading);
 });
 
-const isAccountOperationRunning = (blockchain: Blockchain) =>
+const isAccountOperationRunning = (blockchain?: Blockchain) =>
   computed<boolean>(() => {
     return (
-      get(isTaskRunning(TaskType.ADD_ACCOUNT, { blockchain })) ||
-      get(isTaskRunning(TaskType.REMOVE_ACCOUNT, { blockchain }))
+      get(
+        isTaskRunning(TaskType.ADD_ACCOUNT, blockchain ? { blockchain } : {})
+      ) ||
+      get(
+        isTaskRunning(TaskType.REMOVE_ACCOUNT, blockchain ? { blockchain } : {})
+      )
     );
   });
 

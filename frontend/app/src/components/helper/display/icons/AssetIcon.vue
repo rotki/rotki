@@ -1,37 +1,39 @@
 <template>
-  <adaptive-wrapper :circle="circle" :padding="padding">
-    <v-tooltip top open-delay="400" :disabled="noTooltip">
-      <template #activator="{ on, attrs }">
-        <div
-          v-bind="attrs"
-          :style="styled"
-          class="d-flex"
-          :class="{ [css.circle]: circle }"
-          v-on="on"
-        >
-          <generated-icon
-            v-if="!!currency || error"
-            :asset="displayAsset"
-            :currency="!!currency"
-            :size="size"
-          />
-          <v-img
-            v-else-if="!error"
-            :src="url"
-            :max-height="size"
-            :min-height="size"
-            :max-width="size"
-            :min-width="size"
-            contain
-            @error="error = true"
-          />
-        </div>
-      </template>
-      <span>
-        {{ t('asset_icon.tooltip', tooltip) }}
-      </span>
-    </v-tooltip>
-  </adaptive-wrapper>
+  <div :style="placeholderStyle">
+    <adaptive-wrapper :circle="circle" :padding="padding">
+      <v-tooltip top open-delay="400" :disabled="noTooltip">
+        <template #activator="{ on, attrs }">
+          <div
+            v-bind="attrs"
+            :style="styled"
+            class="d-flex"
+            :class="{ [css.circle]: circle }"
+            v-on="on"
+          >
+            <generated-icon
+              v-if="!!currency || error"
+              :asset="displayAsset"
+              :currency="!!currency"
+              :size="size"
+            />
+            <v-img
+              v-else-if="!error"
+              :src="url"
+              :max-height="size"
+              :min-height="size"
+              :max-width="size"
+              :min-width="size"
+              contain
+              @error="error = true"
+            />
+          </div>
+        </template>
+        <span>
+          {{ t('asset_icon.tooltip', tooltip) }}
+        </span>
+      </v-tooltip>
+    </adaptive-wrapper>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -66,7 +68,8 @@ const props = defineProps({
   circle: { required: false, type: Boolean, default: false },
   padding: { required: false, type: String, default: '2px' }
 });
-const { symbol, changeable, identifier, timestamp } = toRefs(props);
+const { symbol, changeable, identifier, timestamp, padding, size } =
+  toRefs(props);
 const error = ref<boolean>(false);
 
 const { assetSymbol, assetName, assetIdentifierForSymbol } =
@@ -111,6 +114,13 @@ const url = computed<string>(() => {
     id,
     get(changeable) ? currentTimestamp : undefined
   );
+});
+
+const placeholderStyle = computed(() => {
+  const placeholderSize = `calc(${get(padding)} + ${get(padding)} + ${get(
+    size
+  )})`;
+  return { minWidth: placeholderSize, height: placeholderSize };
 });
 
 const { t } = useI18n();

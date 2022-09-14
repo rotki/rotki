@@ -244,6 +244,7 @@ import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
 import { useTrades } from '@/store/history/trades';
 import { IgnoreActionType, TradeEntry } from '@/store/history/types';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Collection } from '@/types/collection';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
@@ -387,6 +388,8 @@ const editTradeHandler = (trade: TradeEntry) => {
   set(openDialog, true);
 };
 
+const { floatingPrecision } = storeToRefs(useGeneralSettingsStore());
+
 const promptForDelete = (trade: TradeEntry) => {
   const prep = (
     trade.tradeType === 'buy'
@@ -401,7 +404,7 @@ const promptForDelete = (trade: TradeEntry) => {
         trade.quoteAsset
       )}`,
       action: trade.tradeType,
-      amount: trade.amount
+      amount: trade.amount.toFormat(get(floatingPrecision))
     })
   );
   set(tradesToDelete, [trade]);

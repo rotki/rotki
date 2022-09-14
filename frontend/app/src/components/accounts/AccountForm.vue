@@ -63,10 +63,6 @@
         :disabled="loading"
       />
     </div>
-
-    <div class="account-form--progress">
-      <v-progress-linear v-if="accountOperation" indeterminate />
-    </div>
   </v-form>
 </template>
 <script lang="ts">
@@ -147,11 +143,12 @@ const AccountForm = defineComponent({
       default: null,
       type: Object as PropType<BlockchainAccountWithBalance | null>
     },
-    context: { required: true, type: String as PropType<Blockchain> }
+    context: { required: true, type: String as PropType<Blockchain> },
+    pending: { required: false, type: Boolean, default: false }
   },
-  emits: ['input'],
+  emits: ['input', 'update:pending'],
   setup(props, { emit }) {
-    const { context, edit } = toRefs(props);
+    const { context, edit, pending } = toRefs(props);
     const { t } = useI18n();
 
     const isEdit = computed(() => !!get(edit));
@@ -164,9 +161,10 @@ const AccountForm = defineComponent({
     const inputMode = ref<AccountInput>(MANUAL_ADD);
     const form = ref<any>(null);
     const errorMessages = ref(validationErrors());
-    const pending = ref(false);
     const selectedModules = ref<Module[]>([]);
     const valid = ref<boolean>(true);
+
+    const updatePending = (pending: boolean) => emit('update:pending', pending);
 
     const setErrors = (field: keyof ValidationErrors, messages: string[]) => {
       const errors = { ...get(errorMessages) };
@@ -383,7 +381,7 @@ const AccountForm = defineComponent({
           setErrors(FIELD_ADDRESS, errors[FIELD_ADDRESS]);
           setErrors(FIELD_XPUB, errors[FIELD_XPUB]);
           setErrors(FIELD_DERIVATION_PATH, errors[FIELD_DERIVATION_PATH]);
-          set(pending, false);
+          updatePending(false);
           return false;
         }
         await setMessage({
@@ -400,7 +398,7 @@ const AccountForm = defineComponent({
 
     const save = async () => {
       let result: boolean;
-      set(pending, true);
+      updatePending(true);
 
       if (get(isMetamask)) {
         result = await metamaskImport();
@@ -414,7 +412,7 @@ const AccountForm = defineComponent({
         result = await manualAdd();
       }
 
-      set(pending, false);
+      updatePending(false);
       return result;
     };
 
@@ -428,7 +426,6 @@ const AccountForm = defineComponent({
       tags,
       blockchain,
       inputMode,
-      pending,
       selectedModules,
       errorMessages,
       isEth,
@@ -436,7 +433,6 @@ const AccountForm = defineComponent({
       isXpub,
       isMetamask,
       loading,
-      accountOperation,
       input,
       save,
       reset

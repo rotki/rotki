@@ -218,6 +218,7 @@ const save = () => {
   const formVal = get(form);
 
   if (!formVal) return;
+
   const index = get(editedIndex);
   const val = get(value);
   const timestampVal = get(timestamp);

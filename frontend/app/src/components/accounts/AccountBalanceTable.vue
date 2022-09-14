@@ -55,7 +55,7 @@
       <template v-if="isEth2" #item.ownershipPercentage="{ item }">
         <percentage-display :value="item.ownershipPercentage" />
       </template>
-      <template v-if="isEth" #item.numOfDetectedTokens="{ item }">
+      <template v-if="isEth && !loopring" #item.numOfDetectedTokens="{ item }">
         <div class="d-flex align-center justify-end">
           <div class="mr-2">
             {{ getEthDetectedTokensInfo(item.address).value.total }}
@@ -358,7 +358,7 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() => {
 
 const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
   const balances = get(nonExpandedBalances).map(item => {
-    if (!get(isEth)) return item;
+    if (!get(isEth) || get(loopring)) return item;
     return {
       ...item,
       numOfDetectedTokens: get(getEthDetectedTokensInfo(item.address)).total
@@ -520,7 +520,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     });
   }
 
-  if (get(isEth)) {
+  if (get(isEth) && !get(loopring)) {
     headers.push({
       text: tc('account_balances.headers.num_of_detected_tokens'),
       value: 'numOfDetectedTokens',
@@ -529,13 +529,15 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     });
   }
 
-  headers.push({
-    text: tc('account_balances.headers.actions'),
-    value: 'actions',
-    align: 'center',
-    sortable: false,
-    width: '28'
-  });
+  if (!get(loopring)) {
+    headers.push({
+      text: tc('account_balances.headers.actions'),
+      value: 'actions',
+      align: 'center',
+      sortable: false,
+      width: '28'
+    });
+  }
 
   if (!get(isBtcNetwork)) {
     headers.push({

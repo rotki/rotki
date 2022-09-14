@@ -63,7 +63,7 @@
                 <account-display :account="data.item" />
               </v-chip>
             </div>
-            <tag-display :tags="data.item.tags" :small="true" />
+            <tag-display class="mb-1" :tags="data.item.tags" :small="true" />
           </div>
         </template>
       </v-autocomplete>

@@ -42,7 +42,7 @@
       </template>
       <span>{{ t('common.actions.copy') }}</span>
     </v-tooltip>
-    <v-tooltip v-if="!noLink || buttons" top open-delay="600" max-width="550">
+    <v-tooltip v-if="!noLink || buttons" top open-delay="600">
       <template #activator="{ on, attrs }">
         <v-btn
           v-if="!!base"
@@ -62,7 +62,10 @@
           <v-icon :x-small="!small" :small="small"> mdi-launch </v-icon>
         </v-btn>
       </template>
-      <span>{{ t('hash_link.open_link', { url }) }}</span>
+      <div>
+        <div>{{ t('hash_link.open_link') }}:</div>
+        <div>{{ displayUrl }}</div>
+      </div>
     </v-tooltip>
   </div>
 </template>
@@ -167,6 +170,10 @@ const copyText = async (text: string) => {
 
 const url = computed<string>(() => {
   return get(base) + get(text);
+});
+
+const displayUrl = computed<string>(() => {
+  return get(base) + truncateAddress(get(text), 10);
 });
 
 const href = computed<string | undefined>(() => {
