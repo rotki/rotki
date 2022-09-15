@@ -94,6 +94,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+    from rotkehlchen.externalapis.manual_current_price import ManualCurrentOracle
 
 
 logger = logging.getLogger(__name__)
@@ -118,6 +119,7 @@ CurrentPriceOracleInstance = Union[
     'UniswapV3Oracle',
     'UniswapV2Oracle',
     'SaddleOracle',
+    'ManualCurrentOracle',
 ]
 
 
@@ -143,9 +145,11 @@ class CurrentPriceOracle(SerializableEnumMixin):
     UNISWAPV2 = auto()
     UNISWAPV3 = auto()
     SADDLE = auto()
+    MANUALCURRENT = auto()
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
+    CurrentPriceOracle.MANUALCURRENT,
     CurrentPriceOracle.COINGECKO,
     CurrentPriceOracle.CRYPTOCOMPARE,
     CurrentPriceOracle.UNISWAPV2,
@@ -248,6 +252,7 @@ class Inquirer():
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
+    _manualcurrent: 'ManualCurrentOracle'
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
     _saddle: Optional['SaddleOracle'] = None
@@ -263,6 +268,7 @@ class Inquirer():
             data_dir: Path = None,
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,
+            manualcurrent: 'ManualCurrentOracle' = None,
     ) -> 'Inquirer':
         if Inquirer.__instance is not None:
             return Inquirer.__instance
@@ -270,12 +276,14 @@ class Inquirer():
         assert data_dir, 'arguments should be given at the first instantiation'
         assert cryptocompare, 'arguments should be given at the first instantiation'
         assert coingecko, 'arguments should be given at the first instantiation'
+        assert manualcurrent, 'arguments should be given at the first instantiation'
 
         Inquirer.__instance = object.__new__(cls)
 
         Inquirer.__instance._data_directory = data_dir
         Inquirer._cryptocompare = cryptocompare
         Inquirer._coingecko = coingecko
+        Inquirer._manualcurrent = manualcurrent
         Inquirer._cached_current_price = {}
         Inquirer.special_tokens = [
             A_YV1_DAIUSDCTBUSD,
@@ -332,6 +340,10 @@ class Inquirer():
             return None
 
         return cache
+
+    @staticmethod
+    def remove_cached_current_price_entry(cache_key: Tuple[Asset, Asset]) -> None:
+        Inquirer()._cached_current_price.pop(cache_key, None)
 
     @staticmethod
     def set_oracles_order(oracles: List[CurrentPriceOracle]) -> None:

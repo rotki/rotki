@@ -66,6 +66,7 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.globaldb.updates import AssetsUpdater
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history.events import EventsHistorian
@@ -158,6 +159,7 @@ class Rotkehlchen():
             data_dir=self.data_dir,
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
+            manualcurrent=ManualCurrentOracle(msg_aggregator=self.msg_aggregator),
         )
         self.task_manager: Optional[TaskManager] = None
         self.shutdown_event = gevent.event.Event()

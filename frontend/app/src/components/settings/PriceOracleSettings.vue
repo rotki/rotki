@@ -69,7 +69,8 @@ const availableCurrentOracles: string[] = [
   ...baseAvailableOracles,
   'uniswapv2',
   'uniswapv3',
-  'saddle'
+  'saddle',
+  'manualcurrent'
 ];
 const availableHistoricOracles = [...baseAvailableOracles, 'manual'];
 

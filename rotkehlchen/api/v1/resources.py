@@ -2140,7 +2140,7 @@ class AssetIconsResource(BaseMethodView):
 
 class CurrentAssetsPriceResource(BaseMethodView):
 
-    put_schema = ManualPriceSchema
+    put_schema = ManualPriceSchema()
     post_schema = CurrentAssetsPriceSchema()
     delete_schema = SingleAssetIdentifierSchema()
 

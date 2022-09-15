@@ -14,7 +14,8 @@ export const PriceOracle = z.enum([
   'manual',
   'uniswapv3',
   'uniswapv2',
-  'saddle'
+  'saddle',
+  'manualcurrent'
 ]);
 export type PriceOracle = z.infer<typeof PriceOracle>;
 

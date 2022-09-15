@@ -26,6 +26,7 @@ from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCurs
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -33,9 +34,10 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTokenKind,
     GeneralCacheType,
+    Price,
     Timestamp,
 )
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 from .upgrades.manager import maybe_upgrade_globaldb
@@ -984,6 +986,91 @@ class GlobalDBHandler():
             return False
 
         return True
+
+    @staticmethod
+    def add_manual_current_price(
+            from_asset: Asset,
+            to_asset: Asset,
+            price: Price,
+    ) -> None:
+        """
+        Adds manual current price and turns previously known manual current price into a
+        historical manual price.
+        May raise:
+        - InputError if some db constraint was hit. Probably means manual price duplication.
+        """
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            try:
+                write_cursor.execute(
+                    'UPDATE price_history SET source_type=? WHERE source_type=? AND from_asset=?',
+                    (
+                        HistoricalPriceOracle.MANUAL.serialize_for_db(),
+                        HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(),
+                        from_asset.identifier,
+                    ),
+                )
+            except sqlite3.IntegrityError as e:
+                # if we got an error, do an extra query to give more information to the user.
+                # In case of an error there has to be a corresponding entry in the db.
+                with GlobalDBHandler().conn.read_ctx() as cursor:
+                    timestamp = cursor.execute(
+                        'SELECT timestamp FROM price_history WHERE source_type=? AND from_asset=?',
+                        (
+                            HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(),
+                            from_asset.identifier,
+                        ),
+                    ).fetchone()[0]
+                raise InputError(
+                    f'Failed to add manual current price because manual price already exists '
+                    f'at {timestamp_to_date(ts=timestamp)}',
+                ) from e
+            try:
+                write_cursor.execute(
+                    'INSERT INTO '
+                    'price_history(from_asset, to_asset, source_type, timestamp, price) '
+                    'VALUES (?, ?, ?, ?, ?)',
+                    (
+                        from_asset.identifier,
+                        to_asset.identifier,
+                        HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(),
+                        ts_now(),
+                        str(price),
+                    ),
+                )
+            except sqlite3.IntegrityError as e:
+                # Means foreign keys failure. Should not happen since is checked by marshmallow
+                raise InputError(f'Failed to add manual current price due to: {str(e)}') from e
+
+    @staticmethod
+    def get_manual_current_price(asset: Asset) -> Optional[Tuple[Asset, Price]]:
+        """Reads manual current price of an asset. If no price is found returns None."""
+        with GlobalDBHandler().conn.read_ctx() as read_cursor:
+            result = read_cursor.execute(
+                'SELECT to_asset, price FROM price_history WHERE source_type=? AND from_asset=?',
+                (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier),
+            ).fetchone()
+
+        if result is None:
+            return None
+
+        return Asset(result[0]), deserialize_price(result[1])
+
+    @staticmethod
+    def delete_manual_current_price(asset: Asset) -> None:
+        """
+        Deletes manual current price from globaldb.
+        May raise:
+        - InputError if asset was not found in the price_history table
+        """
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM price_history WHERE source_type=? AND from_asset=?',
+                (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier),
+            )
+            if write_cursor.rowcount != 1:
+                raise InputError(
+                    f'Not found manual current price to delete for asset {str(asset)}',
+                )
 
     @staticmethod
     def get_manual_prices(

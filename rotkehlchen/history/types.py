@@ -20,6 +20,7 @@ class HistoricalPriceOracle(DBEnumMixIn):
     COINGECKO = 2
     CRYPTOCOMPARE = 3
     XRATESCOM = 4
+    MANUAL_CURRENT = 5
 
 
 NOT_EXPOSED_SOURCES = (

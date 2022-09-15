@@ -44,7 +44,7 @@ from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC1_KSM_ADDR,
     SUBSTRATE_ACC2_KSM_ADDR,
 )
-from rotkehlchen.types import Location, SupportedBlockchain, Timestamp
+from rotkehlchen.types import Location, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -854,3 +854,34 @@ def test_ethereum_tokens_detection(
     result = query_detect_tokens()
     assert set(result[account]['tokens']) == {A_DAI.identifier, A_RDN.identifier}
     assert result[account]['last_update_timestamp'] >= cur_time
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('ignore_mocked_prices_for', ['ETH'])
+def test_balances_behaviour_with_manual_current_prices(rotkehlchen_api_server, ethereum_accounts):
+    """Checks that manual current price is used in balances querying endpoints"""
+    setup = setup_balances(
+        rotki=rotkehlchen_api_server.rest_api.rotkehlchen,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        eth_balances=[str(int(1e18)), str(2 * int(1e18))],
+        token_balances={A_RDN: [str(int(1e18)), str(int(4e18))]},
+        manual_current_prices=[(A_ETH, A_BTC, Price(FVal(10))), (A_RDN, A_ETH, Price(FVal(2)))],
+    )
+    with ExitStack() as stack:
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'allbalancesresource',
+            ),
+        )
+        result = assert_proper_response_with_result(response)
+        # (3 ETH) * (10 BTC per ETH) * (1,5 USD per BTC) = 45 USD of ETH
+        eth_result = result['assets']['ETH']
+        assert eth_result['amount'] == '3'
+        assert eth_result['usd_value'] == '45.0'
+        # (5 RDN) * (2 ETH per RDN) * (10 BTC per RDN) * (1,5 USD per BTC) = 150 USD of RDN
+        rdn_result = result['assets']['eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6']
+        assert rdn_result['amount'] == '5'
+        assert rdn_result['usd_value'] == '150.0'

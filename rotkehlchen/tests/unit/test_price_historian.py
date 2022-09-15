@@ -8,7 +8,7 @@ from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsuppo
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.manual_price_oracle import ManualPriceOracle
+from rotkehlchen.globaldb.manual_price_oracles import ManualPriceOracle
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import (
     DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER,

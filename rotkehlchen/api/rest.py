@@ -3801,24 +3801,52 @@ class RestAPI():
             to_asset: Asset,
             price: Price,
     ) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=False,
-            module_name='nfts',
-            method='add_nft_with_price',
-            query_specific_balances_before=None,
-            from_asset=from_asset,
-            to_asset=to_asset,
-            price=price,
-        )
+        if from_asset.asset_type == AssetType.NFT:
+            return self._api_query_for_eth_module(
+                async_query=False,
+                module_name='nfts',
+                method='add_nft_with_price',
+                query_specific_balances_before=None,
+                from_asset=from_asset,
+                to_asset=to_asset,
+                price=price,
+            )
+        try:
+            GlobalDBHandler().add_manual_current_price(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                price=price,
+            )
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(message=str(e)),
+                status_code=HTTPStatus.CONFLICT,
+            )
 
-    def delete_manual_current_price(self, asset: Asset) -> Response:
-        return self._api_query_for_eth_module(
-            async_query=False,
-            module_name='nfts',
-            method='delete_price_for_nft',
-            query_specific_balances_before=None,
-            asset=asset,
-        )
+        Inquirer().remove_cached_current_price_entry(cache_key=(from_asset, to_asset))
+        return api_response(result=OK_RESULT)
+
+    def delete_manual_current_price(
+            self,
+            asset: Asset,
+    ) -> Response:
+        if asset.asset_type == AssetType.NFT:
+            return self._api_query_for_eth_module(
+                async_query=False,
+                module_name='nfts',
+                method='delete_price_for_nft',
+                query_specific_balances_before=None,
+                asset=asset,
+            )
+        try:
+            GlobalDBHandler().delete_manual_current_price(asset=asset)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(message=str(e)),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        return api_response(result=OK_RESULT)
 
     def get_database_info(self) -> Response:
         globaldb_schema_version = GlobalDBHandler().get_schema_version()

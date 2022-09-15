@@ -15,6 +15,9 @@
     <v-col v-else-if="identifier == 'uniswapv2'" cols="auto">
       {{ t('oracles.uniswap_v2') }}
     </v-col>
+    <v-col v-else-if="identifier == 'manualcurrent'" cols="auto">
+      {{ t('oracles.manualcurrent') }}
+    </v-col>
     <v-col v-else cols="auto">
       {{ toSentenceCase(identifier) }}
     </v-col>
@@ -48,6 +51,8 @@ const icon = computed<string>(() => {
   } else if (get(identifier) === 'coingecko') {
     return '/assets/images/oracles/coingecko.svg';
   } else if (get(identifier) === 'manual') {
+    return '/assets/images/oracles/book.svg';
+  } else if (get(identifier) === 'manualcurrent') {
     return '/assets/images/oracles/book.svg';
   } else if (identifier.value === 'uniswapv2') {
     return '/assets/images/defi/uniswap.svg';
