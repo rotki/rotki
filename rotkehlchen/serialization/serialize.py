@@ -59,7 +59,6 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultHistory,
 )
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
@@ -70,6 +69,7 @@ from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.types import (
     AssetMovementCategory,
     BlockchainAccountData,
+    ChainID,
     CostBasisMethod,
     EvmTokenKind,
     EvmTransaction,

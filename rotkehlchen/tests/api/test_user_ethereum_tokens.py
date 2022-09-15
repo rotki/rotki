@@ -10,7 +10,7 @@ from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BAT
-from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
@@ -31,7 +31,7 @@ from rotkehlchen.tests.utils.globaldb import (
     underlying_address4,
     user_token_address1,
 )
-from rotkehlchen.types import EvmTokenKind, Location
+from rotkehlchen.types import ChainID, EvmTokenKind, Location
 
 
 def assert_token_entry_exists_in_result(

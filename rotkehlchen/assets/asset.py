@@ -1080,7 +1080,7 @@ class HasEvmToken(Asset):
         swapped_for = Asset(entry[8]) if entry[8] is not None else None
         return cls.initialize(
             address=entry[1],  # type: ignore
-            chain=ChainID.deserialize_from_db(entry[2]),
+            chain=ChainID(entry[2]),
             token_kind=EvmTokenKind.deserialize_from_db(entry[3]),
             decimals=entry[4],
             name=entry[5],

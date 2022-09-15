@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional
-from rotkehlchen.constants.resolver import ChainID
-from rotkehlchen.types import EvmTokenKind
 
+from rotkehlchen.types import ChainID, EvmTokenKind
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
 if TYPE_CHECKING:

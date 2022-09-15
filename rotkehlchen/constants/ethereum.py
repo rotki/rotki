@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.constants.resolver import ChainID
+from rotkehlchen.types import ChainID
 
 MAX_BLOCKTIME_CACHE = 250  # 55 mins with 13 secs avg block time
 ETH_SPECIAL_ADDRESS = string_to_evm_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')

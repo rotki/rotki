@@ -17,7 +17,6 @@ from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxR
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, HistoryEventFilterQuery
@@ -28,7 +27,14 @@ from rotkehlchen.errors.serialization import ConversionError, DeserializationErr
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, EVMTxHash, Location, TimestampMS
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTransaction,
+    EVMTxHash,
+    Location,
+    TimestampMS,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     from_wei,

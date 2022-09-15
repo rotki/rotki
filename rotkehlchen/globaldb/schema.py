@@ -70,30 +70,6 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Y', 25);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 26);
 """
 
-# Custom enum table for chains
-DB_CREATE_CHAIN_IDS = """
-CREATE TABLE IF NOT EXISTS chain_ids (
-  chain    CHAR(1)       PRIMARY KEY NOT NULL,
-  seq     INTEGER UNIQUE
-);
-/* ETHEREUM */
-INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('A', 1);
-/* OPTIMISM */
-INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('B', 2);
-/* BINANCE */
-INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('C', 3);
-/* GNOSIS */
-INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('D', 4);
-/* MATIC */
-INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('E', 5);
-/* FANTOM */
-INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('F', 6);
-/* ARBITRUM */
-INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('G', 7);
-/* AVALANCHE */
-INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('H', 8);
-"""
-
 # Custom enum table for token kindss
 DB_CREATE_TOKEN_KINDS = """
 CREATE TABLE IF NOT EXISTS token_kinds (
@@ -157,7 +133,7 @@ DB_CREATE_EVM_TOKENS = """
 CREATE TABLE IF NOT EXISTS evm_tokens (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
     token_kind CHAR(1) NOT NULL DEFAULT('A') REFERENCES token_kinds(token_kind),
-    chain CHAR(1) NOT NULL DEFAULT('A') REFERENCES chain_ids(chain),
+    chain INTEGER NOT NULL,
     address VARCHAR[42] NOT NULL,
     decimals INTEGER,
     protocol TEXT,
@@ -282,7 +258,6 @@ CREATE TABLE IF NOT EXISTS general_cache (
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{DB_CREATE_CHAIN_IDS}
 {DB_CREATE_TOKEN_KINDS}
 {DB_CREATE_ETHEREUM_TOKENS_LIST}
 {DB_CREATE_SETTINGS}

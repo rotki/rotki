@@ -53,7 +53,6 @@ from rotkehlchen.constants.ethereum import (
     ETH_SCAN,
     UNIV1_LP_ABI,
 )
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     InputError,
@@ -72,6 +71,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
+    ChainID,
     ChecksumEvmAddress,
     EvmTransaction,
     EVMTxHash,

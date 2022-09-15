@@ -12,10 +12,9 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Price
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances

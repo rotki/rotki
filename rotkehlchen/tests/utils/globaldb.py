@@ -1,9 +1,8 @@
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_MKR
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.types import EvmTokenKind, Timestamp
+from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
 
 underlying_address1 = make_ethereum_address()
 underlying_address2 = make_ethereum_address()

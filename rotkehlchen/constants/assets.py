@@ -7,8 +7,7 @@ from typing import List
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.constants.resolver import ChainID
-from rotkehlchen.types import EvmTokenKind, Timestamp
+from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
 
 CONSTANT_ASSETS: List[Asset] = []
 

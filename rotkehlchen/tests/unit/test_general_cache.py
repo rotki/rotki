@@ -1,10 +1,8 @@
 from unittest.mock import patch
 
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb import GlobalDBHandler
-from rotkehlchen.types import GeneralCacheType
-
+from rotkehlchen.types import ChainID, GeneralCacheType
 
 CURVE_EXPECTED_LP_TOKENS_TO_POOLS = {
     # first 2 are registry pools

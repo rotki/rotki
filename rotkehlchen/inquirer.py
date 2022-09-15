@@ -57,7 +57,7 @@ from rotkehlchen.constants.assets import (
     A_YV1_YFI,
 )
 from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, YEARN_VAULT_V2_ABI
-from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.defi import DefiPoolError
@@ -78,6 +78,7 @@ from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     UNISWAP_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
+    ChainID,
     GeneralCacheType,
     KnownProtocolsAssets,
     Price,

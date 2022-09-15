@@ -1,56 +1,12 @@
-from typing import Final, Optional, Tuple, Type
+from typing import Optional, Tuple
 
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 
 ETHEREUM_DIRECTIVE = '_ceth_'
 ETHEREUM_DIRECTIVE_LENGTH = len(ETHEREUM_DIRECTIVE)
 EVM_CHAIN_DIRECTIVE = 'eip155'
-
-
-class ChainID(DBEnumMixIn):
-    ETHEREUM = 1
-    OPTIMISM = 10
-    BINANCE = 56
-    GNOSIS = 100
-    MATIC = 137
-    FANTOM = 250
-    ARBITRUM = 42161
-    AVALANCHE = 43114
-
-    def serialize_for_db(self) -> str:
-        return CHAINS_TO_DB_SYMBOL[self]
-
-    @classmethod
-    def deserialize_from_db(cls: Type['ChainID'], value: str) -> 'ChainID':
-        """May raise a DeserializationError if something is wrong with the DB data"""
-        if not isinstance(value, str):
-            raise DeserializationError(
-                f'Failed to deserialize ChainID DB value from non string value: {value}',
-            )
-
-        chain = SYMBOL_TO_CHAIN.get(value)
-        if chain is None:
-            raise DeserializationError(
-                f'Failed to deserialize ChainID DB value from invalid value: {value}',
-            )
-        return chain
-
-
-CHAINS_TO_DB_SYMBOL: Final = {
-    ChainID.ETHEREUM: 'A',
-    ChainID.OPTIMISM: 'B',
-    ChainID.BINANCE: 'C',
-    ChainID.GNOSIS: 'D',
-    ChainID.MATIC: 'E',
-    ChainID.FANTOM: 'F',
-    ChainID.ARBITRUM: 'G',
-    ChainID.AVALANCHE: 'H',
-}
-SYMBOL_TO_CHAIN = {v: k for k, v in CHAINS_TO_DB_SYMBOL.items()}
 
 
 def evm_address_to_identifier(

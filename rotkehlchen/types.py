@@ -310,6 +310,17 @@ class CovalentTransaction(NamedTuple):
         return self.tx_hash + self.from_address.replace('0x', '') + str(self.nonce)
 
 
+class ChainID(SerializableEnumMixin):
+    ETHEREUM = 1
+    OPTIMISM = 10
+    BINANCE = 56
+    GNOSIS = 100
+    MATIC = 137
+    FANTOM = 250
+    ARBITRUM = 42161
+    AVALANCHE = 43114
+
+
 class SupportedBlockchain(SerializableEnumValueMixin):
     """These are the blockchains for which account tracking is supported """
     ETHEREUM = 'ETH'
@@ -319,6 +330,12 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     KUSAMA = 'KSM'
     AVALANCHE = 'AVAX'
     POLKADOT = 'DOT'
+    OPTIMISM = 'OPTIMISM'
+    BINANCE = 'BINANCE'
+    GNOSIS = 'GNOSIS'
+    MATIC = 'MATIC'
+    FANTOM = 'FANTOM'
+    ARBITRUM = 'ARBITRUM'
 
     def get_address_type(self) -> Callable:
         if self in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
@@ -352,6 +369,29 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         if self == SupportedBlockchain.AVALANCHE:
             return 9000
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
+
+    def to_chain_id(self) -> ChainID:
+        return SUPPORTED_BLOCKCHAIN_TO_CHAINID[self]
+
+    @classmethod
+    def from_chain_id(cls, chain: ChainID) -> 'SupportedBlockchain':
+        return CHAINID_TO_SUPPORTED_BLOCKCHAIN[chain]
+
+
+SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
+    SupportedBlockchain.ETHEREUM: ChainID.ETHEREUM,
+    SupportedBlockchain.OPTIMISM: ChainID.OPTIMISM,
+    SupportedBlockchain.BINANCE: ChainID.BINANCE,
+    SupportedBlockchain.GNOSIS: ChainID.GNOSIS,
+    SupportedBlockchain.MATIC: ChainID.MATIC,
+    SupportedBlockchain.FANTOM: ChainID.FANTOM,
+    SupportedBlockchain.ARBITRUM: ChainID.ARBITRUM,
+    SupportedBlockchain.AVALANCHE: ChainID.AVALANCHE,
+}
+CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
+    value: key
+    for key, value in SUPPORTED_BLOCKCHAIN_TO_CHAINID.items()
+}
 
 
 class TradeType(DBEnumMixIn):

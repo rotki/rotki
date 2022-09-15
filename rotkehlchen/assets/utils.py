@@ -2,13 +2,13 @@ import logging
 from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 
 from .asset import Asset, EvmToken, UnderlyingToken
 from .types import AssetType

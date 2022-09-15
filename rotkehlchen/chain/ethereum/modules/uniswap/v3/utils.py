@@ -28,12 +28,11 @@ from rotkehlchen.constants.ethereum import (
     UNISWAP_V3_POOL_ABI,
 )
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Price
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 

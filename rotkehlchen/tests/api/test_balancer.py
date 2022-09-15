@@ -25,7 +25,6 @@ from rotkehlchen.constants.assets import (
     A_WETH,
     A_ZRX,
 )
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -36,7 +35,13 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_BAND
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import AssetAmount, EvmTokenKind, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    AssetAmount,
+    ChainID,
+    EvmTokenKind,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
 
 # Top holder of WBTC-WETH pool (0x1eff8af5d577060ba4ac8a29a13525bb0ee2a3d5)
 BALANCER_TEST_ADDR1 = string_to_evm_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')
