@@ -190,6 +190,8 @@ INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('B', 2);
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('C', 3);
 /* XRATESCOM */
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('D', 4);
+/* MANUAL_CURRENT */
+INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('E', 5);
 """
 
 DB_CREATE_PRICE_HISTORY = """

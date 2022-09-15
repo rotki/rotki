@@ -20,7 +20,7 @@ INFORMATIONAL_MESSAGE_TYPES = {
 
 class MessagesAggregator():
     """
-    This class is passed around where needed and aggreggates messages for the user
+    This class is passed around where needed and aggregates messages for the user
     """
 
     def __init__(self) -> None:

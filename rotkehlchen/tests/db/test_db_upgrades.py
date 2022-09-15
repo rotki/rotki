@@ -817,6 +817,12 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         tokens = json.loads(cursor.fetchone()[0])
         assert tokens['tokens'] == ['_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e']
 
+        # Check that oracles exist in the test db
+        oracles_before_upgrade = cursor.execute(
+            'SELECT value FROM settings WHERE name="current_price_oracles"',
+        ).fetchone()[0]
+        assert oracles_before_upgrade == '["cryptocompare", "coingecko", "uniswapv2", "uniswapv3", "saddle"]'  # noqa: E501
+
     xpub1 = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
     xpub2 = 'zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q'  # noqa: E501
 
@@ -912,6 +918,12 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument 
         cursor.execute('SELECT value from accounts_details WHERE account="0x45E6CA515E840A4e9E02A3062F99216951825eB2" AND blockchain="eth" AND key="tokens"')  # noqa: E501
         token = cursor.fetchone()[0]
         assert token == 'eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e'
+
+        # Check that oracles were upgraded properly
+        oracles_after_upgrade = cursor.execute(
+            'SELECT value FROM settings WHERE name="current_price_oracles"',
+        ).fetchone()[0]
+        assert oracles_after_upgrade == '["manualcurrent", "cryptocompare", "coingecko", "uniswapv2", "uniswapv3", "saddle"]'  # noqa: E501
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

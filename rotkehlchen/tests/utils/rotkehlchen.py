@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 from unittest.mock import _patch, patch
 
 import requests
@@ -12,6 +12,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.tests.utils.blockchain import (
     mock_beaconchain,
     mock_bitcoin_balances_query,
@@ -27,6 +28,7 @@ from rotkehlchen.types import (
     BTCAddress,
     ChecksumEvmAddress,
     Location,
+    Price,
     SupportedBlockchain,
     Timestamp,
 )
@@ -80,6 +82,7 @@ def setup_balances(
         liabilities: Optional[Dict[EvmToken, List[str]]] = None,
         btc_balances: Optional[List[str]] = None,
         manually_tracked_balances: Optional[List[ManuallyTrackedBalance]] = None,
+        manual_current_prices: Optional[List[Tuple[Asset, Asset, Price]]] = None,
         original_queries: Optional[List[str]] = None,
         extra_flags: Optional[List[str]] = None,
         defi_balances: Optional[Dict[ChecksumEvmAddress, List[DefiProtocolBalances]]] = None,
@@ -238,6 +241,14 @@ def setup_balances(
         manually_tracked_balances = []
     with rotki.data.db.user_write() as cursor:
         rotki.data.db.add_manually_tracked_balances(cursor, manually_tracked_balances)
+
+    if manual_current_prices is not None:
+        for current_price in manual_current_prices:
+            GlobalDBHandler().add_manual_current_price(
+                from_asset=current_price[0],
+                to_asset=current_price[1],
+                price=current_price[2],
+            )
 
     return BalancesTestSetup(
         eth_balances=eth_balances,

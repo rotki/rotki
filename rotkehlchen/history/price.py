@@ -8,7 +8,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.manual_price_oracle import ManualPriceOracle
+from rotkehlchen.globaldb.manual_price_oracles import ManualPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp

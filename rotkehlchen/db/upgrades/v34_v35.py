@@ -196,6 +196,25 @@ def _rename_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
     cursor.execute('DROP TABLE ethereum_accounts_details')
 
 
+def _add_manual_current_price_oracle(cursor: 'DBCursor') -> None:
+    """
+    If user had current price oracles order specified, adds manual current price as the most
+    prioritized oracle.
+    """
+    current_oracles_order = cursor.execute(
+        'SELECT value FROM settings WHERE name="current_price_oracles"',
+    ).fetchone()
+    if current_oracles_order is None:
+        return
+
+    list_oracles_order: List = json.loads(current_oracles_order[0])
+    list_oracles_order.insert(0, 'manualcurrent')
+    cursor.execute(
+        'UPDATE settings SET value=? WHERE name="current_price_oracles"',
+        (json.dumps(list_oracles_order),),
+    )
+
+
 def upgrade_v34_to_v35(db: 'DBHandler') -> None:
     """Upgrades the DB from v34 to v35
     - Change tables where time is used as column name to timestamp
@@ -212,3 +231,4 @@ def upgrade_v34_to_v35(db: 'DBHandler') -> None:
         _add_blockchain_column_web3_nodes(write_cursor)
         _create_new_tables(write_cursor)
         _rename_assets_in_user_queried_tokens(write_cursor)
+        _add_manual_current_price_oracle(write_cursor)

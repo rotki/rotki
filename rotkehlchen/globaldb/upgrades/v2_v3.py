@@ -506,6 +506,8 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         cursor.executescript('PRAGMA foreign_keys=on;')
         cursor.executemany(EVM_TOKEN_INSERT, evm_tuples)
         cursor.executemany(UNDERLYING_TOKEN_INSERT, mappings)
+        # Add manual current price source
+        cursor.execute('INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ("E", 5)')  # noqa: E501
 
         dir_path = Path(__file__).resolve().parent.parent.parent
         # This file contains the EVM version of the assets that are currently in the

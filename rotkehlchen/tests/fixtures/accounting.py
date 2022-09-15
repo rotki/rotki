@@ -15,9 +15,11 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.fixture(name='use_clean_caching_directory')
@@ -189,12 +191,11 @@ def create_inquirer(
     Inquirer._Inquirer__instance = None  # type: ignore
     # Get a cryptocompare without a DB since invoking DB fixture here causes problems
     # of existing user for some tests
-    cryptocompare = Cryptocompare(data_directory=data_directory, database=None)
-    gecko = Coingecko()
     inquirer = Inquirer(
         data_dir=data_directory,
-        cryptocompare=cryptocompare,
-        coingecko=gecko,
+        cryptocompare=Cryptocompare(data_directory=data_directory, database=None),
+        coingecko=Coingecko(),
+        manualcurrent=ManualCurrentOracle(msg_aggregator=MessagesAggregator()),
     )
     if ethereum_manager is not None:
         inquirer.inject_ethereum(ethereum_manager)
