@@ -57,7 +57,6 @@ defineProps({
 const emit = defineEmits(['input']);
 const store = useFrontendSettingsStore();
 const { profitLossReportPeriod } = storeToRefs(store);
-const custom = computed(({ year }) => year === 'custom');
 const invalidRange = computed(
   ({ value }) =>
     !!value &&
@@ -68,6 +67,7 @@ const invalidRange = computed(
 
 const year = computed(() => get(profitLossReportPeriod).year);
 const quarter = computed(() => get(profitLossReportPeriod).quarter);
+const custom = computed(() => get(year) === 'custom');
 
 const onChanged = async (event: SelectionChangedEvent) => {
   if (event.year === 'custom') {
