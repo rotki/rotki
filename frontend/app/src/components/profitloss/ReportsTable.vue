@@ -30,6 +30,7 @@
       <template #item.free="{ item }">
         <amount-display
           force-currency
+          pnl
           :value="calculateTotalProfitLoss(item).free"
           :fiat-currency="item.settings.profitCurrency"
         />
@@ -37,6 +38,7 @@
       <template #item.taxable="{ item }">
         <amount-display
           force-currency
+          pnl
           :value="calculateTotalProfitLoss(item).taxable"
           :fiat-currency="item.settings.profitCurrency"
         />

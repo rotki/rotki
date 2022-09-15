@@ -205,10 +205,7 @@ const save = () => {
 
   let newValue = [...val];
 
-  newValue[index].usdValue =
-    get(currencySymbol) === CURRENCY_USD
-      ? get(numericTotal)
-      : get(numericTotal).dividedBy(get(fiatExchangeRate));
+  newValue[index].usdValue = get(numericTotal);
 
   input(newValue);
 };

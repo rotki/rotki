@@ -2211,7 +2211,7 @@
     "search_placeholder": "Search anything..."
   },
   "hash_link": {
-    "open_link": "Open in external block explorer: {url}"
+    "open_link": "Open in external block explorer"
   },
   "help_sidebar": {
     "about": {

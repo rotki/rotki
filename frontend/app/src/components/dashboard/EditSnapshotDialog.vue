@@ -38,20 +38,30 @@
             </v-stepper-content>
             <v-stepper-content :step="2" class="pa-0">
               <edit-location-data-snapshot-table
-                v-model="locationDataSnapshot"
+                :value="locationDataSnapshot"
                 :timestamp="timestamp"
                 @update:step="step = $event"
-                @input="save"
+                @input="
+                  event => {
+                    updateLocationDataSnapshot(event);
+                    save();
+                  }
+                "
               />
             </v-stepper-content>
             <v-stepper-content :step="3" class="pa-0">
               <edit-snapshot-total
                 v-if="step === 3"
-                v-model="locationDataSnapshot"
+                :value="locationDataSnapshot"
                 :balances-snapshot="balancesSnapshot"
                 :timestamp="timestamp"
                 @update:step="step = $event"
-                @input="finish"
+                @input="
+                  event => {
+                    updateLocationDataSnapshot(event);
+                    finish();
+                  }
+                "
               />
             </v-stepper-content>
           </v-stepper-items>
@@ -140,6 +150,20 @@ const close = () => {
 };
 
 const { notify } = useNotifications();
+
+const updateLocationDataSnapshot = (
+  locationDataSnapshot: LocationDataSnapshot[]
+) => {
+  const data = get(snapshotData);
+
+  const newData = {
+    balancesSnapshot: data?.balancesSnapshot || [],
+    locationDataSnapshot
+  };
+
+  set(snapshotData, newData);
+};
+
 const save = async (): Promise<boolean> => {
   const data = get(snapshotData);
   if (!data) return false;

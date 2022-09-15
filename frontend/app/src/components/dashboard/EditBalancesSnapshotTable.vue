@@ -299,12 +299,17 @@ const previewLocationBalance = computed<Record<string, BigNumber> | null>(
       item => item.location === formVal.location
     );
 
-    if (!locationData) return null;
-
     const convertedUsdValue =
       get(currencySymbol) === CURRENCY_USD
         ? bigNumberify(formVal.usdValue)
         : bigNumberify(formVal.usdValue).dividedBy(get(fiatExchangeRate));
+
+    if (!locationData) {
+      return {
+        before: Zero,
+        after: convertedUsdValue
+      };
+    }
 
     const isCurrentLiability = formVal.category === 'liability';
     const currentFactor = bigNumberify(isCurrentLiability ? -1 : 1);
@@ -370,6 +375,12 @@ const updateData = (
     if (locationDataIndex > -1) {
       locationDataSnapshot[locationDataIndex].usdValue =
         calculatedBalance!.after;
+    } else {
+      locationDataSnapshot.push({
+        timestamp: get(timestamp),
+        location,
+        usdValue: calculatedBalance!.after
+      });
     }
   }
 
@@ -446,7 +457,7 @@ const confirmDelete = () => {
   const val = get(value);
   const location = get(locationToDelete);
 
-  if (index === null || !location) return;
+  if (index === null) return;
 
   let balancesSnapshot = [...val.balancesSnapshot];
   balancesSnapshot.splice(index, 1);
