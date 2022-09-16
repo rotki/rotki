@@ -43,7 +43,7 @@ import { storeToRefs } from 'pinia';
 import { computed, defineAsyncComponent } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { useRoute, useTheme } from '@/composables/common';
-import { useDarkMode } from '@/composables/session';
+import { useDarkMode } from '@/composables/dark-mode';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { checkIfDevelopment } from '@/utils/env-utils';
 

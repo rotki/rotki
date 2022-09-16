@@ -32,7 +32,7 @@ import { computed, defineAsyncComponent, onBeforeMount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useBackendManagement } from '@/composables/backend';
 import { useRoute, useRouter, useTheme } from '@/composables/common';
-import { useDarkMode } from '@/composables/session';
+import { useDarkMode } from '@/composables/dark-mode';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
 import { ThemeChecker } from '@/premium/premium';

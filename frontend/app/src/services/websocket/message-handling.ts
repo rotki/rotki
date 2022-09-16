@@ -1,7 +1,8 @@
-import { Severity } from '@rotki/common/lib/messages';
+import { SemiPartial } from '@rotki/common';
+import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import { get } from '@vueuse/core';
+import { useI18n } from 'vue-i18n-composable';
 import { usePremium } from '@/composables/premium';
-import i18n from '@/i18n';
 import {
   BalanceSnapshotError,
   EthereumTransactionQueryData,
@@ -10,68 +11,66 @@ import {
   WebsocketMessage
 } from '@/services/websocket/messages';
 import { useTxQueryStatus } from '@/store/history/query-status';
-import { useNotifications } from '@/store/notifications';
 
-export async function handleSnapshotError(
+export const handleSnapshotError = (
   message: WebsocketMessage<SocketMessageType>
-) {
+): SemiPartial<NotificationPayload, 'title' | 'message'> => {
+  const { tc } = useI18n();
   const data = BalanceSnapshotError.parse(message.data);
-  const { notify } = useNotifications();
-  notify({
-    title: i18n.t('notification_messages.snapshot_failed.title').toString(),
-    message: i18n
-      .t('notification_messages.snapshot_failed.message', data)
-      .toString(),
+  return {
+    title: tc('notification_messages.snapshot_failed.title'),
+    message: tc('notification_messages.snapshot_failed.message', 0, data),
     display: true
-  });
-}
+  };
+};
 
-export async function handleEthereumTransactionStatus(
+export const handleEthereumTransactionStatus = (
   message: WebsocketMessage<SocketMessageType>
-) {
+) => {
   const data = EthereumTransactionQueryData.parse(message.data);
   const { setQueryStatus } = useTxQueryStatus();
   setQueryStatus(data);
-}
+};
 
-export async function handleLegacyMessage(message: string, isWarning: boolean) {
-  const { notify } = useNotifications();
-  notify({
-    title: i18n.t('notification_messages.backend.title').toString(),
+export const handleLegacyMessage = (
+  message: string,
+  isWarning: boolean
+): SemiPartial<NotificationPayload, 'title' | 'message'> => {
+  const { tc } = useI18n();
+  return {
+    title: tc('notification_messages.backend.title'),
     message: message,
     display: !isWarning,
     severity: isWarning ? Severity.WARNING : Severity.ERROR
-  });
-}
+  };
+};
 
-export async function handlePremiumStatusUpdate(data: PremiumStatusUpdateData) {
-  const { notify } = useNotifications();
+export const handlePremiumStatusUpdate = (
+  data: PremiumStatusUpdateData
+): SemiPartial<NotificationPayload, 'title' | 'message'> | null => {
   const { is_premium_active: active, expired } = data;
   const premium = usePremium();
-
-  if (active && !get(premium)) {
-    notify({
-      title: i18n.t('notification_messages.premium.active.title').toString(),
-      message: i18n
-        .t('notification_messages.premium.active.message')
-        .toString(),
-      display: true,
-      severity: Severity.INFO
-    });
-  } else if (!active && get(premium)) {
-    notify({
-      title: i18n.t('notification_messages.premium.inactive.title').toString(),
-      message: expired
-        ? i18n
-            .t('notification_messages.premium.inactive.expired_message')
-            .toString()
-        : i18n
-            .t('notification_messages.premium.inactive.network_problem_message')
-            .toString(),
-      display: true,
-      severity: Severity.ERROR
-    });
-  }
+  const isPremium = get(premium);
+  const { tc } = useI18n();
 
   set(premium, active);
-}
+  if (active && !isPremium) {
+    return {
+      title: tc('notification_messages.premium.active.title'),
+      message: tc('notification_messages.premium.active.message'),
+      display: true,
+      severity: Severity.INFO
+    };
+  } else if (!active && isPremium) {
+    return {
+      title: tc('notification_messages.premium.inactive.title'),
+      message: expired
+        ? tc('notification_messages.premium.inactive.expired_message')
+        : tc('notification_messages.premium.inactive.network_problem_message'),
+      display: true,
+      severity: Severity.ERROR
+    };
+  }
+
+  return null;
+};

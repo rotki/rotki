@@ -63,9 +63,9 @@ import DataTable from '@/components/helper/DataTable.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { CURRENCY_USD } from '@/data/currencies';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancesStore } from '@/store/balances';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { AssetBreakdown } from '@/store/balances/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
@@ -85,14 +85,14 @@ const { identifier } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { getAccountByAddress, getEth2Account } = useBlockchainAccountsStore();
 const { detailsLoading } = storeToRefs(useStatusStore());
-const { assetPriceInfo } = useAssetInfoRetrieval();
+const { assetPriceInfo } = useBlockchainBalancesStore();
 const { assetBreakdown } = useBalancesStore();
 const { t } = useI18n();
 
 const onlyTags = ref<string[]>([]);
 
 const totalUsdValue = computed<BigNumber>(() => {
-  return get(assetPriceInfo(get(identifier))).usdValue;
+  return get(assetPriceInfo(identifier)).usdValue;
 });
 
 const getAccount = (item: AssetBreakdown) =>

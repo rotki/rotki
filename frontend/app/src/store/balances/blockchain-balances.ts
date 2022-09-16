@@ -5,7 +5,7 @@ import {
   BigNumber
 } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get, set } from '@vueuse/core';
+import { get, MaybeRef, set } from '@vueuse/core';
 import { forEach } from 'lodash';
 import cloneDeep from 'lodash/cloneDeep';
 import isEmpty from 'lodash/isEmpty';
@@ -33,6 +33,7 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import {
   AccountAssetBalances,
   AssetBalances,
+  AssetPriceInfo,
   BlockchainBalancePayload
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
@@ -44,7 +45,7 @@ import { isLoading } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { BlockchainMetadata, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { NoPrice, sortDesc } from '@/utils/bignumbers';
+import { NoPrice, sortDesc, Zero } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
@@ -717,6 +718,20 @@ export const useBlockchainBalancesStore = defineStore(
         .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
     });
 
+    const assetPriceInfo = (identifier: MaybeRef<string>) => {
+      return computed<AssetPriceInfo>(() => {
+        const id = get(identifier);
+        const assetValue = (
+          get(aggregatedBalances()) as AssetBalanceWithPrice[]
+        ).find((value: AssetBalanceWithPrice) => value.asset === id);
+        return {
+          usdPrice: assetValue?.usdPrice ?? Zero,
+          amount: assetValue?.amount ?? Zero,
+          usdValue: assetValue?.usdValue ?? Zero
+        };
+      });
+    };
+
     const reset = () => {
       set(ethBalancesState, {});
       set(eth2BalancesState, {});
@@ -751,6 +766,7 @@ export const useBlockchainBalancesStore = defineStore(
       hasDetails,
       loopringBalances,
       blockchainAssets,
+      assetPriceInfo,
       adjustBlockchainPrices,
       updateBlockchainBalances,
       fetchBlockchainBalances,

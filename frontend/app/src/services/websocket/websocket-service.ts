@@ -13,6 +13,7 @@ import {
   SocketMessageType,
   WebsocketMessage
 } from '@/services/websocket/messages';
+import { useNotifications } from '@/store/notifications';
 import { Nullable } from '@/types';
 
 class WebsocketService {
@@ -39,17 +40,17 @@ class WebsocketService {
       logger.debug(`preparing to connect to ${url}`);
       this._connection = new WebSocket(url);
       this._connection.onmessage = async event => {
+        const { notify } = useNotifications();
         const message: WebsocketMessage<SocketMessageType> = JSON.parse(
           event.data
         );
 
         if (message.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
-          await handleSnapshotError(message);
+          notify(handleSnapshotError(message));
         } else if (message.type === SocketMessageType.LEGACY) {
           const data = LegacyMessageData.parse(message.data);
-          await handleLegacyMessage(
-            data.value,
-            data.verbosity === MESSAGE_WARNING
+          notify(
+            handleLegacyMessage(data.value, data.verbosity === MESSAGE_WARNING)
           );
         } else if (
           message.type === SocketMessageType.ETHEREUM_TRANSACTION_STATUS
@@ -57,7 +58,10 @@ class WebsocketService {
           await handleEthereumTransactionStatus(message);
         } else if (message.type === SocketMessageType.PREMIUM_STATUS_UPDATE) {
           const data = PremiumStatusUpdateData.parse(message.data);
-          await handlePremiumStatusUpdate(data);
+          const notification = handlePremiumStatusUpdate(data);
+          if (notification) {
+            notify(notification);
+          }
         } else {
           logger.warn(`Unsupported socket message received: ${event.data}`);
         }
