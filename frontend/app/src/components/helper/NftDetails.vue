@@ -52,7 +52,7 @@
 import { get } from '@vueuse/core';
 import { computed, toRefs, useCssModule } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { Section } from '@/store/const';
 import { getNftBalance, isVideo } from '@/utils/nft';
@@ -90,7 +90,7 @@ const name = computed<string | null>(() => {
   return data?.name || getCollectionName(data) || null;
 });
 
-const { shouldShowLoadingScreen: isLoading } = setupStatusChecking();
+const { shouldShowLoadingScreen: isLoading } = useSectionLoading();
 const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const fallbackData = computed(() => {

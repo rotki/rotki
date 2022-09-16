@@ -47,8 +47,9 @@ import {
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { useYearnStore } from '@/store/defi/yearn';
 import { useNotifications } from '@/store/notifications';
+import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import { getStatus, isLoading, setStatus } from '@/store/utils';
+import { isLoading } from '@/store/utils';
 import { Writeable } from '@/types';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';

@@ -15,7 +15,7 @@
 import { get } from '@vueuse/core';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { useBalancesStore } from '@/store/balances';
 import { Section } from '@/store/const';
 import { useTasks } from '@/store/tasks';
@@ -23,7 +23,7 @@ import { TaskType } from '@/types/task-type';
 
 const { isTaskRunning } = useTasks();
 const { refreshPrices } = useBalancesStore();
-const { isSectionRefreshing } = setupStatusChecking();
+const { isSectionRefreshing } = useSectionLoading();
 
 const refreshing = isSectionRefreshing(Section.PRICES);
 

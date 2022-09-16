@@ -3,6 +3,7 @@ import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { useStatusUpdater } from '@/composables/status';
 import {
   EntryWithMeta,
   LedgerAction,
@@ -22,7 +23,6 @@ import {
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
-import { getStatusUpdater } from '@/store/utils';
 import { Collection, CollectionResponse } from '@/types/collection';
 import { SupportedExchange } from '@/types/exchanges';
 import { TaskMeta } from '@/types/task';
@@ -51,7 +51,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
     onlyLocation?: SupportedExchange
   ) => {
     const { awaitTask, isTaskRunning } = useTasks();
-    const { setStatus, loading, isFirstLoad, resetStatus } = getStatusUpdater(
+    const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.LEDGER_ACTIONS,
       !!onlyLocation
     );

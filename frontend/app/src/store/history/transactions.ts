@@ -3,6 +3,7 @@ import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { useStatusUpdater } from '@/composables/status';
 import {
   EntryWithMeta,
   EthTransaction,
@@ -24,7 +25,6 @@ import {
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
-import { getStatusUpdater } from '@/store/utils';
 import { Collection, CollectionResponse } from '@/types/collection';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -51,7 +51,7 @@ export const useTransactions = defineStore('history/transactions', () => {
   const { ethAddresses } = storeToRefs(useBlockchainAccountsStore());
   const fetchTransactions = async (refresh: boolean = false) => {
     const { awaitTask, isTaskRunning } = useTasks();
-    const { setStatus, loading, isFirstLoad, resetStatus } = getStatusUpdater(
+    const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.TX
     );
     const taskType = TaskType.TX;

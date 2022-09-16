@@ -20,8 +20,8 @@ import { Section, Status } from '@/store/const';
 import { useHistory } from '@/store/history';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
+import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import { getStatus, setStatus } from '@/store/utils';
 import {
   Exchange,
   ExchangeData,

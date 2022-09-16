@@ -45,7 +45,7 @@ import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import Overview from '@/components/defi/Overview.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 
@@ -63,7 +63,7 @@ onMounted(async () => {
   await store.fetchAllDefi(false);
 });
 
-const { shouldShowLoadingScreen, isSectionRefreshing } = setupStatusChecking();
+const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
 
 const loading = shouldShowLoadingScreen(section);
 const refreshing = isSectionRefreshing(section);

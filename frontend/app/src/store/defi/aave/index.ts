@@ -5,19 +5,16 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ref, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
+import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { aaveHistoryKeys } from '@/services/defi/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
+import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import {
-  getStatus,
-  getStatusUpdater,
-  isLoading,
-  setStatus
-} from '@/store/utils';
+import { isLoading } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -163,7 +160,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
   };
 
   const reset = () => {
-    const { resetStatus } = getStatusUpdater(Section.DEFI_AAVE_BALANCES);
+    const { resetStatus } = useStatusUpdater(Section.DEFI_AAVE_BALANCES);
     set(balances, {});
     set(history, {});
     resetStatus(Section.DEFI_AAVE_BALANCES);

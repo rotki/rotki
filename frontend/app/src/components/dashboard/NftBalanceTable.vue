@@ -97,7 +97,7 @@ import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelecto
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { Routes } from '@/router/routes';
 import { useBalancesStore } from '@/store/balances';
 import { Section } from '@/store/const';
@@ -115,7 +115,7 @@ const { totalNetWorthUsd } = storeToRefs(statistics);
 const balancesStore = useBalancesStore();
 const { nfBalances: balances } = storeToRefs(balancesStore);
 const { nfTotalValue, fetchNfBalances } = balancesStore;
-const { shouldShowLoadingScreen, isSectionRefreshing } = setupStatusChecking();
+const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const total = nfTotalValue();

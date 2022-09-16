@@ -11,6 +11,7 @@ import { forEach } from 'lodash';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { useStatusUpdater } from '@/composables/status';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { bigNumberSum } from '@/filters';
 import {
@@ -39,8 +40,8 @@ import {
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import { getStatusUpdater, setStatus } from '@/store/utils';
 import { Writeable } from '@/types';
 import { Exchange, ExchangeData, ExchangeInfo } from '@/types/exchanges';
 import { Module } from '@/types/modules';
@@ -464,7 +465,7 @@ export const useBalancesStore = defineStore('balances', () => {
     if (!activeModules.includes(Module.NFTS)) {
       return;
     }
-    const { isFirstLoad, setStatus, resetStatus } = getStatusUpdater(
+    const { isFirstLoad, setStatus, resetStatus } = useStatusUpdater(
       Section.NON_FUNGIBLE_BALANCES
     );
     try {

@@ -2,7 +2,7 @@ import { get } from '@vueuse/core';
 import { computed, getCurrentInstance, toRefs } from 'vue';
 import { Section, Status } from '@/store/const';
 import { useMainStore } from '@/store/main';
-import { getStatus } from '@/store/utils';
+import { getStatus, useStatusStore } from '@/store/status';
 import { assert } from '@/utils/assertions';
 
 export const useProxy = () => {
@@ -53,8 +53,8 @@ export const useTheme = () => {
   };
 };
 
-export const setupStatusChecking = () => {
-  const { getStatus } = useMainStore();
+export const useSectionLoading = () => {
+  const { getStatus } = useStatusStore();
   const isSectionRefreshing = (section: Section) => {
     const sectionStatus = getStatus(section);
     return computed(() => {

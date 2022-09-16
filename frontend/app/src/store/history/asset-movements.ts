@@ -3,6 +3,7 @@ import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { useStatusUpdater } from '@/composables/status';
 import {
   AssetMovement,
   AssetMovementCollectionResponse,
@@ -21,7 +22,6 @@ import {
 } from '@/store/history/utils';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { getStatusUpdater } from '@/store/utils';
 import { Collection, CollectionResponse } from '@/types/collection';
 import { SupportedExchange } from '@/types/exchanges';
 import { TaskMeta } from '@/types/task';
@@ -52,7 +52,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
     onlyLocation?: SupportedExchange
   ) => {
     const { awaitTask, isTaskRunning } = useTasks();
-    const { setStatus, loading, isFirstLoad, resetStatus } = getStatusUpdater(
+    const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.ASSET_MOVEMENT,
       !!onlyLocation
     );

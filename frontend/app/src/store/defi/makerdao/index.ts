@@ -4,6 +4,7 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
+import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { dsrKeys, vaultDetailsKeys, vaultKeys } from '@/services/defi/consts';
@@ -17,13 +18,9 @@ import {
   MakerDAOVaultDetails
 } from '@/store/defi/types';
 import { useNotifications } from '@/store/notifications';
+import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import {
-  getStatus,
-  getStatusUpdater,
-  isLoading,
-  setStatus
-} from '@/store/utils';
+import { isLoading } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -255,7 +252,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
   }
 
   const reset = (protocol?: MakerDAOProtocol) => {
-    const { resetStatus } = getStatusUpdater(Section.DEFI_DSR_BALANCES);
+    const { resetStatus } = useStatusUpdater(Section.DEFI_DSR_BALANCES);
     if (!protocol || protocol === Module.MAKERDAO_DSR) {
       set(dsrHistory, {});
       set(dsrBalances, defaultDsrBalances());

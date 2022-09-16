@@ -5,6 +5,7 @@ import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { useStatusUpdater } from '@/composables/status';
 import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop, useInterop } from '@/electron-interop';
@@ -48,7 +49,6 @@ import { useStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
-import { getStatusUpdater } from '@/store/utils';
 import {
   Exchange,
   SUPPORTED_EXCHANGES,
@@ -209,8 +209,8 @@ export const useSessionStore = defineStore('session', () => {
       if (!isNew || sync) {
         startPromise(refreshData(exchanges));
       } else {
-        const ethUpdater = getStatusUpdater(Section.BLOCKCHAIN_ETH);
-        const btcUpdater = getStatusUpdater(Section.BLOCKCHAIN_BTC);
+        const ethUpdater = useStatusUpdater(Section.BLOCKCHAIN_ETH);
+        const btcUpdater = useStatusUpdater(Section.BLOCKCHAIN_BTC);
         ethUpdater.setStatus(Status.LOADED);
         btcUpdater.setStatus(Status.LOADED);
       }

@@ -28,7 +28,7 @@ import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { Section } from '@/store/const';
@@ -54,7 +54,7 @@ export default defineComponent({
     }
 
     onMounted(async () => await load());
-    const { shouldShowLoadingScreen } = setupStatusChecking();
+    const { shouldShowLoadingScreen } = useSectionLoading();
     const modules = [Module.LIQUITY];
     const moduleEnabled = isModuleEnabled(modules[0]);
 

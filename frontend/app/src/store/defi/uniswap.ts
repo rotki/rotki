@@ -4,6 +4,7 @@ import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, Ref, ref } from 'vue';
 import { usePremium } from '@/composables/premium';
+import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -16,9 +17,9 @@ import {
   getPoolProfit,
   getPools
 } from '@/store/defi/xswap-utils';
+import { fetchDataAsync } from '@/store/fetch-async';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { OnError } from '@/store/typing';
-import { fetchDataAsync, getStatusUpdater } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -257,7 +258,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
   };
 
   const reset = () => {
-    const { resetStatus } = getStatusUpdater(Section.DEFI_UNISWAP_V3_BALANCES);
+    const { resetStatus } = useStatusUpdater(Section.DEFI_UNISWAP_V3_BALANCES);
     set(v2Balances, {});
     set(v3Balances, {});
     set(events, {});

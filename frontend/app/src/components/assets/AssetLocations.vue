@@ -67,8 +67,8 @@ import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancesStore } from '@/store/balances';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { AssetBreakdown } from '@/store/balances/types';
-import { useMainStore } from '@/store/main';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatusStore } from '@/store/status';
 
 type AssetLocations = (AssetBreakdown & {
   readonly account: GeneralAccount | undefined;
@@ -84,7 +84,7 @@ const { identifier } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { getAccountByAddress, getEth2Account } = useBlockchainAccountsStore();
-const { detailsLoading } = storeToRefs(useMainStore());
+const { detailsLoading } = storeToRefs(useStatusStore());
 const { assetPriceInfo } = useAssetInfoRetrieval();
 const { assetBreakdown } = useBalancesStore();
 const { t } = useI18n();

@@ -2,6 +2,7 @@ import { set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { useStatusUpdater } from '@/composables/status';
 import { IgnoredActions } from '@/services/history/const';
 import { TradeLocation } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
@@ -15,7 +16,6 @@ import { IgnoreActionPayload } from '@/store/history/types';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { ActionStatus } from '@/store/types';
-import { getStatusUpdater } from '@/store/utils';
 import { SupportedExchange } from '@/types/exchanges';
 import { logger } from '@/utils/logging';
 
@@ -114,7 +114,7 @@ export const useHistory = defineStore('history', () => {
   const purgeExchange = async (
     exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
   ) => {
-    const { resetStatus } = getStatusUpdater(Section.TRADES);
+    const { resetStatus } = useStatusUpdater(Section.TRADES);
 
     if (exchange === ALL_CENTRALIZED_EXCHANGES) {
       resetStatus();

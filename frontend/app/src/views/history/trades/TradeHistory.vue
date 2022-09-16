@@ -17,7 +17,7 @@ import { onBeforeMount, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useTrades } from '@/store/history/trades';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -47,7 +47,7 @@ onUnmounted(() => {
   if (isActive) pause();
 });
 
-const { shouldShowLoadingScreen } = setupStatusChecking();
+const { shouldShowLoadingScreen } = useSectionLoading();
 const loading = shouldShowLoadingScreen(Section.TRADES);
 
 const { t } = useI18n();

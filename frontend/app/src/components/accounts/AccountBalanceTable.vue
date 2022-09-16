@@ -193,6 +193,7 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useTheme } from '@/composables/common';
+import { useStatusUpdater } from '@/composables/status';
 import { bigNumberSum } from '@/filters';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
@@ -205,7 +206,6 @@ import {
 import { Section } from '@/store/const';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
-import { getStatusUpdater } from '@/store/utils';
 import { Properties } from '@/types';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
@@ -272,7 +272,7 @@ const section = computed<Section>(() => {
 });
 
 const loading = computed<boolean>(() => {
-  return getStatusUpdater(get(section)).loading();
+  return useStatusUpdater(get(section)).loading();
 });
 
 const expanded = ref<BlockchainAccountWithBalance[]>([]);

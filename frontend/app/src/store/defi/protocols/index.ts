@@ -42,7 +42,8 @@ import {
 } from '@/store/defi/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
 import { useYearnStore } from '@/store/defi/yearn';
-import { getStatus, isLoading, setStatus } from '@/store/utils';
+import { getStatus, setStatus } from '@/store/status';
+import { isLoading } from '@/store/utils';
 import { Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';

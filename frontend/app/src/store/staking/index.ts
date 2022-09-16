@@ -11,19 +11,16 @@ import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref } from 'vue';
 import { usePremium } from '@/composables/premium';
+import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import {
-  getStatus,
-  getStatusUpdater,
-  isLoading,
-  setStatus
-} from '@/store/utils';
+import { isLoading } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -64,7 +61,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
       return;
     }
 
-    const { setStatus, loading, getStatus, resetStatus } = getStatusUpdater(
+    const { setStatus, loading, getStatus, resetStatus } = useStatusUpdater(
       Section.STAKING_ETH2
     );
 
@@ -149,7 +146,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
     }
 
     const taskType = TaskType.STAKING_ETH2_STATS;
-    const { setStatus, loading, isFirstLoad, resetStatus } = getStatusUpdater(
+    const { setStatus, loading, isFirstLoad, resetStatus } = useStatusUpdater(
       Section.STAKING_ETH2_STATS
     );
 
@@ -253,7 +250,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
     set(stats, defaultStats());
     set(pagination, defaultPagination());
 
-    const { resetStatus } = getStatusUpdater(Section.STAKING_ETH2);
+    const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
     resetStatus();
     resetStatus(Section.STAKING_ETH2_DEPOSITS);
     resetStatus(Section.STAKING_ETH2_STATS);

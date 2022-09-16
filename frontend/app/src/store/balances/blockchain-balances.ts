@@ -38,8 +38,9 @@ import {
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import { getStatus, isLoading, setStatus } from '@/store/utils';
+import { isLoading } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { BlockchainMetadata, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

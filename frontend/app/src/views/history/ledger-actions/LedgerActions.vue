@@ -17,7 +17,7 @@ import { onBeforeMount } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import LedgerActionContent from '@/components/history/ledger-actions/LedgerActionContent.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 
@@ -27,7 +27,7 @@ onBeforeMount(async () => {
   await fetchLedgerActions();
 });
 
-const { shouldShowLoadingScreen } = setupStatusChecking();
+const { shouldShowLoadingScreen } = useSectionLoading();
 const loading = shouldShowLoadingScreen(Section.LEDGER_ACTIONS);
 
 const { t } = useI18n();

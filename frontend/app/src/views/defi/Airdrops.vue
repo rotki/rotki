@@ -105,7 +105,7 @@ import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
 import { Section } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
@@ -214,7 +214,7 @@ const { t, tc } = useI18n();
 const defiStore = useDefiStore();
 const { airdropAddresses } = storeToRefs(defiStore);
 const { isPackaged, navigate } = useInterop();
-const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
+const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
 
 const loading = shouldShowLoadingScreen(section);
 const refreshing = isSectionRefreshing(section);

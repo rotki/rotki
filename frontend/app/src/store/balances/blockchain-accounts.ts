@@ -11,6 +11,7 @@ import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, Ref, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { useStatusUpdater } from '@/composables/status';
 import { bigNumberSum } from '@/filters';
 import {
   BlockchainAssetBalances,
@@ -44,13 +45,12 @@ import {
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
-import { useMainStore } from '@/store/main';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { getStatus, useStatusStore } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import { getStatus, getStatusUpdater } from '@/store/utils';
 import { Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { L2_LOOPRING } from '@/types/protocols';
@@ -459,7 +459,7 @@ export const useBlockchainAccountsStore = defineStore(
       try {
         const addresses = await Promise.allSettled(requests);
         useDefiStore().reset();
-        useMainStore().resetDefiStatus();
+        useStatusStore().resetDefiStatus();
         const { refreshPrices, fetchNfBalances } = useBalancesStore();
         startPromise(fetchNfBalances());
 
@@ -636,7 +636,7 @@ export const useBlockchainAccountsStore = defineStore(
 
         await updateBlockchainBalances({ chain: blockchain, balances });
         useDefiStore().reset();
-        useMainStore().resetDefiStatus();
+        useStatusStore().resetDefiStatus();
         const { fetchNfBalances } = useBalancesStore();
         await fetchNfBalances();
       } catch (e: any) {
@@ -684,7 +684,7 @@ export const useBlockchainAccountsStore = defineStore(
           }
         );
         if (result) {
-          const { resetStatus } = getStatusUpdater(Section.STAKING_ETH2);
+          const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
           resetStatus();
           resetStatus(Section.STAKING_ETH2_DEPOSITS);
           resetStatus(Section.STAKING_ETH2_STATS);
@@ -725,7 +725,7 @@ export const useBlockchainAccountsStore = defineStore(
         const success = await api.balances.editEth2Validator(payload);
 
         if (success) {
-          const { resetStatus } = getStatusUpdater(Section.STAKING_ETH2);
+          const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
           await fetchBlockchainBalances({
             blockchain: Blockchain.ETH2,
             ignoreCache: true

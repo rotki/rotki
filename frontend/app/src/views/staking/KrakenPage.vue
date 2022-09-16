@@ -60,13 +60,13 @@ import { useI18n } from 'vue-i18n-composable';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { Section } from '@/store/const';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
 import { SupportedExchange } from '@/types/exchanges';
 
-const { shouldShowLoadingScreen } = setupStatusChecking();
+const { shouldShowLoadingScreen } = useSectionLoading();
 const { load } = useKrakenStakingStore();
 
 const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());

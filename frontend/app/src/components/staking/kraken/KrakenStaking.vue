@@ -27,7 +27,7 @@ import Fragment from '@/components/helper/Fragment';
 import KrakenStakingEvents from '@/components/staking/kraken/KrakenStakingEvents.vue';
 import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
 import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingReceived.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
 import { KrakenStakingEvents as Events } from '@/types/staking';
@@ -44,7 +44,7 @@ export default defineComponent({
     const store = useKrakenStakingStore();
     const { events } = toRefs(store);
 
-    const { isSectionRefreshing } = setupStatusChecking();
+    const { isSectionRefreshing } = useSectionLoading();
 
     const { load, updatePagination } = store;
     const refresh = () => load(true);

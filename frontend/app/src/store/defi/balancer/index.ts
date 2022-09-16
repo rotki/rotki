@@ -11,16 +11,14 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ComputedRef, ref, Ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
+import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
+import { fetchDataAsync } from '@/store/fetch-async';
 import { OnError } from '@/store/typing';
-import {
-  fetchDataAsync,
-  filterAddresses,
-  getStatusUpdater
-} from '@/store/utils';
+import { filterAddresses } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -209,7 +207,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
   };
 
   const reset = () => {
-    const { resetStatus } = getStatusUpdater(Section.DEFI_BALANCER_BALANCES);
+    const { resetStatus } = useStatusUpdater(Section.DEFI_BALANCER_BALANCES);
     set(balances, {});
     set(events, {});
     resetStatus(Section.DEFI_BALANCER_BALANCES);
