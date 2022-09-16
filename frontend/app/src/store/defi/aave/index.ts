@@ -3,7 +3,7 @@ import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ref, Ref } from 'vue';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
@@ -30,7 +30,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
   const { notify } = useNotifications();
   const { awaitTask } = useTasks();
   const { activeModules } = useModules();
-  const premium = getPremium();
+  const premium = usePremium();
 
   const aaveTotalEarned = (addresses: string[]) =>
     computed(() => {

@@ -170,7 +170,7 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking, useTheme } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -219,7 +219,7 @@ const balances = computed(() => {
     : balances.filter(({ address }) => pools.includes(address));
 });
 
-const premium = getPremium();
+const premium = usePremium();
 
 const { dark } = useTheme();
 

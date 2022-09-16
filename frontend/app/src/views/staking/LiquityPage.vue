@@ -29,7 +29,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
 import { setupStatusChecking } from '@/composables/common';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { Section } from '@/store/const';
 import { useLiquityStore } from '@/store/defi/liquity';
@@ -69,7 +69,7 @@ export default defineComponent({
       moduleEnabled: moduleEnabled,
       modules,
       loading: shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING),
-      premium: getPremium(),
+      premium: usePremium(),
       tc
     };
   }

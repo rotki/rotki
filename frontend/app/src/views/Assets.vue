@@ -47,7 +47,7 @@ import { useI18n } from 'vue-i18n-composable';
 import { RawLocation } from 'vue-router';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -80,7 +80,7 @@ const editRoute = computed<RawLocation>(() => {
   };
 });
 
-const premium = getPremium();
+const premium = usePremium();
 
 const { assetName, assetSymbol } = useAssetInfoRetrieval();
 

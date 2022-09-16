@@ -7,7 +7,7 @@ import {
 import { set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { Ref, ref } from 'vue';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
@@ -26,7 +26,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     {}
   ) as Ref<LiquityStakingEvents>;
 
-  const isPremium = getPremium();
+  const isPremium = usePremium();
   const { activeModules } = useModules();
 
   async function fetchBalances(refresh: boolean = false) {

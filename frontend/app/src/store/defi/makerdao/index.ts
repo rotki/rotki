@@ -2,7 +2,7 @@ import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref, Ref } from 'vue';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
@@ -61,7 +61,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
   const { awaitTask } = useTasks();
   const { notify } = useNotifications();
   const { activeModules } = useModules();
-  const premium = getPremium();
+  const premium = usePremium();
 
   async function fetchDSRBalances(refresh: boolean = false) {
     if (!get(activeModules).includes(Module.MAKERDAO_DSR)) {

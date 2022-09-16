@@ -24,7 +24,7 @@ import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { setupStatusChecking } from '@/composables/common';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { BalancerBalances } from '@/premium/premium';
 import { Section } from '@/store/const';
@@ -37,7 +37,7 @@ const { fetchBalances, fetchEvents } = useBalancerStore();
 const { isModuleEnabled } = useModules();
 const { shouldShowLoadingScreen, isSectionRefreshing } = setupStatusChecking();
 
-const premium = getPremium();
+const premium = usePremium();
 const isEnabled = computed(() => isModuleEnabled(modules[0]));
 const balancesLoading = shouldShowLoadingScreen(Section.DEFI_BALANCER_BALANCES);
 const eventsLoading = shouldShowLoadingScreen(Section.DEFI_BALANCER_EVENTS);

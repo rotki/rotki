@@ -138,7 +138,7 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { UniswapDetails } from '@/premium/premium';
@@ -177,7 +177,7 @@ const enabled = isModuleEnabled(modules[0]);
 const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_V2_BALANCES);
 const primaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_V2_BALANCES);
 const secondaryRefreshing = isSectionRefreshing(Section.DEFI_UNISWAP_EVENTS);
-const premium = getPremium();
+const premium = usePremium();
 
 const selectedAddresses = computed(() => {
   let account = get(selectedAccount);

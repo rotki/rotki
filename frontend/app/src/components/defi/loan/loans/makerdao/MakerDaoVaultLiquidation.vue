@@ -71,7 +71,7 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { useTheme } from '@/composables/common';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { MakerDAOVaultModel } from '@/store/defi/types';
 import { Zero } from '@/utils/bignumbers';
 
@@ -85,7 +85,7 @@ const props = defineProps({
 });
 
 const { vault } = toRefs(props);
-const premium = getPremium();
+const premium = usePremium();
 const { fontStyle } = useTheme();
 const { tc } = useI18n();
 

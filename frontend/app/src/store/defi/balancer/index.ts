@@ -9,7 +9,7 @@ import { XswapPool } from '@rotki/common/lib/defi/xswap';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ComputedRef, ref, Ref } from 'vue';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
@@ -31,7 +31,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
 
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
   const { activeModules } = useModules();
-  const isPremium = getPremium();
+  const isPremium = usePremium();
 
   const addresses = computed(() => Object.keys(get(balances)));
 

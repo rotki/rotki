@@ -3,6 +3,7 @@ import { Message } from '@rotki/common/lib/messages';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { usePremium } from '@/composables/premium';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { defiSections, Section, Status } from '@/store/const';
@@ -22,6 +23,8 @@ export const useMainStore = defineStore('main', () => {
   const status = ref<Partial<Record<Section, Status>>>({});
   const dataDirectory = ref('');
   const logLevel = ref<LogLevel>(getDefaultLogLevel());
+
+  const premium = usePremium();
 
   const updateNeeded = computed(() => {
     const { version: appVersion, downloadUrl } = get(version);
@@ -169,6 +172,12 @@ export const useMainStore = defineStore('main', () => {
     set(connectionFailure, false);
     set(status, {});
   };
+
+  watch(premium, premium => {
+    if (!premium) {
+      resetDefiStatus();
+    }
+  });
 
   return {
     newUser,

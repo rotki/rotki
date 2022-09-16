@@ -112,7 +112,7 @@ import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { setupStatusChecking, useRoute } from '@/composables/common';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import {
   AaveEarnedDetails,
@@ -144,7 +144,7 @@ const chains = [Blockchain.ETH];
 
 const selectedAccount = ref<GeneralAccount | null>(null);
 const protocol = ref<DefiProtocol | null>(null);
-const premium = getPremium();
+const premium = usePremium();
 const route = useRoute();
 const { openUrl } = useInterop();
 const { shouldShowLoadingScreen, isSectionRefreshing } = setupStatusChecking();

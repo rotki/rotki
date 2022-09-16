@@ -27,7 +27,7 @@ import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { setupStatusChecking } from '@/composables/common';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { Sushi } from '@/premium/premium';
 import { Section } from '@/store/const';
@@ -52,7 +52,7 @@ export default defineComponent({
     const { isModuleEnabled } = useModules();
     const { shouldShowLoadingScreen, isSectionRefreshing } =
       setupStatusChecking();
-    const premium = getPremium();
+    const premium = usePremium();
     const { tc } = useI18n();
 
     onMounted(async () => {

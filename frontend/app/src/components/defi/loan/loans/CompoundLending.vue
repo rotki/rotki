@@ -38,7 +38,7 @@ import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import CompoundCollateral from '@/components/defi/loan/loans/compound/CompoundCollateral.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { CompoundBorrowingDetails } from '@/premium/premium';
 import { CompoundLoan } from '@/services/defi/types/compound';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -60,7 +60,7 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const premium = getPremium();
+    const premium = usePremium();
 
     const { loan } = toRefs(props);
     const assets = computed(() => {

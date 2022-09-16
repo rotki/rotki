@@ -1,7 +1,7 @@
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ComputedRef, Ref, ref } from 'vue';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
@@ -42,7 +42,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
   const { notify } = useNotifications();
   const { activeModules } = useModules();
   const { assetSymbol } = useAssetInfoRetrieval();
-  const premium = getPremium();
+  const premium = usePremium();
 
   const yearnVaultsProfit = (
     addresses: string[],

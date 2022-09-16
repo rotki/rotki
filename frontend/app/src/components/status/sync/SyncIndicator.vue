@@ -221,14 +221,14 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import { useTheme } from '@/composables/common';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
 import { useBalancesStore } from '@/store/balances';
 import { AllBalancePayload } from '@/store/balances/types';
 import { useSessionStore } from '@/store/session';
-import { usePremiumStore } from '@/store/session/premium';
+import { useSyncStoreStore } from '@/store/session/sync-store';
 import { useTasks } from '@/store/tasks';
 import { showError, showMessage } from '@/store/utils';
 import { Writeable } from '@/types';
@@ -238,11 +238,11 @@ import { startPromise } from '@/utils';
 const { t, tc } = useI18n();
 const store = useSessionStore();
 const { lastBalanceSave, lastDataUpload } = storeToRefs(store);
-const { forceSync } = usePremiumStore();
+const { forceSync } = useSyncStoreStore();
 
 const { fetchBalances } = useBalancesStore();
 const { currentBreakpoint } = useTheme();
-const premium = getPremium();
+const premium = usePremium();
 let { logout } = store;
 
 const pending = ref<boolean>(false);
@@ -290,7 +290,7 @@ const showConfirmation = (action: SyncAction) => {
 
 const performSync = async () => {
   set(pending, true);
-  await forceSync(get(syncAction), logout);
+  await forceSync(syncAction, logout);
   set(pending, false);
 };
 

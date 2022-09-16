@@ -125,7 +125,7 @@ import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import { useBackendManagement } from '@/composables/backend';
 import { useTheme } from '@/composables/common';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
@@ -199,7 +199,7 @@ export default defineComponent({
 
     const { currentBreakpoint } = useTheme();
     const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-    const premium = getPremium();
+    const premium = usePremium();
 
     const displayPremium = computed(
       () => !get(premium) && !get(message).title && get(premiumVisible)

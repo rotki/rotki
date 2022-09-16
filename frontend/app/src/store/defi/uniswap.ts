@@ -3,7 +3,7 @@ import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, Ref, ref } from 'vue';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -33,7 +33,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
 
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
-  const isPremium = getPremium();
+  const isPremium = usePremium();
 
   const uniswapV2Balances = (addresses: string[]) =>
     computed(() => {

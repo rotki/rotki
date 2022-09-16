@@ -59,7 +59,7 @@ import { DataTableHeader } from 'vuetify';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { useTheme } from '@/composables/common';
-import { getPremium } from '@/composables/premium';
+import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -120,7 +120,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 ]);
 
 const { dark } = useTheme();
-const premium = getPremium();
+const premium = usePremium();
 
 const { prices } = storeToRefs(useBalancePricesStore());
 
