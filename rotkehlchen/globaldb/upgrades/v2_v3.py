@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Tuple
 
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import (
@@ -149,15 +149,15 @@ BINANCE_INSERT = 'INSERT INTO binance_pairs(pair, base_asset, quote_asset, locat
 EVM_TUPLES_CREATION_TYPE = (
     Tuple[
         List[Tuple[str, str, int, str, Any, Any]],
-        List[Tuple[Any, Any, str, Any, Optional[str]]],
-        List[Tuple[Any, Any, Any, Any, None]],
+        List[Tuple[Any, Any, str]],
+        List[Tuple[Any, Any, Any, Any, None, Any, Any]],
     ]
 )
 
 ASSET_CREATION_TYPE = (
     Tuple[
-        List[Tuple[Any, Any, Any, Any, Any]],
-        List[Tuple[Any, Any, Any, Any, Any]],
+        List[Tuple[Any, Any, Any]],
+        List[Tuple[Any, Any, Any, Any, Any, Any, Any]],
     ]
 )
 
@@ -512,5 +512,5 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         # other chains. And populates them properly via sql statements
         with open(dir_path / 'data' / 'globaldb_v2_v3_assets.sql', 'r') as f:
             sql_sentences = f.read()
-            # cursor.executescript(sql_sentences)
+            cursor.executescript(sql_sentences)
         connection.commit()
