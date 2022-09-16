@@ -128,6 +128,7 @@ import { useTheme } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import { startPromise } from '@/utils';
@@ -172,8 +173,10 @@ export default defineComponent({
     const premiumVisible = ref(false);
 
     const store = useMainStore();
-    const { connectionFailure, newUser, message, connected, updateNeeded } =
+    const { connectionFailure, newUser, connected, updateNeeded } =
       toRefs(store);
+
+    const { message } = storeToRefs(useMessageStore());
 
     const animationEnabled = useLocalStorage(
       'rotki.login_animation_enabled',

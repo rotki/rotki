@@ -106,8 +106,8 @@ import { ManagedAsset } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { useMessageStore } from '@/store/message';
 import { useTasks } from '@/store/tasks';
-import { showError } from '@/store/utils';
 import { Nullable } from '@/types';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
@@ -121,6 +121,7 @@ const { identifier } = toRefs(props);
 const assetsStore = useAssetInfoRetrieval();
 const { supportedAssets } = storeToRefs(assetsStore);
 const { fetchSupportedAssets } = assetsStore;
+const { setMessage } = useMessageStore();
 
 const loading = ref<boolean>(false);
 const tokens = ref<ManagedAsset[]>([]);
@@ -191,12 +192,12 @@ const deleteToken = async (address: string, chain: string) => {
       await refresh();
     }
   } catch (e: any) {
-    showError(
-      tc('asset_management.delete_error', 0, {
+    setMessage({
+      description: tc('asset_management.delete_error', 0, {
         address,
         message: e.message
       })
-    );
+    });
   }
 };
 
@@ -207,12 +208,12 @@ const deleteAsset = async (identifier: string) => {
       await refresh();
     }
   } catch (e: any) {
-    showError(
-      tc('asset_management.delete_error', 0, {
+    setMessage({
+      description: tc('asset_management.delete_error', 0, {
         address: identifier,
         message: e.message
       })
-    );
+    });
   }
 };
 

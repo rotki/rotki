@@ -86,7 +86,6 @@ import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
 import InputModeSelect from '@/components/accounts/InputModeSelect.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
-import { setupMessages } from '@/composables/common';
 import { setupTaskStatus } from '@/composables/tasks';
 import { useInterop } from '@/electron-interop';
 import { deserializeApiErrorMessage } from '@/services/converters';
@@ -97,6 +96,7 @@ import {
   BlockchainAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
+import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import {
   AccountInput,
@@ -340,7 +340,7 @@ const AccountForm = defineComponent({
       }
     };
 
-    const { setMessage } = setupMessages();
+    const { setMessage } = useMessageStore();
 
     const manualAdd = async () => {
       const blockchainAccount = get(payload);

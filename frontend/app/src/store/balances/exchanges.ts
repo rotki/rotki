@@ -18,9 +18,10 @@ import {
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { useHistory } from '@/store/history';
+import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
-import { getStatus, setStatus, showError } from '@/store/utils';
+import { getStatus, setStatus } from '@/store/utils';
 import {
   Exchange,
   ExchangeData,
@@ -43,6 +44,7 @@ export const useExchangeBalancesStore = defineStore(
 
     const { awaitTask, isTaskRunning, metadata } = useTasks();
     const { notify } = useNotifications();
+    const { setMessage } = useMessageStore();
     const { purgeHistoryLocation } = useHistory();
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -165,13 +167,13 @@ export const useExchangeBalancesStore = defineStore(
 
         return success;
       } catch (e: any) {
-        showError(
-          tc('actions.balances.exchange_removal.description', 0, {
+        setMessage({
+          title: tc('actions.balances.exchange_removal.title'),
+          description: tc('actions.balances.exchange_removal.description', 0, {
             exchange,
             error: e.message
-          }),
-          tc('actions.balances.exchange_removal.title')
-        );
+          })
+        });
         return false;
       }
     };
@@ -287,13 +289,13 @@ export const useExchangeBalancesStore = defineStore(
 
         return success;
       } catch (e: any) {
-        showError(
-          t('actions.balances.exchange_setup.description', {
+        setMessage({
+          title: t('actions.balances.exchange_setup.title').toString(),
+          description: t('actions.balances.exchange_setup.description', {
             exchange: exchange.location,
             error: e.message
-          }).toString(),
-          t('actions.balances.exchange_setup.title').toString()
-        );
+          }).toString()
+        });
         return false;
       }
     };

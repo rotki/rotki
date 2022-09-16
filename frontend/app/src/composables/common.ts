@@ -91,13 +91,6 @@ export const isSectionLoading = (section: Section) => {
   });
 };
 
-export const setupMessages = () => {
-  const { setMessage } = useMainStore();
-  return {
-    setMessage
-  };
-};
-
 export const setupNewUser = () => {
   const store = useMainStore();
   const { newUser } = toRefs(store);

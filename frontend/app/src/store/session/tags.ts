@@ -5,7 +5,7 @@ import { computed, ComputedRef, ref } from 'vue';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { ActionStatus } from '@/store/types';
 import { READ_ONLY_TAGS, Tag, Tags } from '@/types/user';
 
@@ -20,7 +20,7 @@ export const useTagStore = defineStore('session/tags', () => {
     return { ...get(allTags), ...READ_ONLY_TAGS };
   });
 
-  const { setMessage } = useMainStore();
+  const { setMessage } = useMessageStore();
 
   const addTag = async (tag: Tag): Promise<ActionStatus> => {
     try {

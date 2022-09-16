@@ -14,11 +14,12 @@ import { useBalancesStore } from '@/store/balances';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { BalanceByLocation, LocationBalance } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
+import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
-import { getStatus, setStatus, showError } from '@/store/utils';
+import { getStatus, setStatus } from '@/store/utils';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
@@ -30,6 +31,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
 
   const { t, tc } = useI18n();
   const { notify } = useNotifications();
+  const { setMessage } = useMessageStore();
   const { awaitTask } = useTasks();
 
   const manualBalances = computed(() => {
@@ -212,10 +214,10 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       const { balances } = await api.balances.deleteManualBalances([id]);
       set(manualBalancesData, balances);
     } catch (e: any) {
-      showError(
-        `${e.message}`,
-        t('actions.balances.manual_delete.error.title').toString()
-      );
+      setMessage({
+        title: t('actions.balances.manual_delete.error.title').toString(),
+        description: e.message
+      });
     }
   };
 

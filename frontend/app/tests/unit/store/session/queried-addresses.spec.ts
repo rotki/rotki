@@ -4,9 +4,17 @@ import {
   QueriedAddresses,
   QueriedAddressPayload
 } from '@/services/session/types';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { Module } from '@/types/modules';
+
+vi.mock('vue-i18n-composable', () => ({
+  createI18n: vi.fn(),
+  useI18n: () => ({
+    t: vi.fn().mockImplementation(args => args),
+    tc: vi.fn().mockImplementation(args => args)
+  })
+}));
 
 vi.mock('@/services/session/queried-addresses-api', () => ({
   useQueriedAddressApi: vi.fn().mockReturnValue({})
@@ -37,12 +45,12 @@ describe('session:queried addresses store', () => {
 
   test('fetchQueriedAddresses fails', async () => {
     expect.assertions(3);
-    const mainStore = useMainStore();
+    const messageStore = useMessageStore();
     api.queriedAddresses = vi.fn().mockRejectedValue(new Error('failed'));
     await store.fetchQueriedAddresses();
     expect(api.queriedAddresses).toHaveBeenCalledTimes(1);
     expect(store.queriedAddresses).toMatchObject({});
-    expect(mainStore.message.description).toBeTruthy();
+    expect(messageStore.message.description).toBeTruthy();
   });
 
   test('addQueriedAddress', async () => {
@@ -62,7 +70,7 @@ describe('session:queried addresses store', () => {
 
   test('addQueriedAddress fails', async () => {
     expect.assertions(3);
-    const mainStore = useMainStore();
+    const messageStore = useMessageStore();
     const payload: QueriedAddressPayload = {
       module: Module.MAKERDAO_DSR,
       address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
@@ -72,7 +80,7 @@ describe('session:queried addresses store', () => {
     await store.addQueriedAddress(payload);
     expect(api.addQueriedAddress).toHaveBeenCalledWith(payload);
     expect(store.queriedAddresses).toMatchObject({});
-    expect(mainStore.message.description).toBeTruthy();
+    expect(messageStore.message.description).toBeTruthy();
   });
 
   test('deletedQueriedAddress', async () => {
@@ -95,7 +103,7 @@ describe('session:queried addresses store', () => {
 
   test('deletedQueriedAddress failed', async () => {
     expect.assertions(3);
-    const mainStore = useMainStore();
+    const messageStore = useMessageStore();
 
     const originalState: QueriedAddresses = {
       makerdao_dsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5']
@@ -110,6 +118,6 @@ describe('session:queried addresses store', () => {
     await store.deleteQueriedAddress(payload);
     expect(api.deleteQueriedAddress).toHaveBeenCalledWith(payload);
     expect(store.queriedAddresses).toMatchObject(originalState);
-    expect(mainStore.message.description).toBeTruthy();
+    expect(messageStore.message.description).toBeTruthy();
   });
 });

@@ -110,7 +110,7 @@ import {
   EthNamesEntry,
   EthNamesPayload
 } from '@/store/balances/types';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 
 export default defineComponent({
   name: 'EthAddressBookManagement',
@@ -185,7 +185,7 @@ export default defineComponent({
     };
 
     const { addEthAddressBook, updateEthAddressBook } = useEthNamesStore();
-    const { setMessage } = useMainStore();
+    const { setMessage } = useMessageStore();
 
     const save = async () => {
       if (!get(valid)) return;

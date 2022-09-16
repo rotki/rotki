@@ -12,7 +12,7 @@ import { useLedgerActions } from '@/store/history/ledger-actions';
 import { useTrades } from '@/store/history/trades';
 import { useTransactions } from '@/store/history/transactions';
 import { IgnoreActionPayload } from '@/store/history/types';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { ActionStatus } from '@/store/types';
 import { getStatusUpdater } from '@/store/utils';
@@ -24,7 +24,7 @@ export const useHistory = defineStore('history', () => {
   const ignored = ref<IgnoredActions>({});
 
   const { notify } = useNotifications();
-  const { setMessage } = useMainStore();
+  const { setMessage } = useMessageStore();
   const { t } = useI18n();
 
   const fetchAssociatedLocations = async () => {

@@ -4,10 +4,10 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
-import { showMessage } from '@/store/utils';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
@@ -16,6 +16,7 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
 
   const { fetchSupportedAssets } = useAssetInfoRetrieval();
   const { notify } = useNotifications();
+  const { setMessage } = useMessageStore();
   const { t, tc } = useI18n();
 
   const fetchIgnoredAssets = async (): Promise<void> => {
@@ -110,7 +111,11 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
               total: result
             }).toString();
 
-      showMessage(message, title);
+      setMessage({
+        title,
+        description: message,
+        success: true
+      });
       await fetchIgnoredAssets();
       await fetchSupportedAssets();
     } catch (e: any) {

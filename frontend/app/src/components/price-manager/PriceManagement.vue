@@ -68,7 +68,7 @@ import {
   HistoricalPriceFormPayload
 } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { Nullable } from '@/types';
 
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
@@ -91,7 +91,7 @@ const filter = reactive<{
 const valid = ref(false);
 const editMode = ref(false);
 
-const { setMessage } = useMainStore();
+const { setMessage } = useMessageStore();
 const router = useRouter();
 const route = useRoute();
 const { tc } = useI18n();

@@ -227,10 +227,10 @@ import { api } from '@/services/rotkehlchen-api';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
 import { useBalancesStore } from '@/store/balances';
 import { AllBalancePayload } from '@/store/balances/types';
+import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { useSyncStoreStore } from '@/store/session/sync-store';
 import { useTasks } from '@/store/tasks';
-import { showError, showMessage } from '@/store/utils';
 import { Writeable } from '@/types';
 import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
@@ -313,6 +313,8 @@ const importFilesCompleted = computed<boolean>(
   () => !!get(balanceSnapshotFile) && !!get(locationDataSnapshotFile)
 );
 
+const { setMessage } = useMessageStore();
+
 const importSnapshot = async () => {
   if (!get(importFilesCompleted)) return;
   set(importSnapshotLoading, true);
@@ -337,19 +339,26 @@ const importSnapshot = async () => {
   }
 
   if (!success) {
-    showError(
-      t('sync_indicator.import_snapshot.messages.failed_description', {
-        message
-      }).toString(),
-      t('sync_indicator.import_snapshot.messages.title').toString()
-    );
+    setMessage({
+      title: t('sync_indicator.import_snapshot.messages.title').toString(),
+      description: t(
+        'sync_indicator.import_snapshot.messages.failed_description',
+        {
+          message
+        }
+      ).toString()
+    });
   } else {
-    showMessage(
-      t('sync_indicator.import_snapshot.messages.success_description', {
-        message
-      }).toString(),
-      t('sync_indicator.import_snapshot.messages.title').toString()
-    );
+    setMessage({
+      title: t('sync_indicator.import_snapshot.messages.title').toString(),
+      description: t(
+        'sync_indicator.import_snapshot.messages.success_description',
+        {
+          message
+        }
+      ).toString(),
+      success: true
+    });
 
     setTimeout(() => {
       startPromise(logout());

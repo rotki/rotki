@@ -7,7 +7,7 @@ import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { filterAddressesFromWords } from '@/store/history/utils';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
@@ -88,7 +88,7 @@ export const useReports = defineStore('reports', () => {
     missingPrices: []
   });
 
-  const { setMessage } = useMainStore();
+  const { setMessage } = useMessageStore();
   const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 
   const createCsv = async (path: string) => {

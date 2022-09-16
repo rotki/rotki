@@ -176,7 +176,7 @@ import TableExpandContainer from '@/components/helper/table/TableExpandContainer
 import { EthereumToken, ManagedAsset } from '@/services/assets/types';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { ActionStatus } from '@/store/types';
 import { Nullable } from '@/types';
 import {
@@ -253,7 +253,7 @@ const add = () => emit('add');
 const edit = (asset: ManagedAsset) => emit('edit', asset);
 const deleteAsset = (asset: ManagedAsset) => emit('delete-asset', asset);
 
-const { setMessage } = useMainStore();
+const { setMessage } = useMessageStore();
 const { aggregatedAssets } = useBlockchainBalancesStore();
 
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();

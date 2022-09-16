@@ -95,9 +95,9 @@ import {
   Snapshot,
   SnapshotPayload
 } from '@/store/balances/types';
+import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useStatisticsStore } from '@/store/statistics';
-import { showMessage } from '@/store/utils';
 import { sortDesc } from '@/utils/bignumbers';
 
 const props = defineProps({
@@ -211,14 +211,17 @@ const save = async (): Promise<boolean> => {
   return result;
 };
 
+const { setMessage } = useMessageStore();
+
 const finish = async () => {
   const success = await save();
 
   if (success) {
-    showMessage(
-      tc('dashboard.snapshot.edit.dialog.message.success'),
-      tc('dashboard.snapshot.edit.dialog.message.title')
-    );
+    setMessage({
+      title: tc('dashboard.snapshot.edit.dialog.message.title'),
+      description: tc('dashboard.snapshot.edit.dialog.message.success'),
+      success: true
+    });
     await fetchNetValue();
     emit('finish');
   }
