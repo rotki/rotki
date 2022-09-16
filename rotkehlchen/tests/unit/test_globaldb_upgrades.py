@@ -41,7 +41,7 @@ def test_upgrade_v2_v3(globaldb):
         weth_token_data = cursor.execute('SELECT identifier, token_kind, chain, address, decimals, protocol FROM evm_tokens WHERE address = "0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"').fetchone()  # noqa: E501
         assert weth_token_data[0] == 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'
         assert EvmTokenKind.deserialize_from_db(weth_token_data[1]) == EvmTokenKind.ERC20
-        assert ChainID(weth_token_data[2]) == ChainID.ETHEREUM
+        assert ChainID.deserialize_from_db(weth_token_data[2]) == ChainID.ETHEREUM
         assert weth_token_data[3] == '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'
         assert weth_token_data[4] == 18
         assert weth_token_data[5] is None

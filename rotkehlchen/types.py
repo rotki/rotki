@@ -311,6 +311,12 @@ class CovalentTransaction(NamedTuple):
 
 
 class ChainID(SerializableEnumMixin):
+    """This class maps each EVM chain to their chain id. This is used to correctly idenity EVM
+    assets and use it where these ids are needed.
+
+    This enum implements custom serialize_for_db and deserialize_from_db to make it easier future
+    changes if they are needed.
+    """
     ETHEREUM = 1
     OPTIMISM = 10
     BINANCE = 56
@@ -319,6 +325,13 @@ class ChainID(SerializableEnumMixin):
     FANTOM = 250
     ARBITRUM = 42161
     AVALANCHE = 43114
+
+    @classmethod
+    def deserialize_from_db(cls, value: int) -> 'ChainID':
+        return cls(value)
+
+    def serialize_for_db(self) -> int:
+        return self.value
 
 
 class SupportedBlockchain(SerializableEnumValueMixin):

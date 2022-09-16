@@ -262,7 +262,7 @@ class GlobalDBHandler():
                 evm_address: Optional[ChecksumEvmAddress]
                 if asset_type == AssetType.EVM_TOKEN:
                     evm_address = string_to_evm_address(entry[2])
-                    chain = ChainID(entry[12])
+                    chain = ChainID.deserialize_from_db(entry[12])
                     token_kind = EvmTokenKind.deserialize_from_db(entry[13])
                 else:
                     evm_address, chain, token_kind = None, None, None
@@ -350,7 +350,7 @@ class GlobalDBHandler():
                 decimals = result[0]
                 protocol = result[1]
                 evm_address = result[2]
-                chain = ChainID(result[3])
+                chain = ChainID.deserialize_from_db(result[3])
                 token_kind = EvmTokenKind.deserialize_from_db(result[4])
                 missing_basic_data = name is None or symbol is None or decimals is None
                 if missing_basic_data and form_with_incomplete_data is False:
@@ -426,7 +426,7 @@ class GlobalDBHandler():
                         (
                             asset_id,
                             underlying_token.address,
-                            chain.value,
+                            chain.serialize_for_db(),
                             underlying_token.token_kind.serialize_for_db(),
                         ),
                     )
@@ -465,7 +465,7 @@ class GlobalDBHandler():
         """Returns the asset identifier of an EVM token by address if it can be found"""
         query = cursor.execute(
             'SELECT identifier from evm_tokens WHERE address=? AND chain=?;',
-            (address, chain.value),
+            (address, chain.serialize_for_db()),
         )
         result = query.fetchall()
         if len(result) == 0:
@@ -511,7 +511,7 @@ class GlobalDBHandler():
                 'FROM evm_tokens AS B JOIN '
                 'common_asset_details AS A ON B.identifier = A.identifier '
                 'JOIN assets AS C on C.identifier=A.identifier WHERE B.address=? AND B.chain=?;',
-                (address, chain.value),
+                (address, chain.serialize_for_db()),
             )
             results = cursor.fetchall()
             if len(results) == 0:
@@ -621,7 +621,7 @@ class GlobalDBHandler():
                 (
                     entry.identifier,
                     entry.token_kind.serialize_for_db(),
-                    entry.chain.value,
+                    entry.chain.serialize_for_db(),
                     entry.evm_address,
                     entry.decimals,
                     entry.protocol,
@@ -682,7 +682,7 @@ class GlobalDBHandler():
                     'protocol=? WHERE identifier=?',
                     (
                         entry.token_kind.serialize_for_db(),
-                        entry.chain.value,
+                        entry.chain.serialize_for_db(),
                         entry.evm_address,
                         entry.decimals,
                         entry.protocol,
@@ -736,7 +736,7 @@ class GlobalDBHandler():
         # first get the identifier for the asset
         write_cursor.execute(
             'SELECT identifier from evm_tokens WHERE address=? AND chain=?',
-            (address, chain.value),
+            (address, chain.serialize_for_db()),
         )
         result = write_cursor.fetchone()
         if result is None:
@@ -849,7 +849,7 @@ class GlobalDBHandler():
         evm_query_list: List[Union[int, str]] = [symbol, eth_token_type]
         if chain is not None:
             extra_check_evm += ' AND B.chain=? '
-            evm_query_list.append(chain.value)
+            evm_query_list.append(chain.serialize_for_db())
 
         extra_check_common = ''
         common_query_list: List[Union[int, str]] = [symbol, eth_token_type]
@@ -878,7 +878,7 @@ class GlobalDBHandler():
                     identifier=entry[0],
                     asset_type=asset_type,
                     address=evm_address,
-                    chain=ChainID(entry[3]) if entry[3] is not None else None,
+                    chain=ChainID.deserialize_from_db(entry[3]) if entry[3] is not None else None,
                     token_kind=EvmTokenKind.deserialize_from_db(entry[4]) if entry[4] is not None else None,  # noqa: E501
                     decimals=entry[5],
                     name=entry[6],
