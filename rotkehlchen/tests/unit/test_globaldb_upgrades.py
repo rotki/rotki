@@ -3,9 +3,8 @@ from pathlib import Path
 import pytest
 
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
-from rotkehlchen.types import EvmTokenKind
+from rotkehlchen.types import ChainID, EvmTokenKind
 
 # TODO: Perhaps have a saved version of that global DB for the tests and query it too?
 ASSETS_IN_V2_GLOBALDB = 3095

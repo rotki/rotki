@@ -15,11 +15,11 @@ from rotkehlchen.constants.ethereum import (
     CURVE_REGISTRY_ABI,
     ETH_SPECIAL_ADDRESS,
 )
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
+    ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
     GeneralCacheType,

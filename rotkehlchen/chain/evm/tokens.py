@@ -8,13 +8,12 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_evm_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
 if TYPE_CHECKING:

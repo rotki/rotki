@@ -137,7 +137,6 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -159,6 +158,7 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     BlockchainAccountData,
+    ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
     EVMTxHash,

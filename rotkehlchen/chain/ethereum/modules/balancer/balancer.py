@@ -18,7 +18,7 @@ from rotkehlchen.chain.ethereum.graph import (
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.graph import TOKEN_DAY_DATAS_QUERY
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -29,6 +29,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     AssetAmount,
+    ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
     Location,

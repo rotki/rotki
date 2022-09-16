@@ -48,7 +48,6 @@ from rotkehlchen.chain.substrate.utils import (
 )
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -76,6 +75,7 @@ from rotkehlchen.types import (
     AddressbookType,
     AssetMovementCategory,
     BTCAddress,
+    ChainID,
     ChecksumEvmAddress,
     CostBasisMethod,
     EvmTokenKind,

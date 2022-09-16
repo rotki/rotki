@@ -12,7 +12,6 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
@@ -20,7 +19,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Timestamp
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 from .handler import GlobalDBHandler, initialize_globaldb
@@ -240,13 +239,13 @@ class AssetsUpdater():
                 f'At asset DB update could not parse evm token data out of {insert_text}',
             )
 
-        chain_value = self._parse_optional_str(
+        chain_value = self._parse_optional_int(
             value=match.group(3),
             name='chain',
             insert_text=insert_text,
         )
         if chain_value is not None:
-            chain = ChainID.deserialize_from_db(chain_value)
+            chain = ChainID(chain_value)
         else:
             chain = None
 

@@ -8,13 +8,13 @@ from eth_utils import to_checksum_address
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SPAM_PROTOCOL, ChecksumEvmAddress
+from rotkehlchen.types import SPAM_PROTOCOL, ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

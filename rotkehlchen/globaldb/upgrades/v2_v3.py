@@ -148,7 +148,7 @@ BINANCE_INSERT = 'INSERT INTO binance_pairs(pair, base_asset, quote_asset, locat
 
 EVM_TUPLES_CREATION_TYPE = (
     Tuple[
-        List[Tuple[str, str, str, str, Any, Any]],
+        List[Tuple[str, str, int, str, Any, Any]],
         List[Tuple[Any, Any, str, Any, Optional[str]]],
         List[Tuple[Any, Any, Any, Any, None]],
     ]
@@ -192,7 +192,7 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
         evm_tuples.append((
             str(entry[0]),  # identifier
             EvmTokenKind.ERC20.serialize_for_db(),  # token type
-            ChainID.ETHEREUM.serialize_for_db(),  # chain
+            ChainID.ETHEREUM.value,  # chain
             str(entry[1]),  # address
             entry[2],  # decimals
             entry[3],  # protocol
@@ -378,28 +378,6 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
 
         # Create new tables
         cursor.executescript("""
-        CREATE TABLE IF NOT EXISTS chain_ids (
-          chain    CHAR(1)       PRIMARY KEY NOT NULL,
-          seq     INTEGER UNIQUE
-        );
-        /* ETHEREUM */
-        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('A', 1);
-        /* OPTIMISM */
-        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('B', 2);
-        /* BINANCE */
-        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('C', 3);
-        /* GNOSIS */
-        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('D', 4);
-        /* MATIC */
-        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('E', 5);
-        /* FANTOM */
-        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('F', 6);
-        /* ARBITRUM */
-        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('G', 7);
-        /* AVALANCHE */
-        INSERT OR IGNORE INTO chain_ids(chain, seq) VALUES ('H', 8);
-        """)
-        cursor.executescript("""
         CREATE TABLE IF NOT EXISTS token_kinds (
           token_kind    CHAR(1)       PRIMARY KEY NOT NULL,
           seq     INTEGER UNIQUE
@@ -436,7 +414,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         CREATE TABLE IF NOT EXISTS evm_tokens (
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
             token_kind CHAR(1) NOT NULL DEFAULT('A') REFERENCES token_kinds(token_kind),
-            chain CHAR(1) NOT NULL DEFAULT('A') REFERENCES chain_ids(chain),
+            chain INTEGER NOT NULL,
             address VARCHAR[42] NOT NULL,
             decimals INTEGER,
             protocol TEXT,

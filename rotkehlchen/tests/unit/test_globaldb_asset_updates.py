@@ -2,10 +2,9 @@ import pytest
 
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.updates import AssetsUpdater
-from rotkehlchen.types import EvmTokenKind, Timestamp
+from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
 
 
 @pytest.fixture(name='assets_updater')
@@ -20,7 +19,7 @@ def fixture_assets_updater(messages_aggregator):
         VALUES(
             "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015",
             "A",
-            "A",
+            1,
             "0xD178b20c6007572bD1FD01D205cC20D32B4A6015",
             18,
             NULL
@@ -105,7 +104,7 @@ def fixture_assets_updater(messages_aggregator):
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "A",
-            "A",
+            1,
             "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             18,
             "uniswap"
@@ -152,7 +151,7 @@ def fixture_assets_updater(messages_aggregator):
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "A",
-            "A",
+            1,
             "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             18,
             "uniswap"
@@ -199,7 +198,7 @@ def fixture_assets_updater(messages_aggregator):
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "A",
-            "A",
+            1,
             18,
             "uniswap"
         );
@@ -230,7 +229,7 @@ def fixture_assets_updater(messages_aggregator):
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "A",
-            "A",
+            1,
             "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             18,
             "uniswap"
@@ -261,7 +260,7 @@ def fixture_assets_updater(messages_aggregator):
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "A",
-            "A",
+            1,
             "0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             18,
             "uniswap"

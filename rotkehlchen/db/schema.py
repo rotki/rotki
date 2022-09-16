@@ -314,7 +314,7 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
 """  # noqa: E501
 
 
-# Store information about the tokens queried for each combination of account and chain.
+# Store information about the tokens queried for each combination of account and blockchain.
 # The table is designed to have a key-value structure where we use the key `token` to
 # identify the tokens queried per address and the key `last_queried_timestamp` to
 # determine when the last query was executed

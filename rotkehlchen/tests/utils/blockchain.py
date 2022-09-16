@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.resolver import ChainID, strethaddress_to_identifier
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -20,7 +20,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import BTCAddress, ChecksumEvmAddress
+from rotkehlchen.types import BTCAddress, ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 

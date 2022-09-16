@@ -19,7 +19,7 @@ from rotkehlchen.constants.assets import (
     A_LINK,
     A_USD,
 )
-from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -33,7 +33,7 @@ from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import EvmTokenKind, GeneralCacheType, Price, Timestamp
+from rotkehlchen.types import ChainID, EvmTokenKind, GeneralCacheType, Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 UNDERLYING_ASSET_PRICES = {

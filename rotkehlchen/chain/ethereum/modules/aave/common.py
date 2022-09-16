@@ -84,8 +84,8 @@ def atoken_to_asset(atoken: EvmToken) -> Optional[Asset]:
     with GlobalDBHandler().conn.read_ctx() as cursor:
         result = cursor.execute(
             'SELECT A.address from evm_tokens as A LEFT OUTER JOIN common_asset_details as B '
-            'ON A.identifier=B.identifier WHERE A.chain="A" AND B.symbol=? COLLATE NOCASE',
-            (asset_symbol,),
+            'ON A.identifier=B.identifier WHERE A.chain=? AND B.symbol=? COLLATE NOCASE',
+            (atoken.chain.serialize_for_db(), asset_symbol),
         ).fetchall()
     if len(result) != 1:
         log.error(f'Could not find asset from {atoken} since multiple or no results were returned')

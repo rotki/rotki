@@ -48,7 +48,7 @@ def _rename_assets_identifiers(write_cursor: 'DBCursor') -> None:
     """Version 1.26 includes the migration for the global db and the references to assets
     need to be updated also in this database.
     We do an update and relay on the cascade effect to update the assets identifiers in the rest
-    of tables.
+    of the tables.
     """
     write_cursor.execute('SELECT identifier FROM assets')
     old_id_to_new = {}

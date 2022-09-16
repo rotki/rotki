@@ -22,14 +22,19 @@ from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import CONSTANT_ASSETS
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, GeneralCacheType, Timestamp
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    GeneralCacheType,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import ts_now
 
 from .schema import DB_SCRIPT_CREATE_TABLES
@@ -841,13 +846,13 @@ class GlobalDBHandler():
         """Find all asset entries that have the given symbol"""
         eth_token_type = AssetType.EVM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         extra_check_evm = ''
-        evm_query_list = [symbol, eth_token_type]
+        evm_query_list: List[Union[int, str]] = [symbol, eth_token_type]
         if chain is not None:
             extra_check_evm += ' AND B.chain=? '
             evm_query_list.append(chain.serialize_for_db())
 
         extra_check_common = ''
-        common_query_list = [symbol, eth_token_type]
+        common_query_list: List[Union[int, str]] = [symbol, eth_token_type]
         if asset_type is not None:
             extra_check_common += ' AND A.type=? '
             common_query_list.append(asset_type.serialize_for_db())

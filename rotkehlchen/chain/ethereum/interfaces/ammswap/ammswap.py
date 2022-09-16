@@ -42,7 +42,6 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import (
     update_asset_price_in_lp_balances,
 )
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -52,6 +51,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     AssetAmount,
+    ChainID,
     ChecksumEvmAddress,
     Location,
     Price,
