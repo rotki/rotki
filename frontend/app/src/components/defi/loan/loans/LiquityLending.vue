@@ -59,7 +59,7 @@ import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityColla
 import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import { isSectionLoading } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { LiquityTroveEvents } from '@/premium/premium';
 import { Section } from '@/store/const';
 import { LiquityLoan } from '@/store/defi/liquity/types';

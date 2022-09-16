@@ -24,7 +24,7 @@ const ProgressScreen = defineAsyncComponent(
   () => import('@/components/helper/ProgressScreen.vue')
 );
 const TransactionContent = defineAsyncComponent(
-  () => import('@/views/history/transactions/TransactionContent.vue')
+  () => import('@/components/history/transactions/TransactionContent.vue')
 );
 const { fetchTransactions } = useTransactions();
 const { pause, resume, isActive } = useIntervalFn(

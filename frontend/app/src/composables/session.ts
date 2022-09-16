@@ -2,7 +2,6 @@ import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import { useSessionStore } from '@/store/session';
-import { usePremiumStore } from '@/store/session/premium';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 
@@ -28,16 +27,6 @@ export const useModules = () => {
     isModuleEnabled,
     activeModules
   };
-};
-
-export const getPremium = () => {
-  const { premium } = storeToRefs(usePremiumStore());
-  return premium;
-};
-
-export const setPremium = (isPremium: boolean) => {
-  const { premium } = storeToRefs(usePremiumStore());
-  set(premium, isPremium);
 };
 
 export const useDarkMode = () => {

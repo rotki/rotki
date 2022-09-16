@@ -35,8 +35,8 @@ import {
 import { get } from '@vueuse/core';
 import { PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { getPremium } from '@/composables/session';
 
+import { getPremium } from '@/composables/premium';
 import { isPeriodAllowed } from '@/store/settings/utils';
 
 const props = defineProps({

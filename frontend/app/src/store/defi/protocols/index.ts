@@ -15,7 +15,7 @@ import { get } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ComputedRef } from 'vue';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { truncateAddress } from '@/filters';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { CompoundBalances, CompoundLoan } from '@/services/defi/types/compound';

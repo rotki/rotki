@@ -12,7 +12,7 @@
 import { defineComponent } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { PremiumStatistics } from '@/premium/premium';
 
 export default defineComponent({

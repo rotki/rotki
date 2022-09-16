@@ -118,7 +118,7 @@ import { get } from '@vueuse/core';
 import { PropType, Ref, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { TagEvent } from '@/components/tags/types';
+import { TagEvent } from '@/types/tags';
 import { Tag } from '@/types/user';
 import { invertColor, randomColor } from '@/utils/Color';
 

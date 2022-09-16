@@ -135,11 +135,8 @@ import DataTable from '@/components/helper/DataTable.vue';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import DepositWithdrawalDetails from '@/components/history/deposits-withdrawals/DepositWithdrawalDetails.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
-import {
-  MatchedKeyword,
-  SearchMatcher
-} from '@/components/history/filtering/types';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
@@ -163,9 +160,9 @@ import {
 } from '@/store/history/types';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';
+import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
-import DepositWithdrawalDetails from '@/views/history/deposits-withdrawals/DepositWithdrawalDetails.vue';
 
 enum AssetMovementFilterKeys {
   LOCATION = 'location',

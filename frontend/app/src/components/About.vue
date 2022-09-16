@@ -138,7 +138,7 @@
 <script setup lang="ts">
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { SystemVersion } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/main';

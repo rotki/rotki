@@ -221,7 +221,7 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import { useTheme } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';

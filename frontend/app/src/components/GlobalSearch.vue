@@ -113,7 +113,6 @@ import { useI18n } from 'vue-i18n-composable';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { TradeLocationData } from '@/components/history/type';
 import { setupLocationInfo } from '@/composables/balances';
 import { useRouter, useTheme } from '@/composables/common';
 import { interop } from '@/electron-interop';
@@ -124,6 +123,7 @@ import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Exchange } from '@/types/exchanges';
+import { TradeLocationData } from '@/types/trades';
 
 type SearchItem = {
   value: number;

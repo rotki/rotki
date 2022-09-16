@@ -74,8 +74,8 @@ import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { explorerUrls } from '@/components/helper/asset-urls';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { explorerUrls } from '@/types/asset-urls';
 
 const ETC = 'ETC' as const;
 

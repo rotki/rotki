@@ -22,7 +22,7 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
-import { SearchMatcher } from '@/components/history/filtering/types';
+import { SearchMatcher } from '@/types/filtering';
 
 export default defineComponent({
   name: 'FilterEntry',

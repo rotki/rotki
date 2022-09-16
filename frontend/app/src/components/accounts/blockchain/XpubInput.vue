@@ -71,15 +71,15 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { get, set } from '@vueuse/core';
 import { computed, onMounted, PropType, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { XpubPayload } from '@/store/balances/types';
+import { trimOnPaste } from '@/utils/event';
 import {
   getKeyType,
   getPrefix,
   keyType,
   XpubPrefix,
   XpubType
-} from '@/components/accounts/blockchain/xpub';
-import { XpubPayload } from '@/store/balances/types';
-import { trimOnPaste } from '@/utils/event';
+} from '@/utils/xpub';
 
 const FIELD_XPUB = 'xpub';
 const FIELD_DERIVATION_PATH = 'derivation_path';

@@ -69,14 +69,13 @@ import { storeToRefs } from 'pinia';
 import { computed, onMounted, PropType, ref, Ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
-import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { useTheme } from '@/composables/common';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Nullable } from '@/types';
-import { Module } from '@/types/modules';
+import { Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 
 type ModuleWithStatus = {

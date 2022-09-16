@@ -36,7 +36,7 @@ import { get } from '@vueuse/core';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ConfirmableReset from '@/components/helper/ConfirmableReset.vue';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 
 defineProps({
   loading: {

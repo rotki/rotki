@@ -11,9 +11,8 @@
 import { get } from '@vueuse/core';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { tradeLocations } from '@/components/history/consts';
-import { TradeLocationData } from '@/components/history/type';
 import { SupportedExchange } from '@/types/exchanges';
+import { TradeLocationData, tradeLocations } from '@/types/trades';
 import { toSentenceCase } from '@/utils/text';
 
 export default defineComponent({

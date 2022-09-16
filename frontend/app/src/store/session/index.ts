@@ -5,7 +5,6 @@ import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { lastLogin } from '@/components/account-management/utils';
 import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop, useInterop } from '@/electron-interop';
@@ -65,6 +64,7 @@ import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { UserSettingsModel } from '@/types/user';
 import { startPromise } from '@/utils';
+import { lastLogin } from '@/utils/account-management';
 import { backoff } from '@/utils/backoff';
 import { logger } from '@/utils/logging';
 

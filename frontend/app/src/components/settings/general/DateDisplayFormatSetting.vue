@@ -61,11 +61,11 @@ import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
 import { useValidation } from '@/composables/validation';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { Defaults } from '@/data/defaults';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
 
 const dateDisplayFormat = ref<string>('');
 const formatHelp = ref<boolean>(false);

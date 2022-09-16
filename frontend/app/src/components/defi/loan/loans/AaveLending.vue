@@ -39,7 +39,7 @@ import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import AaveCollateral from '@/components/defi/loan/loans/aave/AaveCollateral.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import { isSectionLoading } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { AaveBorrowingDetails } from '@/premium/premium';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';

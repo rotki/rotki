@@ -74,15 +74,12 @@ import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
-import {
-  MatchedKeyword,
-  SearchMatcher
-} from '@/components/history/filtering/types';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { krakenStakingEventTypeData } from '@/store/staking/consts';
+import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import {
   KrakenStakingEvents,
   KrakenStakingEventType,

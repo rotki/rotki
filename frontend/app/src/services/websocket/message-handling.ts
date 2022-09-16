@@ -1,6 +1,6 @@
 import { Severity } from '@rotki/common/lib/messages';
 import { get } from '@vueuse/core';
-import { getPremium, setPremium } from '@/composables/session';
+import { getPremium, setPremium } from '@/composables/premium';
 import i18n from '@/i18n';
 import {
   BalanceSnapshotError,

@@ -77,7 +77,7 @@ import { get, set } from '@vueuse/core';
 import { computed, PropType, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import FileUpload from '@/components/import/FileUpload.vue';
-import { ImportSourceType } from '@/components/import/upload-types';
+import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
@@ -85,7 +85,7 @@ import { useTasks } from '@/store/tasks';
 import { DateFormat } from '@/types/date-format';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
+import { ImportSourceType } from '@/types/upload-types';
 
 const props = defineProps({
   icon: {

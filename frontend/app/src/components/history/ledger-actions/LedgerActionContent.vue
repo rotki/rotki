@@ -194,11 +194,8 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
-import {
-  MatchedKeyword,
-  SearchMatcher
-} from '@/components/history/filtering/types';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
+import LedgerActionDetails from '@/components/history/ledger-actions/LedgerActionDetails.vue';
 import LedgerActionForm, {
   LedgerActionFormInstance
 } from '@/components/history/LedgerActionForm.vue';
@@ -220,10 +217,10 @@ import { useLedgerActions } from '@/store/history/ledger-actions';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';
+import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import { LedgerActionType } from '@/types/ledger-actions';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
-import LedgerActionDetails from '@/views/history/ledger-actions/LedgerActionDetails.vue';
 
 enum LedgerActionFilterKeys {
   ASSET = 'asset',

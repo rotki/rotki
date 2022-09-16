@@ -28,7 +28,7 @@ import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { Zero } from '@/utils/bignumbers';
 
 export default defineComponent({

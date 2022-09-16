@@ -1,6 +1,6 @@
 import { get } from '@vueuse/core';
 import { computed, Ref } from 'vue';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { Collection, CollectionResponse } from '@/types/collection';
 
 export const mapCollectionResponse = <T>(

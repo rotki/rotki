@@ -134,7 +134,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import SortingSelector from '@/components/helper/SortingSelector.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { useTheme } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';

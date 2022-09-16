@@ -160,7 +160,7 @@ import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import UserNoteForm from '@/components/UserNoteForm.vue';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { useUserNotesApi } from '@/services/session/user-notes.api';
 import { Collection } from '@/types/collection';

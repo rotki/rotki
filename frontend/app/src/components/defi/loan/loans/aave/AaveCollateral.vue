@@ -37,9 +37,9 @@
 import { defineComponent, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
-import { totalCollateral } from '@/components/defi/loan/loans/total-collateral';
 import StatCard from '@/components/display/StatCard.vue';
 import { AaveLoan } from '@/store/defi/types';
+import { totalCollateral } from '@/utils/total-collateral';
 
 export default defineComponent({
   name: 'AaveCollateral',

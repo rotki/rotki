@@ -1,4 +1,3 @@
-import { getBackendUrl } from '@/components/account-management/utils';
 import {
   BackendOptions,
   Listeners,
@@ -6,6 +5,7 @@ import {
   TrayUpdate
 } from '@/electron-main/ipc';
 import { WebVersion } from '@/types';
+import { getBackendUrl } from '@/utils/account-management';
 import { assert } from '@/utils/assertions';
 
 const BASEURL = 'https://rotki.com/';

@@ -138,7 +138,8 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
-import { getPremium, useModules } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
+import { useModules } from '@/composables/session';
 import { useInterop } from '@/electron-interop';
 import { UniswapDetails } from '@/premium/premium';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';

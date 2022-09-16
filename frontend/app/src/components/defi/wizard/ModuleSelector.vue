@@ -64,12 +64,11 @@ import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { onMounted, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useBalancesStore } from '@/store/balances';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module } from '@/types/modules';
+import { Module, SUPPORTED_MODULES } from '@/types/modules';
 
 const wasActivated = (
   active: Module[],

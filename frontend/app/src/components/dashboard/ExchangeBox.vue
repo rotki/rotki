@@ -28,8 +28,8 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { defineAsyncComponent, defineComponent, PropType } from 'vue';
-import { exchangeName } from '@/components/history/consts';
 import { TradeLocation } from '@/services/history/types';
+import { exchangeName } from '@/types/trades';
 
 export default defineComponent({
   name: 'ExchangeBox',

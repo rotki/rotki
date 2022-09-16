@@ -47,13 +47,9 @@ import {
   watch
 } from 'vue';
 import NoFilterAvailable from '@/components/history/filtering/NoFilterAvailable.vue';
-import {
-  MatchedKeyword,
-  SearchMatcher,
-  Suggestion
-} from '@/components/history/filtering/types';
-import { splitSearch } from '@/components/history/filtering/utils';
+import { MatchedKeyword, SearchMatcher, Suggestion } from '@/types/filtering';
 import { assert } from '@/utils/assertions';
+import { splitSearch } from '@/utils/search';
 
 export default defineComponent({
   name: 'TableFilter',

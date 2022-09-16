@@ -1,6 +1,5 @@
 import { promiseTimeout, set, useTimeoutFn } from '@vueuse/core';
 import { ref, watch } from 'vue';
-import { BaseMessage } from '@/components/settings/utils';
 import i18n from '@/i18n';
 import { useSettingsStore } from '@/store/settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -10,6 +9,7 @@ import {
 } from '@/store/settings/session';
 import { ActionStatus } from '@/store/types';
 import { FrontendSettingsPayload } from '@/types/frontend-settings';
+import { BaseMessage } from '@/types/messages';
 import { SettingsUpdate } from '@/types/user';
 import { logger } from '@/utils/logging';
 

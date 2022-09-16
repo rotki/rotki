@@ -36,9 +36,8 @@
 <script setup lang="ts">
 import { get } from '@vueuse/core';
 import { computed, PropType, toRefs, useAttrs, useListeners } from 'vue';
-import { tradeLocations } from '@/components/history/consts';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { TradeLocationData } from '@/components/history/type';
+import { TradeLocationData, tradeLocations } from '@/types/trades';
 
 const props = defineProps({
   value: { required: false, type: String, default: '' },

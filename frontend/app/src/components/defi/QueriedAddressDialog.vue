@@ -97,13 +97,12 @@ import { set, get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, PropType, Ref, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { Nullable } from '@/types';
-import { Module } from '@/types/modules';
+import { Module, SUPPORTED_MODULES } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 
 const props = defineProps({

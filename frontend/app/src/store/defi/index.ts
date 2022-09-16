@@ -5,7 +5,7 @@ import { get, set } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ComputedRef, Ref, ref } from 'vue';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { ProtocolVersion } from '@/services/defi/consts';

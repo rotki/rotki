@@ -112,7 +112,7 @@ import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import { setupStatusChecking, useRoute } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import {
   AaveEarnedDetails,

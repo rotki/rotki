@@ -7,7 +7,8 @@ import {
 import { set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { Ref, ref } from 'vue';
-import { getPremium, useModules } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
+import { useModules } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { Section } from '@/store/const';

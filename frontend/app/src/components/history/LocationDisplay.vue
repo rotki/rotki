@@ -24,10 +24,10 @@ import { computed, defineComponent, PropType, toRefs } from 'vue';
 import ListItem from '@/components/helper/ListItem.vue';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { TradeLocationData } from '@/components/history/type';
 import { setupLocationInfo } from '@/composables/balances';
 import { Routes } from '@/router/routes';
 import { TradeLocation } from '@/services/history/types';
+import { TradeLocationData } from '@/types/trades';
 
 export default defineComponent({
   name: 'LocationDisplay',

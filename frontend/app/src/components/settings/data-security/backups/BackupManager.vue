@@ -66,10 +66,10 @@ import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import DatabaseInfoDisplay from '@/components/settings/data-security/backups/DatabaseInfoDisplay.vue';
-import { getFilepath } from '@/components/settings/data-security/backups/utils';
 import { DatabaseInfo, UserDbBackup } from '@/services/backup/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
+import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
 import { logger } from '@/utils/logging';
 

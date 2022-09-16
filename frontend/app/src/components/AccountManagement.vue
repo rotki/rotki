@@ -121,21 +121,21 @@ import {
 import { useI18n } from 'vue-i18n-composable';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
-import {
-  deleteBackendUrl,
-  getBackendUrl,
-  setLastLogin
-} from '@/components/account-management/utils';
 import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue';
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import { useBackendManagement } from '@/composables/backend';
 import { useTheme } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import { startPromise } from '@/utils';
+import {
+  deleteBackendUrl,
+  getBackendUrl,
+  setLastLogin
+} from '@/utils/account-management';
 
 export default defineComponent({
   name: 'AccountManagement',

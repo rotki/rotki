@@ -77,12 +77,12 @@ import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { getFilepath } from '@/components/settings/data-security/backups/utils';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { UserDbBackup } from '@/services/backup/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { assert } from '@/utils/assertions';
+import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
 
 const props = defineProps({

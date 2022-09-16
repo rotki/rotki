@@ -10,7 +10,7 @@ import { omitBy } from 'lodash';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref } from 'vue';
-import { getPremium } from '@/composables/session';
+import { getPremium } from '@/composables/premium';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';

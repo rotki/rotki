@@ -40,11 +40,7 @@
 <script setup lang="ts">
 import { PropType } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
-import { tradeLocations } from '@/components/history/consts';
-import { PurgeParams } from '@/components/settings/data-security/types';
-import { BaseMessage } from '@/components/settings/utils';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
@@ -53,6 +49,10 @@ import {
   PURGABLE
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
+import { BaseMessage } from '@/types/messages';
+import { SUPPORTED_MODULES } from '@/types/modules';
+import { PurgeParams } from '@/types/purge';
+import { tradeLocations } from '@/types/trades';
 
 defineProps({
   value: { required: true, type: String as PropType<Purgeable> },
