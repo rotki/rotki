@@ -166,7 +166,8 @@ const tableHeaders: ComputedRef<DataTableHeader[]> = computed(() => [
     text: tc('profit_loss_reports.columns.actions'),
     value: 'actions',
     align: 'end',
-    width: 140
+    width: 140,
+    sortable: false
   },
   { text: '', value: 'expand', align: 'end', sortable: false }
 ]);

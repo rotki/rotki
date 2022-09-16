@@ -190,7 +190,7 @@ const check = (files: FileList) => {
     return;
   }
 
-  if (!files[0].name.endsWith('.csv')) {
+  if (!files[0].name.endsWith(get(fileFilter))) {
     onError(
       t('file_upload.only_files', {
         fileFilter: get(fileFilter)
@@ -230,6 +230,8 @@ watch(uploaded, uploaded => {
 });
 
 watch(errorMessage, message => onError(message));
+
+defineExpose({ removeFile });
 </script>
 
 <style scoped lang="scss">

@@ -41,7 +41,7 @@ export const useEthNamesStore = defineStore('ethNames', () => {
   const updateEnsAddresses = (newAddresses: string[]): boolean => {
     const newEnsAddresses = [...get(ensAddresses), ...newAddresses]
       .filter(uniqueStrings)
-      .filter(address => isValidEthAddress(address));
+      .filter(isValidEthAddress);
 
     const currentEnsAddresses = [...get(ensAddresses)];
 

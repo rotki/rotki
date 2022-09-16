@@ -13,11 +13,13 @@
       :expanded.sync="expanded"
       :container="tableContainer"
       :dense="isPinned"
+      multi-sort
+      :must-sort="false"
     >
       <template #item.asset="{ item }">
         <asset-details :asset="item.asset" />
       </template>
-      <template #item.time="{ item }">
+      <template #item.startDate="{ item }">
         <date-display :timestamp="item.startDate" />
         <template v-if="item.startDate !== item.endDate">
           <span>
@@ -132,7 +134,7 @@ const headers = computed<DataTableHeader[]>(() => {
     },
     {
       text: t('common.datetime').toString(),
-      value: 'time',
+      value: 'startDate',
       ...pinnedClass
     },
     {

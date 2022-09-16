@@ -1,9 +1,9 @@
 <template>
   <v-container>
-    <generate
+    <report-generator
       v-show="!isRunning && !reportError.message"
-      @generate="generate($event)"
-      @export-data="exportData($event)"
+      @generate="generate"
+      @export-data="exportData"
       @import-data="importDataDialog = true"
     />
     <error-screen
@@ -63,16 +63,16 @@
   </v-container>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { Message } from '@rotki/common/lib/messages';
 import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import { computed, defineComponent, onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
-import Generate from '@/components/profitloss/Generate.vue';
+import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
 import { useRoute, useRouter } from '@/composables/common';
 import { interop } from '@/electron-interop';
@@ -91,187 +91,153 @@ import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { downloadFileByUrl } from '@/utils/download';
 
-export default defineComponent({
-  name: 'ProfitLossReports',
-  components: {
-    FileUpload,
-    ErrorScreen,
-    ReportsTable,
-    ProgressScreen,
-    Generate
-  },
-  setup() {
-    const { isTaskRunning } = useTasks();
-    const reportsStore = useReports();
-    const { reportError } = storeToRefs(reportsStore);
-    const { generateReport, clearError, exportReportData } = reportsStore;
-    const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
-    const importDataDialog = ref<boolean>(false);
-    const reportDebugData = ref<File | null>(null);
-    const importDataLoading = ref<boolean>(false);
-    const reportDebugDataUploader = ref<any>(null);
+const { isTaskRunning } = useTasks();
+const reportsStore = useReports();
+const { reportError } = storeToRefs(reportsStore);
+const { generateReport, clearError, exportReportData } = reportsStore;
+const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
+const importDataDialog = ref<boolean>(false);
+const reportDebugData = ref<File | null>(null);
+const importDataLoading = ref<boolean>(false);
+const reportDebugDataUploader = ref<any>(null);
 
-    const router = useRouter();
-    const route = useRoute();
+const router = useRouter();
+const route = useRoute();
 
-    const { tc } = useI18n();
+const { tc } = useI18n();
 
-    onMounted(async () => {
-      const query = get(route).query;
-      if (query.regenerate) {
-        const start: string = (query.start as string) || '';
-        const end: string = (query.end as string) || '';
+onMounted(async () => {
+  const query = get(route).query;
+  if (query.regenerate) {
+    const start: string = (query.start as string) || '';
+    const end: string = (query.end as string) || '';
 
-        if (start && end) {
-          const period = {
-            start: parseInt(start),
-            end: parseInt(end)
-          };
-
-          await generate(period);
-        }
-
-        await router.replace({ query: {} });
-      }
-    });
-
-    const { pinned } = storeToRefs(useAreaVisibilityStore());
-
-    const generate = async (period: ProfitLossReportPeriod) => {
-      if (get(pinned)?.name === 'report-actionable-card') {
-        set(pinned, null);
-      }
-
-      const reportId = await generateReport(period);
-      if (reportId > 0) {
-        await router.push({
-          path: Routes.PROFIT_LOSS_REPORT.route.replace(
-            ':id',
-            reportId.toString()
-          ),
-          query: {
-            openReportActionable: 'true'
-          }
-        });
-      }
-    };
-
-    const { setMessage } = useMainStore();
-
-    const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
-      let payload: ProfitLossReportDebugPayload = {
-        fromTimestamp: start,
-        toTimestamp: end
+    if (start && end) {
+      const period = {
+        start: parseInt(start),
+        end: parseInt(end)
       };
 
-      let message: Message | null = null;
+      await generate(period);
+    }
 
-      try {
-        const isLocal = interop.appSession;
-        if (isLocal) {
-          const directoryPath =
-            (await interop.openDirectory(
-              tc('profit_loss_reports.debug.select_directory')
-            )) || '';
-          if (!directoryPath) return;
-          payload['directoryPath'] = directoryPath;
-        }
-
-        const result = await exportReportData(payload);
-
-        if (isLocal) {
-          message = {
-            title: tc('profit_loss_reports.debug.export_message.title'),
-            description: result
-              ? tc('profit_loss_reports.debug.export_message.success')
-              : tc('profit_loss_reports.debug.export_message.failure'),
-            success: !!result
-          };
-        } else {
-          const file = new Blob([JSON.stringify(result, null, 2)], {
-            type: 'text/json'
-          });
-          const link = window.URL.createObjectURL(file);
-          downloadFileByUrl(link, 'pnl_debug.json');
-        }
-      } catch (e: any) {
-        message = {
-          title: tc('profit_loss_reports.debug.export_message.title'),
-          description: e.message,
-          success: false
-        };
-      }
-
-      if (message) {
-        setMessage(message);
-      }
-    };
-
-    const importData = async () => {
-      if (!get(reportDebugData)) return;
-      set(importDataLoading, true);
-
-      let success = false;
-      let message = '';
-
-      const { awaitTask } = useTasks();
-      const taskType = TaskType.IMPORT_PNL_REPORT_DATA;
-
-      try {
-        const { taskId } = interop.appSession
-          ? await api.reports.importReportData(get(reportDebugData)!.path)
-          : await api.reports.uploadReportData(get(reportDebugData)!);
-
-        const { result } = await awaitTask<boolean, TaskMeta>(
-          taskId,
-          taskType,
-          {
-            title: tc('profit_loss_reports.debug.import_message.title'),
-            numericKeys: []
-          }
-        );
-        success = result;
-      } catch (e: any) {
-        message = e.message;
-        success = false;
-      }
-
-      if (!success) {
-        showError(
-          tc('profit_loss_reports.debug.import_message.failure', 0, {
-            message
-          }),
-          tc('profit_loss_reports.debug.import_message.title')
-        );
-      } else {
-        showMessage(
-          tc('profit_loss_reports.debug.import_message.success', 0, {
-            message
-          }),
-          tc('profit_loss_reports.debug.import_message.title')
-        );
-      }
-
-      set(importDataLoading, false);
-      get(reportDebugDataUploader)?.removeFile();
-      set(reportDebugData, null);
-    };
-
-    return {
-      importDataDialog,
-      importDataLoading,
-      importData,
-      reportDebugData,
-      processingState: computed(() => reportsStore.processingState),
-      progress: computed(() => reportsStore.progress),
-      loaded: computed(() => reportsStore.loaded),
-      isRunning,
-      reportError,
-      clearError,
-      generate,
-      exportData,
-      tc
-    };
+    await router.replace({ query: {} });
   }
 });
+
+const { pinned } = storeToRefs(useAreaVisibilityStore());
+
+const generate = async (period: ProfitLossReportPeriod) => {
+  if (get(pinned)?.name === 'report-actionable-card') {
+    set(pinned, null);
+  }
+
+  const reportId = await generateReport(period);
+  if (reportId > 0) {
+    await router.push({
+      path: Routes.PROFIT_LOSS_REPORT.route.replace(':id', reportId.toString()),
+      query: {
+        openReportActionable: 'true'
+      }
+    });
+  }
+};
+
+const { setMessage } = useMainStore();
+
+const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
+  let payload: ProfitLossReportDebugPayload = {
+    fromTimestamp: start,
+    toTimestamp: end
+  };
+
+  let message: Message | null = null;
+
+  try {
+    const isLocal = interop.appSession;
+    if (isLocal) {
+      const directoryPath =
+        (await interop.openDirectory(
+          tc('profit_loss_reports.debug.select_directory')
+        )) || '';
+      if (!directoryPath) return;
+      payload['directoryPath'] = directoryPath;
+    }
+
+    const result = await exportReportData(payload);
+
+    if (isLocal) {
+      message = {
+        title: tc('profit_loss_reports.debug.export_message.title'),
+        description: result
+          ? tc('profit_loss_reports.debug.export_message.success')
+          : tc('profit_loss_reports.debug.export_message.failure'),
+        success: !!result
+      };
+    } else {
+      const file = new Blob([JSON.stringify(result, null, 2)], {
+        type: 'text/json'
+      });
+      const link = window.URL.createObjectURL(file);
+      downloadFileByUrl(link, 'pnl_debug.json');
+    }
+  } catch (e: any) {
+    message = {
+      title: tc('profit_loss_reports.debug.export_message.title'),
+      description: e.message,
+      success: false
+    };
+  }
+
+  if (message) {
+    setMessage(message);
+  }
+};
+
+const importData = async () => {
+  if (!get(reportDebugData)) return;
+  set(importDataLoading, true);
+
+  let success = false;
+  let message = '';
+
+  const { awaitTask } = useTasks();
+  const taskType = TaskType.IMPORT_PNL_REPORT_DATA;
+
+  try {
+    const { taskId } = interop.appSession
+      ? await api.reports.importReportData(get(reportDebugData)!.path)
+      : await api.reports.uploadReportData(get(reportDebugData)!);
+
+    const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
+      title: tc('profit_loss_reports.debug.import_message.title'),
+      numericKeys: []
+    });
+    success = result;
+  } catch (e: any) {
+    message = e.message;
+    success = false;
+  }
+
+  if (!success) {
+    showError(
+      tc('profit_loss_reports.debug.import_message.failure', 0, {
+        message
+      }),
+      tc('profit_loss_reports.debug.import_message.title')
+    );
+  } else {
+    showMessage(
+      tc('profit_loss_reports.debug.import_message.success'),
+      tc('profit_loss_reports.debug.import_message.title')
+    );
+  }
+
+  set(importDataLoading, false);
+  get(reportDebugDataUploader)?.removeFile();
+  set(reportDebugData, null);
+};
+
+const processingState = computed(() => reportsStore.processingState);
+const progress = computed(() => reportsStore.progress);
 </script>

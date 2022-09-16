@@ -32,18 +32,7 @@ export function transformEntryWithMeta<T>(
 }
 
 export function filterAddressesFromWords(words: string[]): string[] {
-  return words
-    .filter((word, index) => {
-      // Check if the word is ETH address
-      const isAddress = isValidEthAddress(word);
-
-      // Check if the word is Tx Hash
-      const isTransaction =
-        isAddress && index !== 0 && words[index - 1] === 'transaction';
-
-      return isAddress && !isTransaction;
-    })
-    .filter(uniqueStrings);
+  return words.filter(uniqueStrings).filter(isValidEthAddress);
 }
 
 export const defaultHistoricPayloadState = <
