@@ -29,6 +29,7 @@
     color="primary"
     @click="exportCSV()"
   >
+    <v-icon small class="mr-2"> mdi-export </v-icon>
     {{
       packaged
         ? t('profit_loss_report.export_csv')

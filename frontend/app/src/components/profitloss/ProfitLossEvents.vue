@@ -103,7 +103,9 @@
           <transaction-event-note
             v-if="isTransactionEvent(item)"
             :notes="item.notes"
-            :amount="item.taxableAmount"
+            :amount="
+              item.taxableAmount.isZero() ? item.freeAmount : item.taxableAmount
+            "
             :asset="item.asset"
           />
           <template v-else>{{ item.notes }}</template>

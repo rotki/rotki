@@ -3429,7 +3429,7 @@
         "title": "Import PnL report debug data"
       },
       "import_message": {
-        "failure": "Import PnL report debug data failed",
+        "failure": "Import PnL report debug data failed: {message}",
         "success": "PnL report debug data imported successfully",
         "title": "Import PnL report debug data"
       },

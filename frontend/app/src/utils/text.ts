@@ -132,5 +132,10 @@ export const sanitizeAddress = (address?: string): string => {
 
 export const isValidEthAddress = (address?: string): boolean => {
   if (!address) return false;
-  return address.startsWith('0x') && address.length >= 42;
+  return !!address.match(/^0x[a-fA-F0-9]{40}$/);
+};
+
+export const isValidTxHash = (address?: string): boolean => {
+  if (!address) return false;
+  return !!address.match(/^0x[a-fA-F0-9]{64}$/);
 };

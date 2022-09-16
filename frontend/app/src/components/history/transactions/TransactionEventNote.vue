@@ -30,7 +30,7 @@ import { get } from '@vueuse/core';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { bigNumberify } from '@/utils/bignumbers';
-import { isValidEthAddress } from '@/utils/text';
+import { isValidEthAddress, isValidTxHash } from '@/utils/text';
 
 defineProps({
   notes: { required: false, type: String, default: '' },
@@ -85,16 +85,17 @@ const formatNotes = (
     // Check if the word is ETH address
     const isAddress = isValidEthAddress(word);
 
+    if (isAddress) {
+      formats.push({ type: NoteType.ADDRESS, address: word });
+      return;
+    }
+
     // Check if the word is Tx Hash
     const isTransaction =
-      isAddress && index !== 0 && words[index - 1] === 'transaction';
+      index !== 0 && words[index - 1] === 'transaction' && isValidTxHash(word);
 
-    if (isAddress) {
-      if (isTransaction) {
-        formats.push({ type: NoteType.TX, address: word });
-      } else {
-        formats.push({ type: NoteType.ADDRESS, address: word });
-      }
+    if (isTransaction) {
+      formats.push({ type: NoteType.TX, address: word });
       return;
     }
 
