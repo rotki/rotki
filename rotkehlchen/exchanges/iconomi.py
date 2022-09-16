@@ -12,7 +12,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.converters import UNSUPPORTED_ICONOMI_ASSETS, asset_from_iconomi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AUST
@@ -213,7 +213,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return False, 'Provided API Key is invalid'
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
-        assets_balance: Dict[Asset, Balance] = {}
+        assets_balance: Dict[AssetWithSymbol, Balance] = {}
         try:
             resp_info = self._api_query('get', 'user/balance')
         except RemoteError as e:

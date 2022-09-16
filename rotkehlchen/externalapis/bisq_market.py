@@ -2,7 +2,7 @@ import json
 
 import requests
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -12,7 +12,7 @@ from rotkehlchen.types import Price
 PRICE_API_URL = 'https://bisq.markets/api/ticker?market={symbol}_BTC'
 
 
-def get_bisq_market_price(asset: Asset) -> Price:
+def get_bisq_market_price(asset: CryptoAsset) -> Price:
     """
     Get price for pair at bisq marketplace. Price is returned against BTC.
     Can raise:

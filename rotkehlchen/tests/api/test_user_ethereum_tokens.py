@@ -59,7 +59,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
         json={'address': user_token_address1, 'chain': str(ChainID.ETHEREUM)},
     )
     result = assert_proper_response_with_result(response)
-    expected_result = INITIAL_TOKENS[0].serialize_all_info()
+    expected_result = INITIAL_TOKENS[0].to_dict()
     expected_result['identifier'] = ethaddress_to_identifier(user_token_address1)
     assert result == expected_result
 
@@ -71,7 +71,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    expected_result = [x.serialize_all_info() for x in INITIAL_EXPECTED_TOKENS]
+    expected_result = [x.to_dict() for x in INITIAL_EXPECTED_TOKENS]
     assert_token_entry_exists_in_result(result, expected_result)
     # This check is to make sure the sqlite query works correctly and queries only for tokens
     assert all(x['address'] is not None for x in result), 'All returned tokens should have address'
@@ -97,7 +97,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
 @pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
 def test_adding_user_tokens(rotkehlchen_api_server):
     """Test that the endpoint for adding a user ethereum token works"""
-    serialized_token = USER_TOKEN3.serialize_all_info()
+    serialized_token = USER_TOKEN3.to_dict()
     del serialized_token['identifier']
     response = requests.put(
         api_url_for(
@@ -124,11 +124,11 @@ def test_adding_user_tokens(rotkehlchen_api_server):
             token_kind=EvmTokenKind.ERC20,
         ),
     ]
-    expected_result = [x.serialize_all_info() for x in expected_tokens]
+    expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
 
     # test that adding an already existing address is handled properly
-    serialized_token = INITIAL_TOKENS[1].serialize_all_info()
+    serialized_token = INITIAL_TOKENS[1].to_dict()
     del serialized_token['identifier']
     response = requests.put(
         api_url_for(
@@ -173,7 +173,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
             UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.7055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
         ],
     )
-    serialized_token = bad_token.serialize_all_info()
+    serialized_token = bad_token.to_dict()
     del serialized_token['identifier']
     response = requests.put(
         api_url_for(
@@ -204,7 +204,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
             UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.2055'), token_kind=EvmTokenKind.ERC20),  # noqa: E501
         ],
     )
-    serialized_token = bad_token.serialize_all_info()
+    serialized_token = bad_token.to_dict()
     del serialized_token['identifier']
     response = requests.put(
         api_url_for(
@@ -232,7 +232,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
         symbol='BBB',
         underlying_tokens=[],
     )
-    serialized_bad_token = bad_token.serialize_all_info()
+    serialized_bad_token = bad_token.to_dict()
     del serialized_bad_token['identifier']
     serialized_bad_token['underlying_tokens'] = []
     response = requests.put(
@@ -295,7 +295,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
 @pytest.mark.parametrize('user_ethereum_tokens', [INITIAL_TOKENS])
 def test_editing_user_tokens(rotkehlchen_api_server):
     """Test that the endpoint for editing a user ethereum token works"""
-    new_token1 = INITIAL_TOKENS[0].serialize_all_info()
+    new_token1 = INITIAL_TOKENS[0].to_dict()
     del new_token1['identifier']
     new_name = 'Edited token'
     new_symbol = 'ESMBL'
@@ -328,11 +328,11 @@ def test_editing_user_tokens(rotkehlchen_api_server):
     object.__setattr__(expected_tokens[0], 'symbol', new_symbol)
     object.__setattr__(expected_tokens[0], 'protocol', new_protocol)
     object.__setattr__(expected_tokens[0], 'swapped_for', A_BAT)
-    expected_result = [x.serialize_all_info() for x in expected_tokens]
+    expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
 
     # test that editing an non existing address is handled properly
-    non_existing_token = INITIAL_TOKENS[0].serialize_all_info()
+    non_existing_token = INITIAL_TOKENS[0].to_dict()
     del non_existing_token['identifier']
     non_existing_address = make_ethereum_address()
     non_existing_token['address'] = non_existing_address
@@ -425,7 +425,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     expected_tokens = INITIAL_EXPECTED_TOKENS[:-1]
-    expected_result = [x.serialize_all_info() for x in expected_tokens]
+    expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
     # also check the mapping for the underlying still tokens exists
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
@@ -506,7 +506,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     expected_tokens = INITIAL_EXPECTED_TOKENS[2:-1]
-    expected_result = [x.serialize_all_info() for x in expected_tokens]
+    expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
     # and removes the mapping of all underlying tokens
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]

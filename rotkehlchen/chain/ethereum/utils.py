@@ -4,7 +4,7 @@ from typing import Optional
 from eth_utils import to_checksum_address
 from web3 import Web3
 
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -13,7 +13,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -78,9 +77,10 @@ def asset_normalized_value(amount: int, asset: Asset) -> FVal:
     if asset.identifier == 'ETH':
         decimals = 18
     else:
-        token = EvmToken.from_asset(asset)
-        if token is None:
-            raise UnsupportedAsset(asset.identifier)
+        try:
+            token = EvmToken(asset.identifier)
+        except UnknownAsset as e:
+            raise UnsupportedAsset(asset.identifier) from e
         decimals = token.decimals
 
     return token_normalized_value_decimals(amount, decimals)
@@ -95,9 +95,10 @@ def asset_raw_value(amount: FVal, asset: Asset) -> int:
     if asset.identifier == 'ETH':
         decimals = 18
     else:
-        token = EvmToken.from_asset(asset)
-        if token is None:
-            raise UnsupportedAsset(asset.identifier)
+        try:
+            token = EvmToken(asset.identifier)
+        except UnknownAsset as e:
+            raise UnsupportedAsset(asset.identifier) from e
         decimals = token.decimals
 
     return token_raw_value_decimals(amount, decimals)
@@ -131,7 +132,7 @@ def generate_address_via_create2(
     return to_checksum_address(contract_address)
 
 
-def ethaddress_to_asset(address: ChecksumEvmAddress) -> Optional[Asset]:
+def ethaddress_to_asset(address: ChecksumEvmAddress) -> Optional[CryptoAsset]:
     """Takes an ethereum address and returns a token/asset for it
 
     Checks for special cases like the special ETH address used in some protocols

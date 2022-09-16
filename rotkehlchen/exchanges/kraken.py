@@ -23,7 +23,7 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE, A_USD
@@ -107,7 +107,7 @@ def kraken_ledger_entry_type_to_ours(value: str) -> HistoryEventType:
     return HistoryEventType.INFORMATIONAL  # returned for kraken's unknown events
 
 
-def kraken_to_world_pair(pair: str) -> Tuple[Asset, Asset]:
+def kraken_to_world_pair(pair: str) -> Tuple[AssetWithSymbol, AssetWithSymbol]:
     """Turns a pair from kraken to our base/quote asset tuple
 
     Can throw:
@@ -576,7 +576,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 log.error(msg)
                 return None, msg
 
-        assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        assets_balance: DefaultDict[AssetWithSymbol, Balance] = defaultdict(Balance)
         for kraken_name, amount_ in kraken_balances.items():
             try:
                 amount = deserialize_asset_amount(amount_)
@@ -990,15 +990,14 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             rate = Price((receive_part.balance.amount / amount))
 
         # If kfee was found we use it as the fee for the trade
+        fee: Optional[Fee] = None
+        fee_asset: Optional[AssetWithSymbol] = None
         if kfee_part is not None and fee_part is None:
             fee = Fee(kfee_part.balance.amount)
             fee_asset = A_KFEE
-        elif (None, None) == (fee_part, kfee_part):
-            fee = None
-            fee_asset = None
-        elif fee_part is not None:
-            fee = Fee(fee_part.balance.amount)
-            fee_asset = fee_part.asset
+        else:
+            fee = Fee(fee_part.balance.amount) if fee_part is not None else None
+            fee_asset = fee_part.asset if fee_part is not None else None
 
         trade = Trade(
             timestamp=timestamp,

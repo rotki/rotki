@@ -12,7 +12,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
@@ -59,7 +59,7 @@ log = RotkehlchenLogsAdapter(logger)
 BITTREX_V3_PUBLIC_ENDPOINTS = ('currencies',)
 
 
-def bittrex_pair_to_world(given_pair: str) -> Tuple[Asset, Asset]:
+def bittrex_pair_to_world(given_pair: str) -> Tuple[AssetWithSymbol, AssetWithSymbol]:
     """
     Turns a pair written in bittrex to way to rotki base/quote asset
 
@@ -309,7 +309,7 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        returned_balances: Dict[Asset, Balance] = {}
+        returned_balances: Dict[AssetWithSymbol, Balance] = {}
         for entry in resp:
             try:
                 asset = asset_from_bittrex(entry['currencySymbol'])

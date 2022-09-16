@@ -12,6 +12,7 @@ from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.utils import get_asset_by_identifier
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
 from rotkehlchen.constants.misc import ZERO
@@ -382,7 +383,7 @@ class AssetField(fields.Field):
             raise ValidationError(f'Tried to initialize an asset out of a non-string identifier {value}')  # noqa: E501
 
         try:
-            asset = Asset(
+            asset = get_asset_by_identifier(
                 identifier=urllib.parse.unquote(value),
                 form_with_incomplete_data=self.form_with_incomplete_data,
             )
@@ -416,7 +417,10 @@ class MaybeAssetField(fields.Field):
             **_kwargs: Any,
     ) -> Optional[Asset]:
         try:
-            asset = Asset(value, form_with_incomplete_data=self.form_with_incomplete_data)
+            asset = get_asset_by_identifier(
+                identifier=value,
+                form_with_incomplete_data=self.form_with_incomplete_data,
+            )
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
         except UnknownAsset:

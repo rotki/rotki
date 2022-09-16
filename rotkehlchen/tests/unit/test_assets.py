@@ -3,7 +3,7 @@ import warnings as test_warnings
 import pytest
 from eth_utils import is_checksum_address
 
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.spam_assets import KNOWN_ETH_SPAM_TOKENS
 from rotkehlchen.assets.types import AssetType
@@ -25,7 +25,7 @@ def test_unknown_asset():
 
 
 def test_asset_nft():
-    a = Asset('_nft_foo')
+    a = CryptoAsset('_nft_foo')
     assert a.identifier == '_nft_foo'
     assert a.symbol is not None
     assert a.name == 'nft with id _nft_foo'
@@ -37,8 +37,8 @@ def test_asset_nft():
 
 
 def test_repr():
-    btc_repr = repr(Asset('BTC'))
-    assert btc_repr == '<Asset identifier:BTC name:Bitcoin symbol:BTC>'
+    btc_repr = repr(CryptoAsset('BTC'))
+    assert btc_repr == '<CryptoAsset identifier:BTC name:Bitcoin symbol:BTC>'
 
 
 def test_asset_hashes_properly():

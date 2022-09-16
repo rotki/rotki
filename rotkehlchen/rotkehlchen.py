@@ -26,7 +26,7 @@ from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
@@ -701,11 +701,12 @@ class Rotkehlchen():
             else:
                 location_str = str(exchange.location)
                 if location_str not in balances:
-                    balances[location_str] = exchange_balances
+                    # `AssetWithSymbol` is a subclass of `Asset` mypy error is strange
+                    balances[location_str] = exchange_balances  # type: ignore
                 else:  # multiple exchange of same type. Combine balances
                     balances[location_str] = combine_dicts(
                         balances[location_str],
-                        exchange_balances,
+                        exchange_balances,  # type: ignore
                     )
 
         liabilities: Dict[Asset, Balance]
@@ -781,7 +782,7 @@ class Rotkehlchen():
 
                     for nft_balances in nft_mapping.values():
                         for balance_entry in nft_balances:
-                            balances[str(Location.BLOCKCHAIN)][Asset(
+                            balances[str(Location.BLOCKCHAIN)][CryptoAsset(
                                 balance_entry['id'])] = Balance(
                                 amount=ONE,
                                 usd_value=balance_entry['usd_price'],

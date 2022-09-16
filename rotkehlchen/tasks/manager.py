@@ -161,11 +161,11 @@ class TaskManager():
             if asset.is_fiat() and main_currency.is_fiat():
                 continue  # ignore fiat to fiat
 
-            if asset.cryptocompare == '' or main_currency.cryptocompare == '':
+            if getattr(asset, 'cryptocompare', None) == '' or getattr(main_currency, 'cryptocompare', None) == '':  # noqa: E501
                 continue  # not supported in cryptocompare
 
-            if asset.cryptocompare is None and asset.symbol is None:
-                continue  # type: ignore  # asset.symbol may be None for auto generated underlying tokens # noqa: E501
+            if getattr(asset, 'cryptocompare', None) is None or getattr(main_currency, 'cryptocompare', None) is None:  # noqa: E501
+                continue  # asset.symbol may be None for auto generated underlying tokens
 
             data_range = GlobalDBHandler().get_historical_price_range(
                 from_asset=asset,

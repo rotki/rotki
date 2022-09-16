@@ -25,7 +25,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.converters import asset_from_gemini
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT, QUERY_RETRY_TIMES
@@ -64,7 +64,7 @@ class GeminiPermissionError(Exception):
     pass
 
 
-def gemini_symbol_to_base_quote(symbol: str) -> Tuple[Asset, Asset]:
+def gemini_symbol_to_base_quote(symbol: str) -> Tuple[AssetWithSymbol, AssetWithSymbol]:
     """Turns a gemini symbol product into a base/quote asset tuple
 
     - Can raise UnprocessableTradePair if symbol is in unexpected format
@@ -322,7 +322,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        returned_balances: DefaultDict[AssetWithSymbol, Balance] = defaultdict(Balance)
         for entry in balances:
             try:
                 balance_type = entry['type']

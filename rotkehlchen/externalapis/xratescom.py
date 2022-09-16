@@ -4,7 +4,7 @@ from typing import Dict
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _scrape_xratescom_exchange_rates(url: str) -> Dict[Asset, Price]:
+def _scrape_xratescom_exchange_rates(url: str) -> Dict[AssetWithSymbol, Price]:
     """
     Scrapes x-rates.com website for the exchange rates tables
 
@@ -62,7 +62,7 @@ def _scrape_xratescom_exchange_rates(url: str) -> Dict[Asset, Price]:
             raise RemoteError(f'Could not find to= in {href} while parsing x-rates.com page')
 
         try:
-            to_asset = Asset(parts[1])
+            to_asset = AssetWithSymbol(parts[1])
             if not to_asset.is_fiat():
                 raise ValueError
         except (UnknownAsset, ValueError):
@@ -83,7 +83,7 @@ def _scrape_xratescom_exchange_rates(url: str) -> Dict[Asset, Price]:
     return prices
 
 
-def get_current_xratescom_exchange_rates(from_currency: Asset) -> Dict[Asset, Price]:
+def get_current_xratescom_exchange_rates(from_currency: AssetWithSymbol) -> Dict[AssetWithSymbol, Price]:  # noqa: E501
     """
     Get the current exchanges rates of currency from x-rates.com
 
@@ -94,7 +94,7 @@ def get_current_xratescom_exchange_rates(from_currency: Asset) -> Dict[Asset, Pr
     return _scrape_xratescom_exchange_rates(url)
 
 
-def get_historical_xratescom_exchange_rates(from_asset: Asset, time: Timestamp) -> Dict[Asset, Price]:  # noqa: E501
+def get_historical_xratescom_exchange_rates(from_asset: AssetWithSymbol, time: Timestamp) -> Dict[AssetWithSymbol, Price]:  # noqa: E501
     """
     Get the historical exchanges rates of a currency from x-rates.com
 

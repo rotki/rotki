@@ -8,6 +8,7 @@ from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
@@ -210,14 +211,15 @@ class BalancerEvent(NamedTuple):
         except AttributeError as e:
             raise DeserializationError(f'Unexpected event type: {event_tuple_type}.') from e
 
-        pool_address_token = EvmToken.from_identifier(
-            event_tuple[5],
-            form_with_incomplete_data=True,  # since some may not have decimals input correctly
-        )
-        if pool_address_token is None:
+        try:
+            pool_address_token = EvmToken(
+                event_tuple[5],
+                form_with_incomplete_data=True,  # since some may not have decimals input correctly
+            )
+        except UnknownAsset as e:
             raise DeserializationError(
                 f'Balancer event pool token: {event_tuple[5]} not found in the DB.',
-            )
+            ) from e
 
         amounts: List[AssetAmount] = [
             deserialize_asset_amount(item)

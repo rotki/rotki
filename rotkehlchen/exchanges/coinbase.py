@@ -11,7 +11,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
@@ -429,7 +429,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        returned_balances: DefaultDict[AssetWithSymbol, Balance] = defaultdict(Balance)
         for account in resp:
             try:
                 if not account['balance']:

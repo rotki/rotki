@@ -4,7 +4,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.constants import ZERO_ADDRESS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import (
@@ -357,7 +357,7 @@ class YearnVaultBalance(NamedTuple):
 
 
 def get_usd_price_zero_if_error(
-        asset: Asset,
+        asset: CryptoAsset,
         time: Timestamp,
         location: str,
         msg_aggregator: MessagesAggregator,

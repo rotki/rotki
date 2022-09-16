@@ -10,7 +10,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.transactions import TransactionsAccountant
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetWithSymbol
 from rotkehlchen.constants.assets import A_KFEE
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.reports import DBAccountingReports
@@ -119,7 +119,7 @@ class AccountingPot(CustomizableDateMixin):
             notes: str,
             location: Location,
             timestamp: Timestamp,
-            asset: Asset,
+            asset: AssetWithSymbol,
             amount: FVal,
             taxable: bool,
             given_price: Optional[Price] = None,
@@ -184,7 +184,7 @@ class AccountingPot(CustomizableDateMixin):
             notes: str,
             location: Location,
             timestamp: Timestamp,
-            asset: Asset,
+            asset: AssetWithSymbol,
             amount: FVal,
             taxable: bool,
             given_price: Optional[Price] = None,

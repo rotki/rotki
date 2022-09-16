@@ -21,6 +21,7 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -221,14 +222,16 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         from_asset_raw: Union[Asset, EvmToken] = from_asset
         to_asset_raw: Union[Asset, EvmToken] = to_asset
         if not isinstance(from_asset, EvmToken):
-            from_as_token = EvmToken.from_asset(from_asset)
-            if from_as_token is None:
-                raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {from_asset_raw}')
+            try:
+                from_as_token = EvmToken(from_asset.identifier)
+            except UnknownAsset as e:
+                raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {from_asset_raw}') from e  # noqa: E501
             from_asset = from_as_token
         if not isinstance(to_asset, EvmToken):
-            to_as_token = EvmToken.from_asset(to_asset)
-            if to_as_token is None:
-                raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {to_asset_raw}')
+            try:
+                to_as_token = EvmToken(to_asset.identifier)
+            except UnknownAsset as e:
+                raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {to_asset_raw}') from e  # noqa: E501
             to_asset = to_as_token
 
         route = self.find_route(from_asset, to_asset)

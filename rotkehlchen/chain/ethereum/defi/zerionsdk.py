@@ -413,8 +413,9 @@ class ZerionSDK():
         if asset is None:
             return None
 
-        token = EvmToken.from_asset(asset)
-        if token is None:
+        try:
+            token = EvmToken(asset.identifier)
+        except UnknownAsset:
             return None
         underlying_asset_price, _ = get_underlying_asset_price(token)
         usd_price = handle_defi_price_query(self.ethereum, token, underlying_asset_price)

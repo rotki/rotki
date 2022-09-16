@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Deque, Dict, List, Literal, Optional
 import gevent
 import requests
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_BAT,
@@ -167,8 +167,8 @@ def _multiply_str_nums(a: str, b: str) -> str:
 
 def _check_hourly_data_sanity(
         data: List[Dict[str, Any]],
-        from_asset: Asset,
-        to_asset: Asset,
+        from_asset: CryptoAsset,
+        to_asset: CryptoAsset,
 ) -> None:
     """Check that the hourly data is an array of objects having timestamps
     increasing by 1 hour.
@@ -702,6 +702,10 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
 
         if len(calculated_history) == 0:
             return
+
+        # turn the assets to crypto assets
+        from_asset = CryptoAsset(from_asset.identifier)
+        to_asset = CryptoAsset(to_asset.identifier)
 
         # Let's always check for data sanity for the hourly prices.
         _check_hourly_data_sanity(calculated_history, from_asset, to_asset)
