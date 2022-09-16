@@ -387,6 +387,13 @@ export const transactionEventProtocolData = computed<ActionDataEntry[]>(() => [
       identifier.toLowerCase().startsWith('uniswap')
   },
   {
+    identifier: TransactionEventProtocol.SUSHISWAP,
+    label: 'Sushiswap',
+    image: '/assets/images/defi/sushi.png',
+    matcher: (identifier: string) =>
+      identifier.toLowerCase().startsWith('sushiswap')
+  },
+  {
     identifier: TransactionEventProtocol.AAVE,
     label: 'Aave',
     image: '/assets/images/defi/aave.svg',
