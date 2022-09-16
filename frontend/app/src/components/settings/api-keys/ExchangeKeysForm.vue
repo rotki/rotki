@@ -161,7 +161,6 @@ import {
 import { useI18n } from 'vue-i18n-composable';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
-import { tradeLocations } from '@/components/history/consts';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { ExchangePayload } from '@/store/balances/types';
@@ -170,6 +169,7 @@ import {
   SUPPORTED_EXCHANGES,
   SupportedExchange
 } from '@/types/exchanges';
+import { tradeLocations } from '@/types/trades';
 import { trimOnPaste } from '@/utils/event';
 
 export default defineComponent({

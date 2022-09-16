@@ -134,7 +134,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import SortingSelector from '@/components/helper/SortingSelector.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { useTheme } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
@@ -195,7 +195,7 @@ const itemsPerPage = computed(() => {
 });
 const selectedAccount = ref<GeneralAccount | null>(null);
 const selectedCollection = ref<string | null>(null);
-const premium = getPremium();
+const premium = usePremium();
 
 watch(selectedAccount, () => set(page, 1));
 watch(selectedCollection, () => set(page, 1));

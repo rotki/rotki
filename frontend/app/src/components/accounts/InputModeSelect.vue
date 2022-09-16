@@ -120,13 +120,13 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { get, useClipboard } from '@vueuse/core';
 import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { useInterop } from '@/electron-interop';
 import {
+  AccountInput,
   MANUAL_ADD,
   METAMASK_IMPORT,
   XPUB_ADD
-} from '@/components/accounts/const';
-import { AccountInput } from '@/components/accounts/types';
-import { useInterop } from '@/electron-interop';
+} from '@/types/account-input';
 import { isMetaMaskSupported } from '@/utils/metamask';
 
 const props = defineProps({

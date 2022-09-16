@@ -2,7 +2,7 @@ import { set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { usePremiumStore } from '@/store/session/premium';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
@@ -16,7 +16,7 @@ import { SettingsUpdate } from '@/types/user';
 import { uniqueStrings } from '@/utils/data';
 
 export const useSettingsStore = defineStore('settings', () => {
-  const { setMessage } = useMainStore();
+  const { setMessage } = useMessageStore();
   const { addQueriedAddress } = useQueriedAddressesStore();
   const generalStore = useGeneralSettingsStore();
   const accountingStore = useAccountingSettingsStore();

@@ -47,10 +47,9 @@ import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module } from '@/types/modules';
+import { Module, SUPPORTED_MODULES } from '@/types/modules';
 
 const emit = defineEmits(['update:selection']);
 

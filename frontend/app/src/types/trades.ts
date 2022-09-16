@@ -1,4 +1,3 @@
-import { TradeLocationData } from '@/components/history/type';
 import {
   EXCHANGE_BALANCER,
   EXCHANGE_BISQ,
@@ -21,6 +20,15 @@ import { TradeLocation } from '@/services/history/types';
 import { SupportedExchange } from '@/types/exchanges';
 import { assert } from '@/utils/assertions';
 
+export type TradeLocationData = {
+  readonly identifier: TradeLocation;
+  readonly name: string;
+  readonly icon: string;
+  readonly imageIcon: boolean;
+  readonly component?: any;
+  readonly exchange: boolean;
+  readonly detailPath?: string;
+};
 export const tradeLocations: TradeLocationData[] = [
   {
     identifier: SupportedExchange.KRAKEN,
@@ -261,7 +269,6 @@ export const tradeLocations: TradeLocationData[] = [
     exchange: false
   }
 ];
-
 export const exchangeName: (location: TradeLocation) => string = location => {
   const exchange = tradeLocations.find(tl => tl.identifier === location);
   assert(exchange);

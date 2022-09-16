@@ -28,7 +28,7 @@ import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import { Zero } from '@/utils/bignumbers';
 
 export default defineComponent({
@@ -49,7 +49,7 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const premium = getPremium();
+    const premium = usePremium();
     const { totalInterestOwed } = toRefs(props);
     const { tc } = useI18n();
     const interest = computed(() => {

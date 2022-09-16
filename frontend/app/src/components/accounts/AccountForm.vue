@@ -82,18 +82,10 @@ import { useI18n } from 'vue-i18n-composable';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
-import { xpubToPayload } from '@/components/accounts/blockchain/xpub';
 import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
-import {
-  MANUAL_ADD,
-  METAMASK_IMPORT,
-  XPUB_ADD
-} from '@/components/accounts/const';
 import InputModeSelect from '@/components/accounts/InputModeSelect.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
-import { AccountInput } from '@/components/accounts/types';
 import TagInput from '@/components/inputs/TagInput.vue';
-import { setupMessages } from '@/composables/common';
 import { setupTaskStatus } from '@/composables/tasks';
 import { useInterop } from '@/electron-interop';
 import { deserializeApiErrorMessage } from '@/services/converters';
@@ -104,12 +96,20 @@ import {
   BlockchainAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
+import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
+import {
+  AccountInput,
+  MANUAL_ADD,
+  METAMASK_IMPORT,
+  XPUB_ADD
+} from '@/types/account-input';
 import { Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { getMetamaskAddresses } from '@/utils/metamask';
+import { xpubToPayload } from '@/utils/xpub';
 
 const FIELD_ADDRESS = 'address';
 const FIELD_XPUB = 'xpub';
@@ -340,7 +340,7 @@ const AccountForm = defineComponent({
       }
     };
 
-    const { setMessage } = setupMessages();
+    const { setMessage } = useMessageStore();
 
     const manualAdd = async () => {
       const blockchainAccount = get(payload);

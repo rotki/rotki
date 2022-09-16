@@ -39,7 +39,7 @@ import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import AaveCollateral from '@/components/defi/loan/loans/aave/AaveCollateral.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import { isSectionLoading } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import { AaveBorrowingDetails } from '@/premium/premium';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
@@ -62,7 +62,7 @@ export default defineComponent({
   },
   setup(props) {
     const { loan } = toRefs(props);
-    const premium = getPremium();
+    const premium = usePremium();
     const aaveHistoryLoading = isSectionLoading(Section.DEFI_AAVE_HISTORY);
     const { getAssetSymbol } = useAssetInfoRetrieval();
     const { tc } = useI18n();

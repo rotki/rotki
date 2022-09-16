@@ -319,8 +319,8 @@ import {
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
-import { showError } from '@/store/utils';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import {
   isValidEthAddress,
@@ -395,6 +395,8 @@ export default defineComponent({
       return get(assetType) === EVM_TOKEN;
     });
 
+    const { setMessage } = useMessageStore();
+
     watch(address, async () => {
       const sanitizedAddress = sanitizeAddress(get(address));
       if (get(address) !== sanitizedAddress) {
@@ -462,9 +464,11 @@ export default defineComponent({
       try {
         set(types, await api.assets.assetTypes());
       } catch (e: any) {
-        showError(
-          t('asset_form.types.error', { message: e.message }).toString()
-        );
+        setMessage({
+          description: t('asset_form.types.error', {
+            message: e.message
+          }).toString()
+        });
       }
     });
 
@@ -522,12 +526,12 @@ export default defineComponent({
       }
 
       if (!success) {
-        showError(
-          t('asset_form.icon_upload.description', {
+        setMessage({
+          title: t('asset_form.icon_upload.title').toString(),
+          description: t('asset_form.icon_upload.description', {
             message
-          }).toString(),
-          t('asset_form.icon_upload.title').toString()
-        );
+          }).toString()
+        });
       }
     };
 
@@ -579,16 +583,15 @@ export default defineComponent({
         const underlyingTokens = token.underlying_tokens;
         if (underlyingTokens) {
           const messages = getUnderlyingTokenErrors(underlyingTokens);
-
-          showError(
-            messages.join(','),
-            t('asset_form.underlying_tokens').toString()
-          );
+          setMessage({
+            title: t('asset_form.underlying_tokens').toString(),
+            description: messages.join(',')
+          });
         } else if (token._schema) {
-          showError(
-            token._schema[0],
-            t('asset_form.underlying_tokens').toString()
-          );
+          setMessage({
+            title: t('asset_form.underlying_tokens').toString(),
+            description: token._schema[0]
+          });
         }
       } else {
         set(errors, message);
@@ -607,7 +610,10 @@ export default defineComponent({
       } catch (e: any) {
         const message = deserializeApiErrorMessage(e.message) as any;
         if (!message) {
-          showError(e.message, t('asset_form.underlying_tokens').toString());
+          setMessage({
+            title: t('asset_form.underlying_tokens').toString(),
+            description: e.message
+          });
         } else {
           handleError(message);
         }

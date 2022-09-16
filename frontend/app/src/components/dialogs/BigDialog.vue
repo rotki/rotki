@@ -56,7 +56,7 @@
 
 <script setup lang="ts">
 import { PropType } from 'vue';
-import { DIALOG_TYPES, themes, TYPE_INFO } from '@/components/dialogs/consts';
+import { DIALOG_TYPES, themes, TYPE_INFO } from '@/types/dialogs';
 
 const props = defineProps({
   title: { required: true, type: String },

@@ -62,12 +62,9 @@ import { get, set } from '@vueuse/core';
 import { computed, PropType, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import FilterEntry from '@/components/history/filtering/FilterEntry.vue';
-import {
-  SearchMatcher,
-  Suggestion
-} from '@/components/history/filtering/types';
-import { splitSearch } from '@/components/history/filtering/utils';
+import { SearchMatcher, Suggestion } from '@/types/filtering';
 import { compareSymbols } from '@/utils/assets';
+import { splitSearch } from '@/utils/search';
 
 const props = defineProps({
   matchers: {

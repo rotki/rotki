@@ -2,13 +2,10 @@ import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, ref, Ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import {
-  MatchedKeyword,
-  SearchMatcher
-} from '@/components/history/filtering/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useTransactions } from '@/store/history/transactions';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 enum TransactionFilterKeys {

@@ -69,7 +69,8 @@ import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { isSectionLoading, setupStatusChecking } from '@/composables/common';
-import { getPremium, useModules } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
+import { useModules } from '@/composables/session';
 import { Eth2Staking } from '@/premium/premium';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { Section } from '@/store/const';
@@ -114,7 +115,7 @@ const ownership = computed(() => {
   return ownership;
 });
 
-const premium = getPremium();
+const premium = usePremium();
 
 const module = [Module.ETH2];
 

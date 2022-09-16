@@ -1,9 +1,6 @@
-import { SemiPartial } from '@rotki/common';
-import { Message } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import i18n from '@/i18n';
+import { usePremium } from '@/composables/premium';
 import { api } from '@/services/rotkehlchen-api';
 import { defiSections, Section, Status } from '@/store/const';
 import { StatusPayload, Version } from '@/store/types';
@@ -15,13 +12,15 @@ import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 let intervalId: any = null;
 export const useMainStore = defineStore('main', () => {
   const newUser = ref(false);
-  const message = ref(emptyMessage());
+
   const version = ref(defaultVersion());
   const connected = ref(false);
   const connectionFailure = ref(false);
   const status = ref<Partial<Record<Section, Status>>>({});
   const dataDirectory = ref('');
   const logLevel = ref<LogLevel>(getDefaultLogLevel());
+
+  const premium = usePremium();
 
   const updateNeeded = computed(() => {
     const { version: appVersion, downloadUrl } = get(version);
@@ -38,8 +37,6 @@ export const useMainStore = defineStore('main', () => {
       isLoading(get(getStatus(Section.MANUAL_BALANCES)))
     );
   });
-
-  const showMessage = computed(() => get(message).title.length > 0);
 
   const appVersion = computed(() => {
     const { version: appVersion } = get(version);
@@ -116,20 +113,6 @@ export const useMainStore = defineStore('main', () => {
     set(connectionFailure, false);
   };
 
-  const setMessage = (
-    msg: SemiPartial<Message, 'description'> = emptyMessage()
-  ) => {
-    set(message, {
-      ...{
-        title: msg.success
-          ? i18n.t('message.success.title').toString()
-          : i18n.t('message.error.title').toString(),
-        success: false
-      },
-      ...msg
-    });
-  };
-
   const resetDefiStatus = () => {
     const newStatus = Status.NONE;
     defiSections.forEach(section => {
@@ -164,15 +147,19 @@ export const useMainStore = defineStore('main', () => {
 
   const reset = () => {
     set(newUser, false);
-    set(message, emptyMessage());
     set(version, defaultVersion());
     set(connectionFailure, false);
     set(status, {});
   };
 
+  watch(premium, premium => {
+    if (!premium) {
+      resetDefiStatus();
+    }
+  });
+
   return {
     newUser,
-    message,
     version,
     appVersion,
     connected,
@@ -181,11 +168,9 @@ export const useMainStore = defineStore('main', () => {
     dataDirectory,
     updateNeeded,
     detailsLoading,
-    showMessage,
     connect,
     getVersion,
     getInfo,
-    setMessage,
     setStatus,
     getStatus,
     setConnected,
@@ -195,11 +180,7 @@ export const useMainStore = defineStore('main', () => {
     reset
   };
 });
-const emptyMessage = (): Message => ({
-  title: '',
-  description: '',
-  success: false
-});
+
 const defaultVersion = () =>
   ({
     version: '',

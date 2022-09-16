@@ -45,6 +45,7 @@ import {
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -216,7 +217,7 @@ export const useBlockchainAccountsStore = defineStore(
 
     const { awaitTask, isTaskRunning } = useTasks();
     const { notify } = useNotifications();
-    const { setMessage } = useMainStore();
+    const { setMessage } = useMessageStore();
     const { fetchEnsNames, fetchEthNames } = useEthNamesStore();
     const { t, tc } = useI18n();
 

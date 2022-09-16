@@ -138,7 +138,7 @@
 <script setup lang="ts">
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { SystemVersion } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/main';
@@ -155,7 +155,7 @@ const versionInfo = asyncComputed<SystemVersion | WebVersion>(() =>
   getVersion()
 );
 
-const premium = getPremium();
+const premium = usePremium();
 const componentsVersion = computed(() => {
   if (!get(premium)) {
     return null;

@@ -43,7 +43,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useReports } from '@/store/reports';
 
 defineProps({
@@ -55,7 +55,7 @@ defineProps({
 });
 
 const { createCsv } = useReports();
-const { setMessage } = useMainStore();
+const { setMessage } = useMessageStore();
 
 const { t } = useI18n();
 

@@ -10,7 +10,7 @@ import { omitBy } from 'lodash';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { ref } from 'vue';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
@@ -55,7 +55,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   const details = ref<Eth2Details>([]);
   const stats = ref<Eth2DailyStats>(defaultStats());
   const pagination = ref<Eth2DailyStatsPayload>(defaultPagination());
-  const premium = getPremium();
+  const premium = usePremium();
   const { awaitTask, isTaskRunning } = useTasks();
   const { notify } = useNotifications();
 
@@ -273,7 +273,7 @@ export const useAdexStakingStore = defineStore('staking/adex', () => {
   const adexBalances = ref<AdexBalances>({});
   const adexHistory = ref<AdexHistory>({});
 
-  const premium = getPremium();
+  const premium = usePremium();
   const { notify } = useNotifications();
   const { awaitTask } = useTasks();
 

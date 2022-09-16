@@ -1,8 +1,7 @@
-import { Message, Severity } from '@rotki/common/lib/messages';
+import { Severity } from '@rotki/common/lib/messages';
 import { get, set } from '@vueuse/core';
 import * as logger from 'loglevel';
 import { Ref } from 'vue';
-import i18n from '@/i18n';
 import { Section, Status } from '@/store/const';
 import { useMainStore } from '@/store/main';
 import { useNotifications } from '@/store/notifications';
@@ -52,25 +51,6 @@ export async function fetchDataAsync<T extends TaskMeta, R>(
     });
   }
   setStatus(Status.LOADED);
-}
-
-export function showError(description: string, title: string = '') {
-  const { setMessage } = useMainStore();
-  setMessage({
-    title: title,
-    description: description,
-    success: false
-  });
-}
-
-export function showMessage(description: string, title?: string): void {
-  const { setMessage } = useMainStore();
-  const message: Message = {
-    title: title ?? i18n.t('message.success.title').toString(),
-    description,
-    success: true
-  };
-  setMessage(message);
 }
 
 export const getStatus = (section: Section) => {

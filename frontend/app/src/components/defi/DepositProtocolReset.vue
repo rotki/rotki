@@ -36,7 +36,7 @@ import { get } from '@vueuse/core';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ConfirmableReset from '@/components/helper/ConfirmableReset.vue';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 
 defineProps({
   loading: {
@@ -48,7 +48,7 @@ defineProps({
 const emit = defineEmits(['reset']);
 
 const resetSelection = ref<DefiProtocol[]>([]);
-const premium = getPremium();
+const premium = usePremium();
 const AAVE = DefiProtocol.AAVE;
 const YEARN_VAULTS = DefiProtocol.YEARN_VAULTS;
 const YEARN_VAULTS_V2 = DefiProtocol.YEARN_VAULTS_V2;

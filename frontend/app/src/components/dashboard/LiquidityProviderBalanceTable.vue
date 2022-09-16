@@ -114,7 +114,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import { Routes } from '@/router/routes';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { Section } from '@/store/const';
@@ -255,7 +255,7 @@ const percentageOfCurrentGroup = (value: BigNumber) => {
   return calculatePercentage(value, get(totalInUsd));
 };
 
-const premium = getPremium();
+const premium = usePremium();
 
 const { ethAddresses } = storeToRefs(useBlockchainAccountsStore());
 

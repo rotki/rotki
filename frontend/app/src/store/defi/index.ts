@@ -5,7 +5,7 @@ import { get, set } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ComputedRef, Ref, ref } from 'vue';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { ProtocolVersion } from '@/services/defi/consts';
@@ -67,7 +67,7 @@ export const useDefiStore = defineStore('defi', () => {
 
   const { awaitTask } = useTasks();
   const { notify } = useNotifications();
-  const premium = getPremium();
+  const premium = usePremium();
 
   const liquityStore = useLiquityStore();
   const yearnStore = useYearnStore();
@@ -644,6 +644,12 @@ export const useDefiStore = defineStore('defi', () => {
     set(airdrops, {});
     resetState(ALL_MODULES);
   };
+
+  watch(premium, premium => {
+    if (!premium) {
+      reset();
+    }
+  });
 
   return {
     allProtocols,

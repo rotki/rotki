@@ -61,7 +61,7 @@
 <script lang="ts">
 import { get } from '@vueuse/core';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { themes } from '@/components/dialogs/consts';
+import { themes } from '@/types/dialogs';
 
 const ConfirmDialog = defineComponent({
   name: 'ConfirmDialog',

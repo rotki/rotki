@@ -38,8 +38,8 @@
 import { get } from '@vueuse/core';
 import { computed, defineComponent, PropType } from 'vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
-import { AssetMovement } from '@/components/display/types';
 import { useTheme } from '@/composables/common';
+import { AssetMovement } from '@/types/defi';
 
 export default defineComponent({
   components: { BalanceDisplay },

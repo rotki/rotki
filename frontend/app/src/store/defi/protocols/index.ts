@@ -15,7 +15,7 @@ import { get } from '@vueuse/core';
 import sortBy from 'lodash/sortBy';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ComputedRef } from 'vue';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import { truncateAddress } from '@/filters';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { CompoundBalances, CompoundLoan } from '@/services/defi/types/compound';
@@ -56,7 +56,7 @@ export const useDefiSupportedProtocolsStore = defineStore(
   'defi/supportedProtocols',
   () => {
     const { getAssetIdentifierForSymbol, assetInfo } = useAssetInfoRetrieval();
-    const premium = getPremium();
+    const premium = usePremium();
 
     const liquityStore = useLiquityStore();
     const yearnStore = useYearnStore();

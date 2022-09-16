@@ -121,21 +121,22 @@ import {
 import { useI18n } from 'vue-i18n-composable';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
-import {
-  deleteBackendUrl,
-  getBackendUrl,
-  setLastLogin
-} from '@/components/account-management/utils';
 import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue';
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import { useBackendManagement } from '@/composables/backend';
 import { useTheme } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import { startPromise } from '@/utils';
+import {
+  deleteBackendUrl,
+  getBackendUrl,
+  setLastLogin
+} from '@/utils/account-management';
 
 export default defineComponent({
   name: 'AccountManagement',
@@ -172,8 +173,10 @@ export default defineComponent({
     const premiumVisible = ref(false);
 
     const store = useMainStore();
-    const { connectionFailure, newUser, message, connected, updateNeeded } =
+    const { connectionFailure, newUser, connected, updateNeeded } =
       toRefs(store);
+
+    const { message } = storeToRefs(useMessageStore());
 
     const animationEnabled = useLocalStorage(
       'rotki.login_animation_enabled',
@@ -199,7 +202,7 @@ export default defineComponent({
 
     const { currentBreakpoint } = useTheme();
     const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-    const premium = getPremium();
+    const premium = usePremium();
 
     const displayPremium = computed(
       () => !get(premium) && !get(message).title && get(premiumVisible)

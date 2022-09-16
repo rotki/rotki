@@ -37,9 +37,7 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import PurgeSelector from '@/components/settings/data-security/PurgeSelector.vue';
-import { PurgeParams } from '@/components/settings/data-security/types';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { BaseMessage } from '@/components/settings/utils';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -51,7 +49,9 @@ import {
 import { Purgeable } from '@/services/session/types';
 import { useSessionStore } from '@/store/session';
 import { SUPPORTED_EXCHANGES, SupportedExchange } from '@/types/exchanges';
+import { BaseMessage } from '@/types/messages';
 import { Module } from '@/types/modules';
+import { PurgeParams } from '@/types/purge';
 
 const source = ref<Purgeable>(ALL_TRANSACTIONS);
 const status = ref<BaseMessage | null>(null);

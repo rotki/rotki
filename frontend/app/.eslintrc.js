@@ -105,7 +105,9 @@ module.exports = {
     'vue/no-deprecated-events-api': 'warn',
     'vue/no-deprecated-filter': 'error',
     'vue/prefer-import-from-vue': 'warn',
-    'vue/require-explicit-emits': 'warn'
+    'vue/require-explicit-emits': 'warn',
+    // cyclic imports
+    'import/no-cycle': 'warn'
   },
 
   parserOptions: {

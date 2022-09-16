@@ -77,17 +77,13 @@ import makeBlockie from 'ethereum-blockies-base64';
 import { storeToRefs } from 'pinia';
 import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import {
-  Chains,
-  ExplorerUrls,
-  explorerUrls
-} from '@/components/helper/asset-urls';
 import { useTheme } from '@/composables/common';
 import { interop } from '@/electron-interop';
 import { truncateAddress } from '@/filters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import { Chains, ExplorerUrls, explorerUrls } from '@/types/asset-urls';
 import { randomHex } from '@/utils/data';
 
 const props = defineProps({

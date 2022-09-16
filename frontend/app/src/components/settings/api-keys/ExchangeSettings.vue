@@ -90,7 +90,6 @@ import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import { exchangeName } from '@/components/history/consts';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
 import { useRouter } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
@@ -101,6 +100,7 @@ import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Nullable, Writeable } from '@/types';
 import { Exchange, SupportedExchange } from '@/types/exchanges';
+import { exchangeName } from '@/types/trades';
 import { assert } from '@/utils/assertions';
 
 const placeholder: () => ExchangePayload = () => ({

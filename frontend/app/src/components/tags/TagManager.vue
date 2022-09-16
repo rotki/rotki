@@ -90,8 +90,8 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import TagCreator from '@/components/tags/TagCreator.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { defaultTag } from '@/components/tags/types';
 import { useTagStore } from '@/store/session/tags';
+import { defaultTag } from '@/types/tags';
 import { Tag } from '@/types/user';
 
 defineProps({

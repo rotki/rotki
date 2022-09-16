@@ -262,7 +262,7 @@ type PaginationOptions = {
 };
 
 const TransactionQueryStatus = defineAsyncComponent(
-  () => import('@/views/history/transactions/TransactionQueryStatus.vue')
+  () => import('@/components/history/transactions/TransactionQueryStatus.vue')
 );
 const Fragment = defineAsyncComponent(
   () => import('@/components/helper/Fragment')

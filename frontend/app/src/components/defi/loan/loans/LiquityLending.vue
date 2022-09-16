@@ -59,7 +59,7 @@ import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityColla
 import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import { isSectionLoading } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import { LiquityTroveEvents } from '@/premium/premium';
 import { Section } from '@/store/const';
 import { LiquityLoan } from '@/store/defi/liquity/types';
@@ -88,7 +88,7 @@ export default defineComponent({
     );
     const ratio = computed(() => get(loan).balance.collateralizationRatio);
     const liquidationPrice = computed(() => get(loan).balance.liquidationPrice);
-    const premium = getPremium();
+    const premium = usePremium();
     const loadingEvents = isSectionLoading(Section.DEFI_LIQUITY_EVENTS);
     const { tc } = useI18n();
     return {

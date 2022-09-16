@@ -78,11 +78,10 @@ import { useRoute, useRouter } from '@/composables/common';
 import { interop } from '@/electron-interop';
 import { Routes } from '@/router/routes';
 import { api } from '@/services/rotkehlchen-api';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useReports } from '@/store/reports';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useTasks } from '@/store/tasks';
-import { showError, showMessage } from '@/store/utils';
 import {
   ProfitLossReportDebugPayload,
   ProfitLossReportPeriod
@@ -143,7 +142,7 @@ const generate = async (period: ProfitLossReportPeriod) => {
   }
 };
 
-const { setMessage } = useMainStore();
+const { setMessage } = useMessageStore();
 
 const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
   let payload: ProfitLossReportDebugPayload = {
@@ -220,17 +219,18 @@ const importData = async () => {
   }
 
   if (!success) {
-    showError(
-      tc('profit_loss_reports.debug.import_message.failure', 0, {
+    setMessage({
+      title: tc('profit_loss_reports.debug.import_message.title'),
+      description: tc('profit_loss_reports.debug.import_message.failure', 0, {
         message
-      }),
-      tc('profit_loss_reports.debug.import_message.title')
-    );
+      })
+    });
   } else {
-    showMessage(
-      tc('profit_loss_reports.debug.import_message.success'),
-      tc('profit_loss_reports.debug.import_message.title')
-    );
+    setMessage({
+      title: tc('profit_loss_reports.debug.import_message.title'),
+      description: tc('profit_loss_reports.debug.import_message.success'),
+      success: true
+    });
   }
 
   set(importDataLoading, false);

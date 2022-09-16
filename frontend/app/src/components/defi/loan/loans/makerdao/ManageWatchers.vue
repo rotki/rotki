@@ -44,7 +44,7 @@ import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { useTheme } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import { MakerDAOVaultModel } from '@/store/defi/types';
 import { useWatchersStore } from '@/store/session/watchers';
 
@@ -59,7 +59,7 @@ const showWatcherDialog = ref(false);
 const watcherMessage = ref('');
 const { vault } = toRefs(props);
 const { watchers: loanWatchers } = storeToRefs(useWatchersStore());
-const premium = getPremium();
+const premium = usePremium();
 const { tc } = useI18n();
 const watchers = computed(() => {
   const { identifier } = get(vault);

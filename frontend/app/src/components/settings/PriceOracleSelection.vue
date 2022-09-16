@@ -120,8 +120,8 @@ import { computed, PropType, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import OracleEntry from '@/components/settings/OracleEntry.vue';
-import { BaseMessage } from '@/components/settings/utils';
 import { Nullable } from '@/types';
+import { BaseMessage } from '@/types/messages';
 import { assert } from '@/utils/assertions';
 
 const props = defineProps({

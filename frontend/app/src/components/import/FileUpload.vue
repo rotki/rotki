@@ -99,7 +99,7 @@
 import { get, set, useCounter } from '@vueuse/core';
 import { PropType, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { ImportSourceType, SOURCES } from '@/components/import/upload-types';
+import { ImportSourceType, SOURCES } from '@/types/upload-types';
 
 const props = defineProps({
   source: {

@@ -147,7 +147,7 @@ import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { api } from '@/services/rotkehlchen-api';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 import {
@@ -169,7 +169,7 @@ const serviceToDelete: Ref<ExternalServiceName | ''> = ref('');
 const loading = ref(false);
 
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
-const { setMessage } = useMainStore();
+const { setMessage } = useMessageStore();
 const { fetchLoopringBalances } = useBlockchainBalancesStore();
 
 const { tc } = useI18n();

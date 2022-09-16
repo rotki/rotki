@@ -20,7 +20,7 @@
 <script lang="ts">
 import { defineAsyncComponent, defineComponent, toRefs } from 'vue';
 import Fragment from '@/components/helper/Fragment';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 
 export default defineComponent({
   name: 'AppMessages',
@@ -45,7 +45,7 @@ export default defineComponent({
     winUnsupported: { required: true, type: Boolean }
   },
   setup() {
-    const store = useMainStore();
+    const store = useMessageStore();
     const { message } = toRefs(store);
     const { setMessage } = store;
     const dismissMessage = () => setMessage();

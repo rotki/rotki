@@ -5,7 +5,6 @@ import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { lastLogin } from '@/components/account-management/utils';
 import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop, useInterop } from '@/electron-interop';
@@ -28,6 +27,7 @@ import { useHistory } from '@/store/history';
 import { useTxQueryStatus } from '@/store/history/query-status';
 import { useTransactions } from '@/store/history/transactions';
 import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useReports } from '@/store/reports';
 import { usePremiumStore } from '@/store/session/premium';
@@ -48,7 +48,7 @@ import { useStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
-import { getStatusUpdater, showError } from '@/store/utils';
+import { getStatusUpdater } from '@/store/utils';
 import {
   Exchange,
   SUPPORTED_EXCHANGES,
@@ -65,6 +65,7 @@ import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { UserSettingsModel } from '@/types/user';
 import { startPromise } from '@/utils';
+import { lastLogin } from '@/utils/account-management';
 import { backoff } from '@/utils/backoff';
 import { logger } from '@/utils/logging';
 
@@ -87,7 +88,7 @@ export const useSessionStore = defineStore('session', () => {
 
   const periodicRunning = ref(false);
 
-  const { setMessage } = useMainStore();
+  const { setMessage } = useMessageStore();
   const { awaitTask } = useTasks();
   const { notify } = useNotifications();
   const { fetchWatchers } = useWatchersStore();
@@ -306,7 +307,10 @@ export const useSessionStore = defineStore('session', () => {
       await api.logout(get(username));
       await stop();
     } catch (e: any) {
-      showError(e.message, 'Logout failed');
+      setMessage({
+        title: 'Logout failed',
+        description: e.message
+      });
     }
   };
 

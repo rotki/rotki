@@ -6,7 +6,7 @@ import Vuetify from 'vuetify';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
 import { ExternalServiceKeys } from '@/types/user';
 import '../../../i18n';
@@ -99,7 +99,7 @@ describe('ExternalServices.vue', () => {
         )
         .trigger('click');
       await flushPromises();
-      const store = useMainStore();
+      const store = useMessageStore();
       expect(store.message.description).toMatch('cryptocompare');
       expect(setService).toHaveBeenCalledWith([
         { name: 'cryptocompare', apiKey: '123' }
@@ -117,7 +117,7 @@ describe('ExternalServices.vue', () => {
         .find('.external-services__etherscan-key .service-key__buttons__save')
         .trigger('click');
       await flushPromises();
-      const store = useMainStore();
+      const store = useMessageStore();
       expect(store.message.description).toMatch('mock failure');
     });
 
@@ -205,7 +205,7 @@ describe('ExternalServices.vue', () => {
 
       expect(wrapper.find('[data-cy="confirm-dialog"]').exists()).toBeFalsy();
 
-      const store = useMainStore();
+      const store = useMessageStore();
       expect(store.message.description).toMatch('mock failure');
     });
   });

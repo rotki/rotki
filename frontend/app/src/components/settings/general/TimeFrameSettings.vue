@@ -99,7 +99,7 @@ import { get } from '@vueuse/core';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import Fragment from '@/components/helper/Fragment';
-import { getPremium } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { isPeriodAllowed } from '@/store/settings/utils';
@@ -157,7 +157,7 @@ export default defineComponent({
       return timeframe !== TimeFramePersist.REMEMBER;
     };
 
-    const premium = getPremium();
+    const premium = usePremium();
 
     const worksWithoutPremium = (period: TimeFrameSetting): boolean => {
       return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;

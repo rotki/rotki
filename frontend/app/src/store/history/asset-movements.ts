@@ -3,7 +3,6 @@ import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { exchangeName } from '@/components/history/consts';
 import {
   AssetMovement,
   AssetMovementCollectionResponse,
@@ -27,6 +26,7 @@ import { Collection, CollectionResponse } from '@/types/collection';
 import { SupportedExchange } from '@/types/exchanges';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { exchangeName } from '@/types/trades';
 import {
   defaultCollectionState,
   mapCollectionResponse

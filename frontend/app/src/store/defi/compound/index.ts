@@ -1,7 +1,8 @@
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, Ref, ref } from 'vue';
-import { getPremium, useModules } from '@/composables/session';
+import { usePremium } from '@/composables/premium';
+import { useModules } from '@/composables/session';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import {
@@ -41,7 +42,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   const { awaitTask } = useTasks();
   const { notify } = useNotifications();
   const { activeModules } = useModules();
-  const premium = getPremium();
+  const premium = usePremium();
 
   const rewards = computed(() => toProfitLossModel(get(history).rewards));
   const interestProfit = computed(() =>

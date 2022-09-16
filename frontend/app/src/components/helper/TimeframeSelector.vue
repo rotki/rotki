@@ -35,8 +35,8 @@ import {
 import { get } from '@vueuse/core';
 import { PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { getPremium } from '@/composables/session';
 
+import { usePremium } from '@/composables/premium';
 import { isPeriodAllowed } from '@/store/settings/utils';
 
 const props = defineProps({
@@ -55,7 +55,7 @@ const input = (_value: TimeFrameSetting) => {
   emit('input', _value);
 };
 
-const premium = getPremium();
+const premium = usePremium();
 
 const worksWithoutPremium = (period: TimeFrameSetting): boolean => {
   return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;

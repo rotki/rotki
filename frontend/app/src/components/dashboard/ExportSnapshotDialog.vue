@@ -68,7 +68,7 @@ import { useI18n } from 'vue-i18n-composable';
 import EditSnapshotDialog from '@/components/dashboard/EditSnapshotDialog.vue';
 import { interop } from '@/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
-import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
@@ -114,7 +114,7 @@ const downloadSnapshot = async () => {
   updateVisibility(false);
 };
 
-const { setMessage } = useMainStore();
+const { setMessage } = useMessageStore();
 
 const { t, tc } = useI18n();
 

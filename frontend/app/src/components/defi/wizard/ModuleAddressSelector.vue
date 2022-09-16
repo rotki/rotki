@@ -73,11 +73,11 @@ import { get, useCounter } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleQueriedAddress from '@/components/defi/wizard/ModuleQueriedAddress.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { SUPPORTED_MODULES } from '@/types/modules';
 
 const { inc: nextStep, dec: previousStep, count: step } = useCounter(-1);
 const { fetchQueriedAddresses } = useQueriedAddressesStore();

@@ -26,8 +26,9 @@ import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, defineComponent, onBeforeMount, toRefs } from 'vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
+import DepositsWithdrawalsContent from '@/components/history/deposits-withdrawals/DepositsWithdrawalsContent.vue';
+import LedgerActionContent from '@/components/history/ledger-actions/LedgerActionContent.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { TradeLocationData } from '@/components/history/type';
 import LocationAssets from '@/components/locations/LocationAssets.vue';
 import LocationValueRow from '@/components/locations/LocationValueRow.vue';
 import { setupLocationInfo } from '@/composables/balances';
@@ -36,8 +37,7 @@ import { Section } from '@/store/const';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { useTrades } from '@/store/history/trades';
-import DepositsWithdrawalsContent from '@/views/history/deposits-withdrawals/DepositsWithdrawalsContent.vue';
-import LedgerActionContent from '@/views/history/ledger-actions/LedgerActionContent.vue';
+import { TradeLocationData } from '@/types/trades';
 
 export default defineComponent({
   name: 'LocationOverview',

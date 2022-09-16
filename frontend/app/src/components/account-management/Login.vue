@@ -259,16 +259,16 @@ import {
   watch
 } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import {
-  deleteBackendUrl,
-  getBackendUrl,
-  saveBackendUrl
-} from '@/components/account-management/utils';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useInterop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
 import { SyncConflict } from '@/store/session/types';
 import { LoginCredentials, SyncApproval } from '@/types/login';
+import {
+  deleteBackendUrl,
+  getBackendUrl,
+  saveBackendUrl
+} from '@/utils/account-management';
 
 const KEY_REMEMBER_USERNAME = 'rotki.remember_username';
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
