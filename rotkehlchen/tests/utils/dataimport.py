@@ -2,7 +2,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.converters import asset_from_binance, asset_from_cryptocom
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import (
@@ -1282,7 +1282,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             timestamp=Timestamp(1605169314),
             location=Location.BINANCE,
             base_asset=A_BTC,
-            quote_asset=Asset('IOTA'),
+            quote_asset=CryptoAsset('IOTA'),
             trade_type=TradeType.SELL,
             amount=AssetAmount(FVal('0.001366875')),
             rate=Price(FVal('0.00002025')),
@@ -1295,7 +1295,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             timestamp=Timestamp(1605903740),
             location=Location.BINANCE,
             base_asset=asset_from_binance('BNB'),
-            quote_asset=Asset('SOL-2'),
+            quote_asset=CryptoAsset('SOL-2'),
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal('0.00072724')),
             rate=Price(FVal('0.3537908069071033997951901302')),
@@ -1308,7 +1308,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             timestamp=Timestamp(1605903740),
             location=Location.BINANCE,
             base_asset=asset_from_binance('BNB'),
-            quote_asset=Asset('SOL-2'),
+            quote_asset=CryptoAsset('SOL-2'),
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal('0.000237955')),
             rate=Price(FVal('1.643676176003315604061614975')),
@@ -1321,7 +1321,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             timestamp=Timestamp(1605910681),
             location=Location.BINANCE,
             base_asset=A_USDT,
-            quote_asset=Asset('eip155:56/erc20:0x23CE9e926048273eF83be0A3A8Ba9Cb6D45cd978'),
+            quote_asset=EvmToken('eip155:56/erc20:0x23CE9e926048273eF83be0A3A8Ba9Cb6D45cd978'),
             trade_type=TradeType.SELL,
             amount=AssetAmount(FVal('1157.56')),
             rate=Price(FVal('3.44')),
@@ -1333,13 +1333,13 @@ def assert_binance_import_results(rotki: Rotkehlchen):
         Trade(
             timestamp=Timestamp(1605911401),
             location=Location.BINANCE,
-            base_asset=Asset('IOTA'),
+            base_asset=CryptoAsset('IOTA'),
             quote_asset=A_USDT,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal('882')),
             rate=Price(FVal('0.7694083249980764791875048088')),
             fee=Fee(FVal('-0.882')),
-            fee_currency=Asset('IOTA'),
+            fee_currency=CryptoAsset('IOTA'),
             link='',
             notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
@@ -1401,7 +1401,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             action_type=LedgerActionType.INCOME,
             location=Location.BINANCE,
             amount=AssetAmount(FVal(0.115147055)),
-            asset=Asset('eip155:56/erc20:0x23CE9e926048273eF83be0A3A8Ba9Cb6D45cd978'),
+            asset=EvmToken('eip155:56/erc20:0x23CE9e926048273eF83be0A3A8Ba9Cb6D45cd978'),
             rate=None,
             rate_asset=None,
             link=None,

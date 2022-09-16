@@ -3,6 +3,7 @@ from typing import Union
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
@@ -132,12 +133,16 @@ def deserialize_adex_event_from_db(
             raise DeserializationError(
                 f'Failed to deserialize channel withdraw event. Unexpected data: {event_tuple}.',
             )
-        token = EvmToken.from_identifier(event_tuple[13])   # type: ignore
-        if token is None:
+        try:
+            if event_tuple[13] is not None:
+                token = EvmToken(event_tuple[13])
+            else:
+                raise UnknownAsset('None')
+        except UnknownAsset as e:
             raise DeserializationError(
                 f'Unknown token {event_tuple[13]} found while processing adex event. '
                 f'Unexpected data: {event_tuple}',
-            )
+            ) from e
 
         return ChannelWithdraw(
             tx_hash=tx_hash,

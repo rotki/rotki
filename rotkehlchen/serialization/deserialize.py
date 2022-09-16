@@ -15,7 +15,7 @@ from typing import (
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.types import HistoryEventType
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import AssetWithSymbol, EvmToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
@@ -290,7 +290,7 @@ def _split_pair(pair: TradePair) -> Tuple[str, str]:
     return assets[0], assets[1]
 
 
-def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
+def pair_get_assets(pair: TradePair) -> Tuple[AssetWithSymbol, AssetWithSymbol]:
     """Returns a tuple with the (base, quote) assets
 
     May raise:
@@ -472,11 +472,12 @@ def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> i
 
 def deserialize_ethereum_token_from_db(identifier: str) -> EvmToken:
     """Takes an identifier and returns the <EvmToken>"""
-    ethereum_token = EvmToken.from_identifier(identifier=identifier)
-    if ethereum_token is None:
+    try:
+        ethereum_token = EvmToken(identifier)
+    except UnknownAsset as e:
         raise DeserializationError(
             f'Could not initialize an ethereum token with identifier {identifier}',
-        )
+        ) from e
 
     return ethereum_token
 

@@ -1,4 +1,4 @@
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -6,7 +6,7 @@ from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 
-def get_asset_balance_total(asset: Asset, setup: BalancesTestSetup) -> FVal:
+def get_asset_balance_total(asset: AssetWithSymbol, setup: BalancesTestSetup) -> FVal:
     conversion_function = satoshis_to_btc if asset == A_BTC else from_wei
     total = ZERO
 

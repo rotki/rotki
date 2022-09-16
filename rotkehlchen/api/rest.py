@@ -45,7 +45,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, AssetWithSymbol, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.assets.types import AssetType
@@ -389,11 +389,11 @@ class RestAPI():
 
     def _get_exchange_rates(self, given_currencies: List[Asset]) -> Dict[str, Any]:
         currencies = given_currencies
-        fiat_currencies = []
+        fiat_currencies: List[AssetWithSymbol] = []
         asset_rates = {}
         for asset in currencies:
             if asset.is_fiat():
-                fiat_currencies.append(asset)
+                fiat_currencies.append(AssetWithSymbol(asset.identifier))
                 continue
 
             usd_price = Inquirer().find_usd_price(asset)
@@ -613,7 +613,7 @@ class RestAPI():
                 'status_code': HTTPStatus.CONFLICT,
             }
 
-        balances: Dict[Asset, Balance] = {}
+        balances: Dict[AssetWithSymbol, Balance] = {}
         for exchange in exchanges_list:
             result, msg = exchange.query_balances(ignore_cache=ignore_cache)
             if result is None:
@@ -784,13 +784,13 @@ class RestAPI():
             self,
             timestamp: Timestamp,
             location: Location,
-            base_asset: Asset,
-            quote_asset: Asset,
+            base_asset: AssetWithSymbol,
+            quote_asset: AssetWithSymbol,
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
             fee: Optional[Fee],
-            fee_currency: Optional[Asset],
+            fee_currency: Optional[AssetWithSymbol],
             link: Optional[str],
             notes: Optional[str],
     ) -> Response:
@@ -820,13 +820,13 @@ class RestAPI():
             trade_id: str,
             timestamp: Timestamp,
             location: Location,
-            base_asset: Asset,
-            quote_asset: Asset,
+            base_asset: AssetWithSymbol,
+            quote_asset: AssetWithSymbol,
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
             fee: Optional[Fee],
-            fee_currency: Optional[Asset],
+            fee_currency: Optional[AssetWithSymbol],
             link: Optional[str],
             notes: Optional[str],
     ) -> Response:
@@ -1467,7 +1467,7 @@ class RestAPI():
                 result = wrap_in_fail_result(f'Custom token with address {address} and chain {chain} not found')  # noqa: E501
                 status_code = HTTPStatus.NOT_FOUND
             else:
-                result = _wrap_in_ok_result(token.serialize_all_info())
+                result = _wrap_in_ok_result(token.to_dict())
                 status_code = HTTPStatus.OK
 
             return api_response(result, status_code)
@@ -1475,7 +1475,7 @@ class RestAPI():
         # else return all custom tokens
         tokens = GlobalDBHandler().get_ethereum_tokens()
         return api_response(
-            _wrap_in_ok_result([x.serialize_all_info() for x in tokens]),
+            _wrap_in_ok_result([x.to_dict() for x in tokens]),
             status_code=HTTPStatus.OK,
             log_result=False,
         )

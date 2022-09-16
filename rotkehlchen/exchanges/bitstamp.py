@@ -24,7 +24,7 @@ from requests.adapters import Response
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -103,8 +103,8 @@ class TradePairData(NamedTuple):
     pair: str
     base_asset_symbol: str
     quote_asset_symbol: str
-    base_asset: Asset
-    quote_asset: Asset
+    base_asset: AssetWithSymbol
+    quote_asset: AssetWithSymbol
 
 
 class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
@@ -177,7 +177,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             raise RemoteError(msg) from e
 
-        assets_balance: Dict[Asset, Balance] = {}
+        assets_balance: Dict[AssetWithSymbol, Balance] = {}
         for entry, amount in response_dict.items():
             if not entry.endswith('_balance'):
                 continue
@@ -541,7 +541,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         timestamp = deserialize_timestamp_from_bitstamp_date(raw_movement['datetime'])
         amount: FVal = ZERO
-        fee_asset: Asset
+        fee_asset: AssetWithSymbol
         for raw_movement_key, value in raw_movement.items():
             if raw_movement_key in KNOWN_NON_ASSET_KEYS_FOR_MOVEMENTS:
                 continue

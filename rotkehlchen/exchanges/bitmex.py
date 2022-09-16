@@ -11,7 +11,8 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.utils import get_asset_by_identifier
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -45,10 +46,10 @@ BITMEX_PRIVATE_ENDPOINTS = (
 )
 
 
-def bitmex_to_world(symbol: str) -> Asset:
+def bitmex_to_world(symbol: str) -> AssetWithSymbol:
     if symbol == 'XBt':
         return A_BTC
-    return Asset(symbol)
+    return get_asset_by_identifier(symbol)
 
 
 def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
@@ -237,7 +238,7 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> ExchangeQueryBalances:
-        returned_balances: Dict[Asset, Balance] = {}
+        returned_balances: Dict[AssetWithSymbol, Balance] = {}
         try:
             resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
             # Bitmex shows only BTC balance

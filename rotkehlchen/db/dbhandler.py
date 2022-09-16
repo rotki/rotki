@@ -27,7 +27,8 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.types import ActionType
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, AssetWithSymbol, EvmToken
+from rotkehlchen.assets.utils import get_asset_by_identifier
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import (
@@ -363,14 +364,14 @@ class DBHandler:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['main_currency']) -> Asset:
+    def get_setting(self, cursor: 'DBCursor', name: Literal['main_currency']) -> AssetWithSymbol:
         ...
 
     def get_setting(  # pylint: disable=no-self-use
             self,
             cursor: 'DBCursor',
             name: Literal['version', 'last_write_ts', 'last_data_upload_ts', 'premium_should_sync', 'main_currency'],  # noqa: E501
-    ) -> Union[int, Timestamp, bool, Asset]:
+    ) -> Union[int, Timestamp, bool, AssetWithSymbol]:
         deserializer, default_value = SETTING_TO_DEFAULT_TYPE[name]
         cursor.execute(
             'SELECT value FROM settings WHERE name=?;', (name,),
@@ -1311,7 +1312,7 @@ class DBHandler:
                 last_queried_ts = deserialize_timestamp(value)
             else:  # should be ACCOUNTS_DETAILS_TOKENS
                 try:
-                    token = EvmToken.from_identifier(value)
+                    token = EvmToken(value)
                 except (DeserializationError, UnknownAsset):
                     token = None
 
@@ -1461,7 +1462,7 @@ class DBHandler:
                 balance_type = BalanceType.deserialize_from_db(entry[5])
                 data.append(ManuallyTrackedBalance(
                     id=entry[6],
-                    asset=Asset(entry[0]),
+                    asset=get_asset_by_identifier(entry[0]),
                     label=entry[1],
                     amount=FVal(entry[2]),
                     location=Location.deserialize_from_db(entry[3]),
@@ -2497,7 +2498,7 @@ class DBHandler:
                 for _, asset_id in enumerate(result):
                     try:
                         if asset_id is not None:
-                            results.add(Asset(asset_id))
+                            results.add(get_asset_by_identifier(asset_id))
                     except UnknownAsset:
                         self.msg_aggregator.add_warning(
                             f'Unknown/unsupported asset {asset_id} found in the database. '

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
 from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import symbol_to_asset_or_token, symbol_to_ethereum_token
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
-ADDRESS_TO_ASSETS = Dict[ChecksumEvmAddress, Dict[Asset, Balance]]
+ADDRESS_TO_ASSETS = Dict[ChecksumEvmAddress, Dict[CryptoAsset, Balance]]
 BLOCKS_PER_DAY = 4 * 60 * 24
 DAYS_PER_YEAR = 365
 ETH_MANTISSA = 10**18
@@ -83,9 +83,9 @@ class CompoundEvent(NamedTuple):
     address: ChecksumEvmAddress
     block_number: int
     timestamp: Timestamp
-    asset: Asset
+    asset: CryptoAsset
     value: Balance
-    to_asset: Optional[Asset]
+    to_asset: Optional[CryptoAsset]
     to_value: Optional[Balance]
     realized_pnl: Optional[Balance]
     tx_hash: str
@@ -180,7 +180,7 @@ class Compound(EthereumModule):
     def get_balances(
             self,
             given_defi_balances: GIVEN_DEFI_BALANCES,
-    ) -> Dict[ChecksumEvmAddress, Dict[str, Dict[Asset, CompoundBalance]]]:
+    ) -> Dict[ChecksumEvmAddress, Dict[str, Dict[CryptoAsset, CompoundBalance]]]:
         compound_balances = {}
         now = ts_now()
         if isinstance(given_defi_balances, dict):
@@ -326,7 +326,7 @@ class Compound(EthereumModule):
                 address=address,
                 block_number=entry['blockNumber'],
                 timestamp=timestamp,
-                asset=underlying_asset,
+                asset=CryptoAsset(underlying_asset.identifier),
                 value=Balance(amount=amount, usd_value=amount * usd_price),
                 to_asset=None,
                 to_value=None,
@@ -416,7 +416,7 @@ class Compound(EthereumModule):
                 address=address,
                 block_number=entry['blockNumber'],
                 timestamp=timestamp,
-                asset=underlying_asset,
+                asset=CryptoAsset(underlying_asset.identifier),
                 value=gained_value,
                 to_asset=ctoken_asset,
                 to_value=lost_value,
@@ -464,7 +464,8 @@ class Compound(EthereumModule):
 
             underlying_symbol = ctoken_symbol[1:]
             try:
-                underlying_asset = symbol_to_asset_or_token(underlying_symbol)
+                _underlying_asset = symbol_to_asset_or_token(underlying_symbol)
+                underlying_asset = CryptoAsset(_underlying_asset.identifier)
             except UnknownAsset:
                 log.error(
                     f'Found unexpected token symbol {underlying_symbol} during '

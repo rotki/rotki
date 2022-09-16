@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -424,7 +424,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
 
         return account_id
 
-    def get_account_balances(self, account_id: int) -> Dict[Asset, Balance]:
+    def get_account_balances(self, account_id: int) -> Dict[CryptoAsset, Balance]:
         """Get the loopring balances of a given account id
 
         May Raise:
@@ -478,7 +478,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
     def get_balances(
             self,
             addresses: List[ChecksumEvmAddress],
-    ) -> Dict[ChecksumEvmAddress, Dict[Asset, Balance]]:
+    ) -> Dict[ChecksumEvmAddress, Dict[CryptoAsset, Balance]]:
         """Gets all loopring balances of the given addresses
 
         Since this is the only point of entry to loopring here we check for api key.

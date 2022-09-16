@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
@@ -172,7 +172,7 @@ INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSER
         assert new_token.decimals == 18
         assert new_token.protocol is None
 
-        new_asset = Asset('121-ada-FADS-as')
+        new_asset = CryptoAsset('121-ada-FADS-as')
         assert new_asset.identifier == '121-ada-FADS-as'
         assert new_asset.name == 'A name'
         assert new_asset.symbol == 'SYMBOL'
@@ -433,7 +433,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         assert cursor.execute('SELECT COUNT(*) from evm_tokens WHERE address="0x6B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # noqa: E501
 
-        dash = Asset('DASH')
+        dash = CryptoAsset('DASH')
         assert dash.identifier == 'DASH'
         assert dash.name == 'Dash'
         assert dash.symbol == 'DASH'
@@ -446,7 +446,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE identifier="DASH";').fetchone()[0] == 1  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="DASH";').fetchone()[0] == 1  # noqa: E501
 
-        new_asset = Asset('121-ada-FADS-as')
+        new_asset = CryptoAsset('121-ada-FADS-as')
         assert new_asset.identifier == '121-ada-FADS-as'
         assert new_asset.name == 'A name'
         assert new_asset.symbol == 'SYMBOL'
@@ -632,7 +632,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         assert gnt.decimals == 18
         assert gnt.protocol is None
 
-        new_asset = Asset('121-ada-FADS-as')
+        new_asset = CryptoAsset('121-ada-FADS-as')
         assert new_asset.identifier == '121-ada-FADS-as'
         assert new_asset.name == 'A name'
         assert new_asset.symbol == 'SYMBOL'
@@ -777,7 +777,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         assert gnt.decimals == 18
         assert gnt.protocol is None
 
-        new_asset = Asset('121-ada-FADS-as')
+        new_asset = CryptoAsset('121-ada-FADS-as')
         assert new_asset.identifier == '121-ada-FADS-as'
         assert new_asset.name == 'A name'
         assert new_asset.symbol == 'SYMBOL'

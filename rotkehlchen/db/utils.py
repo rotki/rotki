@@ -21,7 +21,7 @@ from eth_utils import is_checksum_address
 from typing_extensions import Concatenate, ParamSpec
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetWithSymbol
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import is_valid_kusama_address, is_valid_polkadot_address
 from rotkehlchen.db.drivers.gevent import DBCursor
@@ -157,7 +157,7 @@ class DBAssetBalance:
 
     def serialize(
             self,
-            export_data: Optional[Tuple[Asset, Price]] = None,
+            export_data: Optional[Tuple[AssetWithSymbol, Price]] = None,
     ) -> Dict[str, Union[str, int]]:
         """Serializes a `DBAssetBalance` to dict.
         It accepts an `export_data` tuple of the user's local currency and the value of the
@@ -222,7 +222,7 @@ class LocationData(NamedTuple):
 
     def serialize(
             self,
-            export_data: Optional[Tuple[Asset, Price]] = None,
+            export_data: Optional[Tuple[AssetWithSymbol, Price]] = None,
     ) -> Dict[str, Union[str, int]]:
         if export_data:
             return {

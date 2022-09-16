@@ -9,7 +9,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetWithSymbol
 from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -28,6 +28,7 @@ from rotkehlchen.utils.misc import (
     ts_sec_to_ms,
 )
 
+from ...assets.utils import get_asset_by_identifier
 from .balance import Balance
 
 if TYPE_CHECKING:
@@ -88,7 +89,7 @@ class HistoryBaseEntry(AccountingEventMixin):
     location: Location
     event_type: HistoryEventType
     event_subtype: HistoryEventSubType
-    asset: Asset
+    asset: AssetWithSymbol
     balance: Balance
     # location_label is a string field that allows to provide more information about the location.
     # When we use this structure in blockchains can be used to specify addresses for example.
@@ -149,7 +150,7 @@ class HistoryBaseEntry(AccountingEventMixin):
                 location_label=entry[5],
                 # Setting incomplete data to true since we save all history events,
                 # regardless of the type of token that it may involve
-                asset=Asset(entry[6], form_with_incomplete_data=True),
+                asset=get_asset_by_identifier(entry[6], form_with_incomplete_data=True),
                 balance=Balance(
                     amount=FVal(entry[7]),
                     usd_value=FVal(entry[8]),
@@ -223,7 +224,7 @@ class HistoryBaseEntry(AccountingEventMixin):
             notes=deserialize_optional(data['notes'], str),
             identifier=deserialize_optional(data['identifier'], int),
             counterparty=deserialize_optional(data['counterparty'], str),
-            asset=Asset(data['asset']),
+            asset=get_asset_by_identifier(data['asset']),
             balance=Balance(
                 amount=deserialize_fval(
                     value=data['balance']['amount'],
@@ -313,7 +314,7 @@ class HistoryBaseEntry(AccountingEventMixin):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class StakingEvent:
     event_type: HistoryEventSubType
-    asset: Asset
+    asset: AssetWithSymbol
     balance: Balance
     timestamp: Timestamp
     location: Location

@@ -11,7 +11,7 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
@@ -61,11 +61,11 @@ BITCOINDE_TRADING_PAIRS = (
 )
 
 
-def bitcoinde_asset(symbol: str) -> Asset:
+def bitcoinde_asset(symbol: str) -> AssetWithSymbol:
     return symbol_to_asset_or_token(symbol.upper())
 
 
-def bitcoinde_pair_to_world(pair: str) -> Tuple[Asset, Asset]:
+def bitcoinde_pair_to_world(pair: str) -> Tuple[AssetWithSymbol, AssetWithSymbol]:
     if len(pair) == 6:
         tx_asset = bitcoinde_asset(pair[:3])
         native_asset = bitcoinde_asset(pair[3:])
@@ -253,7 +253,7 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return False, str(e)
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
-        assets_balance: Dict[Asset, Balance] = {}
+        assets_balance: Dict[AssetWithSymbol, Balance] = {}
         try:
             resp_info = self._api_query('get', 'account')
         except RemoteError as e:

@@ -17,9 +17,9 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_NEXO,
     WORLD_TO_POLONIEX,
     WORLD_TO_UPHOLD,
-    Asset,
+    AssetWithSymbol,
 )
-from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.assets.utils import get_asset_by_identifier, symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_DAI, A_SAI
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnsupportedAsset
@@ -794,7 +794,7 @@ RENAMED_BINANCE_ASSETS = {
 }
 
 
-def asset_from_kraken(kraken_name: str) -> Asset:
+def asset_from_kraken(kraken_name: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnknownAsset
@@ -827,7 +827,7 @@ def asset_from_kraken(kraken_name: str) -> Asset:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_poloniex(poloniex_name: str) -> Asset:
+def asset_from_poloniex(poloniex_name: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -847,7 +847,7 @@ def asset_from_bitfinex(
         bitfinex_name: str,
         currency_map: Dict[str, str],
         is_currency_map_updated: bool = True,
-) -> Asset:
+) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -869,7 +869,7 @@ def asset_from_bitfinex(
     return symbol_to_asset_or_token(symbol)
 
 
-def asset_from_bitstamp(bitstamp_name: str) -> Asset:
+def asset_from_bitstamp(bitstamp_name: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -882,7 +882,7 @@ def asset_from_bitstamp(bitstamp_name: str) -> Asset:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_bittrex(bittrex_name: str) -> Asset:
+def asset_from_bittrex(bittrex_name: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -898,7 +898,7 @@ def asset_from_bittrex(bittrex_name: str) -> Asset:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_coinbasepro(coinbase_pro_name: str) -> Asset:
+def asset_from_coinbasepro(coinbase_pro_name: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -913,7 +913,7 @@ def asset_from_coinbasepro(coinbase_pro_name: str) -> Asset:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_binance(binance_name: str) -> Asset:
+def asset_from_binance(binance_name: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -926,13 +926,13 @@ def asset_from_binance(binance_name: str) -> Asset:
         raise UnsupportedAsset(binance_name)
 
     if binance_name in RENAMED_BINANCE_ASSETS:
-        return Asset(RENAMED_BINANCE_ASSETS[binance_name])
+        return get_asset_by_identifier(RENAMED_BINANCE_ASSETS[binance_name])
 
     name = BINANCE_TO_WORLD.get(binance_name, binance_name)
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset:
+def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnknownAsset
@@ -958,7 +958,7 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_ftx(ftx_name: str) -> Asset:
+def asset_from_ftx(ftx_name: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -977,7 +977,7 @@ def asset_from_ftx(ftx_name: str) -> Asset:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_kucoin(kucoin_name: str) -> Asset:
+def asset_from_kucoin(kucoin_name: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -993,7 +993,7 @@ def asset_from_kucoin(kucoin_name: str) -> Asset:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_gemini(symbol: str) -> Asset:
+def asset_from_gemini(symbol: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1009,7 +1009,7 @@ def asset_from_gemini(symbol: str) -> Asset:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_iconomi(symbol: str) -> Asset:
+def asset_from_iconomi(symbol: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1024,7 +1024,7 @@ def asset_from_iconomi(symbol: str) -> Asset:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_uphold(symbol: str) -> Asset:
+def asset_from_uphold(symbol: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1037,7 +1037,7 @@ def asset_from_uphold(symbol: str) -> Asset:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_nexo(nexo_name: str) -> Asset:
+def asset_from_nexo(nexo_name: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1050,7 +1050,7 @@ def asset_from_nexo(nexo_name: str) -> Asset:
     return symbol_to_asset_or_token(our_name)
 
 
-def asset_from_bitpanda(bitpanda_name: str) -> Asset:
+def asset_from_bitpanda(bitpanda_name: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1063,7 +1063,7 @@ def asset_from_bitpanda(bitpanda_name: str) -> Asset:
     return symbol_to_asset_or_token(our_name)
 
 
-def asset_from_cryptocom(cryptocom_name: str) -> Asset:
+def asset_from_cryptocom(cryptocom_name: str) -> AssetWithSymbol:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -1078,13 +1078,12 @@ def asset_from_cryptocom(cryptocom_name: str) -> Asset:
     return symbol_to_asset_or_token(symbol)
 
 
-LOCATION_TO_ASSET_MAPPING: Dict[Location, Callable[[str], Asset]] = {
+LOCATION_TO_ASSET_MAPPING: Dict[Location, Callable[[str], AssetWithSymbol]] = {
     Location.BINANCE: asset_from_binance,
     Location.CRYPTOCOM: asset_from_cryptocom,
     Location.BITPANDA: asset_from_bitpanda,
     Location.COINBASEPRO: asset_from_coinbasepro,
     Location.KRAKEN: asset_from_kraken,
-    Location.BITSTAMP: asset_from_bitstamp,
     Location.FTX: asset_from_ftx,
     Location.BITSTAMP: asset_from_bitstamp,
     Location.GEMINI: asset_from_gemini,

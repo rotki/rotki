@@ -2,7 +2,7 @@ import dataclasses
 from typing import Any, Dict, Literal, Optional, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -78,7 +78,7 @@ class AaveEvent:
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveInterestEvent(AaveEvent):
     """A simple event of the Aave protocol. Deposit, withdrawal or interest"""
-    asset: Asset
+    asset: CryptoAsset
     value: Balance
 
     def serialize(self) -> Dict[str, Any]:
@@ -102,7 +102,7 @@ class AaveInterestEvent(AaveEvent):
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveDepositWithdrawalEvent(AaveEvent):
     """A deposit or withdrawal in the aave protocol"""
-    asset: Asset
+    asset: CryptoAsset
     value: Balance
     atoken: EvmToken
 
@@ -166,9 +166,9 @@ class AaveRepayEvent(AaveInterestEvent):
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveLiquidationEvent(AaveEvent):
     """An aave liquidation event. You gain the principal and lose the collateral."""
-    collateral_asset: Asset
+    collateral_asset: CryptoAsset
     collateral_balance: Balance
-    principal_asset: Asset
+    principal_asset: CryptoAsset
     principal_balance: Balance
 
     def serialize(self) -> Dict[str, Any]:
@@ -203,7 +203,7 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
     asset2 = None
     if event_tuple[9] is not None:
         try:
-            asset2 = Asset(event_tuple[9])
+            asset2 = CryptoAsset(event_tuple[9])
         except UnknownAsset as e:
             raise DeserializationError(
                 f'Unknown asset {event_tuple[6]} encountered during deserialization '
@@ -211,7 +211,7 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
             ) from e
 
     try:
-        asset1 = Asset(event_tuple[6])
+        asset1 = CryptoAsset(event_tuple[6])
     except UnknownAsset as e:
         raise DeserializationError(
             f'Unknown asset {event_tuple[6]} encountered during deserialization '
@@ -228,7 +228,7 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
             tx_hash=tx_hash,
             log_index=log_index,
             asset=asset1,
-            atoken=EvmToken.from_asset(asset2),  # type: ignore # should be a token
+            atoken=EvmToken(asset2.identifier),  # type: ignore # should be a token
             value=Balance(amount=asset1_amount, usd_value=asset1_usd_value),
         )
     if event_type == 'interest':

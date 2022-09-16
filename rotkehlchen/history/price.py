@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetWithSymbol
 from rotkehlchen.constants.assets import A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
@@ -183,6 +183,8 @@ class PriceHistorian():
         # Querying historical forex data is attempted first via the external apis
         # and then via any price oracle that has fiat to fiat.
         if from_asset.is_fiat() and to_asset.is_fiat():
+            from_asset = AssetWithSymbol(from_asset.identifier)
+            to_asset = AssetWithSymbol(from_asset.identifier)
             price = Inquirer().query_historical_fiat_exchange_rates(
                 from_fiat_currency=from_asset,
                 to_fiat_currency=to_asset,

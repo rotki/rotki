@@ -2,7 +2,7 @@ import dataclasses
 from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import (
@@ -35,9 +35,9 @@ class YearnVaultEvent:
     event_type: Literal['deposit', 'withdraw']
     block_number: int
     timestamp: Timestamp
-    from_asset: Asset
+    from_asset: CryptoAsset
     from_value: Balance
-    to_asset: Asset
+    to_asset: CryptoAsset
     to_value: Balance
     realized_pnl: Optional[Balance]
     tx_hash: EVMTxHash
@@ -133,8 +133,8 @@ class YearnVaultEvent:
             raise DeserializationError(
                 f'Failed to deserialize block number {result[10]} in yearn vault event: {str(e)}',
             ) from e
-        from_asset = Asset(result[2])
-        to_asset = Asset(result[5])
+        from_asset = CryptoAsset(result[2])
+        to_asset = CryptoAsset(result[5])
         return cls(
             event_type=result[1],
             from_asset=from_asset,

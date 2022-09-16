@@ -1964,7 +1964,7 @@ class ModifyEvmTokenSchema(Schema):
     ) -> None:
         # Not the best way to do it. Need to manually validate, coingecko/cryptocompare id here
         token: fields.Nested = self.declared_fields['token']  # type: ignore
-        serialized_token = data['token'].serialize_all_info()
+        serialized_token = data['token'].to_dict()
         serialized_token.pop('identifier')
         _validate_single_oracle_id(
             data=serialized_token,

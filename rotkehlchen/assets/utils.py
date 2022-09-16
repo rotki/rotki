@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -10,7 +10,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 
-from .asset import Asset, EvmToken, UnderlyingToken
+from .asset import AssetWithSymbol, CryptoAsset, EvmToken, UnderlyingToken
 from .types import AssetType
 
 if TYPE_CHECKING:
@@ -107,7 +107,7 @@ def get_asset_by_symbol(
         symbol: str,
         asset_type: Optional[AssetType] = None,
         preferred_chain: ChainID = ChainID.ETHEREUM,
-) -> Optional[Asset]:
+) -> Optional[AssetWithSymbol]:
     """Gets an asset by symbol from the DB.
 
     If no asset with that symbol or multiple assets (except for EVM tokens) with the same
@@ -125,18 +125,19 @@ def get_asset_by_symbol(
     if len(assets_data) != 1:
         return None
 
-    return Asset(assets_data[0].identifier)
+    return get_asset_by_identifier(assets_data[0].identifier)
 
 
-def symbol_to_asset_or_token(symbol: str) -> Asset:
+def symbol_to_asset_or_token(symbol: str) -> AssetWithSymbol:
     """Tries to turn the given symbol to an asset or an ethereum Token
 
     May raise:
     - UnknownAsset if an asset can't be found by the symbol or if
     more than one tokens match this symbol
     """
+    asset: AssetWithSymbol
     try:
-        asset = Asset(symbol)
+        asset = get_asset_by_identifier(symbol)
     except UnknownAsset:
         # Let's search by symbol if a single asset matches
         maybe_asset = get_asset_by_symbol(symbol)
@@ -159,4 +160,25 @@ def symbol_to_ethereum_token(symbol: str) -> EvmToken:
         raise UnknownAsset(symbol)
 
     # ignore type here since the identifier has to match an ethereum token at this point
-    return EvmToken.from_asset(maybe_asset)  # type: ignore
+    return EvmToken(maybe_asset.identifier)
+
+
+def get_asset_by_identifier(
+        identifier: str,
+        form_with_incomplete_data: bool = False,
+) -> Union[AssetWithSymbol, CryptoAsset, EvmToken]:
+    """Retrieves an asset by identifier from the global db and
+    returns the asset with its appropriate class.
+
+    May raise:
+    - UnknownAsset
+    - DeserializationError
+    """
+    asset_data = GlobalDBHandler().get_asset_data(identifier, form_with_incomplete_data)
+    if asset_data is None:
+        raise UnknownAsset(identifier)
+    if asset_data.asset_type == AssetType.EVM_TOKEN:
+        return EvmToken(asset_data.identifier, form_with_incomplete_data)
+    if asset_data.asset_type == AssetType.FIAT:
+        return AssetWithSymbol(asset_data.identifier)
+    return CryptoAsset(asset_data.identifier)

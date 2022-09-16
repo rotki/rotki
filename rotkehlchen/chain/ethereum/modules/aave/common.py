@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.constants.assets import A_AETH_V1, A_AREP_V1, A_ETH, A_REP
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -61,20 +61,20 @@ class AaveBorrowingBalance(NamedTuple):
 
 class AaveBalances(NamedTuple):
     """The Aave balances per account"""
-    lending: Dict[Asset, AaveLendingBalance]
-    borrowing: Dict[Asset, AaveBorrowingBalance]
+    lending: Dict[CryptoAsset, AaveLendingBalance]
+    borrowing: Dict[CryptoAsset, AaveBorrowingBalance]
 
 
-def asset_to_aave_reserve_address(asset: Asset) -> Optional[ChecksumEvmAddress]:
+def asset_to_aave_reserve_address(asset: CryptoAsset) -> Optional[ChecksumEvmAddress]:
     if asset == A_ETH:  # for v2 this should be WETH
         return ETH_SPECIAL_ADDRESS
 
-    token = EvmToken.from_asset(asset)
+    token = EvmToken(asset.identifier)
     assert token, 'should not be a non token asset at this point'
     return token.evm_address
 
 
-def atoken_to_asset(atoken: EvmToken) -> Optional[Asset]:
+def atoken_to_asset(atoken: EvmToken) -> Optional[CryptoAsset]:
     if atoken == A_AETH_V1:
         return A_ETH
     if atoken == A_AREP_V1:
@@ -91,10 +91,10 @@ def atoken_to_asset(atoken: EvmToken) -> Optional[Asset]:
         log.error(f'Could not find asset from {atoken} since multiple or no results were returned')
         return None
 
-    return Asset(ethaddress_to_identifier(result[0][0]))
+    return CryptoAsset(ethaddress_to_identifier(result[0][0]))
 
 
-def asset_to_atoken(asset: Asset, version: int) -> Optional[EvmToken]:
+def asset_to_atoken(asset: CryptoAsset, version: int) -> Optional[EvmToken]:
     if asset == A_ETH:
         return A_AETH_V1
 
@@ -116,13 +116,13 @@ def asset_to_atoken(asset: Asset, version: int) -> Optional[EvmToken]:
         return None
 
 
-def _get_reserve_address_decimals(asset: Asset) -> Tuple[ChecksumEvmAddress, int]:
+def _get_reserve_address_decimals(asset: CryptoAsset) -> Tuple[ChecksumEvmAddress, int]:
     """Get the reserve address and the number of decimals for symbol"""
     if asset == A_ETH:
         reserve_address = ETH_SPECIAL_ADDRESS
         decimals = 18
     else:
-        token = EvmToken.from_asset(asset)
+        token = EvmToken(asset.identifier)
         assert token, 'should not be a non token asset at this point'
         reserve_address = token.evm_address
         decimals = token.decimals
@@ -134,9 +134,9 @@ class AaveHistory(NamedTuple):
     """All events and total interest accrued for all Atoken of an address
     """
     events: List[AaveEvent]
-    total_earned_interest: Dict[Asset, Balance]
-    total_lost: Dict[Asset, Balance]
-    total_earned_liquidations: Dict[Asset, Balance]
+    total_earned_interest: Dict[CryptoAsset, Balance]
+    total_lost: Dict[CryptoAsset, Balance]
+    total_earned_liquidations: Dict[CryptoAsset, Balance]
 
 
 class AaveInquirer():

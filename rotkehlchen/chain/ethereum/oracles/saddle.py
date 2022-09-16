@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING, Optional
 
 from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetWithSymbol
+from rotkehlchen.assets.utils import get_asset_by_identifier
 from rotkehlchen.constants.assets import A_ALETH, A_ETH, A_WETH
 from rotkehlchen.constants.ethereum import SADDLE_ALETH_POOL
 from rotkehlchen.constants.misc import EXP18
@@ -37,8 +38,8 @@ class SaddleOracle(CurrentPriceOracleInterface):
 
     def get_price(
         self,
-        from_asset: Asset,
-        to_asset: Asset,
+        from_asset: AssetWithSymbol,
+        to_asset: AssetWithSymbol,
         block_identifier: BlockIdentifier,
     ) -> Price:
         """
@@ -72,6 +73,8 @@ class SaddleOracle(CurrentPriceOracleInterface):
         """At the moment until more pools get implemented this function is limited to ALETH
         Refer to the docstring of `get_price`.
         """
+        from_asset = get_asset_by_identifier(from_asset.identifier)
+        to_asset = get_asset_by_identifier(to_asset.identifier)
         return self.get_price(
             from_asset=from_asset,
             to_asset=to_asset,

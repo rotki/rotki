@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
@@ -145,7 +145,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
 
         # Checking assets
         same_assets = True
-        assets: Dict[str, Optional[Asset]] = defaultdict(lambda: None)
+        assets: Dict[str, Optional[AssetWithSymbol]] = defaultdict(lambda: None)
         for row in data:
             if row['Operation'] == 'Fee':
                 cur_operation = 'Fee'
@@ -194,11 +194,11 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         # Creating trades structures based on grouped rows data
         raw_trades: List[Trade] = []
         for trade_rows in grouped_trade_rows:
-            to_asset: Optional[Asset] = None
+            to_asset: Optional[AssetWithSymbol] = None
             to_amount: Optional[AssetAmount] = None
-            from_asset: Optional[Asset] = None
+            from_asset: Optional[AssetWithSymbol] = None
             from_amount: Optional[AssetAmount] = None
-            fee_asset: Optional[Asset] = None
+            fee_asset: Optional[AssetWithSymbol] = None
             fee_amount: Optional[Fee] = None
             trade_type: Optional[TradeType] = None
 
