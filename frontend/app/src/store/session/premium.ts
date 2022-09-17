@@ -1,6 +1,5 @@
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import { ref, watch } from 'vue';
-import { setupPremium } from '@/premium/setup-premium';
+import { ref } from 'vue';
 import { api } from '@/services/rotkehlchen-api';
 import { PremiumCredentialsPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
@@ -54,12 +53,6 @@ export const usePremiumStore = defineStore('session/premium', () => {
     set(premiumSync, false);
     set(componentsLoaded, false);
   };
-
-  watch(premium, async (premium, prev) => {
-    if (premium !== prev && premium) {
-      await setupPremium(componentsLoaded);
-    }
-  });
 
   return {
     premium,

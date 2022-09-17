@@ -1,5 +1,4 @@
 import { balanceKeys } from '@/services/consts';
-import { OverviewDefiProtocol } from '@/store/defi/types';
 
 const FINNEXUS = 'FinNexus';
 const PICKLE_FINANCE = 'Pickle Finance';
@@ -211,6 +210,7 @@ export const OVERVIEW_PROTOCOLS = [
   GELATO
 ] as const;
 
+export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [ONEINCH_LIQUIDITY]: '1inch.svg',
   [ONEINCH_LP_STAKING]: '1inch.svg',
@@ -321,6 +321,10 @@ export function getProtocolIcon(name: OverviewDefiProtocol): string {
   return ICON_LIST[name] ?? '';
 }
 
+/**
+ * @deprecated
+ * replace with zod schema parser
+ */
 export const uniswapNumericKeys = [
   ...balanceKeys,
   'usd_price',
@@ -328,6 +332,10 @@ export const uniswapNumericKeys = [
   'total_supply'
 ];
 
+/**
+ * @deprecated
+ * replace with zod schema parser
+ */
 export const uniswapEventsNumericKeys = [
   'amount0',
   'amount1',
@@ -337,39 +345,3 @@ export const uniswapEventsNumericKeys = [
   'profit_loss1',
   'usd_profit_loss'
 ];
-
-export const AIRDROP_UNISWAP = 'uniswap';
-export const AIRDROP_1INCH = '1inch';
-export const AIRDROP_TORNADO = 'tornado';
-export const AIRDROP_CORNICHON = 'cornichon';
-export const AIRDROP_GRAIN = 'grain';
-export const AIRDROP_LIDO = 'lido';
-export const AIRDROP_FURUCOMBO = 'furucombo';
-export const AIRDROP_CURVE = 'curve';
-export const AIRDROP_POAP = 'poap';
-export const AIRDROP_CONVEX = 'convex';
-export const AIRDROP_FOX = 'fox';
-export const AIRDROP_ENS = 'ens';
-export const AIRDROP_PARASWAP = 'psp';
-export const AIRDROP_SADDLE = 'sdl';
-export const AIRDROP_COW_GNOSIS = 'cowGnosis';
-export const AIRDROP_COW_MAINNET = 'cowMainnet';
-
-export const AIRDROPS = [
-  AIRDROP_1INCH,
-  AIRDROP_TORNADO,
-  AIRDROP_UNISWAP,
-  AIRDROP_CORNICHON,
-  AIRDROP_COW_GNOSIS,
-  AIRDROP_COW_MAINNET,
-  AIRDROP_GRAIN,
-  AIRDROP_LIDO,
-  AIRDROP_FURUCOMBO,
-  AIRDROP_CURVE,
-  AIRDROP_POAP,
-  AIRDROP_CONVEX,
-  AIRDROP_FOX,
-  AIRDROP_ENS,
-  AIRDROP_PARASWAP,
-  AIRDROP_SADDLE
-] as const;

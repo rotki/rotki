@@ -82,12 +82,12 @@ import {
 } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
-import { EthTransactionEventWithMeta } from '@/services/history/types';
 import {
   EthTransactionEntry,
   EthTransactionEventEntry
 } from '@/store/history/types';
 import { transformEntryWithMeta } from '@/store/history/utils';
+import { EthTransactionEventWithMeta } from '@/types/history/tx';
 
 const TransactionEventNote = defineAsyncComponent(
   () => import('@/components/history/transactions/TransactionEventNote.vue')

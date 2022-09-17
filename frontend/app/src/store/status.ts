@@ -1,7 +1,6 @@
 import { get, MaybeRef } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed } from 'vue';
-import { usePremium } from '@/composables/premium';
 import { defiSections, Section, Status } from '@/store/const';
 import { StatusPayload } from '@/store/types';
 
@@ -12,7 +11,6 @@ const isLoading = (status: MaybeRef<Status>): boolean =>
 
 export const useStatusStore = defineStore('status', () => {
   const status = ref<Partial<Record<Section, Status>>>({});
-  const premium = usePremium();
 
   const detailsLoading = computed(() => {
     return (
@@ -48,12 +46,6 @@ export const useStatusStore = defineStore('status', () => {
   const reset = () => {
     set(status, {});
   };
-
-  watch(premium, premium => {
-    if (!premium) {
-      resetDefiStatus();
-    }
-  });
 
   return {
     status,

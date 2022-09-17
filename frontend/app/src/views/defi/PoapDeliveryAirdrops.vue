@@ -40,7 +40,7 @@ import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { useInterop } from '@/electron-interop';
-import { PoapDeliveryDetails } from '@/store/defi/types';
+import { PoapDeliveryDetails } from '@/types/airdrops';
 import { default as images } from './poap.json';
 
 const events = [

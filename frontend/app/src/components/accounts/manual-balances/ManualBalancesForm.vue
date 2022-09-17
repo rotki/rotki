@@ -72,10 +72,11 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { BalanceType, ManualBalance } from '@/services/balances/types';
+import { BalanceType } from '@/services/balances/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { TradeLocation } from '@/services/history/types';
 import { useManualBalancesStore } from '@/store/balances/manual';
+import { TradeLocation } from '@/types/history/trade-location';
+import { ManualBalance } from '@/types/manual-balances';
 import { bigNumberify } from '@/utils/bignumbers';
 
 const setupRules = (tc: (key: string) => string) => {

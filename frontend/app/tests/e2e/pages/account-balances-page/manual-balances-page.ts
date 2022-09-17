@@ -1,4 +1,4 @@
-import { TradeLocation } from '@/services/history/types';
+import { TradeLocation } from '@/types/history/trade-location';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { toSentenceCase } from '@/utils/text';
 import { AccountBalancesPage } from './index';

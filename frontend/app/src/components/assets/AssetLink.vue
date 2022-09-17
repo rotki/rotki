@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { get } from '@vueuse/core';
 import { toRefs } from 'vue';
-import { useRouter } from '@/composables/common';
+import { useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 
 const props = defineProps({

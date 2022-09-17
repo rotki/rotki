@@ -17,8 +17,7 @@ import { bigNumberSum } from '@/filters';
 import {
   BlockchainAssetBalances,
   BlockchainBalances,
-  BtcBalances,
-  ManualBalanceWithValue
+  BtcBalances
 } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
@@ -42,6 +41,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
+import { ManualBalanceWithValue } from '@/types/manual-balances';
 import { Module } from '@/types/modules';
 import { BlockchainMetadata, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

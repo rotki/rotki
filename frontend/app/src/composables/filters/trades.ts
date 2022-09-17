@@ -2,11 +2,11 @@ import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, ref, Ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { TradeType } from '@/services/history/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useHistory } from '@/store/history';
+import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import { TradeType } from '@/types/history/trades';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 enum TradeFilterKeys {
@@ -31,7 +31,7 @@ export const useTradeFilters = () => {
   const filters: Ref<MatchedKeyword<TradeFilterValueKeys>> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { associatedLocations } = storeToRefs(useHistory());
+  const { associatedLocations } = storeToRefs(useAssociatedLocationsStore());
   const assetStore = useAssetInfoRetrieval();
   const { supportedAssetsSymbol } = toRefs(assetStore);
   const { getAssetIdentifierForSymbol } = assetStore;

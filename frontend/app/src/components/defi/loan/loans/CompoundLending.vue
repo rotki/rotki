@@ -40,8 +40,8 @@ import CompoundCollateral from '@/components/defi/loan/loans/compound/CompoundCo
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import { usePremium } from '@/composables/premium';
 import { CompoundBorrowingDetails } from '@/premium/premium';
-import { CompoundLoan } from '@/services/defi/types/compound';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { CompoundLoan } from '@/types/defi/compound';
 import { uniqueStrings } from '@/utils/data';
 
 export default defineComponent({

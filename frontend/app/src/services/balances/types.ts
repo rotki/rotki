@@ -1,8 +1,7 @@
-import { Balance, NumericString } from '@rotki/common';
+import { Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { z } from 'zod';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
-import { TradeLocation } from '@/services/history/types';
 
 export type SupportedExternalExchanges = typeof EXTERNAL_EXCHANGES[number];
 
@@ -11,33 +10,9 @@ export enum BalanceType {
   LIABILITY = 'liability'
 }
 
-export const ManualBalance = z.object({
-  id: z.number().positive(),
-  asset: z.string(),
-  label: z.string(),
-  amount: NumericString,
-  location: TradeLocation,
-  tags: z.array(z.string()).nullable(),
-  balanceType: z.nativeEnum(BalanceType)
-});
-
-export type ManualBalance = z.infer<typeof ManualBalance>;
-
-export const ManualBalanceWithValue = ManualBalance.merge(
-  z.object({ usdValue: NumericString })
-);
-
-export type ManualBalanceWithValue = z.infer<typeof ManualBalanceWithValue>;
-
 export const Balances = z.record(Balance);
 
 export type Balances = z.infer<typeof Balances>;
-
-export const ManualBalances = z.object({
-  balances: z.array(ManualBalanceWithValue)
-});
-
-export type ManualBalances = z.infer<typeof ManualBalances>;
 
 const BlockchainTotals = z.object({
   assets: Balances,

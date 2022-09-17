@@ -3,12 +3,7 @@ import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import {
-  BalanceType,
-  ManualBalance,
-  ManualBalances,
-  ManualBalanceWithValue
-} from '@/services/balances/types';
+import { BalanceType } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
 import { useBalancePricesStore } from '@/store/balances/prices';
@@ -20,6 +15,11 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
+import {
+  ManualBalance,
+  ManualBalances,
+  ManualBalanceWithValue
+} from '@/types/manual-balances';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';

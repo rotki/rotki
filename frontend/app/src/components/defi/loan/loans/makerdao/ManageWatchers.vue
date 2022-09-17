@@ -45,8 +45,8 @@ import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { useTheme } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
-import { MakerDAOVaultModel } from '@/store/defi/types';
 import { useWatchersStore } from '@/store/session/watchers';
+import { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps({
   vault: {

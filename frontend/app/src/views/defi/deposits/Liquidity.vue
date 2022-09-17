@@ -31,7 +31,7 @@
 import { get, set } from '@vueuse/core';
 import { onMounted, ref } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { useRoute } from '@/composables/common';
+import { useRoute } from '@/composables/router';
 import { routesRef } from '@/router/routes';
 
 const Routes = get(routesRef);

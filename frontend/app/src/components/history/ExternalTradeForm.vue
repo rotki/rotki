@@ -289,13 +289,13 @@ import {
 import { useI18n } from 'vue-i18n-composable';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { NewTrade, Trade, TradeType } from '@/services/history/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { TradeEntry } from '@/store/history/types';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
+import { NewTrade, Trade, TradeType } from '@/types/history/trades';
 import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef, Zero } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';

@@ -122,7 +122,6 @@ import DashboardExpandableTable from '@/components/dashboard/DashboardExpandable
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
@@ -130,6 +129,7 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { Nullable } from '@/types';
+import { CURRENCY_USD } from '@/types/currencies';
 import { DashboardTableType } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { getSortItems } from '@/utils/assets';

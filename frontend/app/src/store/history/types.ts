@@ -1,16 +1,17 @@
+import { LedgerAction } from '@/types/history/ledger-actions';
+import { EntryMeta } from '@/types/history/meta';
+import { AssetMovement } from '@/types/history/movements';
+import { Trade } from '@/types/history/trades';
 import {
-  AssetMovement,
-  EntryMeta,
   EthTransaction,
   EthTransactionEvent,
-  LedgerAction,
-  Trade
-} from '@/services/history/types';
+  TxEntryMeta
+} from '@/types/history/tx';
 
 export type TradeEntry = Trade & EntryMeta;
 export type AssetMovementEntry = AssetMovement & EntryMeta;
 export type LedgerActionEntry = LedgerAction & EntryMeta;
-export type EthTransactionEntry = EthTransaction & EntryMeta;
+export type EthTransactionEntry = EthTransaction & TxEntryMeta;
 export type EthTransactionEventEntry = EthTransactionEvent & EntryMeta;
 
 export enum IgnoreActionType {

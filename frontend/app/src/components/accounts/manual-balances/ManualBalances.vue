@@ -75,9 +75,10 @@ import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBala
 import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
-import { useRouter } from '@/composables/common';
-import { BalanceType, ManualBalance } from '@/services/balances/types';
+import { useRouter } from '@/composables/router';
+import { BalanceType } from '@/services/balances/types';
 import { useManualBalancesStore } from '@/store/balances/manual';
+import { ManualBalance } from '@/types/manual-balances';
 
 const form = ref<any | null>(null);
 const balanceToEdit: Ref<ManualBalance | null> = ref(null);

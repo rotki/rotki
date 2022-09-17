@@ -45,7 +45,7 @@ import { get } from '@vueuse/core';
 import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { TradeLocation } from '@/services/history/types';
+import { TradeLocation } from '@/types/history/trade-location';
 import { TradeLocationData, tradeLocations } from '@/types/trades';
 
 const { t } = useI18n();

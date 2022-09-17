@@ -8,7 +8,7 @@
 import { get } from '@vueuse/core';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import { EventType } from '@/services/defi/types';
+import { EventType } from '@/types/defi/event-type';
 
 export default defineComponent({
   name: 'EventTypeDisplay',

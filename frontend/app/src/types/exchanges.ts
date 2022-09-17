@@ -1,6 +1,7 @@
 import { BigNumber } from '@rotki/common';
 import { z } from 'zod';
 import { AssetBalances } from '@/store/balances/types';
+import { Nullable } from '@/types';
 
 export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
@@ -50,3 +51,25 @@ export interface ExchangeInfo {
 }
 
 export type ExchangeData = { [exchange: string]: AssetBalances };
+
+export interface EditExchange {
+  readonly exchange: Exchange;
+  readonly newName: Nullable<string>;
+}
+
+export interface ExchangeSetupPayload {
+  readonly edit: Boolean;
+  readonly exchange: ExchangePayload;
+}
+
+export interface ExchangePayload {
+  readonly name: string;
+  readonly newName: Nullable<string>;
+  readonly location: SupportedExchange;
+  readonly apiKey: Nullable<string>;
+  readonly apiSecret: Nullable<string>;
+  readonly passphrase: Nullable<string>;
+  readonly krakenAccountType: Nullable<KrakenAccountType>;
+  readonly binanceMarkets: Nullable<string[]>;
+  readonly ftxSubaccount: Nullable<string>;
+}

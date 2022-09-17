@@ -3,7 +3,6 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
@@ -13,8 +12,6 @@ import { TaskType } from '@/types/task-type';
 
 export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
   const ignoredAssets = ref<string[]>([]);
-
-  const { fetchSupportedAssets } = useAssetInfoRetrieval();
   const { notify } = useNotifications();
   const { setMessage } = useMessageStore();
   const { t, tc } = useI18n();
@@ -117,7 +114,6 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
         success: true
       });
       await fetchIgnoredAssets();
-      await fetchSupportedAssets();
     } catch (e: any) {
       const title = tc('actions.session.update_ignored_assets.error.title');
       const message = tc(

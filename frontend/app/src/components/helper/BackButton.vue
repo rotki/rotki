@@ -17,7 +17,7 @@
 </template>
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n-composable';
-import { useRouter } from '@/composables/common';
+import { useRouter } from '@/composables/router';
 
 defineProps({
   canNavigateBack: { required: true, type: Boolean, default: false }

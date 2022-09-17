@@ -124,16 +124,16 @@ import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBal
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import { CURRENCY_USD } from '@/data/currencies';
 import { bigNumberSum } from '@/filters';
 import { BalanceType } from '@/services/balances/types';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { CURRENCY_USD } from '@/types/currencies';
 import {
   BalanceSnapshot,
   BalanceSnapshotPayload,
   Snapshot
-} from '@/store/balances/types';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+} from '@/types/snapshots';
 import { bigNumberify, One, sortDesc, Zero } from '@/utils/bignumbers';
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';

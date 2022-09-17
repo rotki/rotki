@@ -7,20 +7,22 @@ import { useModules } from '@/composables/session';
 import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
-import { dsrKeys, vaultDetailsKeys, vaultKeys } from '@/services/defi/consts';
-import { ApiMakerDAOVault } from '@/services/defi/types';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
-import {
-  DSRBalances,
-  DSRHistory,
-  MakerDAOVault,
-  MakerDAOVaultDetails
-} from '@/store/defi/types';
 import { useNotifications } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
+import {
+  ApiMakerDAOVault,
+  DSRBalances,
+  DSRHistory,
+  dsrKeys,
+  MakerDAOVault,
+  MakerDAOVaultDetails,
+  vaultDetailsKeys,
+  vaultKeys
+} from '@/types/defi/maker';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

@@ -1,5 +1,5 @@
-import { currencies } from '@/data/currencies';
 import { Defaults } from '@/data/defaults';
+import { currencies } from '@/types/currencies';
 import {
   AccountingSettings,
   CostBasisMethod,

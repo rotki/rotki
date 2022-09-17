@@ -1,23 +1,13 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { Constraints } from '@/data/constraints';
-import { findCurrency } from '@/data/currencies';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
+import { findCurrency } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { FrontendSettings } from '@/types/frontend-settings';
 import { LedgerActionEnum } from '@/types/ledger-actions';
 import { ModuleEnum } from '@/types/modules';
-
-export const PriceOracle = z.enum([
-  'cryptocompare',
-  'coingecko',
-  'manual',
-  'uniswapv3',
-  'uniswapv2',
-  'saddle',
-  'manualcurrent'
-]);
-export type PriceOracle = z.infer<typeof PriceOracle>;
+import { PriceOracle } from '@/types/price-oracle';
 
 const OtherSettings = z.object({
   krakenAccountType: KrakenAccountType.optional(),

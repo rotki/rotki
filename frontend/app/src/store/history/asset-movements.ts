@@ -1,20 +1,10 @@
-import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
-import {
-  AssetMovement,
-  AssetMovementCollectionResponse,
-  AssetMovementRequestPayload,
-  EntryWithMeta,
-  TradeLocation
-} from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { Section, Status } from '@/store/const';
-import { useHistory } from '@/store/history/index';
+import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { AssetMovementEntry } from '@/store/history/types';
 import {
   defaultHistoricPayloadState,
@@ -24,6 +14,13 @@ import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { Collection, CollectionResponse } from '@/types/collection';
 import { SupportedExchange } from '@/types/exchanges';
+import { EntryWithMeta } from '@/types/history/meta';
+import {
+  AssetMovement,
+  AssetMovementCollectionResponse,
+  AssetMovementRequestPayload
+} from '@/types/history/movements';
+import { TradeLocation } from '@/types/history/trade-location';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { exchangeName } from '@/types/trades';
@@ -42,9 +39,9 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
     defaultHistoricPayloadState<AssetMovement>()
   );
 
-  const history = useHistory();
-  const { associatedLocations } = storeToRefs(history);
-  const { fetchAssociatedLocations } = history;
+  const locationsStore = useAssociatedLocationsStore();
+  const { associatedLocations } = storeToRefs(locationsStore);
+  const { fetchAssociatedLocations } = locationsStore;
   const { tc } = useI18n();
 
   const fetchAssetMovements = async (

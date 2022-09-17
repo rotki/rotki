@@ -15,6 +15,7 @@
 import { get } from '@vueuse/core';
 import { computed, defineComponent, toRefs } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
+import { useNftAssetInfoStore } from '@/store/assets/nft';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 
 export default defineComponent({
@@ -38,14 +39,17 @@ export default defineComponent({
     const { asset, enableAssociation } = toRefs(props);
 
     const { assetInfo } = useAssetInfoRetrieval();
+    const { getNftDetails } = useNftAssetInfoStore();
 
     const currentAsset = computed(() => {
-      const details = get(assetInfo(get(asset), get(enableAssociation)));
+      const id = get(asset);
+      const info = getNftDetails(id) ?? assetInfo(id, get(enableAssociation));
+      const details = get(info);
 
       return {
-        symbol: details ? details.symbol : get(asset),
-        name: details ? details.name : get(asset),
-        identifier: details ? details.identifier : get(asset)
+        symbol: details ? details.symbol : id,
+        name: details ? details.name : id,
+        identifier: details ? details.identifier : id
       };
     });
 

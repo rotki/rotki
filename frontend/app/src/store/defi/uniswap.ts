@@ -10,7 +10,6 @@ import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
-import { uniswapEventsNumericKeys } from '@/store/defi/const';
 import {
   getBalances,
   getEventDetails,
@@ -20,6 +19,7 @@ import {
 import { fetchDataAsync } from '@/store/fetch-async';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { OnError } from '@/store/typing';
+import { uniswapEventsNumericKeys } from '@/types/defi/protocols';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

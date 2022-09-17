@@ -100,11 +100,11 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import { isSectionLoading } from '@/composables/common';
 import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
-import { NonFungibleBalance } from '@/store/balances/types';
 import { Section } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
+import { NonFungibleBalance } from '@/types/nfbalances';
 import { assert } from '@/utils/assertions';
 import { isVideo } from '@/utils/nft';
 

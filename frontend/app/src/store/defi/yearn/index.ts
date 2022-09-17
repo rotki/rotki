@@ -7,14 +7,6 @@ import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { DEPOSIT } from '@/services/defi/types/consts';
-import {
-  YearnVaultAsset,
-  YearnVaultBalance,
-  YearnVaultProfitLoss,
-  YearnVaultsBalances,
-  YearnVaultsHistory
-} from '@/services/defi/types/yearn';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section, Status } from '@/store/const';
@@ -22,6 +14,14 @@ import { useNotifications } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
+import {
+  DEPOSIT,
+  YearnVaultAsset,
+  YearnVaultBalance,
+  YearnVaultProfitLoss,
+  YearnVaultsBalances,
+  YearnVaultsHistory
+} from '@/types/defi/yearn';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

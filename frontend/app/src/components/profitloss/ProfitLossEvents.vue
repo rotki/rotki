@@ -135,8 +135,8 @@ import TransactionEventNote from '@/components/history/transactions/TransactionE
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
-import { useRoute } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
+import { useRoute } from '@/composables/router';
 import {
   ProfitLossEvent,
   ProfitLossEvents,
@@ -278,7 +278,7 @@ const updatePagination = async (options: PaginationOptions | null) => {
   }
   const { itemsPerPage, page } = options;
 
-  const reportId = parseInt(route.value.params.id);
+  const reportId = parseInt(get(route).params.id as string);
 
   emit('update:page', {
     reportId,

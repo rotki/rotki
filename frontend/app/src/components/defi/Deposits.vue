@@ -111,8 +111,9 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { useSectionLoading, useRoute } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
+import { useRoute } from '@/composables/router';
 import { useInterop } from '@/electron-interop';
 import {
   AaveEarnedDetails,
@@ -121,13 +122,13 @@ import {
   YearnVaultsProfitDetails
 } from '@/premium/premium';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import { Section } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import { useAaveStore } from '@/store/defi/aave';
 import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
 import { useYearnStore } from '@/store/defi/yearn';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { YearnVaultProfitLoss } from '@/types/defi/yearn';
 import { Module } from '@/types/modules';
 
 const section = Section.DEFI_LENDING;

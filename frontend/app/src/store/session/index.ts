@@ -25,6 +25,7 @@ import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import { useHistory } from '@/store/history';
+import { usePurgeStore } from '@/store/history/purge';
 import { useTxQueryStatus } from '@/store/history/query-status';
 import { useTransactions } from '@/store/history/transactions';
 import { useMainStore } from '@/store/main';
@@ -47,6 +48,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
+import { useStatusStore } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import {
@@ -401,7 +403,7 @@ export const useSessionStore = defineStore('session', () => {
   };
 
   const purgeCache = async (purgeable: Purgeable) => {
-    const { purgeExchange } = useHistory();
+    const { purgeExchange } = usePurgeStore();
     const { resetState } = useDefiStore();
     const { reset } = useStakingStore();
 
@@ -442,6 +444,7 @@ export const useSessionStore = defineStore('session', () => {
     useTagStore().reset();
     useWatchersStore().reset();
     useEthNamesStore().reset();
+    useStatusStore().reset();
   };
 
   return {

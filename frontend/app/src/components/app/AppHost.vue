@@ -7,6 +7,7 @@
     :class="{ ['app--animations-disabled']: !animationsEnabled }"
   >
     <slot />
+    <app-premium-manager />
   </v-app>
   <dev-app v-else />
 </template>
@@ -15,7 +16,8 @@
 import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed, defineAsyncComponent } from 'vue';
-import { useRoute } from '@/composables/common';
+import AppPremiumManager from '@/components/app/AppPremiumManager.vue';
+import { useRoute } from '@/composables/router';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { checkIfDevelopment } from '@/utils/env-utils';

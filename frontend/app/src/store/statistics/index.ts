@@ -7,7 +7,6 @@ import dayjs from 'dayjs';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
 import { setupLiquidityPosition } from '@/composables/defi';
-import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useBalancesStore } from '@/store/balances';
@@ -17,6 +16,7 @@ import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberify, One, Zero } from '@/utils/bignumbers';
 
 const defaultNetValue = () => ({

@@ -24,62 +24,43 @@
   </v-tooltip>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
-import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-import {
-  computed,
-  defineAsyncComponent,
-  defineComponent,
-  PropType,
-  toRefs
-} from 'vue';
+import { computed, defineAsyncComponent, PropType, toRefs } from 'vue';
 import { truncateAddress } from '@/filters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { randomHex } from '@/utils/data';
 
-export default defineComponent({
-  name: 'AccountDisplay',
-  components: {
-    AssetIcon: defineAsyncComponent(
-      () => import('@/components/helper/display/icons/AssetIcon.vue')
-    )
-  },
-  props: {
-    account: { required: true, type: Object as PropType<GeneralAccount> }
-  },
-  setup(props) {
-    const { account } = toRefs(props);
-    const { scrambleData, shouldShowAmount } = storeToRefs(
-      useSessionSettingsStore()
-    );
+const AssetIcon = defineAsyncComponent(
+  () => import('@/components/helper/display/icons/AssetIcon.vue')
+);
 
-    const { ethNameSelector } = useEthNamesStore();
+const props = defineProps({
+  account: { required: true, type: Object as PropType<GeneralAccount> }
+});
 
-    const address = computed<string>(() => {
-      if (!get(scrambleData)) {
-        return get(account).address;
-      }
-      return randomHex();
-    });
+const { account } = toRefs(props);
+const { scrambleData, shouldShowAmount } = storeToRefs(
+  useSessionSettingsStore()
+);
 
-    const ensName = computed<string | null>(() => {
-      if (!get(scrambleData)) {
-        return get(ethNameSelector(get(account).address));
-      }
+const { ethNameSelector } = useEthNamesStore();
 
-      return null;
-    });
-
-    return {
-      ensName,
-      address,
-      truncateAddress,
-      shouldShowAmount
-    };
+const address = computed<string>(() => {
+  if (!get(scrambleData)) {
+    return get(account).address;
   }
+  return randomHex();
+});
+
+const ensName = computed<string | null>(() => {
+  if (!get(scrambleData)) {
+    return get(ethNameSelector(get(account).address));
+  }
+
+  return null;
 });
 </script>
 

@@ -8,7 +8,6 @@ import {
 } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
-import { BackupApi } from '@/services/backup/backup-api';
 import { BalancesApi } from '@/services/balances/balances-api';
 import { api } from '@/services/rotkehlchen-api';
 import { usePremiumStore } from '@/store/session/premium';
@@ -16,11 +15,11 @@ import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
 import { stub } from '../../../common/utils';
 import '../../i18n';
 
-vi.spyOn(api, 'backups', 'get').mockReturnValue(
-  stub<BackupApi>({
+vi.mock('@/services/backup', () => ({
+  useBackupApi: () => ({
     info: vi.fn()
   })
-);
+}));
 
 vi.spyOn(api, 'balances', 'get').mockReturnValue(
   stub<BalancesApi>({

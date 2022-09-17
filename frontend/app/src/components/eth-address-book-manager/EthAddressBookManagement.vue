@@ -105,12 +105,12 @@ import EthAddressBookForm from '@/components/eth-address-book-manager/EthAddress
 import EthAddressBookTable from '@/components/eth-address-book-manager/EthAddressBookTable.vue';
 import EthNamesHint from '@/components/EthNamesHint.vue';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useMessageStore } from '@/store/message';
 import {
   EthAddressBookLocation,
   EthNamesEntry,
   EthNamesPayload
-} from '@/store/balances/types';
-import { useMessageStore } from '@/store/message';
+} from '@/types/eth-names';
 
 export default defineComponent({
   name: 'EthAddressBookManagement',

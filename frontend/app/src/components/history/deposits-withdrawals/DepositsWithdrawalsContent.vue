@@ -143,16 +143,10 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { isSectionLoading } from '@/composables/common';
 import { setupIgnore } from '@/composables/history';
 import { Routes } from '@/router/routes';
-import {
-  AssetMovement,
-  AssetMovementRequestPayload,
-  MovementCategory,
-  TradeLocation
-} from '@/services/history/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
-import { useHistory } from '@/store/history';
 import { useAssetMovements } from '@/store/history/asset-movements';
+import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import {
   AssetMovementEntry,
   IgnoreActionType,
@@ -161,6 +155,12 @@ import {
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';
 import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import {
+  AssetMovement,
+  AssetMovementRequestPayload,
+  MovementCategory
+} from '@/types/history/movements';
+import { TradeLocation } from '@/types/history/trade-location';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
@@ -215,13 +215,13 @@ export default defineComponent({
 
     const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 
-    const historyStore = useHistory();
+    const locationsStore = useAssociatedLocationsStore();
     const assetMovementStore = useAssetMovements();
     const assetInfoRetrievalStore = useAssetInfoRetrieval();
     const { supportedAssetsSymbol } = toRefs(assetInfoRetrievalStore);
     const { getAssetIdentifierForSymbol } = assetInfoRetrievalStore;
 
-    const { associatedLocations } = storeToRefs(historyStore);
+    const { associatedLocations } = storeToRefs(locationsStore);
     const { assetMovements } = storeToRefs(assetMovementStore);
 
     const { updateAssetMovementsPayload } = assetMovementStore;

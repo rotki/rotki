@@ -35,7 +35,7 @@ import { defineComponent, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import { CompoundLoan } from '@/services/defi/types/compound';
+import { CompoundLoan } from '@/types/defi/compound';
 import { totalCollateral } from '@/utils/total-collateral';
 
 export default defineComponent({

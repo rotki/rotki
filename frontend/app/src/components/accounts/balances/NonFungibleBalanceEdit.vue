@@ -33,7 +33,7 @@
 import { get, set } from '@vueuse/core';
 import { computed, onMounted, PropType, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { NonFungibleBalance } from '@/store/balances/types';
+import { NonFungibleBalance } from '@/types/nfbalances';
 import { assert } from '@/utils/assertions';
 
 const props = defineProps({

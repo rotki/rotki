@@ -6,10 +6,6 @@ import { useModules } from '@/composables/session';
 import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
-import {
-  CompoundBalances,
-  CompoundHistory
-} from '@/services/defi/types/compound';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
 import { toProfitLossModel } from '@/store/defi/utils';
@@ -17,6 +13,7 @@ import { useNotifications } from '@/store/notifications';
 import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { isLoading } from '@/store/utils';
+import { CompoundBalances, CompoundHistory } from '@/types/defi/compound';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

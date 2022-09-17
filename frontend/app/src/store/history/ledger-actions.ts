@@ -4,17 +4,9 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import { Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useStatusUpdater } from '@/composables/status';
-import {
-  EntryWithMeta,
-  LedgerAction,
-  LedgerActionCollectionResponse,
-  LedgerActionRequestPayload,
-  NewLedgerAction,
-  TradeLocation
-} from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
-import { useHistory } from '@/store/history/index';
+import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { LedgerActionEntry } from '@/store/history/types';
 import {
   defaultHistoricPayloadState,
@@ -25,6 +17,14 @@ import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { Collection, CollectionResponse } from '@/types/collection';
 import { SupportedExchange } from '@/types/exchanges';
+import {
+  LedgerAction,
+  LedgerActionCollectionResponse,
+  LedgerActionRequestPayload,
+  NewLedgerAction
+} from '@/types/history/ledger-actions';
+import { EntryWithMeta } from '@/types/history/meta';
+import { TradeLocation } from '@/types/history/trade-location';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { exchangeName } from '@/types/trades';
@@ -43,7 +43,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
     defaultHistoricPayloadState<LedgerAction>()
   );
 
-  const { fetchAssociatedLocations } = useHistory();
+  const { fetchAssociatedLocations } = useAssociatedLocationsStore();
   const { tc } = useI18n();
 
   const fetchLedgerActions = async (

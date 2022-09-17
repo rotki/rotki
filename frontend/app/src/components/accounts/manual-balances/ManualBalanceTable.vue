@@ -111,10 +111,10 @@ import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 
 import { aggregateTotal } from '@/filters';
-import { ManualBalance } from '@/services/balances/types';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { ManualBalance } from '@/types/manual-balances';
 import { assert } from '@/utils/assertions';
 import { One } from '@/utils/bignumbers';
 

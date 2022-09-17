@@ -91,15 +91,18 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
-import { useRouter } from '@/composables/common';
+import { useRouter } from '@/composables/router';
 import { useInterop } from '@/electron-interop';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { ExchangePayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Nullable, Writeable } from '@/types';
-import { Exchange, SupportedExchange } from '@/types/exchanges';
+import {
+  Exchange,
+  ExchangePayload,
+  SupportedExchange
+} from '@/types/exchanges';
 import { exchangeName } from '@/types/trades';
 import { assert } from '@/utils/assertions';
 

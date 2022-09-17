@@ -110,6 +110,7 @@ import { useInterop } from '@/electron-interop';
 import { Section } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import {
+  Airdrop,
   AIRDROP_1INCH,
   AIRDROP_CONVEX,
   AIRDROP_CORNICHON,
@@ -125,9 +126,9 @@ import {
   AIRDROP_POAP,
   AIRDROP_SADDLE,
   AIRDROP_TORNADO,
-  AIRDROP_UNISWAP
-} from '@/store/defi/const';
-import { Airdrop, AirdropType } from '@/store/defi/types';
+  AIRDROP_UNISWAP,
+  AirdropType
+} from '@/types/airdrops';
 import PoapDeliveryAirdrops from '@/views/defi/PoapDeliveryAirdrops.vue';
 
 type AirdropSource = {

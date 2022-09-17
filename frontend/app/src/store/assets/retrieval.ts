@@ -1,13 +1,9 @@
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { EVM_TOKEN } from '@/services/assets/consts';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { SupportedAssets } from '@/services/types-api';
-import { ERC20Token, NonFungibleBalance } from '@/store/balances/types';
+import { ERC20Token } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
@@ -15,7 +11,6 @@ import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
 import { uniqueStrings } from '@/utils/data';
-import { getNftBalance, isNft } from '@/utils/nft';
 
 export const useAssetInfoRetrieval = defineStore(
   'assets/infoRetrievals',
@@ -96,20 +91,6 @@ export const useAssetInfoRetrieval = defineStore(
     ) => {
       return computed<SupportedAsset | undefined>(() => {
         if (!identifier) return undefined;
-
-        if (isNft(identifier)) {
-          const nftBalance: NonFungibleBalance | null =
-            getNftBalance(identifier);
-
-          if (nftBalance) {
-            return {
-              identifier: nftBalance.id,
-              symbol: nftBalance.name,
-              name: nftBalance.name,
-              assetType: 'ethereum_token'
-            } as SupportedAsset;
-          }
-        }
 
         const asset = enableAssociation
           ? get(getAssociatedAsset(identifier))

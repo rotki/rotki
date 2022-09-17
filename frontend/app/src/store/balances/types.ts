@@ -1,19 +1,10 @@
-import { Balance, BigNumber, HasBalance, NumericString } from '@rotki/common';
+import { Balance, BigNumber, HasBalance } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { z } from 'zod';
-import { PriceInformation } from '@/services/assets/types';
-import { BalanceType } from '@/services/balances/types';
 import { Section } from '@/store/const';
-import { Nullable } from '@/types';
-import {
-  Exchange,
-  KrakenAccountType,
-  SupportedExchange
-} from '@/types/exchanges';
 import { Module } from '@/types/modules';
+import { PriceOracle } from '@/types/price-oracle';
 import { SupportedSubBlockchainProtocol } from '@/types/protocols';
-import { PriceOracle } from '@/types/user';
 
 export interface LocationBalance {
   readonly location: string;
@@ -30,28 +21,6 @@ export interface AssetBalances {
 
 export interface AccountAssetBalances {
   readonly [account: string]: AssetBalances;
-}
-
-export interface EditExchange {
-  readonly exchange: Exchange;
-  readonly newName: Nullable<string>;
-}
-
-export interface ExchangeSetupPayload {
-  readonly edit: Boolean;
-  readonly exchange: ExchangePayload;
-}
-
-export interface ExchangePayload {
-  readonly name: string;
-  readonly newName: Nullable<string>;
-  readonly location: SupportedExchange;
-  readonly apiKey: Nullable<string>;
-  readonly apiSecret: Nullable<string>;
-  readonly passphrase: Nullable<string>;
-  readonly krakenAccountType: Nullable<KrakenAccountType>;
-  readonly binanceMarkets: Nullable<string[]>;
-  readonly ftxSubaccount: Nullable<string>;
 }
 
 export enum XpubKeyType {
@@ -192,92 +161,3 @@ export interface ERC20Token {
   readonly name?: string;
   readonly symbol?: string;
 }
-
-export const NonFungibleBalance = PriceInformation.merge(
-  z.object({
-    name: z.string().nullable(),
-    id: z.string().nonempty(),
-    imageUrl: z.string().nullable(),
-    isLp: z.boolean().nullish(),
-    collectionName: z.string().nullable()
-  })
-);
-
-export type NonFungibleBalance = z.infer<typeof NonFungibleBalance>;
-
-const NonFungibleBalanceArray = z.array(NonFungibleBalance);
-
-export const NonFungibleBalances = z.record(NonFungibleBalanceArray);
-
-export type NonFungibleBalances = z.infer<typeof NonFungibleBalances>;
-
-export const EthNames = z.record(z.string().nullable());
-
-export type EthNames = z.infer<typeof EthNames>;
-
-export const EthNamesEntry = z.object({
-  address: z.string(),
-  name: z.string()
-});
-
-export type EthNamesEntry = z.infer<typeof EthNamesEntry>;
-
-export const EthNamesEntries = z.array(EthNamesEntry);
-
-export type EthNamesEntries = z.infer<typeof EthNamesEntries>;
-
-export const EthAddressBookLocation = z.enum(['global', 'private']);
-
-export const EthNamesPayload = EthNamesEntry.merge(
-  z.object({
-    location: EthAddressBookLocation
-  })
-);
-
-export type EthNamesPayload = z.infer<typeof EthNamesPayload>;
-
-export type EthAddressBookLocation = z.infer<typeof EthAddressBookLocation>;
-
-export const BalanceSnapshot = z.object({
-  timestamp: z.number(),
-  category: z.nativeEnum(BalanceType),
-  assetIdentifier: z.string(),
-  amount: NumericString,
-  usdValue: NumericString
-});
-
-export type BalanceSnapshot = z.infer<typeof BalanceSnapshot>;
-
-export type BalanceSnapshotPayload = {
-  timestamp: number;
-  category: BalanceType;
-  assetIdentifier: string;
-  amount: string;
-  usdValue: string;
-};
-
-export const LocationDataSnapshot = z.object({
-  timestamp: z.number(),
-  location: z.string(),
-  usdValue: NumericString
-});
-
-export type LocationDataSnapshot = z.infer<typeof LocationDataSnapshot>;
-
-export type LocationDataSnapshotPayload = {
-  timestamp: number;
-  location: string;
-  usdValue: string;
-};
-
-export const Snapshot = z.object({
-  balancesSnapshot: z.array(BalanceSnapshot),
-  locationDataSnapshot: z.array(LocationDataSnapshot)
-});
-
-export type Snapshot = z.infer<typeof Snapshot>;
-
-export type SnapshotPayload = {
-  balancesSnapshot: BalanceSnapshotPayload[];
-  locationDataSnapshot: LocationDataSnapshotPayload[];
-};

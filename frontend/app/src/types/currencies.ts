@@ -1,5 +1,12 @@
 import i18n from '@/i18n';
-import { Currency } from '@/types/currency';
+
+export class Currency {
+  constructor(
+    readonly name: string,
+    readonly tickerSymbol: SupportedCurrency,
+    readonly unicodeSymbol: string
+  ) {}
+}
 
 export const CURRENCY_USD = 'USD';
 const CURRENCY_EUR = 'EUR';

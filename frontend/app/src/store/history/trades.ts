@@ -4,17 +4,9 @@ import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useStatusUpdater } from '@/composables/status';
-import {
-  EntryWithMeta,
-  NewTrade,
-  Trade,
-  TradeCollectionResponse,
-  TradeLocation,
-  TradeRequestPayload
-} from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
-import { useHistory } from '@/store/history/index';
+import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { TradeEntry } from '@/store/history/types';
 import {
   defaultHistoricPayloadState,
@@ -25,6 +17,14 @@ import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { Collection, CollectionResponse } from '@/types/collection';
 import { SupportedExchange } from '@/types/exchanges';
+import { EntryWithMeta } from '@/types/history/meta';
+import { TradeLocation } from '@/types/history/trade-location';
+import {
+  NewTrade,
+  Trade,
+  TradeCollectionResponse,
+  TradeRequestPayload
+} from '@/types/history/trades';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { exchangeName } from '@/types/trades';
@@ -43,9 +43,9 @@ export const useTrades = defineStore('history/trades', () => {
     defaultHistoricPayloadState<Trade>()
   );
 
-  const history = useHistory();
-  const { associatedLocations } = storeToRefs(history);
-  const { fetchAssociatedLocations } = history;
+  const locationsStore = useAssociatedLocationsStore();
+  const { associatedLocations } = storeToRefs(locationsStore);
+  const { fetchAssociatedLocations } = locationsStore;
   const { tc } = useI18n();
 
   const fetchTrades = async (

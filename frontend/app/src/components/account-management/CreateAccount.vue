@@ -267,7 +267,7 @@ import { useI18n } from 'vue-i18n-composable';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { setupNewUser } from '@/composables/common';
+import { useMainStore } from '@/store/main';
 import { CreateAccountPayload } from '@/types/login';
 
 export default defineComponent({
@@ -281,7 +281,8 @@ export default defineComponent({
   setup(props, { emit }) {
     const { error } = toRefs(props);
 
-    const { newUser } = setupNewUser();
+    const store = useMainStore();
+    const { newUser } = toRefs(store);
     const username: Ref<string> = ref('');
     const password: Ref<string> = ref('');
     const passwordConfirm: Ref<string> = ref('');

@@ -4,14 +4,6 @@ import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useStatusUpdater } from '@/composables/status';
-import {
-  EntryWithMeta,
-  EthTransaction,
-  EthTransactionCollectionResponse,
-  NewEthTransactionEvent,
-  TradeRequestPayload,
-  TransactionRequestPayload
-} from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
@@ -26,6 +18,14 @@ import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { Collection, CollectionResponse } from '@/types/collection';
+import { EntryWithMeta } from '@/types/history/meta';
+import { TradeRequestPayload } from '@/types/history/trades';
+import {
+  EthTransaction,
+  EthTransactionCollectionResponse,
+  NewEthTransactionEvent,
+  TransactionRequestPayload
+} from '@/types/history/tx';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {

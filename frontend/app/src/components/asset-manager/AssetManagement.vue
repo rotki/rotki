@@ -14,7 +14,7 @@
           depressed
           :loading="isUpdateIgnoredAssetsLoading"
           :disabled="isUpdateIgnoredAssetsLoading"
-          @click="updateIgnoredAssets"
+          @click="update"
         >
           <v-icon class="mr-2">mdi-sync</v-icon>
           {{ tc('asset_management.sync_ignored_assets_list') }}
@@ -99,7 +99,7 @@ import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import { useRoute, useRouter } from '@/composables/common';
+import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/services/assets/consts';
 import { ManagedAsset } from '@/services/assets/types';
@@ -254,6 +254,11 @@ watch(identifier, identifier => {
 const ignoredAssetsStore = useIgnoredAssetsStore();
 const { ignoredAssets } = storeToRefs(ignoredAssetsStore);
 const { updateIgnoredAssets } = ignoredAssetsStore;
+
+const update = async () => {
+  await updateIgnoredAssets();
+  await fetchSupportedAssets();
+};
 
 const { isTaskRunning } = useTasks();
 const isUpdateIgnoredAssetsLoading = isTaskRunning(

@@ -196,14 +196,9 @@ import {
 import { useI18n } from 'vue-i18n-composable';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import { CURRENCY_USD } from '@/data/currencies';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import {
-  EthTransactionEvent,
-  NewEthTransactionEvent
-} from '@/services/history/types';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import {
   historyEventSubTypeData,
@@ -217,6 +212,11 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
+import { CURRENCY_USD } from '@/types/currencies';
+import {
+  EthTransactionEvent,
+  NewEthTransactionEvent
+} from '@/types/history/tx';
 import { TaskType } from '@/types/task-type';
 import { HistoryEventSubType, HistoryEventType } from '@/types/transaction';
 import { bigNumberifyFromRef, One, Zero } from '@/utils/bignumbers';

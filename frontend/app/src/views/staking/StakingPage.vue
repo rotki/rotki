@@ -123,7 +123,7 @@ import { computed, onBeforeMount, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { useRouter } from '@/composables/common';
+import { useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import AdexPage from '@/views/staking/AdexPage.vue';

@@ -16,8 +16,8 @@ import {
   TRADE_LOCATION_REALESTATE
 } from '@/data/defaults';
 import i18n from '@/i18n';
-import { TradeLocation } from '@/services/history/types';
 import { SupportedExchange } from '@/types/exchanges';
+import { TradeLocation } from '@/types/history/trade-location';
 import { assert } from '@/utils/assertions';
 
 export type TradeLocationData = {

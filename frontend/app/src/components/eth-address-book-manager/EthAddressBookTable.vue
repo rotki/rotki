@@ -40,13 +40,13 @@ import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
+import { useNotifications } from '@/store/notifications';
+import { Nullable } from '@/types';
 import {
   EthAddressBookLocation,
   EthNamesEntries,
   EthNamesEntry
-} from '@/store/balances/types';
-import { useNotifications } from '@/store/notifications';
-import { Nullable } from '@/types';
+} from '@/types/eth-names';
 
 const addressBookDeletion = (location: Ref<EthAddressBookLocation>) => {
   const pending = ref<Nullable<EthNamesEntry>>(null);

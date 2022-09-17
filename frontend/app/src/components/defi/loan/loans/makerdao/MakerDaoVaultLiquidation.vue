@@ -72,7 +72,7 @@ import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { useTheme } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
-import { MakerDAOVaultModel } from '@/store/defi/types';
+import { MakerDAOVaultModel } from '@/types/defi/maker';
 import { Zero } from '@/utils/bignumbers';
 
 const assetPadding = 3;

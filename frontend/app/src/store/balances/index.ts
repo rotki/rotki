@@ -6,7 +6,6 @@ import {
 } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
-import { get, set } from '@vueuse/core';
 import { forEach } from 'lodash';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
@@ -16,8 +15,7 @@ import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { bigNumberSum } from '@/filters';
 import {
   BlockchainAssetBalances,
-  BtcBalances,
-  ManualBalanceWithValue
+  BtcBalances
 } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
@@ -33,9 +31,7 @@ import {
   AllBalancePayload,
   AssetBreakdown,
   FetchPricePayload,
-  LocationBalance,
-  NonFungibleBalance,
-  NonFungibleBalances
+  LocationBalance
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
@@ -44,7 +40,9 @@ import { setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { Writeable } from '@/types';
 import { Exchange, ExchangeData, ExchangeInfo } from '@/types/exchanges';
+import { ManualBalanceWithValue } from '@/types/manual-balances';
 import { Module } from '@/types/modules';
+import { NonFungibleBalance, NonFungibleBalances } from '@/types/nfbalances';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ReadOnlyTag } from '@/types/user';

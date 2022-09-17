@@ -201,23 +201,24 @@ import LedgerActionForm, {
 } from '@/components/history/LedgerActionForm.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { isSectionLoading, useRoute, useRouter } from '@/composables/common';
+import { isSectionLoading } from '@/composables/common';
 import { setupIgnore } from '@/composables/history';
+import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
-import {
-  LedgerAction,
-  LedgerActionRequestPayload,
-  NewLedgerAction,
-  TradeLocation
-} from '@/services/history/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
-import { useHistory } from '@/store/history';
+import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { Collection } from '@/types/collection';
 import { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import {
+  LedgerAction,
+  LedgerActionRequestPayload,
+  NewLedgerAction
+} from '@/types/history/ledger-actions';
+import { TradeLocation } from '@/types/history/trade-location';
 import { LedgerActionType } from '@/types/ledger-actions';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
@@ -259,13 +260,13 @@ const { locationOverview } = toRefs(props);
 
 const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 
-const historyStore = useHistory();
+const locationsStore = useAssociatedLocationsStore();
 const ledgerActionStore = useLedgerActions();
 const assetInfoRetrievalStore = useAssetInfoRetrieval();
 const { supportedAssetsSymbol } = toRefs(assetInfoRetrievalStore);
 const { getAssetIdentifierForSymbol } = assetInfoRetrievalStore;
 
-const { associatedLocations } = storeToRefs(historyStore);
+const { associatedLocations } = storeToRefs(locationsStore);
 const { ledgerActions } = storeToRefs(ledgerActionStore);
 const {
   addLedgerAction,

@@ -1,6 +1,10 @@
 import { Balance, HasBalance } from '@rotki/common';
-import { COMPOUND_EVENT_TYPES } from '@/services/defi/consts';
-import { Collateral, CollateralizedLoan } from '@/store/defi/types';
+import {
+  DEFI_EVENT_BORROW,
+  DEFI_EVENT_LIQUIDATION,
+  DEFI_EVENT_REPAY
+} from '@/services/defi/events';
+import { Collateral, CollateralizedLoan } from '@/types/defi/index';
 
 interface CompoundReward extends HasBalance {}
 
@@ -34,6 +38,14 @@ export interface CompoundBalances {
   readonly [address: string]: CompoundBalance;
 }
 
+export const COMPOUND_EVENT_TYPES = [
+  'mint',
+  'redeem',
+  DEFI_EVENT_BORROW,
+  DEFI_EVENT_REPAY,
+  DEFI_EVENT_LIQUIDATION,
+  'comp'
+] as const;
 export type CompoundEventType = typeof COMPOUND_EVENT_TYPES[number];
 
 interface CompoundEvent {
@@ -54,7 +66,7 @@ interface CompoundAssetProfitAndLoss {
   readonly [asset: string]: Balance;
 }
 
-interface CompoundProfitAndLoss {
+export interface CompoundProfitAndLoss {
   readonly [address: string]: CompoundAssetProfitAndLoss;
 }
 

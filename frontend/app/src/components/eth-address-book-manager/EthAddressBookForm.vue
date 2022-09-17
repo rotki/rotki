@@ -44,13 +44,10 @@
 
 <script setup lang="ts">
 import { get, set } from '@vueuse/core';
-import { computed, ref, toRefs, watch, PropType } from 'vue';
+import { computed, PropType, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
-import {
-  EthAddressBookLocation,
-  EthNamesPayload
-} from '@/store/balances/types';
+import { EthAddressBookLocation, EthNamesPayload } from '@/types/eth-names';
 import { sanitizeAddress, toSentenceCase } from '@/utils/text';
 
 const props = defineProps({

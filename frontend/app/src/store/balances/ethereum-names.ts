@@ -4,14 +4,14 @@ import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { api } from '@/services/rotkehlchen-api';
+import { useNotifications } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useTasks } from '@/store/tasks';
 import {
   EthAddressBookLocation,
   EthNames,
   EthNamesEntries
-} from '@/store/balances/types';
-import { useNotifications } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTasks } from '@/store/tasks';
+} from '@/types/eth-names';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
