@@ -659,12 +659,14 @@ class GlobalDBHandler():
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 write_cursor.execute(
                     'UPDATE common_asset_details SET symbol=?, coingecko=?, '
-                    'cryptocompare=?, forked=? WHERE identifier=?;',
+                    'cryptocompare=?, forked=?, started=?, swapped_for=? WHERE identifier=?;',
                     (
                         entry.symbol,
                         entry.coingecko,
                         entry.cryptocompare,
                         entry.forked.identifier if entry.forked else None,
+                        entry.started,
+                        entry.swapped_for.identifier if entry.swapped_for else None,
                         entry.identifier,
                     ),
                 )
@@ -677,15 +679,13 @@ class GlobalDBHandler():
                 )
                 write_cursor.execute(
                     'UPDATE evm_tokens SET token_kind=?, chain=?, address=?, decimals=?, '
-                    'protocol=?, started=?, swapped_for=? WHERE identifier=?',
+                    'protocol=? WHERE identifier=?',
                     (
                         entry.token_kind.serialize_for_db(),
                         entry.chain.serialize_for_db(),
                         entry.evm_address,
                         entry.decimals,
                         entry.protocol,
-                        entry.started,
-                        entry.swapped_for.identifier if entry.swapped_for else None,
                         entry.identifier,
                     ),
                 )
@@ -767,12 +767,15 @@ class GlobalDBHandler():
             try:
                 write_cursor.execute(
                     'UPDATE common_asset_details SET symbol=?, '
-                    'coingecko=?, cryptocompare=?, forked=? WHERE identifier=?',
+                    'coingecko=?, cryptocompare=?, forked=?, started=?, swapped_for=? '
+                    'WHERE identifier=?',
                     (
                         data.get('symbol'),
                         data.get('coingecko'),
                         data.get('cryptocompare', ''),
                         forked,
+                        data.get('started'),
+                        swapped_for,
                         identifier,
                     ),
                 )
@@ -790,12 +793,10 @@ class GlobalDBHandler():
 
             try:
                 write_cursor.execute(
-                    'UPDATE assets SET name=?, type=?, started=?, swapped_for=? WHERE identifier=?',  # noqa: E501
+                    'UPDATE assets SET name=?, type=? WHERE identifier=?',
                     (
                         data.get('name'),
                         data['asset_type'].serialize_for_db(),
-                        data.get('started'),
-                        swapped_for,
                         identifier,
                     ),
                 )

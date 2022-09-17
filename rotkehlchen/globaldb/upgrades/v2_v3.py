@@ -469,7 +469,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         CREATE TABLE IF NOT EXISTS custom_assets(
             identifier TEXT NOT NULL PRIMARY KEY,
             notes TEXT,
-            type TEXT,
+            type TEXT NOT NULL,
             FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
         );
         """)  # noqa: E501

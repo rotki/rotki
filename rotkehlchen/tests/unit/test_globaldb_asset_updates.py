@@ -24,21 +24,21 @@ def fixture_assets_updater(messages_aggregator):
             18,
             NULL
         );
-        INSERT INTO assets(identifier, name, type, started, swapped_for)
+        INSERT INTO assets(identifier, name, type)
         VALUES(
             "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015",
             "Aidus",
-            "C",
-            123,
-            NULL
+            "C"
         );
         INSERT INTO common_asset_details(identifier, symbol, coingecko,
-        cryptocompare, forked)
+        cryptocompare, forked, started, swapped_for)
         VALUES(
             "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015",
             "AID",
             NULL,
             "AIDU",
+            NULL,
+            123,
             NULL
         );
         """,
@@ -62,22 +62,22 @@ def fixture_assets_updater(messages_aggregator):
     ),
     (
         """
-        INSERT INTO assets(identifier, name, type, started, swapped_for)
+        INSERT INTO assets(identifier, name, type)
         VALUES(
             "121-ada-FADS-as",
             "A name",
-            "F",
-            NULL,
-            NULL
+            "F"
         );
         INSERT INTO common_asset_details(identifier, symbol, coingecko,
-        cryptocompare, forked)
+        cryptocompare, forked, started, swapped_for)
         VALUES(
             "121-ada-FADS-as",
             "SYMBOL",
             "",
             "",
-            "421-bbc-FADS-ks"
+            "421-bbc-FADS-ks",
+            NULL,
+            NULL
         );
         """,
         AssetData(
@@ -109,22 +109,22 @@ def fixture_assets_updater(messages_aggregator):
             18,
             "uniswap"
         );
-        INSERT INTO assets(identifier, name, type, started, swapped_for)
+        INSERT INTO assets(identifier, name, type)
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "Test token",
-            "C",
-            123,
-            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
+            "C"
         );
         INSERT INTO common_asset_details(identifier, symbol, coingecko,
-        cryptocompare, forked)
+        cryptocompare, forked, started, swapped_for)
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "TEST",
             "test-token",
             "",
-            NULL
+            NULL,
+            123,
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
         );
 """,
         AssetData(
@@ -156,22 +156,22 @@ def fixture_assets_updater(messages_aggregator):
             18,
             "uniswap"
         );
-        INSERT INTO assets(identifier, name, type, started, swapped_for)
+        INSERT INTO assets(identifier, name, type)
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "Test token",
-            "C",
-            123,
-            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
+            "C"
         );
         INSERT INTO common_asset_details(identifier, symbol, coingecko,
-        cryptocompare, forked)
+        cryptocompare, forked, started, swapped_for)
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "TEST",
                         "test-token",
             "",
-            NULL
+            NULL,
+            123,
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
         );
 """,
         AssetData(
@@ -202,22 +202,22 @@ def fixture_assets_updater(messages_aggregator):
             18,
             "uniswap"
         );
-        INSERT INTO assets(identifier, name, type, started, swapped_for)
+        INSERT INTO assets(identifier, name, type)
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "Test token",
-            "C",
-            123,
-            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
+            "C"
         );
         INSERT INTO common_asset_details(identifier, symbol, coingecko,
-        cryptocompare, forked)
+        cryptocompare, forked, started, swapped_for)
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "TEST",
                         "test-token",
             "",
-            NULL
+            NULL,
+            123,
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
         );
 """,
         None,
@@ -234,25 +234,25 @@ def fixture_assets_updater(messages_aggregator):
             18,
             "uniswap"
         );
-        INSERT INTO assets(identifier, name, type, started, swapped_for)
+        INSERT INTO assets(identifier, name, type)
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "Test token",
-            "C",
-            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
+            "C"
         );
         INSERT INTO common_asset_details(identifier, symbol, coingecko,
-        cryptocompare, forked)
+        cryptocompare, forked, started, swapped_for)
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "TEST" ,
             "test-token",
             "",
-            NULL
+            NULL,
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
         );
         """,
         None,
-        'At asset DB update could not parse asset data out of',
+        'At asset DB update could not parse common asset details data out of',
     ),
     (
         """
@@ -265,21 +265,21 @@ def fixture_assets_updater(messages_aggregator):
             18,
             "uniswap"
         );
-        INSERT INTO assets(identifier, name, type, started, swapped_for)
+        INSERT INTO assets(identifier, name, type)
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "Test token",
-            "C",
-            123,
-            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
+            "C"
         );
         INSERT INTO common_asset_details(identifier, symbol, coingecko,
-        cryptocompare, forked)
+        cryptocompare, forked, started, swapped_for)
         VALUES(
             "eip155:1/erc20:0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C",
             "TEST",
             "",
-            NULL
+            NULL,
+            123,
+            "eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015"
         );
         """,
         None,

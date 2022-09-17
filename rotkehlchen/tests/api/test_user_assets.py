@@ -763,7 +763,7 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
             'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (glm_id,),
         ).fetchone()[0] == 1
         assert global_cursor.execute(
-            'SELECT COUNT(*) FROM assets WHERE swapped_for=?', (glm_id,),
+            'SELECT COUNT(*) FROM common_asset_details WHERE swapped_for=?', (glm_id,),
         ).fetchone()[0] == 1
         assert cursor.execute(
             'SELECT COUNT(*) FROM assets WHERE identifier=?', (glm_id,),
