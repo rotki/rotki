@@ -484,7 +484,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
     )
     assert_proper_response(response)
     # Check that with the MKR deletion `swapped_for` was set to null
-    new_swapped_for = cursor.execute('SELECT swapped_for FROM assets WHERE identifier = ?', (token0_id,)).fetchone()  # noqa: E501
+    new_swapped_for = cursor.execute('SELECT swapped_for FROM common_asset_details WHERE identifier = ?', (token0_id,)).fetchone()  # noqa: E501
     assert new_swapped_for is not None and new_swapped_for[0] is None
 
     # now test that deleting the token with underlying tokens works

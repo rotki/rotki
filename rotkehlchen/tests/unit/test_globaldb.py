@@ -503,15 +503,16 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     )
     cursor.execute(
         """
-        INSERT INTO assets(identifier, name, type, started, swapped_for) VALUES(
-        "eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "Aidus", "C", 123, NULL)
+        INSERT INTO assets(identifier, name, type) VALUES(
+        "eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "Aidus", "C")
         """,
     )
     cursor.execute(
         """
         INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare,
-        forked) VALUES("eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017",
-        NULL, "AIDU", "", NULL);
+        forked, started, swapped_for)
+        VALUES("eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017",
+        NULL, "AIDU", "", NULL, 123, NULL);
         """,
     )
     # activate them again should fail since we haven't finished
