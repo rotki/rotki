@@ -29,7 +29,7 @@ import { useI18n } from 'vue-i18n-composable';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import ManageWatchers from '@/components/defi/loan/loans/makerdao/ManageWatchers.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import { MakerDAOVaultModel } from '@/store/defi/types';
+import { MakerDAOVaultModel } from '@/types/defi/maker';
 
 export default defineComponent({
   name: 'MakerDaoVaultCollateral',

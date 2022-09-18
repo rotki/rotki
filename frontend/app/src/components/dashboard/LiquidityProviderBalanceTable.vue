@@ -112,7 +112,7 @@ import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelecto
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { usePremium } from '@/composables/premium';
 import { Routes } from '@/router/routes';
@@ -219,7 +219,7 @@ const tableHeaders = createTableHeaders(
   dashboardTablesVisibleColumns
 );
 
-const { isSectionRefreshing } = setupStatusChecking();
+const { isSectionRefreshing } = useSectionLoading();
 const uniswapV3BalancesLoading = isSectionRefreshing(
   Section.DEFI_UNISWAP_V3_BALANCES
 );

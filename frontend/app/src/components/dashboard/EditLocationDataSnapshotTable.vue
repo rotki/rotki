@@ -91,13 +91,13 @@ import { DataTableHeader } from 'vuetify';
 import EditLocationDataSnapshotForm from '@/components/dashboard/EditLocationDataSnapshotForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import { CURRENCY_USD } from '@/data/currencies';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { CURRENCY_USD } from '@/types/currencies';
 import {
   LocationDataSnapshot,
   LocationDataSnapshotPayload
-} from '@/store/balances/types';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+} from '@/types/snapshots';
 import { bigNumberify, One, sortDesc, Zero } from '@/utils/bignumbers';
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };

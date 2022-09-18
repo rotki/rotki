@@ -12,8 +12,6 @@ import {
 } from '@/services/axios-tranformers';
 import {
   EthDetectedTokensRecord,
-  ManualBalance,
-  ManualBalances,
   OracleCacheMeta
 } from '@/services/balances/types';
 import {
@@ -29,15 +27,16 @@ import {
   validWithSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
+import { Eth2Validator } from '@/types/balances';
 import {
   EthAddressBookLocation,
   EthNames,
   EthNamesEntries
-} from '@/store/balances/types';
-import { Eth2Validator } from '@/types/balances';
+} from '@/types/eth-names';
 import { SupportedExchange } from '@/types/exchanges';
+import { ManualBalance, ManualBalances } from '@/types/manual-balances';
 import { Module } from '@/types/modules';
-import { PriceOracle } from '@/types/user';
+import { PriceOracle } from '@/types/price-oracle';
 
 export class BalancesApi {
   private readonly axios: AxiosInstance;

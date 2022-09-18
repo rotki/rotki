@@ -15,7 +15,7 @@ import { onBeforeMount } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import DepositsWithdrawalsContent from '@/components/history/deposits-withdrawals/DepositsWithdrawalsContent.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useAssetMovements } from '@/store/history/asset-movements';
 
@@ -25,7 +25,7 @@ onBeforeMount(async () => {
   await fetchAssetMovements();
 });
 
-const { shouldShowLoadingScreen } = setupStatusChecking();
+const { shouldShowLoadingScreen } = useSectionLoading();
 const loading = shouldShowLoadingScreen(Section.ASSET_MOVEMENT);
 
 const { t } = useI18n();

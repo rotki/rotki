@@ -26,25 +26,6 @@ const notificationDefaults = (): NotificationPayload => ({
   display: false
 });
 
-const handleNotification = async (message: string, isWarning: boolean) => {
-  try {
-    const object = JSON.parse(message);
-    if (!object.type) {
-      await handleLegacyMessage(message, isWarning);
-    }
-
-    if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
-      await handleSnapshotError(object);
-    } else if (object.type === SocketMessageType.ETHEREUM_TRANSACTION_STATUS) {
-      await handleEthereumTransactionStatus(object);
-    } else {
-      logger.error('unsupported message:', message);
-    }
-  } catch (e: any) {
-    await handleLegacyMessage(message, isWarning);
-  }
-};
-
 const createNotification = (
   id: number = 0,
   { display, duration, message, severity, title }: NotificationPayload = {
@@ -131,6 +112,27 @@ export const useNotifications = defineStore('notifications', () => {
       notifications[index] = { ...notifications[index], display: false };
     }
     setNotifications(notifications);
+  };
+
+  const handleNotification = async (message: string, isWarning: boolean) => {
+    try {
+      const object = JSON.parse(message);
+      if (!object.type) {
+        notify(handleLegacyMessage(message, isWarning));
+      }
+
+      if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
+        notify(handleSnapshotError(object));
+      } else if (
+        object.type === SocketMessageType.ETHEREUM_TRANSACTION_STATUS
+      ) {
+        await handleEthereumTransactionStatus(object);
+      } else {
+        logger.error('unsupported message:', message);
+      }
+    } catch (e: any) {
+      notify(handleLegacyMessage(message, isWarning));
+    }
   };
 
   const consume = async (): Promise<void> => {

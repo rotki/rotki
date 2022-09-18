@@ -16,8 +16,8 @@ import { get } from '@vueuse/core';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import HashLink from '@/components/helper/HashLink.vue';
-import { AssetMovement } from '@/services/history/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { AssetMovement } from '@/types/history/movements';
 
 export default defineComponent({
   name: 'MovementLinks',

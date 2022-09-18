@@ -54,7 +54,7 @@
     "vue": "2.7.10",
     "vue-i18n": "8.27.0",
     "vue-i18n-composable": "2.0.0",
-    "vue-router": "3.5.3",
+    "vue-router": "3.6.5",
     "vuetify": "2.6.9",
     "zod": "3.19.0"
   },

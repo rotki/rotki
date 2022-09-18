@@ -10,22 +10,19 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancesStore } from '@/store/balances/index';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import {
-  AssetBalances,
-  EditExchange,
-  ExchangeBalancePayload,
-  ExchangeSetupPayload
-} from '@/store/balances/types';
+import { AssetBalances, ExchangeBalancePayload } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
-import { useHistory } from '@/store/history';
+import { usePurgeStore } from '@/store/history/purge';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
+import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import { getStatus, setStatus } from '@/store/utils';
 import {
+  EditExchange,
   Exchange,
   ExchangeData,
   ExchangeInfo,
+  ExchangeSetupPayload,
   SupportedExchange
 } from '@/types/exchanges';
 import { ExchangeMeta } from '@/types/task';
@@ -45,7 +42,7 @@ export const useExchangeBalancesStore = defineStore(
     const { awaitTask, isTaskRunning, metadata } = useTasks();
     const { notify } = useNotifications();
     const { setMessage } = useMessageStore();
-    const { purgeHistoryLocation } = useHistory();
+    const { purgeHistoryLocation } = usePurgeStore();
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
 

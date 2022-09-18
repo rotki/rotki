@@ -14,7 +14,7 @@
 import { get, useIntervalFn } from '@vueuse/core';
 import { defineAsyncComponent, onBeforeMount, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { isSectionLoading, setupStatusChecking } from '@/composables/common';
+import { isSectionLoading, useSectionLoading } from '@/composables/common';
 import { Section } from '@/store/const';
 import { useTransactions } from '@/store/history/transactions';
 import { useTasks } from '@/store/tasks';
@@ -56,7 +56,7 @@ onUnmounted(() => {
   pause();
 });
 
-const { shouldShowLoadingScreen } = setupStatusChecking();
+const { shouldShowLoadingScreen } = useSectionLoading();
 
 const loading = shouldShowLoadingScreen(Section.TX);
 

@@ -4,22 +4,23 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, Ref, ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
+import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
-import {
-  uniswapEventsNumericKeys,
-  uniswapNumericKeys
-} from '@/store/defi/const';
 import {
   getBalances,
   getEventDetails,
   getPoolProfit,
   getPools
 } from '@/store/defi/xswap-utils';
+import { fetchDataAsync } from '@/store/fetch-async';
 import { OnError } from '@/store/typing';
-import { fetchDataAsync, getStatusUpdater } from '@/store/utils';
+import {
+  uniswapEventsNumericKeys,
+  uniswapNumericKeys
+} from '@/types/defi/protocols';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -131,7 +132,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   }
 
   async function reset() {
-    const { resetStatus } = getStatusUpdater(Section.DEFI_SUSHISWAP_BALANCES);
+    const { resetStatus } = useStatusUpdater(Section.DEFI_SUSHISWAP_BALANCES);
     set(balances, {});
     set(events, {});
     resetStatus();

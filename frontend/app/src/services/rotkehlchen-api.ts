@@ -11,7 +11,6 @@ import {
   TimedBalances
 } from '@rotki/common/lib/statistics';
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { SupportedCurrency } from '@/data/currencies';
 import { AssetApi } from '@/services/assets/asset-api';
 import {
   axiosNoRootCamelCaseTransformer,
@@ -19,11 +18,9 @@ import {
   getUpdatedKey,
   setupTransformer
 } from '@/services/axios-tranformers';
-import { BackupApi } from '@/services/backup/backup-api';
 import { BalancesApi } from '@/services/balances/balances-api';
 import { basicAxiosTransformer } from '@/services/consts';
 import { DefiApi } from '@/services/defi/defi-api';
-import { IgnoredActions } from '@/services/history/const';
 import { HistoryApi } from '@/services/history/history-api';
 import { ReportsApi } from '@/services/reports/reports-api';
 import {
@@ -51,18 +48,16 @@ import {
   validWithSessionStatus
 } from '@/services/utils';
 import {
-  AccountPayload,
   AllBalancePayload,
   BlockchainAccountPayload,
-  ExchangePayload,
-  Snapshot,
-  SnapshotPayload,
   XpubPayload
 } from '@/store/balances/types';
 import { IgnoreActionType } from '@/store/history/types';
 import { SyncConflictPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
-import { Exchange, Exchanges } from '@/types/exchanges';
+import { SupportedCurrency } from '@/types/currencies';
+import { Exchange, ExchangePayload, Exchanges } from '@/types/exchanges';
+import { IgnoredActions } from '@/types/history/ignored';
 import {
   AccountSession,
   CreateAccountPayload,
@@ -70,6 +65,7 @@ import {
   SyncConflictError
 } from '@/types/login';
 import { EthereumRpcNode, EthereumRpcNodeList } from '@/types/settings';
+import { Snapshot, SnapshotPayload } from '@/types/snapshots';
 import {
   emptyPagination,
   KrakenStakingEvents,
@@ -97,7 +93,6 @@ export class RotkehlchenApi {
   private _history: HistoryApi;
   private _reports: ReportsApi;
   private _assets: AssetApi;
-  private _backups: BackupApi;
   private _serverUrl: string;
   private signal = axios.CancelToken.source();
   private readonly pathname: string;
@@ -137,8 +132,7 @@ export class RotkehlchenApi {
     balances: new BalancesApi(axios),
     history: new HistoryApi(axios),
     reports: new ReportsApi(axios),
-    assets: new AssetApi(axios),
-    backups: new BackupApi(axios)
+    assets: new AssetApi(axios)
   });
 
   constructor() {
@@ -154,8 +148,7 @@ export class RotkehlchenApi {
       balances: this._balances,
       history: this._history,
       reports: this._reports,
-      assets: this._assets,
-      backups: this._backups
+      assets: this._assets
     } = this.setupApis(this.axios));
   }
 
@@ -179,10 +172,6 @@ export class RotkehlchenApi {
     return this._assets;
   }
 
-  get backups(): BackupApi {
-    return this._backups;
-  }
-
   setup(serverUrl: string) {
     this._serverUrl = serverUrl;
     this.axios = axios.create({
@@ -195,8 +184,7 @@ export class RotkehlchenApi {
       balances: this._balances,
       history: this._history,
       reports: this._reports,
-      assets: this._assets,
-      backups: this._backups
+      assets: this._assets
     } = this.setupApis(this.axios));
   }
 
@@ -658,12 +646,6 @@ export class RotkehlchenApi {
           ]
         };
     return this.performAsyncQuery(url, payload);
-  }
-
-  addBlockchainAccounts(chain: Blockchain, payload: AccountPayload[]) {
-    return this.performAsyncQuery(`/blockchains/${chain}`, {
-      accounts: payload
-    });
   }
 
   private async performAsyncQuery(url: string, payload: any) {

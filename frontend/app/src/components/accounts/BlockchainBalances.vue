@@ -220,7 +220,7 @@ import AccountForm, {
 import AssetBalances from '@/components/AssetBalances.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { useRoute, useRouter } from '@/composables/common';
+import { useRoute, useRouter } from '@/composables/router';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { BlockchainAccountWithBalance } from '@/store/balances/types';

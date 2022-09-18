@@ -5,6 +5,7 @@ import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { useStatusUpdater } from '@/composables/status';
 import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop, useInterop } from '@/electron-interop';
@@ -24,6 +25,7 @@ import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { Section, Status } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import { useHistory } from '@/store/history';
+import { usePurgeStore } from '@/store/history/purge';
 import { useTxQueryStatus } from '@/store/history/query-status';
 import { useTransactions } from '@/store/history/transactions';
 import { useMainStore } from '@/store/main';
@@ -46,9 +48,9 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStakingStore } from '@/store/staking';
 import { useStatisticsStore } from '@/store/statistics';
+import { useStatusStore } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
-import { getStatusUpdater } from '@/store/utils';
 import {
   Exchange,
   SUPPORTED_EXCHANGES,
@@ -209,8 +211,8 @@ export const useSessionStore = defineStore('session', () => {
       if (!isNew || sync) {
         startPromise(refreshData(exchanges));
       } else {
-        const ethUpdater = getStatusUpdater(Section.BLOCKCHAIN_ETH);
-        const btcUpdater = getStatusUpdater(Section.BLOCKCHAIN_BTC);
+        const ethUpdater = useStatusUpdater(Section.BLOCKCHAIN_ETH);
+        const btcUpdater = useStatusUpdater(Section.BLOCKCHAIN_BTC);
         ethUpdater.setStatus(Status.LOADED);
         btcUpdater.setStatus(Status.LOADED);
       }
@@ -401,7 +403,7 @@ export const useSessionStore = defineStore('session', () => {
   };
 
   const purgeCache = async (purgeable: Purgeable) => {
-    const { purgeExchange } = useHistory();
+    const { purgeExchange } = usePurgeStore();
     const { resetState } = useDefiStore();
     const { reset } = useStakingStore();
 
@@ -442,6 +444,7 @@ export const useSessionStore = defineStore('session', () => {
     useTagStore().reset();
     useWatchersStore().reset();
     useEthNamesStore().reset();
+    useStatusStore().reset();
   };
 
   return {

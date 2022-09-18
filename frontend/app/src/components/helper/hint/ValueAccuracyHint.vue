@@ -14,8 +14,8 @@ import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { CURRENCY_USD } from '@/data/currencies';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { CURRENCY_USD } from '@/types/currencies';
 
 const { t } = useI18n();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

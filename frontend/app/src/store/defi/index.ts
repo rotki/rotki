@@ -18,38 +18,41 @@ import { Section, Status } from '@/store/const';
 import { useAaveStore } from '@/store/defi/aave';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useCompoundStore } from '@/store/defi/compound';
-import {
-  AAVE,
-  AIRDROP_POAP,
-  COMPOUND,
-  getProtocolIcon,
-  LIQUITY,
-  MAKERDAO_DSR,
-  MAKERDAO_VAULTS,
-  YEARN_FINANCE_VAULTS,
-  YEARN_FINANCE_VAULTS_V2
-} from '@/store/defi/const';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useMakerDaoStore } from '@/store/defi/makerdao';
 import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import {
-  Airdrop,
-  AirdropDetail,
-  Airdrops,
-  AirdropType,
   AllDefiProtocols,
   DefiProtocolSummary,
-  OverviewDefiProtocol,
-  PoapDelivery,
   TokenInfo
 } from '@/store/defi/types';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { useYearnStore } from '@/store/defi/yearn';
 import { useNotifications } from '@/store/notifications';
+import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import { getStatus, isLoading, setStatus } from '@/store/utils';
+import { isLoading } from '@/store/utils';
 import { Writeable } from '@/types';
+import {
+  Airdrop,
+  AIRDROP_POAP,
+  AirdropDetail,
+  Airdrops,
+  AirdropType,
+  PoapDelivery
+} from '@/types/airdrops';
+import {
+  AAVE,
+  COMPOUND,
+  getProtocolIcon,
+  LIQUITY,
+  MAKERDAO_DSR,
+  MAKERDAO_VAULTS,
+  OverviewDefiProtocol,
+  YEARN_FINANCE_VAULTS,
+  YEARN_FINANCE_VAULTS_V2
+} from '@/types/defi/protocols';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

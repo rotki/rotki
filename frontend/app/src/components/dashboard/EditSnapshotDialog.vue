@@ -89,15 +89,15 @@ import EditBalancesSnapshotTable from '@/components/dashboard/EditBalancesSnapsh
 import EditLocationDataSnapshotTable from '@/components/dashboard/EditLocationDataSnapshotTable.vue';
 import EditSnapshotTotal from '@/components/dashboard/EditSnapshotTotal.vue';
 import { api } from '@/services/rotkehlchen-api';
+import { useMessageStore } from '@/store/message';
+import { useNotifications } from '@/store/notifications';
+import { useStatisticsStore } from '@/store/statistics';
 import {
   BalanceSnapshot,
   LocationDataSnapshot,
   Snapshot,
   SnapshotPayload
-} from '@/store/balances/types';
-import { useMessageStore } from '@/store/message';
-import { useNotifications } from '@/store/notifications';
-import { useStatisticsStore } from '@/store/statistics';
+} from '@/types/snapshots';
 import { sortDesc } from '@/utils/bignumbers';
 
 const props = defineProps({

@@ -3,28 +3,25 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, ComputedRef, Ref, ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
+import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { DEPOSIT } from '@/services/defi/types/consts';
+import { api } from '@/services/rotkehlchen-api';
+import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { Section, Status } from '@/store/const';
+import { useNotifications } from '@/store/notifications';
+import { getStatus, setStatus } from '@/store/status';
+import { useTasks } from '@/store/tasks';
+import { isLoading } from '@/store/utils';
 import {
+  DEPOSIT,
   YearnVaultAsset,
   YearnVaultBalance,
   YearnVaultProfitLoss,
   YearnVaultsBalances,
   YearnVaultsHistory
-} from '@/services/defi/types/yearn';
-import { api } from '@/services/rotkehlchen-api';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { Section, Status } from '@/store/const';
-import { useNotifications } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
-import {
-  getStatus,
-  getStatusUpdater,
-  isLoading,
-  setStatus
-} from '@/store/utils';
+} from '@/types/defi/yearn';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -309,7 +306,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
   }
 
   const reset = (version?: ProtocolVersion) => {
-    const { resetStatus } = getStatusUpdater(
+    const { resetStatus } = useStatusUpdater(
       Section.DEFI_YEARN_VAULTS_BALANCES
     );
     if (!version || version === ProtocolVersion.V1) {

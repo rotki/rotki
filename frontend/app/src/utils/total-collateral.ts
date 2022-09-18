@@ -1,6 +1,6 @@
 import { get } from '@vueuse/core';
 import { computed, Ref } from 'vue';
-import { Collateral, CollateralizedLoan } from '@/store/defi/types';
+import { Collateral, CollateralizedLoan } from '@/types/defi';
 import { Zero } from '@/utils/bignumbers';
 
 export const totalCollateral = (

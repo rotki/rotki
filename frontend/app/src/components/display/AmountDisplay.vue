@@ -107,13 +107,12 @@ import { computed, PropType, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
-import { findCurrency } from '@/data/currencies';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { Currency } from '@/types/currency';
+import { findCurrency, Currency } from '@/types/currencies';
 import { bigNumberify } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
 

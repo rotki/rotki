@@ -62,13 +62,13 @@ import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vu
 import DataTable from '@/components/helper/DataTable.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { CURRENCY_USD } from '@/data/currencies';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancesStore } from '@/store/balances';
 import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { AssetBreakdown } from '@/store/balances/types';
-import { useMainStore } from '@/store/main';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatusStore } from '@/store/status';
+import { CURRENCY_USD } from '@/types/currencies';
 
 type AssetLocations = (AssetBreakdown & {
   readonly account: GeneralAccount | undefined;
@@ -84,15 +84,15 @@ const { identifier } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { getAccountByAddress, getEth2Account } = useBlockchainAccountsStore();
-const { detailsLoading } = storeToRefs(useMainStore());
-const { assetPriceInfo } = useAssetInfoRetrieval();
+const { detailsLoading } = storeToRefs(useStatusStore());
+const { assetPriceInfo } = useBlockchainBalancesStore();
 const { assetBreakdown } = useBalancesStore();
 const { t } = useI18n();
 
 const onlyTags = ref<string[]>([]);
 
 const totalUsdValue = computed<BigNumber>(() => {
-  return get(assetPriceInfo(get(identifier))).usdValue;
+  return get(assetPriceInfo(identifier)).usdValue;
 });
 
 const getAccount = (item: AssetBreakdown) =>

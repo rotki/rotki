@@ -230,22 +230,19 @@ import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeDetails from '@/components/history/TradeDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { isSectionLoading, useRoute, useRouter } from '@/composables/common';
+import { isSectionLoading } from '@/composables/common';
 import { useTradeFilters } from '@/composables/filters/trades';
 import { setupIgnore } from '@/composables/history';
+import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
-import {
-  NewTrade,
-  Trade,
-  TradeLocation,
-  TradeRequestPayload
-} from '@/services/history/types';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
 import { useTrades } from '@/store/history/trades';
 import { IgnoreActionType, TradeEntry } from '@/store/history/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Collection } from '@/types/collection';
+import { TradeLocation } from '@/types/history/trade-location';
+import { NewTrade, Trade, TradeRequestPayload } from '@/types/history/trades';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 type PaginationOptions = {

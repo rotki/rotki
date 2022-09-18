@@ -3,23 +3,17 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed, Ref, ref } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
+import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
-import {
-  CompoundBalances,
-  CompoundHistory
-} from '@/services/defi/types/compound';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
 import { toProfitLossModel } from '@/store/defi/utils';
 import { useNotifications } from '@/store/notifications';
+import { getStatus, setStatus } from '@/store/status';
 import { useTasks } from '@/store/tasks';
-import {
-  getStatus,
-  getStatusUpdater,
-  isLoading,
-  setStatus
-} from '@/store/utils';
+import { isLoading } from '@/store/utils';
+import { CompoundBalances, CompoundHistory } from '@/types/defi/compound';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -38,7 +32,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     defaultCompoundHistory()
   ) as Ref<CompoundHistory>;
 
-  const { resetStatus } = getStatusUpdater(Section.DEFI_COMPOUND_BALANCES);
+  const { resetStatus } = useStatusUpdater(Section.DEFI_COMPOUND_BALANCES);
   const { awaitTask } = useTasks();
   const { notify } = useNotifications();
   const { activeModules } = useModules();

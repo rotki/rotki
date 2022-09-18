@@ -31,8 +31,8 @@ import { storeToRefs } from 'pinia';
 import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import { LocationDataSnapshotPayload } from '@/store/balances/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { LocationDataSnapshotPayload } from '@/types/snapshots';
 
 const props = defineProps({
   value: {

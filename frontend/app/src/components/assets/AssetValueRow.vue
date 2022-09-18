@@ -50,7 +50,7 @@ import { get } from '@vueuse/core';
 import { computed, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
+import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
 import { AssetPriceInfo } from '@/store/balances/types';
 
 const props = defineProps({
@@ -58,10 +58,10 @@ const props = defineProps({
   symbol: { required: true, type: String }
 });
 const { identifier } = toRefs(props);
-const { assetPriceInfo } = useAssetInfoRetrieval();
+const { assetPriceInfo } = useBlockchainBalancesStore();
 
 const info = computed<AssetPriceInfo>(() => {
-  return get(assetPriceInfo(get(identifier)));
+  return get(assetPriceInfo(identifier));
 });
 
 const { t } = useI18n();

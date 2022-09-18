@@ -168,7 +168,7 @@ import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import { setupStatusChecking, useTheme } from '@/composables/common';
+import { useSectionLoading, useTheme } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
@@ -194,7 +194,7 @@ const { uniswapV3Addresses: addresses, uniswapV3PoolAssets: poolAssets } =
   storeToRefs(store);
 const { isModuleEnabled } = useModules();
 const { getTokenAddress } = useAssetInfoRetrieval();
-const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
+const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
 const { tc } = useI18n();
 
 const { premiumURL } = useInterop();

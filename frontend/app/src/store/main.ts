@@ -1,10 +1,6 @@
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed, ref } from 'vue';
-import { usePremium } from '@/composables/premium';
 import { api } from '@/services/rotkehlchen-api';
-import { defiSections, Section, Status } from '@/store/const';
-import { StatusPayload, Version } from '@/store/types';
-import { isLoading } from '@/store/utils';
+import { Version } from '@/store/types';
 import { Nullable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
 import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
@@ -16,26 +12,12 @@ export const useMainStore = defineStore('main', () => {
   const version = ref(defaultVersion());
   const connected = ref(false);
   const connectionFailure = ref(false);
-  const status = ref<Partial<Record<Section, Status>>>({});
   const dataDirectory = ref('');
   const logLevel = ref<LogLevel>(getDefaultLogLevel());
-
-  const premium = usePremium();
 
   const updateNeeded = computed(() => {
     const { version: appVersion, downloadUrl } = get(version);
     return appVersion.indexOf('dev') >= 0 ? false : !!downloadUrl;
-  });
-
-  const detailsLoading = computed(() => {
-    return (
-      isLoading(get(getStatus(Section.BLOCKCHAIN_ETH))) ||
-      isLoading(get(getStatus(Section.BLOCKCHAIN_BTC))) ||
-      isLoading(get(getStatus(Section.BLOCKCHAIN_KSM))) ||
-      isLoading(get(getStatus(Section.BLOCKCHAIN_AVAX))) ||
-      isLoading(get(getStatus(Section.EXCHANGES))) ||
-      isLoading(get(getStatus(Section.MANUAL_BALANCES)))
-    );
   });
 
   const appVersion = computed(() => {
@@ -113,26 +95,6 @@ export const useMainStore = defineStore('main', () => {
     set(connectionFailure, false);
   };
 
-  const resetDefiStatus = () => {
-    const newStatus = Status.NONE;
-    defiSections.forEach(section => {
-      status.value[section] = newStatus;
-    });
-  };
-
-  const setStatus = ({ section, status: newStatus }: StatusPayload) => {
-    const statuses = get(status);
-    if (statuses[section] === newStatus) {
-      return;
-    }
-    set(status, { ...statuses, [section]: newStatus });
-  };
-
-  const getStatus = (section: Section) =>
-    computed<Status>(() => {
-      return get(status)[section] ?? Status.NONE;
-    });
-
   const setConnected = (isConnected: boolean) => {
     set(connected, isConnected);
   };
@@ -149,14 +111,7 @@ export const useMainStore = defineStore('main', () => {
     set(newUser, false);
     set(version, defaultVersion());
     set(connectionFailure, false);
-    set(status, {});
   };
-
-  watch(premium, premium => {
-    if (!premium) {
-      resetDefiStatus();
-    }
-  });
 
   return {
     newUser,
@@ -164,19 +119,14 @@ export const useMainStore = defineStore('main', () => {
     appVersion,
     connected,
     connectionFailure,
-    status,
     dataDirectory,
     updateNeeded,
-    detailsLoading,
     connect,
     getVersion,
     getInfo,
-    setStatus,
-    getStatus,
     setConnected,
     setConnectionFailure,
     setNewUser,
-    resetDefiStatus,
     reset
   };
 });

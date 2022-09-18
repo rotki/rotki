@@ -18,8 +18,6 @@ import { computed, ComputedRef } from 'vue';
 import { usePremium } from '@/composables/premium';
 import { truncateAddress } from '@/filters';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { CompoundBalances, CompoundLoan } from '@/services/defi/types/compound';
-import { YearnVaultsHistory } from '@/services/defi/types/yearn';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section, Status } from '@/store/const';
 import { useAaveStore } from '@/store/defi/aave';
@@ -30,20 +28,24 @@ import { useMakerDaoStore } from '@/store/defi/makerdao';
 import {
   AaveLoan,
   BaseDefiBalance,
-  Collateral,
   DefiBalance,
   DefiLendingHistory,
-  DefiLoan,
-  DSRBalances,
-  DSRHistory,
-  LoanSummary,
-  MakerDAOVaultDetails,
-  MakerDAOVaultModel
+  LoanSummary
 } from '@/store/defi/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
 import { useYearnStore } from '@/store/defi/yearn';
-import { getStatus, isLoading, setStatus } from '@/store/utils';
+import { getStatus, setStatus } from '@/store/status';
+import { isLoading } from '@/store/utils';
 import { Writeable } from '@/types';
+import { Collateral, DefiLoan } from '@/types/defi';
+import { CompoundBalances, CompoundLoan } from '@/types/defi/compound';
+import {
+  DSRBalances,
+  DSRHistory,
+  MakerDAOVaultDetails,
+  MakerDAOVaultModel
+} from '@/types/defi/maker';
+import { YearnVaultsHistory } from '@/types/defi/yearn';
 import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';

@@ -1,7 +1,4 @@
 import { z } from 'zod';
-import { setupTransformer } from '@/services/axios-tranformers';
-
-export const movementNumericKeys = ['fee', 'amount'];
 
 export const IgnoredActions = z
   .object({
@@ -24,7 +21,4 @@ export const IgnoredActions = z
     };
     return ignoredActions;
   });
-
 export type IgnoredActions = z.infer<typeof IgnoredActions>;
-
-export const movementAxiosTransformer = setupTransformer(movementNumericKeys);

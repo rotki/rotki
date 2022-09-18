@@ -6,27 +6,6 @@ import {
   setupTransformer
 } from '@/services/axios-tranformers';
 import { basicAxiosTransformer } from '@/services/consts';
-import { IgnoredActions } from '@/services/history/const';
-import {
-  AssetMovement,
-  AssetMovementCollectionResponse,
-  AssetMovementRequestPayload,
-  EntryWithMeta,
-  EthTransaction,
-  EthTransactionCollectionResponse,
-  LedgerAction,
-  LedgerActionCollectionResponse,
-  LedgerActionRequestPayload,
-  NewEthTransactionEvent,
-  NewLedgerAction,
-  NewTrade,
-  Trade,
-  TradeCollectionResponse,
-  TradeLocation,
-  TradeRequestPayload,
-  TransactionEventRequestPayload,
-  TransactionRequestPayload
-} from '@/services/history/types';
 import { PendingTask } from '@/services/types-api';
 import {
   handleResponse,
@@ -36,6 +15,33 @@ import {
   validWithSessionStatus
 } from '@/services/utils';
 import { CollectionResponse } from '@/types/collection';
+import { IgnoredActions } from '@/types/history/ignored';
+import {
+  LedgerAction,
+  LedgerActionCollectionResponse,
+  LedgerActionRequestPayload,
+  NewLedgerAction
+} from '@/types/history/ledger-actions';
+import { EntryWithMeta } from '@/types/history/meta';
+import {
+  AssetMovement,
+  AssetMovementCollectionResponse,
+  AssetMovementRequestPayload
+} from '@/types/history/movements';
+import { TradeLocation } from '@/types/history/trade-location';
+import {
+  NewTrade,
+  Trade,
+  TradeCollectionResponse,
+  TradeRequestPayload
+} from '@/types/history/trades';
+import {
+  EthTransaction,
+  EthTransactionCollectionResponse,
+  NewEthTransactionEvent,
+  TransactionEventRequestPayload,
+  TransactionRequestPayload
+} from '@/types/history/tx';
 import { ReportProgress } from '@/types/reports';
 
 export class HistoryApi {

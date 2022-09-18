@@ -87,9 +87,10 @@ import { useI18n } from 'vue-i18n-composable';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import ThemeControl from '@/components/premium/ThemeControl.vue';
-import { useTheme, useRoute, useRouter } from '@/composables/common';
+import { useTheme } from '@/composables/common';
+import { useDarkMode } from '@/composables/dark-mode';
 import { usePrivacyMode } from '@/composables/privacy';
-import { useDarkMode } from '@/composables/session';
+import { useRoute, useRouter } from '@/composables/router';
 import { interop } from '@/electron-interop';
 import { useSessionStore } from '@/store/session';
 

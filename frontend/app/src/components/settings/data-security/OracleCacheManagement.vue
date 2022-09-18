@@ -135,8 +135,8 @@ import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
+import { PriceOracle } from '@/types/price-oracle';
 import { TaskType } from '@/types/task-type';
-import { PriceOracle } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
 const { t, tc } = useI18n();

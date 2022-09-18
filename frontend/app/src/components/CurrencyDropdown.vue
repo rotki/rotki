@@ -64,10 +64,9 @@ import { storeToRefs } from 'pinia';
 import { computed, defineComponent, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { currencies } from '@/data/currencies';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Currency } from '@/types/currency';
+import { currencies, Currency } from '@/types/currencies';
 
 export default defineComponent({
   name: 'CurrencyDropdown',

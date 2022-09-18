@@ -68,7 +68,7 @@ import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
-import { isSectionLoading, setupStatusChecking } from '@/composables/common';
+import { isSectionLoading, useSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { Eth2Staking } from '@/premium/premium';
@@ -92,7 +92,7 @@ onMounted(async () => {
     await refresh();
   }
 });
-const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
+const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
 
 const loading = shouldShowLoadingScreen(Section.STAKING_ETH2);
 const primaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2);

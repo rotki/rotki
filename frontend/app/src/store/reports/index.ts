@@ -2,7 +2,6 @@ import { Message } from '@rotki/common/lib/messages';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
 import { computed, Ref, ref } from 'vue';
-import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
@@ -11,6 +10,7 @@ import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
+import { CURRENCY_USD } from '@/types/currencies';
 import {
   ProfitLossEvents,
   ProfitLossEventTypeEnum,

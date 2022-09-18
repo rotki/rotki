@@ -1,6 +1,7 @@
 import { get, set } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -8,7 +9,6 @@ import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTasks } from '@/store/tasks';
-import { getStatusUpdater } from '@/store/utils';
 import {
   KrakenStakingEvents,
   KrakenStakingPagination,
@@ -75,7 +75,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
 
   const { isTaskRunning, awaitTask } = useTasks();
   const { notify } = useNotifications();
-  const { isFirstLoad, loading, setStatus, resetStatus } = getStatusUpdater(
+  const { isFirstLoad, loading, setStatus, resetStatus } = useStatusUpdater(
     Section.STAKING_KRAKEN
   );
 

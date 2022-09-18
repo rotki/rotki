@@ -136,7 +136,7 @@ import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue
 import LpPoolIcon from '@/components/display/defi/LpPoolIcon.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
@@ -168,7 +168,7 @@ const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets } =
 
 const { isModuleEnabled } = useModules();
 const { getTokenAddress } = useAssetInfoRetrieval();
-const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
+const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
 
 const { tc } = useI18n();
 const { premiumURL } = useInterop();

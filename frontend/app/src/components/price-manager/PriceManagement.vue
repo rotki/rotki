@@ -62,7 +62,7 @@ import { useI18n } from 'vue-i18n-composable';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceForm from '@/components/price-manager/PriceForm.vue';
 import PriceTable from '@/components/price-manager/PriceTable.vue';
-import { useRoute, useRouter } from '@/composables/common';
+import { useRoute, useRouter } from '@/composables/router';
 import {
   HistoricalPrice,
   HistoricalPriceFormPayload

@@ -4,8 +4,8 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Section, Status } from '@/store/const';
-import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
+import { useStatusStore } from '@/store/status';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import '../../i18n';
@@ -53,7 +53,7 @@ describe('AccountBalances.vue', () => {
       time: 0
     });
 
-    useMainStore().setStatus({
+    useStatusStore().setStatus({
       section: Section.BLOCKCHAIN_ETH,
       status: Status.LOADING
     });
@@ -73,7 +73,7 @@ describe('AccountBalances.vue', () => {
     );
 
     remove(1);
-    useMainStore().setStatus({
+    useStatusStore().setStatus({
       section: Section.BLOCKCHAIN_ETH,
       status: Status.LOADED
     });

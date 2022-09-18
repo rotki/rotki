@@ -66,9 +66,9 @@ import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import DatabaseInfoDisplay from '@/components/settings/data-security/backups/DatabaseInfoDisplay.vue';
-import { DatabaseInfo, UserDbBackup } from '@/services/backup/types';
-import { api } from '@/services/rotkehlchen-api';
+import { useBackupApi } from '@/services/backup';
 import { useNotifications } from '@/store/notifications';
+import { DatabaseInfo, UserDbBackup } from '@/types/backup';
 import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
 import { logger } from '@/utils/logging';
@@ -123,10 +123,12 @@ const setupBackupInfo = () => {
     };
   });
 
+  const { info } = useBackupApi();
+
   const loadInfo = async () => {
     try {
       set(loading, true);
-      set(backupInfo, await api.backups.info());
+      set(backupInfo, await info());
     } catch (e: any) {
       logger.error(e);
       const { notify } = useNotifications();
@@ -161,10 +163,11 @@ const setupBackupActions = (
   showConfirmMassDelete: Ref<boolean>
 ) => {
   const { t } = useI18n();
+  const { deleteBackup } = useBackupApi();
   const massRemove = async () => {
     const filepaths = get(selected).map(db => getFilepath(db, directory));
     try {
-      await api.backups.deleteBackup(filepaths);
+      await deleteBackup(filepaths);
       if (get(backupInfo)) {
         const info: DatabaseInfo = { ...get(backupInfo)! };
         get(selected).forEach((db: UserDbBackup) => {
@@ -194,7 +197,7 @@ const setupBackupActions = (
   const remove = async (db: UserDbBackup) => {
     const filepath = getFilepath(db, directory);
     try {
-      await api.backups.deleteBackup([filepath]);
+      await deleteBackup([filepath]);
       if (get(backupInfo)) {
         const info: DatabaseInfo = { ...get(backupInfo)! };
         const index = info.userdb.backups.findIndex(backup =>
@@ -225,11 +228,12 @@ const setupBackupActions = (
   };
 
   const saving = ref(false);
+  const { createBackup } = useBackupApi();
 
   const backup = async () => {
     try {
       set(saving, true);
-      const filepath = await api.backups.createBackup();
+      const filepath = await createBackup();
       const { notify } = useNotifications();
       notify({
         display: true,

@@ -26,7 +26,7 @@ import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { setupLocationInfo } from '@/composables/balances';
 import { Routes } from '@/router/routes';
-import { TradeLocation } from '@/services/history/types';
+import { TradeLocation } from '@/types/history/trade-location';
 import { TradeLocationData } from '@/types/trades';
 
 export default defineComponent({

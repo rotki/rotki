@@ -1,7 +1,11 @@
 import { Balance } from '@rotki/common';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { YEARN_EVENTS } from '@/services/defi/types/consts';
-type YearnEventType = typeof YEARN_EVENTS[number];
+
+export const WITHDRAW = 'withdraw';
+export const DEPOSIT = 'deposit';
+export const YEARN_EVENTS = [WITHDRAW, DEPOSIT] as const;
+
+export type YearnEventType = typeof YEARN_EVENTS[number];
 
 interface YearnVaultEvent {
   readonly eventType: YearnEventType;
@@ -35,7 +39,7 @@ export interface YearnVaultProfitLoss {
   readonly vault: string;
 }
 
-interface YearnVaultBalance {
+export interface YearnVaultBalance {
   readonly underlyingToken: string;
   readonly vaultToken: string;
   readonly underlyingValue: Balance;

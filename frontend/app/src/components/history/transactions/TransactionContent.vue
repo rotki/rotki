@@ -237,11 +237,6 @@ import { TransactionEventFormInstance } from '@/components/history/TransactionEv
 import { isSectionLoading } from '@/composables/common';
 import { useTransactionFilter } from '@/composables/filters/transactions';
 import { setupIgnore } from '@/composables/history';
-import {
-  EthTransaction,
-  NewEthTransactionEvent,
-  TransactionRequestPayload
-} from '@/services/history/types';
 import { Section } from '@/store/const';
 import { useTransactions } from '@/store/history/transactions';
 import {
@@ -251,6 +246,11 @@ import {
 } from '@/store/history/types';
 import { useTasks } from '@/store/tasks';
 import { Collection } from '@/types/collection';
+import {
+  EthTransaction,
+  NewEthTransactionEvent,
+  TransactionRequestPayload
+} from '@/types/history/tx';
 import { TaskType } from '@/types/task-type';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 

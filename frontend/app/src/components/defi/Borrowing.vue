@@ -103,7 +103,8 @@ import StatCardWide from '@/components/display/StatCardWide.vue';
 import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
-import { setupStatusChecking, useRoute } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
+import { useRoute } from '@/composables/router';
 import { Section } from '@/store/const';
 import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
 import { Module } from '@/types/modules';
@@ -118,7 +119,7 @@ const store = useDefiSupportedProtocolsStore();
 const route = useRoute();
 const { tc } = useI18n();
 
-const { shouldShowLoadingScreen, isSectionRefreshing } = setupStatusChecking();
+const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
 
 const loading = shouldShowLoadingScreen(Section.DEFI_BORROWING);
 

@@ -94,7 +94,7 @@ import { useI18n } from 'vue-i18n-composable';
 import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
 import Loading from '@/components/helper/Loading.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { Section } from '@/store/const';
 import { usePremiumStore } from '@/store/session/premium';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -117,7 +117,7 @@ const { totalNetWorth } = storeToRefs(statistics);
 const frontendStore = useFrontendSettingsStore();
 const { visibleTimeframes } = storeToRefs(frontendStore);
 
-const { isSectionRefreshing } = setupStatusChecking();
+const { isSectionRefreshing } = useSectionLoading();
 const isLoading = computed(() => {
   return (
     get(isSectionRefreshing(Section.BLOCKCHAIN_ETH)) ||

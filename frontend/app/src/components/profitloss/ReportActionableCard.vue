@@ -247,7 +247,7 @@ import ReportMissingAcquisitions from '@/components/profitloss/ReportMissingAcqu
 import ReportMissingPrices, {
   EditableMissingPrice
 } from '@/components/profitloss/ReportMissingPrices.vue';
-import { useRouter } from '@/composables/common';
+import { useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
 import { Pinned } from '@/store/session/types';

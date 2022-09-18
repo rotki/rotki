@@ -88,8 +88,8 @@ import { onBeforeMount, PropType, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
-import { BalanceSnapshotPayload } from '@/store/balances/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { BalanceSnapshotPayload } from '@/types/snapshots';
 import { isNft } from '@/utils/nft';
 
 const props = defineProps({

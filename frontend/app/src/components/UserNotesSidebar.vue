@@ -62,7 +62,7 @@ import { get, set } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import UserNotesList from '@/components/UserNotesList.vue';
-import { useRoute } from '@/composables/common';
+import { useRoute } from '@/composables/router';
 import { routesRef } from '@/router/routes';
 
 const { t } = useI18n();
@@ -81,12 +81,12 @@ const route = useRoute();
 
 const location = computed<string>(() => {
   const meta = get(route).meta;
-  if (meta && meta.noteLocation) return meta.noteLocation;
+  if (meta && meta.noteLocation) return meta.noteLocation as string;
 
   let noteLocation = '';
   get(route).matched.forEach(matched => {
     if (matched.meta.noteLocation) {
-      noteLocation = matched.meta.noteLocation;
+      noteLocation = matched.meta.noteLocation as string;
     }
   });
 

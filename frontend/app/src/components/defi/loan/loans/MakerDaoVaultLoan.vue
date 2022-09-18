@@ -53,14 +53,14 @@ import MakerDaoVaultLiquidation from '@/components/defi/loan/loans/makerdao/Make
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import { useInterop } from '@/electron-interop';
 import { VaultEventsList } from '@/premium/premium';
+import { usePremiumStore } from '@/store/session/premium';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import {
   MakerDAOVault,
   MakerDAOVaultDetails,
   MakerDAOVaultEvent,
   MakerDAOVaultModel
-} from '@/store/defi/types';
-import { usePremiumStore } from '@/store/session/premium';
-import { useSessionSettingsStore } from '@/store/settings/session';
+} from '@/types/defi/maker';
 import { Zero } from '@/utils/bignumbers';
 
 const props = defineProps({

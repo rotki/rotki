@@ -1,4 +1,5 @@
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { ProfitLossModel } from '@rotki/common/lib/defi';
 import { BalancerBalanceWithOwner } from '@rotki/common/lib/defi/balancer';
 import {
@@ -26,6 +27,7 @@ import { setupLiquidityPosition } from '@/composables/defi';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useNftAssetInfoStore } from '@/store/assets/nft';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { useBalancesStore } from '@/store/balances';
 import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
@@ -43,8 +45,13 @@ import { One } from '@/utils/bignumbers';
 export const assetsApi = (): AssetsApi => {
   const { getAssetInfo, getAssetSymbol, getAssetIdentifierForSymbol } =
     useAssetInfoRetrieval();
+
+  const { getNftDetails } = useNftAssetInfoStore();
   return {
-    assetInfo: getAssetInfo,
+    assetInfo: identifier => {
+      const nft = get(getNftDetails(identifier)) as SupportedAsset | null;
+      return nft ?? get(getAssetInfo(identifier)) ?? undefined;
+    },
     assetSymbol: getAssetSymbol,
     getIdentifierForSymbol: getAssetIdentifierForSymbol
   };

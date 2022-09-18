@@ -65,7 +65,7 @@ import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportActionable from '@/components/profitloss/ReportActionable.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
-import { useRoute, useRouter } from '@/composables/common';
+import { useRoute, useRouter } from '@/composables/router';
 import { useInterop } from '@/electron-interop';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
@@ -90,7 +90,7 @@ const settings = computed(() => get(selectedReport).settings);
 const initialOpenReportActionable = ref<boolean>(false);
 
 const currentRoute = get(route);
-const reportId = parseInt(currentRoute.params.id);
+const reportId = parseInt(currentRoute.params.id as string);
 const latest = isLatestReport(reportId);
 
 const { tc } = useI18n();

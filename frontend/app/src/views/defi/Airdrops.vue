@@ -105,11 +105,12 @@ import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
 import { Section } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import {
+  Airdrop,
   AIRDROP_1INCH,
   AIRDROP_CONVEX,
   AIRDROP_CORNICHON,
@@ -125,9 +126,9 @@ import {
   AIRDROP_POAP,
   AIRDROP_SADDLE,
   AIRDROP_TORNADO,
-  AIRDROP_UNISWAP
-} from '@/store/defi/const';
-import { Airdrop, AirdropType } from '@/store/defi/types';
+  AIRDROP_UNISWAP,
+  AirdropType
+} from '@/types/airdrops';
 import PoapDeliveryAirdrops from '@/views/defi/PoapDeliveryAirdrops.vue';
 
 type AirdropSource = {
@@ -214,7 +215,7 @@ const { t, tc } = useI18n();
 const defiStore = useDefiStore();
 const { airdropAddresses } = storeToRefs(defiStore);
 const { isPackaged, navigate } = useInterop();
-const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
+const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
 
 const loading = shouldShowLoadingScreen(section);
 const refreshing = isSectionRefreshing(section);

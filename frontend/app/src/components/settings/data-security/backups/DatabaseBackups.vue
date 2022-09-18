@@ -78,9 +78,9 @@ import { DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { displayDateFormatter } from '@/data/date_formatter';
-import { UserDbBackup } from '@/services/backup/types';
-import { api } from '@/services/rotkehlchen-api';
+import { useBackupApi } from '@/services/backup';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { UserDbBackup } from '@/types/backup';
 import { assert } from '@/utils/assertions';
 import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
@@ -150,8 +150,8 @@ const totalSize = computed(() =>
   size(get(items).reduce((sum, db) => sum + db.size, 0))
 );
 
-const getLink = (db: UserDbBackup) =>
-  api.backups.fileUrl(getFilepath(db, directory));
+const { fileUrl } = useBackupApi();
+const getLink = (db: UserDbBackup) => fileUrl(getFilepath(db, directory));
 
 const onSelectedChange = (selected: UserDbBackup[]) => {
   emit('change', selected);

@@ -24,7 +24,7 @@ import { useI18n } from 'vue-i18n-composable';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { useSectionLoading } from '@/composables/common';
 import { useModules } from '@/composables/session';
 import { AdexStaking } from '@/premium/premium';
 import { Section } from '@/store/const';
@@ -42,7 +42,7 @@ onBeforeMount(async () => {
   await fetchAdex(false);
 });
 
-const { isSectionRefreshing, shouldShowLoadingScreen } = setupStatusChecking();
+const { isSectionRefreshing, shouldShowLoadingScreen } = useSectionLoading();
 
 const loading = shouldShowLoadingScreen(Section.STAKING_ADEX);
 const primaryRefreshing = isSectionRefreshing(Section.STAKING_ADEX);

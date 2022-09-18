@@ -52,10 +52,10 @@
 import { get } from '@vueuse/core';
 import { computed, toRefs, useCssModule } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { setupStatusChecking } from '@/composables/common';
-import { NonFungibleBalance } from '@/store/balances/types';
+import { useSectionLoading } from '@/composables/common';
+import { NftAsset, useNftAssetInfoStore } from '@/store/assets/nft';
 import { Section } from '@/store/const';
-import { getNftBalance, isVideo } from '@/utils/nft';
+import { isVideo } from '@/utils/nft';
 
 const props = defineProps({
   identifier: {
@@ -68,29 +68,28 @@ const props = defineProps({
 const css = useCssModule();
 
 const { identifier } = toRefs(props);
+const { getNftDetails } = useNftAssetInfoStore();
 
-const balanceData = computed<NonFungibleBalance | null>(() => {
-  return getNftBalance(identifier);
-});
+const balanceData = getNftDetails(identifier);
 
 const imageUrl = computed<string | null>(() => {
   return get(balanceData)?.imageUrl ?? '/assets/images/placeholder.svg';
 });
 
-const getCollectionName = (data: NonFungibleBalance | null): string | null => {
+const getCollectionName = (data: NftAsset | null): string | null => {
   if (!data || !data.collectionName) {
     return null;
   }
-  const tokenId = data.id.split('_')[3];
+  const tokenId = data.identifier.split('_')[3];
   return `${data.collectionName} #${tokenId}`;
 };
 
 const name = computed<string | null>(() => {
-  const data = get(balanceData) as NonFungibleBalance | null;
+  const data = get(balanceData);
   return data?.name || getCollectionName(data) || null;
 });
 
-const { shouldShowLoadingScreen: isLoading } = setupStatusChecking();
+const { shouldShowLoadingScreen: isLoading } = useSectionLoading();
 const loading = isLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const fallbackData = computed(() => {

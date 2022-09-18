@@ -11,7 +11,7 @@
 <script lang="ts">
 import { defineComponent, PropType, toRefs } from 'vue';
 import { RawLocation } from 'vue-router';
-import { useRouter } from '@/composables/common';
+import { useRouter } from '@/composables/router';
 
 export default defineComponent({
   props: {

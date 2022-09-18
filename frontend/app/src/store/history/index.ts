@@ -1,13 +1,10 @@
 import { set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import { Ref, ref } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
-import { IgnoredActions } from '@/services/history/const';
-import { TradeLocation } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
-import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
-import { Section } from '@/store/const';
 import { useAssetMovements } from '@/store/history/asset-movements';
+import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { useTrades } from '@/store/history/trades';
 import { useTransactions } from '@/store/history/transactions';
@@ -15,35 +12,15 @@ import { IgnoreActionPayload } from '@/store/history/types';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
 import { ActionStatus } from '@/store/types';
-import { getStatusUpdater } from '@/store/utils';
-import { SupportedExchange } from '@/types/exchanges';
+import { IgnoredActions } from '@/types/history/ignored';
 import { logger } from '@/utils/logging';
 
 export const useHistory = defineStore('history', () => {
-  const associatedLocations: Ref<TradeLocation[]> = ref([]);
   const ignored = ref<IgnoredActions>({});
 
   const { notify } = useNotifications();
   const { setMessage } = useMessageStore();
   const { t } = useI18n();
-
-  const fetchAssociatedLocations = async () => {
-    try {
-      set(associatedLocations, await api.history.associatedLocations());
-    } catch (e: any) {
-      logger.error(e);
-      const message = e?.message ?? e ?? '';
-      notify({
-        title: t(
-          'actions.history.fetch_associated_locations.error.title'
-        ).toString(),
-        message: t('actions.history.fetch_associated_locations.error.message', {
-          message
-        }).toString(),
-        display: true
-      });
-    }
-  };
 
   const fetchIgnored = async () => {
     try {
@@ -99,50 +76,20 @@ export const useHistory = defineStore('history', () => {
     return { success: true };
   };
 
-  // Purge
-  const purgeHistoryLocation = async (exchange: SupportedExchange) => {
-    const { fetchTrades } = useTrades();
-    const { fetchAssetMovements } = useAssetMovements();
-    const { fetchLedgerActions } = useLedgerActions();
-    await Promise.allSettled([
-      fetchTrades(true, exchange),
-      fetchAssetMovements(true, exchange),
-      fetchLedgerActions(true, exchange)
-    ]);
-  };
-
-  const purgeExchange = async (
-    exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
-  ) => {
-    const { resetStatus } = getStatusUpdater(Section.TRADES);
-
-    if (exchange === ALL_CENTRALIZED_EXCHANGES) {
-      resetStatus();
-      resetStatus(Section.ASSET_MOVEMENT);
-      resetStatus(Section.LEDGER_ACTIONS);
-    } else {
-      await purgeHistoryLocation(exchange);
-    }
-  };
-
   // Reset
   const reset = () => {
-    set(associatedLocations, []);
     set(ignored, {});
     useTrades().reset();
     useAssetMovements().reset();
     useTransactions().reset();
     useLedgerActions().reset();
+    useAssociatedLocationsStore().reset();
   };
 
   return {
-    associatedLocations,
     ignored,
-    fetchAssociatedLocations,
     fetchIgnored,
     ignoreInAccounting,
-    purgeExchange,
-    purgeHistoryLocation,
     reset
   };
 });

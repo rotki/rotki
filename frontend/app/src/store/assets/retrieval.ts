@@ -1,28 +1,16 @@
-import { AssetBalanceWithPrice } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { EVM_TOKEN } from '@/services/assets/consts';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { SupportedAssets } from '@/services/types-api';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
-import {
-  AssetPriceInfo,
-  ERC20Token,
-  NonFungibleBalance
-} from '@/store/balances/types';
+import { ERC20Token } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTasks } from '@/store/tasks';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@/utils/assets';
-import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
-import { getNftBalance, isNft } from '@/utils/nft';
 
 export const useAssetInfoRetrieval = defineStore(
   'assets/infoRetrievals',
@@ -104,20 +92,6 @@ export const useAssetInfoRetrieval = defineStore(
       return computed<SupportedAsset | undefined>(() => {
         if (!identifier) return undefined;
 
-        if (isNft(identifier)) {
-          const nftBalance: NonFungibleBalance | null =
-            getNftBalance(identifier);
-
-          if (nftBalance) {
-            return {
-              identifier: nftBalance.id,
-              symbol: nftBalance.name,
-              name: nftBalance.name,
-              assetType: 'ethereum_token'
-            } as SupportedAsset;
-          }
-        }
-
         const asset = enableAssociation
           ? get(getAssociatedAsset(identifier))
           : get(supportedAssetsMap)[identifier];
@@ -192,20 +166,6 @@ export const useAssetInfoRetrieval = defineStore(
       });
     };
 
-    const assetPriceInfo = (identifier: string) => {
-      return computed<AssetPriceInfo>(() => {
-        const { aggregatedBalances } = useBlockchainBalancesStore();
-        const assetValue = (
-          get(aggregatedBalances()) as AssetBalanceWithPrice[]
-        ).find((value: AssetBalanceWithPrice) => value.asset === identifier);
-        return {
-          usdPrice: assetValue?.usdPrice ?? Zero,
-          amount: assetValue?.amount ?? Zero,
-          usdValue: assetValue?.usdValue ?? Zero
-        };
-      });
-    };
-
     const supportedAssetsSymbol = computed<string[]>(() => {
       const data = get(supportedAssets)
         .map(value => get(assetSymbol(value.identifier)))
@@ -266,15 +226,13 @@ export const useAssetInfoRetrieval = defineStore(
       assetIdentifierForSymbol,
       assetName,
       tokenAddress,
-      assetPriceInfo,
       getAssetInfo: (identifier: string) =>
         get(assetInfo(identifier)) as SupportedAsset | undefined,
       getAssetSymbol: (identifier: string) => get(assetSymbol(identifier)),
       getAssetIdentifierForSymbol: (symbol: string) =>
         get(assetIdentifierForSymbol(symbol)),
       getAssetName: (identifier: string) => get(assetName(identifier)),
-      getTokenAddress: (identifier: string) => get(tokenAddress(identifier)),
-      getAssetPriceInfo: (identifier: string) => get(assetPriceInfo(identifier))
+      getTokenAddress: (identifier: string) => get(tokenAddress(identifier))
     };
   }
 );

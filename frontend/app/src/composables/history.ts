@@ -1,11 +1,11 @@
 import { get, set } from '@vueuse/core';
 import { Ref } from 'vue';
 import i18n from '@/i18n';
-import { EntryMeta } from '@/services/history/types';
 import { useHistory } from '@/store/history';
 import { IgnoreActionPayload, IgnoreActionType } from '@/store/history/types';
 import { useMessageStore } from '@/store/message';
 import { ActionStatus } from '@/store/types';
+import { EntryMeta } from '@/types/history/meta';
 import { uniqueStrings } from '@/utils/data';
 
 export const setupIgnore = <T extends EntryMeta>(

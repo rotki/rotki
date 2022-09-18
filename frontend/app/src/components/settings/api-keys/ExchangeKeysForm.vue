@@ -163,8 +163,8 @@ import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { ExchangePayload } from '@/store/balances/types';
 import {
+  ExchangePayload,
   KrakenAccountType,
   SUPPORTED_EXCHANGES,
   SupportedExchange
