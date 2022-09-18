@@ -7,6 +7,7 @@ from rotkehlchen.externalapis.bisq_market import get_bisq_market_price
 from rotkehlchen.types import Price
 
 
+@pytest.mark.skip('bisq.markets API is unreliable. Check #4849')
 def test_market_request():
     """Test that we can query bisq for market prices"""
     price = get_bisq_market_price(A_BSQ)
