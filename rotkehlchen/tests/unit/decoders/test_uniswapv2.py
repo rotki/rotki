@@ -130,7 +130,7 @@ def test_uniswap_v2_swap(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            manager=ethereum_manager,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
@@ -254,7 +254,7 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_manager, eth_transactio
     dbethtx = DBEthTx(database)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )

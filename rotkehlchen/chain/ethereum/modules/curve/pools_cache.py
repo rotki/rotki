@@ -79,7 +79,7 @@ def ensure_curve_tokens_existence(
             userdb=ethereum_manager.database,
             evm_address=lp_token_address,
             chain=ChainID.ETHEREUM,
-            ethereum_manager=ethereum_manager,
+            manager=ethereum_manager,
             protocol=CURVE_POOL_PROTOCOL,
         )
 
@@ -96,7 +96,7 @@ def ensure_curve_tokens_existence(
                     userdb=ethereum_manager.database,
                     evm_address=token_address,
                     chain=ChainID.ETHEREUM,
-                    ethereum_manager=ethereum_manager,
+                    manager=ethereum_manager,
                 )
         else:
             # Otherwise, coins and underlying coins lists represent a
@@ -109,14 +109,14 @@ def ensure_curve_tokens_existence(
                     userdb=ethereum_manager.database,
                     evm_address=underlying_token_address,
                     chain=ChainID.ETHEREUM,
-                    ethereum_manager=ethereum_manager,
+                    manager=ethereum_manager,
                 )
                 # and ensure token exists
                 get_or_create_evm_token(
                     userdb=ethereum_manager.database,
                     evm_address=token_address,
                     chain=ChainID.ETHEREUM,
-                    ethereum_manager=ethereum_manager,
+                    manager=ethereum_manager,
                     underlying_tokens=[UnderlyingToken(
                         address=underlying_token_address,
                         token_kind=EvmTokenKind.ERC20,

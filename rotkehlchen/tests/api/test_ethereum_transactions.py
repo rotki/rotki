@@ -160,7 +160,7 @@ def assert_force_redecode_txns_works(api_server: APIServer, hashes: Optional[Lis
         'get_or_decode_transaction_events',
         wraps=rotki.eth_tx_decoder.get_or_decode_transaction_events,
     )
-    get_or_query_txn_receipt_patch = patch('rotkehlchen.chain.ethereum.transactions.EthTransactions.get_or_query_transaction_receipt')  # noqa: 501
+    get_or_query_txn_receipt_patch = patch('rotkehlchen.chain.ethereum.transactions.EvmTransactions.get_or_query_transaction_receipt')  # noqa: 501
     with ExitStack() as stack:
         function_call_counters = []
         function_call_counters.append(stack.enter_context(get_or_decode_txn_events_patch))

@@ -99,7 +99,7 @@ def test_uniswap_v3_swap(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            manager=ethereum_manager,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
@@ -229,7 +229,7 @@ def test_uniswap_v3_swap_received_token2(database, ethereum_manager, eth_transac
         dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address='0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599')  # noqa: E501
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            manager=ethereum_manager,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )

@@ -97,7 +97,7 @@ def test_liquity_trove_adjust(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            manager=ethereum_manager,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
@@ -213,7 +213,7 @@ def test_liquity_trove_deposit_lusd(database, ethereum_manager, eth_transactions
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            manager=ethereum_manager,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
@@ -326,7 +326,7 @@ def test_liquity_trove_remove_eth(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address=user_address)  # noqa: E501
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            manager=ethereum_manager,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )

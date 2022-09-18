@@ -138,7 +138,7 @@ def test_booster_deposit(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
@@ -241,7 +241,7 @@ def test_booster_withdraw(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
@@ -376,7 +376,7 @@ def test_cvxcrv_get_reward(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
@@ -505,7 +505,7 @@ def test_cvxcrv_withdraw(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
@@ -607,7 +607,7 @@ def test_cvxcrv_stake(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
@@ -723,7 +723,7 @@ def test_cvx_stake(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
@@ -869,7 +869,7 @@ def test_cvx_get_reward(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
@@ -961,7 +961,7 @@ def test_cvx_withdraw(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
@@ -1044,7 +1044,7 @@ def test_claimzap_abracadabras(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
@@ -1137,7 +1137,7 @@ def test_claimzap_cvx_locker(database, ethereum_manager, eth_transactions):
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
         transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )

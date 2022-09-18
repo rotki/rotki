@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def add_ethereum_token_to_db(token_data: EvmToken) -> EvmToken:
-    """Adds an ethereum token to the DB and returns it
+def add_evm_token_to_db(token_data: EvmToken) -> EvmToken:
+    """Adds an EVM token to the DB and returns it
 
     May raise:
     - InputError if token already exists in the DB
@@ -48,13 +48,13 @@ def get_or_create_evm_token(
         protocol: Optional[str] = None,
         underlying_tokens: Optional[List[UnderlyingToken]] = None,
         form_with_incomplete_data: bool = False,
-        ethereum_manager: 'EthereumManager' = None,
+        manager: 'EthereumManager' = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
 
     If the token exists in the GlobalDB it's returned. If not it's created and added.
 
-    If an ethereum_manager instance is passed then in the case that the token is not
+    If an manager instance is passed then in the case that the token is not
     in the global DB it will be added and an attempt to get metadata will be made.
 
     Note: if the token already exists but the other arguments don't match the
@@ -70,14 +70,14 @@ def get_or_create_evm_token(
         token_type=token_kind,
     )
     try:
-        ethereum_token = EvmToken(identifier, form_with_incomplete_data)
+        evm_token = EvmToken(identifier, form_with_incomplete_data)
     except (UnknownAsset, DeserializationError):
         log.info(
             f'Encountered unknown asset with address '
             f'{evm_address}. Adding it to the global DB',
         )
-        if ethereum_manager is not None:
-            info = ethereum_manager.get_basic_contract_info(evm_address)
+        if manager is not None:
+            info = manager.get_basic_contract_info(evm_address)
             decimals = info['decimals'] if decimals is None else decimals
             symbol = info['symbol'] if symbol is None else symbol
             name = info['name'] if name is None else name
@@ -96,11 +96,11 @@ def get_or_create_evm_token(
             underlying_tokens=underlying_tokens,
         )
         # This can but should not raise InputError since it should not already exist
-        ethereum_token = add_ethereum_token_to_db(token_data)
+        evm_token = add_evm_token_to_db(token_data)
         with userdb.user_write() as cursor:
-            userdb.add_asset_identifiers(cursor, [ethereum_token.identifier])
+            userdb.add_asset_identifiers(cursor, [evm_token.identifier])
 
-    return ethereum_token
+    return evm_token
 
 
 def get_asset_by_symbol(

@@ -42,7 +42,7 @@ from rotkehlchen.chain.ethereum.modules.curve.pools_cache import (
 )
 from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.chain.ethereum.transactions import EvmTransactions
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateChain
@@ -294,7 +294,7 @@ class Rotkehlchen():
             connect_on_startup=len(blockchain_accounts.dot) != 0,
             own_rpc_endpoint=settings.dot_rpc_endpoint,
         )
-        self.eth_transactions = EthTransactions(ethereum=ethereum_manager, database=self.data.db)
+        self.eth_transactions = EvmTransactions(manager=ethereum_manager, database=self.data.db)
         self.covalent_avalanche = Covalent(
             database=self.data.db,
             msg_aggregator=self.msg_aggregator,
@@ -334,7 +334,7 @@ class Rotkehlchen():
         )
         self.eth_tx_decoder = EVMTransactionDecoder(
             database=self.data.db,
-            ethereum_manager=ethereum_manager,
+            manager=ethereum_manager,
             transactions=self.eth_transactions,
             msg_aggregator=self.msg_aggregator,
         )

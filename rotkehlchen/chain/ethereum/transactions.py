@@ -38,15 +38,16 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EthTransactions:
+# TODO: Move to chain/evm/ directory once EvmManager (#4807) is merged
+class EvmTransactions:
 
     def __init__(
             self,
-            ethereum: 'EthereumManager',
+            manager: 'EthereumManager',
             database: 'DBHandler',
     ) -> None:
         super().__init__()
-        self.ethereum = ethereum
+        self.manager = manager
         self.database = database
         self.address_tx_locks: Dict[ChecksumEvmAddress, Semaphore] = defaultdict(Semaphore)
         self.missing_receipts_lock = Semaphore()
@@ -177,7 +178,7 @@ class EthTransactions:
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying Transactions for {address} -> {query_start_ts} - {query_end_ts}')
             try:
-                for new_transactions in self.ethereum.etherscan.get_transactions(
+                for new_transactions in self.manager.etherscan.get_transactions(
                     account=address,
                     from_ts=query_start_ts,
                     to_ts=query_end_ts,
@@ -208,8 +209,8 @@ class EthTransactions:
                         )
 
             except RemoteError as e:
-                self.ethereum.msg_aggregator.add_error(
-                    f'Got error "{str(e)}" while querying ethereum transactions '
+                self.manager.msg_aggregator.add_error(
+                    f'Got error "{str(e)}" while querying evm transactions '
                     f'from Etherscan. Some transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
@@ -249,7 +250,7 @@ class EthTransactions:
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying Internal Transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                for new_internal_txs in self.ethereum.etherscan.get_transactions(
+                for new_internal_txs in self.manager.etherscan.get_transactions(
                     account=address,
                     from_ts=query_start_ts,
                     to_ts=query_end_ts,
@@ -266,7 +267,7 @@ class EthTransactions:
                                     has_premium=True,  # ignore limiting here
                                 )
                                 if len(result) == 0:  # parent transaction is not in the DB. Get it
-                                    transaction = self.ethereum.get_transaction_by_hash(internal_tx.parent_tx_hash)  # noqa: E501
+                                    transaction = self.manager.get_transaction_by_hash(internal_tx.parent_tx_hash)  # noqa: E501
                                     gevent.sleep(0)
                                     dbethtx.add_ethereum_transactions(
                                         write_cursor=cursor,
@@ -300,8 +301,8 @@ class EthTransactions:
                             )
 
             except RemoteError as e:
-                self.ethereum.msg_aggregator.add_error(
-                    f'Got error "{str(e)}" while querying internal ethereum transactions '
+                self.manager.msg_aggregator.add_error(
+                    f'Got error "{str(e)}" while querying internal evm transactions '
                     f'from Etherscan. Transactions not added to the DB '
                     f'address: {address} '
                     f'from_ts: {query_start_ts} '
@@ -341,7 +342,7 @@ class EthTransactions:
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying ERC20 Transfers for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                for erc20_tx_hashes in self.ethereum.etherscan.get_token_transaction_hashes(
+                for erc20_tx_hashes in self.manager.etherscan.get_token_transaction_hashes(
                     account=address,
                     from_ts=query_start_ts,
                     to_ts=query_end_ts,
@@ -356,7 +357,7 @@ class EthTransactions:
                             )
                             if len(result) == 0:  # if transaction is not there add it
                                 gevent.sleep(0)
-                                transaction = self.ethereum.get_transaction_by_hash(tx_hash_bytes)
+                                transaction = self.manager.get_transaction_by_hash(tx_hash_bytes)
                                 dbethtx.add_ethereum_transactions(
                                     write_cursor=cursor,
                                     ethereum_transactions=[transaction],
@@ -383,7 +384,7 @@ class EthTransactions:
                                 },
                             )
             except RemoteError as e:
-                self.ethereum.msg_aggregator.add_error(
+                self.manager.msg_aggregator.add_error(
                     f'Got error "{str(e)}" while querying token transactions '
                     f'from Etherscan. Transactions not added to the DB '
                     f'address: {address} '
@@ -424,7 +425,7 @@ class EthTransactions:
         )
 
         if len(result) == 0:
-            transaction = self.ethereum.get_transaction_by_hash(tx_hash)
+            transaction = self.manager.get_transaction_by_hash(tx_hash)
             dbethtx.add_ethereum_transactions(write_cursor, [transaction], relevant_address=None)
             self._get_internal_transactions_for_ranges(
                 address=transaction.from_address,
@@ -442,7 +443,7 @@ class EthTransactions:
             return tx_receipt
 
         # not in the DB, so we need to query the chain for it
-        tx_receipt_data = self.ethereum.get_transaction_receipt(tx_hash=tx_hash)
+        tx_receipt_data = self.manager.get_transaction_receipt(tx_hash=tx_hash)
         try:
             dbethtx.add_receipt_data(write_cursor, tx_receipt_data)
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -473,5 +474,5 @@ class EthTransactions:
 
             with self.database.user_write() as cursor:
                 for entry in hash_results:
-                    tx_receipt_data = self.ethereum.get_transaction_receipt(tx_hash=entry)
+                    tx_receipt_data = self.manager.get_transaction_receipt(tx_hash=entry)
                     dbethtx.add_receipt_data(cursor, tx_receipt_data)

@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.constants import ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.chain.ethereum.transactions import EvmTransactions
 from rotkehlchen.chain.ethereum.types import WeightedNode, string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
@@ -289,18 +289,18 @@ def setup_ethereum_transactions_test(
 
 
 def get_decoded_events_of_transaction(
-        ethereum_manager: EthereumManager,
+        manager: EthereumManager,
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
         tx_hash: EVMTxHash,
 ) -> List[HistoryBaseEntry]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash"""
-    transactions = EthTransactions(ethereum=ethereum_manager, database=database)
+    transactions = EvmTransactions(manager=manager, database=database)
     with database.user_write() as cursor:
         transactions.get_or_query_transaction_receipt(cursor, tx_hash=tx_hash)
     decoder = EVMTransactionDecoder(
         database=database,
-        ethereum_manager=ethereum_manager,
+        manager=manager,
         transactions=transactions,
         msg_aggregator=msg_aggregator,
     )

@@ -45,7 +45,7 @@ def decode_uniswap_v2_like_swap(
         evm_address=tx_log.address,
         chain=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
-        ethereum_manager=ethereum_manager,
+        manager=ethereum_manager,
     )
 
     if pool_token.symbol in exclude_amms.values():

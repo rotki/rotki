@@ -86,7 +86,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
         dbethtx.add_ethereum_internal_transactions(cursor, [internal_tx], relevant_address='0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b')  # noqa: E501
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            manager=ethereum_manager,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
@@ -213,7 +213,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
         dbethtx.add_ethereum_transactions(cursor, [transaction], relevant_address=None)
         decoder = EVMTransactionDecoder(
             database=database,
-            ethereum_manager=ethereum_manager,
+            manager=ethereum_manager,
             transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )

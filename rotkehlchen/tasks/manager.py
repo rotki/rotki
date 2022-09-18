@@ -127,7 +127,7 @@ class TaskManager():
             self._maybe_schedule_exchange_history_query,
             self._maybe_schedule_ethereum_txreceipts,
             self._maybe_query_missing_prices,
-            self._maybe_decode_evm_transactions,
+            self._maybe_decode_ethereum_transactions,
             self._maybe_check_premium_status,
             self._maybe_update_snapshot_balances,
             self._maybe_update_curve_pools,
@@ -402,8 +402,8 @@ class TaskManager():
         with self.database.user_write() as cursor:
             cursor.executemany(query, updates)
 
-    def _maybe_decode_evm_transactions(self) -> None:
-        """Schedules the evm transaction decoding task
+    def _maybe_decode_ethereum_transactions(self) -> None:
+        """Schedules the ethereum transaction decoding task
 
         The DB check happens first here to see if scheduling would even be needed.
         But the DB query will happen again inside the query task while having the

@@ -62,7 +62,7 @@ from .utils import maybe_reshuffle_events
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
     from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.ethereum.transactions import EthTransactions
+    from rotkehlchen.chain.ethereum.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -70,18 +70,19 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+# TODO: Move to chain/evm/ directory once EvmManager (#4807) is merged
 class EVMTransactionDecoder():
 
     def __init__(
             self,
             database: 'DBHandler',
-            ethereum_manager: 'EthereumManager',
-            transactions: 'EthTransactions',
+            manager: 'EthereumManager',
+            transactions: 'EvmTransactions',
             msg_aggregator: MessagesAggregator,
     ):
         self.database = database
         self.all_counterparties: Set[str] = set()
-        self.ethereum_manager = ethereum_manager
+        self.manager = manager
         self.transactions = transactions
         self.msg_aggregator = msg_aggregator
         self.dbethtx = DBEthTx(self.database)
@@ -126,7 +127,7 @@ class EVMTransactionDecoder():
                     if class_name in self.decoders:
                         raise ModuleLoadingError(f'Decoder with name {class_name} already loaded')
                     self.decoders[class_name] = submodule_decoder(
-                        ethereum_manager=self.ethereum_manager,
+                        ethereum_manager=self.manager,
                         base_tools=self.base,
                         msg_aggregator=self.msg_aggregator,
                     )
@@ -215,9 +216,9 @@ class EVMTransactionDecoder():
             transaction: EvmTransaction,
             tx_receipt: EthereumTxReceipt,
     ) -> List[HistoryBaseEntry]:
-        """Decodes an ethereum transaction and its receipt and saves result in the DB"""
+        """Decodes an EVM transaction and its receipt and saves result in the DB"""
         self.base.reset_sequence_counter()
-        # check if any eth transfer happened in the transaction, including in internal transactions
+        # check if any transfer happened in the transaction, including in internal transactions
         events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
         action_items: List[ActionItem] = []
 
@@ -410,7 +411,7 @@ class EVMTransactionDecoder():
             # any tracked address is not involved
             return events
 
-        # now decode the actual transaction eth transfer itself
+        # now decode the actual transaction transfer itself
         amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
         if tx.to_address is None:
             if not self.base.is_tracked(tx.from_address):
@@ -513,7 +514,7 @@ class EVMTransactionDecoder():
                     userdb=self.database,
                     evm_address=tx_log.address,
                     chain=ChainID.ETHEREUM,
-                    ethereum_manager=self.ethereum_manager,
+                    manager=self.manager,
                 )
             except NotERC20Conformant:
                 return None  # ignore non-ERC20 transfers for now
