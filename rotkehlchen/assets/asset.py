@@ -1,16 +1,13 @@
 import logging
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from functools import total_ordering
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, cast
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type
 
-from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import (
     ChainID,
     evm_address_to_identifier,
     strethaddress_to_identifier,
 )
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Timestamp
@@ -721,177 +718,42 @@ WORLD_TO_CRYPTOCOM = {
 class Asset:
     """Base class for all assets"""
     identifier: str
-    name: str = field(init=False)
     asset_type: AssetType = field(init=False)
-    direct_field_initialization: InitVar[bool] = field(default=False)
-
-    def __post_init__(self, direct_field_initialization: bool = False) -> None:
-        """
-        Asset post initialization
-
-        The only thing that is given to initialize an asset is a string.
-
-        If a non string is given then it's probably a deserialization error or
-        invalid data were given to us by the server if an API was queried.
-
-        May raise UnknownAsset if the asset identifier can't be matched to anything
-        """
-        if not isinstance(self.identifier, str):
-            raise DeserializationError(
-                'Tried to initialize an asset out of a non-string identifier',
-            )
-
-        if direct_field_initialization:
-            return
-
-        # TODO: figure out a way to move this out. Moved in here due to cyclic imports
-        from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
-        data = AssetResolver().get_asset_data(self.identifier)
-        # make sure same case of identifier as in  DB is saved in the structure
-        object.__setattr__(self, 'identifier', data.identifier)
-        # Ugly hack to set attributes of a frozen data class as post init
-        # https://docs.python.org/3/library/dataclasses.html#frozen-instances
-        object.__setattr__(self, 'name', data.name)
-        object.__setattr__(self, 'asset_type', data.asset_type)
 
     @classmethod
     def initialize(
-            cls,
+            cls: Type['Asset'],
             identifier: str,
             asset_type: AssetType,
-            name: Optional[str] = None,
     ) -> 'Asset':
-        """Initialize an asset from fields. Subclasses should inherit this method."""
-        raise NotImplementedError
-
-    def serialize(self) -> str:
-        return self.identifier
-
-    def is_fiat(self) -> bool:
-        return self.asset_type == AssetType.FIAT
-
-    def is_evm_token(self) -> bool:
-        return self.asset_type == AssetType.EVM_TOKEN
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Returns an exportable json representation for an asset"""
-        return {
-            'identifier': self.identifier,
-            'name': self.name,
-            'asset_type': str(self.asset_type),
-        }
-
-    def to_cryptocompare(self) -> str:
-        """Returns the symbol with which to query cryptocompare for the asset
-
-        May raise:
-        - UnsupportedAsset if the asset is not supported by cryptocompare
-        """
-        raise UnsupportedAsset(f'{self.identifier} is not supported by cryptocompare')
-
-    def to_coingecko(self) -> str:
-        """Returns the symbol with which to query coingecko for the asset
-
-        May raise:
-        - UnsupportedAsset if the asset is not supported by coingecko
-        """
-        raise UnsupportedAsset(f'{self.identifier} is not supported by coingecko')
-
-    def has_coingecko(self) -> bool:
-        return False
-
-    def has_oracle(self) -> bool:
-        return False
-
-    def __hash__(self) -> int:
-        return hash(self.identifier)
-
-    def __eq__(self, other: Any) -> bool:
-        if other is None:
-            return False
-
-        if isinstance(other, Asset):
-            return self.identifier.lower() == other.identifier.lower()
-        if isinstance(other, str):
-            return self.identifier.lower() == other.lower()
-        # else
-        raise ValueError(f'Invalid comparison of asset with {type(other)}')
-
-    def __ne__(self, other: Any) -> bool:
-        return not self.__eq__(other)
-
-    def __lt__(self, other: Any) -> bool:
-        if isinstance(other, Asset):
-            return self.identifier < other.identifier
-        if isinstance(other, str):
-            return self.identifier < other
-        # else
-        raise ValueError(f'Invalid comparison of asset with {type(other)}')
-
-    def __str__(self) -> str:
-        return f'{self.name}({self.identifier})'
-
-    def __repr__(self) -> str:
-        return f'<Asset identifier:{self.identifier} name:{self.name}>'
+        ...
 
 
-@total_ordering
+class AssetWithName(Asset):
+    name: str
+
+
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
-class AssetWithSymbol(Asset):
+class AssetWithSymbol(AssetWithName):
     symbol: str = field(init=False)
 
-    def __post_init__(self, direct_field_initialization: bool = False) -> None:
-        if direct_field_initialization:
-            return
 
-        super().__post_init__()
-        # TODO: figure out a way to move this out. Moved in here due to cyclic imports
-        from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
 
-        data = AssetResolver().get_asset_data(self.identifier)
-        object.__setattr__(self, 'symbol', data.symbol)
+@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
+class FiatAsset(AssetWithSymbol):
+    ...
 
     @classmethod
     def initialize(
-            cls,
+            cls: Type['FiatAsset'],
             identifier: str,
             asset_type: AssetType,
             name: Optional[str] = None,
             symbol: Optional[str] = None,
     ) -> 'AssetWithSymbol':
-        """Initialize an asset from fields"""
-        asset = cls('whatever', direct_field_initialization=True)
-        object.__setattr__(asset, 'identifier', identifier)
-        object.__setattr__(asset, 'name', name)
-        object.__setattr__(asset, 'asset_type', asset_type)
-        object.__setattr__(asset, 'symbol', symbol)
-        return asset
-
-    def to_kraken(self) -> str:
-        return WORLD_TO_KRAKEN[self.identifier]
-
-    def to_bitfinex(self) -> str:
-        return WORLD_TO_BITFINEX.get(self.identifier, self.identifier)
-
-    def to_bittrex(self) -> str:
-        return WORLD_TO_BITTREX.get(self.identifier, self.identifier)
-
-    def to_binance(self) -> str:
-        return WORLD_TO_BINANCE.get(self.identifier, self.identifier)
-
-    def to_dict(self) -> Dict[str, Any]:
-        dict_representation = super().to_dict()
-        dict_representation['symbol'] = self.symbol
-        return dict_representation
-
-    def __str__(self) -> str:
-        return f'{self.symbol}({self.identifier})'
-
-    def __repr__(self) -> str:
-        return f'<AssetWithSymbol identifier:{self.identifier} name:{self.name} symbol:{self.symbol}>'  # noqa: E501
+        ...
 
 
-@total_ordering
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
 class CryptoAsset(AssetWithSymbol):
     started: Optional[Timestamp] = field(init=False)
@@ -901,47 +763,9 @@ class CryptoAsset(AssetWithSymbol):
     cryptocompare: Optional[str] = field(init=False)
     coingecko: Optional[str] = field(init=False)
 
-    def __post_init__(self, direct_field_initialization: bool = False) -> None:
-        if direct_field_initialization:
-            return
-
-        if self.identifier.startswith(NFT_DIRECTIVE):
-            object.__setattr__(self, 'name', f'nft with id {self.identifier}')
-            object.__setattr__(self, 'symbol', self.identifier[len(NFT_DIRECTIVE):])
-            object.__setattr__(self, 'asset_type', AssetType.NFT)
-            object.__setattr__(self, 'started', 0)
-            object.__setattr__(self, 'forked', None)
-            object.__setattr__(self, 'swapped_for', None)
-            object.__setattr__(self, 'cryptocompare', '')
-            object.__setattr__(self, 'coingecko', None)
-            return
-
-        super().__post_init__()
-        # TODO: figure out a way to move this out. Moved in here due to cyclic imports
-        from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
-
-        data = AssetResolver().get_asset_data(self.identifier)
-        object.__setattr__(self, 'started', data.started)
-        forked = None
-        if data.forked is not None:
-            try:
-                forked = CryptoAsset(data.forked)
-            except UnknownAsset:  # should not happen due to foreign keys
-                log.error(f'Forked crypto asset {data.forked} for {self.identifier} could not be found')  # noqa: E501
-        object.__setattr__(self, 'forked', forked)
-        swapped_for = None
-        if data.swapped_for is not None:
-            try:
-                swapped_for = CryptoAsset(data.swapped_for)
-            except UnknownAsset:  # should not happen due to foreign keys
-                log.error(f'Swapped for crypto asset {data.swapped_for} for {self.identifier} could not be found')  # noqa: E501
-        object.__setattr__(self, 'swapped_for', swapped_for)
-        object.__setattr__(self, 'cryptocompare', data.cryptocompare)
-        object.__setattr__(self, 'coingecko', data.coingecko)
-
     @classmethod
     def initialize(
-            cls,
+            cls: Type['CryptoAsset'],
             identifier: str,
             asset_type: AssetType,
             name: Optional[str] = None,
@@ -953,77 +777,7 @@ class CryptoAsset(AssetWithSymbol):
             # add the asset with inactive cryptocompare so querying is not attempted by symbol
             cryptocompare: Optional[str] = '',
     ) -> 'CryptoAsset':
-        """Initialize an asset from fields."""
-        asset = super().initialize(
-            identifier=identifier,
-            asset_type=asset_type,
-            name=name,
-            symbol=symbol,
-        )
-        asset = cast(CryptoAsset, asset)
-        object.__setattr__(asset, 'started', started)
-        object.__setattr__(asset, 'forked', forked)
-        object.__setattr__(asset, 'swapped_for', swapped_for)
-        object.__setattr__(asset, 'cryptocompare', cryptocompare)
-        object.__setattr__(asset, 'coingecko', coingecko)
-        return asset
-
-    def to_cryptocompare(self) -> str:
-        """Returns the symbol with which to query cryptocompare for the asset
-
-        May raise:
-        - UnsupportedAsset if the asset is not supported by cryptocompare
-        """
-        cryptocompare_str = self.cryptocompare
-        if cryptocompare_str is None:
-            cryptocompare_str = self.symbol
-        # There is an asset which should not be queried in cryptocompare
-        if cryptocompare_str is None or cryptocompare_str == '':
-            raise UnsupportedAsset(f'{self.identifier} is not supported by cryptocompare')
-
-        # Seems cryptocompare capitalizes everything. So cDAI -> CDAI
-        return cryptocompare_str.upper()
-
-    def to_coingecko(self) -> str:
-        """Returns the symbol with which to query coingecko for the asset
-
-        May raise:
-        - UnsupportedAsset if the asset is not supported by coingecko
-        """
-        coingecko_str = getattr(self, 'coingecko', '')
-        # This asset has no coingecko mapping
-        if coingecko_str == '':
-            raise UnsupportedAsset(f'{self.identifier} is not supported by coingecko')
-        return coingecko_str
-
-    def has_coingecko(self) -> bool:
-        return self.coingecko is not None and self.coingecko != ''
-
-    def has_oracle(self) -> bool:
-        return self.has_coingecko() or self.cryptocompare is not None
-
-    def to_dict(self) -> Dict[str, Any]:
-        dict_representation = super().to_dict()
-        forked, swapped_for = None, None
-        if self.forked is not None:
-            forked = self.forked.identifier
-        if self.swapped_for is not None:
-            swapped_for = self.swapped_for.identifier
-
-        dict_representation.update({
-            'started': self.started,
-            'forked': forked,
-            'swapped_for': swapped_for,
-            'cryptocompare': self.cryptocompare,
-            'coingecko': self.coingecko,
-        })
-        return dict_representation
-
-    def __str__(self) -> str:
-        return f'{self.symbol}({self.identifier})'
-
-    def __repr__(self) -> str:
-        return f'<CryptoAsset identifier:{self.identifier} name:{self.name} symbol:{self.symbol}>'
+        ...
 
 
 EthereumTokenDBTuple = Tuple[
@@ -1042,7 +796,6 @@ EthereumTokenDBTuple = Tuple[
 ]
 
 
-@total_ordering
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
 class EvmToken(CryptoAsset):
     evm_address: ChecksumEvmAddress = field(init=False)
@@ -1051,44 +804,17 @@ class EvmToken(CryptoAsset):
     decimals: int = field(init=False)
     protocol: str = field(init=False)
     underlying_tokens: List[UnderlyingToken] = field(init=False)
-    form_with_incomplete_data: InitVar[bool] = field(default=False)
 
     def __post_init__(
             self,
             direct_field_initialization: bool = False,
             form_with_incomplete_data: bool = False,
     ) -> None:
-        """
-        Asset post initialisation
-
-        If `form_with_incomplete_data` is given and is True then we allow the generation
-        of an asset object even if the corresponding underlying object is missing
-        important data such as name, symbol, token decimals etc. In most case this
-        is not wanted except for some exception like passing in some functions for
-        icon generation.
-        """
-        if direct_field_initialization:
-            return
-
-        super().__post_init__()
-        # TODO: figure out a way to move this out. Moved in here due to cyclic imports
-        from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
-        from rotkehlchen.globaldb import GlobalDBHandler  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
-
-        data = AssetResolver().get_asset_data(self.identifier, form_with_incomplete_data)
-        object.__setattr__(self, 'evm_address', data.address)
-        object.__setattr__(self, 'chain', data.chain)
-        object.__setattr__(self, 'token_kind', data.token_kind)
-        object.__setattr__(self, 'decimals', data.decimals)
-        object.__setattr__(self, 'protocol', data.protocol)
-
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(cursor, data.identifier)  # noqa: E501
-        object.__setattr__(self, 'underlying_tokens', underlying_tokens)
+        ...
 
     @classmethod
-    def initialize(  # type: ignore  # figure out a way to make mypy happy
-            cls,
+    def initialize(
+            cls: Type['EvmToken'],
             address: ChecksumEvmAddress,
             chain: ChainID,
             token_kind: EvmTokenKind,
@@ -1103,30 +829,7 @@ class EvmToken(CryptoAsset):
             protocol: Optional[str] = None,
             underlying_tokens: Optional[List[UnderlyingToken]] = None,
     ) -> 'EvmToken':
-        """Initialize a token from fields"""
-        identifier = evm_address_to_identifier(
-            address=address,
-            chain=chain,
-            token_type=token_kind,
-        )
-        token = super().initialize(
-            identifier=identifier,
-            asset_type=AssetType.EVM_TOKEN,
-            name=name,
-            symbol=symbol,
-            started=started,
-            swapped_for=swapped_for,
-            coingecko=coingecko,
-            cryptocompare=cryptocompare,
-        )
-        token = cast(EvmToken, token)
-        object.__setattr__(token, 'evm_address', address)
-        object.__setattr__(token, 'chain', chain)
-        object.__setattr__(token, 'token_kind', token_kind)
-        object.__setattr__(token, 'decimals', decimals)
-        object.__setattr__(token, 'protocol', protocol)
-        object.__setattr__(token, 'underlying_tokens', underlying_tokens)
-        return token
+        ...
 
     @classmethod
     def deserialize_from_db(
@@ -1134,43 +837,4 @@ class EvmToken(CryptoAsset):
             entry: EthereumTokenDBTuple,
             underlying_tokens: Optional[List[UnderlyingToken]] = None,
     ) -> 'EvmToken':
-        """May raise UnknownAsset if the swapped for asset can't be recognized
-
-        That error would be bad because it would mean somehow an unknown id made it into the DB
-        """
-        swapped_for = CryptoAsset(entry[8]) if entry[8] is not None else None
-        return cls.initialize(
-            address=entry[1],  # type: ignore
-            chain=ChainID(entry[2]),
-            token_kind=EvmTokenKind.deserialize_from_db(entry[3]),
-            decimals=entry[4],
-            name=entry[5],
-            symbol=entry[6],
-            started=Timestamp(entry[7]),  # type: ignore
-            swapped_for=swapped_for,
-            coingecko=entry[9],
-            cryptocompare=entry[10],
-            protocol=entry[11],
-            underlying_tokens=underlying_tokens,
-        )
-
-    def to_dict(self) -> Dict[str, Any]:
-        dict_representation = super().to_dict()
-        dict_representation.pop('forked', None)
-        underlying_tokens = [x.serialize() for x in self.underlying_tokens] if self.underlying_tokens is not None else None  # noqa: E501
-        dict_representation.update({
-            'address': self.evm_address,
-            'chain': self.chain.serialize(),
-            'token_kind': self.token_kind.serialize(),
-            'protocol': self.protocol,
-            'decimals': self.decimals,
-            'underlying_tokens': underlying_tokens,
-
-        })
-        return dict_representation
-
-    def __str__(self) -> str:
-        return f'{self.symbol}({self.evm_address} @ {self.chain})'
-
-    def __repr__(self) -> str:
-        return f'<EvmToken identifier:{self.identifier} name:{self.name} symbol:{self.symbol}>'
+        ...
