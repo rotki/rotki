@@ -102,7 +102,7 @@ class ExchangeManager():
             api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
-            PAIRS: Optional[List[str]],  # noqa: N803
+            binance_selected_trade_pairs: Optional[List[str]],
             ftx_subaccount: Optional[str],
     ) -> Tuple[bool, str]:
         """Edits both the exchange object and the database entry
@@ -127,7 +127,7 @@ class ExchangeManager():
                 api_secret=api_secret,
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
-                PAIRS=PAIRS,
+                binance_selected_trade_pairs=binance_selected_trade_pairs,
                 ftx_subaccount=ftx_subaccount,
             )
 
@@ -138,7 +138,7 @@ class ExchangeManager():
                 api_secret=api_secret,
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
-                PAIRS=PAIRS,
+                binance_selected_trade_pairs=binance_selected_trade_pairs,
                 ftx_subaccount=ftx_subaccount,
             )
             if success is False:
