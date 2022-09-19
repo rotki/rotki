@@ -14,6 +14,7 @@
           @update:uploaded="uploaded = $event"
         />
         <v-switch
+          v-if="source.startsWith('rotki_') === false"
           :value="dateInputFormat !== null"
           @change="changeShouldCustomDateFormat"
         >
