@@ -162,6 +162,20 @@ ASSET_CREATION_TYPE = (
 )
 
 
+def _maybe_upgrade_identifier(identifier: str) -> str:
+    """Change the identifier to the new format and return it.
+
+    - If it's an ethereim token return its CAIP
+    - If it's another known EVM chain identifier return its CAIP
+    - Otherwise return unmodified
+    """
+    if identifier.startswith(ETHEREUM_DIRECTIVE):
+        return strethaddress_to_identifier(identifier[ETHEREUM_DIRECTIVE_LENGTH:])
+
+    maybe_other_chain_new_id = OTHER_EVM_CHAINS_ASSETS.get(identifier)
+    return maybe_other_chain_new_id if maybe_other_chain_new_id is not None else identifier
+
+
 def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYPE:
     """Query all the information available from ethereum tokens in
     the v2 schema to be used in v3"""
@@ -312,12 +326,8 @@ def translate_binance_pairs(cursor: 'DBCursor') -> List[Tuple[str, str, str, str
     cursor.execute('SELECT pair, base_asset, quote_asset, location from binance_pairs;')
     binance_pairs = []
     for entry in cursor:
-        new_base = entry[1]
-        if new_base.startswith(ETHEREUM_DIRECTIVE):
-            new_base = strethaddress_to_identifier(new_base[ETHEREUM_DIRECTIVE_LENGTH:])
-        new_quote = entry[2]
-        if new_quote.startswith(ETHEREUM_DIRECTIVE):
-            new_quote = strethaddress_to_identifier(new_quote[ETHEREUM_DIRECTIVE_LENGTH:])
+        new_base = _maybe_upgrade_identifier(entry[1])
+        new_quote = _maybe_upgrade_identifier(entry[2])
         binance_pairs.append((entry[0], new_base, new_quote, entry[3]))
 
     return binance_pairs
