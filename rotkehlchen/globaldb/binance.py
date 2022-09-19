@@ -2,6 +2,7 @@ import logging
 import sqlite3
 from typing import TYPE_CHECKING, Iterable, List
 
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import BinancePair
@@ -23,7 +24,7 @@ class GlobalDBBinance:
 
     def save_all_binance_pairs(
             self,
-            new_pairs: Iterable['BinancePair'],
+            new_pairs: Iterable[BinancePair],
             location: Location,
     ) -> None:
         """Saves all possible binance pairs into the GlobalDB.
@@ -42,7 +43,7 @@ class GlobalDBBinance:
                 f'Tried to add a binance pair to the database but failed due to {str(e)}',
             ) from e
 
-    def get_all_binance_pairs(self, location: Location) -> List['BinancePair']:
+    def get_all_binance_pairs(self, location: Location) -> List[BinancePair]:
         """Gets all possible binance pairs from the GlobalDB.
         NB: This is not the user-selected binance pairs. This is just a cache.
         """
@@ -55,6 +56,6 @@ class GlobalDBBinance:
         for pair in cursor:
             try:
                 pairs.append(BinancePair.deserialize_from_db(pair))
-            except DeserializationError as e:
+            except (DeserializationError, UnsupportedAsset, UnknownAsset) as e:
                 log.debug(f'Failed to deserialize binance pair {pair}. {str(e)}')
         return pairs
