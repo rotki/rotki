@@ -45,9 +45,6 @@ export const EthTransaction = z.object({
   nonce: z.number()
 });
 export type EthTransaction = z.infer<typeof EthTransaction>;
-export const EthTransactionCollectionResponse = getCollectionResponseType(
-  getEntryWithMeta(EthTransaction)
-);
 export type TransactionRequestPayload = {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
@@ -67,3 +64,7 @@ export const TxEntryMeta = EntryMeta.merge(
 );
 
 export type TxEntryMeta = z.infer<typeof TxEntryMeta>;
+
+export const EthTransactionCollectionResponse = getCollectionResponseType(
+  getEntryWithMeta(EthTransaction, TxEntryMeta)
+);

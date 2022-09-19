@@ -55,9 +55,9 @@
           class="ml-1"
           :class="dark ? null : 'grey lighten-4'"
           :href="href"
-          :target="target"
+          target="_blank"
           v-on="on"
-          @click="openLink()"
+          @click="onLinkClick()"
         >
           <v-icon :x-small="!small" :small="small"> mdi-launch </v-icon>
         </v-btn>
@@ -78,7 +78,7 @@ import { storeToRefs } from 'pinia';
 import { computed, PropType, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useTheme } from '@/composables/common';
-import { interop } from '@/electron-interop';
+import { useLinks } from '@/composables/links';
 import { truncateAddress } from '@/filters';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -172,26 +172,8 @@ const displayUrl = computed<string>(() => {
   return get(base) + truncateAddress(get(text), 10);
 });
 
-const href = computed<string | undefined>(() => {
-  if (interop.isPackaged) {
-    return undefined;
-  }
-
-  return get(url);
-});
-
-const target = computed<string | undefined>(() => {
-  if (interop.isPackaged) {
-    return undefined;
-  }
-
-  return '_blank';
-});
-
 const { t } = useI18n();
-const openLink = () => {
-  interop.openUrl(get(url));
-};
+const { href, onLinkClick } = useLinks(url);
 </script>
 
 <style scoped lang="scss">

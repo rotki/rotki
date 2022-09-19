@@ -530,7 +530,6 @@ const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 const { ignore } = setupIgnore(
   IgnoreActionType.TRADES,
   selected,
-  data,
   fetch,
   (item: TradeEntry) => item.tradeId
 );

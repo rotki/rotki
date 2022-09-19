@@ -386,7 +386,6 @@ const { filters, matchers, updateFilter } = useTransactionFilter();
 const { ignore } = setupIgnore(
   IgnoreActionType.ETH_TRANSACTIONS,
   selected,
-  data,
   fetch,
   getId
 );

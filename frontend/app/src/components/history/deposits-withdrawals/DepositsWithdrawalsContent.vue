@@ -433,7 +433,7 @@ export default defineComponent({
       matchers,
       updatePaginationHandler,
       updateFilterHandler,
-      ...setupIgnore(IgnoreActionType.MOVEMENTS, selected, data, fetch, getId),
+      ...setupIgnore(IgnoreActionType.MOVEMENTS, selected, fetch, getId),
       getClass,
       tc
     };
