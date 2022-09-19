@@ -42,7 +42,6 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
-    from rotkehlchen.chain.ethereum.transactions import EthTransactions
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -86,8 +85,7 @@ class TaskManager():
             premium_sync_manager: Optional[PremiumSyncManager],
             chain_manager: ChainManager,
             exchange_manager: ExchangeManager,
-            evm_tx_decoder: 'EVMTransactionDecoder',
-            eth_transactions: 'EthTransactions',
+            eth_tx_decoder: 'EVMTransactionDecoder',
             deactivate_premium: Callable[[], None],
             activate_premium: Callable[[Premium], None],
             query_balances: Callable,
@@ -100,8 +98,7 @@ class TaskManager():
         self.database = database
         self.cryptocompare = cryptocompare
         self.exchange_manager = exchange_manager
-        self.evm_tx_decoder = evm_tx_decoder
-        self.eth_transactions = eth_transactions
+        self.eth_tx_decoder = eth_tx_decoder
         self.cryptocompare_queries: Set[CCHistoQuery] = set()
         self.chain_manager = chain_manager
         self.last_xpub_derivation_ts = 0
@@ -273,7 +270,7 @@ class TaskManager():
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=self.eth_transactions.single_address_query_transactions,
+            method=self.eth_tx_decoder.transactions.single_address_query_transactions,
             address=address,
             start_ts=0,
             end_ts=now,
@@ -298,7 +295,7 @@ class TaskManager():
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=self.eth_transactions.get_receipts_for_transactions_missing_them,
+            method=self.eth_tx_decoder.transactions.get_receipts_for_transactions_missing_them,
             limit=TX_RECEIPTS_QUERY_LIMIT,
         )
 
@@ -422,7 +419,7 @@ class TaskManager():
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
-                method=self.evm_tx_decoder.get_and_decode_undecoded_transactions,
+                method=self.eth_tx_decoder.get_and_decode_undecoded_transactions,
                 limit=TX_DECODING_LIMIT,
             )
 

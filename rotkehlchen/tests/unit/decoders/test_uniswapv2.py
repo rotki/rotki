@@ -131,7 +131,7 @@ def test_uniswap_v2_swap(database, ethereum_manager, eth_transactions):
         decoder = EVMTransactionDecoder(
             database=database,
             ethereum_manager=ethereum_manager,
-            eth_transactions=eth_transactions,
+            transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
@@ -255,7 +255,7 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_manager, eth_transactio
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with database.user_write() as cursor:

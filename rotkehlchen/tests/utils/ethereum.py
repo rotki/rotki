@@ -301,7 +301,7 @@ def get_decoded_events_of_transaction(
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=transactions,
+        transactions=transactions,
         msg_aggregator=msg_aggregator,
     )
     return decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])

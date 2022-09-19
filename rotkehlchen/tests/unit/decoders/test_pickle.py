@@ -74,7 +74,7 @@ def test_pickle_deposit(database, ethereum_manager, eth_transactions):
         decoder = EVMTransactionDecoder(
             database=database,
             ethereum_manager=ethereum_manager,
-            eth_transactions=eth_transactions,
+            transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
@@ -187,7 +187,7 @@ def test_pickle_withdraw(database, ethereum_manager, eth_transactions):
         decoder = EVMTransactionDecoder(
             database=database,
             ethereum_manager=ethereum_manager,
-            eth_transactions=eth_transactions,
+            transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
