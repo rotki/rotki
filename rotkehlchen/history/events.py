@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.ledger_actions import LedgerAction
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
-    from rotkehlchen.chain.ethereum.transactions import EthTransactions
     from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -55,8 +54,7 @@ class EventsHistorian:
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
             chain_manager: 'ChainManager',
-            eth_transactions: 'EthTransactions',
-            evm_tx_decoder: 'EVMTransactionDecoder',
+            eth_tx_decoder: 'EVMTransactionDecoder',
     ) -> None:
 
         self.msg_aggregator = msg_aggregator
@@ -64,8 +62,7 @@ class EventsHistorian:
         self.db = db
         self.exchange_manager = exchange_manager
         self.chain_manager = chain_manager
-        self.evm_tx_decoder = evm_tx_decoder
-        self.eth_transactions = eth_transactions
+        self.eth_tx_decoder = eth_tx_decoder
         self._reset_variables()
 
     def timestamp_to_date(self, timestamp: Timestamp) -> str:
@@ -346,7 +343,7 @@ class EventsHistorian:
             to_ts=end_ts,
         )
         try:
-            _, _ = self.eth_transactions.query(
+            _, _ = self.eth_tx_decoder.transactions.query(
                 filter_query=tx_filter_query,
                 has_premium=True,  # ignore limits here. Limit applied at processing
                 only_cache=False,
@@ -361,11 +358,11 @@ class EventsHistorian:
         step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Querying ethereum transaction receipts'
-        self.eth_transactions.get_receipts_for_transactions_missing_them()
+        self.eth_tx_decoder.transactions.get_receipts_for_transactions_missing_them()
         step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Decoding raw transactions'
-        self.evm_tx_decoder.get_and_decode_undecoded_transactions(limit=None)
+        self.eth_tx_decoder.get_and_decode_undecoded_transactions(limit=None)
         step = self._increase_progress(step, total_steps)
 
         # Include all external trades and trades from external exchanges

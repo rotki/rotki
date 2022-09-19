@@ -3183,7 +3183,7 @@ class RestAPI():
             tx_hashes: Optional[List[EVMTxHash]],
     ) -> Dict[str, Any]:
         try:
-            self.rotkehlchen.evm_tx_decoder.decode_transaction_hashes(ignore_cache=ignore_cache, tx_hashes=tx_hashes)  # noqa: E501
+            self.rotkehlchen.eth_tx_decoder.decode_transaction_hashes(ignore_cache=ignore_cache, tx_hashes=tx_hashes)  # noqa: E501
             return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
         except (RemoteError, DeserializationError) as e:
             status_code = HTTPStatus.BAD_GATEWAY
@@ -4347,7 +4347,7 @@ class RestAPI():
         return api_response(
             result={
                 # Converting to list since set is not json serializable
-                'result': list(self.rotkehlchen.evm_tx_decoder.all_counterparties),
+                'result': list(self.rotkehlchen.eth_tx_decoder.all_counterparties),
                 'message': '',
             },
         )

@@ -332,10 +332,10 @@ class Rotkehlchen():
             beaconchain=self.beaconchain,
             btc_derivation_gap_limit=settings.btc_derivation_gap_limit,
         )
-        self.evm_tx_decoder = EVMTransactionDecoder(
+        self.eth_tx_decoder = EVMTransactionDecoder(
             database=self.data.db,
             ethereum_manager=ethereum_manager,
-            eth_transactions=self.eth_transactions,
+            transactions=self.eth_transactions,
             msg_aggregator=self.msg_aggregator,
         )
         self.evm_accounting_aggregator = EVMAccountingAggregator(
@@ -354,8 +354,7 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
             exchange_manager=self.exchange_manager,
             chain_manager=self.chain_manager,
-            evm_tx_decoder=self.evm_tx_decoder,
-            eth_transactions=self.eth_transactions,
+            eth_tx_decoder=self.eth_tx_decoder,
         )
         self.task_manager = TaskManager(
             max_tasks_num=DEFAULT_MAX_TASKS_NUM,
@@ -366,8 +365,7 @@ class Rotkehlchen():
             premium_sync_manager=self.premium_sync_manager,
             chain_manager=self.chain_manager,
             exchange_manager=self.exchange_manager,
-            eth_transactions=self.eth_transactions,
-            evm_tx_decoder=self.evm_tx_decoder,
+            eth_tx_decoder=self.eth_tx_decoder,
             deactivate_premium=self.deactivate_premium_status,
             activate_premium=self.activate_premium_status,
             query_balances=self.query_balances,
@@ -619,7 +617,7 @@ class Rotkehlchen():
             if blockchain == SupportedBlockchain.ETHEREUM:
                 stack.enter_context(self.eth_transactions.wait_until_no_query_for(eth_addresses))
                 stack.enter_context(self.eth_transactions.missing_receipts_lock)
-                stack.enter_context(self.evm_tx_decoder.undecoded_tx_query_lock)
+                stack.enter_context(self.eth_tx_decoder.undecoded_tx_query_lock)
             self.data.db.remove_blockchain_accounts(cursor, blockchain, accounts)
 
     def get_history_query_status(self) -> Dict[str, str]:
@@ -995,11 +993,11 @@ class Rotkehlchen():
                 ethereum_manager=self.chain_manager.ethereum,
             )
             try:
-                curve_decoder = self.evm_tx_decoder.decoders['Curve']
+                curve_decoder = self.eth_tx_decoder.decoders['Curve']
             except KeyError as e:
                 raise InputError(
                     'Expected to find Curve decoder but it was not loaded. '
                     'Please open an issue on github.com/rotki/rotki/issues if you saw this.',
                 ) from e
             new_mappings = curve_decoder.reload()
-            self.evm_tx_decoder.address_mappings.update(new_mappings)
+            self.eth_tx_decoder.address_mappings.update(new_mappings)

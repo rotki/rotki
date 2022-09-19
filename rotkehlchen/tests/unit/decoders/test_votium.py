@@ -75,7 +75,7 @@ def test_votium_claim(database, ethereum_manager, eth_transactions):
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with database.user_write() as cursor:

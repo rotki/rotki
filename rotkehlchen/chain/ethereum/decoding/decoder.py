@@ -76,13 +76,13 @@ class EVMTransactionDecoder():
             self,
             database: 'DBHandler',
             ethereum_manager: 'EthereumManager',
-            eth_transactions: 'EthTransactions',
+            transactions: 'EthTransactions',
             msg_aggregator: MessagesAggregator,
     ):
         self.database = database
         self.all_counterparties: Set[str] = set()
         self.ethereum_manager = ethereum_manager
-        self.eth_transactions = eth_transactions
+        self.transactions = transactions
         self.msg_aggregator = msg_aggregator
         self.dbethtx = DBEthTx(self.database)
         self.dbevents = DBHistoryEvents(self.database)
@@ -273,7 +273,7 @@ class EVMTransactionDecoder():
         with self.database.user_write() as cursor:
             for tx_hash in tx_hashes:
                 try:
-                    receipt = self.eth_transactions.get_or_query_transaction_receipt(cursor, tx_hash)  # noqa: E501
+                    receipt = self.transactions.get_or_query_transaction_receipt(cursor, tx_hash)  # noqa: E501
                 except RemoteError as e:
                     raise InputError(f'Hash {tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
 

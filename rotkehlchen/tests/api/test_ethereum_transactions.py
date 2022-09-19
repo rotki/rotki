@@ -151,14 +151,14 @@ EXPECTED_4193_TXS = [{
 def assert_force_redecode_txns_works(api_server: APIServer, hashes: Optional[List[EVMTxHash]]):
     rotki = api_server.rest_api.rotkehlchen
     get_eth_txns_patch = patch.object(
-        rotki.evm_tx_decoder.dbethtx,
+        rotki.eth_tx_decoder.dbethtx,
         'get_ethereum_transactions',
-        wraps=rotki.evm_tx_decoder.dbethtx.get_ethereum_transactions,
+        wraps=rotki.eth_tx_decoder.dbethtx.get_ethereum_transactions,
     )
     get_or_decode_txn_events_patch = patch.object(
-        rotki.evm_tx_decoder,
+        rotki.eth_tx_decoder,
         'get_or_decode_transaction_events',
-        wraps=rotki.evm_tx_decoder.get_or_decode_transaction_events,
+        wraps=rotki.eth_tx_decoder.get_or_decode_transaction_events,
     )
     get_or_query_txn_receipt_patch = patch('rotkehlchen.chain.ethereum.transactions.EthTransactions.get_or_query_transaction_receipt')  # noqa: 501
     with ExitStack() as stack:

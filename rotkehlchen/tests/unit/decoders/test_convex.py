@@ -139,7 +139,7 @@ def test_booster_deposit(database, ethereum_manager, eth_transactions):
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with dbethtx.db.user_write() as cursor:
@@ -242,7 +242,7 @@ def test_booster_withdraw(database, ethereum_manager, eth_transactions):
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with dbethtx.db.user_write() as cursor:
@@ -377,7 +377,7 @@ def test_cvxcrv_get_reward(database, ethereum_manager, eth_transactions):
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with dbethtx.db.user_write() as cursor:
@@ -506,7 +506,7 @@ def test_cvxcrv_withdraw(database, ethereum_manager, eth_transactions):
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with dbethtx.db.user_write() as cursor:
@@ -608,7 +608,7 @@ def test_cvxcrv_stake(database, ethereum_manager, eth_transactions):
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with dbethtx.db.user_write() as cursor:
@@ -724,7 +724,7 @@ def test_cvx_stake(database, ethereum_manager, eth_transactions):
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with dbethtx.db.user_write() as cursor:
@@ -870,7 +870,7 @@ def test_cvx_get_reward(database, ethereum_manager, eth_transactions):
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with dbethtx.db.user_write() as cursor:
@@ -962,7 +962,7 @@ def test_cvx_withdraw(database, ethereum_manager, eth_transactions):
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with dbethtx.db.user_write() as cursor:
@@ -1045,7 +1045,7 @@ def test_claimzap_abracadabras(database, ethereum_manager, eth_transactions):
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with dbethtx.db.user_write() as cursor:
@@ -1138,7 +1138,7 @@ def test_claimzap_cvx_locker(database, ethereum_manager, eth_transactions):
     decoder = EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=msg_aggregator,
     )
     with dbethtx.db.user_write() as cursor:

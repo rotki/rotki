@@ -46,7 +46,6 @@ def fixture_task_manager(
         cryptocompare,
         exchange_manager,
         evm_transaction_decoder,
-        eth_transactions,
         messages_aggregator,
 ) -> TaskManager:
     task_manager = TaskManager(
@@ -58,8 +57,7 @@ def fixture_task_manager(
         premium_sync_manager=MockPremiumSyncManager(),  # type: ignore
         chain_manager=blockchain,
         exchange_manager=exchange_manager,
-        evm_tx_decoder=evm_transaction_decoder,
-        eth_transactions=eth_transactions,
+        eth_tx_decoder=evm_transaction_decoder,
         deactivate_premium=lambda: None,
         query_balances=lambda: None,
         update_curve_pools_cache=lambda: None,
@@ -80,7 +78,7 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
         assert end_ts >= now
 
     tx_query_patch = patch.object(
-        task_manager.eth_transactions,
+        task_manager.eth_tx_decoder.transactions,
         'single_address_query_transactions',
         wraps=tx_query_mock,
     )

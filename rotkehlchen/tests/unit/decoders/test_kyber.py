@@ -87,7 +87,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager, eth_transactions)
         decoder = EVMTransactionDecoder(
             database=database,
             ethereum_manager=ethereum_manager,
-            eth_transactions=eth_transactions,
+            transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)
@@ -214,7 +214,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager, eth_transactions)
         decoder = EVMTransactionDecoder(
             database=database,
             ethereum_manager=ethereum_manager,
-            eth_transactions=eth_transactions,
+            transactions=eth_transactions,
             msg_aggregator=msg_aggregator,
         )
         events = decoder.decode_transaction(cursor, transaction=transaction, tx_receipt=receipt)

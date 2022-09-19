@@ -146,7 +146,7 @@ def fixture_evm_transaction_decoder(
     return EVMTransactionDecoder(
         database=database,
         ethereum_manager=ethereum_manager,
-        eth_transactions=eth_transactions,
+        transactions=eth_transactions,
         msg_aggregator=function_scope_messages_aggregator,
     )
 
