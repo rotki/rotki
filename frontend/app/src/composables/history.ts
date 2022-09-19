@@ -11,7 +11,6 @@ import { uniqueStrings } from '@/utils/data';
 export const setupIgnore = <T extends EntryMeta>(
   type: IgnoreActionType,
   selected: Ref<T[]>,
-  items: Ref<T[]>,
   refresh: () => any,
   getIdentifier: (item: T) => string
 ) => {
@@ -32,16 +31,10 @@ export const setupIgnore = <T extends EntryMeta>(
   };
 
   const ignore = async (ignored: boolean) => {
-    const ids = get(items)
+    const ids = get(selected)
       .filter(item => {
         const { ignoredInAccounting } = item;
-        const identifier = getIdentifier(item);
-        return (
-          (ignored ? !ignoredInAccounting : ignoredInAccounting) &&
-          get(selected)
-            .map(item => getIdentifier(item))
-            .includes(identifier)
-        );
+        return ignored ? !ignoredInAccounting : ignoredInAccounting;
       })
       .map(item => getIdentifier(item))
       .filter(uniqueStrings);

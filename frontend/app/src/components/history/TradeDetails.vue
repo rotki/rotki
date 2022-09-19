@@ -37,9 +37,9 @@
                 class="ml-2"
                 :class="dark ? null : 'grey lighten-4'"
                 :href="href"
-                :target="target"
+                target="_blank"
                 v-on="on"
-                @click="openLink()"
+                @click="onLinkClick()"
               >
                 <v-icon :small="true"> mdi-launch </v-icon>
               </v-btn>
@@ -54,12 +54,12 @@
 </template>
 <script setup lang="ts">
 import { get } from '@vueuse/core';
-import { computed, PropType, toRefs } from 'vue';
+import { PropType } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { useTheme } from '@/composables/common';
-import { useInterop } from '@/electron-interop';
+import { useLinks } from '@/composables/links';
 import { TradeEntry } from '@/store/history/types';
 
 const props = defineProps({
@@ -77,29 +77,9 @@ const props = defineProps({
 const { item } = toRefs(props);
 const { dark } = useTheme();
 const { tc } = useI18n();
-const { isPackaged, openUrl } = useInterop();
 
-const hasLink = computed(() => {
-  const { link } = get(item);
-  return link && link.startsWith('http');
-});
-
-const target = isPackaged ? undefined : '_blank';
-
-const href = computed(() => {
-  if (isPackaged) {
-    return undefined;
-  }
-  const { link } = get(item);
-  return link ?? '';
-});
-
-const openLink = () => {
-  const { link } = get(item);
-  if (link) {
-    openUrl(link);
-  }
-};
+const link = computed(() => get(item).link || '');
+const { href, hasLink, onLinkClick } = useLinks(link);
 </script>
 <style scoped lang="scss">
 ::v-deep {

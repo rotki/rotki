@@ -10,9 +10,9 @@
         class="ml-2"
         :class="dark || text ? null : 'grey lighten-4'"
         :href="href"
-        :target="target"
+        target="_blank"
         v-on="on"
-        @click="openLink"
+        @click="onLinkClick"
       >
         <span v-if="text" class="mr-2"> {{ text }}</span>
         <v-icon :small="true"> mdi-launch </v-icon>
@@ -22,48 +22,25 @@
   </v-tooltip>
 </template>
 
-<script lang="ts">
-import { get } from '@vueuse/core';
-import { computed, defineComponent, toRefs } from 'vue';
+<script setup lang="ts">
+import { toRefs } from 'vue';
 import { useTheme } from '@/composables/common';
-import { interop } from '@/electron-interop';
+import { useLinks } from '@/composables/links';
 
-export default defineComponent({
-  name: 'IconLink',
-  props: {
-    text: {
-      type: String,
-      required: false,
-      default: ''
-    },
-    url: {
-      type: String,
-      required: true
-    }
+const props = defineProps({
+  text: {
+    type: String,
+    required: false,
+    default: ''
   },
-  setup(props) {
-    const { url } = toRefs(props);
-    const openLink = () => {
-      interop.openUrl(get(url));
-    };
-
-    const target = interop.isPackaged ? undefined : '_blank';
-
-    const href = computed(() => {
-      if (interop.isPackaged) {
-        return undefined;
-      }
-      return get(url);
-    });
-
-    const { dark } = useTheme();
-
-    return {
-      openLink,
-      target,
-      href,
-      dark
-    };
+  url: {
+    type: String,
+    required: true
   }
 });
+
+const { url } = toRefs(props);
+const { dark } = useTheme();
+
+const { href, onLinkClick } = useLinks(url);
 </script>

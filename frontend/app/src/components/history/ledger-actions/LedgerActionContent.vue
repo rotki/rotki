@@ -570,7 +570,6 @@ const loading = isSectionLoading(Section.LEDGER_ACTIONS);
 const { ignore } = setupIgnore(
   IgnoreActionType.LEDGER_ACTIONS,
   selected,
-  data,
   fetch,
   getId
 );

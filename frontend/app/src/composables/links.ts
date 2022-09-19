@@ -13,13 +13,18 @@ export const useLinks = (url?: Ref<string>) => {
   });
 
   const onLinkClick = !isPackaged
-    ? undefined
+    ? () => {}
     : () => {
         openUrl(get(targetUrl));
       };
 
+  const hasLink = computed(() => {
+    return get(url)?.startsWith('http');
+  });
+
   return {
     href,
+    hasLink,
     onLinkClick
   };
 };
