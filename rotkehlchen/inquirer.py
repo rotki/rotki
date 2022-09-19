@@ -94,7 +94,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
-    from rotkehlchen.externalapis.manual_current_price import ManualCurrentOracle
+    from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 
 
 logger = logging.getLogger(__name__)

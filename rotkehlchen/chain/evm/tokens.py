@@ -17,7 +17,7 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlock
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
