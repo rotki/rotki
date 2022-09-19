@@ -1,5 +1,0 @@
-# rotkehlchen
-webargs==5.5.3
-Flask-Restful==0.3.7
-Flask==1.0.2
-marshmallow==2.17.0
