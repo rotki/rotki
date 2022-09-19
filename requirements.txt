@@ -24,7 +24,7 @@ cryptography==37.0.4
 # For the rest api
 flask-cors==3.0.10
 flask==2.2.2
-marshmallow==3.17.1
+marshmallow==3.18.0
 webargs==8.2.0
 werkzeug==2.2.2
 
