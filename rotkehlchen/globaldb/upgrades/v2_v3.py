@@ -213,11 +213,7 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
         ))
         new_swapped_for = old_ethereum_id_to_new.get(entry[8])
         if new_swapped_for is not None:
-            new_swapped_for = evm_address_to_identifier(
-                address=entry[8][ETHEREUM_DIRECTIVE_LENGTH:],
-                chain=ChainID.ETHEREUM,
-                token_type=EvmTokenKind.ERC20,
-            )
+            new_swapped_for = _maybe_upgrade_identifier(entry[8])
             old_ethereum_id_to_new[entry[8]] = new_swapped_for
 
         assets_tuple.append((
@@ -258,12 +254,9 @@ def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
         if entry[0] in OTHER_EVM_CHAINS_ASSETS:
             continue
         swapped_for = entry[5]
-        if swapped_for is not None and swapped_for.startswith(ETHEREUM_DIRECTIVE):
-            swapped_for = evm_address_to_identifier(
-                address=swapped_for[ETHEREUM_DIRECTIVE_LENGTH:],
-                chain=ChainID.ETHEREUM,
-                token_type=EvmTokenKind.ERC20,
-            )
+        if swapped_for is not None:
+            swapped_for = _maybe_upgrade_identifier(swapped_for)
+
         assets_tuple.append((
             entry[0],  # identifier
             entry[2],  # name
@@ -314,10 +307,7 @@ def translate_owned_assets(cursor: 'DBCursor') -> List[Tuple[str]]:
     cursor.execute('SELECT asset_id from user_owned_assets;')
     owned_assets = []
     for (asset_id,) in cursor:
-        new_id = asset_id
-        if asset_id.startswith(ETHEREUM_DIRECTIVE):
-            new_id = strethaddress_to_identifier(asset_id[ETHEREUM_DIRECTIVE_LENGTH:])
-        owned_assets.append((new_id,))
+        owned_assets.append((_maybe_upgrade_identifier(asset_id),))
     return owned_assets
 
 
@@ -347,11 +337,8 @@ def translate_assets_in_price_table(cursor: 'DBCursor') -> List[Tuple[str, str, 
     )
     updated_rows = []
     for (from_asset, to_asset, source_type, timestamp, price) in cursor:
-        new_from_asset, new_to_asset = from_asset, to_asset
-        if new_from_asset.startswith(ETHEREUM_DIRECTIVE):
-            new_from_asset = strethaddress_to_identifier(new_from_asset[ETHEREUM_DIRECTIVE_LENGTH:])  # noqa: E501
-        if new_to_asset.startswith(ETHEREUM_DIRECTIVE):
-            new_to_asset = strethaddress_to_identifier(new_to_asset[ETHEREUM_DIRECTIVE_LENGTH:])
+        new_from_asset = _maybe_upgrade_identifier(from_asset)
+        new_to_asset = _maybe_upgrade_identifier(to_asset)
         updated_rows.append((new_from_asset, new_to_asset, source_type, timestamp, price))
 
     return updated_rows

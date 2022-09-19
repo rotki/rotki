@@ -1,8 +1,10 @@
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.types import ChainID, EvmTokenKind
 
@@ -25,10 +27,42 @@ def _count_v2_v3_assets_inserted() -> int:
     return assets_inserted_by_update - 1
 
 
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('globaldb_version', [2])
-@pytest.mark.parametrize('target_globaldb_version', [3])
+@pytest.mark.parametrize('target_globaldb_version', [2])
+@pytest.mark.parametrize('reaload_custom_assets', [False])
 def test_upgrade_v2_v3(globaldb):
     """At the start of this test global DB is upgraded to v3"""
+    # Check the state before upgrading
+    with globaldb.conn.read_ctx() as cursor:
+        assert globaldb.get_setting_value('version', None) == 2
+        cursor.execute(
+            'SELECT COUNT(*) FROM price_history WHERE from_asset=? OR to_asset=?',
+            ('BIFI', 'BIFI'),
+        )
+        assert cursor.fetchone()[0] == 2
+
+        # Check that the expected assets are present
+        ids_in_db = {row[0] for row in cursor.execute('SELECT * FROM user_owned_assets')}
+        assert ids_in_db == {
+            '_ceth_0x4E15361FD6b4BB609Fa63C81A2be19d873717870',
+            '_ceth_0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5',
+            '_ceth_0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0',
+            'BTC',
+            'ETH',
+            'USD',
+            'EUR',
+            'BCH',
+            'BIFI',
+        }
+
+    # execute upgrade
+    with patch('rotkehlchen.globaldb.utils.GLOBAL_DB_VERSION', 2):
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            dbpath=globaldb._data_directory / 'global_data' / 'global.db',
+        )
+
     assert globaldb.get_setting_value('version', None) == 3
     assets_inserted_by_update = _count_v2_v3_assets_inserted()
     with globaldb.conn.read_ctx() as cursor:
@@ -78,6 +112,7 @@ def test_upgrade_v2_v3(globaldb):
             'USD',
             'EUR',
             'BCH',
+            'eip155:56/erc20:0xCa3F508B8e4Dd382eE878A314789373D80A5190A',
         }
 
         # FLO asset is the one that is not an evm token but has `swapped_for` pointing to an evm
@@ -93,3 +128,14 @@ def test_upgrade_v2_v3(globaldb):
         ).fetchone()[0]
         # should have found one asset that FLO's swapped_for is pointing to
         assert found_assets == 1
+
+        # Check that new evm tokens have been correctly upgraded in price_history. Checking BIFI
+        cursor.execute('SELECT price FROM price_history WHERE from_asset == "eip155:56/erc20:0xCa3F508B8e4Dd382eE878A314789373D80A5190A"')  # noqa: E501
+        assert cursor.fetchone()[0] == '464.99'
+        cursor.execute('SELECT price FROM price_history WHERE to_asset == "eip155:56/erc20:0xCa3F508B8e4Dd382eE878A314789373D80A5190A"')  # noqa: E501
+        assert cursor.fetchone()[0] == '0.00215058388'
+        cursor.execute(
+            'SELECT COUNT(*) FROM price_history WHERE from_asset=? OR to_asset=?',
+            ('BIFI', 'BIFI'),
+        )
+        assert cursor.fetchone()[0] == 0
