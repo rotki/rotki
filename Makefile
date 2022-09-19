@@ -4,9 +4,9 @@ ISORT_CHECK_PARAMS = --diff --check-only
 
 lint:
 	isort $(ISORT_PARAMS) $(ISORT_CHECK_PARAMS)
-	flake8 rotkehlchen/ tools/data_faker package.py
-	mypy rotkehlchen/ tools/data_faker package.py --install-types --non-interactive
-	pylint --rcfile .pylint.rc rotkehlchen/ tools/data_faker package.py
+	flake8 rotkehlchen/ package.py
+	mypy rotkehlchen/ package.py --install-types --non-interactive
+	pylint --rcfile .pylint.rc rotkehlchen/ package.py
 
 
 format:
