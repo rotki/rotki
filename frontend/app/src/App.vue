@@ -37,8 +37,8 @@ import { useRoute, useRouter } from '@/composables/router';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
 import { ThemeChecker } from '@/premium/premium';
-import { monitor } from '@/services/monitoring';
 import { useMainStore } from '@/store/main';
+import { useMonitorStore } from '@/store/monitor';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
@@ -89,6 +89,7 @@ const completeLogin = async (complete: boolean) => {
 };
 
 const { restartBackend } = useBackendManagement();
+const { start } = useMonitorStore();
 const { t } = useI18n();
 
 onBeforeMount(async () => {
@@ -124,7 +125,7 @@ onBeforeMount(async () => {
 
   await connect();
   if (isDevelopment && get(logged)) {
-    monitor.start();
+    start();
   }
   const search = window.location.search;
   const skipUpdate = search.indexOf('skip_update') >= 0;

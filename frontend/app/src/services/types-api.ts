@@ -22,19 +22,6 @@ export interface PendingTask {
   readonly taskId: number;
 }
 
-export interface Messages {
-  readonly warnings: string[];
-  readonly errors: string[];
-}
-
-// This is equivalent to python's AssetBalance named tuple
-export interface PeriodicClientQueryResult {
-  readonly lastBalanceSave: number;
-  readonly ethNodeConnection: boolean;
-  readonly connectedEthNodes: string[];
-  readonly lastDataUploadTs: number;
-}
-
 const BackendVersion = z.object({
   ourVersion: z.string().optional(),
   latestVersion: z.string().nullish(),

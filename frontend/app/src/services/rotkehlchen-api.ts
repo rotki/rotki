@@ -28,9 +28,7 @@ import {
   BackendInfo,
   BtcAccountData,
   GeneralAccountData,
-  Messages,
   PendingTask,
-  PeriodicClientQueryResult,
   SyncAction,
   TaskNotFoundError,
   TaskStatus
@@ -246,17 +244,6 @@ export class RotkehlchenApi {
     const success = response.status === 409 ? true : handleResponse(response);
     this.cancel();
     return success;
-  }
-
-  async queryPeriodicData(): Promise<PeriodicClientQueryResult> {
-    const response = await this.axios.get<
-      ActionResult<PeriodicClientQueryResult>
-    >('/periodic', {
-      validateStatus: validWithSessionStatus,
-      transformResponse: basicAxiosTransformer
-    });
-
-    return handleResponse(response);
   }
 
   async setPremiumCredentials(
@@ -790,12 +777,6 @@ export class RotkehlchenApi {
         validateStatus: validStatus
       }
     );
-
-    return handleResponse(response);
-  }
-
-  async consumeMessages(): Promise<Messages> {
-    const response = await this.axios.get<ActionResult<Messages>>('/messages');
 
     return handleResponse(response);
   }

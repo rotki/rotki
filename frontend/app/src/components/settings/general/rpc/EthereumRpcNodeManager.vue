@@ -147,7 +147,7 @@ import { deserializeApiErrorMessage } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { useMessageStore } from '@/store/message';
 import { useNotifications } from '@/store/notifications';
-import { useSessionStore } from '@/store/session';
+import { usePeriodicStore } from '@/store/session/periodic';
 import {
   EthereumRpcNode,
   EthereumRpcNodeList,
@@ -172,7 +172,7 @@ export default defineComponent({
     const { setMessage } = useMessageStore();
     const { tc } = useI18n();
 
-    const { connectedEthNodes } = storeToRefs(useSessionStore());
+    const { connectedEthNodes } = storeToRefs(usePeriodicStore());
 
     async function loadNodes(): Promise<void> {
       try {
