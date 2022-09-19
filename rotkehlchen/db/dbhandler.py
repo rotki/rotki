@@ -1619,7 +1619,7 @@ class DBHandler:
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
             kraken_account_type: Optional[KrakenAccountType] = None,
-            PAIRS: Optional[List[str]] = None,  # noqa: N803
+            binance_selected_trade_pairs: Optional[List[str]] = None,
             ftx_subaccount: Optional[str] = None,
     ) -> None:
         if location not in SUPPORTED_EXCHANGES:
@@ -1640,8 +1640,8 @@ class DBHandler:
                     (name, location.serialize_for_db(), KRAKEN_ACCOUNT_TYPE_KEY, kraken_account_type.serialize()),  # noqa: E501
                 )
 
-            if location in (Location.BINANCE, Location.BINANCEUS) and PAIRS is not None:
-                self.set_binance_pairs(cursor, name=name, pairs=PAIRS, location=location)
+            if location in (Location.BINANCE, Location.BINANCEUS) and binance_selected_trade_pairs is not None:  # noqa: E501
+                self.set_binance_pairs(cursor, name=name, pairs=binance_selected_trade_pairs, location=location)  # noqa: E501
 
             if location == Location.FTX and ftx_subaccount is not None:
                 self.set_ftx_subaccount(cursor, name, ftx_subaccount)
@@ -1656,7 +1656,7 @@ class DBHandler:
             api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
-            PAIRS: Optional[List[str]],  # noqa: N803
+            binance_selected_trade_pairs: Optional[List[str]],
             ftx_subaccount: Optional[str],
     ) -> None:
         """May raise InputError if something is wrong with editing the DB"""
@@ -1707,10 +1707,10 @@ class DBHandler:
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
 
         location_is_binance = location in (Location.BINANCE, Location.BINANCEUS)
-        if location_is_binance and PAIRS is not None:
+        if location_is_binance and binance_selected_trade_pairs is not None:
             try:
                 exchange_name = new_name if new_name is not None else name
-                self.set_binance_pairs(write_cursor, name=exchange_name, pairs=PAIRS, location=location)  # noqa: E501
+                self.set_binance_pairs(write_cursor, name=exchange_name, pairs=binance_selected_trade_pairs, location=location)  # noqa: E501
                 # Also delete used query ranges to allow fetching missing trades
                 # from the possible new pairs
                 write_cursor.execute(
