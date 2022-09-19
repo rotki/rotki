@@ -23,8 +23,8 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.event.mixins import AccountingEventMixin
     from rotkehlchen.accounting.ledger_actions import LedgerAction
+    from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.ethereum.transactions import EthTransactions
     from rotkehlchen.chain.manager import ChainManager
