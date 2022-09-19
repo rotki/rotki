@@ -70,7 +70,7 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
     def _deserialize(  # type: ignore  # we may get a list in value
             self,
             value: Union[List[str], str],
-            attr: str,
+            attr: Optional[str],
             data: Dict[str, Any],
             **kwargs: Any,
     ) -> List[Any]:
@@ -178,7 +178,7 @@ class AmountField(fields.Field):
     @staticmethod
     def _serialize(
             value: AssetAmount,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> str:
@@ -220,7 +220,7 @@ class PriceField(fields.Field):
     @staticmethod
     def _serialize(
             value: FVal,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> str:
@@ -249,7 +249,7 @@ class FeeField(fields.Field):
     @staticmethod
     def _serialize(
             value: Fee,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> Optional[str]:
@@ -276,7 +276,7 @@ class FloatingPercentageField(fields.Field):
     @staticmethod
     def _serialize(
             value: FVal,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> str:
@@ -334,7 +334,7 @@ class SerializableEnumField(fields.Field):
     @staticmethod
     def _serialize(
             value: SerializableEnumMixin,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> str:
@@ -364,7 +364,7 @@ class AssetField(fields.Field):
     @staticmethod
     def _serialize(
             value: Asset,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> Optional[str]:
@@ -401,7 +401,7 @@ class MaybeAssetField(fields.Field):
     @staticmethod
     def _serialize(
             value: Asset,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> Optional[str]:
@@ -430,7 +430,7 @@ class EthereumAddressField(fields.Field):
     @staticmethod
     def _serialize(
             value: ChecksumEvmAddress,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> str:
@@ -460,7 +460,7 @@ class EVMTransactionHashField(fields.Field):
     @staticmethod
     def _serialize(
             value: EVMTxHash,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> str:
@@ -498,7 +498,7 @@ class AssetTypeField(fields.Field):
     @staticmethod
     def _serialize(
             value: AssetType,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> str:
@@ -531,7 +531,7 @@ class LocationField(fields.Field):
     @staticmethod
     def _serialize(
             value: Location,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> str:
@@ -577,7 +577,7 @@ class ApiSecretField(fields.Field):
     @staticmethod
     def _serialize(
             value: ApiSecret,
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> str:
@@ -619,7 +619,7 @@ class AssetConflictsField(fields.Field):
     @staticmethod
     def _serialize(
             value: Dict[str, Any],
-            attr: str,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> Dict[str, Any]:
