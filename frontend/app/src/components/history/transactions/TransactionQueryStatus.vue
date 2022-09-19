@@ -224,11 +224,11 @@
 import { get } from '@vueuse/core';
 import { computed, ref, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
+import { useTxQueryStatus } from '@/store/history/query-status';
 import {
   EthereumTransactionQueryData,
   EthereumTransactionsQueryStatus
-} from '@/services/websocket/messages';
-import { useTxQueryStatus } from '@/store/history/query-status';
+} from '@/types/websocket-messages';
 import { toSentenceCase } from '@/utils/text';
 
 defineProps({

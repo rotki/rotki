@@ -1,21 +1,21 @@
 import { SemiPartial } from '@rotki/common';
 import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import { get } from '@vueuse/core';
-import { useI18n } from 'vue-i18n-composable';
+import VueI18n from 'vue-i18n';
 import { usePremium } from '@/composables/premium';
+import { useTxQueryStatus } from '@/store/history/query-status';
 import {
   BalanceSnapshotError,
   EthereumTransactionQueryData,
   PremiumStatusUpdateData,
   SocketMessageType,
   WebsocketMessage
-} from '@/services/websocket/messages';
-import { useTxQueryStatus } from '@/store/history/query-status';
+} from '@/types/websocket-messages';
 
 export const handleSnapshotError = (
-  message: WebsocketMessage<SocketMessageType>
+  message: WebsocketMessage<SocketMessageType>,
+  tc: typeof VueI18n.prototype.tc
 ): SemiPartial<NotificationPayload, 'title' | 'message'> => {
-  const { tc } = useI18n();
   const data = BalanceSnapshotError.parse(message.data);
   return {
     title: tc('notification_messages.snapshot_failed.title'),
@@ -34,9 +34,9 @@ export const handleEthereumTransactionStatus = (
 
 export const handleLegacyMessage = (
   message: string,
-  isWarning: boolean
+  isWarning: boolean,
+  tc: typeof VueI18n.prototype.tc
 ): SemiPartial<NotificationPayload, 'title' | 'message'> => {
-  const { tc } = useI18n();
   return {
     title: tc('notification_messages.backend.title'),
     message: message,
@@ -46,12 +46,12 @@ export const handleLegacyMessage = (
 };
 
 export const handlePremiumStatusUpdate = (
-  data: PremiumStatusUpdateData
+  data: PremiumStatusUpdateData,
+  tc: typeof VueI18n.prototype.tc
 ): SemiPartial<NotificationPayload, 'title' | 'message'> | null => {
   const { is_premium_active: active, expired } = data;
   const premium = usePremium();
   const isPremium = get(premium);
-  const { tc } = useI18n();
 
   set(premium, active);
   if (active && !isPremium) {

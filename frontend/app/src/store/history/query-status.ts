@@ -4,7 +4,7 @@ import { ref } from 'vue';
 import {
   EthereumTransactionQueryData,
   EthereumTransactionsQueryStatus
-} from '@/services/websocket/messages';
+} from '@/types/websocket-messages';
 
 export const useTxQueryStatus = defineStore(
   'history/transactionsQueryStatus',

@@ -10,7 +10,6 @@ import { getBnFormat } from '@/data/amount_formatter';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop, useInterop } from '@/electron-interop';
 import { SupportedExternalExchanges } from '@/services/balances/types';
-import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
 import {
   ALL_CENTRALIZED_EXCHANGES,
@@ -30,8 +29,10 @@ import { useTxQueryStatus } from '@/store/history/query-status';
 import { useTransactions } from '@/store/history/transactions';
 import { useMainStore } from '@/store/main';
 import { useMessageStore } from '@/store/message';
+import { useMonitorStore } from '@/store/monitor';
 import { useNotifications } from '@/store/notifications';
 import { useReports } from '@/store/reports';
+import { usePeriodicStore } from '@/store/session/periodic';
 import { usePremiumStore } from '@/store/session/premium';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useTagStore } from '@/store/session/tags';
@@ -68,7 +69,6 @@ import { TaskType } from '@/types/task-type';
 import { UserSettingsModel } from '@/types/user';
 import { startPromise } from '@/utils';
 import { lastLogin } from '@/utils/account-management';
-import { backoff } from '@/utils/backoff';
 import { logger } from '@/utils/logging';
 
 const defaultSyncConflict = (): SyncConflict => ({
@@ -82,17 +82,11 @@ export const useSessionStore = defineStore('session', () => {
   const loginComplete = ref(false);
   const username = ref('');
   const syncConflict = ref<SyncConflict>(defaultSyncConflict());
-  const lastBalanceSave = ref(0);
-  const lastDataUpload = ref(0);
-  const connectedEthNodes = ref<string[]>([]);
   const showUpdatePopup = ref(false);
   const darkModeEnabled = ref(false);
 
-  const periodicRunning = ref(false);
-
   const { setMessage } = useMessageStore();
   const { awaitTask } = useTasks();
-  const { notify } = useNotifications();
   const { fetchWatchers } = useWatchersStore();
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
   const { fetchTags } = useTagStore();
@@ -106,48 +100,9 @@ export const useSessionStore = defineStore('session', () => {
   const { fetchCounterparties } = useTransactions();
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { fetch, refreshPrices } = useBalancesStore();
+  const { start, stop } = useMonitorStore();
 
   const { t } = useI18n();
-
-  const periodicCheck = async () => {
-    if (get(periodicRunning)) {
-      return;
-    }
-    set(periodicRunning, true);
-    try {
-      const result = await backoff(3, () => api.queryPeriodicData(), 10000);
-      if (Object.keys(result).length === 0) {
-        // an empty object means user is not logged in yet
-        return;
-      }
-
-      const {
-        lastBalanceSave: balance,
-        lastDataUploadTs: upload,
-        connectedEthNodes: connectedNodes
-      } = result;
-
-      if (get(lastBalanceSave) !== balance) {
-        set(lastBalanceSave, balance);
-      }
-
-      if (get(lastDataUpload) !== upload) {
-        set(lastDataUpload, upload);
-      }
-
-      set(connectedEthNodes, connectedNodes);
-    } catch (e: any) {
-      notify({
-        title: t('actions.session.periodic_query.error.title').toString(),
-        message: t('actions.session.periodic_query.error.message', {
-          message: e.message
-        }).toString(),
-        display: true
-      });
-    } finally {
-      set(periodicRunning, false);
-    }
-  };
 
   const refreshData = async (exchanges: Exchange[]) => {
     logger.info('Refreshing data');
@@ -194,12 +149,10 @@ export const useSessionStore = defineStore('session', () => {
 
       set(premium, other.havePremium);
       set(premiumSync, other.premiumShouldSync);
-      set(lastBalanceSave, settings.data.lastBalanceSave);
-      set(lastDataUpload, settings.data.lastDataUploadTs);
       updateGeneralSettings(settings.general);
       accountingSettingsStore.update(settings.accounting);
 
-      monitor.start();
+      start();
       await fetchTags();
 
       set(newAccount, isNew);
@@ -287,8 +240,8 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
-  async function stop() {
-    monitor.stop();
+  async function cleanup() {
+    stop();
     useBalancesStore().reset();
     useMainStore().reset();
     reset();
@@ -307,7 +260,7 @@ export const useSessionStore = defineStore('session', () => {
     interop.resetTray();
     try {
       await api.logout(get(username));
-      await stop();
+      await cleanup();
     } catch (e: any) {
       setMessage({
         title: 'Logout failed',
@@ -434,8 +387,6 @@ export const useSessionStore = defineStore('session', () => {
     set(loginComplete, false);
     set(username, '');
     set(syncConflict, defaultSyncConflict());
-    set(lastBalanceSave, 0);
-    set(lastDataUpload, 0);
     set(showUpdatePopup, false);
     set(darkModeEnabled, false);
 
@@ -445,6 +396,7 @@ export const useSessionStore = defineStore('session', () => {
     useWatchersStore().reset();
     useEthNamesStore().reset();
     useStatusStore().reset();
+    usePeriodicStore().reset();
   };
 
   return {
@@ -453,17 +405,13 @@ export const useSessionStore = defineStore('session', () => {
     loginComplete,
     username,
     syncConflict,
-    lastBalanceSave,
-    lastDataUpload,
     showUpdatePopup,
     darkModeEnabled,
-    connectedEthNodes,
     login,
     logout,
     logoutRemoteSession,
     createAccount,
     changePassword,
-    periodicCheck,
     checkForUpdate,
     purgeCache,
     fetchNfts, //TODO Move it, this does not feel like the right place

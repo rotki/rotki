@@ -10,7 +10,7 @@
       frontend-setting
       :transform="transform"
       :error-message="tc('frontend_settings.validation.periodic_query.error')"
-      @updated="restartMonitor"
+      @updated="restart"
       @finished="resetQueryPeriod"
     >
       <v-text-field
@@ -38,7 +38,7 @@ import { storeToRefs } from 'pinia';
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { useValidation } from '@/composables/validation';
-import { monitor } from '@/services/monitoring';
+import { useMonitorStore } from '@/store/monitor';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const queryPeriod = ref<string>('5');
@@ -72,9 +72,7 @@ const resetQueryPeriod = () => {
 const v$ = useVuelidate(rules, { queryPeriod }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const restartMonitor = () => {
-  monitor.restart();
-};
+const { restart } = useMonitorStore();
 
 const transform = (value: string) => (value ? parseInt(value) : value);
 

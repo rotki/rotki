@@ -229,6 +229,7 @@ import { useBalancesStore } from '@/store/balances';
 import { AllBalancePayload } from '@/store/balances/types';
 import { useMessageStore } from '@/store/message';
 import { useSessionStore } from '@/store/session';
+import { usePeriodicStore } from '@/store/session/periodic';
 import { useSyncStoreStore } from '@/store/session/sync-store';
 import { useTasks } from '@/store/tasks';
 import { Writeable } from '@/types';
@@ -236,14 +237,13 @@ import { TaskType } from '@/types/task-type';
 import { startPromise } from '@/utils';
 
 const { t, tc } = useI18n();
-const store = useSessionStore();
-const { lastBalanceSave, lastDataUpload } = storeToRefs(store);
+const { logout } = useSessionStore();
+const { lastBalanceSave, lastDataUpload } = storeToRefs(usePeriodicStore());
 const { forceSync } = useSyncStoreStore();
 
 const { fetchBalances } = useBalancesStore();
 const { currentBreakpoint } = useTheme();
 const premium = usePremium();
-let { logout } = store;
 
 const pending = ref<boolean>(false);
 const confirmChecked = ref<boolean>(false);
