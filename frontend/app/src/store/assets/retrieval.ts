@@ -1,4 +1,5 @@
 import { SupportedAsset } from '@rotki/common/lib/data';
+import { ComputedRef, Ref } from 'vue';
 import { EVM_TOKEN } from '@/services/assets/consts';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
@@ -15,21 +16,25 @@ import { uniqueStrings } from '@/utils/data';
 export const useAssetInfoRetrieval = defineStore(
   'assets/infoRetrievals',
   () => {
-    const supportedAssetsMap = ref<SupportedAssets>({});
+    const supportedAssetsMap: Ref<SupportedAssets> = ref({});
 
     const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
     const { t } = useI18n();
 
-    const assetAssociationMap = computed<{ [key: string]: string }>(() => {
-      const associationMap: { [key: string]: string } = {};
-      if (get(treatEth2AsEth)) {
-        associationMap['ETH2'] = 'ETH';
+    const assetAssociationMap: ComputedRef<Record<string, string>> = computed(
+      () => {
+        const associationMap: Record<string, string> = {};
+        if (get(treatEth2AsEth)) {
+          associationMap['ETH2'] = 'ETH';
+        }
+        return associationMap;
       }
-      return associationMap;
-    });
+    );
 
-    const getAssociatedAssetIdentifier = (identifier: string) =>
-      computed<string>(() => {
+    const getAssociatedAssetIdentifier = (
+      identifier: string
+    ): ComputedRef<string> =>
+      computed(() => {
         return get(assetAssociationMap)[identifier] ?? identifier;
       });
 
@@ -41,7 +46,7 @@ export const useAssetInfoRetrieval = defineStore(
         return get(supportedAssetsMap)[associatedIdentifier];
       });
 
-    const supportedAssets = computed<SupportedAsset[]>(() => {
+    const supportedAssets: ComputedRef<SupportedAsset[]> = computed(() => {
       const assets: SupportedAsset[] = [];
       const supportedAssetsMapVal = get(supportedAssetsMap);
       Object.keys(supportedAssetsMapVal).forEach(identifier => {
@@ -54,7 +59,7 @@ export const useAssetInfoRetrieval = defineStore(
       return assets;
     });
 
-    const allSupportedAssets = computed<SupportedAsset[]>(() => {
+    const allSupportedAssets: ComputedRef<SupportedAsset[]> = computed(() => {
       const assets: SupportedAsset[] = [];
       const supportedAssetsMapVal = get(supportedAssetsMap);
       Object.keys(supportedAssetsMapVal).forEach(identifier => {
@@ -66,7 +71,9 @@ export const useAssetInfoRetrieval = defineStore(
       return assets;
     });
 
-    const fetchSupportedAssets = async (refresh: boolean = false) => {
+    const fetchSupportedAssets = async (
+      refresh: boolean = false
+    ): Promise<void> => {
       if (get(supportedAssets).length > 0 && !refresh) {
         return;
       }
@@ -88,8 +95,8 @@ export const useAssetInfoRetrieval = defineStore(
     const assetInfo = (
       identifier: string,
       enableAssociation: boolean = true
-    ) => {
-      return computed<SupportedAsset | undefined>(() => {
+    ): ComputedRef<SupportedAsset | undefined> =>
+      computed(() => {
         if (!identifier) return undefined;
 
         const asset = enableAssociation
@@ -105,13 +112,12 @@ export const useAssetInfoRetrieval = defineStore(
           identifier
         };
       });
-    };
 
     const assetSymbol = (
       identifier: string,
       enableAssociation: boolean = true
-    ) => {
-      return computed<string>(() => {
+    ): ComputedRef<string> =>
+      computed(() => {
         if (!identifier) return '';
 
         const symbol = get(assetInfo(identifier, enableAssociation))?.symbol;
@@ -125,23 +131,21 @@ export const useAssetInfoRetrieval = defineStore(
 
         return '';
       });
-    };
 
-    const assetIdentifierForSymbol = (symbol: string) => {
-      return computed<string>(() => {
+    const assetIdentifierForSymbol = (symbol: string): ComputedRef<string> =>
+      computed(() => {
         if (!symbol) return '';
         return (
           get(supportedAssets).find(asset => asset.symbol === symbol)
             ?.identifier ?? ''
         );
       });
-    };
 
     const assetName = (
       identifier: string,
       enableAssociation: boolean = true
-    ) => {
-      return computed<string>(() => {
+    ): ComputedRef<string> =>
+      computed(() => {
         if (!identifier) return '';
 
         const name = get(assetInfo(identifier, enableAssociation))?.name;
@@ -154,19 +158,17 @@ export const useAssetInfoRetrieval = defineStore(
 
         return '';
       });
-    };
 
     const tokenAddress = (
       identifier: string,
       enableAssociation: boolean = true
-    ) => {
-      return computed<string>(() => {
+    ): ComputedRef<string> =>
+      computed(() => {
         if (!identifier) return '';
         return get(assetInfo(identifier, enableAssociation))?.address ?? '';
       });
-    };
 
-    const supportedAssetsSymbol = computed<string[]>(() => {
+    const supportedAssetsSymbol: ComputedRef<string[]> = computed(() => {
       const data = get(supportedAssets)
         .map(value => get(assetSymbol(value.identifier)))
         .filter(uniqueStrings);
@@ -202,8 +204,8 @@ export const useAssetInfoRetrieval = defineStore(
       }
     };
 
-    const isEthereumToken = (asset: string) =>
-      computed<boolean>(() => {
+    const isEthereumToken = (asset: string): ComputedRef<boolean> =>
+      computed(() => {
         const match = get(assetInfo(asset));
         if (match) {
           return match.assetType === EVM_TOKEN;

@@ -86,22 +86,18 @@ import {
   timeframes,
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
 import Loading from '@/components/helper/Loading.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import { useSectionLoading } from '@/composables/common';
-import { Section } from '@/store/const';
 import { usePremiumStore } from '@/store/session/premium';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { isPeriodAllowed } from '@/store/settings/utils';
 import { useStatisticsStore } from '@/store/statistics';
+import { Section } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -109,7 +105,8 @@ const { t } = useI18n();
 const { currencySymbol, floatingPrecision } = storeToRefs(
   useGeneralSettingsStore()
 );
-const { timeframe } = storeToRefs(useSessionSettingsStore());
+const sessionStore = useSessionSettingsStore();
+const { timeframe } = storeToRefs(sessionStore);
 const { premium } = storeToRefs(usePremiumStore());
 const statistics = useStatisticsStore();
 const { fetchNetValue, getNetValue } = statistics;
@@ -189,7 +186,7 @@ const balanceClass = computed(() => {
 
 const setTimeframe = async (value: TimeFrameSetting) => {
   assert(value !== TimeFramePersist.REMEMBER);
-  set(timeframe, value);
+  sessionStore.update({ timeframe: value });
   await frontendStore.updateSetting({ lastKnownTimeframe: value });
 };
 

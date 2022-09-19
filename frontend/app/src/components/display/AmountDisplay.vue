@@ -101,10 +101,7 @@
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { get, set, useClipboard, useTimeoutFn } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, PropType, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';

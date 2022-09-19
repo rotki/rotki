@@ -122,7 +122,6 @@ import {
   YearnVaultsProfitDetails
 } from '@/premium/premium';
 import { ProtocolVersion } from '@/services/defi/consts';
-import { Section } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import { useAaveStore } from '@/store/defi/aave';
 import { useDefiSupportedProtocolsStore } from '@/store/defi/protocols';
@@ -130,6 +129,7 @@ import { useYearnStore } from '@/store/defi/yearn';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { YearnVaultProfitLoss } from '@/types/defi/yearn';
 import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
 
 const section = Section.DEFI_LENDING;
 const historySection = Section.DEFI_LENDING_HISTORY;

@@ -31,9 +31,9 @@ import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDe
 import { useSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
-import { Section } from '@/store/const';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
 
 export default defineComponent({
   name: 'LiquityPage',

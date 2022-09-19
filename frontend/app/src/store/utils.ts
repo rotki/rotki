@@ -1,4 +1,4 @@
-import { Status } from '@/store/const';
+import { Status } from '@/types/status';
 
 /**
  * Returns true if a section is loading

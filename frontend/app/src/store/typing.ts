@@ -1,7 +1,7 @@
 import { Ref } from 'vue';
 import { PendingTask } from '@/services/types-api';
-import { Section } from '@/store/const';
 import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 

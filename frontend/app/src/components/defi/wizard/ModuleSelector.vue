@@ -60,12 +60,9 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { onMounted, Ref, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { Ref } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { useBalancesStore } from '@/store/balances';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module, SUPPORTED_MODULES } from '@/types/modules';
@@ -91,17 +88,17 @@ const autocomplete = ref();
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { update: updateSettings } = useSettingsStore();
 
-const balancesStore = useBalancesStore();
-const { nonFungibleBalancesState } = storeToRefs(balancesStore);
-const { fetchNfBalances } = balancesStore;
+const balancesStore = useNonFungibleBalancesStore();
+const { balances } = storeToRefs(balancesStore);
+const { fetchNonFunginbleBalances } = balancesStore;
 
 const fetch = () => {
-  const callback = () => fetchNfBalances({ ignoreCache: false });
+  const callback = () => fetchNonFunginbleBalances({ ignoreCache: false });
   setTimeout(callback, 800);
 };
 
 const clearNfBalances = () => {
-  const callback = () => set(nonFungibleBalancesState, {});
+  const callback = () => set(balances, {});
   setTimeout(callback, 800);
 };
 

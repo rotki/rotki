@@ -1,8 +1,4 @@
-import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

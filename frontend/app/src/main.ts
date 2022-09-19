@@ -9,7 +9,7 @@ import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
 import vuetify from '@/plugins/vuetify';
 import { usePremiumApi } from '@/premium/setup-interface';
-import { storePiniaPlugins } from '@/store/debug';
+import StoreResetPlugin, { storePiniaPlugins } from '@/store/debug';
 import { setupDayjs } from '@/utils/date';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { setupFormatter } from '@/utils/setup-formatter';
@@ -35,6 +35,7 @@ Vue.directive('blur', {
 });
 
 const pinia = createPinia();
+pinia.use(StoreResetPlugin);
 if (isDevelopment) {
   pinia.use(storePiniaPlugins);
 }

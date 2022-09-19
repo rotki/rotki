@@ -3,7 +3,6 @@ import { Ref } from 'vue';
 import { useStatusUpdater } from '@/composables/status';
 import { api } from '@/services/rotkehlchen-api';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
-import { Section, Status } from '@/store/const';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { AssetMovementEntry } from '@/store/history/types';
 import {
@@ -21,6 +20,7 @@ import {
   AssetMovementRequestPayload
 } from '@/types/history/movements';
 import { TradeLocation } from '@/types/history/trade-location';
+import { Section, Status } from '@/types/status';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { exchangeName } from '@/types/trades';

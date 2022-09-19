@@ -87,10 +87,6 @@
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
@@ -99,12 +95,12 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useSectionLoading } from '@/composables/common';
 import { Routes } from '@/router/routes';
-import { useBalancesStore } from '@/store/balances';
-import { Section } from '@/store/const';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { DashboardTableType } from '@/types/frontend-settings';
+import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
 
@@ -112,13 +108,13 @@ const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.route;
 
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
-const balancesStore = useBalancesStore();
-const { nfBalances: balances } = storeToRefs(balancesStore);
-const { nfTotalValue, fetchNfBalances } = balancesStore;
+const balancesStore = useNonFungibleBalancesStore();
+const { nonFunginbleBalances } = storeToRefs(balancesStore);
+const { nonFungibleTotalValue, fetchNonFunginbleBalances } = balancesStore;
 const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const total = nfTotalValue();
+const total = nonFungibleTotalValue();
 const { tc } = useI18n();
 
 const group = DashboardTableType.NFT;
@@ -189,7 +185,7 @@ const percentageOfCurrentGroup = (value: BigNumber) => {
 };
 
 const refresh = async () => {
-  return await fetchNfBalances({ ignoreCache: true });
+  return await fetchNonFunginbleBalances({ ignoreCache: true });
 };
 
 const { dashboardTablesVisibleColumns } = storeToRefs(
@@ -197,6 +193,6 @@ const { dashboardTablesVisibleColumns } = storeToRefs(
 );
 
 const filteredBalances = computed(() => {
-  return get(balances).filter(item => !item.isLp);
+  return get(nonFunginbleBalances).filter(item => !item.isLp);
 });
 </script>

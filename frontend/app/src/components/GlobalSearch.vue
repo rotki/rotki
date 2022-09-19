@@ -106,10 +106,6 @@
 </template>
 <script setup lang="ts">
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, nextTick, onBeforeMount, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
@@ -119,8 +115,8 @@ import { useRouter } from '@/composables/router';
 import { interop } from '@/electron-interop';
 import { routesRef } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { useBalancesStore } from '@/store/balances';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
+import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Exchange } from '@/types/exchanges';
@@ -161,8 +157,8 @@ const router = useRouter();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetSymbol } = useAssetInfoRetrieval();
 const { connectedExchanges } = storeToRefs(useExchangeBalancesStore());
-const { aggregatedBalances } = useBlockchainBalancesStore();
-const { balancesByLocation } = storeToRefs(useBalancesStore());
+const { balances } = useAggregatedBalancesStore();
+const { balancesByLocation } = storeToRefs(useBalancesBreakdownStore());
 const { getLocation } = setupLocationInfo();
 const { dark } = useTheme();
 
@@ -363,7 +359,7 @@ const items = computed<SearchItem[]>(() => {
   ];
 
   const assetItems: SearchItemWithoutValue[] = (
-    get(aggregatedBalances()) as AssetBalanceWithPrice[]
+    get(balances()) as AssetBalanceWithPrice[]
   ).map(balance => {
     const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
     const asset = balance.asset;

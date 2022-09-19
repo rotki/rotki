@@ -1,24 +1,21 @@
 import { BigNumber } from '@rotki/common';
-import { get, set } from '@vueuse/core';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed, ref } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
-import { Balances } from '@/services/balances/types';
-import { api } from '@/services/rotkehlchen-api';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { MaybeRef } from '@vueuse/core';
+import { ComputedRef } from 'vue';
+import { usePriceApi } from '@/services/balances/price';
+import { FetchPricePayload } from '@/store/balances/types';
+import { useNotifications } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useTasks } from '@/store/tasks';
+import { ActionStatus } from '@/store/types';
+import { Balances } from '@/types/blockchain/balances';
+import { currencies, CURRENCY_USD } from '@/types/currencies';
 import {
   AssetPriceResponse,
   AssetPrices,
-  FetchPricePayload,
   HistoricPricePayload,
   HistoricPrices,
   OracleCachePayload
-} from '@/store/balances/types';
-import { useNotifications } from '@/store/notifications';
-import { useTasks } from '@/store/tasks';
-import { ActionStatus } from '@/store/types';
-import { currencies, CURRENCY_USD } from '@/types/currencies';
-import { PriceOracle } from '@/types/price-oracle';
+} from '@/types/prices';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
@@ -33,19 +30,25 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   const { awaitTask, isTaskRunning } = useTasks();
   const { notify } = useNotifications();
   const { t } = useI18n();
+  const {
+    getPriceCache,
+    createPriceCache,
+    deletePriceCache,
+    queryHistoricalRate,
+    queryFiatExchangeRates,
+    queryPrices
+  } = usePriceApi();
+  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-  const fetchPrices = async (payload: FetchPricePayload) => {
-    const { aggregatedAssets } = useBlockchainBalancesStore();
-    const assets = get(aggregatedAssets());
-
+  const fetchPrices = async (payload: FetchPricePayload): Promise<void> => {
     const taskType = TaskType.UPDATE_PRICES;
     if (get(isTaskRunning(taskType))) {
       return;
     }
 
-    const fetch = async (assets: string[]) => {
-      const { taskId } = await api.balances.prices(
-        payload.selectedAsset ? [payload.selectedAsset] : assets,
+    const fetch = async (assets: string[]): Promise<void> => {
+      const { taskId } = await queryPrices(
+        assets,
         CURRENCY_USD,
         payload.ignoreCache
       );
@@ -68,7 +71,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
     try {
       await Promise.all(
-        chunkArray<string>(assets, 100).map(asset => fetch(asset))
+        chunkArray<string>(payload.selectedAssets, 100).map(fetch)
       );
     } catch (e: any) {
       const title = t('actions.session.fetch_prices.error.title').toString();
@@ -83,7 +86,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     }
   };
 
-  const updateBalancesPrices = (balances: Balances) => {
+  const updateBalancesPrices = (balances: Balances): Balances => {
     for (const asset in balances) {
       const assetPrice = get(prices)[asset];
       if (!assetPrice) {
@@ -98,9 +101,9 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     return balances;
   };
 
-  const fetchExchangeRates = async () => {
+  const fetchExchangeRates = async (): Promise<void> => {
     try {
-      const { taskId } = await api.getFiatExchangeRates(
+      const { taskId } = await queryFiatExchangeRates(
         currencies.map(value => value.tickerSymbol)
       );
 
@@ -127,7 +130,9 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     }
   };
 
-  const exchangeRate = (currency: string) => {
+  const exchangeRate = (
+    currency: string
+  ): ComputedRef<BigNumber | undefined> => {
     return computed<BigNumber | undefined>(() => {
       return get(exchangeRates)[currency] as BigNumber;
     });
@@ -144,7 +149,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     }
 
     try {
-      const { taskId } = await api.balances.fetchRate(
+      const { taskId } = await queryHistoricalRate(
         fromAsset,
         toAsset,
         timestamp
@@ -191,7 +196,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       };
     }
     try {
-      const { taskId } = await api.balances.createPriceCache(
+      const { taskId } = await createPriceCache(
         source,
         fromAsset,
         toAsset,
@@ -227,34 +232,33 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     }
   };
 
-  const getPriceCache = async (source: PriceOracle) => {
-    return await api.balances.getPriceCache(source);
-  };
+  const toSelectedCurrency = (
+    value: MaybeRef<BigNumber>
+  ): ComputedRef<BigNumber> =>
+    computed(() => {
+      const mainCurrency = get(currencySymbol);
+      const currentExchangeRate = get(exchangeRate(mainCurrency));
+      const val = get(value);
+      return currentExchangeRate ? val.multipliedBy(currentExchangeRate) : val;
+    });
 
-  const deletePriceCache = async (
-    source: PriceOracle,
-    fromAsset: string,
-    toAsset: string
-  ) => {
-    return await api.balances.deletePriceCache(source, fromAsset, toAsset);
-  };
-
-  const reset = () => {
+  const reset = (): void => {
     set(prices, {});
     set(exchangeRates, {});
   };
 
   return {
     prices,
+    exchangeRates,
     fetchPrices,
     updateBalancesPrices,
-    exchangeRates,
     fetchExchangeRates,
     exchangeRate,
     getHistoricPrice,
     createOracleCache,
     getPriceCache,
     deletePriceCache,
+    toSelectedCurrency,
     reset
   };
 });

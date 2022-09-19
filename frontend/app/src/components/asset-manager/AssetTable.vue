@@ -175,7 +175,7 @@ import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { EthereumToken, ManagedAsset } from '@/services/assets/types';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useMessageStore } from '@/store/message';
 import { ActionStatus } from '@/store/types';
 import { Nullable } from '@/types';
@@ -254,7 +254,7 @@ const edit = (asset: ManagedAsset) => emit('edit', asset);
 const deleteAsset = (asset: ManagedAsset) => emit('delete-asset', asset);
 
 const { setMessage } = useMessageStore();
-const { aggregatedAssets } = useBlockchainBalancesStore();
+const { assets } = useAggregatedBalancesStore();
 
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 
@@ -266,8 +266,7 @@ const filteredTokens = computed<ManagedAsset[]>(() => {
 
   return get(tokens).filter(item => {
     return (
-      (!showOwned ||
-        get(aggregatedAssets(hideIgnored)).includes(item.identifier)) &&
+      (!showOwned || get(assets(hideIgnored)).includes(item.identifier)) &&
       (!hideIgnored || !get(isIgnored(item.identifier)))
     );
   });

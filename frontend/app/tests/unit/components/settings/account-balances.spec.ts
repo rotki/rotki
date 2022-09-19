@@ -3,10 +3,10 @@ import { createPinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import { Section, Status } from '@/store/const';
 import { useSessionStore } from '@/store/session';
 import { useStatusStore } from '@/store/status';
 import { useTasks } from '@/store/tasks';
+import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import '../../i18n';
 vi.mock('vue', async () => {

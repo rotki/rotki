@@ -1,10 +1,7 @@
-import { get, set } from '@vueuse/core';
 import logger from 'loglevel';
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { computed, ComputedRef, ref } from 'vue';
-import i18n from '@/i18n';
-import { api } from '@/services/rotkehlchen-api';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
+import { ComputedRef } from 'vue';
+import { useTagsApi } from '@/services/tags';
+import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
 import { useMessageStore } from '@/store/message';
 import { ActionStatus } from '@/store/types';
 import { READ_ONLY_TAGS, Tag, Tags } from '@/types/user';
@@ -20,15 +17,18 @@ export const useTagStore = defineStore('session/tags', () => {
     return { ...get(allTags), ...READ_ONLY_TAGS };
   });
 
+  const { removeTag } = useBlockchainAccountsStore();
   const { setMessage } = useMessageStore();
+  const { tc } = useI18n();
+  const { queryAddTag, queryTags, queryEditTag, queryDeleteTag } = useTagsApi();
 
   const addTag = async (tag: Tag): Promise<ActionStatus> => {
     try {
-      set(allTags, await api.addTag(tag));
+      set(allTags, await queryAddTag(tag));
       return { success: true };
     } catch (e: any) {
       setMessage({
-        title: i18n.t('actions.session.tag_add.error.title').toString(),
+        title: tc('actions.session.tag_add.error.title'),
         description: e.message
       });
       return {
@@ -40,10 +40,10 @@ export const useTagStore = defineStore('session/tags', () => {
 
   const editTag = async (tag: Tag) => {
     try {
-      set(allTags, await api.editTag(tag));
+      set(allTags, await queryEditTag(tag));
     } catch (e: any) {
       setMessage({
-        title: i18n.t('actions.session.tag_edit.error.title').toString(),
+        title: tc('actions.session.tag_edit.error.title'),
         description: e.message
       });
     }
@@ -51,20 +51,19 @@ export const useTagStore = defineStore('session/tags', () => {
 
   const deleteTag = async (name: string) => {
     try {
-      set(allTags, await api.deleteTag(name));
+      set(allTags, await queryDeleteTag(name));
+      removeTag(name);
     } catch (e: any) {
       setMessage({
-        title: i18n.t('actions.session.tag_delete.error.title').toString(),
+        title: tc('actions.session.tag_delete.error.title'),
         description: e.message
       });
     }
-    const { removeBlockchainTags } = useBlockchainAccountsStore();
-    await removeBlockchainTags(name);
   };
 
   const fetchTags = async () => {
     try {
-      set(allTags, await api.getTags());
+      set(allTags, await queryTags());
     } catch (e: any) {
       logger.error('Tags fetch failed', e);
     }

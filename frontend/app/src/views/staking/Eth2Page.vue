@@ -59,10 +59,6 @@
 </template>
 
 <script setup lang="ts">
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
@@ -72,10 +68,10 @@ import { isSectionLoading, useSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { Eth2Staking } from '@/premium/premium';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
-import { Section } from '@/store/const';
+import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useEth2StakingStore } from '@/store/staking';
 import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
 
 const selection = ref<string[]>([]);
 const filterType = ref<'address' | 'key'>('key');
@@ -99,9 +95,7 @@ const primaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2);
 const secondaryRefreshing = isSectionRefreshing(Section.STAKING_ETH2_DEPOSITS);
 const eth2StatsLoading = isSectionLoading(Section.STAKING_ETH2_STATS);
 
-const { eth2ValidatorsState: eth2Validators } = storeToRefs(
-  useBlockchainAccountsStore()
-);
+const { eth2Validators } = storeToRefs(useEthAccountsStore());
 watch(filterType, () => set(selection, []));
 
 const refresh = async () => await load(true);

@@ -206,7 +206,6 @@ import { setupIgnore } from '@/composables/history';
 import { useRoute, useRouter } from '@/composables/router';
 import { Routes } from '@/router/routes';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { Section } from '@/store/const';
 import { useAssociatedLocationsStore } from '@/store/history/associated-locations';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
@@ -220,6 +219,7 @@ import {
 } from '@/types/history/ledger-actions';
 import { TradeLocation } from '@/types/history/trade-location';
 import { LedgerActionType } from '@/types/ledger-actions';
+import { Section } from '@/types/status';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 

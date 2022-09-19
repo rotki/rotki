@@ -272,21 +272,11 @@
   </v-form>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { get, set, useTimeoutFn } from '@vueuse/core';
+
 import dayjs from 'dayjs';
-import {
-  computed,
-  defineComponent,
-  nextTick,
-  onMounted,
-  PropType,
-  ref,
-  toRefs,
-  watch
-} from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -300,342 +290,278 @@ import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef, Zero } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
-const ExternalTradeForm = defineComponent({
-  name: 'ExternalTradeForm',
-  props: {
-    value: { required: false, type: Boolean, default: false },
-    edit: {
-      required: false,
-      type: Object as PropType<Trade | null>,
-      default: null
-    },
-    saveData: {
-      required: true,
-      type: Function as PropType<
-        (trade: NewTrade | TradeEntry) => Promise<ActionStatus>
-      >
-    }
+const props = defineProps({
+  value: { required: false, type: Boolean, default: false },
+  edit: {
+    required: false,
+    type: Object as PropType<Trade | null>,
+    default: null
   },
-  emits: ['input'],
-  setup(props, { emit }) {
-    const { t } = useI18n();
-    const { edit, saveData } = toRefs(props);
-
-    const { getAssetSymbol } = useAssetInfoRetrieval();
-    const input = (valid: boolean) => emit('input', valid);
-
-    const { isTaskRunning } = useTasks();
-    const { getHistoricPrice } = useBalancePricesStore();
-
-    const id = ref<string>('');
-    const base = ref<string>('');
-    const quote = ref<string>('');
-    const datetime = ref<string>('');
-    const amount = ref<string>('');
-    const rate = ref<string>('');
-    const quoteAmount = ref<string>('');
-    const selectedCalculationInput = ref<'rate' | 'quoteAmount'>('rate');
-    const fee = ref<string>('');
-    const feeCurrency = ref<string>('');
-    const link = ref<string>('');
-    const notes = ref<string>('');
-    const type = ref<TradeType>('buy');
-
-    const errorMessages = ref<{ [field: string]: string[] }>({});
-
-    const quoteAmountInput = ref<any>(null);
-    const rateInput = ref<any>(null);
-    const feeInput = ref<any>(null);
-    const feeCurrencyInput = ref<any>(null);
-
-    const baseRules = [
-      (v: string) => !!v || t('external_trade_form.validation.non_empty_base')
-    ];
-    const quoteRules = [
-      (v: string) => !!v || t('external_trade_form.validation.non_empty_quote')
-    ];
-    const amountRules = [
-      (v: string) => !!v || t('external_trade_form.validation.non_empty_amount')
-    ];
-    const rateRules = [
-      (v: string) => !!v || t('external_trade_form.validation.non_empty_rate')
-    ];
-    const quoteAmountRules = [
-      (v: string) =>
-        !!v || t('external_trade_form.validation.non_empty_quote_amount')
-    ];
-
-    const feeRules = [
-      (v: string) =>
-        !!v ||
-        !get(feeCurrency) ||
-        t('external_trade_form.validation.non_empty_fee')
-    ];
-
-    const feeCurrencyRules = [
-      (v: string) =>
-        !!v ||
-        !get(fee) ||
-        t('external_trade_form.validation.non_empty_fee_currency')
-    ];
-
-    const triggerFeeValidator = () => {
-      get(feeInput)?.textInput?.validate(true);
-      get(feeCurrencyInput)?.autoCompleteInput?.validate(true);
-    };
-
-    const baseHint = computed<string>(() => {
-      return get(type) === 'buy'
-        ? t('external_trade_form.buy_base').toString()
-        : t('external_trade_form.sell_base').toString();
-    });
-
-    const quoteHint = computed<string>(() => {
-      return get(type) === 'buy'
-        ? t('external_trade_form.buy_quote').toString()
-        : t('external_trade_form.sell_quote').toString();
-    });
-
-    const shouldRenderSummary = computed<boolean>(() => {
-      return !!(
-        get(type) &&
-        get(base) &&
-        get(quote) &&
-        get(amount) &&
-        get(rate)
-      );
-    });
-
-    const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
-
-    const numericAmount = bigNumberifyFromRef(amount);
-    const numericFee = bigNumberifyFromRef(fee);
-    const numericRate = bigNumberifyFromRef(rate);
-
-    const reset = () => {
-      set(id, '');
-      set(datetime, convertFromTimestamp(dayjs().unix(), true));
-      set(amount, '');
-      set(rate, '');
-      set(fee, '');
-      set(feeCurrency, '');
-      set(link, '');
-      set(notes, '');
-      set(type, 'buy');
-      set(errorMessages, {});
-    };
-
-    const setEditMode = () => {
-      const trade = get(edit);
-      if (!trade) {
-        reset();
-        return;
-      }
-
-      set(base, trade.baseAsset);
-      set(quote, trade.quoteAsset);
-      set(datetime, convertFromTimestamp(trade.timestamp, true));
-      set(amount, trade.amount.toFixed());
-      set(rate, trade.rate.toFixed());
-      set(fee, trade.fee?.toFixed() ?? '');
-      set(feeCurrency, trade.feeCurrency ?? '');
-      set(link, trade.link ?? '');
-      set(notes, trade.notes ?? '');
-      set(type, trade.tradeType);
-      set(id, trade.tradeId);
-    };
-
-    const save = async (): Promise<boolean> => {
-      const amount = get(numericAmount);
-      const fee = get(numericFee);
-      const rate = get(numericRate);
-
-      const tradePayload: Writeable<NewTrade> = {
-        amount: amount.isNaN() ? Zero : amount,
-        fee: fee.isNaN() || fee.isZero() ? undefined : fee,
-        feeCurrency: get(feeCurrency) ? get(feeCurrency) : undefined,
-        link: get(link) ? get(link) : undefined,
-        notes: get(notes) ? get(notes) : undefined,
-        baseAsset: get(base),
-        quoteAsset: get(quote),
-        rate: rate.isNaN() ? Zero : rate,
-        location: 'external',
-        timestamp: convertToTimestamp(get(datetime)),
-        tradeType: get(type)
-      };
-
-      const save = get(saveData);
-      const result = !get(id)
-        ? await save(tradePayload)
-        : await save({ ...tradePayload, tradeId: get(id) });
-
-      if (result.success) {
-        reset();
-        return true;
-      }
-
-      if (result.message) {
-        set(
-          errorMessages,
-          convertKeys(
-            deserializeApiErrorMessage(result.message) ?? {},
-            true,
-            false
-          )
-        );
-      }
-
-      return false;
-    };
-
-    const swapAmountInput = () => {
-      if (get(selectedCalculationInput) === 'rate') {
-        set(selectedCalculationInput, 'quoteAmount');
-        nextTick(() => {
-          get(quoteAmountInput)?.focus();
-        });
-      } else {
-        set(selectedCalculationInput, 'rate');
-        nextTick(() => {
-          get(rateInput)?.focus();
-        });
-      }
-    };
-
-    const updateRate = (forceUpdate: boolean = false) => {
-      if (
-        get(amount) &&
-        get(rate) &&
-        (get(selectedCalculationInput) === 'rate' || forceUpdate)
-      ) {
-        set(
-          quoteAmount,
-          new BigNumber(get(amount))
-            .multipliedBy(new BigNumber(get(rate)))
-            .toFixed()
-        );
-      }
-    };
-
-    const fetchPrice = async () => {
-      if (
-        (get(rate) && get(edit)) ||
-        !get(datetime) ||
-        !get(base) ||
-        !get(quote)
-      ) {
-        return;
-      }
-
-      const timestamp = convertToTimestamp(get(datetime));
-      const fromAsset = get(base);
-      const toAsset = get(quote);
-
-      const rateFromHistoricPrice = await getHistoricPrice({
-        timestamp,
-        fromAsset,
-        toAsset
-      });
-      if (rateFromHistoricPrice.gt(0)) {
-        set(rate, rateFromHistoricPrice.toFixed());
-        updateRate(true);
-      } else if (!get(rate)) {
-        set(errorMessages, {
-          rate: [t('external_trade_form.rate_not_found').toString()]
-        });
-        useTimeoutFn(() => {
-          set(errorMessages, {});
-        }, 4000);
-      }
-    };
-
-    const onQuoteAmountChange = () => {
-      if (
-        get(amount) &&
-        get(quoteAmount) &&
-        get(selectedCalculationInput) === 'quoteAmount'
-      ) {
-        set(
-          rate,
-          new BigNumber(get(quoteAmount))
-            .div(new BigNumber(get(amount)))
-            .toFixed()
-        );
-      }
-    };
-
-    watch(edit, () => {
-      setEditMode();
-    });
-
-    watch([datetime, quote, base], async () => {
-      await fetchPrice();
-    });
-
-    watch(rate, () => {
-      updateRate();
-    });
-
-    watch(amount, () => {
-      updateRate();
-      onQuoteAmountChange();
-    });
-
-    watch(quoteAmount, () => {
-      onQuoteAmountChange();
-    });
-
-    onMounted(() => {
-      setEditMode();
-    });
-
-    return {
-      t,
-      triggerFeeValidator,
-      getAssetSymbol,
-      input,
-      id,
-      base,
-      quote,
-      datetime,
-      amount,
-      rate,
-      quoteAmount,
-      selectedCalculationInput,
-      fee,
-      feeCurrency,
-      link,
-      notes,
-      type,
-      rateInput,
-      quoteAmountInput,
-      feeInput,
-      feeCurrencyInput,
-      errorMessages,
-      baseRules,
-      quoteRules,
-      amountRules,
-      rateRules,
-      quoteAmountRules,
-      feeRules,
-      feeCurrencyRules,
-      baseHint,
-      quoteHint,
-      shouldRenderSummary,
-      fetching,
-      numericAmount,
-      numericRate,
-      numericFee,
-      swapAmountInput,
-      save,
-      reset
-    };
+  saveData: {
+    required: true,
+    type: Function as PropType<
+      (trade: NewTrade | TradeEntry) => Promise<ActionStatus>
+    >
   }
 });
 
-export type ExternalTradeFormInstance = InstanceType<typeof ExternalTradeForm>;
+const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 
-export default ExternalTradeForm;
+const { t } = useI18n();
+const { edit, saveData } = toRefs(props);
+
+const { getAssetSymbol } = useAssetInfoRetrieval();
+const input = (valid: boolean) => emit('input', valid);
+
+const { isTaskRunning } = useTasks();
+const { getHistoricPrice } = useBalancePricesStore();
+
+const id = ref<string>('');
+const base = ref<string>('');
+const quote = ref<string>('');
+const datetime = ref<string>('');
+const amount = ref<string>('');
+const rate = ref<string>('');
+const quoteAmount = ref<string>('');
+const selectedCalculationInput = ref<'rate' | 'quoteAmount'>('rate');
+const fee = ref<string>('');
+const feeCurrency = ref<string>('');
+const link = ref<string>('');
+const notes = ref<string>('');
+const type = ref<TradeType>('buy');
+
+const errorMessages = ref<{ [field: string]: string[] }>({});
+
+const quoteAmountInput = ref<any>(null);
+const rateInput = ref<any>(null);
+const feeInput = ref<any>(null);
+const feeCurrencyInput = ref<any>(null);
+
+const baseRules = [
+  (v: string) => !!v || t('external_trade_form.validation.non_empty_base')
+];
+const quoteRules = [
+  (v: string) => !!v || t('external_trade_form.validation.non_empty_quote')
+];
+const amountRules = [
+  (v: string) => !!v || t('external_trade_form.validation.non_empty_amount')
+];
+const rateRules = [
+  (v: string) => !!v || t('external_trade_form.validation.non_empty_rate')
+];
+const quoteAmountRules = [
+  (v: string) =>
+    !!v || t('external_trade_form.validation.non_empty_quote_amount')
+];
+
+const feeRules = [
+  (v: string) =>
+    !!v ||
+    !get(feeCurrency) ||
+    t('external_trade_form.validation.non_empty_fee')
+];
+
+const feeCurrencyRules = [
+  (v: string) =>
+    !!v ||
+    !get(fee) ||
+    t('external_trade_form.validation.non_empty_fee_currency')
+];
+
+const triggerFeeValidator = () => {
+  get(feeInput)?.textInput?.validate(true);
+  get(feeCurrencyInput)?.autoCompleteInput?.validate(true);
+};
+
+const baseHint = computed<string>(() => {
+  return get(type) === 'buy'
+    ? t('external_trade_form.buy_base').toString()
+    : t('external_trade_form.sell_base').toString();
+});
+
+const quoteHint = computed<string>(() => {
+  return get(type) === 'buy'
+    ? t('external_trade_form.buy_quote').toString()
+    : t('external_trade_form.sell_quote').toString();
+});
+
+const shouldRenderSummary = computed<boolean>(() => {
+  return !!(get(type) && get(base) && get(quote) && get(amount) && get(rate));
+});
+
+const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
+
+const numericAmount = bigNumberifyFromRef(amount);
+const numericFee = bigNumberifyFromRef(fee);
+const numericRate = bigNumberifyFromRef(rate);
+
+const reset = () => {
+  set(id, '');
+  set(datetime, convertFromTimestamp(dayjs().unix(), true));
+  set(amount, '');
+  set(rate, '');
+  set(fee, '');
+  set(feeCurrency, '');
+  set(link, '');
+  set(notes, '');
+  set(type, 'buy');
+  set(errorMessages, {});
+};
+
+const setEditMode = () => {
+  const trade = get(edit);
+  if (!trade) {
+    reset();
+    return;
+  }
+
+  set(base, trade.baseAsset);
+  set(quote, trade.quoteAsset);
+  set(datetime, convertFromTimestamp(trade.timestamp, true));
+  set(amount, trade.amount.toFixed());
+  set(rate, trade.rate.toFixed());
+  set(fee, trade.fee?.toFixed() ?? '');
+  set(feeCurrency, trade.feeCurrency ?? '');
+  set(link, trade.link ?? '');
+  set(notes, trade.notes ?? '');
+  set(type, trade.tradeType);
+  set(id, trade.tradeId);
+};
+
+const save = async (): Promise<boolean> => {
+  const amount = get(numericAmount);
+  const fee = get(numericFee);
+  const rate = get(numericRate);
+
+  const tradePayload: Writeable<NewTrade> = {
+    amount: amount.isNaN() ? Zero : amount,
+    fee: fee.isNaN() || fee.isZero() ? undefined : fee,
+    feeCurrency: get(feeCurrency) ? get(feeCurrency) : undefined,
+    link: get(link) ? get(link) : undefined,
+    notes: get(notes) ? get(notes) : undefined,
+    baseAsset: get(base),
+    quoteAsset: get(quote),
+    rate: rate.isNaN() ? Zero : rate,
+    location: 'external',
+    timestamp: convertToTimestamp(get(datetime)),
+    tradeType: get(type)
+  };
+
+  const save = get(saveData);
+  const result = !get(id)
+    ? await save(tradePayload)
+    : await save({ ...tradePayload, tradeId: get(id) });
+
+  if (result.success) {
+    reset();
+    return true;
+  }
+
+  if (result.message) {
+    set(
+      errorMessages,
+      convertKeys(deserializeApiErrorMessage(result.message) ?? {}, true, false)
+    );
+  }
+
+  return false;
+};
+
+defineExpose({ save, reset, focus });
+
+const swapAmountInput = () => {
+  if (get(selectedCalculationInput) === 'rate') {
+    set(selectedCalculationInput, 'quoteAmount');
+    nextTick(() => {
+      get(quoteAmountInput)?.focus();
+    });
+  } else {
+    set(selectedCalculationInput, 'rate');
+    nextTick(() => {
+      get(rateInput)?.focus();
+    });
+  }
+};
+
+const updateRate = (forceUpdate: boolean = false) => {
+  if (
+    get(amount) &&
+    get(rate) &&
+    (get(selectedCalculationInput) === 'rate' || forceUpdate)
+  ) {
+    set(
+      quoteAmount,
+      new BigNumber(get(amount))
+        .multipliedBy(new BigNumber(get(rate)))
+        .toFixed()
+    );
+  }
+};
+
+const fetchPrice = async () => {
+  if ((get(rate) && get(edit)) || !get(datetime) || !get(base) || !get(quote)) {
+    return;
+  }
+
+  const timestamp = convertToTimestamp(get(datetime));
+  const fromAsset = get(base);
+  const toAsset = get(quote);
+
+  const rateFromHistoricPrice = await getHistoricPrice({
+    timestamp,
+    fromAsset,
+    toAsset
+  });
+  if (rateFromHistoricPrice.gt(0)) {
+    set(rate, rateFromHistoricPrice.toFixed());
+    updateRate(true);
+  } else if (!get(rate)) {
+    set(errorMessages, {
+      rate: [t('external_trade_form.rate_not_found').toString()]
+    });
+    useTimeoutFn(() => {
+      set(errorMessages, {});
+    }, 4000);
+  }
+};
+
+const onQuoteAmountChange = () => {
+  if (
+    get(amount) &&
+    get(quoteAmount) &&
+    get(selectedCalculationInput) === 'quoteAmount'
+  ) {
+    set(
+      rate,
+      new BigNumber(get(quoteAmount)).div(new BigNumber(get(amount))).toFixed()
+    );
+  }
+};
+
+watch(edit, () => {
+  setEditMode();
+});
+
+watch([datetime, quote, base], async () => {
+  await fetchPrice();
+});
+
+watch(rate, () => {
+  updateRate();
+});
+
+watch(amount, () => {
+  updateRate();
+  onQuoteAmountChange();
+});
+
+watch(quoteAmount, () => {
+  onQuoteAmountChange();
+});
+
+onMounted(() => {
+  setEditMode();
+});
 </script>
 
 <style scoped lang="scss">

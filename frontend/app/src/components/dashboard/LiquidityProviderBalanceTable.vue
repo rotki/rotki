@@ -100,11 +100,8 @@
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
 import { XswapAsset, XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { get } from '@vueuse/core';
 import { isEqual } from 'lodash';
-import { storeToRefs } from 'pinia';
-import { computed, onBeforeMount, ref, Ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { Ref } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import LiquidityProviderBalanceDetails from '@/components/dashboard/LiquidityProviderBalanceDetails.vue';
@@ -116,8 +113,7 @@ import { useSectionLoading } from '@/composables/common';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { usePremium } from '@/composables/premium';
 import { Routes } from '@/router/routes';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
-import { Section } from '@/store/const';
+import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswapStore } from '@/store/defi/uniswap';
@@ -128,6 +124,7 @@ import {
   DashboardTablesVisibleColumns,
   DashboardTableType
 } from '@/types/frontend-settings';
+import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
 
@@ -257,7 +254,7 @@ const percentageOfCurrentGroup = (value: BigNumber) => {
 
 const premium = usePremium();
 
-const { ethAddresses } = storeToRefs(useBlockchainAccountsStore());
+const { ethAddresses } = storeToRefs(useEthBalancesStore());
 
 const fetch = async (refresh: boolean = false) => {
   if (get(ethAddresses).length > 0) {

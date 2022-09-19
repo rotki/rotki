@@ -1,8 +1,8 @@
 import { get, MaybeRef } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { computed } from 'vue';
-import { defiSections, Section, Status } from '@/store/const';
 import { StatusPayload } from '@/store/types';
+import { defiSections, Section, Status } from '@/types/status';
 
 const isLoading = (status: MaybeRef<Status>): boolean =>
   get(status) === Status.LOADING ||

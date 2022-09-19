@@ -1,9 +1,7 @@
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { get, MaybeRef } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
+import { MaybeRef } from '@vueuse/core';
 import { ComputedRef } from 'vue';
-import { useBalancesStore } from '@/store/balances';
-import { NonFungibleBalance } from '@/types/nfbalances';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
 import { isNft } from '@/utils/nft';
 
 export type NftAsset = SupportedAsset & {
@@ -12,7 +10,7 @@ export type NftAsset = SupportedAsset & {
 };
 
 export const useNftAssetInfoStore = defineStore('assets/nfts', () => {
-  const { nfBalances } = storeToRefs(useBalancesStore());
+  const { nonFunginbleBalances } = storeToRefs(useNonFungibleBalancesStore());
 
   const getNftDetails = (
     identifier: MaybeRef<string>
@@ -24,7 +22,7 @@ export const useNftAssetInfoStore = defineStore('assets/nfts', () => {
         return null;
       }
 
-      const balances = get(nfBalances) as NonFungibleBalance[];
+      const balances = get(nonFunginbleBalances);
       const balance = balances.find(item => item.id === id);
 
       if (!balance) {

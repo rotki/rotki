@@ -1,8 +1,5 @@
 import { Ref } from 'vue';
 import { useBalancesStore } from '@/store/balances';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useManualBalancesStore } from '@/store/balances/manual';
 import { useNotifications } from '@/store/notifications';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useWatchersStore } from '@/store/session/watchers';
@@ -24,12 +21,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { consume } = useNotifications();
   const { fetchWatchers } = useWatchersStore();
   const { monitor } = useTasks();
-
-  const { fetchBlockchainBalances, fetchLoopringBalances } =
-    useBlockchainBalancesStore();
-  const { refreshPrices } = useBalancesStore();
-  const { fetchManualBalances } = useManualBalancesStore();
-  const { fetchConnectedExchangeBalances } = useExchangeBalancesStore();
+  const { autoRefresh } = useBalancesStore();
 
   const { queryPeriod, refreshPeriod } = storeToRefs(
     useFrontendSettingsStore()
@@ -43,14 +35,6 @@ export const useMonitorStore = defineStore('monitor', () => {
     if (!get(connected)) {
       startPromise(consume());
     }
-  };
-
-  const fetchBalances = async () => {
-    await fetchManualBalances();
-    await fetchBlockchainBalances({ ignoreCache: true });
-    await fetchLoopringBalances(true);
-    await fetchConnectedExchangeBalances();
-    await refreshPrices({ ignoreCache: true });
   };
 
   const connectWebSocket = async (restarting: boolean): Promise<void> => {
@@ -102,7 +86,7 @@ export const useMonitorStore = defineStore('monitor', () => {
     const period = get(refreshPeriod) * 60 * 1000;
     const activeMonitors = get(monitors);
     if (!activeMonitors[BALANCES] && period > 0) {
-      activeMonitors[BALANCES] = setInterval(fetchBalances, period);
+      activeMonitors[BALANCES] = setInterval(autoRefresh, period);
       set(monitors, activeMonitors);
     }
   };

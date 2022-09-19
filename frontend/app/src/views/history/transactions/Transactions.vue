@@ -15,9 +15,9 @@ import { get, useIntervalFn } from '@vueuse/core';
 import { defineAsyncComponent, onBeforeMount, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import { isSectionLoading, useSectionLoading } from '@/composables/common';
-import { Section } from '@/store/const';
 import { useTransactions } from '@/store/history/transactions';
 import { useTasks } from '@/store/tasks';
+import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 
 const ProgressScreen = defineAsyncComponent(

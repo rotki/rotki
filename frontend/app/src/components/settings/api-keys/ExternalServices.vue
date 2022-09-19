@@ -146,7 +146,7 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { api } from '@/services/rotkehlchen-api';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { useEthBalancesStore } from '@/store/blockchain/balances/eth';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
@@ -170,7 +170,7 @@ const loading = ref(false);
 
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { setMessage } = useMessageStore();
-const { fetchLoopringBalances } = useBlockchainBalancesStore();
+const { fetchLoopringBalances } = useEthBalancesStore();
 
 const { tc } = useI18n();
 

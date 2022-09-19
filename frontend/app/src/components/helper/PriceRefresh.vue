@@ -4,7 +4,7 @@
     color="primary"
     :loading="refreshing"
     :disabled="refreshing || loadingData"
-    @click="refreshPrices({ ignoreCache: true })"
+    @click="refreshPrices(true)"
   >
     <v-icon left>mdi-refresh</v-icon>
     {{ t('price_refresh.button') }}
@@ -12,13 +12,10 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
 import { useSectionLoading } from '@/composables/common';
 import { useBalancesStore } from '@/store/balances';
-import { Section } from '@/store/const';
 import { useTasks } from '@/store/tasks';
+import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 
 const { isTaskRunning } = useTasks();

@@ -107,7 +107,6 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import { useSectionLoading } from '@/composables/common';
 import { useInterop } from '@/electron-interop';
-import { Section } from '@/store/const';
 import { useDefiStore } from '@/store/defi';
 import {
   Airdrop,
@@ -129,6 +128,7 @@ import {
   AIRDROP_UNISWAP,
   AirdropType
 } from '@/types/airdrops';
+import { Section } from '@/types/status';
 import PoapDeliveryAirdrops from '@/views/defi/PoapDeliveryAirdrops.vue';
 
 type AirdropSource = {

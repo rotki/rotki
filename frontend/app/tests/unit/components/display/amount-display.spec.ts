@@ -12,6 +12,7 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { VTooltip } from 'vuetify/lib/components';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { defaultGeneralSettings } from '@/data/factories';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionStore } from '@/store/session';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -62,12 +63,15 @@ describe('AmountDisplay.vue', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     document.body.setAttribute('data-app', 'true');
-    const { uiFloatingPrecision, mainCurrency } = storeToRefs(
-      useGeneralSettingsStore()
-    );
+    const store = useGeneralSettingsStore();
+    store.update({
+      ...defaultGeneralSettings(),
+      mainCurrency: currencies[1],
+      uiFloatingPrecision: 2
+    });
+
     const { exchangeRates } = storeToRefs(useBalancePricesStore());
-    set(mainCurrency, currencies[1]);
-    set(uiFloatingPrecision, 2);
+
     set(exchangeRates, { EUR: bigNumberify(1.2) });
   });
 
@@ -139,8 +143,7 @@ describe('AmountDisplay.vue', () => {
 
   describe('Scramble data', () => {
     beforeEach(() => {
-      const { scrambleData } = storeToRefs(useSessionSettingsStore());
-      set(scrambleData, true);
+      useSessionSettingsStore().update({ scrambleData: true });
     });
 
     test('displays amount converted to selected fiat currency as scrambled', async () => {
@@ -182,8 +185,9 @@ describe('AmountDisplay.vue', () => {
   describe('Check currency location', () => {
     describe('Before', () => {
       beforeEach(() => {
-        const { currencyLocation } = storeToRefs(useFrontendSettingsStore());
-        set(currencyLocation, CurrencyLocation.BEFORE);
+        useFrontendSettingsStore().update({
+          currencyLocation: CurrencyLocation.BEFORE
+        });
       });
 
       test('fiat symbol before amount', () => {
@@ -212,8 +216,9 @@ describe('AmountDisplay.vue', () => {
 
     describe('After', () => {
       beforeEach(() => {
-        const { currencyLocation } = storeToRefs(useFrontendSettingsStore());
-        set(currencyLocation, CurrencyLocation.AFTER);
+        useFrontendSettingsStore().update({
+          currencyLocation: CurrencyLocation.AFTER
+        });
       });
 
       test('fiat symbol after amount', () => {
@@ -243,11 +248,10 @@ describe('AmountDisplay.vue', () => {
 
   describe('Check separator', () => {
     test('`Thousand separator=,` & `Decimal separator=.`', () => {
-      const { decimalSeparator, thousandSeparator } = storeToRefs(
-        useFrontendSettingsStore()
-      );
-      set(thousandSeparator, ',');
-      set(decimalSeparator, '.');
+      useFrontendSettingsStore().update({
+        thousandSeparator: ',',
+        decimalSeparator: '.'
+      });
 
       const wrapper = createWrapper(bigNumberify(123456.78));
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe(
@@ -256,11 +260,10 @@ describe('AmountDisplay.vue', () => {
     });
 
     test('`Thousand separator=.` & `Decimal separator=,`', () => {
-      const { decimalSeparator, thousandSeparator } = storeToRefs(
-        useFrontendSettingsStore()
-      );
-      set(thousandSeparator, '.');
-      set(decimalSeparator, ',');
+      useFrontendSettingsStore().update({
+        thousandSeparator: '.',
+        decimalSeparator: ','
+      });
 
       const wrapper = createWrapper(bigNumberify(123456.78));
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe(
@@ -271,24 +274,27 @@ describe('AmountDisplay.vue', () => {
 
   describe('Check rounding', () => {
     test('`amountRoundingMode=up`', () => {
-      const { amountRoundingMode } = storeToRefs(useFrontendSettingsStore());
-      set(amountRoundingMode, BigNumber.ROUND_UP);
+      useFrontendSettingsStore().update({
+        amountRoundingMode: BigNumber.ROUND_UP
+      });
 
       const wrapper = createWrapper(bigNumberify(1.20340001));
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.21');
     });
 
     test('`amountRoundingMode=down`', () => {
-      const { amountRoundingMode } = storeToRefs(useFrontendSettingsStore());
-      set(amountRoundingMode, BigNumber.ROUND_DOWN);
+      useFrontendSettingsStore().update({
+        amountRoundingMode: BigNumber.ROUND_DOWN
+      });
 
       const wrapper = createWrapper(bigNumberify(1.20340001));
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.20');
     });
 
     test('`valueRoundingMode=up`', () => {
-      const { valueRoundingMode } = storeToRefs(useFrontendSettingsStore());
-      set(valueRoundingMode, BigNumber.ROUND_UP);
+      useFrontendSettingsStore().update({
+        valueRoundingMode: BigNumber.ROUND_UP
+      });
 
       const wrapper = createWrapper(bigNumberify(1.20340001), {
         fiatCurrency: 'EUR'
@@ -297,8 +303,9 @@ describe('AmountDisplay.vue', () => {
     });
 
     test('`valueRoundingMode=down`', () => {
-      const { valueRoundingMode } = storeToRefs(useFrontendSettingsStore());
-      set(valueRoundingMode, BigNumber.ROUND_DOWN);
+      useFrontendSettingsStore().update({
+        valueRoundingMode: BigNumber.ROUND_DOWN
+      });
 
       const wrapper = createWrapper(bigNumberify(1.20340001), {
         fiatCurrency: 'EUR'

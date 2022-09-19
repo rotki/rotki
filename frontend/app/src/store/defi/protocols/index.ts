@@ -19,7 +19,6 @@ import { usePremium } from '@/composables/premium';
 import { truncateAddress } from '@/filters';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { Section, Status } from '@/store/const';
 import { useAaveStore } from '@/store/defi/aave';
 import { useCompoundStore } from '@/store/defi/compound';
 import { useLiquityStore } from '@/store/defi/liquity';
@@ -46,6 +45,7 @@ import {
   MakerDAOVaultModel
 } from '@/types/defi/maker';
 import { YearnVaultsHistory } from '@/types/defi/yearn';
+import { Section, Status } from '@/types/status';
 import { assert } from '@/utils/assertions';
 import { Zero, zeroBalance } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';

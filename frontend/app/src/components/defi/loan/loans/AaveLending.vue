@@ -42,8 +42,8 @@ import { isSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { AaveBorrowingDetails } from '@/premium/premium';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
-import { Section } from '@/store/const';
 import { AaveLoan } from '@/store/defi/types';
+import { Section } from '@/types/status';
 
 export default defineComponent({
   name: 'AaveLending',

@@ -78,14 +78,11 @@
 <script setup lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, PropType, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useTheme } from '@/composables/common';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
+import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 
 const props = defineProps({
   label: { required: false, type: String, default: '' },
@@ -119,7 +116,7 @@ const { t } = useI18n();
 
 const { chains, value, usableAddresses, hideOnEmptyUsable } = toRefs(props);
 const search = ref('');
-const { accounts } = storeToRefs(useBlockchainAccountsStore());
+const { accounts } = storeToRefs(useAccountBalancesStore());
 const selectableAccounts = computed(() => {
   const filteredChains = get(chains);
   const blockchainAccounts = get(accounts);

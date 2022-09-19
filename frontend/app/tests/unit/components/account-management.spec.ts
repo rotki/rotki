@@ -9,7 +9,7 @@ import { VDialog } from 'vuetify/lib/components';
 import AccountManagement from '@/components/AccountManagement.vue';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { interop, useInterop } from '@/electron-interop';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
 import { usePremiumStore } from '@/store/session/premium';
@@ -56,8 +56,8 @@ describe('AccountManagement.vue', () => {
       lpAggregatedBalances: () => []
     }));
 
-    useBlockchainBalancesStore(testingPinia).aggregatedBalances = () => [];
-    useBlockchainBalancesStore(testingPinia).liabilities = () => [];
+    useAggregatedBalancesStore(testingPinia).balances = () => [];
+    useAggregatedBalancesStore(testingPinia).liabilities = () => [];
 
     sessionStore = useSessionStore();
 

@@ -71,7 +71,7 @@ export const useSettings = () => {
       {
         [SettingLocation.GENERAL]: () => updateSettings(payload),
         [SettingLocation.FRONTEND]: () => updateFrontendSettings(payload),
-        [SettingLocation.SESSION]: () => updateSessionSettings(payload)
+        [SettingLocation.SESSION]: async () => updateSessionSettings(payload)
       };
 
     return await getActionStatus(updateMethods[settingLocation], message);

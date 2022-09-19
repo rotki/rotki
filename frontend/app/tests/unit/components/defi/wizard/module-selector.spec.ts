@@ -1,15 +1,9 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { set } from '@vueuse/core';
-import {
-  createPinia,
-  Pinia,
-  PiniaVuePlugin,
-  setActivePinia,
-  storeToRefs
-} from 'pinia';
+import { createPinia, Pinia, PiniaVuePlugin, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
+import { defaultGeneralSettings } from '@/data/factories';
 import { api } from '@/services/rotkehlchen-api';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
@@ -40,8 +34,10 @@ describe('ModuleSelector.vue', () => {
     settingsStore = useGeneralSettingsStore(pinia);
 
     document.body.setAttribute('data-app', 'true');
-    const { activeModules } = storeToRefs(settingsStore);
-    set(activeModules, [Module.AAVE]);
+    settingsStore.update({
+      ...defaultGeneralSettings(),
+      activeModules: [Module.AAVE]
+    });
     wrapper = createWrapper();
   });
 

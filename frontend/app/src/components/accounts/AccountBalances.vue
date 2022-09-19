@@ -7,7 +7,7 @@
             class="account-balances__refresh"
             :loading="isLoading"
             :tooltip="tc('account_balances.refresh_tooltip', 0, { blockchain })"
-            @refresh="refresh"
+            @refresh="refreshBlockchainBalances"
           />
         </v-col>
         <v-col class="ps-2">
@@ -70,21 +70,22 @@
 
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get, set } from '@vueuse/core';
-import { computed, PropType, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { useRefresh } from '@/composables/balances/refresh';
 import {
   AccountWithBalance,
   BlockchainAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
+import { useBtcAccountsStore } from '@/store/blockchain/accounts/btc';
+import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
@@ -102,8 +103,7 @@ const emit = defineEmits<{
 const { blockchain } = toRefs(props);
 
 const { isTaskRunning } = useTasks();
-const { fetchLoopringBalances, fetchBlockchainBalances } =
-  useBlockchainBalancesStore();
+const { refreshBlockchainBalances } = useRefresh(blockchain);
 
 const selectedAddresses = ref<string[]>([]);
 const visibleTags = ref<string[]>([]);
@@ -155,8 +155,10 @@ const editAccount = (account: BlockchainAccountWithBalance) => {
   emit('edit-account', account);
 };
 
-const { deleteEth2Validators, removeAccount, deleteXpub } =
-  useBlockchainAccountsStore();
+const { deleteEth2Validators } = useEthAccountsStore();
+const { removeAccount } = useBlockchainAccountsStore();
+const { refreshAccounts } = useBlockchainStore();
+const { deleteXpub } = useBtcAccountsStore();
 
 const deleteAccount = async () => {
   if (get(selectedAddresses).length > 0) {
@@ -171,6 +173,8 @@ const deleteAccount = async () => {
       });
     }
 
+    await refreshAccounts(get(blockchain));
+
     set(selectedAddresses, []);
   } else if (get(xpubToDelete)) {
     const payload = { ...get(xpubToDelete)! };
@@ -183,15 +187,5 @@ const deleteAccount = async () => {
 const cancelDelete = () => {
   set(confirmDelete, false);
   set(xpubToDelete, null);
-};
-
-const refresh = async () => {
-  await fetchBlockchainBalances({
-    ignoreCache: true,
-    blockchain: get(blockchain)
-  });
-  if (get(blockchain) === Blockchain.ETH) {
-    await fetchLoopringBalances(true);
-  }
 };
 </script>

@@ -27,9 +27,9 @@ import { useSectionLoading } from '@/composables/common';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session';
 import { BalancerBalances } from '@/premium/premium';
-import { Section } from '@/store/const';
 import { useBalancerStore } from '@/store/defi/balancer';
 import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
 
 const modules: Module[] = [Module.BALANCER];
 

@@ -1,5 +1,3 @@
-import { acceptHMRUpdate, defineStore } from 'pinia';
-import { useI18n } from 'vue-i18n-composable';
 import { interop } from '@/electron-interop';
 import { AssetUpdatePayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';

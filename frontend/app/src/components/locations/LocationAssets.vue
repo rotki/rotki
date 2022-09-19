@@ -6,11 +6,9 @@
 </template>
 <script setup lang="ts">
 import { AssetBalanceWithPrice } from '@rotki/common';
-import { get } from '@vueuse/core';
-import { computed, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { ComputedRef } from 'vue';
 import AssetBalances from '@/components/AssetBalances.vue';
-import { useBalancesStore } from '@/store/balances';
+import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
@@ -23,8 +21,8 @@ const { isTaskRunning } = useTasks();
 
 const { t } = useI18n();
 
-const { locationBreakdown: breakdown } = useBalancesStore();
-const locationBreakdown = computed<AssetBalanceWithPrice[]>(() => {
+const { locationBreakdown: breakdown } = useBalancesBreakdownStore();
+const locationBreakdown: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
   return get(breakdown(get(identifier)));
 });
 

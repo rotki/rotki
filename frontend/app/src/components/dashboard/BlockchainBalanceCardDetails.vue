@@ -32,8 +32,8 @@
 <script setup lang="ts">
 import { PropType } from 'vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { SubBlockchainTotal } from '@/store/balances/types';
 import { ActionDataEntry } from '@/store/types';
+import { SubBlockchainTotal } from '@/types/blockchain';
 
 defineProps({
   child: {

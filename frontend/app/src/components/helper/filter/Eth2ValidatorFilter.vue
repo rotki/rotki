@@ -22,12 +22,10 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { storeToRefs } from 'pinia';
-import { defineComponent, PropType, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
+import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 
 export default defineComponent({
   name: 'Eth2ValidatorFilter',
@@ -50,9 +48,7 @@ export default defineComponent({
   },
   emits: ['input'],
   setup(props, { emit }) {
-    const { eth2ValidatorsState: eth2Validators } = storeToRefs(
-      useBlockchainAccountsStore()
-    );
+    const { eth2Validators } = storeToRefs(useEthAccountsStore());
     const account = ref<GeneralAccount[]>([]);
     const { tc } = useI18n();
     const input = (selection: string[]) => {

@@ -1,8 +1,10 @@
+import { BigNumber } from '@rotki/common';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Routes } from '@/router/routes';
 import { ChainSections } from '@/store/balances/types';
-import { Section } from '@/store/const';
 import { ActionDataEntry } from '@/store/types';
-import { L2_LOOPRING } from '@/types/protocols';
+import { L2_LOOPRING, SupportedSubBlockchainProtocol } from '@/types/protocols';
+import { Section } from '@/types/status';
 
 export const chainSection: ChainSections = {
   BTC: Section.BLOCKCHAIN_BTC,
@@ -26,3 +28,16 @@ export const SupportedSubBlockchainProtocolData: ActionDataEntry[] = [
     detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}#blockchain-balances-LRC`
   }
 ];
+
+export interface SubBlockchainTotal {
+  readonly protocol: SupportedSubBlockchainProtocol;
+  readonly usdValue: BigNumber;
+  readonly loading: boolean;
+}
+
+export interface BlockchainTotal {
+  readonly chain: Blockchain;
+  readonly children: SubBlockchainTotal[];
+  readonly usdValue: BigNumber;
+  readonly loading: boolean;
+}

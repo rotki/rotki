@@ -33,10 +33,10 @@ import LocationAssets from '@/components/locations/LocationAssets.vue';
 import LocationValueRow from '@/components/locations/LocationValueRow.vue';
 import { setupLocationInfo } from '@/composables/balances';
 import { isSectionLoading } from '@/composables/common';
-import { Section } from '@/store/const';
 import { useAssetMovements } from '@/store/history/asset-movements';
 import { useLedgerActions } from '@/store/history/ledger-actions';
 import { useTrades } from '@/store/history/trades';
+import { Section } from '@/types/status';
 import { TradeLocationData } from '@/types/trades';
 
 export default defineComponent({

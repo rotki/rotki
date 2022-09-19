@@ -53,19 +53,17 @@
 import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, ref, toRefs } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { ComputedRef } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useBalancesStore } from '@/store/balances';
-import { useBlockchainAccountsStore } from '@/store/balances/blockchain-accounts';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
+import { useBalancesBreakdownStore } from '@/store/balances/breakdown';
 import { AssetBreakdown } from '@/store/balances/types';
+import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
+import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -83,10 +81,11 @@ const props = defineProps({
 const { identifier } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { getAccountByAddress, getEth2Account } = useBlockchainAccountsStore();
+const { getAccountByAddress } = useAccountBalancesStore();
+const { getEth2Account } = useEthAccountsStore();
 const { detailsLoading } = storeToRefs(useStatusStore());
-const { assetPriceInfo } = useBlockchainBalancesStore();
-const { assetBreakdown } = useBalancesStore();
+const { assetPriceInfo } = useAggregatedBalancesStore();
+const { assetBreakdown } = useBalancesBreakdownStore();
 const { t } = useI18n();
 
 const onlyTags = ref<string[]>([]);
@@ -95,13 +94,14 @@ const totalUsdValue = computed<BigNumber>(() => {
   return get(assetPriceInfo(identifier)).usdValue;
 });
 
-const getAccount = (item: AssetBreakdown) =>
-  computed<GeneralAccount | undefined>(() => {
-    if (item.location === Blockchain.ETH2) {
-      return get(getEth2Account(item.address));
-    }
-    return get(getAccountByAddress(item.address));
-  });
+const getAccount = (
+  item: AssetBreakdown
+): ComputedRef<GeneralAccount | undefined> =>
+  computed(() =>
+    item.location === Blockchain.ETH2
+      ? get(getEth2Account(item.address))
+      : get(getAccountByAddress(item.address))
+  );
 
 const assetLocations = computed<AssetLocations>(() => {
   const breakdowns = get(assetBreakdown(get(identifier)));

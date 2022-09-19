@@ -2,15 +2,11 @@ import { BigNumber } from '@rotki/common';
 import { TimeUnit } from '@rotki/common/lib/settings';
 import { timeframes } from '@rotki/common/lib/settings/graphs';
 import { NetValue } from '@rotki/common/lib/statistics';
-import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
-import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
-import { computed, ref } from 'vue';
 import { setupLiquidityPosition } from '@/composables/defi';
-import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { useBalancesStore } from '@/store/balances';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -33,23 +29,23 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { currencySymbol, floatingPrecision } = storeToRefs(
     useGeneralSettingsStore()
   );
-  const { aggregatedBalances, liabilities } = useBlockchainBalancesStore();
-
-  const balancesStore = useBalancesStore();
-  const { nfTotalValue } = balancesStore;
+  const { balances, liabilities } = useAggregatedBalancesStore();
+  const { nonFungibleTotalValue } = useNonFungibleBalancesStore();
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { exchangeRate } = useBalancePricesStore();
 
   const { lpTotal } = setupLiquidityPosition();
 
+  const { t } = useI18n();
+
   const calculateTotalValue = (includeNft: boolean = false) =>
     computed(() => {
-      const balances = get(aggregatedBalances());
+      const aggregatedBalances = get(balances());
       const totalLiabilities = get(liabilities());
-      const nftTotal = includeNft ? get(nfTotalValue()) : 0;
+      const nftTotal = includeNft ? get(nonFungibleTotalValue()) : 0;
       const lpTotalBalance = get(lpTotal(includeNft));
 
-      const assetValue = balances.reduce(
+      const assetValue = aggregatedBalances.reduce(
         (sum, value) => sum.plus(value.usdValue),
         Zero
       );
@@ -127,12 +123,10 @@ export const useStatisticsStore = defineStore('statistics', () => {
       set(netValue, await api.queryNetvalueData(get(nftsInNetValue)));
     } catch (e: any) {
       notify({
-        title: i18n.t('actions.statistics.net_value.error.title').toString(),
-        message: i18n
-          .t('actions.statistics.net_value.error.message', {
-            message: e.message
-          })
-          .toString(),
+        title: t('actions.statistics.net_value.error.title').toString(),
+        message: t('actions.statistics.net_value.error.message', {
+          message: e.message
+        }).toString(),
         display: false
       });
     }

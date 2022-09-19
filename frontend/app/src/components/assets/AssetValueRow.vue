@@ -50,15 +50,15 @@ import { get } from '@vueuse/core';
 import { computed, toRefs } from 'vue';
 import { useI18n } from 'vue-i18n-composable';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { useBlockchainBalancesStore } from '@/store/balances/blockchain-balances';
-import { AssetPriceInfo } from '@/store/balances/types';
+import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
+import { AssetPriceInfo } from '@/types/prices';
 
 const props = defineProps({
   identifier: { required: true, type: String },
   symbol: { required: true, type: String }
 });
 const { identifier } = toRefs(props);
-const { assetPriceInfo } = useBlockchainBalancesStore();
+const { assetPriceInfo } = useAggregatedBalancesStore();
 
 const info = computed<AssetPriceInfo>(() => {
   return get(assetPriceInfo(identifier));

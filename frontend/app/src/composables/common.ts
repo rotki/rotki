@@ -1,7 +1,7 @@
 import { get } from '@vueuse/core';
 import { computed, getCurrentInstance } from 'vue';
-import { Section, Status } from '@/store/const';
 import { getStatus, useStatusStore } from '@/store/status';
+import { Section, Status } from '@/types/status';
 import { assert } from '@/utils/assertions';
 
 export const useProxy = () => {
