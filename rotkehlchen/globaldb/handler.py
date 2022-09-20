@@ -1,3 +1,4 @@
+from ast import Global
 import logging
 import shutil
 import sqlite3
@@ -1642,12 +1643,19 @@ class GlobalDBHandler():
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(querystr, (identifier, identifier))
             asset_data = cursor.fetchone()
-        if asset_data is None:
-            raise UnknownAsset(f"Couldn't find asset with identifier {identifier}")
 
-        asset_type = AssetType.deserialize_from_db(asset_data[1])
-        if asset_type != AssetType.EVM_TOKEN:
-            raise UnknownAsset(f'Tried to resolve as EVM token an asset of type {asset_type}')
+            if asset_data is None:
+                raise UnknownAsset(f"Couldn't find asset with identifier {identifier}")
+
+            asset_type = AssetType.deserialize_from_db(asset_data[1])
+            if asset_type != AssetType.EVM_TOKEN:
+                raise UnknownAsset(f'Tried to resolve as EVM token an asset of type {asset_type}')
+
+            # fetch the underlying tokens
+            underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
+                cursor=cursor,
+                parent_token_identifier=identifier,
+            )
 
         return EvmToken.initialize(
             address=string_to_evm_address(asset_data[2]),
@@ -1662,6 +1670,7 @@ class GlobalDBHandler():
             coingecko=asset_data[11],
             cryptocompare=asset_data[12],
             protocol=asset_data[13],
+            underlying_tokens=underlying_tokens,
         )
 
     @staticmethod
