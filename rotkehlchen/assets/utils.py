@@ -105,7 +105,6 @@ def get_or_create_evm_token(
 def get_crypto_asset_by_symbol(
         symbol: str,
         asset_type: Optional[AssetType] = None,
-        preferred_chain: ChainID = ChainID.ETHEREUM,
 ) -> Optional[AssetWithOracles]:
     """Gets an asset by symbol from the DB.
 
@@ -119,7 +118,6 @@ def get_crypto_asset_by_symbol(
     assets_data = GlobalDBHandler().get_assets_with_symbol(
         symbol=symbol,
         asset_type=asset_type,
-        chain=preferred_chain,
     )
     if len(assets_data) != 1:
         return None
