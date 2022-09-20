@@ -1993,7 +1993,7 @@
     "date_input_format": {
       "hint": "Use this if date format in your file is: {format}",
       "placeholder": "Input custom date format",
-      "switch_label": "Use custom date format to parsing your file"
+      "switch_label": "Use custom date format to parse your file"
     },
     "drop_area": "Drop the file or",
     "import_complete": "Import was completed successfully.",

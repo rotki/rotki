@@ -14,6 +14,7 @@
           @update:uploaded="uploaded = $event"
         />
         <v-switch
+          v-if="!isRotkiCustomImport"
           :value="dateInputFormat !== null"
           @change="changeShouldCustomDateFormat"
         >
@@ -196,6 +197,10 @@ const changeShouldCustomDateFormat = () => {
     set(dateInputFormat, null);
   }
 };
+
+const isRotkiCustomImport = computed(() => {
+  return get(source).startsWith('rotki_');
+});
 </script>
 
 <style module lang="scss">
