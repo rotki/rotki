@@ -20,11 +20,7 @@ const BalancerBalance = z.object({
   userBalance: Balance
 })
 
-type BalancerBalance = z.infer<typeof BalancerBalance>
-
-export interface BalancerBalanceWithOwner extends BalancerBalance {
-  readonly owner: string;
-}
+export type BalancerBalance = z.infer<typeof BalancerBalance>
 
 export const BalancerBalances = z.record(z.array(BalancerBalance))
 export type BalancerBalances = z.infer<typeof BalancerBalances>

@@ -1,7 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { LpType } from '@rotki/common/lib/defi';
 import { get } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import { bigNumberSum } from '@/filters';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -14,7 +13,7 @@ import { sortDesc } from '@/utils/bignumbers';
 export const setupLiquidityPosition = () => {
   const { uniswapV2Balances, uniswapV3Balances } = useUniswapStore();
   const { balanceList: sushiswapBalances } = useSushiswapStore();
-  const { balanceList: balancerBalances } = storeToRefs(useBalancerStore());
+  const { balancerBalances } = useBalancerStore();
   const { getAssetSymbol } = useAssetInfoRetrieval();
 
   const lpAggregatedBalances = (includeNft: boolean = true) =>
@@ -46,7 +45,7 @@ export const setupLiquidityPosition = () => {
         lpType: LpType.SUSHISWAP
       }));
 
-      const mappedBalancerBalances = get(balancerBalances).map(item => ({
+      const mappedBalancerBalances = get(balancerBalances([])).map(item => ({
         ...item,
         usdValue: item.userBalance.usdValue as BigNumber,
         asset: createEvmIdentifierFromAddress(item.address),

@@ -1,4 +1,3 @@
-import { AssetBalance, Balance } from '@rotki/common';
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
@@ -7,7 +6,6 @@ import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
 import { Section } from '@/store/const';
 import {
@@ -23,8 +21,6 @@ import { uniswapEventsNumericKeys } from '@/types/defi/protocols';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { sortDesc } from '@/utils/bignumbers';
-import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 
 export const useUniswapStore = defineStore('defi/uniswap', () => {
@@ -38,7 +34,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
 
   const uniswapV2Balances = (addresses: string[]) =>
     computed(() => {
-      return getBalances(get(v2Balances), addresses, false);
+      return getBalances(get(v2Balances), addresses);
     });
 
   const uniswapV3Balances = (addresses: string[]) =>
@@ -82,53 +78,6 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     const uniswapBalances = get(v3Balances);
     return getPools(uniswapBalances, {});
   });
-
-  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
-  const { isAssetIgnored } = useIgnoredAssetsStore();
-
-  const uniswapV3AggregatedBalances = (address: string | string[] = []) =>
-    computed<AssetBalance[]>(() => {
-      const ownedAssets: Record<string, Balance> = {};
-
-      const addToOwned = (value: AssetBalance) => {
-        const associatedAsset: string = get(
-          getAssociatedAssetIdentifier(value.asset)
-        );
-
-        const ownedAsset = ownedAssets[associatedAsset];
-
-        ownedAssets[associatedAsset] = !ownedAsset
-          ? {
-              ...value
-            }
-          : {
-              ...balanceSum(ownedAsset, value)
-            };
-      };
-
-      const balances = get(
-        uniswapV3Balances(Array.isArray(address) ? address : [address])
-      );
-
-      balances.forEach(balance => {
-        const assets = balance.assets;
-        assets.forEach(asset => {
-          addToOwned({
-            ...asset.userBalance,
-            asset: asset.asset
-          });
-        });
-      });
-
-      return Object.keys(ownedAssets)
-        .filter(asset => !get(isAssetIgnored(asset)))
-        .map(asset => ({
-          asset,
-          amount: ownedAssets[asset].amount,
-          usdValue: ownedAssets[asset].usdValue
-        }))
-        .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
-    });
 
   const fetchV2Balances = async (refresh: boolean = false) => {
     const meta: TaskMeta = {
@@ -278,7 +227,6 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     uniswapV3PoolAssets,
     uniswapV2Balances,
     uniswapV3Balances,
-    uniswapV3AggregatedBalances,
     uniswapEvents,
     uniswapPoolProfit,
     fetchV2Balances,
