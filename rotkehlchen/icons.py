@@ -152,19 +152,7 @@ class IconManager():
 
         Returns true if there is more icons left to cache after this batch.
         """
-        coingecko_integrated_asset_ids = []
-        # type ignore is due to: https://github.com/python/mypy/issues/7781
-        assets_list = GlobalDBHandler().get_all_asset_data(mapping=False)  # type:ignore
-        for entry in assets_list:
-            try:
-                if entry.asset_type != AssetType.FIAT and entry.coingecko is not None and entry.coingecko != '':  # noqa: E501
-                    coingecko_integrated_asset_ids.append(entry.identifier)
-            except KeyError:
-                log.warning(
-                    f'Ignoring asset {entry.identifier} during query icons due to KeyError',
-                )
-                continue
-
+        coingecko_integrated_asset_ids = GlobalDBHandler().assets_with_coingecko_id()
         cached_asset_ids = [
             str(x.name)[:-10] for x in self.icons_dir.glob('*_small.png') if x.is_file()
         ]

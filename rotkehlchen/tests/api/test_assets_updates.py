@@ -230,7 +230,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         sql_actions={"999999991": update_1},
     )
     globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999990)
-    start_assets_num = len(globaldb.get_all_asset_data(mapping=False))
+    start_assets_num = globaldb.count_total_assets()
     with update_patch:
         response = requests.get(
             api_url_for(
@@ -277,7 +277,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
 
         # Make sure that nothing was committed
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999990
-        assert len(globaldb.get_all_asset_data(mapping=False)) == start_assets_num
+        assert globaldb.count_total_assets() == start_assets_num
         with pytest.raises(UnknownAsset):
             Asset('121-ada-FADS-as')
         errors = rotki.msg_aggregator.consume_errors()
@@ -500,7 +500,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         sql_actions={"999999991": update_1},
     )
     globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999990)
-    start_assets_num = len(globaldb.get_all_asset_data(mapping=False))
+    start_assets_num = globaldb.count_total_assets()
     with update_patch:
         response = requests.get(
             api_url_for(
@@ -547,7 +547,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
 
         # Make sure that nothing was committed
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999990
-        assert len(globaldb.get_all_asset_data(mapping=False)) == start_assets_num
+        assert globaldb.count_total_assets() == start_assets_num
         with pytest.raises(UnknownAsset):
             Asset('121-ada-FADS-as')
         errors = rotki.msg_aggregator.consume_errors()
@@ -674,7 +674,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
     )
     cursor = globaldb.conn.cursor()
     cursor.execute(f'DELETE FROM settings WHERE name="{ASSETS_VERSION_KEY}"')
-    start_assets_num = len(globaldb.get_all_asset_data(mapping=False))
+    start_assets_num = globaldb.count_total_assets()
     with update_patch:
         response = requests.get(
             api_url_for(
@@ -701,7 +701,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
 
         # Make sure that nothing was committed
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 0
-        assert len(globaldb.get_all_asset_data(mapping=False)) == start_assets_num
+        assert globaldb.count_total_assets() == start_assets_num
         with pytest.raises(UnknownAsset):
             Asset('121-ada-FADS-as')
         errors = rotki.msg_aggregator.consume_errors()

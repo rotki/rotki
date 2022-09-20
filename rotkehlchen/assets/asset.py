@@ -822,6 +822,7 @@ class EvmToken(CryptoAsset):
             name: Optional[str] = None,
             symbol: Optional[str] = None,
             started: Optional[Timestamp] = None,
+            forked: Optional[CryptoAsset] = None,
             swapped_for: Optional[CryptoAsset] = None,
             coingecko: Optional[str] = None,
             # add the token with inactive cryptocompare so querying is not attempted by symbol
