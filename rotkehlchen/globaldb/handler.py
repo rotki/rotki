@@ -16,10 +16,11 @@ from typing import (
     cast,
     overload,
 )
+from unicodedata import decimal
 
 from polyleven import levenshtein
 
-from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, CONSTANT_ASSETS
@@ -391,6 +392,20 @@ class GlobalDBHandler():
         """
         query = parent_query + query
         return query, bindings
+    def assets_with_coingecko_id() -> List[Asset]:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT A.identifier from common_asset_details AS A JOIN assets AS B ON A.identifier=B.identifer '
+                'WHERE coingecko IS NOT NULL AND coingecko != "" and asset_type !=?',
+                (AssetType.FIAT.serialize_for_db()),
+            )
+            return [row[0] for row in cursor.fetchall()]
+
+    @staticmethod
+    def count_total_assets() -> int:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute('SELECT COUNT(*) FROM assets')
+            return cursor.fetchone()[0]
 
     @overload
     @staticmethod
@@ -1029,7 +1044,7 @@ class GlobalDBHandler():
             symbol: str,
             asset_type: Optional[AssetType] = None,
             chain: Optional[ChainID] = None,
-    ) -> List[AssetData]:
+    ) -> List[Asset]:
         """Find all asset entries that have the given symbol"""
         eth_token_type = AssetType.EVM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         extra_check_evm = ''
@@ -1045,38 +1060,17 @@ class GlobalDBHandler():
             common_query_list.append(asset_type.serialize_for_db())
 
         querystr = f"""
-        SELECT A.identifier, A.type, B.address, B.chain, B.token_kind, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol FROM assets as A LEFT OUTER JOIN evm_tokens as B
-        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE C.symbol=? COLLATE NOCASE AND A.type=?{extra_check_evm}
+        SELECT A.identifier FROM assets as A LEFT OUTER JOIN evm_tokens as B ON B.identifier = A.identifier
+        JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE C.symbol=? COLLATE NOCASE AND A.type=?{extra_check_evm}
         UNION ALL
-        SELECT A.identifier, A.type, null, null, null, null, A.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null FROM assets as A JOIN common_asset_details as B
-        ON B.identifier = A.identifier WHERE B.symbol=? COLLATE NOCASE AND A.type!=?{extra_check_common};
+        SELECT A.identifier FROM assets as A JOIN common_asset_details as B ON B.identifier = A.identifier
+        WHERE B.symbol=? COLLATE NOCASE AND A.type!=?{extra_check_common};
         """  # noqa: E501
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(querystr, evm_query_list + common_query_list)
             assets = []
             for entry in cursor:
-                asset_type = AssetType.deserialize_from_db(entry[1])
-                evm_address: Optional[ChecksumEvmAddress]
-                if asset_type == AssetType.EVM_TOKEN:
-                    evm_address = string_to_evm_address(entry[2])
-                else:
-                    evm_address = None
-                assets.append(AssetData(
-                    identifier=entry[0],
-                    asset_type=asset_type,
-                    address=evm_address,
-                    chain=ChainID.deserialize_from_db(entry[3]) if entry[3] is not None else None,
-                    token_kind=EvmTokenKind.deserialize_from_db(entry[4]) if entry[4] is not None else None,  # noqa: E501
-                    decimals=entry[5],
-                    name=entry[6],
-                    symbol=entry[7],
-                    started=entry[8],
-                    forked=entry[9],
-                    swapped_for=entry[10],
-                    coingecko=entry[11],
-                    cryptocompare=entry[12],
-                    protocol=entry[13],
-                ))
+                assets.append(Asset.initialize(identifier=entry[0]))
 
         return assets
 
@@ -1633,6 +1627,102 @@ class GlobalDBHandler():
         shipped_ids = {tup[0] for tup in query}
         cursor.execute('DETACH DATABASE clean_db;')
         return user_ids - shipped_ids
+
+    @staticmethod
+    def evm_token_from_identifier(identifier: str) -> EvmToken:
+        """
+        Resolve an asset identifier to an evm token.
+        May raise:
+        - UnknownAsset: If the identifier is not found or the type is not correct
+        """
+        querystr = """
+        SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind FROM assets as A JOIN evm_tokens as B
+        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.identifier=?
+        """  # noqa: E501
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(querystr, (identifier, identifier))
+            asset_data = cursor.fetchone()
+        if asset_data is None:
+            raise UnknownAsset(f"Couldn't find asset with identifier {identifier}")
+
+        asset_type = AssetType.deserialize_from_db(asset_data[1])
+        if asset_type != AssetType.EVM_TOKEN:
+            raise UnknownAsset(f'Tried to resolve as EVM token an asset of type {asset_type}')
+
+        return EvmToken.initialize(
+            address=string_to_evm_address(asset_data[2]),
+            chain=ChainID.deserialize_from_db(asset_data[3]),
+            token_kind=EvmTokenKind.deserialize_from_db(asset_data[4]),
+            decimals=asset_data[5],
+            name=asset_data[6],
+            symbol=asset_data[7],
+            started=asset_data[8],
+            forked=asset_data[9],
+            swapped_for=asset_data[10],
+            coingecko=asset_data[11],
+            cryptocompare=asset_data[12],
+            protocol=asset_data[13],
+        )
+
+    @staticmethod
+    def crypto_asset_from_identifier(identifier: str) -> CryptoAsset:
+        """
+        Resolve an asset identifier to a crypto asset.
+        May raise:
+        - UnknownAsset: If the identifier is not found
+        """
+        querystr = """
+        SELECT A.identifier, A.type, A.name, B.symbol, B.started, B.forked, B.swapped_for,
+        B.coingecko, B.cryptocompare from assets as A JOIN common_asset_details as B
+        ON B.identifier = A.identifier WHERE A.identifier=?;
+        """
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(querystr, (identifier, identifier))
+            asset_data = cursor.fetchone()
+        if asset_data is None:
+            raise UnknownAsset(f"Couldn't find asset with identifier {identifier}")
+
+        asset_type = AssetType.deserialize_from_db(asset_data[1])
+        return CryptoAsset.initialize(
+            identifier=asset_data[0],
+            asset_type=asset_type,
+            name=asset_data[2],
+            symbol=asset_data[3],
+            started=asset_data[4],
+            forked=asset_data[5],
+            swapped_for=asset_data[6],
+            coingecko=asset_data[7],
+            cryptocompare=asset_data[8],
+        )
+
+    @staticmethod
+    def fiat_asset_from_identifier(identifier: str) -> FiatAsset:
+        """
+        Resolve an asset identifier to a fiat asset.
+        May raise:
+        - UnknownAsset: If the identifier is not found or the type is not correct
+        """
+        querystr = """
+        SELECT A.identifier, A.type, A.name, B.symbol,
+        B.coingecko, B.cryptocompare from assets as A JOIN common_asset_details as B
+        ON B.identifier = A.identifier WHERE A.identifier=?;
+        """
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(querystr, (identifier, identifier))
+            asset_data = cursor.fetchone()
+        if asset_data is None:
+            raise UnknownAsset(f"Couldn't find asset with identifier {identifier}")
+
+        asset_type = AssetType.deserialize_from_db(asset_data[1])
+        if asset_type != AssetType.FIAT:
+            raise UnknownAsset(f'Tried to resolve to fiat asset an asset of type {asset_type}')
+
+        return FiatAsset.initialize(
+            identifier=identifier,
+            asset_type=asset_type,
+            name=asset_data[2],
+            symbol=asset_data[3],
+        )
 
 
 def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
