@@ -270,7 +270,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       }
       return {
         ...item,
-        usdValue: item.amount.times(assetPrice)
+        usdValue: item.amount.times(assetPrice.value)
       };
     });
 

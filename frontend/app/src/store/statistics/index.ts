@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import { setupLiquidityPosition } from '@/composables/defi';
 import { api } from '@/services/rotkehlchen-api';
 import { useAggregatedBalancesStore } from '@/store/balances/aggregated';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotifications } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

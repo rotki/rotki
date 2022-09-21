@@ -4,12 +4,16 @@ import { AxiosInstance, AxiosResponseTransformer } from 'axios';
 import { omit } from 'lodash';
 import {
   AssetIdResponse,
-  AssetPriceArray,
   ConflictResolution,
   HistoricalPrice,
   HistoricalPriceDeletePayload,
   HistoricalPriceFormPayload,
-  HistoricalPricePayload
+  ManualPricePayload,
+  HistoricalPrices,
+  ManualPriceFormPayload,
+  ManualPrice,
+  ManualPrices,
+  AssetPriceArray
 } from '@/services/assets/types';
 import {
   axiosSnakeCaseTransformer,
@@ -266,16 +270,19 @@ export class AssetApi {
     return handleResponse(response);
   }
 
-  historicalPrices(
-    payload?: Partial<HistoricalPricePayload>
+  async historicalPrices(
+    payload?: Partial<ManualPricePayload>
   ): Promise<HistoricalPrice[]> {
-    return this.axios
-      .get<ActionResult<HistoricalPrice[]>>('/assets/prices/historical', {
+    const response = await this.axios.get<ActionResult<HistoricalPrice[]>>(
+      '/assets/prices/historical',
+      {
         params: axiosSnakeCaseTransformer(payload),
         validateStatus: validWithoutSessionStatus,
-        transformResponse: setupTransformer(['price'])
-      })
-      .then(handleResponse);
+        transformResponse: this.baseTransformer
+      }
+    );
+
+    return HistoricalPrices.parse(handleResponse(response));
   }
 
   async addHistoricalPrice(
@@ -330,45 +337,55 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  fetchCurrentPrices(): Promise<AssetPriceArray> {
-    return this.axios
-      .get<ActionResult<AssetPriceArray>>('/assets/prices/current', {
+  async fetchNftsPrices(): Promise<AssetPriceArray> {
+    const response = await this.axios.get<ActionResult<AssetPriceArray>>(
+      '/nfts/prices',
+      {
         validateStatus: validStatus,
         transformResponse: this.baseTransformer
-      })
+      }
+    );
+
+    return AssetPriceArray.parse(handleResponse(response));
+  }
+
+  async fetchLatestPrices(
+    payload?: Partial<ManualPricePayload>
+  ): Promise<ManualPrice[]> {
+    const response = await this.axios.post<ActionResult<ManualPrice[]>>(
+      '/assets/prices/latest/all',
+      payload,
+      {
+        validateStatus: validStatus,
+        transformResponse: this.baseTransformer
+      }
+    );
+
+    return ManualPrices.parse(handleResponse(response));
+  }
+
+  addLatestPrice(payload: ManualPriceFormPayload): Promise<boolean> {
+    return this.axios
+      .put<ActionResult<boolean>>(
+        '/assets/prices/latest',
+        axiosSnakeCaseTransformer(payload),
+        {
+          validateStatus: validStatus,
+          transformResponse: this.baseTransformer
+        }
+      )
       .then(handleResponse);
   }
 
-  deleteCurrentPrice(asset: string): Promise<boolean> {
+  deleteLatestPrice(asset: string): Promise<boolean> {
     return this.axios
-      .delete<ActionResult<boolean>>('/assets/prices/current', {
+      .delete<ActionResult<boolean>>('/assets/prices/latest', {
         validateStatus: validStatus,
         data: {
           asset
         },
         transformResponse: this.baseTransformer
       })
-      .then(handleResponse);
-  }
-
-  setCurrentPrice(
-    fromAsset: string,
-    toAsset: string,
-    price: string
-  ): Promise<boolean> {
-    return this.axios
-      .put<ActionResult<boolean>>(
-        '/assets/prices/current',
-        axiosSnakeCaseTransformer({
-          fromAsset,
-          toAsset,
-          price
-        }),
-        {
-          validateStatus: validStatus,
-          transformResponse: this.baseTransformer
-        }
-      )
       .then(handleResponse);
   }
 

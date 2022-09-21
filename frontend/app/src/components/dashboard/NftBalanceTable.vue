@@ -95,7 +95,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useSectionLoading } from '@/composables/common';
 import { Routes } from '@/router/routes';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
@@ -109,8 +109,8 @@ const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.route;
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
 const balancesStore = useNonFungibleBalancesStore();
-const { nonFunginbleBalances } = storeToRefs(balancesStore);
-const { nonFungibleTotalValue, fetchNonFunginbleBalances } = balancesStore;
+const { nonFungibleBalances } = storeToRefs(balancesStore);
+const { nonFungibleTotalValue, fetchNonFungibleBalances } = balancesStore;
 const { shouldShowLoadingScreen, isSectionRefreshing } = useSectionLoading();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -185,7 +185,7 @@ const percentageOfCurrentGroup = (value: BigNumber) => {
 };
 
 const refresh = async () => {
-  return await fetchNonFunginbleBalances({ ignoreCache: true });
+  return await fetchNonFungibleBalances({ ignoreCache: true });
 };
 
 const { dashboardTablesVisibleColumns } = storeToRefs(
@@ -193,6 +193,6 @@ const { dashboardTablesVisibleColumns } = storeToRefs(
 );
 
 const filteredBalances = computed(() => {
-  return get(nonFunginbleBalances).filter(item => !item.isLp);
+  return get(nonFungibleBalances).filter(item => !item.isLp);
 });
 </script>

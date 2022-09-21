@@ -1,6 +1,6 @@
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useEthNamesStore } from '@/store/balances/ethereum-names';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useBtcAccountsStore } from '@/store/blockchain/accounts/btc';
 import { useChainsAccountsStore } from '@/store/blockchain/accounts/chains';
 import { useEthAccountsStore } from '@/store/blockchain/accounts/eth';

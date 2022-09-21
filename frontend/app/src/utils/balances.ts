@@ -109,7 +109,7 @@ const toSortedArray = <T extends Balance>(
 export const toStoredAssetBalanceWithPrice = (
   ownedAssets: AssetBalances,
   isIgnored: (asset: string) => boolean,
-  getPrice: (asset: string) => BigNumber | null
+  getPrice: (asset: string) => BigNumber | null | undefined
 ): AssetBalanceWithPrice[] =>
   toSortedArray(ownedAssets, isIgnored, asset => ({
     asset,

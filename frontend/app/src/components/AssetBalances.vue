@@ -19,7 +19,9 @@
         :price-asset="item.asset"
         :value="item.usdPrice"
       />
-      <span v-else>-</span>
+      <div v-else class="d-flex justify-end">
+        <v-skeleton-loader width="70" type="text" />
+      </div>
     </template>
     <template #item.amount="{ item }">
       <amount-display :value="item.amount" />

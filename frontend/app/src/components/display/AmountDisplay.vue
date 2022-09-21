@@ -1,107 +1,110 @@
 <template>
-  <div
-    class="amount-display"
-    :class="{
-      'blur-content': !shouldShowAmount,
-      'amount-display--profit': pnl && value.gt(0),
-      'amount-display--loss': pnl && value.lt(0)
-    }"
-    @click="copy()"
-  >
-    <v-skeleton-loader
-      :loading="loading"
-      min-width="60"
-      max-width="70"
-      class="d-flex flex-row align-baseline"
-      type="text"
-    >
-      <span
-        v-if="comparisonSymbol"
-        class="mr-1 amount-display__comparison-symbol"
-        data-cy="display-comparison-symbol"
-      >
-        {{ comparisonSymbol }}
-      </span>
-      <div
-        v-if="
-          !isRenderValueNaN &&
-          currencyLocation === 'before' &&
-          (shownCurrency !== 'none' || symbol)
-        "
-        class="mr-1"
-      >
-        <amount-currency
-          class="amount-display__currency"
-          :show-currency="shownCurrency"
-          :currency="currency"
-          :asset="symbol"
-        />
-      </div>
-      <span>
-        <v-tooltip top open-delay="200ms">
-          <template #activator="{ on, attrs }">
-            <span
-              data-cy="display-amount"
-              class="amount-display__value text-no-wrap"
-              v-bind="attrs"
-              v-on="on"
-            >
-              {{ formattedValue }}
-            </span>
+  <div class="d-inline-block">
+    <div class="d-flex flex-row align-baseline">
+      <div v-if="isManualPrice" class="mr-2 d-inline-block">
+        <v-tooltip bottom>
+          <template #activator="{ on }">
+            <v-icon class="mr-1" small color="warning" v-on="on">
+              mdi-auto-fix
+            </v-icon>
           </template>
-          <div class="text-center">
-            <div
-              v-if="
-                !(renderValueDecimalPlaces <= floatingPrecision && !tooltip) ||
-                isPriceAsset ||
-                showExponential
-              "
-              class="amount-display__full-value"
-              data-cy="display-full-value"
-            >
-              {{ fullFormattedValue }}
-            </div>
-            <div class="amount-display__copy-instruction">
-              <div
-                class="amount-display__copy-instruction__wrapper text-uppercase font-weight-bold text-caption"
-                :class="{
-                  'amount-display__copy-instruction__wrapper--copied': copied
-                }"
-              >
-                <div>
-                  {{ t('amount_display.click_to_copy') }}
+          <span>{{ t('amount_display.manual_tooltip') }}</span>
+        </v-tooltip>
+      </div>
+      <span
+        class="amount-display"
+        :class="{
+          'blur-content': !shouldShowAmount,
+          'amount-display--profit': pnl && value.gt(0),
+          'amount-display--loss': pnl && value.lt(0)
+        }"
+        @click="copy()"
+      >
+        <v-skeleton-loader
+          :loading="loading"
+          min-width="60"
+          max-width="70"
+          class="d-flex flex-row align-baseline"
+          type="text"
+        >
+          <span
+            v-if="comparisonSymbol"
+            class="mr-1 amount-display__comparison-symbol"
+            data-cy="display-comparison-symbol"
+          >
+            {{ comparisonSymbol }}
+          </span>
+          <div
+            v-if="shouldShowCurrency && currencyLocation === 'before'"
+            class="mr-1"
+          >
+            <amount-currency
+              class="amount-display__currency"
+              :show-currency="shownCurrency"
+              :currency="currency"
+              :asset="symbol"
+            />
+          </div>
+          <span>
+            <v-tooltip top open-delay="200ms">
+              <template #activator="{ on, attrs }">
+                <span
+                  data-cy="display-amount"
+                  class="amount-display__value text-no-wrap"
+                  v-bind="attrs"
+                  v-on="on"
+                >
+                  {{ formattedValue }}
+                </span>
+              </template>
+              <div class="text-center">
+                <div
+                  v-if="showFullValue"
+                  class="amount-display__full-value"
+                  data-cy="display-full-value"
+                >
+                  {{ fullFormattedValue }}
                 </div>
-                <div class="green--text text--lighten-2">
-                  {{ t('amount_display.copied') }}
+                <div class="amount-display__copy-instruction">
+                  <div
+                    class="amount-display__copy-instruction__wrapper text-uppercase font-weight-bold text-caption"
+                    :class="{
+                      'amount-display__copy-instruction__wrapper--copied':
+                        copied
+                    }"
+                  >
+                    <div>
+                      {{ t('amount_display.click_to_copy') }}
+                    </div>
+                    <div class="green--text text--lighten-2">
+                      {{ t('amount_display.copied') }}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            </v-tooltip>
+          </span>
+          <div
+            v-if="shouldShowCurrency && currencyLocation === 'after'"
+            class="ml-1"
+          >
+            <amount-currency
+              :asset-padding="assetPadding"
+              class="amount-display__currency"
+              :show-currency="shownCurrency"
+              :currency="renderedCurrency"
+              :asset="symbol"
+            />
           </div>
-        </v-tooltip>
+        </v-skeleton-loader>
       </span>
-      <div
-        v-if="
-          !isRenderValueNaN &&
-          currencyLocation === 'after' &&
-          (shownCurrency !== 'none' || symbol)
-        "
-        class="ml-1"
-      >
-        <amount-currency
-          :asset-padding="assetPadding"
-          class="amount-display__currency"
-          :show-currency="shownCurrency"
-          :currency="renderedCurrency"
-          :asset="symbol"
-        />
-      </div>
-    </v-skeleton-loader>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { BigNumber } from '@rotki/common';
-import { PropType } from 'vue';
+import { ComputedRef, PropType } from 'vue';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { useAssetInfoRetrieval } from '@/store/assets/retrieval';
@@ -158,7 +161,8 @@ const {
   showCurrency,
   priceAsset,
   integer,
-  forceCurrency
+  forceCurrency,
+  tooltip
 } = toRefs(props);
 const { currency, currencySymbol, floatingPrecision } = storeToRefs(
   useGeneralSettingsStore()
@@ -376,6 +380,30 @@ const renderedCurrency = computed<Currency>(() => {
   }
 
   return get(currency);
+});
+
+const { prices } = storeToRefs(useBalancePricesStore());
+
+const isManualPrice: ComputedRef<boolean> = computed(() => {
+  const asset = get(priceAsset);
+  if (!asset) return false;
+  return get(prices)[asset]?.isManualPrice || false;
+});
+
+const showFullValue: ComputedRef<boolean> = computed(() => {
+  return (
+    !(
+      get(renderValueDecimalPlaces) <= get(floatingPrecision) && !get(tooltip)
+    ) ||
+    get(isPriceAsset) ||
+    get(showExponential)
+  );
+});
+
+const shouldShowCurrency: ComputedRef<boolean> = computed(() => {
+  return (
+    !get(isRenderValueNaN) && !!(get(shownCurrency) !== 'none' || get(symbol))
+  );
 });
 </script>
 

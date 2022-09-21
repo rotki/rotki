@@ -114,7 +114,7 @@ const { t } = useI18n();
 <style scoped lang="scss">
 .defi-wizard {
   &__address-selector {
-    ::v-deep {
+    :deep() {
       .v-stepper {
         &__content {
           margin: auto !important;

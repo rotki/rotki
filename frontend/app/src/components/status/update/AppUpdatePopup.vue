@@ -167,7 +167,7 @@ onMounted(async () => {
 </script>
 <style scoped lang="scss">
 .update-popup {
-  ::v-deep {
+  :deep() {
     .v-snack {
       &__wrapper {
         margin: 16px;

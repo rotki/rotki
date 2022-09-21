@@ -299,8 +299,8 @@ const noData = computed(
 
 const fetchPrices = async () => {
   try {
-    const data = await api.assets.fetchCurrentPrices();
-    set(prices, AssetPriceArray.parse(data));
+    const data = await api.assets.fetchNftsPrices();
+    set(prices, data);
   } catch (e: any) {
     set(priceError, e.message);
   }

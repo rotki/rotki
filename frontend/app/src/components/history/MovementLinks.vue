@@ -6,7 +6,14 @@
     </span>
     <span v-if="item.transactionId" class="d-flex flex-row mt-1">
       <span class="mr-1 font-weight-medium"> {{ tc('common.tx') }}: </span>
-      <hash-link :text="transactionId" :chain="chain" tx full-address />
+      <hash-link
+        v-if="isValidTxHash(transactionId)"
+        :text="transactionId"
+        :chain="chain"
+        tx
+        full-address
+      />
+      <span v-else>{{ item.transactionId ?? '' }}</span>
     </span>
   </span>
 </template>
@@ -16,16 +23,18 @@ import { PropType } from 'vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import { AssetMovement } from '@/types/history/movements';
 import { isEvmIdentifier } from '@/utils/assets';
+import { isValidTxHash } from '@/utils/text';
 
 const props = defineProps({
   item: { required: true, type: Object as PropType<AssetMovement> }
 });
 
 const { item } = toRefs(props);
+
 const { tc } = useI18n();
 
+// TODO: make it so that the chains are retrieved from the backend
 const chain = computed<Blockchain>(() => {
-  // TODO: make it so that the chains are retrieved from the backend
   if (
     get(isEvmIdentifier(get(item).asset)) ||
     get(item).asset === Blockchain.ETH

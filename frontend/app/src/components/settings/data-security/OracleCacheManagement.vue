@@ -165,19 +165,19 @@ const { isTaskRunning } = useTasks();
 const { createOracleCache, getPriceCache, deletePriceCache } =
   useBalancePricesStore();
 
-const oracles: PriceOracle[] = ['cryptocompare'];
+const oracles: PriceOracle[] = [PriceOracle.CRYPTOCOMPARE];
 
 const loading = ref<boolean>(false);
 const confirmClear = ref<boolean>(false);
 const cacheData = ref<OracleCacheMeta[]>([]);
 const fromAsset = ref<string>('');
 const toAsset = ref<string>('');
-const selection = ref<PriceOracle>('cryptocompare');
+const selection = ref<PriceOracle>(PriceOracle.CRYPTOCOMPARE);
 const deleteEntry = ref<OracleCacheMeta | null>(null);
 
 const load = async () => {
   set(loading, true);
-  set(cacheData, await getPriceCache('cryptocompare'));
+  set(cacheData, await getPriceCache(PriceOracle.CRYPTOCOMPARE));
   set(loading, false);
 };
 

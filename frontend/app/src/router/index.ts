@@ -282,7 +282,26 @@ export default new Router({
         canNavigateBack: true,
         noteLocation: NoteLocation.PRICE_MANAGER
       },
-      props: true
+      props: true,
+      children: [
+        {
+          path: '',
+          name: 'price-manager',
+          redirect: Routes.PRICE_MANAGER_LATEST.route
+        },
+        {
+          path: Routes.PRICE_MANAGER_LATEST.route,
+          name: 'price-manager-current',
+          component: async () =>
+            import('../views/prices/LatestPriceManagement.vue')
+        },
+        {
+          path: Routes.PRICE_MANAGER_HISTORIC.route,
+          name: 'price-manager-historic',
+          component: async () =>
+            import('../views/prices/HistoricPriceManagement.vue')
+        }
+      ]
     },
     {
       path: Routes.ETH_ADDRESS_BOOK_MANAGER.route,

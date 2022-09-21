@@ -167,7 +167,7 @@ export default defineComponent({
       margin-top: 10px;
     }
 
-    ::v-deep {
+    :deep() {
       .v-input {
         &--is-disabled {
           .v-icon,

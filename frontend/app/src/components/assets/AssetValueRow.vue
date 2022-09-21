@@ -14,7 +14,9 @@
             :price-asset="symbol"
             :value="info.usdPrice"
           />
-          <span v-else>-</span>
+          <div v-else class="pt-3 d-flex justify-end">
+            <v-skeleton-loader height="20" width="70" type="text" />
+          </div>
         </v-card-text>
       </v-card>
     </v-col>

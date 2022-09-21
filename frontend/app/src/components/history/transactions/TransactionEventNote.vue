@@ -83,18 +83,13 @@ const formatNotes = (
     }
 
     // Check if the word is ETH address
-    const isAddress = isValidEthAddress(word);
-
-    if (isAddress) {
+    if (isValidEthAddress(word)) {
       formats.push({ type: NoteType.ADDRESS, address: word });
       return;
     }
 
     // Check if the word is Tx Hash
-    const isTransaction =
-      index !== 0 && words[index - 1] === 'transaction' && isValidTxHash(word);
-
-    if (isTransaction) {
+    if (isValidTxHash(word)) {
       formats.push({ type: NoteType.TX, address: word });
       return;
     }

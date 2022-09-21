@@ -64,7 +64,7 @@ export default defineComponent({
     z-index: 1;
   }
 
-  ::v-deep {
+  :deep() {
     .v-card {
       &__text {
         font-size: 1em;

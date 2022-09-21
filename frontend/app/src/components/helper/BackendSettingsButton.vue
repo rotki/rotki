@@ -35,7 +35,7 @@ const { t } = useI18n();
 </script>
 
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   .v-card {
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;

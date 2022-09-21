@@ -3,7 +3,6 @@
 </template>
 
 <script setup lang="ts">
-import { get } from '@vueuse/core';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';

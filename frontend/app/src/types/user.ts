@@ -7,7 +7,7 @@ import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { FrontendSettings } from '@/types/frontend-settings';
 import { LedgerActionEnum } from '@/types/ledger-actions';
 import { ModuleEnum } from '@/types/modules';
-import { PriceOracle } from '@/types/price-oracle';
+import { PriceOracleEnum } from '@/types/price-oracle';
 
 const OtherSettings = z.object({
   krakenAccountType: KrakenAccountType.optional(),
@@ -39,8 +39,8 @@ const GeneralSettings = z.object({
   activeModules: z.array(ModuleEnum),
   btcDerivationGapLimit: z.number(),
   displayDateInLocaltime: z.boolean(),
-  currentPriceOracles: z.array(PriceOracle),
-  historicalPriceOracles: z.array(PriceOracle),
+  currentPriceOracles: z.array(PriceOracleEnum),
+  historicalPriceOracles: z.array(PriceOracleEnum),
   ssf0graphMultiplier: z.number().default(0),
   nonSyncingExchanges: z.array(Exchange),
   treatEth2AsEth: z.boolean()

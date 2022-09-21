@@ -210,7 +210,7 @@ const values = computed<Tag[]>(() => {
 </script>
 
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   .v-dialog {
     &--active {
       height: 100%;

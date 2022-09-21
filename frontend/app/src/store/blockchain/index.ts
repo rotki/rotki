@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { AddAccountsPayload } from '@/store/balances/types';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 import { useBlockchainAccountsStore } from '@/store/blockchain/accounts';
@@ -20,7 +20,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   const { addAccount, fetch } = useBlockchainAccountsStore();
   const { getAccountsByChain } = useAccountBalancesStore();
   const { fetchBlockchainBalances } = useBlockchainBalancesStore();
-  const { fetchNonFunginbleBalances } = useNonFungibleBalancesStore();
+  const { fetchNonFungibleBalances } = useNonFungibleBalancesStore();
   const { fetchLoopringBalances } = useEthBalancesStore();
   const { fetchDetected } = useBlockchainTokensStore();
   const { enableModule } = useSettingsStore();
@@ -120,7 +120,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       if (blockchain === Blockchain.ETH) {
         await fetchDetected(addr.filter(add => add.length > 0));
       }
-      startPromise(fetchNonFunginbleBalances());
+      startPromise(fetchNonFungibleBalances());
       startPromise(refreshAccounts(blockchain));
     } catch (e: any) {
       logger.error(e);

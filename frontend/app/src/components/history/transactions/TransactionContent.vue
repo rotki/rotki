@@ -11,12 +11,12 @@
       </template>
       <template #actions>
         <v-row>
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="7">
             <v-row>
               <v-col cols="auto">
                 <v-menu offset-y>
                   <template #activator="{ on }">
-                    <v-btn color="primary" depressed height="100%" v-on="on">
+                    <v-btn color="primary" depressed height="40px" v-on="on">
                       {{ tc('transactions.redecode_events.title') }}
                     </v-btn>
                   </template>
@@ -49,7 +49,7 @@
               </v-col>
             </v-row>
           </v-col>
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="5">
             <div>
               <table-filter
                 :matchers="matchers"

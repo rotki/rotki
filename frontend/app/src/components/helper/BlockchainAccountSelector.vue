@@ -5,6 +5,7 @@
         :value="value"
         :items="displayedAccounts"
         :filter="filter"
+        auto-select-first
         :search-input.sync="search"
         :multiple="multiple"
         :loading="loading"
@@ -82,6 +83,7 @@ import { PropType } from 'vue';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useTheme } from '@/composables/common';
+import { useEthNamesStore } from '@/store/balances/ethereum-names';
 import { useAccountBalancesStore } from '@/store/blockchain/accountbalances';
 
 const props = defineProps({
@@ -146,10 +148,12 @@ const displayedAccounts = computed(() => {
   return get(hideOnEmptyUsable) ? [] : accounts;
 });
 
+const { ethNameSelector } = useEthNamesStore();
+
 const filter = (item: GeneralAccount, queryText: string) => {
-  const text = item.label.toLocaleLowerCase();
-  const query = queryText.toLocaleLowerCase();
+  const text = (get(ethNameSelector(item.address)) ?? '').toLowerCase();
   const address = item.address.toLocaleLowerCase();
+  const query = queryText.toLocaleLowerCase();
 
   const labelMatches = text.indexOf(query) > -1;
   const addressMatches = address.indexOf(query) > -1;
@@ -173,6 +177,16 @@ const { dark } = useTheme();
   &__list {
     &__item {
       max-width: 100%;
+    }
+  }
+
+  :deep() {
+    .v-select {
+      &__selections {
+        input {
+          min-width: 0;
+        }
+      }
     }
   }
 }

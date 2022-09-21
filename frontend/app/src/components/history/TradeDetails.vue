@@ -82,7 +82,7 @@ const link = computed(() => get(item).link || '');
 const { href, hasLink, onLinkClick } = useLinks(link);
 </script>
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   th {
     &:nth-child(2) {
       span {

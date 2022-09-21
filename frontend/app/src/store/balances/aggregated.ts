@@ -20,7 +20,7 @@ export const useAggregatedBalancesStore = defineStore(
   'balances/aggregated',
   () => {
     const { isAssetIgnored } = useIgnoredAssetsStore();
-    const { prices } = storeToRefs(useBalancePricesStore());
+    const { getAssetPrice } = useBalancePricesStore();
     const { totals, liabilities: chainLiabilities } = storeToRefs(
       useAggregatedBlockchainBalancesStore()
     );
@@ -43,7 +43,7 @@ export const useAggregatedBalancesStore = defineStore(
         return toStoredAssetBalanceWithPrice(
           ownedAssets,
           asset => hideIgnored && get(isAssetIgnored(asset)),
-          asset => get(prices)[asset]
+          getAssetPrice
         );
       });
 
@@ -59,7 +59,7 @@ export const useAggregatedBalancesStore = defineStore(
         return toStoredAssetBalanceWithPrice(
           liabilities,
           asset => hideIgnored && get(isAssetIgnored(asset)),
-          asset => get(prices)[asset]
+          getAssetPrice
         );
       });
 

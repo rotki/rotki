@@ -1,12 +1,15 @@
 import { z } from 'zod';
 
-export const PriceOracle = z.enum([
-  'cryptocompare',
-  'coingecko',
-  'manual',
-  'uniswapv3',
-  'uniswapv2',
-  'saddle',
-  'manualcurrent'
-]);
-export type PriceOracle = z.infer<typeof PriceOracle>;
+export enum PriceOracle {
+  BLOCKCHAIN = 'blockchain',
+  COINGECKO = 'coingecko',
+  CRYPTOCOMPARE = 'cryptocompare',
+  FIAT = 'fiat',
+  MANUAL = 'manual',
+  MANUALCURRENT = 'manualcurrent',
+  SADDLE = 'saddle',
+  UNISWAP2 = 'uniswapv2',
+  UNISWAP3 = 'uniswapv3'
+}
+
+export const PriceOracleEnum = z.nativeEnum(PriceOracle);

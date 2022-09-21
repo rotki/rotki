@@ -49,7 +49,7 @@ export const useExchangeBalancesStore = defineStore(
     const { purgeHistoryLocation } = usePurgeStore();
     const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
     const { isAssetIgnored } = useIgnoredAssetsStore();
-    const { prices } = storeToRefs(useBalancePricesStore());
+    const { getAssetPrice } = useBalancePricesStore();
     const { queryRemoveExchange, queryExchangeBalances, querySetupExchange } =
       useExchangeApi();
 
@@ -140,7 +140,7 @@ export const useExchangeBalancesStore = defineStore(
             getAssociatedAssetIdentifier
           ),
           asset => hideIgnored && get(isAssetIgnored(asset)),
-          asset => get(prices)[asset]
+          getAssetPrice
         );
       });
 

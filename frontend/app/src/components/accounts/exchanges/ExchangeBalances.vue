@@ -180,7 +180,7 @@ const { t, tc } = useI18n();
 </script>
 
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   .v-tabs-bar {
     &__content {
       background-color: var(--v-rotki-light-grey-darken1);
@@ -203,7 +203,7 @@ const { t, tc } = useI18n();
     &__select {
       border-radius: 4px 4px 0 0;
 
-      ::v-deep {
+      :deep() {
         .v-input {
           &__icon {
             &--append {

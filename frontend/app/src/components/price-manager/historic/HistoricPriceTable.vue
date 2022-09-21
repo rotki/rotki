@@ -1,6 +1,15 @@
 <template>
   <card outlined-body>
-    <template #title>{{ tc('price_table.title') }}</template>
+    <template #title>
+      <refresh-button
+        :loading="loading"
+        :tooltip="tc('price_table.refresh_tooltip')"
+        @refresh="refresh"
+      />
+      <div>
+        {{ tc('price_table.historic.title') }}
+      </div>
+    </template>
     <slot />
     <data-table
       :items="prices"
@@ -44,15 +53,10 @@
 
 <script setup lang="ts">
 import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
-import { get, set } from '@vueuse/core';
-import { computed, onMounted, PropType, ref, toRef, watch } from 'vue';
-import { useI18n } from 'vue-i18n-composable';
+import { PropType } from 'vue';
 import { DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
-import {
-  HistoricalPrice,
-  HistoricalPricePayload
-} from '@/services/assets/types';
+import { HistoricalPrice, ManualPricePayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
 import { Nullable } from '@/types';
@@ -60,10 +64,10 @@ import { nonNullProperties } from '@/utils/data';
 
 const props = defineProps({
   filter: {
-    type: Object as PropType<HistoricalPricePayload>,
+    type: Object as PropType<ManualPricePayload>,
     required: true
   },
-  refresh: {
+  refreshing: {
     type: Boolean,
     required: false,
     default: false
@@ -71,8 +75,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['edit', 'refreshed']);
-
-const filter = toRef(props, 'filter');
+const { filter, refreshing } = toRefs(props);
 
 const prices = ref<HistoricalPrice[]>([]);
 const loading = ref(false);
@@ -93,7 +96,8 @@ const headers = computed<DataTableHeader[]>(() => [
   },
   {
     text: tc('common.price'),
-    value: 'price'
+    value: 'price',
+    align: 'end'
   },
   {
     text: tc('price_table.headers.to_asset'),
@@ -136,7 +140,7 @@ const deletePrice = async () => {
   }
 };
 
-const fetchPrices = async (payload?: Partial<HistoricalPricePayload>) => {
+const fetchPrices = async (payload?: Partial<ManualPricePayload>) => {
   set(loading, true);
   try {
     set(prices, await api.assets.historicalPrices(payload));
@@ -159,14 +163,14 @@ const refresh = async () => {
   await fetchPrices(get(filter));
 };
 
-watch(props.filter, async payload => {
+watch(filter, async payload => {
   await fetchPrices(nonNullProperties(payload));
 });
 
 watch(
-  () => props.refresh,
-  async refresh => {
-    if (!refresh) {
+  () => refreshing,
+  async refreshing => {
+    if (!refreshing) {
       return;
     }
     await fetchPrices();

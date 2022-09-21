@@ -167,6 +167,16 @@ export const routesRef = computed(() => ({
     icon: 'mdi-chart-line',
     text: i18n.t('navigation_menu.manage_prices').toString()
   },
+  PRICE_MANAGER_LATEST: {
+    route: '/price-manager/latest',
+    icon: 'mdi-chart-line',
+    text: i18n.t('navigation_menu.manage_prices_sub.latest_prices').toString()
+  },
+  PRICE_MANAGER_HISTORIC: {
+    route: '/price-manager/historic',
+    icon: 'mdi-chart-line',
+    text: i18n.t('navigation_menu.manage_prices_sub.historic_prices').toString()
+  },
   ETH_ADDRESS_BOOK_MANAGER: {
     route: '/eth-address-book-manager',
     icon: 'mdi-book-open',

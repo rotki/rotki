@@ -97,7 +97,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
 
     .slider-wrapper {
       .v-input {
-        ::v-deep {
+        :deep() {
           .v-slider {
             width: 210px;
 
@@ -178,7 +178,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
         /* stylelint-disable plugin/stylelint-bem-namics, rule-empty-line-before */
         @for $i from 0 through 2 {
           &.selected-#{$i} {
-            ::v-deep {
+            :deep() {
               .v-slider {
                 &__tick {
                   @for $j from 3-$i through 3 {
@@ -208,7 +208,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
       &__menu {
         .slider-wrapper {
           .v-input {
-            ::v-deep {
+            :deep() {
               .v-slider {
                 &__tick {
                   --color: var(--v-secondary-lighten2);

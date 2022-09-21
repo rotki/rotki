@@ -33,13 +33,13 @@ export const useEthAccountsStore = defineStore(
     const eth2Validators: Ref<Eth2Validators> = ref(defaultValidators());
 
     const { awaitTask } = useTasks();
-    const { activeModules } = useGeneralSettingsStore();
+    const { activeModules } = storeToRefs(useGeneralSettingsStore());
     const { notify } = useNotifications();
     const { setMessage } = useMessageStore();
     const { t, tc } = useI18n();
 
     const fetchEth2Validators = async () => {
-      if (!activeModules.includes(Module.ETH2)) {
+      if (!get(activeModules).includes(Module.ETH2)) {
         return;
       }
       try {
@@ -62,7 +62,7 @@ export const useEthAccountsStore = defineStore(
       payload: Eth2Validator
     ): Promise<boolean> => {
       const { activeModules } = useGeneralSettingsStore();
-      if (!activeModules.includes(Module.ETH2)) {
+      if (!get(activeModules).includes(Module.ETH2)) {
         return false;
       }
       const id = payload.publicKey || payload.validatorIndex;
@@ -106,7 +106,7 @@ export const useEthAccountsStore = defineStore(
       payload: Eth2Validator
     ): Promise<boolean> => {
       const { activeModules } = useGeneralSettingsStore();
-      if (!activeModules.includes(Module.ETH2)) {
+      if (!get(activeModules).includes(Module.ETH2)) {
         return false;
       }
 

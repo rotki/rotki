@@ -18,12 +18,12 @@ export const useNonFungibleBalancesStore = defineStore(
   () => {
     const balances: Ref<NonFungibleBalances> = ref({});
 
-    const { activeModules } = useGeneralSettingsStore();
+    const { activeModules } = storeToRefs(useGeneralSettingsStore());
     const { awaitTask } = useTasks();
     const { notify } = useNotifications();
     const { tc } = useI18n();
 
-    const nonFunginbleBalances: ComputedRef<NonFungibleBalance[]> = computed(
+    const nonFungibleBalances: ComputedRef<NonFungibleBalance[]> = computed(
       () => {
         const data: NonFungibleBalance[] = [];
         const nonFungibleBalances = get(balances) as NonFungibleBalances;
@@ -40,16 +40,16 @@ export const useNonFungibleBalancesStore = defineStore(
     ): ComputedRef<BigNumber> =>
       computed(() => {
         return bigNumberSum(
-          get(nonFunginbleBalances)
+          get(nonFungibleBalances)
             .filter(item => includeLPToken || !item.isLp)
             .map(item => item.usdPrice)
         );
       });
 
-    const fetchNonFunginbleBalances = async (payload?: {
+    const fetchNonFungibleBalances = async (payload?: {
       ignoreCache: boolean;
     }): Promise<void> => {
-      if (!activeModules.includes(Module.NFTS)) {
+      if (!get(activeModules).includes(Module.NFTS)) {
         return;
       }
       const { isFirstLoad, setStatus, resetStatus } = useStatusUpdater(
@@ -89,9 +89,9 @@ export const useNonFungibleBalancesStore = defineStore(
 
     return {
       balances,
-      nonFunginbleBalances,
+      nonFungibleBalances,
       nonFungibleTotalValue,
-      fetchNonFunginbleBalances,
+      fetchNonFungibleBalances,
       reset
     };
   }

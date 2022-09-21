@@ -95,8 +95,9 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { isSectionLoading } from '@/composables/common';
+import { ManualPriceFormPayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-funginble';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useNotifications } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
@@ -126,8 +127,8 @@ export default defineComponent({
     const confirmDelete: Ref<NonFungibleBalance | null> = ref(null);
 
     const balancesStore = useNonFungibleBalancesStore();
-    const { nonFungibleTotalValue, fetchNonFunginbleBalances } = balancesStore;
-    const { nonFunginbleBalances } = storeToRefs(balancesStore);
+    const { nonFungibleTotalValue, fetchNonFungibleBalances } = balancesStore;
+    const { nonFungibleBalances } = storeToRefs(balancesStore);
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const total = nonFungibleTotalValue();
     const { tc } = useI18n();
@@ -139,7 +140,7 @@ export default defineComponent({
     });
 
     const mappedBalances = computed(() => {
-      return get(nonFunginbleBalances).map(balance => {
+      return get(nonFungibleBalances).map(balance => {
         return {
           ...balance,
           imageUrl: balance.imageUrl || '/assets/images/placeholder.svg',
@@ -186,7 +187,7 @@ export default defineComponent({
     const setupRefresh = (ignoreCache: boolean = false) => {
       const payload = ignoreCache ? { ignoreCache: true } : undefined;
 
-      return async () => await fetchNonFunginbleBalances(payload);
+      return async () => await fetchNonFungibleBalances(payload);
     };
 
     const refresh = setupRefresh(true);
@@ -197,7 +198,12 @@ export default defineComponent({
       set(edit, null);
       assert(nft);
       try {
-        await api.assets.setCurrentPrice(nft.id, toAsset, price);
+        const payload: ManualPriceFormPayload = {
+          fromAsset: nft.id,
+          toAsset,
+          price
+        };
+        await api.assets.addLatestPrice(payload);
         await refreshBalances();
       } catch (e: any) {
         notify({
@@ -213,7 +219,7 @@ export default defineComponent({
       assert(price);
       set(confirmDelete, null);
       try {
-        await api.assets.deleteCurrentPrice(price.id);
+        await api.assets.deleteLatestPrice(price.id);
         await refreshBalances();
       } catch (e: any) {
         notify({

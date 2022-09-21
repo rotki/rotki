@@ -220,7 +220,9 @@ export const useEthAccountBalancesStore = defineStore(
       return [
         {
           chain: Blockchain.ETH,
-          children: get(ethChildrenTotals),
+          children: get(ethChildrenTotals).filter((item: SubBlockchainTotal) =>
+            item.usdValue.gt(0)
+          ),
           usdValue: sum(get(ethAccounts)),
           loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_ETH))
         },

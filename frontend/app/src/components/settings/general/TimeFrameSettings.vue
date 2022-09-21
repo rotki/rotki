@@ -244,7 +244,7 @@ export default defineComponent({
 </script>
 <style scoped lang="scss">
 .timeframe-settings {
-  ::v-deep {
+  :deep() {
     .v-chip {
       cursor: pointer;
     }

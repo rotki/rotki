@@ -214,7 +214,7 @@ const navItems: MenuItem[] = [
 </script>
 
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   .v-list-item {
     border-radius: 0.5rem;
     padding: 0 0.75rem;
@@ -243,7 +243,7 @@ const navItems: MenuItem[] = [
       background-color: var(--v-primary-base);
       color: white !important;
 
-      ::v-deep {
+      :deep() {
         .nav-icon {
           opacity: 1 !important;
           filter: brightness(0) invert(100%);
@@ -264,7 +264,7 @@ const navItems: MenuItem[] = [
 
 .theme {
   &--dark {
-    ::v-deep {
+    :deep() {
       .navigation-submenu {
         &--mini {
           background: var(--v-secondary-lighten1);

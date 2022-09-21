@@ -273,7 +273,7 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   tbody {
     tr {
       height: 72px;

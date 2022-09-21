@@ -395,7 +395,7 @@ const cancel = () => {
 <style lang="scss" scoped>
 .watcher-dialog {
   &__body {
-    ::v-deep {
+    :deep() {
       .v-text-field {
         &--filled {
           .v-text-field {

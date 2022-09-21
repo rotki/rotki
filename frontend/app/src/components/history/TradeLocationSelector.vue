@@ -84,7 +84,7 @@ const input = (value: TradeLocation) => {
 <style scoped lang="scss">
 .trade-location-selector {
   &--outlined {
-    ::v-deep {
+    :deep() {
       /* stylelint-disable */
       .v-label:not(.v-label--active) {
         /* stylelint-enable */

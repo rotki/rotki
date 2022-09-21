@@ -439,7 +439,7 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-::v-deep {
+:deep() {
   .v-expansion-panel-content {
     &__wrap {
       padding: 0 0 16px;
