@@ -375,12 +375,12 @@ def is_valid_ethereum_tx_hash(val: str) -> bool:
 
 def create_order_by_rules_list(
         data: Dict[str, Any],
-        timestamp_field: str = 'timestamp',
+        default_order_by_field: str = 'timestamp',
 ) -> List[Tuple[str, bool]]:
     """Create a list of attributes and sorting order taking values from DBOrderBySchema
     to be used by the filters that allow sorting. By default the attribute used for sorting is
     timestamp and the ascending value for this field is False.
     """
-    order_by_attribute = data['order_by_attributes'] if data['order_by_attributes'] is not None else [timestamp_field]  # noqa: E501
+    order_by_attribute = data['order_by_attributes'] if data['order_by_attributes'] is not None else [default_order_by_field]  # noqa: E501
     ascending = data['ascending'] if data['ascending'] is not None else [False]
     return list(zip(order_by_attribute, ascending))

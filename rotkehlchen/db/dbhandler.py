@@ -2118,6 +2118,7 @@ class DBHandler:
                 'eth2_daily_staking_details',
                 'entries_notes',
                 'user_notes',
+                'assets',
             ],
             op: Literal['OR', 'AND'] = 'OR',
             **kwargs: Any,

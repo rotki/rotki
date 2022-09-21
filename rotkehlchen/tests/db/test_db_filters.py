@@ -45,7 +45,7 @@ def test_filter_arguments(and_op, order_by, pagination):
     address_filter = DBETHTransactionJoinsFilter(and_op=False, addresses=addresses)
     time_filter = DBTimestampFilter(and_op=True, from_ts=Timestamp(1), to_ts=Timestamp(999))
     location_filter = DBLocationFilter(and_op=True, location=Location.KRAKEN)
-    order_by_obj = DBFilterOrder(rules=[('timestamp', True)]) if order_by else None
+    order_by_obj = DBFilterOrder(rules=[('timestamp', True)], case_sensitive=True) if order_by else None  # noqa: E501
     pagination_obj = DBFilterPagination(limit=10, offset=10) if pagination else None
     filter_query = DBFilterQuery(
         and_op=and_op,

@@ -32,7 +32,11 @@ from rotkehlchen.api.v1.schemas import (
     AssetSchema,
     AssetsImportingFromFormSchema,
     AssetsImportingSchema,
+    AssetsMappingSchema,
+    AssetsPostSchema,
     AssetsReplaceSchema,
+    AssetsSearchLevenshteinSchema,
+    AssetsSearchSchema,
     AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
     AsyncIgnoreCacheQueryArgumentSchema,
@@ -140,6 +144,7 @@ from rotkehlchen.chain.ethereum.types import NodeName, WeightedNode
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
+    AssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
     LedgerActionsFilterQuery,
@@ -653,7 +658,7 @@ class DatabaseBackupsResource(BaseMethodView):
 
 
 class AllAssetsResource(BaseMethodView):
-
+    post_schema = AssetsPostSchema()
     delete_schema = StringIdentifierSchema()
 
     def make_add_schema(self) -> AssetSchema:
@@ -670,8 +675,9 @@ class AllAssetsResource(BaseMethodView):
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
 
-    def get(self) -> Response:
-        return self.rest_api.query_all_assets()
+    @use_kwargs(post_schema, location='json')
+    def post(self, filter_query: AssetsFilterQuery) -> Response:
+        return self.rest_api.query_all_assets(filter_query)
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_add_schema, location='json')
@@ -686,6 +692,39 @@ class AllAssetsResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json')
     def delete(self, identifier: str) -> Response:
         return self.rest_api.delete_custom_asset(identifier)
+
+
+class AssetsMappingResource(BaseMethodView):
+    post_schema = AssetsMappingSchema()
+
+    @use_kwargs(post_schema, location='json')
+    def post(self, identifiers: List[str]) -> Response:
+        return self.rest_api.get_assets_mappings(identifiers)
+
+
+class AssetsSearchResource(BaseMethodView):
+    post_schema = AssetsSearchSchema()
+
+    @use_kwargs(post_schema, location='json')
+    def post(self, filter_query: AssetsFilterQuery) -> Response:
+        return self.rest_api.search_assets(filter_query)
+
+
+class AssetsSearchLevenshteinResource(BaseMethodView):
+    post_schema = AssetsSearchLevenshteinSchema()
+
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            filter_query: AssetsFilterQuery,
+            substring_search: str,
+            limit: Optional[int],
+    ) -> Response:
+        return self.rest_api.search_assets_levenshtein(
+            filter_query=filter_query,
+            substring_search=substring_search,
+            limit=limit,
+        )
 
 
 class AssetsTypesResource(BaseMethodView):
