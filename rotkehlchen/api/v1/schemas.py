@@ -51,6 +51,7 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
+    AssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
     HistoryEventFilterQuery,
@@ -1737,6 +1738,103 @@ class AssetSchema(Schema):
         _validate_single_oracle_id(data, 'cryptocompare', self.cryptocompare_obj)
 
 
+class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
+    name = fields.String(load_default=None)
+    symbol = fields.String(load_default=None)
+    asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        # the length of `order_by_attributes` and `ascending` are the same. So check only one.
+        if data['order_by_attributes'] is not None and len(data['order_by_attributes']) > 1:
+            raise ValidationError(
+                message='Multiple fields ordering is not allowed.',
+                field_name='order_by_attributes',
+            )
+
+    @post_load
+    def make_assets_post_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        filter_query = AssetsFilterQuery.make(
+            order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
+            limit=data['limit'],
+            offset=data['offset'],
+            name=data['name'],
+            symbol=data['symbol'],
+            asset_type=data['asset_type'],
+        )
+        return {'filter_query': filter_query}
+
+
+class AssetsSearchSchema(DBOrderBySchema, DBPaginationSchema):
+    value = fields.String(required=True)
+    search_column = fields.String(
+        required=True,
+        validate=webargs.validate.OneOf(choices=('name', 'symbol')),
+    )
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        # the length of `order_by_attributes` and `ascending` are the same. So check only one.
+        if data['order_by_attributes'] is not None and len(data['order_by_attributes']) > 1:
+            raise ValidationError(
+                message='Multiple fields ordering is not allowed.',
+                field_name='order_by_attributes',
+            )
+
+    @post_load
+    def make_assets_search_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        filter_query = AssetsFilterQuery.make(
+            and_op=True,
+            order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
+            limit=data['limit'],
+            offset=0,  # this is needed for the `limit` argument to work.
+            substring_search=data['value'],
+            search_column=data['search_column'],
+        )
+        return {'filter_query': filter_query}
+
+
+class AssetsSearchLevenshteinSchema(AssetsSearchSchema):
+    # this is not used at all.
+    search_column = fields.String(required=False)
+
+    @post_load
+    def make_assets_search_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        filter_query = AssetsFilterQuery.make(
+            and_op=True,
+            order_by_rules=create_order_by_rules_list(data=data, default_order_by_field='name'),
+        )
+        return {
+            'filter_query': filter_query,
+            'substring_search': data['value'],
+            'limit': data['limit'],
+        }
+
+
+class AssetsMappingSchema(Schema):
+    identifiers = DelimitedOrNormalList(fields.String(required=True), required=True)
+
+
 class EvmTokenSchema(RequiredEthereumAddressSchema):
     token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
     decimals = fields.Integer(
@@ -2452,7 +2550,7 @@ class UserNotesGetSchema(DBPaginationSchema, DBOrderBySchema):
     location = fields.String(load_default=None)
 
     @post_load
-    def make_ethereum_transaction_query(  # pylint: disable=no-self-use
+    def make_user_notes_query(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,

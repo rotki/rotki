@@ -17,6 +17,8 @@ from typing import (
     overload,
 )
 
+from polyleven import levenshtein
+
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.ethereum.types import string_to_evm_address
@@ -45,9 +47,11 @@ from .utils import GLOBAL_DB_VERSION, _get_setting_value
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.filtering import AssetsFilterQuery
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+LEVENSHTEIN_DISTANCE_MATCH_THRESHOLD = 4
 
 
 def initialize_globaldb(dbpath: Path, sql_vm_instructions_cb: int) -> DBConnection:
@@ -207,6 +211,143 @@ class GlobalDBHandler():
             raise InputError(
                 f'Failed to add asset {asset_id} into the assets table due to {str(e)}',
             ) from e
+
+    @staticmethod
+    def retrieve_assets(filter_query: 'AssetsFilterQuery') -> Tuple[Dict[str, dict], int]:
+        """
+        Returns a tuple that contains a dict of identifiers and their assets details
+        and a count of those assets that match the filter query.
+        May raise:
+        - DeserializationError
+        """
+        assets_info = {}
+        query, bindings = filter_query.prepare()
+        parent_query = """
+        SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind
+        FROM assets as A
+        JOIN common_asset_details AS C ON C.identifier = A.identifier
+        LEFT JOIN evm_tokens as B ON B.identifier = A.identifier
+        """  # noqa: E501
+        query = f'SELECT * FROM ({parent_query}) ' + query
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(query, bindings)
+            for entry in cursor:
+                asset_type = AssetType.deserialize_from_db(entry[1])
+                data = {
+                    'type': str(asset_type),
+                    'name': entry[4],
+                }
+                # for evm tokens and crypto assets
+                common_data = {
+                    'symbol': entry[5],
+                    'started': entry[6],
+                    'swapped_for': entry[8],
+                    'forked': entry[7],
+                    'cryptocompare': entry[10],
+                    'coingecko': entry[9],
+                }
+                if asset_type == AssetType.FIAT:
+                    data.update({
+                        'symbol': entry[5],
+                        'started': entry[6],
+                    })
+                elif asset_type == AssetType.EVM_TOKEN:
+                    data.update({
+                        'address': entry[2],
+                        'chain': ChainID.deserialize_from_db(entry[12]).serialize(),
+                        'token_kind': EvmTokenKind.deserialize_from_db(entry[13]).serialize(),
+                        'decimals': entry[3],
+                        'protocol': entry[11],
+                    })
+                    data.update(common_data)
+                elif AssetType.is_crypto_asset(asset_type):
+                    data.update(common_data)
+                else:
+                    raise NotImplementedError(f'Unsupported AssetType {asset_type} found in the DB. Should never happen')  # noqa: E501
+                # dict of identifier to asset details
+                assets_info[entry[0]] = data
+
+            # get `entries_found`
+            query, bindings = filter_query.prepare(with_pagination=False)
+            total_found_query = f'SELECT COUNT(*) FROM ({parent_query}) ' + query
+            entries_found = cursor.execute(total_found_query, bindings).fetchone()[0]
+
+        return assets_info, entries_found
+
+    @staticmethod
+    def get_assets_mappings(identifiers: List[str]) -> Dict[str, dict]:
+        """
+        Given a list of asset identifiers, return a list of asset information(id, name, symbol)
+        for those identifiers.
+        May raise:
+        - InputError if one of the identifiers do not exist
+        """
+        result = {}
+        identifiers_query = f'assets.identifier IN ({",".join("?" * len(identifiers))})'
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT assets.identifier, assets.name, common_asset_details.symbol FROM assets '
+                'JOIN common_asset_details on assets.identifier = common_asset_details.identifier '
+                'WHERE ' + identifiers_query,
+                tuple(identifiers),
+            )
+            for entry in cursor:
+                result[entry[0]] = {'name': entry[1], 'symbol': entry[2]}
+            if len(result) != len(identifiers):
+                raise InputError('One or more of the given identifiers could not be found in the database')  # noqa: E501
+        return result
+
+    @staticmethod
+    def search_assets(filter_query: 'AssetsFilterQuery') -> List[Dict[str, str]]:
+        """Returns a list of asset details that match the search query provided."""
+        search_result = []
+        query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)  # noqa:E501
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(query, bindings)
+            for entry in cursor:
+                search_result.append({
+                    'identifier': entry[0],
+                    'name': entry[1],
+                    'symbol': entry[2],
+                })
+        return search_result
+
+    @staticmethod
+    def search_assets_levenshtein(
+            filter_query: 'AssetsFilterQuery',
+            substring_search: str,
+            limit: Optional[int],
+    ) -> List[Dict[str, str]]:
+        """Returns a list of asset details that match the search keyword using the Levenshtein distance approach."""  # noqa: E501
+        search_result = []
+        levenshtein_distances = []
+        query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)  # noqa:E501
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(query, bindings)
+            for entry in cursor:
+                lev_dist_name = levenshtein(substring_search, entry[0])
+                lev_dist_symbol = levenshtein(substring_search, entry[1])
+                lev_dist_average = (lev_dist_name + lev_dist_symbol) / 2
+                # the maximum average levenshtein distance that should be accepted.
+                if lev_dist_average <= LEVENSHTEIN_DISTANCE_MATCH_THRESHOLD:
+                    search_result.append({
+                        'identifier': entry[0],
+                        'name': entry[1],
+                        'symbol': entry[2],
+                    })
+                    levenshtein_distances.append(lev_dist_average)
+        search_result = [result for _, result in sorted(zip(levenshtein_distances, search_result), key=lambda item: item[0])]  # noqa: E501
+        return search_result[:limit] if limit is not None else search_result
+
+    @staticmethod
+    def _prepare_search_assets_query(filter_query: 'AssetsFilterQuery') -> Tuple[str, list]:
+        query, bindings = filter_query.prepare()
+        parent_query = """
+        SELECT assets.identifier, name, symbol FROM assets
+        JOIN common_asset_details on assets.identifier = common_asset_details.identifier
+        """
+        query = parent_query + query
+        return query, bindings
 
     @overload
     @staticmethod

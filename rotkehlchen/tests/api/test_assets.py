@@ -1,5 +1,6 @@
 from contextlib import ExitStack
 from http import HTTPStatus
+from typing import Union
 from unittest.mock import patch
 
 import pytest
@@ -31,6 +32,25 @@ def mock_cryptoscamdb_request():
         return MockResponse(200, response)
 
     return patch('requests.get', side_effect=mock_requests_get)
+
+
+def assert_asset_result_order(
+        data: Union[list, dict],
+        is_ascending: bool,
+        order_field: str,
+) -> None:
+    """Asserts the ordering of the result received matches the query provided."""
+    last_entry = ''
+    result = data.values() if isinstance(data, dict) else data
+    for index, entry in enumerate(result):
+        if index == 0:
+            last_entry = entry[order_field]
+            continue
+        # the .casefold() is needed because the sorting is case-insensitive
+        if is_ascending is True:
+            assert entry[order_field].casefold() > last_entry.casefold()
+        else:
+            assert entry[order_field].casefold() < last_entry.casefold()
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -262,3 +282,219 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         )
         # Check that assets did not get modified
         assert set(rotki.data.db.get_ignored_assets(cursor)) >= expected_tokens
+
+
+def test_get_all_assets(rotkehlchen_api_server):
+    """Test that fetching all assets returns a paginated result."""
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'limit': 20,
+            'offset': 0,
+            'asset_type': 'fiat',
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) <= 20
+    assert 'entries_found' in result
+    assert 'entries_total' in result
+    assert 'entries_limit' in result
+    for entry in result['entries'].values():
+        assert entry['type'] == 'fiat'
+    assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
+
+    # use a different filter
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'limit': 50,
+            'offset': 0,
+            'name': 'Uniswap',
+            'order_by_attributes': ['symbol'],
+            'ascending': [False],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['entries']) <= 50
+    assert 'entries_found' in result
+    assert 'entries_total' in result
+    assert 'entries_limit' in result
+    for entry in result['entries'].values():
+        assert entry['name'] == 'Uniswap'
+    assert_asset_result_order(data=result['entries'], is_ascending=False, order_field='symbol')
+
+    # check that providing multiple order_by_attributes fails
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'limit': 20,
+            'offset': 0,
+            'asset_type': 'fiat',
+            'order_by_attributes': ['name', 'symbol'],
+            'ascending': [True, False],
+        },
+    )
+    assert_error_response(response, contained_in_msg='Multiple fields ordering is not allowed.')
+
+
+def test_get_assets_mappings(rotkehlchen_api_server):
+    """Test that providing a list of asset identifiers, the appropriate assets mappings are returned."""  # noqa: E501
+    queried_assets = ('BTC', 'TRY', 'EUR')
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsmappingresource',
+        ),
+        json={'identifiers': queried_assets},
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 3
+    for identifier in result.keys():
+        assert identifier in queried_assets
+
+    # check that providing multiple order_by_attributes fails
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsmappingresource',
+        ),
+        json={'identifiers': ['BTC', 'TRY', 'invalid']},
+    )
+    assert_error_response(response, contained_in_msg='One or more of the given identifiers could not be found in the database')  # noqa: E501
+
+
+def test_search_assets(rotkehlchen_api_server):
+    """Test that searching for assets using a keyword works."""
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchresource',
+        ),
+        json={
+            'value': 'Bitcoin',
+            'search_column': 'name',
+            'limit': 50,
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) <= 50
+    for entry in result:
+        assert 'bitcoin' in entry['name'].lower()
+    assert_asset_result_order(data=result, is_ascending=True, order_field='name')
+
+    # use a different keyword
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchresource',
+        ),
+        json={
+            'value': 'eth',
+            'search_column': 'symbol',
+            'limit': 10,
+            'order_by_attributes': ['symbol'],
+            'ascending': [False],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) <= 10
+    for entry in result:
+        assert 'eth' in entry['symbol'].lower()
+    assert_asset_result_order(data=result, is_ascending=False, order_field='symbol')
+
+    # check that searching for a non-existent asset returns nothing
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchresource',
+        ),
+        json={
+            'value': 'idontexist',
+            'search_column': 'name',
+            'limit': 50,
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 0
+
+    # search using a column that is not allowed
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchresource',
+        ),
+        json={
+            'value': 'idontexist',
+            'search_column': 'identifier',
+            'limit': 50,
+            'order_by_attributes': ['name'],
+            'ascending': [True],
+        },
+    )
+    assert_error_response(response, contained_in_msg='Must be one of: name, symbol.')
+
+
+def test_search_assets_with_levenshtein(rotkehlchen_api_server):
+    """Test that searching for assets using a keyword works(levenshtein approach)."""
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchlevenshteinresource',
+        ),
+        json={
+            'value': 'Bitcoin',
+            'limit': 50,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) <= 50
+    for entry in result:
+        assert 'bitcoin' in entry['name'].lower() or entry['symbol'].lower()
+
+    # use a different keyword
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchresource',
+        ),
+        json={
+            'value': 'eth',
+            'search_column': 'symbol',
+            'limit': 10,
+            'order_by_attributes': ['name'],
+            'ascending': [False],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) <= 10
+    for entry in result:
+        assert 'eth' in entry['symbol'].lower()
+
+    # check that searching for a non-existent asset returns nothing
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetssearchlevenshteinresource',
+        ),
+        json={
+            'value': 'idontexist',
+            'limit': 50,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 0

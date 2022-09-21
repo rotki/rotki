@@ -6,6 +6,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -25,6 +26,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class DBFilterOrder(NamedTuple):
     rules: List[Tuple[str, bool]]
+    case_sensitive: bool
 
     def prepare(self) -> str:
         querystr = 'ORDER BY '
@@ -36,7 +38,10 @@ class DBFilterOrder(NamedTuple):
             else:
                 order_by = attribute
 
-            querystr += f'{order_by} {"ASC" if ascending else "DESC"}'
+            if self.case_sensitive is False:
+                querystr += f'{order_by} COLLATE NOCASE {"ASC" if ascending else "DESC"}'
+            else:
+                querystr += f'{order_by} {"ASC" if ascending else "DESC"}'
 
         return querystr
 
@@ -243,6 +248,7 @@ class DBFilterQuery():
             and_op: bool,
             limit: Optional[int],
             offset: Optional[int],
+            order_by_case_sensitive: bool = True,
             order_by_rules: Optional[List[Tuple[str, bool]]] = None,
     ) -> 'DBFilterQuery':
         if limit is None or offset is None:
@@ -253,7 +259,7 @@ class DBFilterQuery():
         if order_by_rules is None:
             order_by = None
         else:
-            order_by = DBFilterOrder(order_by_rules)
+            order_by = DBFilterOrder(rules=order_by_rules, case_sensitive=order_by_case_sensitive)
 
         return cls(
             and_op=and_op,
@@ -901,5 +907,60 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
         if location is not None:
             filters.append(DBEqualsFilter(and_op=True, column='location', value=location))
         filters.append(filter_query.timestamp_filter)
+        filter_query.filters = filters
+        return filter_query
+
+
+class AssetsFilterQuery(DBFilterQuery):
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            name: Optional[str] = None,
+            symbol: Optional[str] = None,
+            substring_search: Optional[str] = None,
+            search_column: Optional[str] = None,
+            asset_type: Optional[AssetType] = None,
+    ) -> 'AssetsFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('name', True)]
+
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+            order_by_rules=order_by_rules,
+            order_by_case_sensitive=False,
+        )
+        filter_query = cast('AssetsFilterQuery', filter_query)
+
+        filters: List[DBFilter] = []
+        if name is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='name',
+                value=name,
+            ))
+        if symbol is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='symbol',
+                value=symbol,
+            ))
+        if asset_type is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='type',
+                value=asset_type.serialize_for_db(),
+            ))
+        if substring_search is not None and search_column is not None:
+            filters.append(DBSubStringFilter(
+                and_op=True,
+                field=search_column,
+                search_string=substring_search,
+            ))
         filter_query.filters = filters
         return filter_query

@@ -93,6 +93,7 @@ from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
+    AssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
     HistoryEventFilterQuery,
@@ -1313,16 +1314,47 @@ class RestAPI():
         # else
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
+    def query_all_assets(self, filter_query: AssetsFilterQuery) -> Response:
+        """Returns all supported assets with pagination."""
+        assets, assets_found = GlobalDBHandler().retrieve_assets(filter_query)
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            assets_total = self.rotkehlchen.data.db.get_entries_count(
+                cursor=cursor,
+                entries_table='assets',
+            )
+        result = {
+            'entries': assets,
+            'entries_found': assets_found,
+            'entries_total': assets_total,
+            'entries_limit': -1,
+        }
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
     @staticmethod
-    def query_all_assets() -> Response:
-        """Returns all supported assets"""
-        # type ignore is due to: https://github.com/python/mypy/issues/7781
-        assets = GlobalDBHandler().get_all_asset_data(mapping=True, serialized=True)  # type: ignore  # noqa: E501
-        return api_response(
-            _wrap_in_ok_result(assets),
-            status_code=HTTPStatus.OK,
-            log_result=False,
+    def get_assets_mappings(identifier: List[str]) -> Response:
+        try:
+            asset_mappings = GlobalDBHandler().get_assets_mappings(identifier)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+        return api_response(_wrap_in_ok_result(asset_mappings), status_code=HTTPStatus.OK)
+
+    @staticmethod
+    def search_assets(filter_query: AssetsFilterQuery) -> Response:
+        result = GlobalDBHandler().search_assets(filter_query)
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    @staticmethod
+    def search_assets_levenshtein(
+            filter_query: AssetsFilterQuery,
+            substring_search: str,
+            limit: Optional[int],
+    ) -> Response:
+        result = GlobalDBHandler().search_assets_levenshtein(
+            filter_query=filter_query,
+            substring_search=substring_search,
+            limit=limit,
         )
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @staticmethod
     def supported_modules() -> Response:

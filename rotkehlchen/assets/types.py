@@ -35,6 +35,12 @@ class AssetType(DBEnumMixIn):
     SOLANA_TOKEN = 25
     NFT = 26
 
+    @staticmethod
+    def is_crypto_asset(asset_type: 'AssetType') -> bool:
+        crypto_asset_types_values = set(range(4, 27))
+        crypto_asset_types_values.add(2)  # include `OWN_CHAIN`
+        return asset_type.value in crypto_asset_types_values
+
 
 class AssetData(NamedTuple):
     """Data of an asset. Keep in sync with assets/asset.py"""
