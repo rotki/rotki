@@ -2755,9 +2755,9 @@ Querying all balances
 Querying all supported assets
 ================================
 
-.. http:get:: /api/(version)/assets/all
+.. http:post:: /api/(version)/assets/all
 
-   Doing a GET on the all assets endpoint will return a mapping of all supported assets and their details. The keys are the unique symbol identifier and the values are the details for each asset.
+   Doing a POST on the all assets endpoint will return a mapping of all supported assets and their details. The keys are the unique symbol identifier and the values are the details for each asset.
 
 The details of each asset can contain the following keys:
 
@@ -2780,8 +2780,23 @@ The details of each asset can contain the following keys:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/all HTTP/1.1
+      POST /api/1/assets/all HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "asset_type": "own chain",
+        "limit": 15,
+        "offset": 0
+      }
+
+   :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson list[string] order_by_attributes: This is the list of attributes of the asset by which to order the results. By default we sort using ``name``.
+   :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
+   :reqjson string name: The name of asset to be used to filter the result data. Optional.
+   :reqjson string symbol: An asset symbol to be used to filter the result data. Optional.
+   :reqjson string asset_type: The category of an asset to be used to filter the result data. Optional.
 
    **Example Response**:
 
@@ -2850,15 +2865,171 @@ The details of each asset can contain the following keys:
                   "cryptocompare":"VET",
                   "coingecko":"vet",
                   "protocol":"None"
-              },
+              }
           },
           "message": ""
       }
 
-
-   :resjson object result: A mapping of asset symbol identifiers to asset details
+   :resjson object result: A mapping of asset identifiers to their respective asset details.
    :statuscode 200: Assets successfully queried.
    :statuscode 500: Internal rotki error
+
+
+Get asset identifiers mappings
+================================
+
+.. http:post:: /api/(version)/assets/mappings
+
+   Doing a POST on the assets mappings endpoint with a list of of identifiers will return a mapping of those identifiers to their respective name and symbols.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/assets/mappings HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "identifiers": [
+            "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
+            "DCR",
+            "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38"
+        ]
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31": {
+                  "name": "0xBitcoin",
+                  "symbol": "0xBTC"
+              },
+              "DCR": {
+                  "name": "Decred",
+                  "symbol": "DCR"
+              },
+              "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
+                  "name": "DigitalDevelopersFund",
+                  "symbol": "DDF"
+              }
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of identifiers to names and symbols.
+   :statuscode 200: Assets successfully queried.
+   :statuscode 400: One of the identifiers are not valid. Provided JSON is in some way malformed.
+   :statuscode 500: Internal rotki error.
+
+Search for assets
+===================
+
+.. http:post:: /api/(version)/assets/search
+
+   Doing a POST on the assets search endpoint will return a list of objects containing an asset's name, symbol and identifier in ascending order of the assets' names by default.
+   The result returned is based on the search keyword and column specified to search.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/assets/search HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "value": "bitcoin",
+        "search_column": "name",
+        "limit": 50,
+        "order_by_attributes": ["symbol"],
+        "ascending": [false]
+      }
+
+   :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson list[string] order_by_attributes: This is the list of attributes of the asset by which to order the results. By default we sort using ``name``.
+   :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
+   :reqjson string value: A string to be used search the assets. Required.
+   :reqjson string search_column: A column on the assets table to perform the search on. One of ``"name"`` or ``"symbol"``. Required.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              {
+                  "identifier": "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
+                  "name": "0xBitcoin",
+                  "symbol": "0xBTC"
+              }
+          ],
+          "message": ""
+      }
+
+   :resjson object result: A list of objects that contain the asset details which match the search keyword.
+   :statuscode 200: Assets successfully queried.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 500: Internal rotki error.
+
+
+Search for assets(Levenshtein)
+===============================
+
+.. http:post:: /api/(version)/assets/search/levenshtein
+
+   Doing a POST on the assets search endpoint will return a list of objects containing an asset's name, symbol and identifier based on the search keyword provided. This approach using Levenshtein distance for the search functionality and returns them by the closest match first.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/assets/search/levenshtein HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "value": "bitcoin",
+        "limit": 50
+      }
+
+   :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson list[string] order_by_attributes: This is the list of attributes of the asset by which to order the results. By default we sort using ``name``.
+   :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
+   :reqjson string value: A string to be used to search the assets. Required.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              {
+                  "identifier": "eip155:1/erc20:0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
+                  "name": "0xBitcoin",
+                  "symbol": "0xBTC"
+              }
+          ],
+          "message": ""
+      }
+
+   :resjson object result: A list of objects that contain the asset details which match the search keyword ordered by distance to search keyword.
+   :statuscode 200: Assets successfully queried.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 500: Internal rotki error.
+
 
 Querying owned assets
 ======================
